@@ -50,12 +50,13 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsResponse;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
+import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.rar.AuthorizationRequestContext;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -290,7 +291,7 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @param authorizationDetailsResponse the processed authorization details response
      */
     protected void afterAuthorizationDetailsProcessed(UserSessionModel userSession, ClientSessionContext clientSessionCtx,
-                                                      List<AuthorizationDetailsResponse> authorizationDetailsResponse) {
+                                                      List<AuthorizationDetailsJSONRepresentation> authorizationDetailsResponse) {
         // Default: do nothing
         // Subclasses or processors can override/extend this to perform post-processing
     }
@@ -303,26 +304,17 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @param clientSessionCtx the client session context
      * @return the authorization details response if processing was successful, null otherwise
      */
-    protected List<AuthorizationDetailsResponse> processAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    protected List<AuthorizationDetailsJSONRepresentation> processAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS);
         if (authorizationDetailsParam != null) {
             try {
-                return session.getKeycloakSessionFactory()
-                        .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
-                        .sorted((f1, f2) -> f2.order() - f1.order())
-                        .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
-                        .map(authzDetailsProcessor -> authzDetailsProcessor.process(userSession, clientSessionCtx, authorizationDetailsParam))
-                        .filter(authzDetailsResponse -> authzDetailsResponse != null)
-                        .findFirst()
-                        .orElse(null);
-            } catch (RuntimeException e) {
-                if (e.getMessage() != null && e.getMessage().contains("Invalid authorization_details")) {
-                    logger.warnf(e, "Error when processing authorization_details");
-                    event.error(Errors.INVALID_REQUEST);
-                    throw new CorsErrorResponseException(cors, "invalid_request", "Error when processing authorization_details", Response.Status.BAD_REQUEST);
-                } else {
-                    throw e;
-                }
+                return new AuthorizationDetailsProcessorManager()
+                        .processAuthorizationDetails(session, userSession, clientSessionCtx, authorizationDetailsParam);
+            } catch (InvalidAuthorizationDetailsException e) {
+                logger.warnf(e, "Error when processing authorization_details");
+                event.detail(Details.REASON, e.getMessage());
+                event.error(Errors.INVALID_AUTHORIZATION_DETAILS);
+                throw new CorsErrorResponseException(cors, Errors.INVALID_AUTHORIZATION_DETAILS, "Error when processing authorization_details: " + e.getMessage(), Response.Status.BAD_REQUEST);
             }
         }
         return null;
@@ -336,20 +328,14 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @param clientSessionCtx the client session context
      * @return the authorization details response if generation was successful, null otherwise
      */
-    protected List<AuthorizationDetailsResponse> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    protected List<AuthorizationDetailsJSONRepresentation> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         try {
-            var result = session.getKeycloakSessionFactory()
-                    .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
-                    .sorted((f1, f2) -> f2.order() - f1.order())
-                    .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
-                    .map(processor -> processor.handleMissingAuthorizationDetails(userSession, clientSessionCtx))
-                    .filter(authzDetailsResponse -> authzDetailsResponse != null)
-                    .findFirst()
-                    .orElse(null);
-            return result;
+            return new AuthorizationDetailsProcessorManager().handleMissingAuthorizationDetails(session, userSession, clientSessionCtx);
         } catch (RuntimeException e) {
             logger.warnf(e, "Error when handling missing authorization_details");
-            return null;
+            event.detail(Details.REASON, e.getMessage());
+            event.error(Errors.INVALID_AUTHORIZATION_DETAILS);
+            throw new CorsErrorResponseException(cors, Errors.INVALID_AUTHORIZATION_DETAILS, e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -362,30 +348,19 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      * @param clientSessionCtx the client session context
      * @return the authorization details response if processing was successful, null otherwise
      */
-    protected List<AuthorizationDetailsResponse> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) throws CorsErrorResponseException {
+    protected List<AuthorizationDetailsJSONRepresentation> processStoredAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) throws CorsErrorResponseException {
         // Check if authorization_details was stored during authorization request (e.g., from PAR)
         String storedAuthDetails = clientSessionCtx.getClientSession().getNote(AUTHORIZATION_DETAILS);
         if (storedAuthDetails != null) {
             logger.debugf("Found authorization_details in client session, processing it");
             try {
-                return session.getKeycloakSessionFactory()
-                        .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
-                        .sorted((f1, f2) -> f2.order() - f1.order())
-                        .map(f -> session.getProvider(AuthorizationDetailsProcessor.class, f.getId()))
-                        .map(processor -> {
-                            try {
-                                return processor.processStoredAuthorizationDetails(userSession, clientSessionCtx, storedAuthDetails);
-                            } catch (OAuthErrorException e) {
-                                // Wrap OAuthErrorException in CorsErrorResponseException for proper HTTP response
-                                throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
-                            }
-                        })
-                        .filter(authzDetailsResponse -> authzDetailsResponse != null)
-                        .findFirst()
-                        .orElse(null);
-            } catch (RuntimeException e) {
+                return new AuthorizationDetailsProcessorManager()
+                        .processStoredAuthorizationDetails(session, userSession, clientSessionCtx, storedAuthDetails);
+            } catch (InvalidAuthorizationDetailsException e) {
                 logger.warnf(e, "Error when processing stored authorization_details");
-                throw e;
+                event.detail(Details.REASON, e.getMessage());
+                event.error(Errors.INVALID_AUTHORIZATION_DETAILS);
+                throw new CorsErrorResponseException(cors, Errors.INVALID_AUTHORIZATION_DETAILS, e.getMessage(), Response.Status.BAD_REQUEST);
             }
         }
         return null;

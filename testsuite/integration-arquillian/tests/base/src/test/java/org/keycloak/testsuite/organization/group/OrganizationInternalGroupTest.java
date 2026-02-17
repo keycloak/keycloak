@@ -170,7 +170,7 @@ public class OrganizationInternalGroupTest extends AbstractOrganizationTest {
         String orgId = createOrganization().getId();
         String memberId = addMember(testRealm().organizations().get(orgId)).getId();
 
-        assertThat (memberId, notNullValue());
+        assertThat(memberId, notNullValue());
 
         String groupId = getTestingClient().server(TEST_REALM_NAME).fetch(session -> {
             OrganizationProvider provider = session.getProvider(OrganizationProvider.class, JpaOrganizationProviderFactory.ID);

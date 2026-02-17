@@ -50,6 +50,7 @@ public class StartDevCommandDistTest {
         String out = cliResult.getOutput().toUpperCase();
         assertFalse(out.contains("WARN"));
         assertFalse(out.contains("ERROR"));
+        assertFalse(out.contains("0.0.0.0") || out.contains("all addresses"));
     }
 
     @DryRun

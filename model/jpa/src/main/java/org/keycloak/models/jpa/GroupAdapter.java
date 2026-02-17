@@ -384,7 +384,14 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
         if (orgProvider == null) return null;
 
-        return orgProvider.getById(organization.getId());
+        // Temporarily set session realm context to group's realm to avoid realm mismatch
+        RealmModel currentRealm = session.getContext().getRealm();
+        try {
+            session.getContext().setRealm(realm);
+            return orgProvider.getById(organization.getId());
+        } finally {
+            session.getContext().setRealm(currentRealm);
+        }
     }
 
     @Override

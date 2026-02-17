@@ -93,8 +93,8 @@ importers:
         specifier: ^26.2.2
         version: 26.2.2
       lodash-es:
-        specifier: ^4.17.22
-        version: 4.17.22
+        specifier: ^4.17.23
+        version: 4.17.23
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -196,8 +196,8 @@ importers:
         specifier: ^26.2.2
         version: 26.2.2
       lodash-es:
-        specifier: ^4.17.22
-        version: 4.17.22
+        specifier: ^4.17.23
+        version: 4.17.23
       p-debounce:
         specifier: ^5.1.0
         version: 5.1.0
@@ -354,8 +354,8 @@ importers:
         specifier: ^6.2.2
         version: 6.2.2
       lodash-es:
-        specifier: ^4.17.22
-        version: 4.17.22
+        specifier: ^4.17.23
+        version: 4.17.23
       mocha:
         specifier: ^11.7.5
         version: 11.7.5
@@ -387,8 +387,8 @@ importers:
         specifier: ^26.2.2
         version: 26.2.2
       lodash-es:
-        specifier: ^4.17.22
-        version: 4.17.22
+        specifier: ^4.17.23
+        version: 4.17.23
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -3176,8 +3176,8 @@ packages:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
     engines: {node: '>=10'}
 
-  lodash-es@4.17.22:
-    resolution: {integrity: sha512-XEawp1t0gxSi9x01glktRZ5HDy0HXqrM0x5pXQM98EaI0NxO6jVM7omDOxsuEo5UIASAnm2bRp1Jt/e0a2XU8Q==}
+  lodash-es@4.17.23:
+    resolution: {integrity: sha512-kVI48u3PZr38HdYz98UmfPnXl2DXrpdctLrFLCd3kOx1xUkOmpFPx7gCWWM5MPkL/fD8zb+Ph0QzjGFs4+hHWg==}
 
   lodash.merge@4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
@@ -5002,7 +5002,7 @@ snapshots:
       i18next-fetch-backend: 7.0.0
       jszip: 3.10.1
       keycloak-js: 26.2.2
-      lodash-es: 4.17.22
+      lodash-es: 4.17.23
       p-debounce: 5.1.0
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -7384,7 +7384,7 @@ snapshots:
     dependencies:
       p-locate: 5.0.0
 
-  lodash-es@4.17.22: {}
+  lodash-es@4.17.23: {}
 
   lodash.merge@4.6.2: {}
 

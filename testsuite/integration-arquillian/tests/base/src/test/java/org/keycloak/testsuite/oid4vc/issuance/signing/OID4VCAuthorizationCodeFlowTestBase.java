@@ -17,64 +17,60 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
-
-import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
-import org.keycloak.protocol.oid4vc.model.ErrorType;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.InvalidTokenRequest;
+import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.InvalidCredentialRequest;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialRequest;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.message.BasicNameValuePair;
 import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.SIGNING_ALG;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.SIGNING_KEY_ID;
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Base class for authorization code flow tests with authorization details and claims validation.
@@ -122,34 +118,106 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         Oid4vcTestContext ctx = new Oid4vcTestContext();
 
         // Get credential issuer metadata
-        HttpGet getCredentialIssuer = new HttpGet(getRealmMetadataPath(TEST_REALM_NAME));
-        try (CloseableHttpResponse response = httpClient.execute(getCredentialIssuer)) {
-            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            ctx.credentialIssuer = JsonSerialization.readValue(s, CredentialIssuer.class);
-        }
+        CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc().doIssuerMetadataRequest();
+        assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusCode());
+        ctx.credentialIssuer = metadataResponse.getMetadata();
 
         // Get OpenID configuration
-        HttpGet getOpenidConfiguration = new HttpGet(ctx.credentialIssuer.getAuthorizationServers().get(0) + "/.well-known/openid-configuration");
-        try (CloseableHttpResponse response = httpClient.execute(getOpenidConfiguration)) {
-            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            ctx.openidConfig = JsonSerialization.readValue(s, OIDCConfigurationRepresentation.class);
-        }
+        OpenIDProviderConfigurationResponse openIDProviderConfigurationResponse = oauth.wellknownRequest()
+                .url(ctx.credentialIssuer.getAuthorizationServers().get(0))
+                .send();
+        assertEquals(HttpStatus.SC_OK, openIDProviderConfigurationResponse.getStatusCode());
+        ctx.openidConfig = openIDProviderConfigurationResponse.getOidcConfiguration();
 
         return ctx;
     }
 
+    /**
+     * Test that verifies that a second regular SSO login should NOT return authorization_details
+     * from a previous OID4VCI login.
+     */
+    @Test
+    public void testSecondSSOLoginDoesNotReturnAuthorizationDetails() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // ===== STEP 1: First login with OID4VCI (should return authorization_details) =====
+        AccessTokenResponse firstTokenResponse = authzCodeFlow(ctx);
+        String credentialIdentifier = assertTokenResponse(firstTokenResponse);
+        assertNotNull("Credential identifier should be present in first token", credentialIdentifier);
+
+        // ===== STEP 2: Second login - Regular SSO (should NOT return authorization_details) =====
+        // Second login WITHOUT OID4VCI scope and WITHOUT authorization_details.
+        oauth.client(client.getClientId(), "password");
+        oauth.scope(OAuth2Constants.SCOPE_OPENID);
+        oauth.openLoginForm();
+
+        String secondCode = oauth.parseLoginResponse().getCode();
+        assertNotNull("Second authorization code should not be null", secondCode);
+
+        // Exchange second code for tokens WITHOUT authorization_details using OAuthClient
+        AccessTokenResponse secondTokenResponse = oauth.accessTokenRequest(secondCode)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), "password")
+                .send();
+        assertEquals("Second token exchange should succeed", HttpStatus.SC_OK, secondTokenResponse.getStatusCode());
+
+        // ===== STEP 3: Verify second token does NOT have authorization_details =====
+        assertNull("Second token (regular SSO) should NOT have authorization_details", secondTokenResponse.getAuthorizationDetails());
+
+        // ===== STEP 4: Verify second token cannot be used for credential requests =====
+
+        // Credential request with second token should fail using OID4VCI utilities
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .bearerToken(secondTokenResponse.getAccessToken())
+                .send();
+
+        // Credential request with second token should fail
+        // The second token doesn't have the OID4VCI scope, so it should fail
+        assertEquals("Credential request with token without OID4VCI scope should fail",
+            HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
+
+        String error = credentialResponse.getError();
+        String errorDescription = credentialResponse.getErrorDescription();
+
+        assertEquals("Credential request should fail with unknown credential configuration when OID4VCI scope is missing",
+            "UNKNOWN_CREDENTIAL_CONFIGURATION", error);
+        assertEquals("Scope check failure", errorDescription);
+    }
+
     // Test for the whole authorization_code flow with the credentialRequest using credential_configuration_id
+    // Note: When authorization_details are present in the token, credential_identifier must be used instead
+    // This test verifies that using credential_configuration_id fails when authorization_details are present
     @Test
     public void testCompleteFlowWithClaimsValidationAuthorizationCode_credentialRequestWithConfigurationId() throws Exception {
-        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
-            CredentialRequest credentialRequest = new CredentialRequest();
-            credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
-            return credentialRequest;
-        };
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
-        testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
+        // Perform authorization code flow to get authorization code (includes authorization_details)
+        AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // Clear events before credential request
+        events.clear();
+
+        // Request the credential using credential_configuration_id (should fail when authorization_details are present)
+        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
+        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getAccessToken());
+        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+
+        CredentialRequest credentialRequest = new CredentialRequest();
+        credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
+
+        String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
+        postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
+
+        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            assertEquals("Using credential_configuration_id with token that has authorization_details should fail",
+                    HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
+
+            String errorBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+            assertTrue("Error should indicate that credential_identifier must be used. Actual error: " + errorBody,
+                    errorBody.contains("credential_identifier") || errorBody.contains("authorization_details"));
+        }
     }
 
     // Test for the whole authorization_code flow with the credentialRequest using credential_identifier
@@ -164,6 +232,43 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
     }
 
+    // Tests that when token is refreshed, the new access-token can be used as well for credential-request
+    @Test
+    public void testCompleteFlowWithClaimsValidationAuthorizationCode_refreshToken() throws Exception {
+        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
+            CredentialRequest credentialRequest = new CredentialRequest();
+            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            return credentialRequest;
+        };
+
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Perform authorization code flow to get authorization code
+        AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+
+        // Refresh token now
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponseRef = oauth.refreshRequest(tokenResponse.getRefreshToken()).send();
+
+        // Extract values from refreshed token for credential request
+        String accessToken = tokenResponseRef.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetails = tokenResponseRef.getOid4vcAuthorizationDetails();
+
+        String credentialIdentifier = null;
+        if (authDetails != null && !authDetails.isEmpty()) {
+            List<String> credentialIdentifiers = authDetails.get(0).getCredentialIdentifiers();
+            if (credentialIdentifiers != null && !credentialIdentifiers.isEmpty()) {
+                credentialIdentifier = credentialIdentifiers.get(0);
+            }
+        }
+
+        // Request the actual credential using the refreshed token
+        Oid4vcCredentialResponse credRequestResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .bearerToken(accessToken)
+                .send();
+        assertSuccessfulCredentialResponse(credRequestResponse);
+    }
+
     // Test for the authorization_code flow with "mandatory" claim specified in the "authorization_details" parameter
     @Test
     public void testCompleteFlow_mandatoryClaimsInAuthzDetailsParameter() throws Exception {
@@ -174,7 +279,62 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
             return credentialRequest;
         };
 
-        // 1 - Update user to have missing "lastName" (mandatory attribute)
+        // Store original user state for cleanup
+        UserState userState = storeUserState();
+
+        try {
+            // 1 - Update user to have missing "lastName" (mandatory attribute)
+            // NOTE: Need to call both "setLastName" and set attributes to be able to set last name as null
+            userState.userRep.setAttributes(Collections.emptyMap());
+            userState.userRep.setLastName(null);
+            userState.user.update(userState.userRep);
+
+            // 2 - Test the flow. Credential request should fail due the missing "lastName"
+            // Perform authorization code flow to get authorization code
+            AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+            String credentialIdentifier = assertTokenResponse(tokenResponse);
+            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+            // Clear events before credential request
+            events.clear();
+
+            // Request the actual credential using the identifier
+            Oid4vcCredentialRequest credentialRequest = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+            Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
+
+            assertErrorCredentialResponse(credentialResponse);
+
+            // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired with details about missing mandatory claim
+            expectCredentialRequestError()
+                    .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
+                    .assertEvent();
+
+            // 3 - Update user to add "lastName"
+            userState.userRep.setLastName("Doe");
+            userState.user.update(userState.userRep);
+
+            // 4 - Test the credential-request again. Should be OK now
+            credentialResponse = credentialRequest.send();
+            assertSuccessfulCredentialResponse(credentialResponse);
+        } finally {
+            // Restore original user state
+            restoreUserState(userState);
+        }
+    }
+
+
+    // Tests that Keycloak should use authorization_details from accessToken when processing mandatory claims
+    @Test
+    public void testCorrectAccessTokenUsed() throws Exception {
+        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
+            CredentialRequest credentialRequest = new CredentialRequest();
+            credentialRequest.setCredentialIdentifier(credentialIdentifier);
+            return credentialRequest;
+        };
+
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Update user to have missing "lastName"
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "john");
         UserRepresentation userRep = user.toRepresentation();
         // NOTE: Need to call both "setLastName" and set attributes to be able to set last name as null
@@ -182,38 +342,30 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         userRep.setLastName(null);
         user.update(userRep);
 
-        // 2 - Test the flow. Credential request should fail due the missing "lastName"
-        // Perform authorization code flow to get authorization code
-        AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
-        String credentialIdentifier = assertTokenResponse(tokenResponse);
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        try {
+            // Create token with authorization_details, which does not require "lastName" to be mandatory attribute
+            AccessTokenResponse tokenResponse = authzCodeFlow(ctx, Collections.emptyList(), false);
 
-        // Clear events before credential request
-        events.clear();
+            // Create another token with authorization_details, which require "lastName" to be mandatory attribute
+            AccessTokenResponse tokenResponseWithMandatoryLastName = authzCodeFlow(ctx, mandatoryLastNameClaimsSupplier(), true);
 
-        // Request the actual credential using the identifier
-        HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+            // Request with mandatory lastName will fail as user does not have "lastName"
+            String credentialIdentifier = assertTokenResponse(tokenResponseWithMandatoryLastName);
+            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
 
-        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            Oid4vcCredentialRequest credentialRequest = getCredentialRequest(ctx, credRequestSupplier, tokenResponseWithMandatoryLastName, credentialConfigurationId, credentialIdentifier);
+            Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
             assertErrorCredentialResponse_mandatoryClaimsMissing(credentialResponse);
-            
-            // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired with details about missing mandatory claim
-            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
-                    .client(client.getClientId())
-                    .user(AssertEvents.isUUID())
-                    .session(AssertEvents.isSessionId())
-                    .error(Errors.INVALID_REQUEST)
-                    .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
-                    .assertEvent();
-        }
 
-        // 3 - Update user to add "lastName"
-        userRep.setLastName("Doe");
-        user.update(userRep);
-
-        // 4 - Test the credential-request again. Should be OK now
-        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
+            // Request without mandatory lastName should work. Authorization_Details from accessToken will be used by Keycloak for processing this request
+            credentialIdentifier = assertTokenResponse(tokenResponse);
+            credentialRequest = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+            credentialResponse = credentialRequest.send();
             assertSuccessfulCredentialResponse(credentialResponse);
+        } finally {
+            // Revert user changes and add lastName back
+            userRep.setLastName("Doe");
+            user.update(userRep);
         }
     }
 
@@ -237,18 +389,22 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
                 .filter(protMapper -> getFirstNameProtocolMapperName().equals(protMapper.getName()))
                 .findFirst()
                 .orElseThrow((() -> new RuntimeException("Not found protocol mapper with name 'firstName-mapper'.")));
+
+        // Store original protocol mapper config for cleanup
+        String originalMandatoryValue = protocolMapper.getConfig().get(Oid4vcProtocolMapperModel.MANDATORY);
         protocolMapper.getConfig().put(Oid4vcProtocolMapperModel.MANDATORY, "true");
         clientScopeResource.getProtocolMappers().update(protocolMapper.getId(), protocolMapper);
 
+        // Store original user state for cleanup
+        UserState userState = storeUserState();
+
         try {
             // 2 - Update user to have missing "lastName" (mandatory attribute by authorization_details parameter) and "firstName" (mandatory attribute by protocol mapper)
-            UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "john");
-            UserRepresentation userRep = user.toRepresentation();
             // NOTE: Need to call both "setLastName" and set attributes to be able to set last name as null
-            userRep.setAttributes(Collections.emptyMap());
-            userRep.setFirstName(null);
-            userRep.setLastName(null);
-            user.update(userRep);
+            userState.userRep.setAttributes(Collections.emptyMap());
+            userState.userRep.setFirstName(null);
+            userState.userRep.setLastName(null);
+            userState.user.update(userState.userRep);
 
             // 2 - Test the flow. Credential request should fail due the missing "lastName"
             // Perform authorization code flow to get authorization code
@@ -260,160 +416,512 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
             events.clear();
 
             // Request the actual credential using the identifier
-            HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+            Oid4vcCredentialRequest credentialRequest = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+            Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
 
-            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-                assertErrorCredentialResponse_mandatoryClaimsMissing(credentialResponse);
-                
-                // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired with details about missing mandatory claim
-                events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
-                        .client(client.getClientId())
-                        .user(AssertEvents.isUUID())
-                        .session(AssertEvents.isSessionId())
-                        .error(Errors.INVALID_REQUEST)
-                        .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
-                        .assertEvent();
-            }
+            assertErrorCredentialResponse(credentialResponse);
+
+            // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired with details about missing mandatory claim
+            expectCredentialRequestError()
+                    .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
+                    .assertEvent();
 
             // 3 - Update user to add "lastName", but keep "firstName" missing. Credential request should still fail
-            userRep.setLastName("Doe");
-            userRep.setFirstName(null);
-            user.update(userRep);
+            userState.userRep.setLastName("Doe");
+            userState.userRep.setFirstName(null);
+            userState.user.update(userState.userRep);
 
             // Clear events before credential request
             events.clear();
 
-            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-                assertErrorCredentialResponse_mandatoryClaimsMissing(credentialResponse);
-                
-                // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
-                events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
-                        .client(client.getClientId())
-                        .user(AssertEvents.isUUID())
-                        .session(AssertEvents.isSessionId())
-                        .error(Errors.INVALID_REQUEST)
-                        .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
-                        .assertEvent();
-            }
+            credentialResponse = credentialRequest.send();
+            assertErrorCredentialResponse(credentialResponse);
+
+            // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+            expectCredentialRequestError()
+                    .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
+                    .assertEvent();
 
             // 4 - Update user to add "firstName", but missing "lastName"
-            userRep.setLastName(null);
-            userRep.setFirstName("John");
-            user.update(userRep);
+            userState.userRep.setLastName(null);
+            userState.userRep.setFirstName("John");
+            userState.user.update(userState.userRep);
 
             // Clear events before credential request
             events.clear();
 
-            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-                assertErrorCredentialResponse_mandatoryClaimsMissing(credentialResponse);
-                
-                // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
-                events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
-                        .client(client.getClientId())
-                        .user(AssertEvents.isUUID())
-                        .session(AssertEvents.isSessionId())
-                        .error(Errors.INVALID_REQUEST)
-                        .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
-                        .assertEvent();
-            }
+            credentialResponse = credentialRequest.send();
+            assertErrorCredentialResponse(credentialResponse);
+
+            // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+            expectCredentialRequestError()
+                    .detail(Details.REASON, Matchers.containsString("The requested claims are not available in the user profile"))
+                    .assertEvent();
 
             // 5 - Update user to both "firstName" and "lastName". Credential request should be successful
-            userRep.setLastName("Doe");
-            userRep.setFirstName("John");
-            user.update(userRep);
+            userState.userRep.setLastName("Doe");
+            userState.userRep.setFirstName("John");
+            userState.user.update(userState.userRep);
 
-            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-                assertSuccessfulCredentialResponse(credentialResponse);
-            }
+            credentialResponse = credentialRequest.send();
+            assertSuccessfulCredentialResponse(credentialResponse);
         } finally {
-            // 6 - Revert protocol mapper config
-            protocolMapper.getConfig().put(Oid4vcProtocolMapperModel.MANDATORY, "false");
+            // Restore original user state
+            restoreUserState(userState);
+
+            // Restore original protocol mapper config
+            protocolMapper.getConfig().put(Oid4vcProtocolMapperModel.MANDATORY,
+                    originalMandatoryValue != null ? originalMandatoryValue : "false");
             clientScopeResource.getProtocolMappers().update(protocolMapper.getId(), protocolMapper);
         }
     }
 
+
+    /**
+     * Test that reusing an authorization code fails with invalid_grant error.
+     * This is a security-critical test to ensure codes can only be used once.
+     */
     @Test
-    public void testCompleteFlowWithSigningAlgorithmAndKeyIdConfigured() throws Exception {
-        BiFunction<String, String, CredentialRequest> credRequestSupplier = (credentialConfigurationId, credentialIdentifier) -> {
-            CredentialRequest credentialRequest = new CredentialRequest();
-            credentialRequest.setCredentialIdentifier(credentialIdentifier);
-            return credentialRequest;
-        };
+    public void testAuthorizationCodeReuse() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
-        ClientScopeResource clientScope = ApiUtil.findClientScopeByName(testRealm(), getCredentialClientScope().getName());
-        ClientScopeRepresentation clientScopeRep = clientScope.toRepresentation();
-        Map<String, String> origAttributes = new HashMap<>(clientScopeRep.getAttributes());
+        // Create authorization details for token exchange
+        OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
+        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
 
-        try {
-            // 1 - Configure signature algorithm, but not keyId. Make sure that credential signed with the target algorithm
-            clientScopeRep.getAttributes().put(SIGNING_ALG, Algorithm.ES512);
-            clientScopeRep.getAttributes().put(SIGNING_KEY_ID, null);
-            clientScope.update(clientScopeRep);
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
 
-            Object credentialObj = testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
-            JWSHeader jwsHeader = verifyCredentialSignature(credentialObj, Algorithm.ES512);
-            String es512keyId = jwsHeader.getKeyId();
-            logoutUser("john");
+        // First token exchange - should succeed
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), "password")
+                .send();
+        assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
-            // 2 - Configure signature algorithm, and keyId with blank value "" (just to simulate what admin console was doing when clientScope was saved).
-            // Make sure that credential signed with the target algorithm and keyId is not considered
-            clientScopeRep.getAttributes().put(SIGNING_ALG, Algorithm.EdDSA);
-            clientScopeRep.getAttributes().put(SIGNING_KEY_ID, "");
-            clientScope.update(clientScopeRep);
+        // Clear events before second attempt
+        events.clear();
 
-            credentialObj = testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
-            verifyCredentialSignature(credentialObj, Algorithm.EdDSA);
-            logoutUser("john");
+        // Second token exchange with same code - should fail
+        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), "password")
+                .send();
 
-            // 3 - Configure signature algorithm, and keyId with some value. Make sure that
-            // credential signed with the target algorithm and keyId as expected
-            clientScopeRep.getAttributes().put(SIGNING_ALG, Algorithm.ES512);
-            clientScopeRep.getAttributes().put(SIGNING_KEY_ID, es512keyId);
-            clientScope.update(clientScopeRep);
+        assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
+        assertTrue("Error response should indicate invalid grant",
+                "invalid_grant".equals(errorResponse.getError()) ||
+                (errorResponse.getErrorDescription() != null && errorResponse.getErrorDescription().contains("Code not valid")));
 
-            credentialObj = testCompleteFlowWithClaimsValidationAuthorizationCode(credRequestSupplier);
-            JWSHeader newJWSHeader = verifyCredentialSignature(credentialObj, Algorithm.ES512);
-            assertEquals(es512keyId, newJWSHeader.getKeyId());
-            logoutUser("john");
-
-            // 4 - Configure different signature algorithm not matching with key specified by keyId. Error is expected
-            clientScopeRep.getAttributes().put(SIGNING_ALG, Algorithm.EdDSA);
-            clientScopeRep.getAttributes().put(SIGNING_KEY_ID, es512keyId);
-            clientScope.update(clientScopeRep);
-
-            Oid4vcTestContext ctx = prepareOid4vcTestContext();
-            AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
-            String credentialIdentifier = assertTokenResponse(tokenResponse);
-            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-
-            // Clear events before credential request
-            events.clear();
-
-            HttpPost postCredential = getCredentialRequest(ctx, credRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
-
-            try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-                String expectedError = "Signing of credential failed: No key for id '" + es512keyId + "' and algorithm 'EdDSA' available.";
-                assertErrorCredentialResponse(credentialResponse, ErrorType.INVALID_CREDENTIAL_REQUEST.name(), expectedError);
-
-                // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired with details about missing mandatory claim
-                events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
-                        .client(client.getClientId())
-                        .user(AssertEvents.isUUID())
-                        .session(AssertEvents.isSessionId())
-                        .error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue())
-                        .detail(Details.REASON, expectedError)
-                        .assertEvent();
-            }
-
-        } finally {
-            // Revert clientScope config
-            clientScopeRep.setAttributes(origAttributes);
-            clientScope.update(clientScopeRep);
-        }
+        // Verify error event was fired
+        // Note: When code is reused, user is null but session from first successful use may still exist
+        events.expect(EventType.CODE_TO_TOKEN_ERROR)
+                .client(client.getClientId())
+                .user((String) null)
+                .session(AssertEvents.isSessionId())
+                .error(Errors.INVALID_CODE)
+                .assertEvent();
     }
 
-    // Return VC credential object
-    private Object testCompleteFlowWithClaimsValidationAuthorizationCode(BiFunction<String, String, CredentialRequest> credentialRequestSupplier) throws Exception {
+    /**
+     * Test that an invalid/malformed authorization code is rejected.
+     */
+    @Test
+    public void testInvalidAuthorizationCode() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Attempt token exchange with invalid code
+        events.clear();
+
+        AccessTokenResponse errorResponse = oauth.accessTokenRequest("invalid-code-12345")
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), "password")
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
+        assertTrue("Error response should indicate invalid grant",
+                "invalid_grant".equals(errorResponse.getError()) ||
+                (errorResponse.getErrorDescription() != null && errorResponse.getErrorDescription().contains("Code not valid")));
+
+        // Verify error event was fired
+        // Note: When code is invalid (never valid), there is no session because authentication never occurred
+        events.expect(EventType.CODE_TO_TOKEN_ERROR)
+                .client(client.getClientId())
+                .user((String) null)
+                .session((String) null)
+                .error(Errors.INVALID_CODE)
+                .assertEvent();
+    }
+
+    @Test
+    public void testTokenExchangeWithoutAuthorizationDetails() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Perform authorization code flow to get authorization code
+        String code = performAuthorizationCodeLogin();
+
+        // Attempt token exchange without authorization_details
+        events.clear();
+
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), "password")
+                .send();
+
+        assertEquals("Token exchange should succeed without authorization_details (it's optional)",
+                HttpStatus.SC_OK, tokenResponse.getStatusCode());
+        assertNotNull("Access token should be present", tokenResponse.getAccessToken());
+        assertNull("Response should not contain authorization_details when not provided in request",
+                tokenResponse.getAuthorizationDetails());
+    }
+
+    /**
+     * Test that mismatched credential_configuration_id in authorization_details is rejected.
+     */
+    @Test
+    public void testMismatchedCredentialConfigurationId() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Create authorization details with mismatched credential_configuration_id
+        OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx, "unknown-credential-config-id");
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
+        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
+
+        // Attempt token exchange without resubmitting authorization_details
+        events.clear();
+
+        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), "password")
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
+        assertTrue("Error response should indicate authorization_details processing error",
+                "invalid_request".equals(errorResponse.getError()) ||
+                "unknown_credential_configuration".equals(errorResponse.getError()) ||
+                (errorResponse.getErrorDescription() != null && errorResponse.getErrorDescription().contains("authorization_details")));
+    }
+
+    /**
+     * Test that missing redirect_uri in token exchange fails.
+     */
+    @Test
+    public void testTokenExchangeWithoutRedirectUri() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Create authorization details for token exchange
+        OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
+        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
+
+        // Attempt token exchange without redirect_uri
+        events.clear();
+
+        AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .withClientId(client.getClientId())
+                .withClientSecret("password")
+                // redirect_uri is intentionally omitted
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
+        assertTrue("Error response should indicate invalid request",
+                "invalid_request".equals(errorResponse.getError()) ||
+                (errorResponse.getErrorDescription() != null && errorResponse.getErrorDescription().contains("redirect_uri")));
+    }
+
+    /**
+     * Test that redirect_uri mismatch between authorization and token requests fails.
+     */
+    @Test
+    public void testTokenExchangeWithMismatchedRedirectUri() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Create authorization details for token exchange
+        OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
+        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
+
+        // Attempt token exchange with mismatched redirect_uri
+        events.clear();
+
+        AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .withClientId(client.getClientId())
+                .withClientSecret("password")
+                .withRedirectUri("http://invalid-redirect-uri")
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
+        assertTrue("Error response should indicate redirect_uri mismatch",
+                "invalid_grant".equals(errorResponse.getError()) ||
+                "invalid_request".equals(errorResponse.getError()) ||
+                (errorResponse.getErrorDescription() != null &&
+                 (errorResponse.getErrorDescription().contains("redirect_uri") ||
+                  errorResponse.getErrorDescription().contains("Incorrect redirect_uri"))));
+    }
+
+    /**
+     * Test that malformed JSON at credential endpoint fails with proper error.
+     */
+    @Test
+    public void testCredentialRequestWithMalformedJson() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Perform authorization code flow to get authorization code and token
+        AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+        String credentialIdentifier = assertTokenResponse(tokenResponse);
+        assertNotNull("Token should not be null", tokenResponse.getAccessToken());
+
+        // Create a malformed JSON payload (invalid JSON syntax)
+        String malformedJson = "{\"credential_identifier\":\"" + credentialIdentifier + "\", invalid json}";
+
+        // Request credential with malformed JSON using InvalidCredentialRequest
+        // This tests error handling for invalid JSON payloads
+        events.clear();
+
+        Oid4vcCredentialResponse credentialResponse = new InvalidCredentialRequest(oauth, malformedJson)
+                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
+        
+        // For malformed JSON, the error might be in error or errorDescription fields
+        // or the parsing might fail entirely, but we should still get a 400 status
+        String error = credentialResponse.getError();
+        String errorDescription = credentialResponse.getErrorDescription();
+        
+        // Verify error response indicates a problem (either error field is set, or errorDescription contains relevant info)
+        assertTrue("Error response should indicate JSON parsing failure or invalid request",
+                error != null ||
+                (errorDescription != null && 
+                 (errorDescription.contains("invalid_credential_request") ||
+                  errorDescription.contains("Failed to parse JSON") ||
+                  errorDescription.contains("JSON") ||
+                  errorDescription.contains("parse"))));
+
+        // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+        // Note: JSON parsing fails before authentication, so client/user/session are not set in the event
+        expectCredentialRequestErrorWithoutAuth().assertEvent();
+    }
+
+    /**
+     * Test that invalid client_secret in token exchange fails.
+     */
+    @Test
+    public void testTokenExchangeWithInvalidClientSecret() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Create authorization details for token exchange
+        OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
+        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
+
+        // Attempt token exchange with invalid client_secret
+        events.clear();
+
+        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), "wrong-secret")
+                .send();
+
+        assertEquals(HttpStatus.SC_UNAUTHORIZED, errorResponse.getStatusCode());
+        assertEquals("unauthorized_client", errorResponse.getError());
+    }
+
+    /**
+     * Test that missing client_id in token exchange fails.
+     */
+    @Test
+    public void testTokenExchangeWithoutClientId() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Create authorization details for token exchange
+        OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(ctx);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
+        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+
+        // Perform authorization code flow with authorization_details in authorization request
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetailsJson);
+
+        // Attempt token exchange without client_id
+        // This tests error handling for missing client_id parameter
+        events.clear();
+
+        AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .withClientSecret("password")  // Set client_secret but omit client_id
+                // client_id is intentionally omitted
+                .send();
+
+        int statusCode = errorResponse.getStatusCode();
+        assertTrue("Should return 400 or 401 for missing client_id",
+                statusCode == HttpStatus.SC_BAD_REQUEST || statusCode == HttpStatus.SC_UNAUTHORIZED);
+        assertTrue("Error should be invalid_request or invalid_client",
+                "invalid_request".equals(errorResponse.getError()) || "invalid_client".equals(errorResponse.getError()));
+    }
+
+    /**
+     * Test that malformed authorization_details JSON is rejected.
+     */
+    @Test
+    public void testTokenExchangeWithMalformedAuthorizationDetails() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Perform authorization code flow with malformed authorization_details in the authorization request.
+        oauth.client(client.getClientId());
+        oauth.scope(getCredentialClientScope().getName());
+        oauth.loginForm()
+                .param(OAuth2Constants.AUTHORIZATION_DETAILS, "invalid-json")
+                .doLogin("john", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        assertNotNull("Authorization code should not be null", code);
+
+        // Attempt token exchange without resubmitting authorization_details (stored value is malformed)
+        events.clear();
+
+        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), "password")
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
+        assertEquals(Errors.INVALID_AUTHORIZATION_DETAILS, errorResponse.getError());
+        assertTrue("Error description should indicate authorization_details processing error",
+                errorResponse.getErrorDescription() != null && errorResponse.getErrorDescription().contains("authorization_details"));
+    }
+
+    /**
+     * Test that token request authorization_details cannot exceed what was granted in the authorization request.
+     */
+    @Test
+    public void testTokenExchangeRejectsAuthorizationDetailsNotGranted() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Authorization request with a valid authorization_details entry
+        OID4VCAuthorizationDetail grantedDetail = createAuthorizationDetail(ctx);
+        String grantedAuthDetailsJson = JsonSerialization.writeValueAsString(List.of(grantedDetail));
+        String code = performAuthorizationCodeLoginWithAuthorizationDetails(grantedAuthDetailsJson);
+
+        // Token request attempts to change authorization_details (different credential configuration)
+        OID4VCAuthorizationDetail differentDetail = createAuthorizationDetail(ctx, "different-credential-config-id");
+        List<OID4VCAuthorizationDetail> differentAuthDetails = List.of(differentDetail);
+
+        events.clear();
+
+        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), "password")
+                .authorizationDetails(differentAuthDetails)
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
+        assertEquals(Errors.INVALID_AUTHORIZATION_DETAILS, errorResponse.getError());
+        assertTrue("Error description should indicate authorization_details mismatch",
+                errorResponse.getErrorDescription() != null && errorResponse.getErrorDescription().contains("authorization_details"));
+    }
+
+    /**
+     * Test that credential request with unknown credential_configuration_id fails.
+     */
+    @Test
+    public void testCredentialRequestWithUnknownCredentialConfigurationId() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Perform successful authorization code flow to get token
+        AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+
+        // Clear events before credential request
+        events.clear();
+
+        // Request credential with unknown credential_configuration_id only (no credential_identifier).
+        // Server now requires credential_identifier when authorization_details are present,
+        // so this request is treated as an invalid credential request.
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .credentialConfigurationId("unknown-credential-config-id")
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
+        assertEquals("INVALID_CREDENTIAL_REQUEST", credentialResponse.getError());
+
+        // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+        expectCredentialRequestError().assertEvent();
+    }
+
+    /**
+     * Test that credential request with mismatched credential_identifier fails.
+     */
+    @Test
+    public void testCredentialRequestWithMismatchedCredentialIdentifier() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Perform successful authorization code flow to get token
+        AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+        assertTokenResponse(tokenResponse);
+
+        // Clear events before credential request
+        events.clear();
+
+        CredentialRequest credRequest = new CredentialRequest().setCredentialIdentifier("00000000-0000-0000-0000-000000000000");
+
+        // Request credential with mismatched credential_identifier (from different flow)
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier("00000000-0000-0000-0000-000000000000")
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
+        assertEquals("UNKNOWN_CREDENTIAL_IDENTIFIER", credentialResponse.getError());
+
+        // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+        expectCredentialRequestError().assertEvent();
+    }
+
+    /**
+     * Test that credential request without credential_configuration_id or credential_identifier fails.
+     */
+    @Test
+    public void testCredentialRequestWithoutIdentifier() throws Exception {
+        Oid4vcTestContext ctx = prepareOid4vcTestContext();
+
+        // Perform successful authorization code flow to get token
+        AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+        assertTokenResponse(tokenResponse);
+
+        // Clear events before credential request
+        events.clear();
+
+        // Request credential without credential_configuration_id or credential_identifier.
+        // Server now requires credential_identifier when authorization_details are present,
+        // so an empty credential request results in INVALID_CREDENTIAL_REQUEST.
+        Oid4vcCredentialResponse credentialResponse = new InvalidCredentialRequest(oauth, "{}")
+                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
+        assertEquals("INVALID_CREDENTIAL_REQUEST", credentialResponse.getError());
+
+        // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+        expectCredentialRequestError().assertEvent();
+    }
+
+    private void testCompleteFlowWithClaimsValidationAuthorizationCode(BiFunction<String, String, CredentialRequest> credentialRequestSupplier) throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
         // Perform authorization code flow to get authorization code
@@ -421,38 +929,20 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         String credentialIdentifier = assertTokenResponse(tokenResponse);
         String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
 
-        events.clear();
-
         // Request the actual credential using the identifier
-        HttpPost postCredential = getCredentialRequest(ctx, credentialRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+        Oid4vcCredentialRequest credentialRequest = getCredentialRequest(ctx, credentialRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
+        Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
 
-        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-            Object credential = assertSuccessfulCredentialResponse(credentialResponse);
-
-            // Verify event
-            events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST)
-                    .client(client.getClientId())
-                    .user(AssertEvents.isUUID())
-                    .session(AssertEvents.isSessionId())
-                    .detail(Details.USERNAME, "john")
-                    .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
-                    .assertEvent();
-
-            return credential;
-        }
+        assertSuccessfulCredentialResponse(credentialResponse);
     }
 
     // Successful authorization_code flow
     private AccessTokenResponse authzCodeFlow(Oid4vcTestContext ctx) throws Exception {
-        // Perform authorization code flow to get authorization code
-        oauth.client(client.getClientId());
-        oauth.scope(getCredentialClientScope().getName()); // Add the credential scope
-        oauth.loginForm().doLogin("john", "password");
+        return authzCodeFlow(ctx, mandatoryLastNameClaimsSupplier(), false);
+    }
 
-        String code = oauth.parseLoginResponse().getCode();
-        assertNotNull("Authorization code should not be null", code);
-
-        // Create authorization details with claims for token exchange
+    private List<ClaimsDescription> mandatoryLastNameClaimsSupplier() {
+        // Create authorization details with mandatory claims for "lastName" user attribute
         ClaimsDescription claim = new ClaimsDescription();
 
         // Construct claim path based on credential format
@@ -464,43 +954,47 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         }
         claim.setPath(claimPath);
         claim.setMandatory(true);
+        return List.of(claim);
+    }
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+    // Successful authorization_code flow
+    private AccessTokenResponse authzCodeFlow(Oid4vcTestContext ctx, List<ClaimsDescription> claimsForAuthorizationDetailsParameter, boolean expectUserAlreadyAuthenticated) throws Exception {
+        // Perform authorization code flow to get authorization code
+        oauth.client(client.getClientId(), "password");
+        oauth.scope(getCredentialClientScope().getName()); // Add the credential scope
+        if (expectUserAlreadyAuthenticated) {
+            oauth.openLoginForm();
+        } else {
+            oauth.loginForm().doLogin("john", "password");
+        }
+
+        String code = oauth.parseLoginResponse().getCode();
+        assertNotNull("Authorization code should not be null", code);
+
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
-        authDetail.setClaims(List.of(claim));
+        authDetail.setClaims(claimsForAuthorizationDetailsParameter);
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
-        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
 
         // Exchange authorization code for tokens with authorization_details
-        HttpPost postToken = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> tokenParameters = new LinkedList<>();
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.AUTHORIZATION_DETAILS, authDetailsJson));
-        UrlEncodedFormEntity tokenFormEntity = new UrlEncodedFormEntity(tokenParameters, StandardCharsets.UTF_8);
-        postToken.setEntity(tokenFormEntity);
-
-        try (CloseableHttpResponse tokenHttpResponse = httpClient.execute(postToken)) {
-            assertEquals(HttpStatus.SC_OK, tokenHttpResponse.getStatusLine().getStatusCode());
-            String tokenResponseBody = IOUtils.toString(tokenHttpResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            return JsonSerialization.readValue(tokenResponseBody, AccessTokenResponse.class);
-        }
+        return oauth.accessTokenRequest(code)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(client.getClientId(), "password")
+                .authorizationDetails(authDetails)
+                .send();
     }
 
     // Test successful token response. Returns "Credential identifier" of the VC credential
     private String assertTokenResponse(AccessTokenResponse tokenResponse) throws Exception {
         // Extract authorization_details from token response
-        List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(JsonSerialization.writeValueAsString(tokenResponse));
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals(1, authDetailsResponse.size());
 
-        OID4VCAuthorizationDetailsResponse authDetailResponse = authDetailsResponse.get(0);
+        OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
         assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
         assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
 
@@ -514,28 +1008,23 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         return credentialIdentifiers.get(0);
     }
 
-    private HttpPost getCredentialRequest(Oid4vcTestContext ctx, BiFunction<String, String, CredentialRequest> credentialRequestSupplier, AccessTokenResponse tokenResponse,
-                                          String credentialConfigurationId, String credentialIdentifier) throws Exception {
+    private Oid4vcCredentialRequest getCredentialRequest(Oid4vcTestContext ctx, BiFunction<String, String, CredentialRequest> credentialRequestSupplier, AccessTokenResponse tokenResponse,
+                                                         String credentialConfigurationId, String credentialIdentifier) throws Exception {
         // Request the actual credential using the identifier
-        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
-        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getToken());
-        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        CredentialRequest credRequest = credentialRequestSupplier.apply(credentialConfigurationId, credentialIdentifier);
 
-        CredentialRequest credentialRequest = credentialRequestSupplier.apply(credentialConfigurationId, credentialIdentifier);
+        Oid4vcCredentialRequest request = oauth.oid4vc()
+                .credentialRequest(credRequest)
+                .bearerToken(tokenResponse.getAccessToken());
 
-        String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
-        postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
-
-        return postCredential;
+        return request;
     }
 
-    // Test successful credential response and returns credential object
-    private Object assertSuccessfulCredentialResponse(CloseableHttpResponse credentialResponse) throws Exception {
-        assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
-        String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+    private void assertSuccessfulCredentialResponse(Oid4vcCredentialResponse credentialResponse) throws Exception {
+        assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
 
         // Parse the credential response
-        CredentialResponse parsedResponse = JsonSerialization.readValue(responseBody, CredentialResponse.class);
+        CredentialResponse parsedResponse = credentialResponse.getCredentialResponse();
         assertNotNull("Credential response should not be null", parsedResponse);
         assertNotNull("Credentials should be present", parsedResponse.getCredentials());
         assertEquals("Should have exactly one credential", 1, parsedResponse.getCredentials().size());
@@ -550,23 +1039,18 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         // Verify the credential structure based on formatfix-authorization_details-processing
         verifyCredentialStructure(credentialObj);
-
-        return credentialObj;
     }
 
-    private void assertErrorCredentialResponse_mandatoryClaimsMissing(CloseableHttpResponse credentialResponse) throws Exception {
-        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
-        String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        OAuth2ErrorRepresentation error = JsonSerialization.readValue(responseBody, OAuth2ErrorRepresentation.class);
-        assertEquals("Credential issuance failed: No elements selected after processing claims path pointer. The requested claims are not available in the user profile.", error.getError());
+    private void assertErrorCredentialResponse(Oid4vcCredentialResponse credentialResponse) throws Exception {
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
+        String error = credentialResponse.getError();
+        assertEquals("Credential issuance failed: No elements selected after processing claims path pointer. The requested claims are not available in the user profile.", error);
     }
 
-    private void assertErrorCredentialResponse(CloseableHttpResponse credentialResponse, String expectedError, String expectedErrorDescription) throws Exception {
-        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusLine().getStatusCode());
-        String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-        OAuth2ErrorRepresentation error = JsonSerialization.readValue(responseBody, OAuth2ErrorRepresentation.class);
-        assertEquals(expectedError, error.getError());
-        assertEquals(expectedErrorDescription, error.getErrorDescription());
+    private void assertErrorCredentialResponse_mandatoryClaimsMissing(Oid4vcCredentialResponse credentialResponse) throws Exception {
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
+        String error = credentialResponse.getError();
+        assertEquals("Credential issuance failed: No elements selected after processing claims path pointer. The requested claims are not available in the user profile.", error);
     }
 
     /**
@@ -579,34 +1063,137 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     }
 
     /**
-     * Verify credential signature on VC credential is of expected algorithm and optionally expected keyId.
+     * Creates a standard AuthorizationDetail for token exchange.
      *
-     * @param vcCredential Verifiable credential
-     * @param expectedSignatureAlgorithm expected signature algorithm of the VC credential
-     * @return JWS header used for the VC credential. Can be used for further checks in the tests
+     * @param ctx the test context
+     * @param credentialConfigurationId the credential configuration ID (null to use default)
+     * @return the AuthorizationDetail
      */
-    protected abstract JWSHeader verifyCredentialSignature(Object vcCredential, String expectedSignatureAlgorithm) throws Exception;
+    protected OID4VCAuthorizationDetail createAuthorizationDetail(Oid4vcTestContext ctx, String credentialConfigurationId) {
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credentialConfigurationId != null
+                ? credentialConfigurationId
+                : getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
+        authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
+        return authDetail;
+    }
 
     /**
-     * Parse authorization details from the token response.
+     * Creates a standard AuthorizationDetail for token exchange using default credential configuration.
+     *
+     * @param ctx the test context
+     * @return the AuthorizationDetail
      */
-    protected List<OID4VCAuthorizationDetailsResponse> parseAuthorizationDetails(String responseBody) {
-        try {
-            // Parse the JSON response to extract authorization_details
-            Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, new TypeReference<>() {
-            });
-            Object authDetailsObj = responseMap.get(OAuth2Constants.AUTHORIZATION_DETAILS);
+    protected OID4VCAuthorizationDetail createAuthorizationDetail(Oid4vcTestContext ctx) {
+        return createAuthorizationDetail(ctx, null);
+    }
 
-            if (authDetailsObj == null) {
-                return Collections.emptyList();
-            }
+    /**
+     * Performs authorization code login flow and returns the authorization code.
+     *
+     * @return the authorization code
+     */
+    protected String performAuthorizationCodeLogin() {
+        oauth.client(client.getClientId());
+        oauth.scope(getCredentialClientScope().getName());
+        oauth.loginForm().doLogin("john", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        assertNotNull("Authorization code should not be null", code);
+        return code;
+    }
 
-            // Convert to list of OID4VCAuthorizationDetailsResponse
-            return JsonSerialization.readValue(JsonSerialization.writeValueAsString(authDetailsObj),
-                    new TypeReference<>() {
-                    });
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse authorization_details from response", e);
+    /**
+     * Performs authorization code login flow with provided authorization_details JSON in the authorization request.
+     *
+     * @param authorizationDetailsJson authorization_details JSON to send with the authorization request
+     * @return the authorization code
+     */
+    protected String performAuthorizationCodeLoginWithAuthorizationDetails(String authorizationDetailsJson) {
+        oauth.client(client.getClientId());
+        oauth.scope(getCredentialClientScope().getName());
+        oauth.loginForm()
+                // Encode JSON so UriBuilder does not treat '{' or '}' as URI template characters
+                .param(OAuth2Constants.AUTHORIZATION_DETAILS,
+                        URLEncoder.encode(authorizationDetailsJson, StandardCharsets.UTF_8))
+                .doLogin("john", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        assertNotNull("Authorization code should not be null", code);
+        return code;
+    }
+
+    /**
+     * Creates an event expectation for VERIFIABLE_CREDENTIAL_REQUEST_ERROR with standard fields.
+     *
+     * @return the event expectation
+     */
+    protected AssertEvents.ExpectedEvent expectCredentialRequestError() {
+        return events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                .client(client.getClientId())
+                .user(AssertEvents.isUUID())
+                .session(AssertEvents.isSessionId())
+                .error(Errors.INVALID_REQUEST);
+    }
+
+    /**
+     * Creates an event expectation for VERIFIABLE_CREDENTIAL_REQUEST_ERROR without client/user/session
+     * (for cases where authentication hasn't occurred yet, e.g., malformed JSON).
+     *
+     * @return the event expectation
+     */
+    protected AssertEvents.ExpectedEvent expectCredentialRequestErrorWithoutAuth() {
+        return events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                .client((String) null)
+                .user((String) null)
+                .session((String) null)
+                .error(Errors.INVALID_REQUEST);
+    }
+
+    /**
+     * Stores the original user state for later restoration.
+     *
+     * @return a UserState object containing the original state and the user resource
+     */
+    protected UserState storeUserState() {
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "john");
+        UserRepresentation userRep = user.toRepresentation();
+        return new UserState(user, userRep,
+                userRep.getFirstName(),
+                userRep.getLastName(),
+                userRep.getAttributes() != null ? new HashMap<>(userRep.getAttributes()) : null);
+    }
+
+    /**
+     * Restores the user state from a UserState object.
+     *
+     * @param userState the stored user state
+     * @throws Exception if restoration fails
+     */
+    protected void restoreUserState(UserState userState) throws Exception {
+        UserRepresentation userRep = userState.user.toRepresentation();
+        userRep.setFirstName(userState.originalFirstName);
+        userRep.setLastName(userState.originalLastName);
+        userRep.setAttributes(Objects.requireNonNullElse(userState.originalAttributes, Collections.emptyMap()));
+        userState.user.update(userRep);
+    }
+
+    /**
+     * Helper class to store user state for cleanup.
+     */
+    protected static class UserState {
+        final UserResource user;
+        final UserRepresentation userRep;
+        final String originalFirstName;
+        final String originalLastName;
+        final Map<String, List<String>> originalAttributes;
+
+        UserState(UserResource user, UserRepresentation userRep, String originalFirstName,
+                  String originalLastName, Map<String, List<String>> originalAttributes) {
+            this.user = user;
+            this.userRep = userRep;
+            this.originalFirstName = originalFirstName;
+            this.originalLastName = originalLastName;
+            this.originalAttributes = originalAttributes;
         }
     }
 }

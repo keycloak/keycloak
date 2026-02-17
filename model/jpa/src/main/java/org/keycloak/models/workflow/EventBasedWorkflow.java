@@ -2,10 +2,11 @@ package org.keycloak.models.workflow;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.workflow.conditions.expression.BooleanConditionParser;
-import org.keycloak.models.workflow.conditions.expression.ConditionEvaluator;
-import org.keycloak.models.workflow.conditions.expression.EvaluatorUtils;
-import org.keycloak.models.workflow.conditions.expression.EventEvaluator;
+import org.keycloak.models.workflow.expression.BooleanConditionParser;
+import org.keycloak.models.workflow.expression.ConditionEvaluator;
+import org.keycloak.models.workflow.expression.EvaluatorUtils;
+import org.keycloak.models.workflow.expression.EventEvaluator;
+import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CANCEL_IN_PROGRESS;
@@ -41,7 +42,7 @@ final class EventBasedWorkflow {
         if (event == null) {
             return false;
         }
-        return supports(event.getResourceType()) && activateOnEvent(event) && validateResourceConditions(executionContext);
+        return supports(event.getResourceType()) && activateOnEvent(executionContext) && validateResourceConditions(executionContext);
     }
 
     /**
@@ -89,19 +90,19 @@ final class EventBasedWorkflow {
     /**
      * Determines whether the workflow should be activated based on the given event or not.
      *
-     * @param event a reference to the workflow event.
+     * @param executionContext a reference to the workflow execution context.
      * @return {@code true} if the workflow should be activated, {@code false} otherwise.
      */
-    private boolean activateOnEvent(WorkflowEvent event) {
+    private boolean activateOnEvent(WorkflowExecutionContext executionContext) {
         // AD_HOC is a special case that always triggers the workflow regardless of the configured activation events
-        if (ResourceOperationType.AD_HOC.equals(event.getOperation())) {
+        if (WorkflowConstants.AD_HOC.equals(executionContext.getEvent().getEventProviderId())) {
             return true;
         }
 
         String eventConditions = model.getConfig().getFirst(CONFIG_ON_EVENT);
         if (StringUtil.isNotBlank(eventConditions)) {
             BooleanConditionParser.EvaluatorContext context = EvaluatorUtils.createEvaluatorContext(model, eventConditions);
-            EventEvaluator eventEvaluator = new EventEvaluator(event);
+            EventEvaluator eventEvaluator = new EventEvaluator(session, executionContext);
             return eventEvaluator.visit(context);
         } else {
             return false;
@@ -131,7 +132,7 @@ final class EventBasedWorkflow {
             else {
                 // the flag has an event expression - parse and evaluate it
                 BooleanConditionParser.EvaluatorContext context = EvaluatorUtils.createEvaluatorContext(model, concurrencySetting);
-                EventEvaluator eventEvaluator = new EventEvaluator(executionContext.getEvent());
+                EventEvaluator eventEvaluator = new EventEvaluator(session, executionContext);
                 return eventEvaluator.visit(context);
             }
         }

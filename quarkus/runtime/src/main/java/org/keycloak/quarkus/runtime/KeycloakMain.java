@@ -18,17 +18,21 @@
 package org.keycloak.quarkus.runtime;
 
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ForkJoinPool;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 
 import io.quarkus.arc.Arc;
@@ -75,6 +79,15 @@ public class KeycloakMain implements QuarkusApplication {
             picocli = new Picocli();
         }
         main(args, picocli);
+    }
+
+    public static void reset(Properties systemProperties) {
+        System.setProperties((Properties) systemProperties.clone());
+        PropertyMappers.reset();
+        PersistedConfigSource.getInstance().getConfigValueProperties().clear();
+        Profile.reset();
+        Configuration.resetConfig();
+        ExecutionExceptionHandler.resetExceptionTransformers();
     }
 
     public static void main(String[] args, Picocli picocli) {

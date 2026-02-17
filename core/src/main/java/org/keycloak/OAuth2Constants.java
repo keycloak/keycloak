@@ -174,7 +174,4 @@ public interface OAuth2Constants {
     String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
     String ALGS_ATTRIBUTE = "algs";
 
-    // OID4VCI - https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html
-    String OPENID_CREDENTIAL = "openid_credential";
-    String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
 }

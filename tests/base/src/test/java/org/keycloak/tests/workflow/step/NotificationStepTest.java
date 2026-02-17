@@ -30,6 +30,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.DeleteUserStepProviderFactory;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.representations.workflows.StepExecutionStatus;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
@@ -47,7 +48,6 @@ import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 import static org.keycloak.tests.workflow.util.EmailTestUtils.findEmailByRecipient;
 import static org.keycloak.tests.workflow.util.EmailTestUtils.findEmailByRecipientContaining;
 import static org.keycloak.tests.workflow.util.EmailTestUtils.verifyEmailContent;
@@ -80,7 +80,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
     public void testNotifyUserStepSendsEmailWithDefaultDisableMessage() {
         // Create workflow: disable at 10 days, notify 3 days before (at day 7)
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(7))
@@ -108,7 +108,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
     public void testNotifyUserStepSendsEmailWithDefaultDeleteMessage() {
         // Create workflow: delete at 30 days, notify 15 days before (at day 15)
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(15))
@@ -135,7 +135,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
     @Test
     public void testNotifyUserStepSkipsUsersWithoutEmailButLogsWarning() {
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(5))
@@ -169,7 +169,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
     public void testCompleteUserLifecycleWithMultipleNotifications() {
         // Create workflow: just disable at 30 days with one notification before
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .after(Duration.ofDays(15))
@@ -218,7 +218,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
     public void testNotifyUserStepWithCustomMessageOverride() throws IOException {
         // Create workflow: disable at 7 days, notify 2 days before (at day 5) with custom message
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .withConfig("message", "<p>Dear ${user.firstName} ${user.lastName}, </p>\n" +
@@ -265,7 +265,7 @@ public class NotificationStepTest extends AbstractWorkflowTest {
     public void testNotifyUserStepWithSendToConfiguration() throws Exception {
         // Create workflow: notify immediately with send_to
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .withSteps(
                         WorkflowStepRepresentation.create().of(NotifyUserStepProviderFactory.ID)
                                 .withConfig("to", "admin@example.com")

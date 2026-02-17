@@ -444,6 +444,7 @@ Most claims are dependent on the `protocolMapper`-value, but there are also comm
 | `claim.name`
 | required
 | The name of the attribute that will be added into the Verifiable Credential. +
+Just like with OIDC user attributes, you may use dots to create nested JSON objects. +
 _Default_: _none_
 
 | `userAttribute`

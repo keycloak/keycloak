@@ -27,9 +27,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <groupId>org.keycloak</groupId>
     <artifactId>theme-verifier-maven-plugin</artifactId>
-    <version>999.0.0-SNAPSHOT</version>
 
     <name>Keycloak Theme verifier</name>
     <description>Keycloak Theme verifier</description>
@@ -40,27 +38,25 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven-plugin-tools.version>3.15.1</maven-plugin-tools.version>
-        <maven-plugin-api.version>3.9.9</maven-plugin-api.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>${maven-plugin-api.version}</version>
+            <version>${maven.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>${maven-plugin-tools.version}</version>
+            <version>${maven.plugin-tools.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-core</artifactId>
-            <version>${maven-plugin-api.version}</version>
+            <version>${maven.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

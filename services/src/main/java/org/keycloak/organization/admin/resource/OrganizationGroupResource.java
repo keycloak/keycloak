@@ -48,8 +48,10 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
@@ -93,10 +95,7 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "200", description = "OK")
     })
     public GroupRepresentation getGroup() {
-        GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(group);
-        // todo path
-        rep.setPath("");
-        return rep;
+        return ModelToRepresentation.toRepresentation(group, true);
     }
 
     @DELETE
@@ -108,7 +107,6 @@ public class OrganizationGroupResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public void deleteGroup() {
-        // todo org cache - listen to removal event and invalidate corresponding org in the cache?
         session.groups().removeGroup(session.getContext().getRealm(), group);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
@@ -135,9 +133,12 @@ public class OrganizationGroupResource {
                 throw ErrorResponse.error("Invalid group id", Response.Status.BAD_REQUEST);
             }
 
-            // name, todo path
+            // name changed: fire path change event
             if (!Objects.equals(groupName, group.getName())) {
+                String previousPath = KeycloakModelUtils.buildGroupPath(group);
                 group.setName(groupName);
+                String newPath = KeycloakModelUtils.buildGroupPath(group);
+                GroupModel.GroupPathChangeEvent.fire(group, newPath, previousPath, session);
             }
 
             // description
@@ -181,12 +182,8 @@ public class OrganizationGroupResource {
             @Parameter(description = "The position of the first result to be returned (pagination offset).") @QueryParam("first") @DefaultValue("0") Integer first,
             @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max) {
 
-        return group.getSubGroupsStream(search, exact, first, max).map(groupModel -> {
-            GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(groupModel);
-            // todo path
-            rep.setPath("");
-            return rep;
-        });
+        return group.getSubGroupsStream(search, exact, first, max)
+                .map(ModelToRepresentation::groupToBriefRepresentation);
     }
 
     @POST
@@ -231,8 +228,8 @@ public class OrganizationGroupResource {
                 }
 
                 // Validate it belongs to the same organization
-                OrganizationModel childOrg = child.getOrganization();
-                if (childOrg == null || !childOrg.getId().equals(organization.getId())) {
+                if (!Organizations.isOrganizationGroup(child) ||
+                        !child.getOrganization().getId().equals(organization.getId())) {
                     throw ErrorResponse.error("Group does not belong to this organization", Response.Status.BAD_REQUEST);
                 }
 

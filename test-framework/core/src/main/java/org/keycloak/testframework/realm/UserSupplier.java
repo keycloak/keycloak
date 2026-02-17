@@ -30,12 +30,16 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
     public ManagedUser getValue(InstanceContext<ManagedUser, InjectUser> instanceContext) {
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
 
-        UserConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
+        UserConfig config = SupplierHelpers.getInstanceWithInjectedFields(instanceContext.getAnnotation().config(), instanceContext);
         UserRepresentation userRepresentation = config.configure(UserConfigBuilder.create()).build();
 
         if (userRepresentation.getUsername() == null) {
             String username = SupplierHelpers.createName(instanceContext);
             userRepresentation.setUsername(username);
+        }
+
+        if (userRepresentation.getRealmRoles() != null  || userRepresentation.getClientRoles() != null) {
+            throw new UnsupportedOperationException("Creating user with roles or client roles is not supported!");
         }
 
         try (Response response = realm.admin().users().create(userRepresentation)) {

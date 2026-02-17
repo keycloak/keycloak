@@ -1,0 +1,92 @@
+name: Translation Maintainer Notification
+
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'themes/**/messages_*.properties'
+      - 'js/**/messages_*.properties'
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  pull-requests: write
+
+jobs:
+  notify-maintainers:
+    name: Notify language maintainers of changes
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Yq
+        run: sudo snap install yq
+
+      - name: Get changed language files and notify maintainers
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        # language=bash
+        run: |
+          # Get the list of changed files in this PR
+          CHANGED_FILES=$(gh pr view "$PR_NUMBER" --json files --jq '.files[].path' | grep 'messages_.*\.properties' || true)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No translation files changed"
+            exit 0
+          fi
+
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # Extract unique language codes from filenames
+          declare -A languages
+
+          while IFS= read -r file; do
+            # Extract language code from messages_XX.properties or messages_XX_YY.properties
+            if [[ $file =~ messages_([a-z]{2}(_[A-Z][a-z]+)?)\.properties ]]; then
+              lang_code="${BASH_REMATCH[1]}"
+              # Skip English language
+              if [ "$lang_code" != "en" ]; then
+                languages["$lang_code"]=1
+              fi
+            fi
+          done <<< "$CHANGED_FILES"
+
+          if [ ${#languages[@]} -eq 0 ]; then
+            echo "No non-English language codes found in changed files"
+            exit 0
+          fi
+
+          echo "Languages changed: ${!languages[@]}"
+
+          # Read maintainers file and build comment
+          COMMENT="## Translation Changes Notification\n\n"
+          COMMENT+="*Language maintainers:* Please review the translation changes in your language in [Weblate](https://hosted.weblate.org/projects/keycloak/).\n\n"        
+          COMMENT+="The following languages have been updated in this PR:\n\n"
+
+          # Sort languages for deterministic output
+          for lang_code in $(printf '%s\n' "${!languages[@]}" | sort); do
+            # Look up maintainers in the YAML file
+            yaml_key="$lang_code"
+
+            LANG_NAME=$(yq eval ".languages.\"${yaml_key}\".name // \"Unknown\"" .github/language-maintainers.yml)
+            MAINTAINERS=$(yq eval ".languages.\"${yaml_key}\".maintainers // [] | join(\", @\")" .github/language-maintainers.yml)
+
+            if [ "$MAINTAINERS" != "" ] && [ "$MAINTAINERS" != "null" ]; then
+              COMMENT+="### ${LANG_NAME} (\`${lang_code}\`)\n"
+              COMMENT+="@${MAINTAINERS}\n\n"
+            else
+              COMMENT+="### \`${lang_code}\`\n"
+              COMMENT+="No maintainers configured for this language.\n\n"
+            fi
+            COMMENT+="[Changes waiting for approval.](https://hosted.weblate.org/translate/keycloak/-/${lang_code}/?q=state:translated)\n\n"
+          done
+
+          # Post comment to PR
+          echo -e "$COMMENT" | gh pr comment "$PR_NUMBER" --body-file -

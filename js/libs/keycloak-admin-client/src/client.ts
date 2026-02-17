@@ -16,8 +16,9 @@ import { ServerInfo } from "./resources/serverInfo.js";
 import { Users } from "./resources/users.js";
 import { UserStorageProvider } from "./resources/userStorageProvider.js";
 import { WhoAmI } from "./resources/whoAmI.js";
-import { Credentials, getToken } from "./utils/auth.js";
+import { Credentials, getToken, Settings } from "./utils/auth.js";
 import { defaultBaseUrl, defaultRealm } from "./utils/constants.js";
+import { DecodedToken, decodeToken } from "./utils/decode.js";
 
 export type RequestOptions = Omit<RequestInit, "signal">;
 
@@ -32,6 +33,8 @@ export interface ConnectionConfig {
   requestArgOptions?: Pick<RequestArgs, "catchNotFound">;
   timeout?: number;
 }
+
+const MIN_VALIDITY = 5; // in seconds
 
 export class KeycloakAdminClient {
   // Resources
@@ -64,6 +67,9 @@ export class KeycloakAdminClient {
   #requestOptions?: RequestOptions;
   #globalRequestArgOptions?: Pick<RequestArgs, "catchNotFound">;
   #tokenProvider?: TokenProvider;
+  #accessTokenDecoded?: DecodedToken;
+  #refreshTokenDecoded?: DecodedToken;
+  #credentials?: Credentials;
 
   constructor(connectionConfig?: ConnectionConfig) {
     this.baseUrl = connectionConfig?.baseUrl || defaultBaseUrl;
@@ -93,7 +99,16 @@ export class KeycloakAdminClient {
   }
 
   public async auth(credentials: Credentials) {
-    const { accessToken, refreshToken } = await getToken({
+    const { accessToken, refreshToken } = await getToken(
+      this.#getTokenSettings(credentials),
+    );
+    this.#credentials = credentials;
+    this.setAccessToken(accessToken);
+    this.setRefreshToken(refreshToken);
+  }
+
+  #getTokenSettings(credentials: Credentials): Settings {
+    return {
       baseUrl: this.baseUrl,
       realmName: this.realmName,
       scope: this.scope,
@@ -102,9 +117,7 @@ export class KeycloakAdminClient {
         ...this.#requestOptions,
         ...(this.timeout ? { signal: AbortSignal.timeout(this.timeout) } : {}),
       },
-    });
-    this.accessToken = accessToken;
-    this.refreshToken = refreshToken;
+    };
   }
 
   public registerTokenProvider(provider: TokenProvider) {
@@ -117,6 +130,12 @@ export class KeycloakAdminClient {
 
   public setAccessToken(token: string) {
     this.accessToken = token;
+    this.#accessTokenDecoded = decodeToken(token);
+  }
+
+  public setRefreshToken(token: string) {
+    this.refreshToken = token;
+    this.#refreshTokenDecoded = decodeToken(token);
   }
 
   public async getAccessToken() {
@@ -124,7 +143,52 @@ export class KeycloakAdminClient {
       return this.#tokenProvider.getAccessToken();
     }
 
+    if (this.isTokenExpired()) {
+      await this.#refreshAccessToken();
+    }
+
     return this.accessToken;
+  }
+
+  async #refreshAccessToken() {
+    if (!this.refreshToken || !this.#credentials) {
+      throw new Error(
+        "Cannot refresh token: missing refresh token or credentials",
+      );
+    }
+
+    if (this.isRefreshTokenExpired()) {
+      throw new Error("Cannot refresh token: refresh token has expired");
+    }
+
+    const { accessToken, refreshToken } = await getToken(
+      this.#getTokenSettings({
+        grantType: "refresh_token",
+        clientId: this.#credentials.clientId,
+        clientSecret: this.#credentials.clientSecret,
+        refreshToken: this.refreshToken,
+      }),
+    );
+
+    this.setAccessToken(accessToken);
+    this.setRefreshToken(refreshToken);
+  }
+
+  public isTokenExpired(): boolean {
+    return this.#isExpired(this.#accessTokenDecoded);
+  }
+
+  public isRefreshTokenExpired(): boolean {
+    return this.#isExpired(this.#refreshTokenDecoded);
+  }
+
+  #isExpired(token?: DecodedToken): boolean {
+    if (typeof token?.exp !== "number") {
+      return false;
+    }
+    const expiresIn =
+      token.exp - Math.ceil(new Date().getTime() / 1000) - MIN_VALIDITY;
+    return expiresIn < 0;
   }
 
   public getRequestOptions() {

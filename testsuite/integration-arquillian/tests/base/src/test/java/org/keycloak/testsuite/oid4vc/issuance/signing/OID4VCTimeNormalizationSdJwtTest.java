@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
@@ -28,8 +29,10 @@ import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -40,6 +43,8 @@ import org.keycloak.util.JsonSerialization;
 import org.apache.http.HttpStatus;
 import org.junit.Test;
 
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -49,7 +54,7 @@ import static org.junit.Assert.assertNotNull;
  * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
  *
  */
-public class OID4VCTimeNormalizationSdJwtTest extends OID4VCSdJwtIssuingEndpointTest {
+public class OID4VCTimeNormalizationSdJwtTest extends OID4VCIssuerEndpointTest {
 
     @Test
     public void testSdJwtIatRoundedViaRealmNormalizedIssuanceDate() {
@@ -59,7 +64,20 @@ public class OID4VCTimeNormalizationSdJwtTest extends OID4VCSdJwtIssuingEndpoint
             session.getContext().getRealm().setAttribute("oid4vci.time.round.unit", "DAY");
         });
 
-        String token = getBearerToken(oauth, client, sdJwtTypeCredentialClientScope.getName());
+        String scopeName = sdJwtTypeCredentialClientScope.getName();
+        String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
+        String token = tokenResponse.getAccessToken();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+
         final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
@@ -81,7 +99,7 @@ public class OID4VCTimeNormalizationSdJwtTest extends OID4VCSdJwtIssuingEndpoint
                 OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
                 CredentialRequest credentialRequest = new CredentialRequest()
-                        .setCredentialConfigurationId(clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
+                        .setCredentialIdentifier(credentialIdentifier);
 
                 String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
                 Response response = issuerEndpoint.requestCredential(requestPayload);

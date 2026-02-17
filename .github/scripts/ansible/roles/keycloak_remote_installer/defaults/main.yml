@@ -3,4 +3,4 @@ kc_home: /opt/keycloak
 m2_home: ~/.m2
 update_system_packages: no
 install_java: yes
-java_version: 21
+java_version: 25

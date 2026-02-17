@@ -478,12 +478,12 @@ public class BasicSamlTest extends AbstractSamlTest {
 
     @Test
     public void testEncryptionRsaOaep() throws Exception {
-        testEncryption(XMLCipher.AES_256_GCM, XMLCipher.RSA_OAEP, XMLCipher.SHA256, "", XMLCipher.AES_256_GCM, XMLCipher.RSA_OAEP, XMLCipher.SHA256, EncryptionConstants.MGF1_SHA1);
+        testEncryption(XMLCipher.AES_256_GCM, XMLCipher.RSA_OAEP, XMLCipher.SHA256, "", XMLCipher.AES_256_GCM, XMLCipher.RSA_OAEP, XMLCipher.SHA256, "");
     }
 
     @Test
     public void testEncryptionRsaOaepLegacy() throws Exception {
-        testEncryption(XMLCipher.AES_128, XMLCipher.RSA_OAEP, XMLCipher.SHA1, "", XMLCipher.AES_128, XMLCipher.RSA_OAEP, "", EncryptionConstants.MGF1_SHA1);
+        testEncryption(XMLCipher.AES_128, XMLCipher.RSA_OAEP, XMLCipher.SHA1, "", XMLCipher.AES_128, XMLCipher.RSA_OAEP, "", "");
     }
 
     @Test

@@ -203,7 +203,7 @@ public final class WorkflowRepresentation extends AbstractWorkflowComponentRepre
         }
 
         public Builder onEvent(String... operation) {
-            return onEvent(String.join(" or ", operation).toUpperCase());
+            return onEvent(String.join(" or ", operation));
         }
 
         public Builder onCondition(String condition) {

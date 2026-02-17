@@ -55,6 +55,8 @@ export const RealmSettingsTokensTab = ({
   const serverInfo = useServerInfo();
   const isFeatureEnabled = useIsFeatureEnabled();
   const { whoAmI } = useWhoAmI();
+  const openId4vciEnabled =
+    isFeatureEnabled(Feature.OpenId4VCI) && realm.verifiableCredentialsEnabled;
 
   const [defaultSigAlgDrpdwnIsOpen, setDefaultSigAlgDrpdwnOpen] =
     useState(false);
@@ -654,7 +656,7 @@ export const RealmSettingsTokensTab = ({
               )}
             />
           </FormGroup>
-          {!isFeatureEnabled(Feature.OpenId4VCI) && (
+          {!openId4vciEnabled && (
             <FixedButtonsGroup
               name="tokens-tab"
               isSubmit
@@ -667,9 +669,7 @@ export const RealmSettingsTokensTab = ({
     },
     {
       title: t("oid4vciAttributes"),
-      isHidden:
-        !isFeatureEnabled(Feature.OpenId4VCI) ||
-        !realm.verifiableCredentialsEnabled,
+      isHidden: !openId4vciEnabled,
       panel: (
         <FormAccess
           isHorizontal

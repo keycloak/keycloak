@@ -11,6 +11,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.utils.MediaType;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -22,17 +23,20 @@ public abstract class AbstractHttpPostRequest<T, R> {
     protected final AbstractOAuthClient<?> client;
 
     protected String clientId;
-
     protected String clientSecret;
 
     protected String clientAssertion;
-
     protected String clientAssertionType;
+
+    protected String bearerToken;
 
     protected HttpPost post;
 
     protected Map<String, String> headers = new HashMap<>();
     protected List<NameValuePair> parameters = new LinkedList<>();
+    protected HttpEntity entity;
+
+    protected String endpoint;
 
     public AbstractHttpPostRequest(AbstractOAuthClient<?> client) {
         this.client = client;
@@ -40,10 +44,22 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected abstract String getEndpoint();
 
+    /**
+     * Override the endpoint URL for this request.
+     * When specified, this takes precedence over {@link #getEndpoint()}.
+     *
+     * @param endpoint the endpoint URL to use
+     * @return this request instance for method chaining
+     */
+    public T endpoint(String endpoint) {
+        this.endpoint = endpoint;
+        return request();
+    }
+
     protected abstract void initRequest();
 
     public R send() {
-        post = new HttpPost(getEndpoint());
+        post = new HttpPost(endpoint != null ? endpoint : getEndpoint());
         post.addHeader("Accept", getAccept());
         post.addHeader("Origin", client.config().getOrigin());
 
@@ -53,14 +69,25 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
         headers.forEach((n, v) -> post.addHeader(n, v));
 
-        UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
-        post.setEntity(formEntity);
+        if (entity == null && !parameters.isEmpty()) {
+            entity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
+        }
+
+        // If entity is null, don't set (no body)
+        if (entity != null) {
+            post.setEntity(entity);
+        }
 
         try {
             return toResponse(client.httpClient().get().execute(post));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public T bearerToken(String token) {
+        this.bearerToken = token;
+        return request();
     }
 
     public T client(String clientId) {
@@ -106,6 +133,8 @@ public abstract class AbstractHttpPostRequest<T, R> {
         if (clientAssertion != null && clientAssertionType != null) {
             parameter("client_assertion_type", clientAssertionType);
             parameter("client_assertion", clientAssertion);
+        } else if (bearerToken != null) {
+            header("Authorization", "Bearer " + bearerToken);
         } else if (clientSecret != null) {
             String authorization = BasicAuthHelper.RFC6749.createHeader(clientId, clientSecret);
             header("Authorization", authorization);
@@ -126,11 +155,20 @@ public abstract class AbstractHttpPostRequest<T, R> {
         return MediaType.APPLICATION_JSON;
     }
 
+    protected String getParameter(String key) {
+        return parameters.stream()
+                .filter(vp -> vp.getName().equals(key))
+                .map(NameValuePair::getValue)
+                .findFirst().orElse(null);
+    }
+
+    protected boolean hasParameter(String key) {
+        return getParameter(key) != null;
+    }
+
     protected abstract R toResponse(CloseableHttpResponse response) throws IOException;
 
-    @SuppressWarnings("unchecked")
     private T request() {
         return (T) this;
     }
-
 }

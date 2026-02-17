@@ -25,7 +25,7 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
 
     @Test
     public void testNotAllowedIdentityProvider() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ENABLED, "false");
         });
 
@@ -39,7 +39,7 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
 
     @Test
     public void testValidateSignatureDisabled() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
         });
 
@@ -58,7 +58,7 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Invalid token audience", response, events.poll());
 
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.ALLOW_CLIENT_ID_AS_AUDIENCE, Boolean.TRUE.toString());
         });
 

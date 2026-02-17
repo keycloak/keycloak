@@ -9,6 +9,7 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.testsuite.util.oauth.ciba.CibaClient;
 import org.keycloak.testsuite.util.oauth.device.DeviceClient;
+import org.keycloak.testsuite.util.oauth.oid4vc.OID4VCClient;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.openqa.selenium.WebDriver;
@@ -119,7 +120,7 @@ public abstract class AbstractOAuthClient<T> {
     }
 
     public AccessTokenRequest accessTokenRequest(String code) {
-        return new AccessTokenRequest(code, this);
+        return new AccessTokenRequest(this, code);
     }
 
     public AccessTokenResponse doAccessTokenRequest(String code) {
@@ -232,6 +233,10 @@ public abstract class AbstractOAuthClient<T> {
 
     public DeviceClient device() {
         return new DeviceClient(this);
+    }
+
+    public OID4VCClient oid4vc() {
+        return new OID4VCClient(this);
     }
 
     public ParRequest pushedAuthorizationRequest() {

@@ -105,9 +105,10 @@ org.keycloak.cookie.CookieSpi
 org.keycloak.organization.OrganizationSpi
 org.keycloak.securityprofile.SecurityProfileSpi
 org.keycloak.logging.MappedDiagnosticContextSpi
+org.keycloak.models.workflow.WorkflowConditionSpi
+org.keycloak.models.workflow.WorkflowEventSpi
 org.keycloak.models.workflow.WorkflowStepSpi
 org.keycloak.models.workflow.WorkflowSpi
-org.keycloak.models.workflow.WorkflowConditionSpi
 org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorSpi
 org.keycloak.cache.AlternativeLookupSPI
 org.keycloak.cache.LocalCacheSPI

@@ -17,7 +17,6 @@
 package org.keycloak.services.managers;
 
 import java.util.List;
-import java.util.regex.Pattern;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -33,6 +32,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.util.TokenUtil;
 
+import org.jboss.logging.Logger;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -40,8 +41,6 @@ import org.keycloak.util.TokenUtil;
 public class AppAuthManager extends AuthenticationManager {
 
     public static final String BEARER = "Bearer";
-
-    private static final Pattern WHITESPACES = Pattern.compile("\\s+");
 
     @Override
     public AuthResult authenticateIdentityCookie(KeycloakSession session, RealmModel realm) {
@@ -64,26 +63,28 @@ public class AppAuthManager extends AuthenticationManager {
             return null;
         }
 
-        String[] split = WHITESPACES.split(authHeader.trim());
-        if (split.length != 2){
+        int indexOfSpace = authHeader.indexOf(' ');
+
+        if (indexOfSpace <= 0) {
             return null;
         }
 
-        String typeString = split[0];
+        String typeString = authHeader.substring(0, indexOfSpace);
+        String tokenString = authHeader.substring(indexOfSpace + 1);
 
+        boolean isBearerHeader = typeString.equalsIgnoreCase(BEARER);
         if (!Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-            if (!typeString.equalsIgnoreCase(BEARER)) {
+            if (!isBearerHeader) {
                 return null;
             }
         } else {
             // "Bearer" is case-insensitive for historical reasons. "DPoP" is case-sensitive to follow the spec.
-            if (!typeString.equalsIgnoreCase(BEARER) && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)){
+            if (!isBearerHeader && !typeString.equals(TokenUtil.TOKEN_TYPE_DPOP)) {
                 return null;
             }
         }
 
-        String tokenString = split[1];
-        if (ObjectUtil.isBlank(tokenString)) {
+        if (ObjectUtil.isBlank(tokenString) || tokenString.contains(" ")) {
             return null;
         }
 
@@ -129,6 +130,8 @@ public class AppAuthManager extends AuthenticationManager {
     }
 
     public static class BearerTokenAuthenticator {
+        private static final Logger logger = Logger.getLogger(BearerTokenAuthenticator.class);
+        
         private KeycloakSession session;
         private RealmModel realm;
         private UriInfo uriInfo;
@@ -193,7 +196,10 @@ public class AppAuthManager extends AuthenticationManager {
             // audience can be null
 
             return verifyIdentityToken(session, realm, uriInfo, connection, true, true, audience, false, tokenString, headers,
-                    verifier -> DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString)));
+                    verifier -> {
+                        DPoPUtil.withDPoPVerifier(verifier, realm, new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).accessToken(tokenString));
+                        verifier.withChecks(GrantTypeEndpointRestrictionValidator.check(session));
+                    });
         }
     }
 

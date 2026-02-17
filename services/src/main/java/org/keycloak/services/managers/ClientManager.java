@@ -383,8 +383,9 @@ public class ClientManager {
 
     private Map<String, Object> getClientCredentialsAdapterConfig(ClientModel client) {
         String clientAuthenticator = client.getClientAuthenticatorType();
-        ClientAuthenticatorFactory authenticator = (ClientAuthenticatorFactory) realmManager.getSession().getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, clientAuthenticator);
-        return authenticator.getAdapterConfiguration(client);
+        KeycloakSession session = realmManager.getSession();
+        ClientAuthenticatorFactory authenticator = (ClientAuthenticatorFactory) session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, clientAuthenticator);
+        return authenticator.getAdapterConfiguration(session, client);
     }
 
     private boolean isInternalClient(String realmName, String clientId) {

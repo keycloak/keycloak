@@ -10,7 +10,7 @@ summary="Configure and use token exchange for {project_name}.">
 Token exchange is the process that allows a client application to exchange one token for another token. In {project_name}, two features implement token exchange:
 
 * <<_standard-token-exchange,Standard token exchange: version 2 (V2)>> - This feature is the fully supported token exchange implementation that is enabled by default once the {project_name} server is started.
-* <<_legacy-token-exchange,Legacy token exchange: version 1 (V1)>> - This preview feature is not enabled by default once {project_name} server is started.
+* <<_legacy-token-exchange,Legacy token exchange: version 1 (V1)>> - This preview feature is deprecated and not enabled by default once {project_name} server is started. In future versions legacy Token Exchange will be replaced by version 2, JWT Authorization grant and other features.
 
 The capabilities of {project_name} for token exchange are as follows:
 
@@ -19,8 +19,8 @@ The capabilities of {project_name} for token exchange are as follows:
 . A client can exchange an external token for a {project_name} token.
 . A client can impersonate a user.
 
-The standard token exchange supports only use-case (1). The legacy token exchange supports the four use-cases, but it is a preview feature. Therefore, the standard token exchange V2 is recommended  since it is supported and will be maintained for the future. The legacy token exchange is useful for last three use cases, but it may not be
-backwards compatible with future {project_name} versions. You can also enable both token exchange features and use them together. For example, you could use both internal-internal exchange
+The standard token exchange supports only use-case (1). The legacy token exchange supports the four use-cases, but it is a preview and deprecated feature. Therefore, the standard token exchange V2 is recommended  since it is supported and will be maintained for the future. The legacy token exchange is useful for last three use cases, but it may not be
+backwards compatible with future {project_name} versions, and it will be finally removed. You can also enable both token exchange features and use them together. For example, you could use both internal-internal exchange
 provided by V2 together with other use cases that are supported by V1. For more details, see this <<_standard-token-exchange-comparison,token exchange comparison>>.
 
 NOTE: If you still need legacy token exchange feature, you also need link:{adminguide_link}#fine-grained-admin-permissions-v1[Fine-grained admin permissions version 1] (FGAP:v1) enabled because
@@ -326,14 +326,15 @@ s|Authorization  | Verification that the requester client must be in the audienc
 s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
 s|Delegation per RFC 8693|Not supported yet|Not supported
 s|Resource parameter per RFC 8693|Not supported yet|Not supported
-s|Federated token exchange | Not implemented yet | Implemented as a preview
+s|Internal to external Token Exchange | Not implemented yet | Implemented as a preview
+s|External to internal Token Exchange | Use-case implemented by Standard Token Exchange V2 and JWT Authorization Grant. See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for more information. | Implemented as a preview
 s|Subject impersonation (including direct naked impersonation)   | Not implemented yet | Implemented as a preview
 |===
 
 [[_legacy-token-exchange]]
 == Legacy token exchange
 
-<@features.techpreview feature="token-exchange"/>
+<@features.techpreviewdeprecated feature="token-exchange"/>
 
 [NOTE]
 ====
@@ -675,7 +676,7 @@ These types of changes required a configured identity provider in the Admin Cons
 
 NOTE:  SAML identity providers are not supported at this time.  Twitter tokens cannot be exchanged either.
 
-WARNING: External to internal Token Exchange will be replaced by <<_standard-token-exchange,Standard Token Exchange V2>> and <@links.securingapps id="jwt-authorization-grant" />. Following the idea presented in the current draft specification link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-identity-chaining-06[OAuth Identity and Authorization Chaining Across Domains], the final access token will be obtained performing two requests: a standard token exchange in the external identity server to get a valid JWT assertion; a JWT Authorization Grant to finally request an access token in the internal {project_name} realm. The JWT Authorization grant can be eventually used directly to exchange your external tokens as long as they are JWT tokens, which conforms to all the requirements specified for the JWT Authorization Grant.
+WARNING: External to internal Token Exchange will be replaced by <<_standard-token-exchange,Standard Token Exchange V2>> and <@links.securingapps id="jwt-authorization-grant" />. See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for more information.
 
 ==== Granting permission for the exchange
 

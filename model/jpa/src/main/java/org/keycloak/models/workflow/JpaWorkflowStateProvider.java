@@ -61,7 +61,7 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     }
 
     @Override
-    public void scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId) {
+    public ScheduleResult scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId) {
         WorkflowStateEntity entity = em.find(WorkflowStateEntity.class, executionId);
         Duration duration = DurationConverter.parseDuration(step.getAfter());
         if (duration == null) {
@@ -78,9 +78,11 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
             entity.setScheduledStepId(step.getId());
             entity.setScheduledStepTimestamp(Instant.now().plus(duration).toEpochMilli());
             em.persist(entity);
+            return ScheduleResult.CREATED;
         } else {
             entity.setScheduledStepId(step.getId());
             entity.setScheduledStepTimestamp(Instant.now().plus(duration).toEpochMilli());
+            return ScheduleResult.UPDATED;
         }
     }
 
@@ -111,6 +113,24 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
 
         Predicate byWorkflow = cb.equal(stateRoot.get("workflowId"), workflowId);
         query.where(byWorkflow);
+
+        return em.createQuery(query).getResultStream()
+                .map(this::toScheduledStep);
+    }
+
+    @Override
+    public Stream<ScheduledStep> getScheduledStepsByStep(String workflowId, String stepId) {
+        if (StringUtil.isBlank(workflowId) || StringUtil.isBlank(stepId)) {
+            return Stream.empty();
+        }
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<WorkflowStateEntity> query = cb.createQuery(WorkflowStateEntity.class);
+        Root<WorkflowStateEntity> stateRoot = query.from(WorkflowStateEntity.class);
+
+        Predicate byWorkflowAndStep = cb.and(cb.equal(stateRoot.get("workflowId"), workflowId),
+                                    cb.equal(stateRoot.get("scheduledStepId"), stepId));
+        query.where(byWorkflowAndStep);
 
         return em.createQuery(query).getResultStream()
                 .map(this::toScheduledStep);

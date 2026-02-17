@@ -17,16 +17,12 @@
 
 package org.keycloak.models.workflow.client;
 
-import java.util.List;
 import java.util.Set;
 
-import org.keycloak.Config;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowStepProviderFactory;
-import org.keycloak.provider.ProviderConfigProperty;
 
 public class DisableClientStepProviderFactory implements
         WorkflowStepProviderFactory<DisableClientStepProvider> {
@@ -39,37 +35,18 @@ public class DisableClientStepProviderFactory implements
     }
 
     @Override
-    public void init(Config.Scope config) {
-        // no-op
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        // no-op
-    }
-
-    @Override
-    public void close() {
-        // no-op
-    }
-
-    @Override
     public String getId() {
         return ID;
     }
 
     @Override
-    public Set<ResourceType> getTypes() {
+    public Set<ResourceType> getSupportedResourceTypes() {
         return Set.of(ResourceType.CLIENTS);
     }
 
     @Override
     public String getHelpText() {
-        return "";
+        return "Disables the client";
     }
 
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
-        return List.of();
-    }
 }

@@ -66,11 +66,19 @@ public class ProfileTest {
         Profile profile = Profile.defaults();
 
         Assert.assertTrue(Profile.isFeatureEnabled(DEFAULT_FEATURE));
+        Assert.assertFalse(DEFAULT_FEATURE.isDeprecated());
+        MatcherAssert.assertThat(profile.getPreviewFeatures(), Matchers.not(Matchers.hasItem(DEFAULT_FEATURE)));
         Assert.assertFalse(Profile.isFeatureEnabled(DISABLED_BY_DEFAULT_FEATURE));
+        Assert.assertFalse(DISABLED_BY_DEFAULT_FEATURE.isDeprecated());
+        MatcherAssert.assertThat(profile.getPreviewFeatures(), Matchers.not(Matchers.hasItem(DISABLED_BY_DEFAULT_FEATURE)));
         Assert.assertFalse(Profile.isFeatureEnabled(PREVIEW_FEATURE));
         Assert.assertFalse(Profile.isFeatureEnabled(EXPERIMENTAL_FEATURE));
+        Assert.assertFalse(EXPERIMENTAL_FEATURE.isDeprecated());
+        MatcherAssert.assertThat(profile.getPreviewFeatures(), Matchers.not(Matchers.hasItem(EXPERIMENTAL_FEATURE)));
         if (DEPRECATED_FEATURE != null) {
             Assert.assertFalse(Profile.isFeatureEnabled(DEPRECATED_FEATURE));
+            MatcherAssert.assertThat(profile.getDeprecatedFeatures(), Matchers.hasItem(DEPRECATED_FEATURE));
+            Assert.assertTrue(DEPRECATED_FEATURE.isDeprecated());
         } else {
             MatcherAssert.assertThat(profile.getDeprecatedFeatures(), Matchers.empty());
         }
@@ -79,6 +87,8 @@ public class ProfileTest {
 
         MatcherAssert.assertThat(profile.getDisabledFeatures(), Matchers.hasItem(DISABLED_BY_DEFAULT_FEATURE));
         MatcherAssert.assertThat(profile.getPreviewFeatures(), Matchers.hasItem(PREVIEW_FEATURE));
+        Assert.assertTrue(Profile.Feature.TOKEN_EXCHANGE.isDeprecated());
+        Assert.assertEquals(Profile.Feature.Type.PREVIEW, Profile.Feature.TOKEN_EXCHANGE.getType());
     }
 
     @Test

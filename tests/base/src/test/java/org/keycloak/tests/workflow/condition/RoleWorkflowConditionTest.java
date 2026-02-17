@@ -12,7 +12,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
-import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.RestartWorkflowStepProviderFactory;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
@@ -20,6 +19,7 @@ import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.conditions.RoleWorkflowConditionFactory;
+import org.keycloak.models.workflow.events.UserRoleGrantedWorkflowEventFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -114,7 +114,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
                         Workflow workflow = registeredWorkflows.get(0);
                         // check workflow was correctly assigned to the users
                         WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-                        List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+                        List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList();
                         assertThat(scheduledSteps, hasSize(10));
                     });
                 });
@@ -172,7 +172,7 @@ public class RoleWorkflowConditionTest extends AbstractWorkflowTest {
                 .reduce((a, b) -> a + " AND " + b).orElse(null);
 
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_ROLE_GRANTED.name())
+                .onEvent(UserRoleGrantedWorkflowEventFactory.ID)
                 .onCondition(roleCondition)
                 .withSteps(
                         WorkflowStepRepresentation.create()

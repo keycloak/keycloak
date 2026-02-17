@@ -22,6 +22,7 @@ export async function fetchWithError(
   if (!response.ok) {
     const responseData = await parseResponse(response);
     const message = getErrorMessage(responseData);
+    console.error(message, response.status, responseData);
     throw new NetworkError(message, {
       response,
       responseData,

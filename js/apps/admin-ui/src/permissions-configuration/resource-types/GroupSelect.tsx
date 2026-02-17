@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import type { ComponentProps } from "../../components/dynamic/components";
 import { GroupPickerDialog } from "../../components/group/GroupPickerDialog";
+import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
 
 type GroupSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: "typeahead" | "typeaheadMulti";
@@ -78,30 +79,32 @@ export const GroupSelect = ({
         render={({ field }) => (
           <>
             {open && (
-              <GroupPickerDialog
-                type={selectOne ? "selectOne" : "selectMany"}
-                text={{
-                  title: "addGroupsToGroupPolicy",
-                  ok: "add",
-                }}
-                onConfirm={(selectGroup) => {
-                  if (selectOne) {
-                    field.onChange(convertGroups(selectGroup || []));
-                    setGroups(selectGroup || []);
-                  } else {
-                    field.onChange([
-                      ...(field.value || []),
-                      ...convertGroups(selectGroup || []),
-                    ]);
-                    setGroups([...groups, ...(selectGroup || [])]);
-                  }
-                  setOpen(false);
-                }}
-                onClose={() => {
-                  setOpen(false);
-                }}
-                filterGroups={groups}
-              />
+              <GroupResourceContext value={adminClient.groups}>
+                <GroupPickerDialog
+                  type={selectOne ? "selectOne" : "selectMany"}
+                  text={{
+                    title: "addGroupsToGroupPolicy",
+                    ok: "add",
+                  }}
+                  onConfirm={(selectGroup) => {
+                    if (selectOne) {
+                      field.onChange(convertGroups(selectGroup || []));
+                      setGroups(selectGroup || []);
+                    } else {
+                      field.onChange([
+                        ...(field.value || []),
+                        ...convertGroups(selectGroup || []),
+                      ]);
+                      setGroups([...groups, ...(selectGroup || [])]);
+                    }
+                    setOpen(false);
+                  }}
+                  onClose={() => {
+                    setOpen(false);
+                  }}
+                  filterGroups={groups}
+                />
+              </GroupResourceContext>
             )}
             <Button
               data-testid="select-group-button"

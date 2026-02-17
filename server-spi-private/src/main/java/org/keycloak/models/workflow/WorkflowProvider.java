@@ -68,4 +68,22 @@ public interface WorkflowProvider extends Provider {
     void runScheduledSteps();
 
     void activateForAllEligibleResources(Workflow workflow);
+
+    /**
+     * Migrates scheduled resources from one workflow step to another. The destination step might be a step in the same
+     * workflow or a step in a different workflow.
+     * <br/>
+     * If the resources are being migrated to a different workflow, the following conditions must be met:
+     * <ul>
+     *     <li>the source and destination workflows must support the same resource type;</li>
+     *     <li>all resources must satisfy the activation conditions of the destination workflow.</li>
+     * </ul>
+     * The process behaves exactly as if the resources were being activated for the first time in the destination workflow,
+     * except that the first step to be processed is the specified destination step. So, if the step is a scheduled step,
+     * the resources will be scheduled accordingly. If the step is not a scheduled step, it will run immediately.
+     *
+     * @param stepIdFrom the id of the step to migrate from.
+     * @param stepIdTo the id of the step to migrate to.
+     */
+    void migrateScheduledResources(String stepIdFrom, String stepIdTo);
 }

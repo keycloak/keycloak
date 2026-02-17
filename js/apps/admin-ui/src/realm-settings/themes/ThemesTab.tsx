@@ -1,5 +1,6 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { useEnvironment } from "@keycloak/keycloak-ui-shared";
+import { Environment } from "../../environment";
 import { Tab, TabTitleText } from "@patternfly/react-core";
 import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
@@ -8,7 +9,6 @@ import {
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { joinPath } from "../../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { ThemesTabType, toThemesTab } from "../routes/ThemesTab";
 import { LogoContext } from "./LogoContext";
@@ -24,13 +24,15 @@ export type ThemeRealmRepresentation = RealmRepresentation & {
   fileName?: string;
   favicon?: File;
   logo?: File;
+  logoWidth?: string;
+  logoHeight?: string;
   bgimage?: File;
 };
 
 export default function ThemesTab({ realm, save }: ThemesTabProps) {
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
-  const { environment } = useEnvironment();
+  const { environment } = useEnvironment<Environment>();
   const isFeatureEnabled = useIsFeatureEnabled();
 
   const saveTheme = async (realm: ThemeRealmRepresentation) => {
@@ -84,7 +86,7 @@ styles=css/theme-styles.css
 parent=keycloak.v2
 import=common/quick-theme
 
-styles=css/login.css css/theme-styles.css
+styles=css/styles.css css/theme-styles.css
 `,
     );
 
@@ -117,18 +119,20 @@ styles=css/login.css css/theme-styles.css
         .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
         .join("\n");
 
-    const logoCss = (
-      await fetch(joinPath(environment.resourceUrl, "/theme/login.css"))
+    const loginCss = (
+      await fetch(
+        `/resources/${environment.resourceVersion}/login/keycloak.v2/css/styles.css`,
+      )
     ).text();
-    zip.file("theme/quick-theme/common/resources/css/login.css", logoCss);
+    zip.file("theme/quick-theme/common/resources/css/styles.css", loginCss);
 
     zip.file(
       "theme/quick-theme/common/resources/css/theme-styles.css",
       `:root {
-        --keycloak-bg-logo-url: url('../${bgimageName}');
-        --keycloak-logo-url: url('../${logoName}');
-        --keycloak-logo-height: 63px;
-        --keycloak-logo-width: 300px;
+        ${bgimage ? `--keycloak-bg-logo-url: url('../${bgimageName}');` : ""}
+        ${logo ? `--keycloak-logo-url: url('../${logoName}');` : ""}
+        --keycloak-logo-height: ${realm.logoHeight};
+        --keycloak-logo-width: ${realm.logoWidth};
         ${toCss(styles.light)}
       }
       .pf-v5-theme-dark {
@@ -152,8 +156,7 @@ styles=css/login.css css/theme-styles.css
   });
 
   const settingsTab = useRoutableTab(toThemesTab(param("settings")));
-  const lightColorsTab = useRoutableTab(toThemesTab(param("lightColors")));
-  const darkColorsTab = useRoutableTab(toThemesTab(param("darkColors")));
+  const quickThemeTab = useRoutableTab(toThemesTab(param("quickTheme")));
 
   if (!isFeatureEnabled(Feature.QuickTheme)) {
     return <ThemeSettingsTab realm={realm} save={save} />;
@@ -177,23 +180,13 @@ styles=css/login.css css/theme-styles.css
         <ThemeSettingsTab realm={realm} save={save} />
       </Tab>
       <Tab
-        id="lightColors"
-        title={<TabTitleText>{t("themeColorsLight")}</TabTitleText>}
-        data-testid="lightColors-tab"
-        {...lightColorsTab}
+        id="quickTheme"
+        title={<TabTitleText>{t("quickTheme")}</TabTitleText>}
+        data-testid="quickTheme-tab"
+        {...quickThemeTab}
       >
         <LogoContext>
-          <ThemeColors realm={realm} save={saveTheme} theme="light" />
-        </LogoContext>
-      </Tab>
-      <Tab
-        id="darkColors"
-        title={<TabTitleText>{t("themeColorsDark")}</TabTitleText>}
-        data-testid="darkColors-tab"
-        {...darkColorsTab}
-      >
-        <LogoContext>
-          <ThemeColors realm={realm} save={saveTheme} theme="dark" />
+          <ThemeColors realm={realm} save={saveTheme} />
         </LogoContext>
       </Tab>
     </RoutableTabs>

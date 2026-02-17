@@ -541,8 +541,8 @@ spec:
 === ServiceMonitor
 A `ServiceMonitor` resource is used to define how a service's metrics are discovered and scraped by Prometheus.
 The {project_name} Operator automatically generates a `ServiceMonitor` resource for your deployment. In order for the
-`ServiceMonitor` resource to be created, the `monitoring.coreos.com/v1:ServiceMonitor` Custom Resource Definition (CRD)
-must be installed on your {kubernetes} cluster.
+`ServiceMonitor` resource to be created, at least version `v0.72.0` of the `monitoring.coreos.com/v1:ServiceMonitor`
+Custom Resource Definition (CRD) must be installed on your {kubernetes} cluster.
 
 A ServiceMonitor is only created if the `metrics-enabled` option is set.
 

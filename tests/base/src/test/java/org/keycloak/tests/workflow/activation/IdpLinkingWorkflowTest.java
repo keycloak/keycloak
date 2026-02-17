@@ -6,8 +6,9 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.WorkflowsResource;
-import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.models.workflow.events.UserFedIdentityAddedWorkflowEventFactory;
+import org.keycloak.models.workflow.events.UserFedIdentityRemovedWorkflowEventFactory;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -42,7 +43,7 @@ public class IdpLinkingWorkflowTest extends AbstractWorkflowTest {
 
         // create the workflow that triggers on IdP linking
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADDED.name() + "(" + IDP_ALIAS + ")")
+                .onEvent(UserFedIdentityAddedWorkflowEventFactory.ID + "(" + IDP_ALIAS + ")")
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)
@@ -81,7 +82,7 @@ public class IdpLinkingWorkflowTest extends AbstractWorkflowTest {
 
         // create the workflow that triggers on IdP unlinking
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_REMOVED.name() + "(" + IDP_ALIAS + ")")
+                .onEvent(UserFedIdentityRemovedWorkflowEventFactory.ID + "(" + IDP_ALIAS + ")")
                 .withSteps(
                         WorkflowStepRepresentation.create()
                                 .of(SetUserAttributeStepProviderFactory.ID)

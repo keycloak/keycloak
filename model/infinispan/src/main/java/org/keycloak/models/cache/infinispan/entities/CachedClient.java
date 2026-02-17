@@ -65,7 +65,7 @@ public class CachedClient extends AbstractCachedClientScope<ClientModel> {
     protected int nodeReRegistrationTimeout;
     protected Map<String, Integer> registeredNodes;
 
-    public CachedClient(Long revision, RealmModel realm, ClientModel model) {
+    public CachedClient(long revision, RealmModel realm, ClientModel model) {
         super(revision, model);
         clientAuthenticatorType = model.getClientAuthenticatorType();
         secret = model.getSecret();

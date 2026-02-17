@@ -85,7 +85,7 @@ A retransmission mechanism ensures a reliable communication with an increase of 
 
 TIP: In a healthy cluster, the thread pool should never be closer to its maximum size (by default, `200` threads).
 
-NOTE: Thread pool metrics are not available with virtual threads. Virtual threads are enabled by default when running with OpenJDK 21.
+NOTE: Thread pool metrics are not available with virtual threads. Virtual threads are enabled by default when running with OpenJDK 21 and later.
 
 IMPORTANT: The metric name depends on the JGroups transport protocol in use. The default transport protocol is TCP.
 
@@ -148,13 +148,16 @@ m| vendor_jgroups_mfc_get_average_time_blocked
 
 JGroups provides reliable delivery of messages.
 When a message is dropped on the network, or the receiver cannot handle the message, a retransmission is required.
-Retransmissions increase resource usage, and it is usually a signal of an overload system.
+JGroups delays the acknowledgment of delivered messages, to reduce the amount of acknowledge messages in transit.
+This choice has a side effect: the sender may eagerly retransmit message(s) if the acknowledges are delayed for too long.
+An increase in the retransmission metric value does not immediately mean an unhealthy cluster.
 
 Random Early Drop (RED) monitors the sender queues.
 When the queues are almost full, the message is dropped, and a retransmission must happen.
 It prevents threads from being blocked by a full sender queue.
 
-TIP: A healthy cluster shows a value of zero for all metrics.
+TIP: A healthy cluster typically shows a value of zero or very low values for all metrics.
+Occasional retransmissions may occur due to timing issues between the sender and the receiver.
 
 |===
 |Metric |Description

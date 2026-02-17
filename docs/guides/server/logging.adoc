@@ -334,7 +334,7 @@ You can enable file logging as follows:
 
 <@kc.start parameters="--http-access-log-enabled=true --http-access-log-file-enabled=true"/>
 
-This automatically creates a file called `keycloak-http-access.log` in the `/data` directory of your distribution.
+This automatically creates a file called `keycloak-http-access.log` in the `/data/log` directory of your distribution.
 
 ==== Change file name and suffix
 

@@ -18,6 +18,7 @@ import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.injection.SupplierHelpers;
 import org.keycloak.testframework.injection.SupplierOrder;
 import org.keycloak.testframework.server.KeycloakServer;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Strings;
 
@@ -26,6 +27,7 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
     @Override
     public List<Dependency> getDependencies(RequestedInstance<ManagedRealm, InjectRealm> instanceContext) {
         return DependenciesBuilder.create(KeycloakServer.class)
+                .add(KeycloakUrls.class)
                 .add(Keycloak.class, "bootstrap-client").build();
     }
 
@@ -55,7 +57,7 @@ public class RealmSupplier implements Supplier<ManagedRealm, InjectRealm> {
                 realmConfigBuilder = RealmConfigBuilder.create();
             }
 
-            RealmConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
+            RealmConfig config = SupplierHelpers.getInstanceWithInjectedFields(instanceContext.getAnnotation().config(), instanceContext);
             realmConfigBuilder = config.configure(realmConfigBuilder);
 
             RealmConfigInterceptorHelper interceptor = new RealmConfigInterceptorHelper(instanceContext.getRegistry());

@@ -2,6 +2,7 @@ package org.keycloak.testframework.injection;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -10,20 +11,24 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.keycloak.testframework.FatalTestClassException;
 import org.keycloak.testframework.TestFrameworkExecutor;
+import org.keycloak.testframework.annotations.TestCleanup;
+import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.injection.predicates.DependencyPredicates;
 import org.keycloak.testframework.injection.predicates.InstanceContextPredicates;
 import org.keycloak.testframework.injection.predicates.RequestedInstancePredicates;
 import org.keycloak.testframework.injection.predicates.TestFrameworkExecutorPredicates;
 import org.keycloak.testframework.server.KeycloakServer;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class Registry implements ExtensionContext.Store.CloseableResource {
+public class Registry implements AutoCloseable {
 
     private final RegistryLogger logger;
 
@@ -31,6 +36,9 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     private final Extensions extensions;
     private final List<InstanceContext<?, ?>> deployedInstances = new LinkedList<>();
     private final List<RequestedInstance<?, ?>> requestedInstances = new LinkedList<>();
+    private FatalTestClassException fatalTestClassException;
+
+    private Object currentTestInstance;
 
     public Registry() {
         extensions = Extensions.getInstance();
@@ -113,12 +121,32 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
     }
 
     public void beforeEach(Object testInstance, Method testMethod) {
-        findRequestedInstances(testInstance, testMethod);
-        destroyIncompatibleInstances();
-        matchDeployedInstancesWithRequestedInstances();
-        deployRequestedInstances();
-        injectFields(testInstance);
-        invokeBeforeEachOnSuppliers();
+        if (fatalTestClassException != null) {
+            skipTestMethod();
+        }
+
+        try {
+            findRequestedInstances(testInstance, testMethod);
+            destroyIncompatibleInstances();
+            matchDeployedInstancesWithRequestedInstances();
+            deployRequestedInstances();
+            invokeBeforeEachOnSuppliers();
+            injectFields(testInstance);
+
+            if (currentTestInstance == null || testInstance.getClass() != currentTestInstance.getClass()) {
+                executeSetup(testInstance, TestSetup.class);
+                currentTestInstance = testInstance;
+            }
+
+        } catch (FatalTestClassException e) {
+            requestedInstances.clear();
+            fatalTestClassException = e;
+            skipTestMethod();
+        }
+    }
+
+    private void skipTestMethod() {
+        Assumptions.abort("Skipping test method due to fatal test class error");
     }
 
     public void intercept(InvocationInterceptor.Invocation<Void> invocation, ReflectiveInvocationContext<Method> invocationContext) throws Throwable {
@@ -207,20 +235,31 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
     private void deployRequestedInstances() {
         requestedInstances.sort(RequestedInstanceComparator.INSTANCE);
-        while (!requestedInstances.isEmpty()) {
-            RequestedInstance requestedInstance = requestedInstances.remove(0);
 
-            if (getDeployedInstance(requestedInstance) == null) {
-                InstanceContext instance = new InstanceContext(requestedInstance.getInstanceId(), this, requestedInstance.getSupplier(), requestedInstance.getAnnotation(), requestedInstance.getValueType(), requestedInstance.getDeclaredDependencies());
-                instance.setValue(requestedInstance.getSupplier().getValue(instance));
+        while (!requestedInstances.isEmpty()) {
+            RequestedInstance nextToDeploy = requestedInstances.stream().filter(r -> {
+                List<Dependency> declaredDependencies = r.getDeclaredDependencies();
+                for (Dependency d : declaredDependencies) {
+                    if (deployedInstances.stream().noneMatch(InstanceContextPredicates.matches(d.valueType(), d.ref()))) {
+                        return false;
+                    }
+                }
+                return true;
+            }).findFirst().orElseThrow(() -> new RuntimeException("Failed to resolve next requested instance to deploy"));
+
+            requestedInstances.remove(nextToDeploy);
+
+            if (getDeployedInstance(nextToDeploy) == null) {
+                InstanceContext instance = new InstanceContext(nextToDeploy.getInstanceId(), this, nextToDeploy.getSupplier(), nextToDeploy.getAnnotation(), nextToDeploy.getValueType(), nextToDeploy.getDeclaredDependencies());
+                instance.setValue(nextToDeploy.getSupplier().getValue(instance));
                 deployedInstances.add(instance);
 
-                if (!requestedInstance.getDependents().isEmpty()) {
-                    Set<InstanceContext<?,?>> dependencies = requestedInstance.getDependents();
+                if (!nextToDeploy.getDependents().isEmpty()) {
+                    Set<InstanceContext<?,?>> dependencies = nextToDeploy.getDependents();
                     dependencies.forEach(instance::registerDependent);
                 }
 
-                logger.logCreatedInstance(requestedInstance, instance);
+                logger.logCreatedInstance(nextToDeploy, instance);
             }
         }
     }
@@ -235,10 +274,36 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
         }
     }
 
+    private void executeSetup(Object testInstance, Class<? extends Annotation> annotation) {
+        for (Method m : ReflectionUtils.listMethods(testInstance.getClass(), annotation)) {
+            if (m.getParameterCount() != 0) {
+                throw new RuntimeException("Method with " + annotation.getName() + " has required parameters: " + m); // Update when https://github.com/keycloak/keycloak/pull/45869 is merged
+            }
+            try {
+                m.invoke(testInstance);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Method with " + annotation.getName() + " not accessible: " + m); // Update when https://github.com/keycloak/keycloak/pull/45869 is merged
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     public void afterAll() {
+        FatalTestClassException exception = fatalTestClassException;
+        fatalTestClassException = null;
+
+        if (exception == null && currentTestInstance != null) {
+            executeSetup(currentTestInstance, TestCleanup.class);
+        }
+
         logger.logAfterAll();
         List<InstanceContext<?, ?>> destroy = deployedInstances.stream().filter(InstanceContextPredicates.hasLifeCycle(LifeCycle.CLASS)).toList();
         destroy.forEach(this::destroy);
+
+        if (exception != null) {
+            throw exception;
+        }
     }
 
     public void afterEach() {
@@ -274,6 +339,9 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
             for (Annotation annotation : annotations) {
                 Supplier<?, ?> supplier = extensions.findSupplierByAnnotation(annotation);
                 if (supplier != null) {
+                    if (!supplier.getValueType().isAssignableFrom(valueType)) {
+                        throw typeMismatch(annotation.annotationType(), supplier.getValueType(), valueType);
+                    }
                     return new RequestedInstance(supplier, annotation, valueType);
                 }
             }
@@ -351,6 +419,18 @@ public class Registry implements ExtensionContext.Store.CloseableResource {
 
     private TestFrameworkExecutor getExecutor(Method testMethod) {
         return extensions.getTestFrameworkExecutors().stream().filter(TestFrameworkExecutorPredicates.shouldExecute(testMethod)).findFirst().orElse(null);
+    }
+
+    private FatalTestClassException typeMismatch(
+            Class<? extends Annotation> annotation,
+            Class<?> expectedType,
+            Class<?> providedType) {
+        return new FatalTestClassException(
+                String.format("@%s requires %s (or its subclass) but field has type %s",
+                        annotation.getSimpleName(),
+                        expectedType.getName(),
+                        providedType.getName())
+        );
     }
 
     private static class RequestedInstanceComparator implements Comparator<RequestedInstance> {

@@ -50,6 +50,9 @@ An optional duration to wait before executing the step. The duration is defined 
 *   `h`: hours
 *   `d`: days
 
+In addition, ISO-8601 duration format is also supported, for example: `P1DT2H` (1 day and 2 hours). If no time unit is specified,
+it assumes seconds by default.
+
 {project_name} provides a set of built-in steps that you can use in your workflows. The steps are targeted at performing actions
 on the realm resource associated with the event, so that each realm resource type has its own set of steps.
 
@@ -65,6 +68,11 @@ on the realm resource associated with the event, so that each realm resource typ
 * `action`: The name of the required action
 | `delete-user` | Delete the user | None
 | `disable-user` | Disable the user | None
+| `unlink-user` | Unlink the user from one or more external Identity Providers a|
+* `idp`: One or more Identity Provider aliases to unlink. This can be:
+** Single value
+** List of values (i.e., `["value", "value2"]`) 
+** `*` to unlink user from all linked Identity Providers
 | `notify-user` | Notify the user by email a|
 - `subject`: The email subject
 - `message`: The email message in plain text or HTML format

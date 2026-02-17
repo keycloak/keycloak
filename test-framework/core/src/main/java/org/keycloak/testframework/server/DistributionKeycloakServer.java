@@ -71,12 +71,11 @@ public class DistributionKeycloakServer implements KeycloakServer {
         List<String> args = keycloakServerConfigBuilder.toArgs();
         Set<Dependency> dependencies = keycloakServerConfigBuilder.toDependencies();
 
-        if (!reuse) {
-            killPreviousProcess();
-        }
-
         try {
             boolean installationCreated = createInstallation();
+            if (!reuse) {
+                killPreviousProcess();
+            }
 
             File providersDir = new File(keycloakHomeDir, "providers");
             List<File> existingProviders = listExistingProviders(providersDir);
@@ -109,6 +108,9 @@ public class DistributionKeycloakServer implements KeycloakServer {
 
             waitForStart(outputHandler);
 
+            if (!Environment.isWindows()) {
+                FileUtils.writeToFile(getPidFile(), ProcessUtils.getKeycloakPid(keycloakProcess));
+            }
             FileUtils.writeToFile(getServerArgsFile(), String.join(" ", args));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -165,9 +167,6 @@ public class DistributionKeycloakServer implements KeycloakServer {
             keycloakProcess = pb.start();
             outputHandler = new OutputHandler(keycloakProcess);
             new Thread(outputHandler).start();
-
-            ProcessHandle descendent = ProcessUtils.waitForDescendent(keycloakProcess);
-            FileUtils.writeToFile(getPidFile(), descendent.pid());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -426,13 +425,17 @@ public class DistributionKeycloakServer implements KeycloakServer {
                 }
             } catch (IOException e) {
                 // Ignored
+            } finally {
+                if (startupLatch.getCount() != 0) {
+                    startupLatch.countDown();
+                }
             }
         }
 
         public boolean waitForStarted() {
             try {
                 startupLatch.await(startTimeout, TimeUnit.SECONDS);
-                return true;
+                return process.isAlive();
             } catch (InterruptedException e) {
                 return false;
             }

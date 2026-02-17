@@ -566,7 +566,13 @@ public class PodTemplateTest {
         var additionalOptions = List.of(
                 new ValueOrSecret("log-level-org.package.some_class", "debug"),
                 new ValueOrSecret("tracing-header-Authorization", "Bearer aldskfjqweoiruzxcv"),
-                new ValueOrSecret("tracing-header-My-BEST_$header", "api-asdflkqjwer-key")
+                new ValueOrSecret("tracing-header-My-BEST_$header", "api-asdflkqjwer-key"),
+                new ValueOrSecret("telemetry-header-Authorization", "Bearer aldskfjqweoiruzxcv-telemetry"),
+                new ValueOrSecret("telemetry-header-My-BEST_$header", "api-asdflkqjwer-key-telemetry"),
+                new ValueOrSecret("telemetry-logs-header-Authorization", "Bearer aldskfjqweoiruzxcv-logs"),
+                new ValueOrSecret("telemetry-logs-header-My-BEST_$header", "api-asdflkqjwer-key-logs"),
+                new ValueOrSecret("telemetry-metrics-header-Authorization", "Bearer aldskfjqweoiruzxcv-metrics"),
+                new ValueOrSecret("telemetry-metrics-header-My-BEST_$header", "api-asdflkqjwer-key-metrics")
         );
 
         // Act
@@ -583,11 +589,33 @@ public class PodTemplateTest {
                 "KCKEY_TRACING_HEADER_MY_BEST__HEADER", "tracing-header-My-BEST_$header",
                 "KC_TRACING_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key"
         );
+        var assertEnvVarKeysTelemetry = Map.of(
+                "KCKEY_TELEMETRY_HEADER_MY_BEST__HEADER", "telemetry-header-My-BEST_$header",
+                "KC_TELEMETRY_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key-telemetry",
+                "KCKEY_TELEMETRY_HEADER_AUTHORIZATION", "telemetry-header-Authorization",
+                "KC_TELEMETRY_HEADER_AUTHORIZATION", "Bearer aldskfjqweoiruzxcv-telemetry"
+        );
+        var assertEnvVarKeysTelemetryLogs = Map.of(
+                "KCKEY_TELEMETRY_LOGS_HEADER_MY_BEST__HEADER", "telemetry-logs-header-My-BEST_$header",
+                "KC_TELEMETRY_LOGS_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key-logs",
+                "KCKEY_TELEMETRY_LOGS_HEADER_AUTHORIZATION", "telemetry-logs-header-Authorization",
+                "KC_TELEMETRY_LOGS_HEADER_AUTHORIZATION", "Bearer aldskfjqweoiruzxcv-logs"
+        );
+        var assertEnvVarKeysTelemetryMetrics = Map.of(
+                "KCKEY_TELEMETRY_METRICS_HEADER_MY_BEST__HEADER", "telemetry-metrics-header-My-BEST_$header",
+                "KC_TELEMETRY_METRICS_HEADER_MY_BEST__HEADER", "api-asdflkqjwer-key-metrics",
+                "KCKEY_TELEMETRY_METRICS_HEADER_AUTHORIZATION", "telemetry-metrics-header-Authorization",
+                "KC_TELEMETRY_METRICS_HEADER_AUTHORIZATION", "Bearer aldskfjqweoiruzxcv-metrics"
+        );
 
         var envVars = podTemplate.getSpec().getContainers().get(0).getEnv().stream()
                 .filter(e -> e.getValue() != null)
                 .collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+
         assertThat(envVars).containsAllEntriesOf(assertEnvVarKeys);
+        assertThat(envVars).containsAllEntriesOf(assertEnvVarKeysTelemetry);
+        assertThat(envVars).containsAllEntriesOf(assertEnvVarKeysTelemetryLogs);
+        assertThat(envVars).containsAllEntriesOf(assertEnvVarKeysTelemetryMetrics);
     }
 
     @Test

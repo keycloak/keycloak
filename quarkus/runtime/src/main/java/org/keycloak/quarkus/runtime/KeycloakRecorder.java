@@ -33,6 +33,7 @@ import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.HealthOptions;
+import org.keycloak.config.HttpAccessLogOptions;
 import org.keycloak.config.HttpOptions;
 import org.keycloak.config.MetricsOptions;
 import org.keycloak.config.OpenApiOptions;
@@ -69,6 +70,17 @@ public class KeycloakRecorder {
 
     public void initConfig() {
         Config.init(new MicroProfileConfigProvider());
+    }
+
+    public void createHttpAccessLogDirectory() {
+        if (Configuration.isTrue(HttpAccessLogOptions.HTTP_ACCESS_LOG_FILE_ENABLED)) {
+            Environment.getHomeDir().ifPresent(homeDir -> {
+                File logDir = new File(homeDir, "data" + File.separator + "log");
+                if (!logDir.exists() && !logDir.mkdirs() && !logDir.exists()) {
+                    throw new RuntimeException("Failed to create HTTP Access log directory");
+                }
+            });
+        }
     }
 
     public void configureProfile(Profile.ProfileName profileName, Map<Profile.Feature, Boolean> features) {

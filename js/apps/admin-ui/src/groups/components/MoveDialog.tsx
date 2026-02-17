@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { GroupPickerDialog } from "../../components/group/GroupPickerDialog";
+import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
 
 type MoveDialogProps = {
   source: GroupRepresentation;
@@ -44,16 +45,18 @@ export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
   };
 
   return (
-    <GroupPickerDialog
-      type="selectOne"
-      filterGroups={[source]}
-      text={{
-        title: "moveToGroup",
-        ok: "moveHere",
-      }}
-      onClose={onClose}
-      onConfirm={moveGroup}
-      isMove
-    />
+    <GroupResourceContext value={adminClient.groups}>
+      <GroupPickerDialog
+        type="selectOne"
+        filterGroups={[source]}
+        text={{
+          title: "moveToGroup",
+          ok: "moveHere",
+        }}
+        onClose={onClose}
+        onConfirm={moveGroup}
+        isMove
+      />
+    </GroupResourceContext>
   );
 };

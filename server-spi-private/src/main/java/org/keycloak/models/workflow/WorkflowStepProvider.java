@@ -19,10 +19,17 @@ package org.keycloak.models.workflow;
 
 import org.keycloak.provider.Provider;
 
+/**
+ * Defines a provider interface for executing workflow steps.
+ * </p>
+ * Implementations of this interface represent individual steps that can be executed
+ * as part of a workflow. Each step can perform specific actions and optionally provide
+ * custom notification messages when users need to be informed about the step's execution.
+ */
 public interface WorkflowStepProvider extends Provider {
 
     /**
-     * Run this workflow step.
+     * Runs this workflow step.
      *
      * @param context the workflow execution context
      */

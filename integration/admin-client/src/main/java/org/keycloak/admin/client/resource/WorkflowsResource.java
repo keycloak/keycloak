@@ -48,4 +48,8 @@ public interface WorkflowsResource {
 
     @Path("{id}")
     WorkflowResource workflow(@PathParam("id") String id);
+
+    @POST
+    @Path("migrate")
+    Response migrate(@QueryParam("from") String stepFrom, @QueryParam("to") String stepTo);
 }

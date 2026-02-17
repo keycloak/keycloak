@@ -20,7 +20,7 @@ public class JoinGroupStepProviderFactory implements WorkflowStepProviderFactory
     }
 
     @Override
-    public Set<ResourceType> getTypes() {
+    public Set<ResourceType> getSupportedResourceTypes() {
         return Set.of(ResourceType.USERS);
     }
 

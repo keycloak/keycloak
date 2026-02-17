@@ -105,7 +105,7 @@ public class HostnameV2ProviderFactory implements HostnameProviderFactory, Envir
     private URI validateAndCreateUri(String uri, String validationFailedMessage) {
         URI result;
         try {
-            result = URI.create(uri);
+            result = URI.create(uri.endsWith("/") ? uri : uri + "/");
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException(validationFailedMessage, e);

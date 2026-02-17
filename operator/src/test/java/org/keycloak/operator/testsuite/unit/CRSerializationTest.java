@@ -243,6 +243,27 @@ public class CRSerializationTest {
     }
 
     @Test
+    public void telemetryHeaders(){
+        Keycloak keycloak = Serialization.unmarshal(this.getClass().getResourceAsStream("/test-serialization-keycloak-cr-telemetry.yml"), Keycloak.class);
+        assertThat(keycloak, notNullValue());
+        var additionalOptions = keycloak.getSpec().getAdditionalOptions().stream().collect(Collectors.toMap(ValueOrSecret::getName, e -> e));
+        assertNotNull(additionalOptions);
+        assertThat(additionalOptions.isEmpty(), is(false));
+
+        assertThat(additionalOptions, hasEntry("tracing-header-Authorization", new ValueOrSecret("tracing-header-Authorization", new SecretKeySelector("tracing-secret", "token", false))));
+        assertThat(additionalOptions, hasEntry("tracing-header-X-Org-Id", new ValueOrSecret("tracing-header-X-Org-Id", "my-org-id")));
+
+        assertThat(additionalOptions, hasEntry("telemetry-header-Some-key", new ValueOrSecret("telemetry-header-Some-key", new SecretKeySelector("telemetry-header-secret", "token", false))));
+        assertThat(additionalOptions, hasEntry("telemetry-header-Org-name", new ValueOrSecret("telemetry-header-Org-name", "Keycloak123")));
+
+        assertThat(additionalOptions, hasEntry("telemetry-logs-header-Authorization", new ValueOrSecret("telemetry-logs-header-Authorization", new SecretKeySelector("telemetry-logs-secret", "token", false))));
+        assertThat(additionalOptions, hasEntry("telemetry-logs-header-X-Org-Id", new ValueOrSecret("telemetry-logs-header-X-Org-Id", "my-org-id-logs")));
+
+        assertThat(additionalOptions, hasEntry("telemetry-metrics-header-Authorization", new ValueOrSecret("telemetry-metrics-header-Authorization", new SecretKeySelector("telemetry-metrics-secret", "token", false))));
+        assertThat(additionalOptions, hasEntry("telemetry-metrics-header-X-Org-Id", new ValueOrSecret("telemetry-metrics-header-X-Org-Id", "my-org-id-metrics")));
+    }
+
+    @Test
     public void resourcesSpecificationOnlyLimit() {
         final Keycloak keycloak = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-with-empty-list.yml", Keycloak.class);
 

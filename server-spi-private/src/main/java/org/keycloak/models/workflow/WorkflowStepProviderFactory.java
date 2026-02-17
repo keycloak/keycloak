@@ -32,7 +32,7 @@ public interface WorkflowStepProviderFactory<P extends WorkflowStepProvider> ext
     /**
      * Supported types, usually one type but could be more (RestartStep for example)
      */
-    Set<ResourceType> getTypes();
+    Set<ResourceType> getSupportedResourceTypes();
 
     @Override
     default void init(Config.Scope config) {

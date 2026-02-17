@@ -17,15 +17,10 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import org.keycloak.jose.jws.JWSHeader;
-import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.sdjwt.IssuerSignedJWT;
-import org.keycloak.sdjwt.vp.SdJwtVP;
 
 import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -71,17 +66,4 @@ public class OID4VCSdJwtAuthorizationCodeFlowTest extends OID4VCAuthorizationCod
         assertTrue("SD-JWT should contain dots", sdJwtString.contains("."));
         assertTrue("SD-JWT should contain tilde", sdJwtString.contains(SDJWT_DELIMITER));
     }
-
-    @Override
-    protected JWSHeader verifyCredentialSignature(Object vcCredential, String expectedSignatureAlgorithm) {
-        IssuerSignedJWT issuerSignedJWT = SdJwtVP.of(vcCredential.toString())
-                .getIssuerSignedJWT();
-        JWSHeader header = issuerSignedJWT.getJwsHeader();
-
-        assertEquals(expectedSignatureAlgorithm, header.getRawAlgorithm());
-
-        oauth.verifyToken(issuerSignedJWT.getJws(), JsonWebToken.class);
-        return header;
-    }
-
 }

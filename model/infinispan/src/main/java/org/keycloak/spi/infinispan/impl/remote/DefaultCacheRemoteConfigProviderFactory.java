@@ -45,7 +45,6 @@ import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
 
 import org.infinispan.client.hotrod.configuration.AuthenticationConfigurationBuilder;
 import org.infinispan.client.hotrod.configuration.ClientIntelligence;
-import org.infinispan.client.hotrod.configuration.Configuration;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.configuration.ExhaustedAction;
 import org.infinispan.client.hotrod.impl.ConfigurationProperties;
@@ -62,7 +61,7 @@ import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRA
  * <p>
  * It is used when an external Infinispan cluster is enabled.
  */
-public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfigProviderFactory, CacheRemoteConfigProvider, EnvironmentDependentProviderFactory {
+public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfigProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "default";
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());
@@ -88,7 +87,6 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
     private static final String CONNECTION_POOL_EXHAUSTED_ACTION_DEFAULT = ExhaustedAction.CREATE_NEW.name();
     private static final String SASL_MECHANISM_DEFAULT = SCRAM_SHA_512;
 
-    private volatile Configuration remoteConfiguration;
     private volatile Config.Scope keycloakConfiguration;
 
     @Override
@@ -98,8 +96,13 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
 
     @Override
     public CacheRemoteConfigProvider create(KeycloakSession session) {
-        lazyInit();
-        return this;
+        return () -> {
+            try {
+                return Optional.of(createConfigurationBuilder().build());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        };
     }
 
     @Override
@@ -109,13 +112,6 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-        lazyInit();
-    }
-
-    @Override
-    public Optional<Configuration> configuration() {
-        assert remoteConfiguration != null;
-        return Optional.of(remoteConfiguration);
     }
 
     @Override
@@ -166,22 +162,6 @@ public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfi
         configureRemoteCaches(builder);
 
         return builder;
-    }
-
-    private void lazyInit() {
-        if (remoteConfiguration != null) {
-            return;
-        }
-        synchronized (this) {
-            if (remoteConfiguration != null) {
-                return;
-            }
-            try {
-                remoteConfiguration = createConfigurationBuilder().build();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     private void loadProperties(ConfigurationBuilder builder) throws IOException {

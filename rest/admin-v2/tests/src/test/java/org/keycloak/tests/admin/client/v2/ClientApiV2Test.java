@@ -41,7 +41,6 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -52,7 +51,6 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.services.cors.Cors.ACCESS_CONTROL_ALLOW_METHODS;
@@ -65,10 +63,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @KeycloakIntegrationTest(config = ClientApiV2Test.AdminV2Config.class)
-public class ClientApiV2Test {
-
-    public static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/master/clients/v2";
-    private static ObjectMapper mapper;
+public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @InjectHttpClient
     CloseableHttpClient client;
@@ -82,14 +77,9 @@ public class ClientApiV2Test {
     @InjectAdminClient(ref = "noAccessClient", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
     Keycloak noAccessAdminClient;
 
-    @BeforeAll
-    public static void setupMapper() {
-        mapper = new ObjectMapper();
-    }
-
     @Test
     public void getClient() throws Exception {
-        HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/account");
+        HttpGet request = new HttpGet(getClientsApiUrl() + "/account");
         setAuthHeader(request);
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
@@ -100,7 +90,7 @@ public class ClientApiV2Test {
 
     @Test
     public void jsonPatchClient() throws Exception {
-        HttpPatch request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/account");
+        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_PATCH_JSON);
         try (var response = client.execute(request)) {
@@ -111,7 +101,7 @@ public class ClientApiV2Test {
 
     @Test
     public void jsonMergePatchClient() throws Exception {
-        HttpPatch request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/account");
+        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, AdminApi.CONTENT_TYPE_MERGE_PATCH);
 
@@ -130,7 +120,7 @@ public class ClientApiV2Test {
 
     @Test
     public void putFailsWithDifferentClientId() throws Exception {
-        HttpPut request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/account");
+        HttpPut request = new HttpPut(getClientsApiUrl() + "/account");
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -146,7 +136,7 @@ public class ClientApiV2Test {
 
     @Test
     public void putCreateOrUpdates() throws Exception {
-        HttpPut request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/other");
+        HttpPut request = new HttpPut(getClientsApiUrl() + "/other");
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -175,7 +165,7 @@ public class ClientApiV2Test {
 
     @Test
     public void createClient() throws Exception {
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -201,7 +191,7 @@ public class ClientApiV2Test {
 
     @Test
     public void deleteClient() throws Exception {
-        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/to-delete");
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/to-delete");
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -215,13 +205,13 @@ public class ClientApiV2Test {
             assertEquals(201, response.getStatusLine().getStatusCode());
         }
 
-        HttpGet getRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/to-delete");
+        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/to-delete");
         setAuthHeader(getRequest);
         try (var response = client.execute(getRequest)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
         }
 
-        HttpDelete deleteRequest = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/to-delete");
+        HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/to-delete");
         setAuthHeader(deleteRequest);
         try (var response = client.execute(deleteRequest)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
@@ -235,7 +225,7 @@ public class ClientApiV2Test {
     @Test
     public void getClientsMixedProtocols() throws Exception {
         // Create an OIDC client with OIDC-specific fields
-        HttpPost oidcRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost oidcRequest = new HttpPost(getClientsApiUrl());
         setAuthHeader(oidcRequest);
         oidcRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -254,7 +244,7 @@ public class ClientApiV2Test {
         }
 
         // Create a SAML client with SAML-specific fields
-        HttpPost samlRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost samlRequest = new HttpPost(getClientsApiUrl());
         setAuthHeader(samlRequest);
         samlRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -269,6 +259,9 @@ public class ClientApiV2Test {
         samlRep.setForcePostBinding(true);
         samlRep.setFrontChannelLogout(false);
 
+        String rep = mapper.writeValueAsString(samlRep);
+        System.out.println(rep);
+
         samlRequest.setEntity(new StringEntity(mapper.writeValueAsString(samlRep)));
 
         try (var response = client.execute(samlRequest)) {
@@ -276,7 +269,7 @@ public class ClientApiV2Test {
         }
 
         // Get all clients - this should work with mixed protocols
-        HttpGet getRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN);
+        HttpGet getRequest = new HttpGet(getClientsApiUrl());
         setAuthHeader(getRequest);
 
         try (var response = client.execute(getRequest)) {
@@ -312,7 +305,7 @@ public class ClientApiV2Test {
         }
 
         // Get individual OIDC client and verify OIDC-specific fields
-        HttpGet getOidcRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/mixed-test-oidc");
+        HttpGet getOidcRequest = new HttpGet(getClientsApiUrl() + "/mixed-test-oidc");
         setAuthHeader(getOidcRequest);
 
         try (var response = client.execute(getOidcRequest)) {
@@ -325,7 +318,7 @@ public class ClientApiV2Test {
         }
 
         // Get individual SAML client and verify SAML-specific fields
-        HttpGet getSamlRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/mixed-test-saml");
+        HttpGet getSamlRequest = new HttpGet(getClientsApiUrl() + "/mixed-test-saml");
         setAuthHeader(getSamlRequest);
 
         try (var response = client.execute(getSamlRequest)) {
@@ -342,13 +335,13 @@ public class ClientApiV2Test {
         }
 
         // Cleanup
-        HttpDelete deleteOidc = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/mixed-test-oidc");
+        HttpDelete deleteOidc = new HttpDelete(getClientsApiUrl() + "/mixed-test-oidc");
         setAuthHeader(deleteOidc);
         try (var response = client.execute(deleteOidc)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
         }
 
-        HttpDelete deleteSaml = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/mixed-test-saml");
+        HttpDelete deleteSaml = new HttpDelete(getClientsApiUrl() + "/mixed-test-saml");
         setAuthHeader(deleteSaml);
         try (var response = client.execute(deleteSaml)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
@@ -357,7 +350,7 @@ public class ClientApiV2Test {
 
     @Test
     public void OIDCClientRepresentationValidation() throws Exception {
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -405,16 +398,16 @@ public class ClientApiV2Test {
 
     @Test
     public void authenticationRequired() throws Exception {
-        HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/account");
+        HttpGet request = new HttpGet(getClientsApiUrl() + "/account");
         setAuthHeader(request, noAccessAdminClient);
         try (var response = client.execute(request)) {
-            assertEquals(401, response.getStatusLine().getStatusCode());
+            assertEquals(403, response.getStatusLine().getStatusCode());
         }
     }
 
     @Test
     public void createFullClient() throws Exception {
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -430,7 +423,7 @@ public class ClientApiV2Test {
 
     @Test
     public void createFullClientWrongServiceAccountRoles() throws Exception {
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -447,7 +440,7 @@ public class ClientApiV2Test {
     @Test
     public void declarativeRoleManagement() throws Exception {
         // 1. Create a client with initial roles
-        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/declarative-role-test");
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/declarative-role-test");
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -465,7 +458,7 @@ public class ClientApiV2Test {
         }
 
         // 2. Update with completely new roles - should remove old ones and add new ones
-        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/declarative-role-test");
+        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/declarative-role-test");
         setAuthHeader(updateRequest);
         updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -512,7 +505,7 @@ public class ClientApiV2Test {
     @Test
     public void declarativeServiceAccountRoleManagement() throws Exception {
         // 1. Create a client with service account and initial realm roles
-        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/sa-declarative-test");
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/sa-declarative-test");
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -532,7 +525,7 @@ public class ClientApiV2Test {
         }
 
         // 2. Update with completely new roles - should remove old ones and add new ones
-        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/sa-declarative-test");
+        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/sa-declarative-test");
         setAuthHeader(updateRequest);
         updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -612,7 +605,7 @@ public class ClientApiV2Test {
 
     @Test
     public void preflight() throws Exception {
-        HttpOptions request = new HttpOptions(HOSTNAME_LOCAL_ADMIN);
+        HttpOptions request = new HttpOptions(getClientsApiUrl());
         request.setHeader(ORIGIN_HEADER, "http://localhost:8080");
 
         // we can improve preflight logic in follow-up issues
@@ -646,12 +639,6 @@ public class ClientApiV2Test {
         // not implemented yet
         // rep.setAdditionalFields(Map.of("key1", "val1", "key2", "val2"));
         return rep;
-    }
-
-    // TODO Rewrite the tests to not need explicit auth. They should use the admin client directly.
-    private void setAuthHeader(HttpMessage request, Keycloak adminClient) {
-        String token = adminClient.tokenManager().getAccessTokenString();
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
     }
 
     private void setAuthHeader(HttpMessage request) {

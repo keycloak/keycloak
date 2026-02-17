@@ -19,5 +19,5 @@ bin\kc.bat start-dev
 
 Using the `start-dev` option, you are starting {project_name} in development mode. In this mode, you can try out {project_name} for the first time to get it up and running quickly. This mode offers convenient defaults for developers, such as for developing a new {project_name} theme.
 
-WARNING: By default, {project_name} in development mode binds to all network addresses (`0.0.0.0`). This means your {project_name} instance may be accessible from other machines on your network, not just from your local machine. If you want to restrict access to localhost only, you can start the server with `--http-host=127.0.0.1`.
+WARNING: By default, {project_name} in development mode on Windows Subsystem For Linux the server binds to all network addresses (`0.0.0.0`). This means your {project_name} instance may be accessible from other machines on your network, not just from your local machine.
 

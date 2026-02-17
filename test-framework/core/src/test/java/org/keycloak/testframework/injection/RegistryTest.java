@@ -3,6 +3,9 @@ package org.keycloak.testframework.injection;
 import java.lang.reflect.Method;
 import java.util.List;
 
+import org.keycloak.testframework.FatalTestClassException;
+import org.keycloak.testframework.annotations.TestCleanup;
+import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.injection.mocks.MockChildAnnotation;
 import org.keycloak.testframework.injection.mocks.MockChildSupplier;
@@ -18,6 +21,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
 
 public class RegistryTest {
 
@@ -82,6 +86,30 @@ public class RegistryTest {
         MockParentValue value3 = test2.parent;
 
         Assertions.assertNotSame(value1, value3);
+    }
+
+    @Test
+    public void testTestSetup() {
+        SetupTest setupTest = new SetupTest();
+        runBeforeEach(setupTest);
+        Assertions.assertEquals("anothervalue", setupTest.parent.getStringOption());
+        setupTest.test();
+
+        registry.afterEach();
+
+        Assertions.assertEquals("anothervalue", setupTest.parent.getStringOption());
+
+        // JUnit creates new instances for each test method
+        setupTest = new SetupTest();
+        runBeforeEach(setupTest);
+        Assertions.assertEquals("anothervalue", setupTest.parent.getStringOption());
+        setupTest.test();
+
+        registry.afterEach();
+
+        registry.afterAll();
+
+        Assertions.assertEquals("myvalue", setupTest.parent.getStringOption());
     }
 
     @Test
@@ -213,7 +241,7 @@ public class RegistryTest {
     }
 
     @Test
-    public void testMultiplRef() {
+    public void testMultipleRef() {
         MultipleRefTest refTest = new MultipleRefTest();
         runBeforeEach(refTest);
 
@@ -301,6 +329,21 @@ public class RegistryTest {
         Assertions.assertNotEquals(child1, test.child);
     }
 
+    @Test
+    public void testAnnotationValueTypeMismatch() {
+        AnnotationValueTypeMismatchTest test = new AnnotationValueTypeMismatchTest();
+
+        Assertions.assertThrows(
+                TestAbortedException.class,
+                () -> runBeforeEach(test)
+        );
+
+        Assertions.assertThrows(
+                FatalTestClassException.class,
+                () -> registry.afterAll()
+        );
+    }
+
     private <T extends AbstractTest> void runBeforeEach(T testInstance) {
         try {
             Method testMethod = testInstance.getClass().getMethod("test");
@@ -385,6 +428,38 @@ public class RegistryTest {
         @MockParentAnnotation
         MockParentValue parent;
 
+    }
+
+    public static final class SetupTest extends AbstractTest {
+
+        @MockParentAnnotation(stringOption = "myvalue")
+        MockParentValue parent;
+
+        @MockChildAnnotation
+        MockChildValue child;
+
+        @TestSetup
+        public void setup() {
+            Assertions.assertEquals("myvalue", parent.getStringOption());
+            parent.setStringOption("anothervalue");
+        }
+
+        @Test
+        public void test() {
+            Assertions.assertEquals("anothervalue", parent.getStringOption());
+        }
+
+        @TestCleanup
+        public void cleanup() {
+            Assertions.assertEquals("anothervalue", parent.getStringOption());
+            parent.setStringOption("myvalue");
+        }
+
+    }
+
+    public static final class AnnotationValueTypeMismatchTest extends AbstractTest {
+        @MockParentAnnotation
+        MockChildValue child;
     }
 
 }

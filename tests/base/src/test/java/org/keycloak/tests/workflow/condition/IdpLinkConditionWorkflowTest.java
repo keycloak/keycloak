@@ -28,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
-import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
@@ -36,6 +35,8 @@ import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 import org.keycloak.models.workflow.WorkflowStep;
 import org.keycloak.models.workflow.conditions.IdentityProviderWorkflowConditionFactory;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
+import org.keycloak.models.workflow.events.UserFedIdentityAddedWorkflowEventFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -52,8 +53,6 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.models.workflow.ResourceOperationType.USER_CREATED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -84,7 +83,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
 
         // create the workflow that triggers on IdP linking with a condition for the specific IdP
         WorkflowRepresentation workflow = WorkflowRepresentation.withName("idp-members-workflow")
-                .onEvent(USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .onCondition(IdentityProviderWorkflowConditionFactory.ID + "(" + IDP_OIDC_ALIAS + ")")
                 .withSteps(
                         WorkflowStepRepresentation.create()
@@ -133,7 +132,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
         setupIdentityProvider();
 
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("myworkflow")
-                .onEvent(ResourceOperationType.USER_FEDERATED_IDENTITY_ADDED.name())
+                .onEvent(UserFedIdentityAddedWorkflowEventFactory.ID)
                 .onCondition(IdentityProviderWorkflowConditionFactory.ID + "(" + IDP_OIDC_ALIAS + ")")
                 .schedule(WorkflowScheduleRepresentation.create().after("1s").build())
                 .withSteps(
@@ -168,7 +167,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
 
             // check no workflows are yet attached to the previous users, only to the ones created after the workflow was in place
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList();
             assertEquals(3, scheduledSteps.size());
             scheduledSteps.forEach(scheduledStep -> {
                 assertEquals(notifyStep.getId(), scheduledStep.stepId());
@@ -191,7 +190,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
             WorkflowStep disableStep = workflow.getSteps().toList().get(1);
             WorkflowStateProvider stateProvider = session.getKeycloakSessionFactory().getProviderFactory(WorkflowStateProvider.class).create(session);
 
-            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+            List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList();
             assertEquals(3, scheduledSteps.size());
             scheduledSteps.forEach(scheduledStep -> {
                 assertEquals(disableStep.getId(), scheduledStep.stepId());
@@ -217,7 +216,7 @@ public class IdpLinkConditionWorkflowTest extends AbstractWorkflowTest {
                         Workflow workflow = registeredWorkflows.get(0);
                         // check workflow was correctly assigned to the old users, not affecting users already associated with the workflow.
                         WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
-                        List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow).toList();
+                        List<ScheduledStep> scheduledSteps = stateProvider.getScheduledStepsByWorkflow(workflow.getId()).toList();
                         assertEquals(13, scheduledSteps.size());
 
                         List<WorkflowStep> steps = workflow.getSteps().toList();

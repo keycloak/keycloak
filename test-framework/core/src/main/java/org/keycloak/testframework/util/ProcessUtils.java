@@ -1,7 +1,7 @@
 package org.keycloak.testframework.util;
 
 import java.util.Iterator;
-import java.util.Optional;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -9,20 +9,17 @@ import org.keycloak.quarkus.runtime.Environment;
 
 public class ProcessUtils {
 
-    public static ProcessHandle waitForDescendent(Process process) {
-        long timeout = System.currentTimeMillis() + 5000;
-        while (System.currentTimeMillis() < timeout) {
-            Optional<ProcessHandle> descendent = process.descendants().findFirst();
-            if (descendent.isPresent()) {
-                return descendent.get();
-            }
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+    public static long getKeycloakPid(Process keycloakProcess) {
+        List<ProcessHandle> descendants = keycloakProcess.descendants().toList();
+        if (descendants.isEmpty()) {
+            // When re-augmentation happens `exec` is used to re-start Keycloak. In this case java has the same pid as kc.sh
+            return keycloakProcess.pid();
+        } else if (descendants.size() == 1) {
+            // When re-augmentation does not happen `exec` is not used to start Keycloak. In this case java has a different pid to kc.sh
+            return descendants.get(0).pid();
+        } else {
+            throw new RuntimeException("Started process has multiple descendants");
         }
-        throw new RuntimeException("Descendent process not started within timeout");
     }
 
     public static boolean killProcess(String pid) {

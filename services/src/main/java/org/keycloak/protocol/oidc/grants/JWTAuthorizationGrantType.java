@@ -77,6 +77,10 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             }
             event.detail(Details.IDENTITY_PROVIDER, identityProviderModel.getAlias());
 
+            if (!identityProviderModel.isEnabled()) {
+                throw new RuntimeException("Identity Provider is not enabled");
+            }
+
             if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).getJWTAuthorizationGrantAllowedIdentityProviders().contains(identityProviderModel.getAlias())) {
                 throw new RuntimeException("Identity Provider is not allowed for the client");
             }
@@ -92,9 +96,6 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             // assign the signature alg and validate
             authorizationGrantContext.validateSignatureAlgorithm(jwtAuthorizationGrantProvider.getAssertionSignatureAlg());
 
-            // Validate audience
-            authorizationGrantContext.validateTokenAudience(jwtAuthorizationGrantProvider.getAllowedAudienceForJWTGrant(), false);
-
             //validate the JWT assertion and get the brokered identity from the idp
             BrokeredIdentityContext brokeredIdentityContext = jwtAuthorizationGrantProvider.validateAuthorizationGrantAssertion(authorizationGrantContext);
             if (brokeredIdentityContext == null) {
@@ -106,6 +107,12 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             UserModel user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
             if (user == null) {
                 throw new RuntimeException("User not found");
+            }
+            if (!user.isEnabled()) {
+                throw new RuntimeException("User is not enabled");
+            }
+            if (user.getRequiredActionsStream().findAny().isPresent()) {
+                throw new RuntimeException("Account is not fully set up");
             }
             event.user(user);
             event.detail(Details.USERNAME, user.getUsername());
@@ -120,6 +127,11 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
                 event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
                 event.error(cpe.getError());
                 throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            }
+
+            // Validate audience if not validated previously by client policies
+            if (!authorizationGrantContext.isAudienceAlreadyValidated()) {
+                authorizationGrantContext.validateTokenAudience(jwtAuthorizationGrantProvider.getAllowedAudienceForJWTGrant(), false);
             }
 
             RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);

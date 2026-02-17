@@ -4,12 +4,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import jakarta.annotation.Nonnull;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.KeycloakSession;
@@ -21,23 +21,30 @@ import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.ClientsResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 
 public class DefaultClientsApi implements ClientsApi {
     private final KeycloakSession session;
+    private final AdminPermissionEvaluator permissions;
     private final RealmModel realm;
     private final ClientService clientService;
     private final JakartaValidatorProvider validator;
+
+    // v1 resources
     private final RealmAdminResource realmAdminResource;
     private final ClientsResource clientsResource;
 
-    public DefaultClientsApi(KeycloakSession session, RealmAdminResource realmAdminResource) {
+    public DefaultClientsApi(@Nonnull KeycloakSession session,
+                             @Nonnull AdminPermissionEvaluator permissions,
+                             @Nonnull RealmAdminResource realmAdminResource) {
         this.session = session;
+        this.permissions = permissions;
         this.realmAdminResource = realmAdminResource;
 
         this.realm = Objects.requireNonNull(session.getContext().getRealm());
-        this.clientService = new DefaultClientService(session, realmAdminResource);
+        this.clientService = new DefaultClientService(session, permissions, realmAdminResource);
         this.validator = new HibernateValidatorProvider();
         this.clientsResource = realmAdminResource.getClients();
     }
@@ -45,7 +52,7 @@ public class DefaultClientsApi implements ClientsApi {
     @GET
     @Override
     public Stream<BaseClientRepresentation> getClients() {
-        return clientService.getClients(realm, null, null, null);
+        return clientService.getClients(realm);
     }
 
     @POST
@@ -58,7 +65,7 @@ public class DefaultClientsApi implements ClientsApi {
                     .entity(clientService.createOrUpdate(realm, client, false).representation())
                     .build();
         } catch (ServiceException e) {
-            throw new WebApplicationException(e.getMessage(), e.getSuggestedResponseStatus().orElse(Response.Status.BAD_REQUEST));
+            throw e.toWebApplicationException();
         }
     }
 
@@ -66,7 +73,7 @@ public class DefaultClientsApi implements ClientsApi {
     @Override
     public ClientApi client(@PathParam("id") String clientId) {
         var client = Optional.ofNullable(session.clients().getClientByClientId(realm, clientId));
-        return new DefaultClientApi(session, realmAdminResource, client.map(c -> clientsResource.getClient(c.getId())).orElse(null), clientId);
+        return new DefaultClientApi(session, clientId, permissions, realmAdminResource, client.map(c -> clientsResource.getClient(c.getId())).orElse(null));
     }
 
 }

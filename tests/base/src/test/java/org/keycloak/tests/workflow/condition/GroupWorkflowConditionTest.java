@@ -10,12 +10,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.workflow.DisableUserStepProviderFactory;
 import org.keycloak.models.workflow.NotifyUserStepProviderFactory;
-import org.keycloak.models.workflow.ResourceOperationType;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
 import org.keycloak.models.workflow.Workflow;
 import org.keycloak.models.workflow.WorkflowProvider;
 import org.keycloak.models.workflow.WorkflowStateProvider;
 import org.keycloak.models.workflow.conditions.GroupMembershipWorkflowConditionFactory;
+import org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
@@ -56,7 +56,7 @@ public class GroupWorkflowConditionTest extends AbstractWorkflowTest {
 
         // create workflow that activates on user creation with a group membership condition
         managedRealm.admin().workflows().create(WorkflowRepresentation.withName("group-membership-workflow")
-                .onEvent(ResourceOperationType.USER_CREATED.name())
+                .onEvent(UserCreatedWorkflowEventFactory.ID)
                 .onCondition(GROUP_CONDITION)
                 .withSteps(
                         WorkflowStepRepresentation.create()
@@ -129,7 +129,7 @@ public class GroupWorkflowConditionTest extends AbstractWorkflowTest {
                         // check workflow was correctly assigned to the users
                         WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
                         RealmModel realm = session.getContext().getRealm();
-                        List<String> scheduledUsers = stateProvider.getScheduledStepsByWorkflow(workflow)
+                        List<String> scheduledUsers = stateProvider.getScheduledStepsByWorkflow(workflow.getId())
                                 .map(step -> session.users().getUserById(realm, step.resourceId()).getUsername()).toList();
                         assertThat(scheduledUsers, hasSize(10));
 

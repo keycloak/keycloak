@@ -56,6 +56,11 @@ import org.hibernate.annotations.DynamicUpdate;
                 " FROM PersistentClientSessionEntity sess" +
                 " WHERE sess.offline = :offline AND sess.realmId = :realmId" +
                 " GROUP BY sess.clientId, sess.externalClientId, sess.clientStorageProvider"),
+        @NamedQuery(name = "findClientSessionsOrderedByIdExactReadOnly",
+                query = "SELECT new org.keycloak.models.jpa.session.ImmutablePersistentClientSessionEntity(sess.userSessionId, sess.clientId, sess.clientStorageProvider, sess.externalClientId, sess.offline, sess.data, sess.realmId, sess.timestamp)" +
+                        " FROM PersistentClientSessionEntity sess" +
+                        " WHERE sess.offline = :offline AND sess.userSessionId IN (:userSessionIds)"
+        ),
 })
 @Table(name="OFFLINE_CLIENT_SESSION")
 @Entity

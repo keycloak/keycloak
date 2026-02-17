@@ -31,7 +31,7 @@ final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
         WorkflowEvent event = workflowContext.getEvent();
         WorkflowStep firstStep = workflow.getSteps().findFirst().orElseThrow(() -> new WorkflowInvalidStateException("No steps found for workflow " + workflow.getName()));
         log.debugf("Scheduling first step '%s' of workflow '%s' for resource %s based on on event %s with notBefore %d",
-                firstStep.getProviderId(), workflow.getName(), event.getResourceId(), event.getOperation(), workflow.getNotBefore());
+                firstStep.getProviderId(), workflow.getName(), event.getResourceId(), event.getEventProviderId(), workflow.getNotBefore());
         String originalAfter = firstStep.getAfter();
         try {
             firstStep.setAfter(workflow.getNotBefore());
@@ -46,7 +46,7 @@ final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
     @Override
     public String toString() {
         WorkflowEvent event = context.getEvent();
-        return "eventType=" + event.getOperation() +
+        return "eventType=" + event.getEventProviderId() +
                 ",resourceType=" + event.getResourceType() +
                 ",resourceId=" + event.getResourceId();
     }

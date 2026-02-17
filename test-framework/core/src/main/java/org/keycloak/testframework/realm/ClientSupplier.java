@@ -34,7 +34,7 @@ public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
         ClientRepresentation clientRepresentation;
 
         if (managed) {
-            ClientConfig config = SupplierHelpers.getInstance(instanceContext.getAnnotation().config());
+            ClientConfig config = SupplierHelpers.getInstanceWithInjectedFields(instanceContext.getAnnotation().config(), instanceContext);
             clientRepresentation = config.configure(ClientConfigBuilder.create()).build();
 
             if (clientRepresentation.getClientId() == null) {

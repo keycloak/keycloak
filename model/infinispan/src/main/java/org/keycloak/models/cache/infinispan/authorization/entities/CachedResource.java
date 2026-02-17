@@ -50,7 +50,7 @@ public class CachedResource extends AbstractRevisioned implements InResourceServ
     private LazyLoader<Resource, Set<String>> uris;
     private LazyLoader<Resource, MultivaluedHashMap<String, String>> attributes;
 
-    public CachedResource(Long revision, Resource resource) {
+    public CachedResource(long revision, Resource resource) {
         super(revision, resource.getId());
         this.name = resource.getName();
         this.displayName = resource.getDisplayName();

@@ -67,6 +67,17 @@ public class Workflow {
         this.config = c;
     }
 
+    /**
+     * Create a new workflow instance based on the provided workflow but bound to a new session.
+     *
+     * @param workflow the workflow to copy
+     */
+    public Workflow(KeycloakSession session, Workflow workflow) {
+        this(session, workflow.getId(), workflow.getConfig());
+        this.notBefore = workflow.getNotBefore();
+    }
+
+
     public String getId() {
         return id;
     }
@@ -180,8 +191,8 @@ public class Workflow {
             addStep(step);
 
             // update allowed types
-            WorkflowStepProviderFactory<WorkflowStepProvider> stepProvider = getStepProviderFactory(step);
-            allowedTypes.retainAll(stepProvider.getTypes());
+            WorkflowStepProviderFactory<WorkflowStepProvider> stepProvider = Workflows.getStepProviderFactory(session, step);
+            allowedTypes.retainAll(stepProvider.getSupportedResourceTypes());
         }
 
         if (allowedTypes.isEmpty()) {
@@ -221,13 +232,8 @@ public class Workflow {
         ComponentModel component = realm.getComponent(id);
 
         if (component == null || !Objects.equals(providerType, component.getProviderType())) {
-            throw new BadRequestException("Not a valid resource workflow: " + id);
+            throw new BadRequestException("Not a valid workflow resource: " + id);
         }
         return component;
-    }
-
-    private WorkflowStepProviderFactory<WorkflowStepProvider> getStepProviderFactory(WorkflowStep step) {
-        return (WorkflowStepProviderFactory<WorkflowStepProvider>) session
-            .getKeycloakSessionFactory().getProviderFactory(WorkflowStepProvider.class, step.getProviderId());
     }
 }

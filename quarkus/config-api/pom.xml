@@ -43,6 +43,12 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-opentelemetry</artifactId>
+            <exclusions>
+            	<exclusion>
+            		<groupId>io.quarkus</groupId>
+            		<artifactId>quarkus-bootstrap-runner</artifactId>
+            	</exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

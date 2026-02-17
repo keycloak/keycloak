@@ -139,7 +139,7 @@ public class ClientUpdaterSourceRolesCondition extends AbstractClientPolicyCondi
 
         RealmModel realm = session.getContext().getRealm();
         for (String roleName : expectedRoles) {
-            RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
+            RoleModel role = KeycloakModelUtils.getRoleFromString(session, realm, roleName);
             if (role == null) continue;
             if (user.hasRole(role)) return true;
         }

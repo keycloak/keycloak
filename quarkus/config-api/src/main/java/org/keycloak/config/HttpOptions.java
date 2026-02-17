@@ -18,8 +18,7 @@ public class HttpOptions {
 
     public static final Option<String> HTTP_HOST = new OptionBuilder<>("http-host", String.class)
             .category(OptionCategory.HTTP)
-            .description("The HTTP Host. By default, Keycloak binds to all network addresses (0.0.0.0), which means the server may be accessible from other machines on your network. For local development, you can restrict access to localhost only by setting this to 127.0.0.1.")
-            .defaultValue("0.0.0.0")
+            .description("The HTTP Host. In prod mode or when running on Windows Subsystem For Linux the default is to bind to all network addresses (0.0.0.0), which means the server may be accessible from other machines on your network. Otherwise defaults to localhost.")
             .build();
 
     public static final Option<String> HTTP_RELATIVE_PATH = new OptionBuilder<>("http-relative-path", String.class)
@@ -151,4 +150,16 @@ public class HttpOptions {
             .defaultValue(Boolean.FALSE)
             .build();
 
+    public static final Option<String> SHUTDOWN_TIMEOUT = new OptionBuilder<>("shutdown-timeout", String.class)
+            .category(OptionCategory.HTTP)
+            .description("The shutdown period waiting for currently running HTTP requests to finish. " + DURATION_DESCRIPTION)
+            .defaultValue("1s")
+            .build();
+
+    public static final Option<String> SHUTDOWN_DELAY = new OptionBuilder<>("shutdown-delay", String.class)
+            .category(OptionCategory.HTTP)
+            .description("Length of the pre-shutdown phase during which the server prepares for shutdown. " + DURATION_DESCRIPTION +
+                    " This period allows for loadbalancer reconfiguration and draining of TLS/HTTP keepalive connections.")
+            .defaultValue("1s")
+            .build();
 }

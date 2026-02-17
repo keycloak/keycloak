@@ -19,6 +19,7 @@ package org.keycloak.protocol;
 
 import java.util.Map;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.WebApplicationException;
 
 import org.keycloak.events.EventBuilder;
@@ -84,5 +85,20 @@ public interface LoginProtocolFactory extends ProviderFactory<LoginProtocol> {
      */
     default boolean isValidClientScope(KeycloakSession session, ClientModel client, ClientScopeModel clientScope) {
         return true;
+    }
+
+    /**
+     * Validates whether a client scope can be assigned as Default or Optional to a client or realm.
+     * This method is called before assigning a client scope to ensure protocol-specific restrictions are enforced.
+     *
+     * @param session      the Keycloak session
+     * @param clientScope  the client scope to be assigned
+     * @param defaultScope true if assigning as Default scope, false if Optional
+     * @param realm        the realm where the assignment is happening
+     * @throws BadRequestException if the assignment is not allowed
+     */
+    default void validateClientScopeAssignment(KeycloakSession session, ClientScopeModel clientScope, boolean defaultScope, RealmModel realm) {
+        // Default implementation: no validation (allows all assignments)
+        // Protocol-specific implementations can override to enforce restrictions
     }
 }

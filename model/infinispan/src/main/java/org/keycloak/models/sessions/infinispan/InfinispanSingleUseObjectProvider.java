@@ -20,27 +20,22 @@ package org.keycloak.models.sessions.infinispan;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.session.RevokedTokenPersisterProvider;
 import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectValueEntity;
 
-import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 import org.infinispan.commons.api.BasicCache;
-import org.jboss.logging.Logger;
 
 /**
- * TODO: Check if Boolean can be used as single-use cache argument instead of SingleUseObjectValueEntity. With respect to other single-use cache usecases like "Revoke Refresh Token" .
+ * TODO: Check if Boolean can be used as single-use cache argument instead of SingleUseObjectValueEntity. With respect to other single-use cache use cases like "Revoke Refresh Token" .
  * Also with respect to the usage of streams iterating over "actionTokens" cache (check there are no ClassCastExceptions when casting values directly to SingleUseObjectValueEntity)
  *
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvider {
-
-    public static final Logger logger = Logger.getLogger(InfinispanSingleUseObjectProvider.class);
 
     private final KeycloakSession session;
     private final BasicCache<String, SingleUseObjectValueEntity> singleUseObjectCache;
@@ -57,15 +52,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
     @Override
     public void put(String key, long lifespanSeconds, Map<String, String> notes) {
         SingleUseObjectValueEntity tokenValue = new SingleUseObjectValueEntity(notes);
-        try {
-            tx.put(singleUseObjectCache, key, tokenValue, Time.toMillis(lifespanSeconds), TimeUnit.MILLISECONDS);
-        } catch (HotRodClientException re) {
-            // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
-            if (logger.isDebugEnabled()) {
-                logger.debugf(re, "Failed when adding code %s", key);
-            }
-            throw re;
-        }
+        tx.put(singleUseObjectCache, key, tokenValue, lifespanSeconds, TimeUnit.SECONDS);
         if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
             if (!notes.isEmpty()) {
                 throw new ModelException("Notes are not supported for revoked tokens");
@@ -80,9 +67,7 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
             throw new ModelException("Revoked tokens can't be retrieved");
         }
 
-        SingleUseObjectValueEntity singleUseObjectValueEntity;
-
-        singleUseObjectValueEntity = tx.get(singleUseObjectCache, key);
+        SingleUseObjectValueEntity singleUseObjectValueEntity = tx.get(singleUseObjectCache, key);
         return singleUseObjectValueEntity != null ? singleUseObjectValueEntity.getNotes() : null;
     }
 
@@ -92,18 +77,14 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
            throw new ModelException("Revoked tokens can't be removed");
         }
 
-        try {
-            SingleUseObjectValueEntity existing = singleUseObjectCache.remove(key);
-            return existing == null ? null : existing.getNotes();
-        } catch (HotRodClientException re) {
-            // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
-            // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to remove the code from different place.
-            if (logger.isDebugEnabled()) {
-                logger.debugf(re, "Failed when removing code %s", key);
-            }
-
+        // Using a get-before-remove allows us to return the value even in cases when a state transfer happens in Infinispan
+        // where it might not return the value in all cases.
+        // This workaround can be removed once https://github.com/infinispan/infinispan/issues/16703 is implemented.
+        var data = singleUseObjectCache.get(key);
+        if (data == null) {
             return null;
         }
+        return singleUseObjectCache.remove(key, data) ? data.getNotes() : null;
     }
 
     @Override
@@ -118,21 +99,11 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
     @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
         SingleUseObjectValueEntity tokenValue = new SingleUseObjectValueEntity(null);
-
-        try {
-            SingleUseObjectValueEntity existing = singleUseObjectCache.putIfAbsent(key, tokenValue, Time.toMillis(lifespanInSeconds), TimeUnit.MILLISECONDS);
-            if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
-                session.getProvider(RevokedTokenPersisterProvider.class).revokeToken(key.substring(0, key.length() - REVOKED_KEY.length()), lifespanInSeconds);
-            }
-            return existing == null;
-        } catch (HotRodClientException re) {
-            // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
-            // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to use the token from different place.
-            logger.debugf(re, "Failed when adding token %s", key);
-
-            return false;
+        SingleUseObjectValueEntity existing = singleUseObjectCache.putIfAbsent(key, tokenValue, lifespanInSeconds, TimeUnit.SECONDS);
+        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
+            session.getProvider(RevokedTokenPersisterProvider.class).revokeToken(key.substring(0, key.length() - REVOKED_KEY.length()), lifespanInSeconds);
         }
-
+        return existing == null;
     }
 
     @Override

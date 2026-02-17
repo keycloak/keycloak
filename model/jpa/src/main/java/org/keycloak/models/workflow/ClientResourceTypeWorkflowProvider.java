@@ -16,9 +16,9 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
-import org.keycloak.models.workflow.conditions.expression.BooleanConditionParser;
-import org.keycloak.models.workflow.conditions.expression.EvaluatorUtils;
-import org.keycloak.models.workflow.conditions.expression.PredicateEvaluator;
+import org.keycloak.models.workflow.expression.BooleanConditionParser;
+import org.keycloak.models.workflow.expression.EvaluatorUtils;
+import org.keycloak.models.workflow.expression.PredicateEvaluator;
 import org.keycloak.representations.workflows.WorkflowConstants;
 import org.keycloak.utils.StringUtil;
 

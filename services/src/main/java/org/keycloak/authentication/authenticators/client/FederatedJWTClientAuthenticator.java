@@ -97,7 +97,7 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
             }
 
             ClientAssertionIdentityProviderFactory.LookupResult lookup = strategy.lookup(context);
-            if (lookup == null || lookup.identityProviderModel() == null || lookup.clientModel() == null) {
+            if (lookup == null || lookup.identityProviderModel() == null || !lookup.identityProviderModel().isEnabled() || lookup.clientModel() == null) {
                 return;
             }
 
@@ -160,7 +160,7 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
     }
 
     @Override
-    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+    public Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client) {
         return Collections.emptyMap();
     }
 

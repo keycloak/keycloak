@@ -7,6 +7,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
@@ -25,33 +27,54 @@ import org.keycloak.services.ServiceException;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.util.EntityUtils;
 
 // TODO
 public class DefaultClientService implements ClientService {
     private final KeycloakSession session;
     private final JakartaValidatorProvider validator;
-    private final RealmAdminResource realmAdminResource;
+    private final AdminPermissionEvaluator permissions;
+
+    // v1 resources
+    private final RealmAdminResource realmResource;
     private final ClientsResource clientsResource;
     private ClientResource clientResource;
 
-    public DefaultClientService(KeycloakSession session, RealmAdminResource realmAdminResource, ClientResource clientResource) {
+    public DefaultClientService(@Nonnull KeycloakSession session,
+                                @Nonnull AdminPermissionEvaluator permissions,
+                                @Nonnull RealmAdminResource realmResource,
+                                @Nullable ClientResource clientResource) {
         this.session = session;
-        this.realmAdminResource = realmAdminResource;
-        this.clientResource = clientResource;
-
-        this.clientsResource = realmAdminResource.getClients();
+        this.permissions = permissions;
         this.validator = new HibernateValidatorProvider();
+
+        this.realmResource = realmResource;
+        this.clientsResource = realmResource.getClients();
+        this.clientResource = clientResource;
     }
 
-    public DefaultClientService(KeycloakSession session, RealmAdminResource realmAdminResource) {
-        this(session, realmAdminResource, null);
+    public DefaultClientService(@Nonnull KeycloakSession session,
+                                @Nonnull AdminPermissionEvaluator permissions,
+                                @Nonnull RealmAdminResource realmResource) {
+        this(session, permissions, realmResource, null);
+    }
+
+    protected void avoidClientIdPhishing() throws ServiceException {
+        if (clientResource == null && !permissions.clients().canList()) {
+            // we do this to make sure somebody can't phish client IDs
+            throw new ServiceException(Response.Status.FORBIDDEN);
+        }
     }
 
     @Override
-    public Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions) {
+    public Optional<BaseClientRepresentation> getClient(RealmModel realm, String clientId, ClientProjectionOptions projectionOptions) throws ServiceException {
         // TODO: is the access map on the representation needed
+        avoidClientIdPhishing();
         return Optional.ofNullable(clientResource).map(ClientResource::viewClientModel)
                 .map(model -> session.getProvider(ClientModelMapper.class, model.getProtocol()).fromModel(model));
     }
@@ -82,7 +105,11 @@ public class DefaultClientService implements ClientService {
             }
             model = mapper.toModel(client, clientResource.viewClientModel());
             var rep = ModelToRepresentation.toRepresentation(model, session);
-            clientResource.update(rep);
+
+            try (var response = clientResource.update(rep)) {
+                // close response and consume payload due to performance reasons
+                EntityUtils.consumeQuietly((HttpEntity) response.getEntity());
+            }
         } else {
             created = true;
             validator.validate(client, CreateClientDefault.class); // TODO improve it to avoid second validation when we know it is create and not update
@@ -115,6 +142,15 @@ public class DefaultClientService implements ClientService {
         return null;
     }
 
+    @Override
+    public void deleteClient(RealmModel realm, String clientId) throws ServiceException {
+        avoidClientIdPhishing();
+        if (clientResource == null) {
+            throw new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND);
+        }
+        clientResource.deleteClient();
+    }
+
     /**
      * Declaratively manage client roles - ensures the client has exactly the roles specified in 'rolesFromRep'
      * <p>
@@ -133,7 +169,12 @@ public class DefaultClientService implements ClientService {
         // Add missing roles (in desiredRoleNames but not in currentRoleNames)
         desiredRoleNames.stream()
                 .filter(roleName -> !currentRoleNames.contains(roleName))
-                .forEach(roleName -> roleResource.createRole(new RoleRepresentation(roleName, "", false)));
+                .forEach(roleName -> {
+                    try (var response = roleResource.createRole(new RoleRepresentation(roleName, "", false))) {
+                        // close response and consume payload due to performance reasons
+                        EntityUtils.consumeQuietly((HttpEntity) response.getEntity());
+                    }
+                });
 
         // Remove extra roles (in currentRoleNames but not in desiredRoleNames)
         currentRoleNames.stream()
@@ -156,10 +197,10 @@ public class DefaultClientService implements ClientService {
         }
 
         var clientRoleResource = clientResource.getRoleContainerResource();
-        var realmRoleResource = realmAdminResource.getRoleContainerResource();
+        var realmRoleResource = realmResource.getRoleContainerResource();
 
         var serviceAccountUser = session.users().getServiceAccount(model);
-        var serviceAccountRoleResource = realmAdminResource.users().user(clientResource.getServiceAccountUser().getId()).getRoleMappings();
+        var serviceAccountRoleResource = realmResource.users().user(clientResource.getServiceAccountUser().getId()).getRoleMappings();
 
         Set<String> desiredRoleNames = Optional.ofNullable(rep.getServiceAccountRoles()).orElse(Collections.emptySet());
         Set<RoleModel> currentRoles = serviceAccountUser.getRoleMappingsStream().collect(Collectors.toSet());

@@ -45,7 +45,7 @@ public class WelcomePageTest {
     static class WelcomePageTestConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config;
+            return config.option("http-host", "0.0.0.0");
         }
     }
 

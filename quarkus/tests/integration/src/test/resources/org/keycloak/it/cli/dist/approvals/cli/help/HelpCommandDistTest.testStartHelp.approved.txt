@@ -277,10 +277,10 @@ HTTP(S):
                      Enables the HTTP listener. Enabled by default in development mode. Typically
                        not enabled in production unless the server is fronted by a TLS termination
                        proxy. Default: false.
---http-host <host>   The HTTP Host. By default, Keycloak binds to all network addresses (0.0.0.0),
-                       which means the server may be accessible from other machines on your
-                       network. For local development, you can restrict access to localhost only by
-                       setting this to 127.0.0.1. Default: 0.0.0.0.
+--http-host <host>   The HTTP Host. In prod mode or when running on Windows Subsystem For Linux the
+                       default is to bind to all network addresses (0.0.0.0), which means the
+                       server may be accessible from other machines on your network. Otherwise
+                       defaults to localhost.
 --http-max-queued-requests <requests>
                      Maximum number of queued HTTP requests. Use this to shed load in an overload
                        situation. Excess requests will return a "503 Server not Available" response.
@@ -330,6 +330,16 @@ HTTP(S):
                      The type of the trust store file. If not given, the type is automatically
                        detected based on the file extension. If 'fips-mode' is set to 'strict' and
                        no value is set, it defaults to 'BCFKS'.
+--shutdown-delay <delay>
+                     Length of the pre-shutdown phase during which the server prepares for
+                       shutdown. May be an ISO 8601 duration value, an integer number of seconds,
+                       or an integer followed by one of [ms, h, m, s, d]. This period allows for
+                       loadbalancer reconfiguration and draining of TLS/HTTP keepalive connections.
+                       Default: 1s.
+--shutdown-timeout <timeout>
+                     The shutdown period waiting for currently running HTTP requests to finish. May
+                       be an ISO 8601 duration value, an integer number of seconds, or an integer
+                       followed by one of [ms, h, m, s, d]. Default: 1s.
 
 HTTP Access log:
 

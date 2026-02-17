@@ -311,8 +311,53 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         for (int i = 0; i < 3; i++) {
             loginPage.login("wrong-password");
             loginPage.assertAttemptedUsernameAvailability(true);
+            Assert.assertFalse(loginPage.isEmailInputPresent());
             Assert.assertTrue(loginPage.isPasswordInputPresent());
         }
+    }
+
+    @Test
+    public void testHideUsernameKeptAfterPasswordFailuresBruteForceEnabled() {
+        testRealm().organizations().get(createOrganization().getId());
+
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setBruteForceProtected(true);
+        realm.setBruteForceStrategy(RealmRepresentation.BruteForceStrategy.MULTIPLE);
+        realm.setFailureFactor(1);
+        realm.setMaxDeltaTimeSeconds(30);
+        realm.setMaxFailureWaitSeconds(30);
+        realm.setWaitIncrementSeconds(30);
+        testRealm().update(realm);
+        getCleanup().addCleanup(() -> {
+            RealmRepresentation r = testRealm().toRepresentation();
+            r.setBruteForceProtected(false);
+            testRealm().update(r);
+        });
+
+        String email = "existing-user@" + organizationName + ".org";
+        createUser(realm.getRealm(), "existing-user", memberPassword, "John", "Doe", email);
+        openIdentityFirstLoginPage(email, false, null, false, false);
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+
+        loginPage.login("wrong-password");
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        loginPage.login("wrong-password");
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+
+        openIdentityFirstLoginPage(email, false, null, false, false);
+        realm.setRegistrationEmailAsUsername(true);
+        testRealm().update(realm);
+        loginPage.login("wrong-password");
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertFalse(loginPage.isEmailInputPresent());
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
+        loginPage.login("wrong-password");
+        loginPage.assertAttemptedUsernameAvailability(true);
+        Assert.assertFalse(loginPage.isEmailInputPresent());
+        Assert.assertTrue(loginPage.isPasswordInputPresent());
     }
 
     @Test
