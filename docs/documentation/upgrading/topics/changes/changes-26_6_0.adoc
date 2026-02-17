@@ -137,6 +137,10 @@ They should avoid keeping the returned items in memory by for example binding th
 
 A similar change was done for the `UserSessionPersisterProvider`.
 
+=== OpenJDK upgrade
+
+The official container images for server and the Operator now use OpenJDK 25 instead of previously used OpenJDK 21.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
