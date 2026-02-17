@@ -109,7 +109,7 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
             String appName = roleName.substring(0, scopeIndex);
             ClientModel client = realm.getClientByClientId(appName);
             if (client != null) {
-                return storeClientRoleInCache(client, roleName, roleName.substring(scopeIndex + 1), counter);
+                return storeClientRoleInCache(client, cachedRoleKey(realm, roleName), roleName.substring(scopeIndex + 1), counter);
             }
 
             scopeIndex = roleName.lastIndexOf(CLIENT_ROLE_SEPARATOR, scopeIndex - 1);
@@ -127,27 +127,28 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
     }
 
     private RoleModel findRoleInCache(RealmModel realm, String roleName) {
-        var cachedRole = lookupCache.get(roleName);
+        var cacheKey = cachedRoleKey(realm, roleName);
+        var cachedRole = lookupCache.get(cacheKey);
         if (!(cachedRole instanceof CachedValue.CachedRoleQualifier cachedRoleQualifier)) {
             return null;
         }
         if (cachedRoleQualifier.isRealmRole()) {
             var role = realm.getRole(cachedRoleQualifier.roleName());
             if (role == null) {
-                lookupCache.invalidate(roleName);
+                lookupCache.invalidate(cacheKey);
             }
             return role;
         }
 
         var client = realm.getClientByClientId(cachedRoleQualifier.clientId());
         if (client == null) {
-            lookupCache.invalidate(roleName);
+            lookupCache.invalidate(cacheKey);
             return null;
         }
 
         var role = client.getRole(cachedRoleQualifier.roleName());
         if (role == null) {
-            lookupCache.invalidate(roleName);
+            lookupCache.invalidate(cacheKey);
         }
         return role;
     }
@@ -168,8 +169,12 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
         var roleModel = realm.getRole(roleName);
         if (roleModel != null) {
             // only cache if the role is present
-            lookupCache.put(roleName, CachedValue.ofRealmRole(roleName));
+            lookupCache.put(cachedRoleKey(realm, roleName), CachedValue.ofRealmRole(roleName));
         }
         return roleModel;
+    }
+
+    private static String cachedRoleKey(RealmModel realm, String roleName) {
+        return realm.getId() + roleName;
     }
 }

@@ -71,6 +71,11 @@ public class AlternativeLookupProviderTest {
                 counter.incrementAndGet();
                 return null;
             }
+
+            @Override
+            public String getId() {
+                return "realm";
+            }
         };
 
         String badRoleName = ".";
