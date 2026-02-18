@@ -528,7 +528,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
             prompt = authenticationSession.getClientNote(OAuth2Constants.PROMPT);
         }
         if (prompt != null) {
-            uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
+            // "create" is a Keycloak-internal prompt value used to initiate registration
+            // and should not be forwarded to external identity providers.
+            prompt = prompt.replace(OIDCLoginProtocol.PROMPT_VALUE_CREATE, "").trim();
+            if (!prompt.isEmpty()) {
+                uriBuilder.queryParam(OAuth2Constants.PROMPT, prompt);
+            }
         }
 
         if (getConfig().isPkceEnabled()) {
