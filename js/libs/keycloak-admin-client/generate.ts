@@ -122,9 +122,13 @@ function postProcessGeneratedCode() {
   let modified = false;
 
   // Check if the if-blocks are empty (missing the registration calls)
+  // Handle both Unix (\n) and Windows (\r\n) line endings
   if (
     content.includes(
       "if (parseNodeFactoryRegistry.registerDefaultDeserializer) {\n    }",
+    ) ||
+    content.includes(
+      "if (parseNodeFactoryRegistry.registerDefaultDeserializer) {\r\n    }",
     )
   ) {
     // Add required imports for serializers/deserializers
@@ -141,16 +145,18 @@ import { TextParseNodeFactory, TextSerializationWriterFactory } from "@microsoft
     );
 
     // Fill in the deserializer registration (without if-check to avoid TypeScript 5.9+ warnings)
+    // Handle both Unix (\n) and Windows (\r\n) line endings
     content = content.replace(
-      /if \(parseNodeFactoryRegistry\.registerDefaultDeserializer\) \{\n {4}\}/,
+      /if \(parseNodeFactoryRegistry\.registerDefaultDeserializer\) \{(?:\r?\n) {4}\}/,
       `parseNodeFactoryRegistry.registerDefaultDeserializer(JsonParseNodeFactory, backingStoreFactory);
     parseNodeFactoryRegistry.registerDefaultDeserializer(TextParseNodeFactory, backingStoreFactory);
     parseNodeFactoryRegistry.registerDefaultDeserializer(FormParseNodeFactory, backingStoreFactory);`,
     );
 
     // Fill in the serializer registration (without if-check to avoid TypeScript 5.9+ warnings)
+    // Handle both Unix (\n) and Windows (\r\n) line endings
     content = content.replace(
-      /if \(serializationWriterFactory\.registerDefaultSerializer\) \{\n {4}\}/,
+      /if \(serializationWriterFactory\.registerDefaultSerializer\) \{(?:\r?\n) {4}\}/,
       `serializationWriterFactory.registerDefaultSerializer(JsonSerializationWriterFactory);
     serializationWriterFactory.registerDefaultSerializer(TextSerializationWriterFactory);
     serializationWriterFactory.registerDefaultSerializer(FormSerializationWriterFactory);
