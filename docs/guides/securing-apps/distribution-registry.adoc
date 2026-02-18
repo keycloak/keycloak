@@ -2,19 +2,21 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Configuring a Docker registry"
+title="Configuring a Distribution Registry"
 priority=90
-summary="Configure a Docker registry to use {project_name}.">
+summary="Configure a Distribution Registry to use {project_name}.">
+
+NOTE: Docker Registry has been renamed to Distribution Registry, however feature, endpoint and protocol are still called Docker.
 
 NOTE: Docker authentication is disabled by default. To enable see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 
-This section describes how you can configure a Docker registry to use {project_name} as its authentication server.
+This section describes how you can configure a Distribution registry to use {project_name} as its authentication server.
 
-For more information on how to set up and configure a Docker registry, see the link:https://distribution.github.io/distribution/about/configuration/[Docker Registry Configuration Guide].
+For more information on how to set up and configure a Distribution registry, see the link:https://distribution.github.io/distribution/about/configuration/[Configuring a registry].
 
-== Docker registry configuration file installation
+== Distribution registry configuration file installation
 
-For users with more advanced Docker registry configurations, it is generally recommended to provide your own registry configuration file.  The {project_name} Docker provider supports this mechanism via the _Registry Config File_ Format Option.  Choosing this option will generate output similar to the following:
+For users with more advanced Distribution registry configurations, it is generally recommended to provide your own registry configuration file.  The {project_name} Docker provider supports this mechanism via the _Registry Config File_ Format Option.  Choosing this option will generate output similar to the following:
 
 [source,subs="attributes+"]
 ----
@@ -29,7 +31,7 @@ This output can then be copied into any existing registry config file.  See the 
 
 WARNING: Don't forget to configure the `rootcertbundle` field with the location of the {project_name} realm's public key.  The auth configuration will not work without this argument.
 
-== Docker registry environment variable override installation
+== Distribution registry environment variable override installation
 
 Often times it is appropriate to use a simple environment variable override for develop or POC Docker registries. While this approach is usually not recommended for production use, it can be helpful when one requires quick-and-dirty way to stand up a registry. Simply use the _Variable Override_ Format Option from the client details, and an output should appear like the one below:
 
@@ -45,20 +47,20 @@ WARNING: Don't forget to configure the `REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE` over
 
 == Docker Compose YAML File
 
-WARNING: This installation method is meant to be an easy way to get a docker registry authenticating against a {project_name} server.  It is intended for development purposes only and should never be used in a production or production-like environment.
+WARNING: This installation method is meant to be an easy way to get a distribution registry authenticating against a {project_name} server.  It is intended for development purposes only and should never be used in a production or production-like environment.
 
-The zip file installation mechanism provides a quickstart for developers who want to understand how the {project_name} server can interact with the Docker registry.  In order to configure:
+The zip file installation mechanism provides a quickstart for developers who want to understand how the {project_name} server can interact with the Distribution registry.  In order to configure:
 
 .Procedure
 
- 1. From the desired realm, create a client configuration. At this point you will not have a Docker registry - the quickstart will take care of that part.
+ 1. From the desired realm, create a client configuration. At this point you will not have a Distribution registry - the quickstart will take care of that part.
  2. Choose the *Docker Compose YAML* option from the from _Action_ menu and select the *Download adapter config* option to download the ZIP file.
  3. Unzip the archive to the desired location, and open the directory.
- 4. Start the Docker registry with `docker-compose up`
+ 4. Start the Distribution registry with `docker-compose up`
 
-NOTE: it is recommended that you configure the Docker registry client in a realm other than 'master', since the HTTP Basic auth flow will not present forms.
+NOTE: it is recommended that you configure the Distribution registry client in a realm other than 'master', since the HTTP Basic auth flow will not present forms.
 
-Once the above configuration has taken place, and the keycloak server and Docker registry are running, docker authentication should be successful:
+Once the above configuration has taken place, and the keycloak server and Distribution registry are running, docker authentication should be successful:
 
 	[user ~]# docker login localhost:5000 -u $username
 	Password: *******
