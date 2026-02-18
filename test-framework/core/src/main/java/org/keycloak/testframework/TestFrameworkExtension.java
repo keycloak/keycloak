@@ -27,9 +27,9 @@ public interface TestFrameworkExtension {
     }
 
     /**
-     * List of aliases for value types. By default, `getSimpleName` is used as the name for a value type, implementing
+     * List of aliases for value types. By default, {@code getSimpleName} is used as the name for a value type, implementing
      * this method allows setting custom aliases for the value type. For example the core extension has the alias
-     * `server` for the value type `KeycloakServer`
+     * {@code server} for the value type {@code KeycloakServer}
      * @return map where key is the value type and value is the alias
      */
     default Map<Class<?>, String> valueTypeAliases() {
