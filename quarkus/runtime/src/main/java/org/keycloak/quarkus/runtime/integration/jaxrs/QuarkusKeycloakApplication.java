@@ -37,6 +37,7 @@ import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.common.annotation.Blocking;
+import org.jboss.logging.Logger;
 
 @ApplicationPath("/")
 @Blocking
@@ -45,9 +46,14 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
 
+    private static final Logger logger = Logger.getLogger(QuarkusKeycloakApplication.class);
+
     @Override
     protected String getDataDir() {
-        return Environment.getDataDir().orElse(null);
+        return Environment.getDataDir().orElseGet(() -> {
+            logger.warnf("%s is not set, the system temporary directory will be used as the Keycloak data directory.", Environment.KC_HOME_DIR);
+            return System.getProperty("java.io.tmpdir");
+        });
     }
 
     @Override
@@ -71,8 +77,8 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
-    protected void loadConfig() {
-        // no need to load config provider because we force quarkus impl
+    protected void initAndStart() {
+        // no need - is handled by Quarkus logic and onStartupEvent
     }
 
     @Override

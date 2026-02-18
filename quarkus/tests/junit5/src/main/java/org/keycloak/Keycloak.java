@@ -38,7 +38,6 @@ import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
-import org.keycloak.services.resources.KeycloakApplication;
 
 import io.quarkus.bootstrap.app.AugmentAction;
 import io.quarkus.bootstrap.app.CuratedApplication;
@@ -56,6 +55,7 @@ import io.quarkus.bootstrap.workspace.WorkspaceModuleId;
 import io.quarkus.maven.dependency.Dependency;
 import io.quarkus.maven.dependency.DependencyBuilder;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 
 import static java.util.Optional.ofNullable;
@@ -114,7 +114,7 @@ public class Keycloak {
 
         public Keycloak start(List<String> rawArgs) {
             if (homeDir == null) {
-                homeDir = KeycloakApplication.createTmpDirectory().toPath();
+                homeDir = initTempDirectory("keycloak-home");
             }
 
             List<String> args = new ArrayList<>(rawArgs);
@@ -353,4 +353,24 @@ public class Keycloak {
         System.setProperty(Environment.KC_CONFIG_BUILT, "true");
         return result.get();
     }
+
+    public static Path initTempDirectory(String name) {
+        String buildDir = System.getProperty("project.build.directory");
+        if (buildDir == null) {
+            try {
+                return Files.createTempDirectory(name).toAbsolutePath();
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create temporary directory", e);
+            }
+        } else {
+            Path homeDir = Path.of(buildDir, name);
+            try {
+                FileUtils.deleteDirectory(homeDir.toFile());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return homeDir;
+        }
+    }
+
 }
