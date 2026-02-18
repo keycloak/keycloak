@@ -24,6 +24,18 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
 
     public static final String TRANSMITTER_TOKEN_TYPE = "transmitterTokenType";
 
+    public static final String TRANSMITTER_AUTH_METHOD = "transmitterAuthMethod";
+
+    public static final String CLIENT_ID = "clientId";
+
+    public static final String CLIENT_SECRET = "clientSecret";
+
+    public static final String CLIENT_AUTH_METHOD = "clientAuthMethod";
+
+    public static final String TOKEN_URL = "tokenUrl";
+
+    public static final String SCOPE = "scope";
+
     public static final String DELIVERY_METHOD = "deliveryMethod";
 
     public static final String PUSH_AUTHORIZATION_HEADER = "pushAuthorizationHeader";
@@ -114,6 +126,62 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
                 .collect(Collectors.toUnmodifiableSet());
     }
 
+    public TransmitterAuthMethod getTransmitterAuthMethod() {
+        String value = getConfig().get(TRANSMITTER_AUTH_METHOD);
+        if (value == null) {
+            return TransmitterAuthMethod.STATIC_TOKEN;
+        }
+        return TransmitterAuthMethod.valueOf(value);
+    }
+
+    public void setTransmitterAuthMethod(TransmitterAuthMethod transmitterAuthMethod) {
+        getConfig().put(TRANSMITTER_AUTH_METHOD, transmitterAuthMethod.name());
+    }
+
+    public String getClientId() {
+        return getConfig().get(CLIENT_ID);
+    }
+
+    public void setClientId(String clientId) {
+        getConfig().put(CLIENT_ID, clientId);
+    }
+
+    public String getClientSecret() {
+        return getConfig().get(CLIENT_SECRET);
+    }
+
+    public void setClientSecret(String clientSecret) {
+        getConfig().put(CLIENT_SECRET, clientSecret);
+    }
+
+    public String getClientAuthMethod() {
+        String value = getConfig().get(CLIENT_AUTH_METHOD);
+        if (value == null) {
+            return "client_secret_post";
+        }
+        return value;
+    }
+
+    public void setClientAuthMethod(String clientAuthMethod) {
+        getConfig().put(CLIENT_AUTH_METHOD, clientAuthMethod);
+    }
+
+    public String getTokenUrl() {
+        return getConfig().get(TOKEN_URL);
+    }
+
+    public void setTokenUrl(String tokenUrl) {
+        getConfig().put(TOKEN_URL, tokenUrl);
+    }
+
+    public String getScope() {
+        return getConfig().get(SCOPE);
+    }
+
+    public void setScope(String scope) {
+        getConfig().put(SCOPE, scope);
+    }
+
     public DeliveryMethod getDeliveryMethod() {
         String value = getConfig().get(DELIVERY_METHOD);
         if (value == null) {
@@ -129,6 +197,32 @@ public class SsfReceiverRegistrationProviderConfig extends IdentityProviderModel
     @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
+
+        TransmitterAuthMethod authMethod = getTransmitterAuthMethod();
+        if (authMethod == TransmitterAuthMethod.CLIENT_CREDENTIALS) {
+            if (isBlank(getTokenUrl())) {
+                throw new IllegalArgumentException("tokenUrl is required when using CLIENT_CREDENTIALS authentication");
+            }
+            if (isBlank(getClientId())) {
+                throw new IllegalArgumentException("clientId is required when using CLIENT_CREDENTIALS authentication");
+            }
+            if (isBlank(getClientSecret())) {
+                throw new IllegalArgumentException("clientSecret is required when using CLIENT_CREDENTIALS authentication");
+            }
+        } else {
+            if (isBlank(getTransmitterToken())) {
+                throw new IllegalArgumentException("transmitterToken is required when using STATIC_TOKEN authentication");
+            }
+        }
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    public static enum TransmitterAuthMethod {
+        STATIC_TOKEN,
+        CLIENT_CREDENTIALS,
     }
 
     public static enum TransmitterTokenType {

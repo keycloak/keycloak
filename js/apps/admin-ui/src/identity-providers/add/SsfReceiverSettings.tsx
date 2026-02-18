@@ -4,9 +4,16 @@ import {
   TextControl,
 } from "@keycloak/keycloak-ui-shared";
 import { useTranslation } from "react-i18next";
+import { useWatch } from "react-hook-form";
+import { ClientIdSecret } from "../component/ClientIdSecret";
 
 export const SsfReceiverSettings = () => {
   const { t } = useTranslation();
+
+  const transmitterAuthMethod = useWatch({
+    name: "config.transmitterAuthMethod",
+    defaultValue: "STATIC_TOKEN",
+  });
 
   return (
     <>
@@ -42,27 +49,71 @@ export const SsfReceiverSettings = () => {
         rules={{}}
       />
 
-      <PasswordControl
-        name="config.transmitterToken"
-        label={t("ssfTransmitterToken")}
-        labelIcon={t("ssfTransmitterTokenHelp")}
-        rules={{
-          required: t("required"),
-        }}
-      />
-
       <SelectControl
-        name="config.transmitterTokenType"
-        label={t("ssfTransmitterTokenType")}
-        labelIcon={t("ssfTransmitterTokenTypeHelp")}
+        name="config.transmitterAuthMethod"
+        label={t("ssfTransmitterAuthMethod")}
+        labelIcon={t("ssfTransmitterAuthMethodHelp")}
         options={[
           {
-            key: "ACCESS_TOKEN",
-            value: t("ssfTransmitterTokenType.accessToken"),
+            key: "STATIC_TOKEN",
+            value: t("ssfTransmitterAuthMethod.staticToken"),
+          },
+          {
+            key: "CLIENT_CREDENTIALS",
+            value: t("ssfTransmitterAuthMethod.clientCredentials"),
           },
         ]}
-        controller={{ defaultValue: "ACCESS_TOKEN" }}
+        controller={{ defaultValue: "STATIC_TOKEN" }}
       />
+
+      {(!transmitterAuthMethod || transmitterAuthMethod === "STATIC_TOKEN") && (
+        <PasswordControl
+          name="config.transmitterToken"
+          label={t("ssfTransmitterToken")}
+          labelIcon={t("ssfTransmitterTokenHelp")}
+          rules={{
+            required: t("required"),
+          }}
+        />
+      )}
+
+      {transmitterAuthMethod === "CLIENT_CREDENTIALS" && (
+        <>
+          <TextControl
+            name="config.tokenUrl"
+            label={t("tokenUrl")}
+            labelIcon={t("ssfTokenUrlHelp")}
+            rules={{
+              required: t("required"),
+            }}
+          />
+
+          <SelectControl
+            name="config.clientAuthMethod"
+            label={t("clientAuthentication")}
+            options={[
+              {
+                key: "client_secret_post",
+                value: t("clientAuthentications.client_secret_post"),
+              },
+              {
+                key: "client_secret_basic",
+                value: t("clientAuthentications.client_secret_basic"),
+              },
+            ]}
+            controller={{ defaultValue: "client_secret_post" }}
+          />
+
+          <ClientIdSecret />
+
+          <TextControl
+            name="config.scope"
+            label={t("ssfScope")}
+            labelIcon={t("ssfScopeHelp")}
+            rules={{}}
+          />
+        </>
+      )}
     </>
   );
 };

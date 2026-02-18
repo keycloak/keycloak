@@ -61,7 +61,10 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
         Map<String, SsfEvent> events = securityEventToken.getEvents();
         SsfReceiverRegistrationProviderConfig receiverProviderConfig = receiver.getConfig();
 
-        LOG.debugf("Processing SSF events for security event token. realm=%s jti=%s streamId=%s eventCount=%s", keycloakContext.getRealm().getName(), securityEventToken.getId(), receiverProviderConfig.getStreamId(), events.size());
+        RealmModel realm = keycloakContext.getRealm();
+        String receiverAlias = receiver.getConfig().getAlias();
+        LOG.debugf("Processing SSF events for security event token. realm=%s receiver=%s jti=%s streamId=%s eventCount=%s",
+                realm.getName(), receiverAlias, securityEventToken.getId(), receiverProviderConfig.getStreamId(), events.size());
 
         int successfullyProcessedEventCounter = 0;
         for (var entry : events.entrySet()) {
@@ -71,13 +74,16 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
             try {
                 SsfEvent ssfEvent = narrowEventPayloadToSecurityEvent(securityEventType, securityEventData, securityEventToken);
 
+                LOG.debugf("Processing SSF Event. realm=%s receiver=%s jti=%s streamId=%s eventType=%s",
+                        realm.getName(), receiverAlias, securityEventToken.getId(), receiverProviderConfig.getStreamId(), ssfEvent.getEventType());
+
                 if (ssfEvent instanceof VerificationEvent verificationEvent) {
                     // special case: handle verification event
                     // See: https://openid.net/specs/openid-sharedsignals-framework-1_0.html#name-verification
                     if (events.size() > 1) {
-                        LOG.warnf("Found more than one security event for token with verification request. %s", eventId);
+                        LOG.warnf("Found more than one security event for token with verification request. realm=%s receiver=%s jti=%s streamId=%s eventType=%s",
+                                realm.getName(), receiverAlias, securityEventToken.getId(), receiverProviderConfig.getStreamId(), ssfEvent.getEventType());
                     }
-
                     boolean verified = handleVerificationEvent(eventContext, verificationEvent, eventId);
                     if (verified) {
                         successfullyProcessedEventCounter++;
@@ -152,25 +158,29 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
         RealmModel realm = keycloakContext.getRealm();
         SsfReceiver receiver = eventContext.getReceiver();
         SsfReceiverRegistrationProviderConfig receiverProviderConfig = receiver.getConfig();
+        String receiverAlias = receiverProviderConfig.getAlias();
 
         if (!receiverProviderConfig.getStreamId().equals(streamId)) {
-            LOG.debugf("Verification failed! StreamId mismatch. jti=%s expectedStreamId=%s actualStreamId=%s", jti, receiverProviderConfig.getStreamId(), streamId);
+            LOG.warnf("Stream Verification failed! StreamId mismatch. realm=%s  receiver=%s jti=%s eventType=%s expectedStreamId=%s actualStreamId=%s",
+                    realm.getName(), receiverAlias, jti, verificationEvent.getEventType(), receiverProviderConfig.getStreamId(), streamId);
             return false;
         }
 
-        SsfStreamVerificationState verificationState = getVerificationState(realm, receiver, receiverProviderConfig.getAlias(), receiverProviderConfig.getStreamId());
+        SsfStreamVerificationState verificationState = getVerificationState(realm, receiver, receiverAlias, receiverProviderConfig.getStreamId());
 
         String givenState = verificationEvent.getState();
         String expectedState = verificationState == null ? null : verificationState.getState();
 
         if (expectedState != null && expectedState.equals(givenState)) {
             // Only clear verification state on successful verification
-            verificationStore.clearVerificationState(realm, receiverProviderConfig.getAlias(), receiverProviderConfig.getStreamId());
-            LOG.debugf("Verification successful. jti=%s state=%s", jti, givenState);
+            verificationStore.clearVerificationState(realm, receiverAlias, receiverProviderConfig.getStreamId());
+            LOG.debugf("Stream Verification successful. realm=%s receiver=%s jti=%s state=%s",
+                    realm.getName(), receiverAlias, jti, givenState);
             return true;
         }
 
-        LOG.warnf("Verification failed. jti=%s givenState=%s expectedState=%s", jti, givenState, expectedState);
+        LOG.warnf("Stream Verification failed. realm=%s receiver=%s jti=%s eventType=%s givenState=%s expectedState=%s",
+                realm.getName(), receiverAlias, jti, verificationEvent.getEventType(), receiverProviderConfig.getStreamId(), streamId);
         return false;
     }
 
@@ -209,10 +219,11 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
 
         KeycloakContext keycloakContext = eventContext.getSession().getContext();
         RealmModel realm = keycloakContext.getRealm();
-
+        String receiverAlias = eventContext.getReceiver().getConfig().getAlias();
         if (securityEventToken.getSubjectId() instanceof OpaqueSubjectId opaqueSubjectId) {
             // TODO handle stream status update, do we need to do anything here? currently streams are managed outside of Keycloak.
-            LOG.debugf("Handled stream updated event. realm=%s jti=%s streamId=%s newStatus=%s", realm.getName(), jti, opaqueSubjectId.getId(), streamUpdatedEvent.getStatus());
+            LOG.debugf("Handled stream updated event. realm=%s receiver=%s jti=%s streamId=%s newStatus=%s",
+                    realm.getName(), receiverAlias, jti, opaqueSubjectId.getId(), streamUpdatedEvent.getStatus());
         }
 
         return true;
