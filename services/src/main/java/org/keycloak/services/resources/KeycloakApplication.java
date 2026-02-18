@@ -17,8 +17,6 @@
 package org.keycloak.services.resources;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
 
 import jakarta.transaction.SystemException;
 import jakarta.transaction.Transaction;
@@ -55,15 +53,9 @@ public abstract class KeycloakApplication extends Application {
 
     public KeycloakApplication() {
         try {
-            File tmpDir = initTmpDirectory();
-            if (tmpDir.isDirectory()) {
-                logger.debugf("Using server tmp directory: %s", tmpDir.getAbsolutePath());
-            } else {
-                logger.warnf("Temporary directory %s does not exist and it was not possible to create it.", tmpDir.getAbsolutePath());
-            }
-            System.setProperty(KC_TMPDIR, tmpDir.getAbsolutePath());
+            initTmpDirectory();
             logger.debugv("Application: {0}", this.getClass().getName());
-            loadConfig();
+            initAndStart();
         } catch (Throwable t) {
             exit(t);
         }
@@ -73,33 +65,16 @@ public abstract class KeycloakApplication extends Application {
         return System.getProperty(KC_TMPDIR, System.getProperty("java.io.tmpdir"));
     }
 
-    protected File initTmpDirectory() {
+    protected void initTmpDirectory() {
         String dataDir = getDataDir();
-
-        File tmpDir;
-        if (dataDir == null) {
-            // Should happen just in non-script launch scenarios
-            tmpDir = createTmpDirectory();
+        File tmpDir = new File(dataDir, "tmp");
+        tmpDir.mkdirs();
+        if (tmpDir.isDirectory()) {
+            logger.debugf("Using server tmp directory: %s", tmpDir.getAbsolutePath());
         } else {
-            tmpDir = new File(dataDir, "tmp");
-            tmpDir.mkdirs();
+            logger.warnf("Temporary directory %s does not exist and it was not possible to create it.", tmpDir.getAbsolutePath());
         }
-        return tmpDir;
-    }
-
-    public static File createTmpDirectory() {
-        try {
-            File tmpDir = Path.of(System.getProperty("java.io.tmpdir"), "server-tmp").toFile();
-            if (tmpDir.exists()) {
-                org.apache.commons.io.FileUtils.deleteDirectory(tmpDir);
-            }
-            if (tmpDir.mkdirs()) {
-                tmpDir.deleteOnExit();
-            }
-            return tmpDir;
-        } catch (IOException ioex) {
-            throw new RuntimeException("It was not possible to create temporary directory keycloak-quarkus-tmp", ioex);
-        }
+        System.setProperty(KC_TMPDIR, tmpDir.getAbsolutePath());
     }
 
     protected abstract void exit(Throwable t);
@@ -200,7 +175,7 @@ public abstract class KeycloakApplication extends Application {
 
     protected abstract void createTemporaryAdmin(KeycloakSession session);
 
-    protected abstract void loadConfig();
+    protected abstract void initAndStart();
 
     protected abstract KeycloakSessionFactory createSessionFactory();
 

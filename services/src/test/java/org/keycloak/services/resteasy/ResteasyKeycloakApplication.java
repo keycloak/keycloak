@@ -105,7 +105,7 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
-    protected void loadConfig() {
+    protected void initAndStart() {
         Config.init(new JsonConfigProviderFactory().create()
                 .orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
         startup();
