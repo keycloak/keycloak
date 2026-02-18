@@ -181,6 +181,8 @@
         <xml-apis.version>1.4.01</xml-apis.version>
         <subethasmtp.version>3.1.7</subethasmtp.version>
         <assertj-core.version>3.22.0</assertj-core.version>
+        <!-- Needs to be overridden to fix this issue - https://github.com/testcontainers/testcontainers-java/issues/11212 -->
+        <testcontainers.version>1.21.4</testcontainers.version>
 
         <!-- Maven Plugins -->
         <maven.plugins.version>3.13.1</maven.plugins.version>
@@ -650,6 +652,49 @@
                 <version>${subethasmtp.version}</version>
                 <scope>test</scope>
             </dependency>
+
+            <!-- BEGIN - Override Testcontainers version to fix issue: https://github.com/testcontainers/testcontainers-java/issues/11212 -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>cockroachdb</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>mariadb</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>mysql</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>mssqlserver</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>oracle-free</artifactId>
+                <version>${testcontainers.version}</version>
+            </dependency>
+            <!-- END -->
 
             <!-- Apache DS -->
             <dependency>
