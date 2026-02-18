@@ -39,24 +39,23 @@ public class DefaultSsfEventListener implements SsfEventListener {
         String eventType = event.getEventType();
         SubjectId subjectId = event.getSubjectId();
         var eventClass = event.getClass();
-        LOG.debugf("Security event received. eventId=%s eventType=%s subjectId=%s eventClass=%s", eventId, eventType, subjectId, eventClass.getName());
+        LOG.debugf("SSF event received. eventId=%s eventType=%s subjectId=%s eventClass=%s", eventId, eventType, subjectId, eventClass.getName());
 
-        KeycloakContext context = session.getContext();
-        RealmModel realm = context.getRealm();
-
-        handleSecurityEvent(eventContext, event, realm, subjectId);
+        handleSsfEvent(eventContext, event, subjectId);
     }
 
-    protected void handleSecurityEvent(SsfEventContext eventContext, SsfEvent ssfEvent, RealmModel realm, SubjectId subjectId) {
+    protected void handleSsfEvent(SsfEventContext eventContext, SsfEvent ssfEvent, SubjectId subjectId) {
 
         if (ssfEvent instanceof SessionRevoked sessionRevoked) {
-            handleSessionRevokedEvent(eventContext, realm, subjectId, sessionRevoked);
+            handleSessionRevokedEvent(eventContext, subjectId, sessionRevoked);
         }
     }
 
-    protected void handleSessionRevokedEvent(SsfEventContext eventContext, RealmModel realm, SubjectId subjectId, SessionRevoked ssfEvent) {
+    protected void handleSessionRevokedEvent(SsfEventContext eventContext, SubjectId subjectId, SessionRevoked ssfEvent) {
 
-        // TODO subject is usually refering to a user, but could also be UserSession, an IdentityProvider, Organization etc. so we might need to be more flexible here
+        RealmModel realm = eventContext.getRealm();
+
+        // TODO subject is usually refering to a user, but could also be UserSession, all users of an IdentityProvider or Organization etc. so we might need to be more flexible here
         List<UserSessionModel> userSessions = getUserSessions(realm, subjectId);
         if (userSessions == null || userSessions.isEmpty()) {
             return;
@@ -67,11 +66,11 @@ public class DefaultSsfEventListener implements SsfEventListener {
         UserModel user = userSessions.get(0).getUser();
         for (var userSession : userSessions) {
 
-            if (!shouldRemoveUserSession(realm, userSession, eventContext)) {
+            if (!shouldRemoveUserSession(userSession, eventContext)) {
                 continue;
             }
 
-            removeUserSession(realm, userSession, eventContext);
+            removeUserSession(userSession, eventContext);
 
             if (isUserEventRecordingEnabled(realm, EventType.USER_SESSION_DELETED)) {
                 fireUserEvent(eventContext, ssfEvent, userSession, eventBuilder, user);
@@ -82,11 +81,11 @@ public class DefaultSsfEventListener implements SsfEventListener {
                 userSessions.size(), realm.getName(), user.getId(), ssfEvent.getReasonAdmin(), ssfEvent.getReasonUser());
     }
 
-    protected void removeUserSession(RealmModel realm, UserSessionModel userSession, SsfEventContext eventContext) {
-        session.sessions().removeUserSession(realm, userSession);
+    protected void removeUserSession(UserSessionModel userSession, SsfEventContext eventContext) {
+        session.sessions().removeUserSession(eventContext.getRealm(), userSession);
     }
 
-    protected boolean shouldRemoveUserSession(RealmModel realm, UserSessionModel userSession, SsfEventContext eventContext) {
+    protected boolean shouldRemoveUserSession(UserSessionModel userSession, SsfEventContext eventContext) {
         return true;
     }
 
