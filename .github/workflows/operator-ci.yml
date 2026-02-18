@@ -146,15 +146,12 @@ jobs:
           driver: docker
           start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
 
-      - name: Install OPM
+      - name: Install OPM / OC
         uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
         with:
-          source: github
-          opm: 1.21.0
-
-      - name: Install OC
-        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
-        with:
+          # openshift-tools-installer is out-of-date for later opm, which started using the binary name opm-rhelX.
+          # we may have to do our own installation to move past this
+          opm: 4.16.4
           oc: 4
 
       - name: Install Yq
