@@ -1,6 +1,8 @@
 package org.keycloak.tests.ssf;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.util.HashMap;
 import java.util.List;
@@ -8,9 +10,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.ws.rs.core.HttpHeaders;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyUse;
@@ -28,7 +32,9 @@ import org.keycloak.protocol.ssf.event.types.SsfEvent;
 import org.keycloak.protocol.ssf.event.types.caep.SessionRevoked;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpServer;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -40,6 +46,7 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.HttpServerUtil;
 import org.keycloak.tests.utils.KeyUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -49,6 +56,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.http.entity.StringEntity;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -67,6 +75,12 @@ public class SsfReceiverTests {
 
     @InjectOAuthClient
     OAuthClient oauthClient;
+
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     KeyWrapper keyWrapper;
 
@@ -128,6 +142,25 @@ public class SsfReceiverTests {
             }
         });
 
+    }
+
+    @AfterEach
+    public void cleanup() {
+        // Remove IdP created in setup to avoid conflicts on next test run
+        try {
+            realm.admin().identityProviders().get("dummy-transmitter").remove();
+        } catch (Exception ignored) {
+        }
+
+        // Remove mock server contexts to allow re-creation in next setup
+        try {
+            mockTransmitterServer.removeContext("/jwks.json");
+        } catch (Exception ignored) {
+        }
+        try {
+            mockTransmitterServer.removeContext("/.well-known/ssf-configuration");
+        } catch (Exception ignored) {
+        }
     }
 
     public IdentityProviderRepresentation createSsfReceiverProviderRegistration() {
@@ -205,6 +238,92 @@ public class SsfReceiverTests {
             Assertions.assertFalse(introspectionResponse.asJsonNode().get("active").asBoolean());
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void testVerificationWithClientCredentials() throws IOException {
+
+        String ccReceiverAlias = "cc-transmitter";
+
+        // Track what the mock verify endpoint receives
+        AtomicReference<String> receivedVerifyAuthHeader = new AtomicReference<>();
+        AtomicReference<String> receivedTokenRequestBody = new AtomicReference<>();
+
+        // Mock /token endpoint that validates client credentials and returns an access token
+        mockTransmitterServer.createContext("/token", exchange -> {
+            try {
+                InputStream is = exchange.getRequestBody();
+                String body = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                receivedTokenRequestBody.set(body);
+
+                // Return a mock access token response
+                String tokenResponse = "{\"access_token\":\"mock-cc-token\",\"token_type\":\"bearer\",\"expires_in\":300}";
+                HttpServerUtil.sendResponse(exchange, 200,
+                        Map.of("Content-Type", List.of("application/json")),
+                        tokenResponse
+                );
+            } catch (Exception e) {
+                HttpServerUtil.sendResponse(exchange, 500, Map.of(), "Internal Error");
+            }
+        });
+
+        // Mock /verify endpoint that records the Authorization header and returns 204
+        mockTransmitterServer.createContext("/verify", exchange -> {
+            receivedVerifyAuthHeader.set(exchange.getRequestHeaders().getFirst("Authorization"));
+            HttpServerUtil.sendResponse(exchange, 204, Map.of());
+        });
+
+        // Create an SSF receiver with CLIENT_CREDENTIALS auth method
+        var ccReceiverRegistration = new IdentityProviderRepresentation();
+        ccReceiverRegistration.setAlias(ccReceiverAlias);
+        ccReceiverRegistration.setProviderId("ssf-receiver");
+        ccReceiverRegistration.setDisplayName("CC SSF Receiver");
+        ccReceiverRegistration.setEnabled(true);
+        Map<String, String> ccConfig = new HashMap<>();
+        ccConfig.put("streamId", "cc-stream-id");
+        ccConfig.put("description", "Client Credentials SSF Receiver");
+        ccConfig.put("streamAudience", "https://keycloak-stream-audience");
+        ccConfig.put("issuer", "http://127.0.0.1:8500");
+        ccConfig.put("transmitterAuthMethod", "CLIENT_CREDENTIALS");
+        ccConfig.put("tokenUrl", "http://127.0.0.1:8500/token");
+        ccConfig.put("clientId", "test-cc-client");
+        ccConfig.put("clientSecret", "test-cc-secret");
+        ccConfig.put("clientAuthMethod", "client_secret_post");
+        ccConfig.put("pushAuthorizationHeader", "expected-push-auth-header");
+        ccReceiverRegistration.setConfig(ccConfig);
+
+        realm.admin().identityProviders().create(ccReceiverRegistration);
+
+        try {
+            // Trigger verification via admin API
+            String verifyUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName() + "/ssf/receivers/" + ccReceiverAlias + "/verify";
+            try (SimpleHttpResponse response = http.doPost(verifyUrl)
+                    .auth(adminClient.tokenManager().getAccessTokenString())
+                    .entity(new StringEntity(""))
+                    .asResponse()) {
+                Assertions.assertEquals(204, response.getStatus(),
+                        "Verification should succeed with 204");
+            }
+
+            // Assert the mock token endpoint was called with client credentials
+            String tokenBody = receivedTokenRequestBody.get();
+            Assertions.assertNotNull(tokenBody, "Token endpoint should have been called");
+            Assertions.assertTrue(tokenBody.contains("grant_type=client_credentials"),
+                    "Token request should contain grant_type=client_credentials");
+            Assertions.assertTrue(tokenBody.contains("client_id=test-cc-client"),
+                    "Token request should contain client_id");
+            Assertions.assertTrue(tokenBody.contains("client_secret=test-cc-secret"),
+                    "Token request should contain client_secret");
+
+            // Assert the verification endpoint received the dynamically obtained token
+            Assertions.assertEquals("Bearer mock-cc-token", receivedVerifyAuthHeader.get(),
+                    "Verification endpoint should receive the dynamically obtained token");
+        } finally {
+            // Cleanup: remove the receiver
+            realm.admin().identityProviders().get(ccReceiverAlias).remove();
+            mockTransmitterServer.removeContext("/token");
+            mockTransmitterServer.removeContext("/verify");
         }
     }
 
