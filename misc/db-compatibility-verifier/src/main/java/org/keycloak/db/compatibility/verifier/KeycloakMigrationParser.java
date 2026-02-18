@@ -18,6 +18,12 @@ import java.util.stream.Stream;
 record KeycloakMigrationParser(ClassLoader classLoader, String packageName) {
     Set<Migration> discoverAllMigrations() throws IOException {
         return findAllClassNamesInPackage(classLoader, packageName)
+              .filter(s -> {
+                  var parts = s.split("\\.");
+                  var clazz = parts[parts.length - 1];
+                  // Ignore anonymous/lambda/inner classes
+                  return !clazz.contains("$");
+              })
               .map(Migration::new)
               .collect(Collectors.toSet());
     }
