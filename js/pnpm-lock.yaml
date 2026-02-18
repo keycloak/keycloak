@@ -374,6 +374,9 @@ importers:
       chai:
         specifier: ^6.2.2
         version: 6.2.2
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
       lodash-es:
         specifier: ^4.17.23
         version: 4.17.23
