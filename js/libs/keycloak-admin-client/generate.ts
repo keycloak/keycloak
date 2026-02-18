@@ -140,25 +140,21 @@ import { TextParseNodeFactory, TextSerializationWriterFactory } from "@microsoft
       serializerImports + "import { apiClientProxifier,",
     );
 
-    // Fill in the deserializer registration
+    // Fill in the deserializer registration (without if-check to avoid TypeScript 5.9+ warnings)
     content = content.replace(
       /if \(parseNodeFactoryRegistry\.registerDefaultDeserializer\) \{\n {4}\}/,
-      `if (parseNodeFactoryRegistry.registerDefaultDeserializer) {
-        parseNodeFactoryRegistry.registerDefaultDeserializer(JsonParseNodeFactory, backingStoreFactory);
-        parseNodeFactoryRegistry.registerDefaultDeserializer(TextParseNodeFactory, backingStoreFactory);
-        parseNodeFactoryRegistry.registerDefaultDeserializer(FormParseNodeFactory, backingStoreFactory);
-    }`,
+      `parseNodeFactoryRegistry.registerDefaultDeserializer(JsonParseNodeFactory, backingStoreFactory);
+    parseNodeFactoryRegistry.registerDefaultDeserializer(TextParseNodeFactory, backingStoreFactory);
+    parseNodeFactoryRegistry.registerDefaultDeserializer(FormParseNodeFactory, backingStoreFactory);`,
     );
 
-    // Fill in the serializer registration
+    // Fill in the serializer registration (without if-check to avoid TypeScript 5.9+ warnings)
     content = content.replace(
       /if \(serializationWriterFactory\.registerDefaultSerializer\) \{\n {4}\}/,
-      `if (serializationWriterFactory.registerDefaultSerializer) {
-        serializationWriterFactory.registerDefaultSerializer(JsonSerializationWriterFactory);
-        serializationWriterFactory.registerDefaultSerializer(TextSerializationWriterFactory);
-        serializationWriterFactory.registerDefaultSerializer(FormSerializationWriterFactory);
-        serializationWriterFactory.registerDefaultSerializer(MultipartSerializationWriterFactory);
-    }`,
+      `serializationWriterFactory.registerDefaultSerializer(JsonSerializationWriterFactory);
+    serializationWriterFactory.registerDefaultSerializer(TextSerializationWriterFactory);
+    serializationWriterFactory.registerDefaultSerializer(FormSerializationWriterFactory);
+    serializationWriterFactory.registerDefaultSerializer(MultipartSerializationWriterFactory);`,
     );
 
     modified = true;
