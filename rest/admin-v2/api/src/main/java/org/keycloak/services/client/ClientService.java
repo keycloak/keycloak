@@ -11,7 +11,6 @@ import org.keycloak.services.ServiceException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-
 public interface ClientService extends Service {
 
     class ClientSearchOptions {

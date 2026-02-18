@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -149,14 +150,18 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, JsonNode patch) throws ServiceException {
-        BaseClientRepresentation original, updated;
+        Supplier<BaseClientRepresentation> getOriginalClient = () -> getClient(realm, clientId)
+                .orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
 
-        original = getClient(realm, clientId).orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
-
+        BaseClientRepresentation updated;
         switch (patchType) {
             case JSON_MERGE -> {
                 try {
-                    final ObjectReader objectReader = MAPPER.readerForUpdating(original);
+                    if (patch == null) {
+                        // based on the RFC 7396 JSON Merge Patch should replace the whole entity if the patch is not an object - we can't do it
+                        throw new ServiceException("Cannot replace client resource with null", Response.Status.BAD_REQUEST);
+                    }
+                    final ObjectReader objectReader = MAPPER.readerForUpdating(getOriginalClient.get());
                     updated = objectReader.readValue(patch);
                 } catch (JsonProcessingException e) {
                     throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);

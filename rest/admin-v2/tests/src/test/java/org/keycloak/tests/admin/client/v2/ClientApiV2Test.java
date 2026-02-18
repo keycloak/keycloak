@@ -51,6 +51,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.services.cors.Cors.ACCESS_CONTROL_ALLOW_METHODS;
@@ -126,12 +127,12 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         request.setEntity(new StringEntity("patch client invalid"));
         try (var response = client.execute(request)) {
-            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
         }
 
         request.setEntity(new StringEntity("{\"invalid\":\"nothing\"}"));
         try (var response = client.execute(request)) {
-            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
         }
 
         request.setEntity(new StringEntity("{}"));
@@ -140,9 +141,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(200, response.getStatusLine().getStatusCode());
         }
 
-        request.setEntity(new StringEntity("")); // behaves the same as {}
+        request.setEntity(new StringEntity(""));
         try (var response = client.execute(request)) {
-            assertEquals(200, response.getStatusLine().getStatusCode());
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with null"));
         }
     }
 
