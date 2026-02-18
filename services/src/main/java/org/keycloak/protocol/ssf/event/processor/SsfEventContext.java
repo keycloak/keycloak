@@ -1,6 +1,7 @@
 package org.keycloak.protocol.ssf.event.processor;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.event.SecurityEventToken;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 
@@ -16,6 +17,9 @@ public class SsfEventContext {
     protected SecurityEventToken securityEventToken;
 
     protected boolean processedSuccessfully;
+
+    public SsfEventContext() {
+    }
 
     public SecurityEventToken getSecurityEventToken() {
         return securityEventToken;
@@ -47,5 +51,9 @@ public class SsfEventContext {
 
     public void setReceiver(SsfReceiver receiver) {
         this.receiver = receiver;
+    }
+
+    public RealmModel getRealm() {
+        return session.getContext().getRealm();
     }
 }
