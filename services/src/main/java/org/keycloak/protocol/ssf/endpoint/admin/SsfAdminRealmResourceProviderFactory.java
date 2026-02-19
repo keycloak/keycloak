@@ -1,12 +1,14 @@
 package org.keycloak.protocol.ssf.endpoint.admin;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProviderFactory;
 
-public class SsfAdminRealmResourceProviderFactory implements AdminRealmResourceProviderFactory {
+public class SsfAdminRealmResourceProviderFactory implements AdminRealmResourceProviderFactory, EnvironmentDependentProviderFactory {
 
     @Override
     public String getId() {
@@ -31,5 +33,9 @@ public class SsfAdminRealmResourceProviderFactory implements AdminRealmResourceP
     @Override
     public void close() {
         // NOOP
+    }
+
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.SSF);
     }
 }
