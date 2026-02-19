@@ -9,11 +9,16 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.IdentityOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.ManagedIdentity.AwsDatabaseTokenProvider;
+import org.keycloak.quarkus.runtime.configuration.ManagedIdentity.AzureDatabaseTokenProvider;
+import org.keycloak.quarkus.runtime.configuration.ManagedIdentity.DatabaseTokenManager;
+import org.keycloak.quarkus.runtime.configuration.ManagedIdentity.DatabaseTokenProvider;
 import org.keycloak.utils.StringUtil;
 
 import io.quarkus.datasource.common.runtime.DatabaseKind;
@@ -75,6 +80,7 @@ final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .paramLabel("username")
                         .build(),
                 fromOption(DatabaseOptions.DB_PASSWORD)
+                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::getPassword)
                         .to("quarkus.datasource.password")
                         .paramLabel("password")
                         .isMasked(true)
@@ -236,6 +242,47 @@ final class DatabasePropertyMappers implements PropertyMapperGrouping {
             case MYSQL, MARIADB -> "PT7H50M";
             default -> "";
         };
+    }
+    private static volatile  DatabaseTokenManager TOKEN_MANAGER ;
+
+    private static String getPassword(String name, String value, ConfigSourceInterceptorContext context) {
+      String IdentityEnabled = Configuration.getConfigValue(IdentityOptions.USE_IDENTITY).getValue();
+      Supplier<String> configuredPassword  = () -> Optional.ofNullable(context.proceed(NS_KEYCLOAK_PREFIX + DatabaseOptions.DB_PASSWORD.getKey()))
+        .map(ConfigValue::getValue)
+        .orElse(null);
+      String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+      Database.Vendor vendorEnum = Database.getVendor(db).orElseThrow();
+      String vendor = vendorEnum.name().toLowerCase(); //postgres
+      if ("true".equalsIgnoreCase(IdentityEnabled)) {
+        log.debug("token is:"+ configuredPassword);
+        return getTokenManager().getToken(vendor);
+      }
+      return configuredPassword.get();
+    }
+
+  private static DatabaseTokenManager getTokenManager() {
+
+    if (TOKEN_MANAGER == null) {
+      synchronized (DatabasePropertyMappers.class) {
+        if (TOKEN_MANAGER == null) {
+          TOKEN_MANAGER = new DatabaseTokenManager(resolveProvider());
+        }
+      }
+    }
+    return TOKEN_MANAGER;
+  }
+
+    private static DatabaseTokenProvider resolveProvider() {
+
+      String cloud = Configuration.getConfigValue(IdentityOptions.CLOUD_PROVIDER).getValue();
+
+      if ("azure".equalsIgnoreCase(cloud)) {
+        return new AzureDatabaseTokenProvider();
+      }
+      if ("aws".equalsIgnoreCase(cloud)) {
+        return new AwsDatabaseTokenProvider();
+      }
+      throw new IllegalStateException("Unsupported cloud provider: " + cloud);
     }
 
     public static final class Datasources {

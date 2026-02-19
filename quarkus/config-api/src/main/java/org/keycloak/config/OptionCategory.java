@@ -3,6 +3,7 @@ package org.keycloak.config;
 public enum OptionCategory {
     CACHE("Cache", 10, ConfigSupportLevel.SUPPORTED),
     CONFIG("Config", 15, ConfigSupportLevel.SUPPORTED),
+    DATABASE_IDENTITY("Identity", 17, ConfigSupportLevel.SUPPORTED),
     DATABASE("Database", 20, ConfigSupportLevel.SUPPORTED),
     DATABASE_DATASOURCES("Database - additional datasources", 21, ConfigSupportLevel.SUPPORTED),
     TRANSACTION("Transaction",30, ConfigSupportLevel.SUPPORTED),
@@ -27,6 +28,7 @@ public enum OptionCategory {
     OPENAPI("OpenAPI configuration", 150, ConfigSupportLevel.SUPPORTED),
     BOOTSTRAP_ADMIN("Bootstrap Admin", 998, ConfigSupportLevel.SUPPORTED),
     GENERAL("General", 999, ConfigSupportLevel.SUPPORTED);
+
 
     private final String heading;
     //Categories with a lower number are shown before groups with a higher number
