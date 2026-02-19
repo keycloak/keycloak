@@ -11,8 +11,8 @@ on:
 
 env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
-  MINIKUBE_VERSION: v1.32.0
-  KUBERNETES_VERSION: v1.27.10 # OCP 4.14
+  MINIKUBE_VERSION: v1.38.0
+  KUBERNETES_VERSION: v1.28.15
   MINIKUBE_MEMORY: 4096 # Without explicitly setting memory, minikube uses ~25% of available memory which might be too little on smaller GitHub runners for running the tests
 
 defaults:
@@ -62,8 +62,6 @@ jobs:
   test-local:
     name: Test local
     runs-on: ubuntu-latest
-    env:
-      DOCKER_API_VERSION: 1.43 # Workaround to have compatible Docker client with engine in GHA agents
     needs: [build]
     strategy:
       matrix:
@@ -85,7 +83,7 @@ jobs:
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }} --cni cilium --cpus=max
+          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }} --cni calico --cpus=max
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
@@ -115,8 +113,6 @@ jobs:
   test-remote:
     name: Test remote
     runs-on: ubuntu-latest
-    env:
-      DOCKER_API_VERSION: 1.43 # Workaround to have compatible Docker client with engine in GHA agents
     needs: [build]
     strategy:
           matrix:
@@ -138,7 +134,7 @@ jobs:
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }} --cni cilium --cpus=max
+          start args: --addons=ingress --memory=${{ env.MINIKUBE_MEMORY }} --cni calico --cpus=max
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
@@ -171,9 +167,6 @@ jobs:
   test-olm:
     name: Test OLM installation
     runs-on: ubuntu-latest
-    env:
-      MINIKUBE_VERSION: v1.38.0 # Upgrade minikube to fix the issue with unstable registry
-      KUBERNETES_VERSION: v1.35.0
     needs: [build]
     steps:
       - uses: actions/checkout@v4
