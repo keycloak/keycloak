@@ -23,12 +23,12 @@ import java.util.Set;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
-import org.keycloak.admin.api.AdminApi;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
+import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -51,6 +51,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -104,7 +105,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     public void jsonMergePatchClient() throws Exception {
         HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
         setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, AdminApi.CONTENT_TYPE_MERGE_PATCH);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("I'm also a description");
@@ -116,6 +117,35 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals("I'm also a description", client.getDescription());
+        }
+    }
+
+    @Test
+    public void jsonMergePatchClientInvalid() throws Exception {
+        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+
+        request.setEntity(new StringEntity("patch client invalid"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
+        }
+
+        request.setEntity(new StringEntity("{\"invalid\":\"nothing\"}"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
+        }
+
+        request.setEntity(new StringEntity("{}"));
+        try (var response = client.execute(request)) {
+            EntityUtils.consumeQuietly(response.getEntity());
+            assertEquals(200, response.getStatusLine().getStatusCode());
+        }
+
+        request.setEntity(new StringEntity(""));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with null"));
         }
     }
 

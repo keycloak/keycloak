@@ -1,11 +1,13 @@
 package org.keycloak.quarkus.runtime.oas;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -15,11 +17,8 @@ import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.OASFilter;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.PathItem;
-import org.eclipse.microprofile.openapi.models.media.Content;
 import org.eclipse.microprofile.openapi.models.media.Discriminator;
 import org.eclipse.microprofile.openapi.models.media.Schema;
-import org.eclipse.microprofile.openapi.models.parameters.RequestBody;
-import org.eclipse.microprofile.openapi.models.responses.APIResponses;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
@@ -58,46 +57,12 @@ public class OASModelFilter implements OASFilter {
         newPaths.forEach(paths::addPathItem);
         openAPI.setPaths(paths);
 
+        removeSchemaAndRefs(openAPI, "BaseRepresentation");
+
         Map<String, Set<Schema>> discriminatorPropertiesToBeAdded = new HashMap<>();
 
-        // Reflect Jackson annotations in OpenAPI spec
         // Follows https://swagger.io/docs/specification/v3_0/data-models/inheritance-and-polymorphism/
-        openAPI.getPaths().getPathItems().values().stream()
-                .flatMap(p -> p.getOperations().values().stream())
-                .forEach(operation -> {
-                    // This is not nice but so is the model structure...
-
-                    // Request body
-                    Optional.ofNullable(operation.getRequestBody())
-                            .map(RequestBody::getContent)
-                            .map(Content::getMediaTypes)
-                            .map(Map::values)
-                            .map(Collection::stream)
-                            .ifPresent(mediaTypes -> {
-                                mediaTypes.forEach(mediaType -> {
-                                    mediaType.setSchema(replaceSchemaWithChildrenIfNeeded(mediaType.getSchema(), openAPI, discriminatorPropertiesToBeAdded));
-                                });
-                            });
-
-                    // Responses
-                    Optional.ofNullable(operation.getResponses())
-                            .map(APIResponses::getAPIResponses)
-                            .map(Map::values)
-                            .map(Collection::stream)
-                            .ifPresent(apiResponses -> {
-                                apiResponses.forEach(apiResponse -> {
-                                    Optional.ofNullable(apiResponse.getContent())
-                                            .map(Content::getMediaTypes)
-                                            .map(Map::values)
-                                            .map(Collection::stream)
-                                            .ifPresent(mediaTypes -> {
-                                                mediaTypes.forEach(mediaType -> {
-                                                    mediaType.setSchema(replaceSchemaWithChildrenIfNeeded(mediaType.getSchema(), openAPI, discriminatorPropertiesToBeAdded));
-                                                });
-                                            });
-                                });
-                            });
-                });
+        addDiscriminatorsToParentSchemas(openAPI, discriminatorPropertiesToBeAdded);
 
         // Add missing discriminator properties to subclass schemas
         // Normally, this is handled by Jackson
@@ -109,6 +74,137 @@ public class OASModelFilter implements OASFilter {
                 }
             });
         });
+    }
+
+    /**
+     * Removes a schema from components and cleans up allOf/oneOf/anyOf references to it
+     * from all remaining schemas.
+     */
+    private void removeSchemaAndRefs(OpenAPI openAPI, String schemaName) {
+        if (openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null) {
+            return;
+        }
+
+        Map<String, Schema> schemas = openAPI.getComponents().getSchemas();
+
+        if (schemas.containsKey(schemaName)) {
+            Map<String, Schema> remainingSchemas = new HashMap<>(schemas);
+            remainingSchemas.remove(schemaName);
+            openAPI.getComponents().setSchemas(remainingSchemas);
+            log.debugf("Removed schema '%s'", schemaName);
+        }
+
+        String ref = REF_PREFIX + schemaName;
+        for (Schema schema : openAPI.getComponents().getSchemas().values()) {
+            filterRef(schema::getAllOf, schema::setAllOf, ref);
+            filterRef(schema::getOneOf, schema::setOneOf, ref);
+            filterRef(schema::getAnyOf, schema::setAnyOf, ref);
+        }
+    }
+
+    private void filterRef(Supplier<List<Schema>> getter, Consumer<List<Schema>> setter, String refToRemove) {
+        List<Schema> schemas = getter.get();
+        if (schemas == null) {
+            return;
+        }
+        List<Schema> filtered = schemas.stream()
+                .filter(s -> !refToRemove.equals(s.getRef()))
+                .collect(Collectors.toList());
+        setter.accept(filtered.isEmpty() ? null : filtered);
+    }
+
+    /**
+     * Adds discriminator and oneOf references to parent schemas that have Jackson @JsonTypeInfo
+     * and @JsonSubTypes annotations. This enables OpenAPI generators to create proper class
+     * hierarchies with inheritance.
+     */
+    private void addDiscriminatorsToParentSchemas(OpenAPI openAPI, Map<String, Set<Schema>> discriminatorPropertiesToBeAdded) {
+        if (openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null) {
+            return;
+        }
+
+        // Create a copy of schema names to avoid ConcurrentModificationException
+        Set<String> schemaNames = new HashSet<>(openAPI.getComponents().getSchemas().keySet());
+
+        for (String schemaName : schemaNames) {
+            ClassInfo classInfo = simpleNameToClassInfoMap.get(schemaName);
+            if (classInfo == null) {
+                continue;
+            }
+
+            AnnotationInstance typeInfoAnnotation = classInfo.annotation(JsonTypeInfo.class);
+            AnnotationInstance subTypesAnnotation = classInfo.annotation(JsonSubTypes.class);
+            if (typeInfoAnnotation == null || subTypesAnnotation == null) {
+                continue;
+            }
+
+            AnnotationInstance[] typeAnnotations = Optional.of(subTypesAnnotation.value())
+                    .map(AnnotationValue::asNestedArray)
+                    .orElse(new AnnotationInstance[0]);
+            if (typeAnnotations.length == 0) {
+                continue;
+            }
+
+            // Validate annotations
+            AnnotationValue useValue = typeInfoAnnotation.value("use");
+            if (useValue == null || (!JsonTypeInfo.Id.NAME.name().equals(useValue.asEnum())
+                    && !JsonTypeInfo.Id.SIMPLE_NAME.name().equals(useValue.asEnum()))) {
+                throw new IllegalStateException(
+                        String.format("@JsonTypeInfo on '%s' must use Id.NAME or Id.SIMPLE_NAME, but found: %s",
+                                schemaName, useValue == null ? "null" : useValue.asEnum()));
+            }
+
+            AnnotationValue includeValue = typeInfoAnnotation.value("include");
+            if (includeValue != null && !JsonTypeInfo.As.PROPERTY.name().equals(includeValue.asEnum())
+                    && !JsonTypeInfo.As.EXISTING_PROPERTY.name().equals(includeValue.asEnum())) {
+                throw new IllegalStateException(
+                        String.format("@JsonTypeInfo on '%s' must use As.PROPERTY or As.EXISTING_PROPERTY, but found: %s",
+                                schemaName, includeValue.asEnum()));
+            }
+
+            String discriminatorPropertyName = Optional.of(typeInfoAnnotation.value("property"))
+                    .map(AnnotationValue::asString)
+                    .orElse("");
+            if (discriminatorPropertyName.isEmpty()) {
+                throw new IllegalStateException(
+                        String.format("@JsonTypeInfo on '%s' must specify a non-empty 'property' value", schemaName));
+            }
+
+            Schema parentSchema = openAPI.getComponents().getSchemas().get(schemaName);
+            if (parentSchema == null) {
+                continue;
+            }
+
+            // Create discriminator with mappings only (no oneOf on parent schema)
+            // OpenAPI generators use the discriminator + allOf on subtypes to establish inheritance
+            // Adding oneOf to the parent schema causes generators to merge sibling properties incorrectly
+            Discriminator discriminator = OASFactory.createDiscriminator().propertyName(discriminatorPropertyName);
+
+            for (AnnotationInstance typeAnnotation : typeAnnotations) {
+                String simpleSubClassName = typeAnnotation.value("value").asClass().name().withoutPackagePrefix();
+                String ref = REF_PREFIX + simpleSubClassName;
+
+                // Add mapping to discriminator
+                String typeName = Optional.of(typeAnnotation.value("name"))
+                        .map(AnnotationValue::asString)
+                        .orElse("");
+                if (!typeName.isEmpty()) {
+                    discriminator.addMapping(typeName, ref);
+                }
+
+                // Track subschemas that need discriminator property added
+                Schema subSchema = openAPI.getComponents().getSchemas().get(simpleSubClassName);
+                if (subSchema != null) {
+                    discriminatorPropertiesToBeAdded
+                            .computeIfAbsent(discriminatorPropertyName, k -> new HashSet<>())
+                            .add(subSchema);
+                }
+            }
+
+            parentSchema.setDiscriminator(discriminator);
+            log.debugf("Added discriminator '%s' to schema '%s' with %d subtypes",
+                    discriminatorPropertyName, schemaName, typeAnnotations.length);
+        }
     }
 
     private PathItem sortOperationsByMethod(PathItem pathItem) {
@@ -146,101 +242,5 @@ public class OASModelFilter implements OASFilter {
         sortedPathItem.setParameters(pathItem.getParameters());
 
         return sortedPathItem;
-    }
-
-    /**
-     * Replaces the given schema with a new schema that uses oneOf to reference all subclasses if the original schema
-     * has a $ref and the referenced class has Jackson @JsonTypeInfo and @JsonSubTypes annotations. I.e. adds polymorphism
-     * support to OpenAPI generation.
-     *
-     * @param originalSchema
-     * @param openAPI
-     * @param discriminatorPropertiesToBeAdded
-     * @return the new schema or the original schema if no changes were made
-     */
-    private Schema replaceSchemaWithChildrenIfNeeded(Schema originalSchema, OpenAPI openAPI, Map<String, Set<Schema>> discriminatorPropertiesToBeAdded) {
-        Schema arraySchema = null;
-        if (originalSchema.getType() != null && originalSchema.getType().size() == 1 && Schema.SchemaType.ARRAY.equals(originalSchema.getType().get(0))) {
-            arraySchema = originalSchema;
-            originalSchema = originalSchema.getItems();
-        }
-
-        if (originalSchema == null || originalSchema.getRef() == null) {
-            return originalSchema;
-        }
-
-        String parentSchemaName = originalSchema.getRef().substring(REF_PREFIX.length());
-
-        ClassInfo parentClassInfo = simpleNameToClassInfoMap.get(parentSchemaName);
-        if (parentClassInfo == null) {
-            throw new IllegalStateException("Could not find class in index for schema: " + parentSchemaName);
-        }
-
-        AnnotationInstance typeInfoAnnotation = parentClassInfo.annotation(JsonTypeInfo.class);
-        AnnotationInstance subTypesAnnotation = parentClassInfo.annotation(JsonSubTypes.class);
-        if (typeInfoAnnotation == null || subTypesAnnotation == null) {
-            log.debugf("Class %s does not have JsonTypeInfo or JsonSubTypes annotations, skipping", parentClassInfo.simpleName());
-            return originalSchema;
-        }
-
-        AnnotationInstance[] typeAnnotations = Optional.of(subTypesAnnotation.value()).map(AnnotationValue::asNestedArray).orElse(new AnnotationInstance[0]);
-        if (typeAnnotations.length == 0) {
-            log.debugf("Class %s does not have any JsonSubTypes defined, skipping", parentClassInfo.simpleName());
-            return originalSchema;
-        }
-
-        // Validations
-
-        AnnotationValue useValue = typeInfoAnnotation.value("use");
-        if (useValue == null || !JsonTypeInfo.Id.NAME.name().equals(useValue.asEnum())) {
-            throw new IllegalArgumentException(parentClassInfo.simpleName() + ": JsonTypeInfo annotation must have use=NAME.");
-        }
-
-        AnnotationValue includeValue = typeInfoAnnotation.value("include");
-        if (includeValue != null && !JsonTypeInfo.As.EXISTING_PROPERTY.name().equals(includeValue.asEnum())) {
-            throw new IllegalArgumentException(parentClassInfo.simpleName() + ": JsonTypeInfo annotation must have include=EXISTING_PROPERTY, or include must not be set.");
-        }
-
-        String discriminatorPropertyName = Optional.of(typeInfoAnnotation.value("property")).map(AnnotationValue::asString).orElse("");
-        if (discriminatorPropertyName.isEmpty()) {
-            throw new IllegalArgumentException(parentClassInfo.simpleName() + ": JsonTypeInfo annotation must have property set.");
-        }
-
-        Schema newSchema = OASFactory.createSchema();
-
-        // Add discriminator
-
-        Discriminator discriminator = OASFactory.createDiscriminator().propertyName(discriminatorPropertyName);
-        newSchema.setDiscriminator(discriminator);
-
-        // Create new schema with oneOf for each subclass
-
-        for (AnnotationInstance typeAnnotation : typeAnnotations) {
-            String simpleSubClassName = typeAnnotation.value("value").asClass().name().withoutPackagePrefix();
-
-            // Add schema ref as oneOf to the new schema
-            Schema subSchema = openAPI.getComponents().getSchemas().get(simpleSubClassName); // This won't work with inner classes due to '$' in the name
-            if (subSchema == null) {
-                throw new IllegalStateException(parentClassInfo.simpleName() + ": Could not find schema for subclass: " + simpleSubClassName + ". Make sure the subclass has the @Schema annotation.");
-            }
-            String ref = REF_PREFIX + simpleSubClassName;
-            Schema schemaRef = OASFactory.createSchema().ref(ref);
-            newSchema.addOneOf(schemaRef);
-
-            // Add mapping to discriminator
-            String typeName = Optional.of(typeAnnotation.value("name")).map(AnnotationValue::asString).orElse("");
-            if (!typeName.isEmpty()) {
-                discriminator.addMapping(typeName, ref);
-            }
-
-            discriminatorPropertiesToBeAdded.computeIfAbsent(discriminatorPropertyName, k -> new HashSet<>()).add(subSchema);
-        }
-
-        if (arraySchema != null) {
-            arraySchema.setItems(newSchema);
-            newSchema = arraySchema;
-        }
-
-        return newSchema;
     }
 }

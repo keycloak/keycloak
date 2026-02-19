@@ -147,7 +147,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         // ===== STEP 2: Second login - Regular SSO (should NOT return authorization_details) =====
         // Second login WITHOUT OID4VCI scope and WITHOUT authorization_details.
-        oauth.client(client.getClientId(), "password");
         oauth.scope(OAuth2Constants.SCOPE_OPENID);
         oauth.openLoginForm();
 
@@ -157,7 +156,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Exchange second code for tokens WITHOUT authorization_details using OAuthClient
         AccessTokenResponse secondTokenResponse = oauth.accessTokenRequest(secondCode)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
         assertEquals("Second token exchange should succeed", HttpStatus.SC_OK, secondTokenResponse.getStatusCode());
 
@@ -496,7 +494,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // First token exchange - should succeed
         AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
@@ -506,7 +503,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Second token exchange with same code - should fail
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
@@ -517,7 +513,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Verify error event was fired
         // Note: When code is reused, user is null but session from first successful use may still exist
         events.expect(EventType.CODE_TO_TOKEN_ERROR)
-                .client(client.getClientId())
+                .client(clientId)
                 .user((String) null)
                 .session(AssertEvents.isSessionId())
                 .error(Errors.INVALID_CODE)
@@ -536,7 +532,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest("invalid-code-12345")
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
@@ -547,7 +542,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Verify error event was fired
         // Note: When code is invalid (never valid), there is no session because authentication never occurred
         events.expect(EventType.CODE_TO_TOKEN_ERROR)
-                .client(client.getClientId())
+                .client(clientId)
                 .user((String) null)
                 .session((String) null)
                 .error(Errors.INVALID_CODE)
@@ -566,7 +561,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
 
         assertEquals("Token exchange should succeed without authorization_details (it's optional)",
@@ -596,7 +590,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
@@ -626,7 +619,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .withClientId(client.getClientId())
+                .withClientId(clientId)
                 .withClientSecret("password")
                 // redirect_uri is intentionally omitted
                 .send();
@@ -657,7 +650,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .withClientId(client.getClientId())
+                .withClientId(clientId)
                 .withClientSecret("password")
                 .withRedirectUri("http://invalid-redirect-uri")
                 .send();
@@ -736,7 +729,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "wrong-secret")
+                .client(clientId, "wrong-secret")
                 .send();
 
         assertEquals(HttpStatus.SC_UNAUTHORIZED, errorResponse.getStatusCode());
@@ -783,7 +776,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
         // Perform authorization code flow with malformed authorization_details in the authorization request.
-        oauth.client(client.getClientId());
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm()
                 .param(OAuth2Constants.AUTHORIZATION_DETAILS, "invalid-json")
@@ -796,7 +788,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
@@ -825,7 +816,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .authorizationDetails(differentAuthDetails)
                 .send();
 
@@ -960,7 +950,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     // Successful authorization_code flow
     private AccessTokenResponse authzCodeFlow(Oid4vcTestContext ctx, List<ClaimsDescription> claimsForAuthorizationDetailsParameter, boolean expectUserAlreadyAuthenticated) throws Exception {
         // Perform authorization code flow to get authorization code
-        oauth.client(client.getClientId(), "password");
         oauth.scope(getCredentialClientScope().getName()); // Add the credential scope
         if (expectUserAlreadyAuthenticated) {
             oauth.openLoginForm();
@@ -982,7 +971,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Exchange authorization code for tokens with authorization_details
         return oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .authorizationDetails(authDetails)
                 .send();
     }
@@ -1095,7 +1083,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
      * @return the authorization code
      */
     protected String performAuthorizationCodeLogin() {
-        oauth.client(client.getClientId());
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm().doLogin("john", "password");
         String code = oauth.parseLoginResponse().getCode();
@@ -1110,7 +1097,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
      * @return the authorization code
      */
     protected String performAuthorizationCodeLoginWithAuthorizationDetails(String authorizationDetailsJson) {
-        oauth.client(client.getClientId());
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm()
                 // Encode JSON so UriBuilder does not treat '{' or '}' as URI template characters
@@ -1129,7 +1115,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
      */
     protected AssertEvents.ExpectedEvent expectCredentialRequestError() {
         return events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
-                .client(client.getClientId())
+                .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())
                 .error(Errors.INVALID_REQUEST);

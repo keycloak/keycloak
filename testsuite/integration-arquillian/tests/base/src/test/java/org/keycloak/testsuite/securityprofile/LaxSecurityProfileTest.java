@@ -49,8 +49,8 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@SetDefaultProvider(spi = "security-profile", providerId = "default", config = {"name", "strict-security-profile"})
-public class StrictSecurityProfileTest extends AbstractTestRealmKeycloakTest {
+@SetDefaultProvider(spi = "security-profile", providerId = "default", config = {"name", "lax-security-profile"})
+public class LaxSecurityProfileTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -65,7 +65,6 @@ public class StrictSecurityProfileTest extends AbstractTestRealmKeycloakTest {
         Assert.assertNotNull(policies.getGlobalPolicies());
         MatcherAssert.assertThat(policies.getGlobalPolicies().stream().map(ClientPolicyRepresentation::getName).collect(Collectors.toList()),
                 Matchers.containsInAnyOrder("Openid-connect OAuth 2.1 confidential client",
-                        "Openid-connect OAuth 2.1 public client",
                         "Saml secure client (signatures, post, https)"));
         // try creating a global policy fails
         ClientPoliciesRepresentation policiesRep = new ClientPoliciesRepresentation();
@@ -118,45 +117,6 @@ public class StrictSecurityProfileTest extends AbstractTestRealmKeycloakTest {
         // Doublecheck global policies were not changed
         clientPoliciesRep = getClientPolicies();
         org.keycloak.testsuite.Assert.assertEquals(origGlobalPolicies, clientPoliciesRep.getGlobalPolicies());
-    }
-
-    @Test
-    public void testCreatePublicOpenIdConnectClientSecure() {
-        RealmResource realm = testRealm();
-        ClientRepresentation clientRep = ClientBuilder.create()
-                .name("test-client-policy-app")
-                .clientId("test-client-policy-app")
-                .publicClient()
-                .protocol(OIDCLogin.OIDC)
-                .baseUrl("https://www.keycloak.org")
-                .redirectUris("https://www.keycloak.org")
-                .build();
-        clientRep.setImplicitFlowEnabled(true);
-        OIDCAdvancedConfigWrapper wrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
-        wrapper.setPostLogoutRedirectUris(Collections.singletonList("https://www.keycloak.org"));
-        wrapper.setPkceCodeChallengeMethod(OIDCLoginProtocol.PKCE_METHOD_PLAIN);
-
-        // set the redirect uri to unsecure http
-        clientRep.setRedirectUris(Collections.singletonList("http://www.keycloak.org"));
-        Response resp = realm.clients().create(clientRep);
-        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), resp.getStatus());
-        OAuth2ErrorRepresentation error = resp.readEntity(OAuth2ErrorRepresentation.class);
-        Assert.assertEquals(OAuthErrorException.INVALID_REQUEST, error.getError());
-        Assert.assertEquals("Invalid Redirect Uri: invalid uri", error.getErrorDescription());
-        clientRep.setRedirectUris(Collections.singletonList("https://www.keycloak.org"));
-
-        // create OK
-        resp = realm.clients().create(clientRep);
-        Assert.assertEquals(Response.Status.CREATED.getStatusCode(), resp.getStatus());
-        String id = ApiUtil.getCreatedId(resp);
-        getCleanup().addClientUuid(id);
-
-        // check everything is auto-configure for security as the policy has auto-configure
-        clientRep = realm.clients().get(id).toRepresentation();
-        wrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
-        Assert.assertEquals(OIDCLoginProtocol.PKCE_METHOD_S256, wrapper.getPkceCodeChallengeMethod());
-        Assert.assertFalse(clientRep.isImplicitFlowEnabled());
-        Assert.assertFalse(clientRep.isDirectAccessGrantsEnabled());
     }
 
     @Test

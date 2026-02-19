@@ -144,6 +144,8 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 	protected static final String jwtTypeCredentialScopeName = "jwt-credential";
 	protected static final String jwtTypeCredentialConfigurationIdName = "jwt-credential-config-id";
 
+    protected static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
+
 	protected static final String TEST_CREDENTIAL_MAPPERS_FILE = "/oid4vc/test-credential-mappers.json";
 
     @BeforeClass

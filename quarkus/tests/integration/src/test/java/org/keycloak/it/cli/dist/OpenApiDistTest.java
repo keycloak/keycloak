@@ -31,7 +31,9 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DistributionTest(keepAlive = true, requestPort = 9000, containerExposedPorts = {8080, 9000})
@@ -99,22 +101,27 @@ public class OpenApiDistTest {
                 .get(OPENAPI_ENDPOINT)
             .then();
 
-      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/{realmName}/clients/{version}/{id}'.put.requestBody.content.'application/json'.schema"); // request
-      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/{realmName}/clients/{version}/{id}'.get.responses.'200'.content.'application/json'.schema"); // response
-      assertOpenAPISpecPolymorphicPaths(response, "paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.items"); // arrays
+      // BaseRepresentation has no spec-visible properties and must not appear in the spec
+      response.body(not(containsString("BaseRepresentation")));
 
+      // Verify discriminator is on the parent schema (BaseClientRepresentation) in components section
       response
-          .body("components.schemas.OIDCClientRepresentation.properties.protocol.type", equalTo("string")) // the generated discriminator field
-          .body("paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.type", equalTo("array"));
-    }
+          .body("components.schemas.BaseClientRepresentation.discriminator.propertyName", equalTo("protocol"))
+          .body("components.schemas.BaseClientRepresentation.discriminator.mapping.openid-connect", equalTo("#/components/schemas/OIDCClientRepresentation"))
+          .body("components.schemas.BaseClientRepresentation.discriminator.mapping.saml", equalTo("#/components/schemas/SAMLClientRepresentation"));
 
-    private void assertOpenAPISpecPolymorphicPaths(ValidatableResponse response, String schemaPath) {
-        response
-            .body(schemaPath + ".discriminator.mapping.openid-connect", equalTo("#/components/schemas/OIDCClientRepresentation"))
-            .body(schemaPath + ".discriminator.mapping.saml", equalTo("#/components/schemas/SAMLClientRepresentation"))
-            .body(schemaPath + ".discriminator.propertyName", equalTo("protocol"))
-            .body(schemaPath + ".oneOf.size()", equalTo(2))
-            .body(schemaPath + ".oneOf[0].'$ref'", equalTo("#/components/schemas/OIDCClientRepresentation"))
-            .body(schemaPath + ".oneOf[1].'$ref'", equalTo("#/components/schemas/SAMLClientRepresentation"));
+      // Verify subtypes have the discriminator property and allOf reference to parent
+      response
+          .body("components.schemas.OIDCClientRepresentation.properties.protocol.type", equalTo("string"))
+          .body("components.schemas.OIDCClientRepresentation.allOf[0].'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"))
+          .body("components.schemas.SAMLClientRepresentation.properties.protocol.type", equalTo("string"))
+          .body("components.schemas.SAMLClientRepresentation.allOf[0].'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"));
+
+      // Verify endpoints reference the parent schema (no inline oneOf)
+      response
+          .body("paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.type", equalTo("array"))
+          .body("paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.items.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"))
+          .body("paths.'/admin/api/{realmName}/clients/{version}/{id}'.get.responses.'200'.content.'application/json'.schema.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"))
+          .body("paths.'/admin/api/{realmName}/clients/{version}/{id}'.put.requestBody.content.'application/json'.schema.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"));
     }
 }
