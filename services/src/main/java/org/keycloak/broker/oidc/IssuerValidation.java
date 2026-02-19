@@ -19,6 +19,8 @@ public interface IssuerValidation {
 
     String getInternalId();
 
+    boolean isEnabled();
+
     default void validateIssuer(RealmModel realm) {
 
         String issuer = getConfig().get(ISSUER);
@@ -28,13 +30,15 @@ public interface IssuerValidation {
 
         checkUrl(realm.getSslRequired(), issuer, "Issuer");
 
-        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
-        AlternativeLookupProvider lookupProvider = session.getProvider(AlternativeLookupProvider.class);
+        if (isEnabled()) {
+            KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+            AlternativeLookupProvider lookupProvider = session.getProvider(AlternativeLookupProvider.class);
 
-        if (lookupProvider != null) {
-            IdentityProviderModel existingIdp = lookupProvider.lookupIdentityProviderFromIssuer(session, getConfig().get(ISSUER));
-            if (existingIdp != null && (getInternalId() == null || !Objects.equals(existingIdp.getInternalId(), getInternalId()))) {
-                throw new IllegalArgumentException("Issuer URL already used for IDP '" + existingIdp.getAlias() + "', Issuer must be unique if the idp supports JWT Authorization Grant or Federated Client Authentication");
+            if (lookupProvider != null) {
+                IdentityProviderModel existingIdp = lookupProvider.lookupIdentityProviderFromIssuer(session, getConfig().get(ISSUER));
+                if (existingIdp != null && (getInternalId() == null || !Objects.equals(existingIdp.getInternalId(), getInternalId()))) {
+                    throw new IllegalArgumentException("Issuer URL already used for IDP '" + existingIdp.getAlias() + "', Issuer must be unique if the idp supports JWT Authorization Grant or Federated Client Authentication");
+                }
             }
         }
     }

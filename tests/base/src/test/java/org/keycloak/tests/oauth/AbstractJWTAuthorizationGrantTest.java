@@ -309,7 +309,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertFailure("Identity Provider is not enabled", response, events.poll());
+        assertFailure("No Identity Provider for provided issuer", response, events.poll());
     }
 
     @Test

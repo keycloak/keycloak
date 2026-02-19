@@ -31,7 +31,7 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
         CachedValue cachedIdpAlias = lookupCache.get(alternativeKey);
         if (cachedIdpAlias instanceof CachedValue.CachedString cachedString) {
             IdentityProviderModel idp = session.identityProviders().getByAlias(cachedString.value());
-            if (idp != null && issuerUrl.equals(idp.getConfig().get(IdentityProviderModel.ISSUER))) {
+            if (idp != null && issuerUrl.equals(idp.getConfig().get(IdentityProviderModel.ISSUER)) && idp.isEnabled()) {
                 return idp;
             } else {
                 lookupCache.invalidate(alternativeKey);
@@ -39,7 +39,7 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
         }
 
         List<IdentityProviderModel> idps = session.identityProviders().getAllStream(IdentityProviderQuery.any())
-                .filter(i -> issuerUrl.equals(i.getConfig().get(IdentityProviderModel.ISSUER)))
+                .filter(i -> issuerUrl.equals(i.getConfig().get(IdentityProviderModel.ISSUER)) && i.isEnabled())
                 .limit(2)
                 .toList();
         IdentityProviderModel idp = null;
@@ -62,7 +62,7 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
         CachedValue cachedClientId = lookupCache.get(alternativeKey);
         if (cachedClientId instanceof CachedValue.CachedString cachedString) {
             ClientModel client = session.clients().getClientByClientId(session.getContext().getRealm(), cachedString.value());
-            boolean match = client != null;
+            boolean match = client != null && client.isEnabled();
             if (match) {
                 for (Map.Entry<String, String> e : attributes.entrySet()) {
                     if (!e.getValue().equals(client.getAttribute(e.getKey()))) {
@@ -79,7 +79,10 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
         }
 
         ClientModel client = null;
-        List<ClientModel> clients = session.clients().searchClientsByAttributes(session.getContext().getRealm(), attributes, 0, 2).toList();
+        List<ClientModel> clients = session.clients().searchClientsByAttributes(session.getContext().getRealm(), attributes, null, null)
+                .filter(ClientModel::isEnabled)
+                .limit(2)
+                .toList();
         if (clients.size() == 1) {
             client = clients.get(0);
             lookupCache.put(alternativeKey, CachedValue.ofId(client.getClientId()));

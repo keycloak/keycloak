@@ -35,6 +35,11 @@ If you are using this Quarkus property, the new `transaction-default-timeout` CL
 
 To maintain your desired transaction timeout configuration, migrate to using the `transaction-default-timeout` CLI option and remove the `quarkus.transaction-manager.default-transaction-timeout` property from your configuration.
 
+=== The Identity Provider issuer should be unique for the JWT authorization grant and client assertions
+
+The JWT authorization grant and the client assertion authentication use the `issuer` claim passed in the assertion to locate the Identity Provider defined in {project_name}, and that provider validates the claims and signature in the assertion. Since this version, the `issuer` configuration option should be unique to only identify one provider. The grant operation or the assertion client authentication fail if more providers are returned for a single issuer. In the same way, the Identity Providers, when configured to allow the JWT authorization grant or client assertions, are validated to have a unique issuer defined in its configuration. Any update or add operation will fail if the issuer collides with another provider.
+
+If you have identity providers defined with the same issuer and tested the JWT authorization grants or client assertions features, please update the providers accordingly before the upgrade. You can update the issuer or disable the provider to avoid the duplicates.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
