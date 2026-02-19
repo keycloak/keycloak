@@ -52,6 +52,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.services.cors.Cors.ACCESS_CONTROL_ALLOW_METHODS;
@@ -644,6 +645,183 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             var header = response.getFirstHeader(ACCESS_CONTROL_ALLOW_METHODS);
             assertThat(header, notNullValue());
             assertThat(header.getValue(), is("DELETE, POST, GET, PUT"));
+        }
+    }
+
+    @Test
+    public void createClientWithInvalidRedirectUriFragment() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-invalid-fragment");
+        rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
+        assertClientCreationFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+    }
+
+    @Test
+    public void createClientWithInvalidRedirectUriScheme() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-invalid-scheme");
+        rep.setRedirectUris(Set.of("javascript:alert(1)"));
+        assertClientCreationFailsWithError(rep, "Each redirect URL must be valid");
+    }
+
+    @Test
+    @Disabled("Root URL fragment validation not yet implemented in V2 API")
+    public void createClientWithInvalidRootUrl() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-invalid-root-url");
+        rep.setAppUrl("http://localhost:3000#fragment");
+        assertClientCreationFailsWithError(rep, "Root URL must not contain an URL fragment");
+    }
+
+    @Test
+    public void createSamlClientWithInvalidRedirectUriFragment() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-invalid-fragment");
+        rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
+        assertClientCreationFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+    }
+
+    @Test
+    public void createSamlClientWithInvalidRedirectUriScheme() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-invalid-scheme");
+        rep.setRedirectUris(Set.of("javascript:alert(1)"));
+        assertClientCreationFailsWithError(rep, "Each redirect URL must be valid");
+    }
+
+    @Test
+    @Disabled("Root URL fragment validation not yet implemented in V2 API")
+    public void createSamlClientWithInvalidRootUrl() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-invalid-root-url");
+        rep.setAppUrl("http://localhost:3000#fragment");
+        assertClientCreationFailsWithError(rep, "Root URL must not contain an URL fragment");
+    }
+
+    @Test
+    public void updateClientWithInvalidRedirectUriFragment() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-update-invalid-fragment");
+        rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
+        assertClientUpdateFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+    }
+
+    @Test
+    public void updateClientWithInvalidRedirectUriScheme() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-update-invalid-scheme");
+        rep.setRedirectUris(Set.of("javascript:alert(1)"));
+        assertClientUpdateFailsWithError(rep, "A redirect URI uses an illegal scheme");
+    }
+
+    @Test
+    @Disabled("Root URL fragment validation not yet implemented in V2 API")
+    public void updateClientWithInvalidRootUrl() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-update-invalid-root-url");
+        rep.setAppUrl("http://localhost:3000#fragment");
+        assertClientUpdateFailsWithError(rep, "Root URL must not contain an URL fragment");
+    }
+
+    @Test
+    public void updateSamlClientWithInvalidRedirectUriFragment() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-update-invalid-fragment");
+        rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
+        assertClientUpdateFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+    }
+
+    @Test
+    public void updateSamlClientWithInvalidRedirectUriScheme() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-update-invalid-scheme");
+        rep.setRedirectUris(Set.of("javascript:alert(1)"));
+        assertClientUpdateFailsWithError(rep, "A redirect URI uses an illegal scheme");
+    }
+
+    @Test
+    @Disabled("Root URL fragment validation not yet implemented in V2 API")
+    public void updateSamlClientWithInvalidRootUrl() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-update-invalid-root-url");
+        rep.setAppUrl("http://localhost:3000#fragment");
+        assertClientUpdateFailsWithError(rep, "Root URL must not contain an URL fragment");
+    }
+
+    /**
+     * Helper method to verify that client creation fails with the expected validation error.
+     * This verifies that ValidationUtil.validateClient is called after the full model is populated.
+     */
+    private void assertClientCreationFailsWithError(BaseClientRepresentation rep, String expectedErrorMessage) throws Exception {
+        HttpPost request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            String body = EntityUtils.toString(response.getEntity());
+            assertThat(body, containsString(expectedErrorMessage));
+        }
+    }
+
+    /**
+     * Helper method to verify that client update fails with the expected validation error.
+     * First creates a valid client, then attempts to update it with invalid data.
+     */
+    private void assertClientUpdateFailsWithError(BaseClientRepresentation rep, String expectedErrorMessage) throws Exception {
+        String clientId = rep.getClientId();
+
+        // First, create a valid client
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/" + clientId);
+        setAuthHeader(createRequest);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        BaseClientRepresentation validRep;
+        if (rep instanceof SAMLClientRepresentation) {
+            validRep = new SAMLClientRepresentation();
+        } else {
+            validRep = new OIDCClientRepresentation();
+        }
+        validRep.setClientId(clientId);
+        validRep.setEnabled(true);
+
+        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(validRep)));
+
+        try (var response = client.execute(createRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(201));
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+
+        // Now try to update with invalid data
+        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/" + clientId);
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            String body = EntityUtils.toString(response.getEntity());
+            assertThat(body, containsString(expectedErrorMessage));
+        }
+
+        // Cleanup: delete the created client
+        HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + clientId);
+        setAuthHeader(deleteRequest);
+        try (var response = client.execute(deleteRequest)) {
+            EntityUtils.consumeQuietly(response.getEntity());
         }
     }
 

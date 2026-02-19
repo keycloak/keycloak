@@ -53,6 +53,10 @@ import org.keycloak.authorization.DefaultAuthorizationProviderFactory;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.store.StoreFactorySpi;
+import org.keycloak.cache.AlternativeLookupProviderFactory;
+import org.keycloak.cache.AlternativeLookupSPI;
+import org.keycloak.cache.LocalCacheProviderFactory;
+import org.keycloak.cache.LocalCacheSPI;
 import org.keycloak.cluster.ClusterSpi;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
@@ -254,7 +258,9 @@ public abstract class KeycloakModelTest {
             UserSessionSpi.class,
             UserSpi.class,
             DatastoreSpi.class,
-            CacheRemoteConfigProviderSpi.class);
+            CacheRemoteConfigProviderSpi.class,
+            AlternativeLookupSPI.class,
+            LocalCacheSPI.class);
 
     private static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = Set.of(
             ComponentFactoryProviderFactory.class,
@@ -264,7 +270,9 @@ public abstract class KeycloakModelTest {
             DeploymentStateProviderFactory.class,
             DatastoreProviderFactory.class,
             TracingProviderFactory.class,
-            CacheRemoteConfigProviderFactory.class);
+            CacheRemoteConfigProviderFactory.class,
+            AlternativeLookupProviderFactory.class,
+            LocalCacheProviderFactory.class);
 
     protected static final List<KeycloakModelParameters> MODEL_PARAMETERS;
     protected static final Config CONFIG = new Config(KeycloakModelTest::useDefaultFactory);

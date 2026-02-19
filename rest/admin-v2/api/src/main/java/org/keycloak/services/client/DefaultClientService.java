@@ -32,6 +32,7 @@ import org.keycloak.services.resources.admin.ClientsResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.ObjectMapperResolver;
+import org.keycloak.validation.ValidationUtil;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 
@@ -137,6 +138,12 @@ public class DefaultClientService implements ClientService {
             clientResource = clientsResource.getClient(model.getId());
 
             mapper.toModel(client, model);
+
+            // Validate the fully populated model (createClientModel only validates the basic model)
+            ValidationUtil.validateClient(session, model, true, r -> {
+                session.getTransactionManager().setRollbackOnly();
+                throw new ServiceException(r.getAllErrorsAsString(), Response.Status.BAD_REQUEST);
+            });
         }
 
         handleRoles(client.getRoles());

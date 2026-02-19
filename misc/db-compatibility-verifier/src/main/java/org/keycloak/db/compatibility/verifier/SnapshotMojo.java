@@ -4,12 +4,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 @Mojo(name = "snapshot")
-public class CreateSnapshotMojo extends AbstractMojo {
+public class SnapshotMojo extends AbstractMojo {
+
+    @Parameter(property = "db.verify.migration.package")
+    String migrationsPackage;
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -24,20 +27,25 @@ public class CreateSnapshotMojo extends AbstractMojo {
             File uFile = new File(root, unsupportedFile);
 
             ClassLoader classLoader = classLoader();
-            createSnapshot(classLoader, sFile, uFile);
+            createSnapshot(classLoader, sFile, uFile, migrationsPackage);
         } catch (Exception e) {
             throw new MojoExecutionException("Error creating ChangeSet snapshot", e);
         }
     }
 
-    void createSnapshot(ClassLoader classLoader, File sFile, File uFile) throws IOException {
-        // Write all known ChangeSet defined in the jpa-changelog*.xml files to the supported file
+    void createSnapshot(ClassLoader classLoader, File sFile, File uFile, String migrationsPackage) throws IOException {
+        // Record all known ChangeSet defined in the jpa-changelog*.xml files
         ChangeLogXMLParser xmlParser = new ChangeLogXMLParser(classLoader);
         Set<ChangeSet> changeSets = xmlParser.discoverAllChangeSets();
-        objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
-        objectMapper.writeValue(sFile, changeSets);
+
+        // Record all known org.keycloak.migration.migrators.Migration implementations
+        Set<Migration> migrations = new KeycloakMigrationParser(classLoader, migrationsPackage).discoverAllMigrations();
+
+        // Write all to the supported file
+        JsonParent jsonFile = new JsonParent(changeSets, migrations);
+        objectMapper.writeValue(sFile, jsonFile);
 
         // Create an empty JSON array in the unsupported file
-        objectMapper.writeValue(uFile, Set.of());
+        objectMapper.writeValue(uFile, new JsonParent(Set.of(), Set.of()));
     }
 }

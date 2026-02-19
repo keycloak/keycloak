@@ -11,6 +11,12 @@
     <name>Keycloak Database Support - Private classes</name>
     <description>Keycloak Database Support - Private classes</description>
 
+    <properties>
+        <db.verify.supportedFile>src/main/resources/META-INF/rolling-upgrades-supported-changes.json</db.verify.supportedFile>
+        <db.verify.unsupportedFile>src/main/resources/META-INF/rolling-upgrades-unsupported-changes.json</db.verify.unsupportedFile>
+        <db.verify.migration.package>org.keycloak.migration.migrators</db.verify.migration.package>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -61,4 +67,46 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.keycloak</groupId>
+                <artifactId>db-compatibility-verifier-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>verify</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>db-snapshot</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.keycloak</groupId>
+                        <artifactId>db-compatibility-verifier-maven-plugin</artifactId>
+                        <version>${project.version}</version>
+                        <executions>
+                            <execution>
+                                <id>snapshot</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>snapshot</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
