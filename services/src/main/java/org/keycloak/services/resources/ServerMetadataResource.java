@@ -67,10 +67,8 @@ public class ServerMetadataResource {
     }
 
     private boolean isValidProvider(String alias) {
-
-        WellKnownProviderFactory factory = WellKnownProviderUtil.resolveFromAlias(session.getKeycloakSessionFactory(), alias)
-                .orElse(null);
-        if (factory == null) return false;
-        return factory.isAvailableViaServerMetadata();
+        return WellKnownProviderUtil.resolveFromAlias(session.getKeycloakSessionFactory(), alias)
+                .map(WellKnownProviderFactory::isAvailableViaServerMetadata)
+                .orElse(false);
     }
 }
