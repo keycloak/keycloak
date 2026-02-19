@@ -178,9 +178,9 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         String error = credentialResponse.getError();
         String errorDescription = credentialResponse.getErrorDescription();
 
-        assertEquals("Credential request should fail with unknown credential configuration when OID4VCI scope is missing",
+        assertEquals("Credential request should fail with unknown credential configuration when OID4VCI scope is missing or authorization_details missing from the token",
             "UNKNOWN_CREDENTIAL_CONFIGURATION", error);
-        assertEquals("Scope check failure", errorDescription);
+        assertEquals("No authorization_details found in token", errorDescription);
     }
 
     // Test for the whole authorization_code flow with the credentialRequest using credential_configuration_id

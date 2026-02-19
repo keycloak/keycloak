@@ -38,6 +38,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -66,6 +67,7 @@ import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -306,6 +308,14 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
                 .authorizationDetails(authDetails)
                 .send();
+
+        // Assert no session referenced in the access token and token response.
+        AccessToken parsedToken = oauth.verifyToken(tokenResponse.getAccessToken(), AccessToken.class);
+        assertNull(parsedToken.getSessionId());
+        assertNull(tokenResponse.getSessionState());
+        // Assert scope in the token matches with the credential requested
+        assertEquals(parsedToken.getScope(), getCredentialClientScope().getName());
+        assertEquals(tokenResponse.getScope(), getCredentialClientScope().getName());
 
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
@@ -895,7 +905,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
-                .bearerToken(token)
+                .bearerToken(tokenResponse.getAccessToken())
                 .send();
 
         assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
