@@ -18,7 +18,6 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.DefaultClientService;
-import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.ClientsResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
@@ -38,14 +37,13 @@ public class DefaultClientsApi implements ClientsApi {
 
     public DefaultClientsApi(@Nonnull KeycloakSession session,
                              @Nonnull AdminPermissionEvaluator permissions,
-                             @Nonnull RealmAdminResource realmAdminResource,
-                             @Nonnull AdminAuth auth) {
+                             @Nonnull RealmAdminResource realmAdminResource) {
         this.session = session;
         this.permissions = permissions;
         this.realmAdminResource = realmAdminResource;
 
         this.realm = Objects.requireNonNull(session.getContext().getRealm());
-        this.clientService = new DefaultClientService(session, permissions, realmAdminResource, auth);
+        this.clientService = new DefaultClientService(session, permissions, realmAdminResource);
         this.validator = new HibernateValidatorProvider();
         this.clientsResource = realmAdminResource.getClients();
     }
@@ -69,7 +67,7 @@ public class DefaultClientsApi implements ClientsApi {
     @Override
     public ClientApi client(@PathParam("id") String clientId) {
         var client = Optional.ofNullable(session.clients().getClientByClientId(realm, clientId));
-        return new DefaultClientApi(session, clientId, permissions, realmAdminResource, client.map(c -> clientsResource.getClient(c.getId())).orElse(null), null);
+        return new DefaultClientApi(session, clientId, permissions, realmAdminResource, client.map(c -> clientsResource.getClient(c.getId())).orElse(null));
     }
 
 }

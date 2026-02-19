@@ -30,7 +30,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
-import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
@@ -67,8 +66,7 @@ public class DefaultClientService implements ClientService {
     public DefaultClientService(@Nonnull KeycloakSession session,
                                 @Nonnull AdminPermissionEvaluator permissions,
                                 @Nonnull RealmAdminResource realmResource,
-                                @Nullable ClientResource clientResource,
-                                @Nullable AdminAuth adminAuth) {
+                                @Nullable ClientResource clientResource) {
         this.session = session;
         this.permissions = permissions;
         this.validator = new HibernateValidatorProvider();
@@ -77,15 +75,14 @@ public class DefaultClientService implements ClientService {
         this.clientsResource = realmResource.getClients();
         this.clientResource = clientResource;
         RealmModel realm = session.getContext().getRealm();
-        this.adminEventBuilder = new AdminEventV2Builder(realm, adminAuth, session, session.getContext().getConnection())
+        this.adminEventBuilder = new AdminEventV2Builder(realm, permissions.adminAuth(), session, session.getContext().getConnection())
                 .resource(ResourceType.CLIENT);
     }
 
     public DefaultClientService(@Nonnull KeycloakSession session,
                                 @Nonnull AdminPermissionEvaluator permissions,
-                                @Nonnull RealmAdminResource realmResource,
-                                @Nonnull AdminAuth auth) {
-        this(session, permissions, realmResource, null, auth);
+                                @Nonnull RealmAdminResource realmResource) {
+        this(session, permissions, realmResource, null);
     }
 
     protected void avoidClientIdPhishing() throws ServiceException {
@@ -164,24 +161,25 @@ public class DefaultClientService implements ClientService {
             handleServiceAccount(model, oidcClient);
         }
 
-        // Fire v2 admin event (in parallel to v1 events fired by clientsResource/clientResource)
         fireAdminEvent(created ? OperationType.CREATE : OperationType.UPDATE, mapper.fromModel(model));
 
         return new CreateOrUpdateResult(mapper.fromModel(model), created);
     }
 
     /**
-     * Fires a v2 admin event for client operations.
+     * Fires a v2 admin event for client operations (only enabled for testing now to avoid duplicated admin events)
      *
      * @param operationType the type of operation (CREATE, UPDATE, DELETE)
      * @param representation the v2 representation of the client
      */
     private void fireAdminEvent(OperationType operationType, BaseClientRepresentation representation) {
-        adminEventBuilder
-                .operation(operationType)
-                .resourcePath(session.getContext().getUri())
-                .representation(representation)
-                .success();
+        if (Boolean.parseBoolean(System.getProperty("kc.admin-v2.client-service.events.enabled","false"))) {
+            adminEventBuilder
+                    .operation(operationType)
+                    .resourcePath(session.getContext().getUri())
+                    .representation(representation)
+                    .success();
+        }
     }
 
     @Override

@@ -35,10 +35,11 @@ import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpPost;
@@ -46,7 +47,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,9 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verifies that v2 admin events are fired with the apiVersion=v2 detail.
  */
 @KeycloakIntegrationTest(config = AdminEventV2Test.AdminV2EventConfig.class)
-public class AdminEventV2Test {
-    public static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/master/clients/v2";
-    private static ObjectMapper mapper;
+public class AdminEventV2Test extends AbstractClientApiV2Test {
     private static final String TEST_CLIENT_ID = "v2-rep-test-client";
 
     @InjectHttpClient
@@ -77,13 +76,16 @@ public class AdminEventV2Test {
     @InjectRealm(attachTo = "master", ref = "master")
     ManagedRealm masterRealm;
 
-    @BeforeAll
-    public static void setupMapper() {
-        mapper = new ObjectMapper();
-    }
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     @BeforeEach
     public void setupAndClearEvents() {
+        runOnServer.run(session -> {
+            // enable Admin v2 events on the server
+            System.setProperty("kc.admin-v2.client-service.events.enabled", "true");
+        });
+
         // Enable admin events on master realm
         RealmEventsConfigRepresentation eventsConfig = masterRealm.admin().getRealmEventsConfig();
         eventsConfig.setAdminEventsEnabled(true);
@@ -92,6 +94,14 @@ public class AdminEventV2Test {
         
         // Clear any existing events
         masterRealm.admin().clearAdminEvents();
+    }
+
+    @AfterEach
+    public void disableAdminEventsV2() {
+        runOnServer.run(session -> {
+            // enable Admin v2 events on the server
+            System.clearProperty("kc.admin-v2.client-service.events.enabled");
+        });
     }
 
     @Test
@@ -124,7 +134,7 @@ public class AdminEventV2Test {
         try {
             masterRealm.admin().clearAdminEvents();
 
-            HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/" + TEST_CLIENT_ID);
+            HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/" + TEST_CLIENT_ID);
             setAuthHeader(updateRequest);
             updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -193,7 +203,7 @@ public class AdminEventV2Test {
     public void stripSamlSigningCertificateFromRepresentation() throws Exception {
         var SAML_CLIENT_ID = "saml-with-certificate";
 
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -240,7 +250,7 @@ public class AdminEventV2Test {
 
     private void createTestClient() throws Exception {
         // Create a client via v2 API (representation details already enabled in @BeforeEach)
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -257,7 +267,7 @@ public class AdminEventV2Test {
     }
 
     private void deleteClient(String clientId) throws Exception {
-        HttpDelete deleteRequest = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/" + clientId);
+        HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + clientId);
         setAuthHeader(deleteRequest);
         try (var response = client.execute(deleteRequest)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
