@@ -141,6 +141,11 @@ A similar change was done for the `UserSessionPersisterProvider`.
 
 The official container images for server and the Operator now use OpenJDK 25 instead of previously used OpenJDK 21.
 
+=== Re-indexing required for external Infinispan Server
+
+With the `clusterless` feature enabled and `persistent-user-sessions` disabled, a re-index is required due to schema changes.
+{project_name} triggers the re-index on startup, but this may delay server startup depending on the number of sessions stored, and/or return incorrect results during the re-index process.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
