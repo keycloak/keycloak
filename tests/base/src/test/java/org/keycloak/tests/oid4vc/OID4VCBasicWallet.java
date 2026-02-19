@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.jose.jws.JWSHeader;
@@ -18,8 +19,11 @@ import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse.Credential;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.policy.CredentialPolicy;
+import org.keycloak.protocol.oid4vc.policy.CredentialPolicyUtils;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -245,6 +249,17 @@ public class OID4VCBasicWallet {
         return issuerMetadata;
     }
 
+    public <T> T getCredentialPolicyValue(CredentialScopeRepresentation credScope, CredentialPolicy<?> policy) {
+        return CredentialPolicyUtils.getCredentialPolicyValue(credScope, policy);
+    }
+
+    public <T> void setCredentialPolicyValue(CredentialScopeRepresentation credScope, CredentialPolicy<T> policy, T value) {
+        RealmResource realm = keycloak.realm(TEST_REALM_NAME);
+        ClientScopeResource scopeResource = realm.clientScopes().get(credScope.getId());
+        credScope.setAttribute(policy.getAttrKey(), String.valueOf(value));
+        scopeResource.update(credScope);
+    }
+
     public void logout() {
         for (String user : loginUsers) {
             logout(user);
@@ -361,7 +376,7 @@ public class OID4VCBasicWallet {
         }
 
         public AuthorizationEndpointRequest authorizationDetails(List<OID4VCAuthorizationDetail> authDetails) {
-            loginForm.authorizationDetails(authDetails.stream().map(it -> (AuthorizationDetailsJSONRepresentation)it).toList());
+            loginForm.authorizationDetails(authDetails.stream().map(it -> (AuthorizationDetailsJSONRepresentation) it).toList());
             return this;
         }
 

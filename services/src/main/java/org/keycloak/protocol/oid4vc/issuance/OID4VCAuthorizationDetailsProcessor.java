@@ -29,13 +29,16 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+import org.keycloak.protocol.oid4vc.policy.CredentialPolicyUtils;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
@@ -47,6 +50,7 @@ import org.jboss.logging.Logger;
 import static org.keycloak.OAuth2Constants.ISSUER_STATE;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_ID_NOTE;
+import static org.keycloak.protocol.oid4vc.policy.CredentialPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByName;
 import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX;
@@ -259,6 +263,14 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         for (String scope : scopeParam.split(" ")) {
             CredentialScopeModel credScopeModel = findCredentialScopeModelByName(realmModel, clientSessionCtx::getClientScopesStream, scope);
             if (credScopeModel != null) {
+
+                // Validate Credential Policy 'vc.policy.offer.required'
+                //
+                var credScope = new CredentialScopeRepresentation(ModelToRepresentation.toRepresentation(credScopeModel));
+                boolean offerRequired = CredentialPolicyUtils.getCredentialPolicyValue(credScope, VC_POLICY_CREDENTIAL_OFFER_REQUIRED);
+                if (offerRequired) {
+                    throw getInvalidRequestException("Credential offer is required by policy: " + VC_POLICY_CREDENTIAL_OFFER_REQUIRED.getName());
+                }
 
                 // Generate `authorization_details` for the AccessToken Response
                 // This is the same logic as we use when a credential offer is created

@@ -106,6 +106,7 @@ import org.keycloak.protocol.oid4vc.model.OfferResponseType;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oid4vc.policy.CredentialPolicyUtils;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
@@ -143,6 +144,7 @@ import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
+import static org.keycloak.protocol.oid4vc.policy.CredentialPolicies.VC_POLICY_CREDENTIAL_OFFER_TXCODE_REDACTED;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -521,10 +523,22 @@ public class OID4VCIssuerEndpoint {
                 .success();
 
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
+        String txCode = offerState.getTxCode();
+
+        // Check whether the tx_code should be redacted
+        //
+        CredentialScopeModel credScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
+                realmModel, () -> clientModel.getClientScopes(false).values().stream(), credentialConfigurationId);
+
+        boolean redactedPolicyValue = CredentialPolicyUtils.getCredentialPolicyValue(credScope, VC_POLICY_CREDENTIAL_OFFER_TXCODE_REDACTED);
+        if (!Strings.isEmpty(txCode) && redactedPolicyValue) {
+            txCode = "******";
+        }
+
         CredentialOfferURI credOfferURI = new CredentialOfferURI()
                 .setIssuer(credOffer.getCredentialIssuer() + "/protocol/" + OID4VC_PROTOCOL + "/" + CREDENTIAL_OFFER_PATH)
                 .setNonce(offerState.getNonce())
-                .setTxCode(offerState.getTxCode());
+                .setTxCode(txCode);
 
         // Respond with QR-Code as 'image/png'
         if (responseType == OfferResponseType.QR) {

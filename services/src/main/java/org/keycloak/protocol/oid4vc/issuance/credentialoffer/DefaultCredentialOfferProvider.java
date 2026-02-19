@@ -35,6 +35,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
+import org.keycloak.protocol.oid4vc.policy.CredentialPolicyUtils;
 import org.keycloak.protocol.oid4vc.policy.PredicateCredentialPolicy;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
@@ -45,6 +46,7 @@ import org.keycloak.util.Strings;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 import static org.keycloak.protocol.oid4vc.policy.CredentialPolicies.VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
+import static org.keycloak.protocol.oid4vc.policy.CredentialPolicies.VC_POLICY_CREDENTIAL_OFFER_TXCODE_REQUIRED;
 
 /**
  * Default implementation of {@link CredentialOfferProvider}.
@@ -89,8 +91,12 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             }
 
             if (PRE_AUTH_GRANT_TYPE.equals(grantType)) {
+
                 PredicateCredentialPolicy preAuthPolicy = VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
                 String preAuthPolicyName = preAuthPolicy.getName();
+
+                PredicateCredentialPolicy txCodePolicy = VC_POLICY_CREDENTIAL_OFFER_TXCODE_REQUIRED;
+                String txCodePolicyName = txCodePolicy.getName();
 
                 // Require existence of 'oid4vci-offer-preauth-allowed' ClientPolicy
                 //
@@ -108,6 +114,12 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
                 boolean preAuthAllowed = Boolean.parseBoolean(clientAttributes.get(preAuthPolicy.getAttrKey()));
                 if (!preAuthAllowed) {
                     throw new CredentialOfferException(Errors.NOT_ALLOWED, "Pre-Authorized code grant not allowed by policy: " + preAuthPolicyName);
+                }
+
+                // Validate policy 'vc.policy.offer.tx-code.required'
+                boolean txCodeRequired = CredentialPolicyUtils.getCredentialPolicyValue(credScopeModel, txCodePolicy);
+                if (txCodeRequired && !withTxCode) {
+                    throw new CredentialOfferException(Errors.NOT_ALLOWED, "TxCode required policy: " + txCodePolicyName);
                 }
             }
 

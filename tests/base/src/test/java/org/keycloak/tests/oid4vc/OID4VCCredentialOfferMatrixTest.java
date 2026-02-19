@@ -7,6 +7,7 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
@@ -27,9 +28,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.protocol.oid4vc.policy.CredentialPolicies.VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
+import static org.keycloak.protocol.oid4vc.policy.CredentialPolicies.VC_POLICY_CREDENTIAL_OFFER_TXCODE_REDACTED;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIAL_OFFER_URI_ATTACHMENT_KEY;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -241,7 +245,7 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testPreAuthOffer_NotAllowed() throws Exception {
+    public void testPreAuthOffer_NotAllowed() {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 
@@ -331,6 +335,11 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
         //
         CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.holder, true);
         String preAuthCode = credOffer.getPreAuthorizedCode();
+
+        CredentialOfferURI credOfferUri = ctx.getAttachment(CREDENTIAL_OFFER_URI_ATTACHMENT_KEY);
+        Boolean redactedPolicyValue = wallet.getCredentialPolicyValue(ctx.credentialScope, VC_POLICY_CREDENTIAL_OFFER_TXCODE_REDACTED);
+        assertFalse(redactedPolicyValue, "TxCode redacted");
+        assertNotEquals("******", credOfferUri.getTxCode());
 
         // Test missing TxCode
         {
