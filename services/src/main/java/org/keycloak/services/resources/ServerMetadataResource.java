@@ -49,7 +49,9 @@ public class ServerMetadataResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getWellKnownPreflight(final @PathParam("provider") String alias,
                                           final @PathParam("realm") String realm) {
-        if (!isValidProvider(alias)) throw new NotFoundException();
+        if (!isValidProvider(alias)) {
+            throw new NotFoundException();
+        }
         return Cors.builder().allowedMethods("GET").preflight().auth().add(Response.ok());
     }
 
@@ -58,7 +60,9 @@ public class ServerMetadataResource {
     @Produces({MediaType.APPLICATION_JSON, org.keycloak.utils.MediaType.APPLICATION_JWT})
     public Response getWellKnown(final @PathParam("provider") String alias,
                                  final @PathParam("realm") String realm) {
-        if (!isValidProvider(alias)) throw new NotFoundException();
+        if (!isValidProvider(alias)) {
+            throw new NotFoundException();
+        }
         return RealmsResource.getWellKnownResponse(session, realm, alias, logger);
     }
 
