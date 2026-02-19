@@ -153,7 +153,7 @@ Once all the Keycloak instances managed by the operator are updated, then update
 
 If due to a major version change or bug an old operator is not compatible with a new custom image version, then you will instead need to stop the old operator when updating the custom images, then bring up the new operator version once the Keycloak CRs are up-to-date.
 
-To stop an operator you uninstall it scale the Deployment to 0 replicas:
+To stop an operator you uninstall it, or scale down the Deployment to 0 replicas:
 
 [source,bash,subs="attributes+"]
 ----
