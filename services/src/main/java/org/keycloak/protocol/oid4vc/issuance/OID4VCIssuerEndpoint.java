@@ -577,10 +577,11 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, targetUserId)
                 .success();
 
+        String redactedTxCode = !Strings.isEmpty(offerState.getTxCode()) ? "******" : null;
         CredentialOfferURI credOfferURI = new CredentialOfferURI()
                 .setIssuer(credOffer.getCredentialIssuer() + "/protocol/" + OID4VC_PROTOCOL + "/" + CREDENTIAL_OFFER_PATH)
-                .setTxCode(offerState.getTxCode())
-                .setNonce(offerState.getNonce());
+                .setNonce(offerState.getNonce())
+                .setTxCode(redactedTxCode);
 
         // Respond with QR-Code as 'image/png'
         if (responseType == OfferResponseType.QR) {

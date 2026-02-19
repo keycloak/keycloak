@@ -31,6 +31,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
@@ -1139,6 +1140,15 @@ public class TestingResourceProvider implements RealmResourceProvider {
         offerStorage.putOfferState(session, new CredentialOfferState(credOffer, clientId, userId, expiration));
 
         return code;
+    }
+
+    @GET
+    @Path("/tx-code")
+    @NoCache
+    public String getTxCode(@QueryParam("pre-auth-code") final String preAuthCode) {
+        var offerStorage = session.getProvider(CredentialOfferStorage.class);
+        var offerState = offerStorage.findOfferStateByCode(session, preAuthCode);
+        return Optional.ofNullable(offerState).map(CredentialOfferState::getTxCode).orElse(null);
     }
 
     @POST

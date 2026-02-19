@@ -238,6 +238,8 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                 //  4. does not reflect anything from the credential offer
                 //
                 AccessTokenResponse accessToken = getPreAuthorizedAccessTokenResponse(credOffer);
+                assertTrue(accessToken.getErrorDescription(), accessToken.isSuccess());
+
                 List<OID4VCAuthorizationDetail> authDetailsResponse = accessToken.getOid4vcAuthorizationDetails();
                 if (authDetailsResponse == null || authDetailsResponse.isEmpty()) {
                     throw new IllegalStateException("No authorization_details in token response");
@@ -352,6 +354,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         CredentialOfferUriResponse credentialOfferURIResponse = oauth.oid4vc()
                 .credentialOfferUriRequest(credConfigId)
                 .preAuthorized(ctx.preAuthorized)
+                .txCode(ctx.preAuthorized)
                 .targetUser(ctx.appUser)
                 .bearerToken(token)
                 .send();
@@ -369,8 +372,12 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     }
 
     private AccessTokenResponse getPreAuthorizedAccessTokenResponse(CredentialsOffer credOffer) throws Exception {
-        PreAuthorizedCode preAuthorizedCode = credOffer.getGrants().getPreAuthorizedCode();
-        return oauth.oid4vc().doPreAuthorizedCodeGrantRequest(preAuthorizedCode.getPreAuthorizedCode());
+        PreAuthorizedCode preAuthCodeGrant = credOffer.getGrants().getPreAuthorizedCode();
+        String preAuthCode = preAuthCodeGrant.getPreAuthorizedCode();
+        String txCode = getTestingClient().testing().getTxCode(preAuthCode);
+        return oauth.oid4vc().preAuthorizedCodeGrantRequest(preAuthCode)
+                .txCode(txCode)
+                .send();
     }
 
     private CredentialResponse getCredentialByAuthDetail(String accessToken, OID4VCAuthorizationDetail authDetail) throws Exception {
