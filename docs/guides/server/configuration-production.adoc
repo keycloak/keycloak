@@ -12,6 +12,10 @@ A {project_name} production environment provides secure authentication and autho
 
 This {section} describes the general areas of configuration required for a production ready {project_name} environment. This information focuses on the general concepts instead of the actual implementation, which depends on your environment. The key aspects covered in this {section} apply to all environments, whether it is containerized, on-premise, GitOps, or Ansible.
 
+== Supported configurations for production environments
+
+For an overview of supported platforms, Java versions, databases, and other system requirements for {project_name}, see <@links.server id="supported-configurations"/>.
+
 == TLS for secure communication
 {project_name} continually exchanges sensitive data, which means that all communication to and from {project_name} requires a secure communication channel. To prevent several attack vectors, you enable HTTP over TLS, or HTTPS, for that channel.
 
