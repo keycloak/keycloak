@@ -330,7 +330,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                 .setAttributeMapper(attributes -> {
                     if (hasPublicBrokers(organization)) {
                         attributes.computeIfPresent("social",
-                                (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, true)
+                                (key, bean) -> new OrganizationAwareIdentityProviderBean((IdentityProviderBean) bean, false)
                         );
                         // do not show the self-registration link if there are public brokers available from the organization to force the user to register using a broker
                         attributes.computeIfPresent("realm",
