@@ -18,8 +18,8 @@
 package org.keycloak.tests.admin;
 
 import java.util.Map;
-
 import java.util.concurrent.TimeUnit;
+
 import org.keycloak.admin.client.resource.AttackDetectionResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
