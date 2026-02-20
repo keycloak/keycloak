@@ -50,7 +50,7 @@ public class OIDCWellKnownProviderTest extends AbstractWellKnownProviderTest {
     public void openIdConfigurationShouldNotBeExposedViaServerMetadataRoot() {
 
         UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
-        URI serverMetadataWellKnownUri = ServerMetadataResource.wellKnownOAuthProviderUrl(builder).build(getWellKnownProviderId(), "test");
+        URI serverMetadataWellKnownUri = ServerMetadataResource.wellKnownProviderUrl(builder).build(getWellKnownProviderId(), "test");
 
         try (Client client = AdminClientUtil.createResteasyClient()) {
             try (Response response = client.target(serverMetadataWellKnownUri).request().get()) {
