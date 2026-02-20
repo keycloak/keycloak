@@ -125,11 +125,13 @@ public class KeycloakClientTest extends BaseOperatorTest {
         assertNull(k8sclient.resource(client).get());
     }
 
+    @Test
     @DisabledIfApiServerTest
     public void testBasicOIDCClientCreationAndDeletionHttp() throws InterruptedException {
         helpTestBasicOIDCClientCreationAndDeletion(false);
     }
 
+    @Test
     @DisabledIfApiServerTest
     public void testBasicOIDCClientCreationAndDeletionHttps() throws InterruptedException {
         helpTestBasicOIDCClientCreationAndDeletion(true);
