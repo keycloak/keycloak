@@ -51,7 +51,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Details;
@@ -81,6 +80,7 @@ import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage.CredentialOfferState;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.PreAuthCodeHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.ProofValidator;
@@ -495,7 +495,7 @@ public class OID4VCIssuerEndpoint {
         CredentialOfferState offerState = new CredentialOfferState(credOffer, appClientId, userId, expiration);
 
         if (preAuthorized) {
-            String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
+            String code = createPreAuthorizedCode(offerState);
             credOffer.setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(
                     new PreAuthorizedCode().setPreAuthorizedCode(code)));
         }
@@ -611,7 +611,8 @@ public class OID4VCIssuerEndpoint {
         // i.e. an authenticated client/user session is not required nor checked against the offer state
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
         LOGGER.debugf("Found credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
-                credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
+                Optional.ofNullable(credOffer).map(CredentialsOffer::getCredentialConfigurationIds).orElse(null),
+                offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
 
         if (offerState.isExpired()) {
             var errorMessage = "Credential offer already expired";
@@ -621,7 +622,7 @@ public class OID4VCIssuerEndpoint {
 
         // Remove the nonce entry atomically for replay protection
         // This prevents the same offer URL from being accessed multiple times
-        // while keeping pre-authorized code and credential identifier entries available
+        // while keeping credential identifier entries available
         Map<String, String> removed = session.singleUseObjects().remove(nonce);
         if (removed == null) {
             var errorMessage = "Credential offer not found or already consumed";
@@ -638,7 +639,10 @@ public class OID4VCIssuerEndpoint {
         if (offerState.getUserId() != null) {
             eventBuilder.user(offerState.getUserId());
         }
-        if (credOffer.getCredentialConfigurationIds() != null && !credOffer.getCredentialConfigurationIds().isEmpty()) {
+
+        if (credOffer != null
+                && credOffer.getCredentialConfigurationIds() != null
+                && !credOffer.getCredentialConfigurationIds().isEmpty()) {
             eventBuilder.detail(Details.CREDENTIAL_TYPE, String.join(",", credOffer.getCredentialConfigurationIds()));
         }
 
@@ -1528,6 +1532,28 @@ public class OID4VCIssuerEndpoint {
 
     private Response getErrorResponse(ErrorType errorType, String errorDescription) {
         return getErrorResponseBuilder(errorType, errorDescription).build();
+    }
+
+    /**
+     * Creates pre-authorized code to associate with a credential offer state.
+     */
+    private String createPreAuthorizedCode(CredentialOfferState offerState) {
+        PreAuthCodeHandler preAuthCodeHandler = session.getProvider(PreAuthCodeHandler.class);
+        if (preAuthCodeHandler == null) {
+            throw new IllegalStateException("No PreAuthCodeHandler provider available");
+        }
+
+        // We pass a distinct, partial copy to be explicit about the data that can be made public.
+        // For example, transactions codes must never leak into the pre-auth code.
+        CredentialOfferState publicOfferState = new CredentialOfferState()
+                .setCredentialsOffer(offerState.getCredentialsOffer())
+                .setAuthorizationDetails(offerState.getAuthorizationDetails())
+                .setNonce(offerState.getNonce())
+                .setClientId(offerState.getClientId())
+                .setUserId(offerState.getUserId())
+                .setExpiration(offerState.getExpiration());
+
+        return preAuthCodeHandler.createPreAuthCode(publicOfferState);
     }
 
     // builds the unsigned credential by applying all protocol mappers.

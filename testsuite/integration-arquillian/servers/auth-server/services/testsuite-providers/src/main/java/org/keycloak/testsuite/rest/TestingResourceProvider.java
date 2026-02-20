@@ -86,11 +86,9 @@ import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
-import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage.CredentialOfferState;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.JwtPreAuthCodeHandler;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.provider.Provider;
@@ -1127,18 +1125,14 @@ public class TestingResourceProvider implements RealmResourceProvider {
         RealmModel realm = getRealmByName(realmName);
         UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
 
-        String code = "urn:oid4vci:code:" + UUID.randomUUID();
         CredentialsOffer credOffer = new CredentialsOffer()
                 .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
-                .setCredentialConfigurationIds(List.of("oid4vc_natural_person_sd"))
-                .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(
-                    new PreAuthorizedCode().setPreAuthorizedCode(code)));
+                .setCredentialConfigurationIds(List.of("oid4vc_natural_person_sd"));
 
         String userId = userSession.getUser().getId();
-        var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        offerStorage.putOfferState(session, new CredentialOfferState(credOffer, clientId, userId, expiration));
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, userId, expiration);
 
-        return code;
+        return new JwtPreAuthCodeHandler(session).createPreAuthCode(offerState);
     }
 
     @POST

@@ -17,26 +17,34 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakUriInfo;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.PreAuthCodeHandler;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -51,6 +59,7 @@ import org.keycloak.utils.MediaType;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.events.Details.REASON;
+import static org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage.CredentialOfferState;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
 import static org.keycloak.services.util.DefaultClientSessionContext.fromClientSessionAndScopeParameter;
 
@@ -85,15 +94,9 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        var offerState = offerStorage.findOfferStateByCode(session, code);
-        if (offerState == null) {
-            var errorMessage = "No credential offer state for code: " + code;
-            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
-                    errorMessage, Response.Status.BAD_REQUEST);
-        }
-
+        // Verify the pre-auth code and retrieve the associated credential offer state.
+        // The verification logic is delegated to the configured PreAuthCodeHandler provider.
+        CredentialOfferState offerState = verifyPreAuthCode(code);
         if (offerState.isExpired()) {
             event.error(Errors.EXPIRED_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
@@ -175,7 +178,8 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         // Add authorization_details to the OfferState and otherClaims
-        OID4VCAuthorizationDetail authDetails = (OID4VCAuthorizationDetail) authorizationDetailsResponses.get(0);
+        var offerStorage = session.getProvider(CredentialOfferStorage.class);
+        var authDetails = (OID4VCAuthorizationDetail) authorizationDetailsResponses.get(0);
         offerState.setAuthorizationDetails(authDetails);
         offerStorage.replaceOfferState(session, offerState);
 
@@ -244,7 +248,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
     public boolean isTokenAllowed(KeycloakSession session, AccessToken token) {
         // Check if the request path ends with the credential endpoint path
         boolean isCredentialEndpoint = Optional.ofNullable(session.getContext().getUri())
-                .map(uri -> uri.getPath())
+                .map(KeycloakUriInfo::getPath)
                 .map(path -> path.endsWith("/" + OID4VCIssuerEndpoint.CREDENTIAL_PATH))
                 .orElse(false);
 
@@ -257,5 +261,53 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         String expectedAudience = OID4VCIssuerWellKnownProvider.getCredentialsEndpoint(session.getContext());
         String[] audiences = token.getAudience();
         return audiences != null && audiences.length == 1 && expectedAudience.equals(audiences[0]);
+    }
+
+    /**
+     * Runs the pre-auth code verification logic using the configured PreAuthCodeHandler provider.
+     * A public, partial view of the CredentialOfferState is returned upon successful verification.
+     */
+    private CredentialOfferState verifyPreAuthCode(String code) {
+        PreAuthCodeHandler preAuthCodeHandler = session.getProvider(PreAuthCodeHandler.class);
+        if (preAuthCodeHandler == null) {
+            throw new IllegalStateException("No PreAuthCodeHandler provider available");
+        }
+
+        CredentialOfferState offerState;
+        try {
+            offerState = preAuthCodeHandler.verifyPreAuthCode(code);
+        } catch (VerificationException e) {
+            String errorType = Optional.ofNullable(e.getErrorType()).orElse(Errors.INVALID_CODE);
+            String errorMessage = String.format("Pre-authorized code failed handler verification (%s)", errorType);
+            LOGGER.error(errorMessage, e);
+            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors,
+                    errorType.equals(Errors.INVALID_CODE)
+                            ? OAuthErrorException.INVALID_REQUEST
+                            : OAuthErrorException.EXPIRED_TOKEN,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        // Pre-auth code is valid, but let's prevent replay attacks
+        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
+        String key = getPreAuthCodeSingleObjectKey(code);
+        if (singleUseStore.get(key) != null) {
+            String errorMessage = "Pre-authorized code has already been used";
+            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        // Prevent code replay for the remaining validity period
+        long expiresIn = offerState.getExpiration() - Time.currentTime();
+        singleUseStore.put(key, expiresIn, Map.of());
+
+        return offerState;
+    }
+
+    private static String getPreAuthCodeSingleObjectKey(String code) {
+        String hash = HashUtils.sha256UrlEncodedHash(code.trim(), StandardCharsets.UTF_8);
+        String fqcn = PreAuthorizedCodeGrantType.class.getName().toLowerCase();
+        return fqcn + "." + hash;
     }
 }
