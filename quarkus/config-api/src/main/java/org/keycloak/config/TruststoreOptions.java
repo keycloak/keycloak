@@ -13,7 +13,7 @@ public class TruststoreOptions {
 
     public static final Option<Boolean> TRUSTSTORE_KUBERNETES_CA_ENABLED = new OptionBuilder<>("truststore-kubernetes-enabled", Boolean.class)
             .category(OptionCategory.TRUSTSTORE)
-            .description("If enabled, the server will automatically include the default Kubernetes service account CA certificate from \"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" when running in a container environment.")
+            .description("If enabled, the server will automatically include the default Kubernetes service account CA certificate from \"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt\" and the OpenShift service CA certificate from \"/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt\" when running in a container environment.")
             .defaultValue(true)
             .build();
 
