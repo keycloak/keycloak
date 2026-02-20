@@ -1,0 +1,92 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+<#import "templates/databases.adoc" as databases>
+
+<@tmpl.guide
+    title="Supported Configurations"
+    summary="Overview of supported platforms, Java versions, databases, and other system requirements for {project_name}.">
+
+<@profile.ifCommunity>
+This {section} provides an overview of the platforms, versions, and configurations that are tested and supported for running {project_name} in production environments.
+
+== Java Virtual Machine
+
+{project_name} requires a Java Virtual Machine (JVM) to run. The following Java Development Kit (JDK) versions are supported:
+
+* OpenJDK 17 (LTS)
+* OpenJDK 21 (LTS)
+* OpenJDK 25 (LTS)
+
+NOTE: Always the latest supported JDK version is recommended for production deployments to benefit from the latest performance improvements.
+This is currently OpenJDK {jdk_version_recommended}.
+
+== Runtime Platform
+
+{project_name} can be deployed in various environments:
+
+* **Bare Metal / Virtual Machines** - Direct installation on Linux or Windows servers
+* **Containers** - Docker, Podman
+* **Kubernetes** - OpenShift, Azure, AWS
+
+NOTE: Other Kubernetes distributions are supported only in a best-effort manner, i.e. support will be provided for issues that
+can be reproduced on other supported Kubernetes distributions.
+
+NOTE: The supported versions of each respective environment are limited to the versions that are currently supported by the respective vendors. For example, for OpenShift, only the versions that are currently supported by Red Hat are supported by {project_name}.
+
+=== Container Image
+
+{project_name} provides official container image that is using OpenJDK {jdk_version_recommended}. Consider this when writing
+custom extensions, or override the OpenJDK version in a custom container image of {project_name}. For more details on the container image, see <@links.server id="containers"/>.
+
+== Supported Databases
+
+{project_name} has built-in support for different relational databases. The following table lists the supported databases and their tested versions.
+
+<@databases.supportedDatabases/>
+
+For details on configuring a supported database, see <@links.server id="db"/> {section}.
+
+== Supported Browsers
+
+The {project_name} UI including login pages, Admin Console and Account Console are supported with the following browsers:
+
+[%autowidth]
+|===
+|Browser | Supported Versions
+
+|Google Chrome | Latest stable version
+|Mozilla Firefox | Latest stable version
+|Microsoft Edge | Latest stable version
+|Apple Safari | Latest stable version
+|===
+
+NOTE: The Admin Console and Account Console require JavaScript to be enabled. Browsers must support modern web standards including ES6+, WebAuthn, and Web Crypto API for full functionality.
+
+== Clustering and High Availability
+
+{project_name} supports clustering for high availability and scalability using external Infinispan ${properties["infinispan.version"]}.
+For details, visit the <@links.ha id="introduction"/>.
+
+== Hardware Requirements
+
+The hardware requirements for running {project_name} depend on the expected load and deployment environment.
+Consult  the <@links.ha id="introduction"/> for recommendations on hardware sizing for different deployment scenarios.
+</@profile.ifCommunity>
+
+<@profile.ifProduct>
+Visit the {rhbk_supported_configurations_link}[Red Hat Knowledgebase Article on supported configurations] for detailed information on supported platforms, Java versions, databases, and other system requirements for running {project_name} in production environments.
+</@profile.ifProduct>
+
+== Additional Resources
+
+For more detailed configuration information, see:
+
+* <@links.server id="configuration-production"/>
+* <@links.server id="db"/>
+* <@links.server id="containers"/>
+* <@links.ha id="introduction"/>
+
+</@tmpl.guide>
+
+
