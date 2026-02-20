@@ -60,16 +60,18 @@ public class BERDecoder {
 
     /**
      * Check if the next element matches with the given tag, but do not consume it.
+     * Returns false if there is no more data.
      */
-    public boolean isNextTag(int clazz, int form, int tag) throws DecodeException {
+    public boolean isNextTag(int clazz, int form, int tag) {
+        // Check if there is more data to read (e.g. to allow empty SEQUENCE).
+        if (!encoded.hasRemaining()) {
+            return false;
+        }
         encoded.mark();
         try {
             int expected = clazz | form | tag;
             int unsignedTag = encoded.get() & 0xFF;
-            encoded.reset();
             return unsignedTag == expected;
-        } catch (BufferUnderflowException e) {
-            throw new DecodeException("Unexpected end of input");
         } finally {
             encoded.reset();
         }
@@ -80,6 +82,7 @@ public class BERDecoder {
      */
     public void skipElement() throws DecodeException {
         try {
+            encoded.get(); // Consume tag.
             int length = readLength();
             encoded.position(encoded.position() + length);
         } catch (BufferUnderflowException e) {
@@ -92,6 +95,7 @@ public class BERDecoder {
      */
     public byte[] drainElementValue() throws DecodeException {
         try {
+            encoded.get(); // Consume tag.
             int length = readLength();
             byte[] value = new byte[length];
             encoded.get(value);

@@ -60,6 +60,10 @@ public class PasswordPolicyControl implements Control {
      */
 
     PasswordPolicyControl(byte[] encodedValue) {
+        if (encodedValue == null || encodedValue.length == 0) {
+            return;
+        }
+
         BERDecoder ber = new BERDecoder(encodedValue);
 
         try {
