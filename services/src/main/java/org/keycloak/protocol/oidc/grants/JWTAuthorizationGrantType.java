@@ -21,6 +21,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.authenticators.client.ClientAssertionState;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.JWTAuthorizationGrantProvider;
 import org.keycloak.cache.AlternativeLookupProvider;
@@ -104,7 +105,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
             //user must exist in keycloak
             FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(identityProviderModel.getAlias(), brokeredIdentityContext.getId(), brokeredIdentityContext.getUsername(), brokeredIdentityContext.getToken());
-            UserModel user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
+            UserModel user = lookupUserByFederatedIdentity(federatedIdentityModel, authorizationGrantContext.getState());
             if (user == null) {
                 throw new RuntimeException("User not found");
             }
@@ -155,6 +156,10 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             event.error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, e.getMessage(), Response.Status.BAD_REQUEST);
         }
+    }
+
+    protected UserModel lookupUserByFederatedIdentity(FederatedIdentityModel federatedIdentityModel, ClientAssertionState clientAssertionState) {
+        return this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
     }
 
     protected AuthenticationSessionModel createSessionModel(RootAuthenticationSessionModel rootAuthSession, UserModel targetUser, ClientModel client, String scope) {
