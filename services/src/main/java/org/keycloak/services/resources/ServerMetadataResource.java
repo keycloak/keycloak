@@ -66,7 +66,23 @@ public class ServerMetadataResource {
         return RealmsResource.getWellKnownResponse(session, realm, alias, logger);
     }
 
+    /**
+     * @Deprecated use {@link #wellKnownProviderUrl(UriBuilder)} instead.
+     * @return the updated UriBuilder instance.
+     */
+    @Deprecated
     public static UriBuilder wellKnownOAuthProviderUrl(UriBuilder builder) {
+        return wellKnownProviderUrl(builder);
+    }
+
+    /**
+     * Constructs the URI path for the well-known provider URL based on the provided UriBuilder.
+     *
+     * @param builder the base UriBuilder instance to which the well-known provider path will be appended.
+     *                It must not be null.
+     * @return the updated UriBuilder instance with the well-known provider path appended.
+     */
+    public static UriBuilder wellKnownProviderUrl(UriBuilder builder) {
         return builder.path(ServerMetadataResource.class).path("{provider}/realms/{realm}");
     }
 

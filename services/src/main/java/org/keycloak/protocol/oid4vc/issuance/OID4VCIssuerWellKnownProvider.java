@@ -571,7 +571,7 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
         UriBuilder base = session.getContext().getUri().getBaseUriBuilder();
         String logKey = session.getContext().getRealm().getName();
-        URI successor = ServerMetadataResource.wellKnownOAuthProviderUrl(base)
+        URI successor = ServerMetadataResource.wellKnownProviderUrl(base)
                 .build(WELL_KNOWN_OPENID_CREDENTIAL_ISSUER, logKey);
 
         HttpResponse httpResponse = session.getContext().getHttpResponse();
