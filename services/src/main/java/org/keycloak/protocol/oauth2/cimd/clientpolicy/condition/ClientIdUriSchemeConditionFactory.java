@@ -3,7 +3,10 @@ package org.keycloak.protocol.oauth2.cimd.clientpolicy.condition;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientpolicy.condition.AbstractClientPolicyConditionProviderFactory;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
@@ -14,7 +17,8 @@ import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvide
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientIdUriSchemeConditionFactory extends AbstractClientPolicyConditionProviderFactory {
+public class ClientIdUriSchemeConditionFactory extends AbstractClientPolicyConditionProviderFactory
+        implements EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "client-id-uri";
 
@@ -68,5 +72,10 @@ public class ClientIdUriSchemeConditionFactory extends AbstractClientPolicyCondi
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.CIMD);
     }
 }

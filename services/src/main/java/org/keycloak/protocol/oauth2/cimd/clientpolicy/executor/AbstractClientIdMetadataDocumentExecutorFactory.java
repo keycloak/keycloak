@@ -3,7 +3,9 @@ package org.keycloak.protocol.oauth2.cimd.clientpolicy.executor;
 import java.util.List;
 
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderFactory;
@@ -30,7 +32,8 @@ import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderF
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements ClientPolicyExecutorProviderFactory {
+public abstract class AbstractClientIdMetadataDocumentExecutorFactory
+        implements ClientPolicyExecutorProviderFactory, EnvironmentDependentProviderFactory {
 
     // Client ID Verification
     public static final String ALLOW_HTTP_SCHEME = "cimd-allow-http-scheme";
@@ -145,5 +148,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory implements
                 .add()
 
                 .build();
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.CIMD);
     }
 }
