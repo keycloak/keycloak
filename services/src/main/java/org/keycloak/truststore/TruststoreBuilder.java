@@ -27,7 +27,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
@@ -49,10 +48,8 @@ public class TruststoreBuilder {
     public static final String DUMMY_PASSWORD = "keycloakchangeit"; // fips length compliant dummy password
     static final String PKCS12 = "PKCS12";
 
-    private static final String DEFAULT_KUBERNETES_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
-    private static final String DEFAULT_SERVICE_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt";
-    public static final String KUBERNETES_CA_PATH_PROPERTY = "keycloak.kubernetes.ca.path";
-    public static final String SERVICE_CA_PATH_PROPERTY = "keycloak.service.ca.path";
+    private static final String KUBERNETES_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
+    private static final String SERVICE_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt";
 
     private static final Logger LOGGER = Logger.getLogger(TruststoreBuilder.class);
 
@@ -74,27 +71,17 @@ public class TruststoreBuilder {
      * Include the Kubernetes and/or OpenShift service CA truststore paths if enabled and the files exist.
      *
      * @param truststores the existing truststore paths
-     * @param includeKubernetesCa {@code true} to include the Kubernetes service account CA certificate
-     * @return the updated truststore paths
      */
-    public static String[] includeKubernetesTrustStorePaths(String[] truststores, boolean includeKubernetesCa) {
-        final List<String> truststoreList = new ArrayList<>(Arrays.asList(truststores));
-
-        if (includeKubernetesCa) {
-            String kubernetesCaPath = System.getProperty(KUBERNETES_CA_PATH_PROPERTY, DEFAULT_KUBERNETES_CA_PATH);
-            File kubernetesCA = new File(kubernetesCaPath);
-            if (kubernetesCA.exists() && kubernetesCA.isFile()) {
-                truststoreList.add(kubernetesCaPath);
-            }
-
-            String serviceCaPath = System.getProperty(SERVICE_CA_PATH_PROPERTY, DEFAULT_SERVICE_CA_PATH);
-            File serviceCA = new File(serviceCaPath);
-            if (serviceCA.exists() && serviceCA.isFile()) {
-                truststoreList.add(serviceCaPath);
-            }
+    public static void includeKubernetesTrustStorePaths(List<String> trustStores) {
+        File kubernetesCA = new File(KUBERNETES_CA_PATH);
+        if (kubernetesCA.exists() && kubernetesCA.isFile()) {
+            trustStores.add(KUBERNETES_CA_PATH);
         }
 
-        return truststoreList.toArray(new String[0]);
+        File serviceCA = new File(SERVICE_CA_PATH);
+        if (serviceCA.exists() && serviceCA.isFile()) {
+            trustStores.add(SERVICE_CA_PATH);
+        }
     }
 
     static File saveTruststore(KeyStore truststore, String dataDir, char[] password) {

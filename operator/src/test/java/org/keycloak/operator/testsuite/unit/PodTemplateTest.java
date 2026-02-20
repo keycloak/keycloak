@@ -481,7 +481,6 @@ public class PodTemplateTest {
         assertThat(container.getArgs()).contains("-Djgroups.bind.address=$(POD_IP)");
 
         var envVars = container.getEnv();
-        assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRUSTSTORE_PATHS));
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TELEMETRY_SERVICE_NAME));
         assertThat(envVars.stream()).anyMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TELEMETRY_RESOURCE_ATTRIBUTES));
         assertThat(envVars.stream()).noneMatch(envVar -> envVar.getName().equals(KeycloakDeploymentDependentResource.KC_TRACING_RESOURCE_ATTRIBUTES));

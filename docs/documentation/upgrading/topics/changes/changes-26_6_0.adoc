@@ -133,9 +133,9 @@ This behavior is enabled by default and can be controlled with the server option
 
 No changes are required for most deployments. If you previously relied on the Operator to manage these truststore entries, the server now performs the same function directly. For details, see the server guide section "Cluster CA certificates (Kubernetes and OpenShift)" in the Truststore guide.
 
-If you are deploying {project_name} by using the {project_name} Operator and your deployment relies on trusting the Kubernetes CA, upgrade the Keycloak image first. This ensures that the Kubernetes CAs remain trusted for the entire duration of the upgrade.
+If you are deploying {project_name} by using the {project_name} Operator and your deployment relies on trusting the Kubernetes CA, upgrade custom Keycloak images first. This ensures that the Kubernetes CAs remain trusted for the entire duration of the upgrade.
 
-If you cannot upgrade the image first, it is recommended to explicitly configure the truststore path in the Keycloak Custom Resource prior to changing the Operator version. This ensures that older pods continue to trust the cluster CA during the upgrade procedure:
+If you cannot upgrade the custom image first nor are able to simultaneously upgrade the operator with the custom images, it is recommended to explicitly configure the truststore path in the Keycloak Custom Resource prior to changing the Operator version. This ensures that Pods using older custom images continue to trust the cluster CA during the upgrade procedure:
 
 [source,yaml]
 ----
