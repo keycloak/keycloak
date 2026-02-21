@@ -14,6 +14,7 @@ import {
   Modal,
   ModalVariant,
 } from "@patternfly/react-core";
+import { useGroupResource } from "../context/group-resource/GroupResourceContext";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -48,6 +49,7 @@ export const GroupsModal = ({
 }: GroupsModalProps) => {
   const { adminClient } = useAdminClient();
   const { t } = useTranslation();
+  const groups = useGroupResource();
   const { addAlert, addError } = useAlerts();
   const isFeatureEnabled = useIsFeatureEnabled();
   const [duplicateGroupDetails, setDuplicateGroupDetails] =
@@ -64,7 +66,7 @@ export const GroupsModal = ({
   useFetch(
     async () => {
       if (duplicateId) {
-        return adminClient.groups.findOne({ id: duplicateId });
+        return groups.findOne({ id: duplicateId });
       }
     },
     (group) => {
@@ -82,7 +84,7 @@ export const GroupsModal = ({
       const clients = await adminClient.clients.find();
 
       for (const client of clients) {
-        const roles = await adminClient.groups.listClientRoleMappings({
+        const roles = await groups.listClientRoleMappings({
           id: groupId,
           clientUniqueId: client.id!,
         });
@@ -123,10 +125,10 @@ export const GroupsModal = ({
       delete newGroup.id;
 
       const createdGroup = parentId
-        ? await adminClient.groups.createChildGroup({ id: parentId }, newGroup)
-        : await adminClient.groups.create(newGroup);
+        ? await groups.createChildGroup({ id: parentId }, newGroup)
+        : await groups.create(newGroup);
 
-      const members = await adminClient.groups.listMembers({
+      const members = await groups.listMembers({
         id: sourceGroup.id!,
       });
 
@@ -138,19 +140,16 @@ export const GroupsModal = ({
       }
 
       if (isFeatureEnabled(Feature.AdminFineGrainedAuthz)) {
-        const permissions = await adminClient.groups.listPermissions({
+        const permissions = await groups.listPermissions({
           id: sourceGroup.id!,
         });
 
         if (permissions) {
-          await adminClient.groups.updatePermission(
-            { id: createdGroup.id },
-            permissions,
-          );
+          await groups.updatePermission({ id: createdGroup.id }, permissions);
         }
       }
 
-      const realmRoles = await adminClient.groups.listRealmRoleMappings({
+      const realmRoles = await groups.listRealmRoleMappings({
         id: sourceGroup.id!,
       });
 
@@ -176,7 +175,7 @@ export const GroupsModal = ({
 
       await assignRoles(rolesToAssign, createdGroup.id);
 
-      const subGroups = await adminClient.groups.listSubGroups({
+      const subGroups = await groups.listSubGroups({
         parentId: sourceGroup.id!,
       });
 
@@ -205,7 +204,7 @@ export const GroupsModal = ({
         (role) => role.clientUniqueId && role.name,
       );
 
-      await adminClient.groups.addRealmRoleMappings({
+      await groups.addRealmRoleMappings({
         id: groupId,
         roles: realmRoles.map(({ id, name }) => ({ id, name: name! })),
       });
@@ -213,7 +212,7 @@ export const GroupsModal = ({
       await Promise.all(
         clientRoles.map((clientRole) => {
           if (clientRole.clientUniqueId && clientRole.name) {
-            return adminClient.groups.addClientRoleMappings({
+            return groups.addClientRoleMappings({
               id: groupId,
               clientUniqueId: clientRole.clientUniqueId,
               roles: [{ id: clientRole.id, name: clientRole.name }],
@@ -234,14 +233,14 @@ export const GroupsModal = ({
       if (duplicateId && duplicateGroupDetails) {
         await duplicateGroup(duplicateGroupDetails);
       } else if (!id) {
-        await adminClient.groups.create(group);
+        await groups.create(group);
       } else if (rename) {
-        await adminClient.groups.update(
+        await groups.update(
           { id },
           { ...rename, name: group.name, description: group.description },
         );
       } else {
-        await adminClient.groups.updateChildGroup({ id }, group);
+        await groups.updateChildGroup({ id }, group);
       }
 
       refresh(rename ? { ...rename, ...group } : undefined);

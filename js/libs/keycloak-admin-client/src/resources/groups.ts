@@ -284,6 +284,34 @@ export class Groups extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
   });
 
+  public addMemberToOrgGroup = this.makeRequest<
+    { groupId: string; userId: string },
+    void
+  >({
+    method: "PUT",
+    path: "/{groupId}/members/{userId}",
+    urlParamKeys: ["groupId", "userId"],
+  });
+
+  public removeMemberFromOrgGroup = this.makeRequest<
+    { groupId: string; userId: string },
+    void
+  >({
+    method: "DELETE",
+    path: "/{groupId}/members/{userId}",
+    urlParamKeys: ["groupId", "userId"],
+  });
+
+  #orgId?: string;
+
+  public getOrgId(): string | undefined {
+    return this.#orgId;
+  }
+
+  public isOrgGroups(): boolean {
+    return !!this.#orgId;
+  }
+
   constructor(client: KeycloakAdminClient, orgId?: string) {
     super(client, {
       path: `/admin/realms/{realm}/${orgId ? "organizations/{orgId}/" : ""}groups`,
@@ -293,5 +321,6 @@ export class Groups extends Resource<{ realm?: string }> {
       }),
       getBaseUrl: () => client.baseUrl,
     });
+    this.#orgId = orgId;
   }
 }
