@@ -1,7 +1,9 @@
 package org.keycloak.tests.oid4vc;
 
-import java.time.Duration;
 import java.io.IOException;
+import java.security.KeyPair;
+import java.security.interfaces.ECPublicKey;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,6 +25,10 @@ import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse.Credential;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.IDTokenRequest;
+import org.keycloak.protocol.oid4vc.model.IDTokenRequestBuilder;
+import org.keycloak.protocol.oid4vc.model.IDTokenResponse;
+import org.keycloak.protocol.oid4vc.model.IDTokenResponseBuilder;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -31,6 +37,8 @@ import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationRedirectResponse;
+import org.keycloak.testsuite.util.oauth.IDTokenResponseRequest;
 import org.keycloak.testsuite.util.oauth.LoginUrlBuilder;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferRequest;
@@ -42,6 +50,9 @@ import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.PreAuthorizedCodeGrantRequest;
 import org.keycloak.util.JsonSerialization;
 
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.HttpClients;
+import org.jboss.logging.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -54,6 +65,7 @@ import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_ATTA
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIAL_OFFER_URI_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIAL_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ISSUER_METADATA_ATTACHMENT_KEY;
+import static org.keycloak.util.DIDUtils.encodeDidKey;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -367,8 +379,15 @@ public class OID4VCBasicWallet {
 
     public static class AuthorizationEndpointRequest {
 
-        protected final AbstractOAuthClient<?> client;
-        protected final LoginUrlBuilder loginForm;
+        private static final Logger log = Logger.getLogger(AuthorizationEndpointRequest.class);
+
+        private final AbstractOAuthClient<?> client;
+        private final LoginUrlBuilder loginForm;
+        private CredentialIssuer issuerMetadata;
+        private String clientId;
+        private KeyPair keyPair;
+        private String username;
+        private String password;
 
         public AuthorizationEndpointRequest(AbstractOAuthClient<?> client) {
             this.client = client;
@@ -377,6 +396,12 @@ public class OID4VCBasicWallet {
 
         public AuthorizationEndpointRequest authorizationDetails(OID4VCAuthorizationDetail authDetail) {
             loginForm.authorizationDetails(List.of(authDetail));
+            return this;
+        }
+
+        public AuthorizationEndpointRequest client(String clientId) {
+            loginForm.clientId(clientId);
+            this.clientId = clientId;
             return this;
         }
 
@@ -400,7 +425,30 @@ public class OID4VCBasicWallet {
             return this;
         }
 
+        public AuthorizationEndpointRequest issuerMetadata(CredentialIssuer issuerMetadata) {
+            this.issuerMetadata = issuerMetadata;
+            return this;
+        }
+
+        public AuthorizationEndpointRequest subjectKeyPair(KeyPair keyPair) {
+            this.keyPair = keyPair;
+            return this;
+        }
+
         public AuthorizationEndpointResponse send(String username, String password) {
+            this.username = username;
+            this.password = password;
+            return send();
+        }
+
+        public AuthorizationEndpointResponse send() {
+
+            // Handle IDToken Authorization
+            if (clientId != null && clientId.startsWith("did:")) {
+                String endpointUrl = loginForm.build();
+                return handleIDTokenAuthorization(endpointUrl);
+            }
+
             loginForm.open();
             WebDriver driver = client.getDriver();
             AuthPageState authPageState = waitForLoginOrError(driver);
@@ -450,6 +498,70 @@ public class OID4VCBasicWallet {
 
                 return null; // keep waiting
             });
+        }
+
+        private AuthorizationEndpointResponse handleIDTokenAuthorization(String endpointUrl) {
+
+            // Disable redirects for the HttpClients
+            client.httpClient().set(HttpClients.custom().disableRedirectHandling().build());
+
+            AuthorizationEndpointResponse response;
+            try {
+                HttpGet get = new HttpGet(endpointUrl);
+
+                String location = new AuthorizationRedirectResponse(client.httpClient().get().execute(get))
+                        .getRedirectLocation();
+
+                // Wallet receives the IDTokenRequest
+                //
+                IDTokenRequest idTokenRequest = IDTokenRequestBuilder.fromUri(location).build();
+                log.infof("Received IDTokenRequest: %s", JsonSerialization.valueAsString(idTokenRequest));
+
+            /* Wallet gets the Issuer's PublicKey to verify the IDTokenRequest signature
+            String kid = idTokenRequest.getJWSInput().getHeader().getKeyId();
+            KeyMetadataRepresentation key = testRealm().keys().getKeyMetadata().getKeys().stream()
+                    .filter(kmd -> kmd.getKid().equals(kid))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("No key for: " + kid));
+            PublicKey publicKey = DerUtils.decodePublicKey(key.getPublicKey(), key.getType());
+
+            // Wallet verifies the IDTokenRequest
+            //
+            idTokenRequest.verify(publicKey);
+            */
+
+                // Wallet creates/sends the IDTokenResponse
+                //
+                IDTokenResponse idTokenResponse = createIDTokenResponse(idTokenRequest);
+
+                log.infof("Send IDTokenResponse: %s", JsonSerialization.valueAsString(idTokenResponse));
+                response = new IDTokenResponseRequest(client, idTokenRequest.getRedirectUri(), idTokenResponse).send();
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } finally {
+                client.httpClient().reset();
+            }
+            return response;
+        }
+
+        private IDTokenResponse createIDTokenResponse(IDTokenRequest idTokenRequest) {
+            String aud = issuerMetadata.getCredentialIssuer();
+            String clientId = idTokenRequest.getClientId();
+
+            ECPublicKey expPubKey = (ECPublicKey) keyPair.getPublic();
+            String didKey = encodeDidKey(expPubKey);
+            if (clientId.equals(didKey))
+                throw new IllegalStateException("Unexpected IDToken client_id: " + clientId);
+
+            IDTokenResponse idTokenResponse = new IDTokenResponseBuilder()
+                    .withJwtIssuer(didKey)
+                    .withJwtSubject(didKey)
+                    .withJwtAudience(aud)
+                    .sign(keyPair)
+                    .build();
+
+            return idTokenResponse;
         }
     }
 }

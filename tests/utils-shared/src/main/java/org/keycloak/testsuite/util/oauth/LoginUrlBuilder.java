@@ -25,6 +25,11 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         return this;
     }
 
+    public LoginUrlBuilder clientId(String clientId) {
+        parameter(OAuth2Constants.CLIENT_ID, clientId);
+        return this;
+    }
+
     public LoginUrlBuilder scope(String... scopes) {
         String joinedScopes = String.join(" ", Arrays.asList(scopes));
         parameter(OAuth2Constants.SCOPE, joinedScopes);
@@ -116,13 +121,15 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
 
     @Override
     protected void initRequest() {
-        parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
-        parameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM, client.config().getResponseMode());
-        parameter(OAuth2Constants.CLIENT_ID, client.config().getClientId());
-        parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
+        if (!params.containsKey(OAuth2Constants.CLIENT_ID)) {
+            parameter(OAuth2Constants.CLIENT_ID, client.config().getClientId());
+        }
         if (!params.containsKey(OAuth2Constants.SCOPE)) {
             parameter(OAuth2Constants.SCOPE, client.config().getScope());
         }
+        parameter(OAuth2Constants.RESPONSE_TYPE, client.config().getResponseType());
+        parameter(OIDCLoginProtocol.RESPONSE_MODE_PARAM, client.config().getResponseMode());
+        parameter(OAuth2Constants.REDIRECT_URI, client.config().getRedirectUri());
     }
 
     public AuthorizationEndpointResponse doLogin(String username, String password) {
