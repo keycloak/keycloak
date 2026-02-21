@@ -20,6 +20,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
+import { GroupResourceContext } from "../context/group-resource/GroupResourceContext";
 import { GroupBreadCrumbs } from "../components/bread-crumb/GroupBreadCrumbs";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -29,21 +30,23 @@ import { AdminEvents } from "../events/AdminEvents";
 import helpUrls from "../help-urls";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import useToggle from "../utils/useToggle";
-import { GroupAttributes } from "./GroupAttributes";
-import { GroupRoleMapping } from "./GroupRoleMapping";
-import { GroupTable } from "./GroupTable";
-import { GroupsModal } from "./GroupsModal";
-import { Members } from "./Members";
-import { useSubGroups } from "./SubGroupsContext";
-import { DeleteGroup } from "./components/DeleteGroup";
-import { GroupTree } from "./components/GroupTree";
-import { getId, getLastId } from "./groupIdUtils";
-import { toGroups } from "./routes/Groups";
-import { GroupResourceContext } from "../context/group-resource/GroupResourceContext";
+import { GroupAttributes } from "../groups/GroupAttributes";
+import { GroupTable } from "../groups/GroupTable";
+import { GroupsModal } from "../groups/GroupsModal";
+import { Members } from "../groups/Members";
+import { useSubGroups } from "../groups/SubGroupsContext";
+import { DeleteGroup } from "../groups/components/DeleteGroup";
+import { GroupTree } from "../groups/components/GroupTree";
+import { getId, getLastId } from "../groups/groupIdUtils";
+import { toGroups } from "../groups/routes/Groups";
 
-import "./GroupsSection.css";
+import "../groups/GroupsSection.css";
 
-export default function GroupsSection() {
+export default function OrganizationGroupsSection({
+  orgId,
+}: {
+  orgId: string;
+}) {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
@@ -63,14 +66,13 @@ export default function GroupsSection() {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
-  const { hasAccess, hasSomeAccess } = useAccess();
+  const { hasAccess } = useAccess();
   const isFeatureEnabled = useIsFeatureEnabled();
   const canViewPermissions =
     isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
     hasAccess("manage-authorization", "manage-users", "manage-clients");
   const canManageGroup =
     hasAccess("manage-users") || currentGroup()?.access?.manage || false;
-  const canViewRoles = hasSomeAccess("view-users", "manage-users");
   const canViewDetails =
     hasAccess("query-groups", "view-users") ||
     hasAccess("manage-users", "query-groups");
@@ -91,7 +93,9 @@ export default function GroupsSection() {
         for (const i of ids!) {
           let group = undefined;
           if (i !== "search") {
-            group = await adminClient.groups.findOne({ id: i });
+            group = await adminClient.organizations
+              .groups(orgId)
+              .findOne({ id: i });
           } else {
             group = { name: t("searchGroups"), id: "search" };
           }
@@ -108,17 +112,17 @@ export default function GroupsSection() {
     (groups: GroupRepresentation[]) => {
       if (groups.length) setSubGroups(groups);
     },
-    [id],
+    [id, orgId],
   );
 
   return (
-    <GroupResourceContext value={adminClient.groups}>
+    <GroupResourceContext value={adminClient.organizations.groups(orgId)}>
       <DeleteGroup
         show={deleteOpen}
         toggleDialog={toggleDeleteOpen}
         selectedRows={[currentGroup()!]}
         refresh={() => {
-          navigate(toGroups({ realm }));
+          navigate(toGroups({ realm, orgId }));
           refresh();
         }}
       />
@@ -162,6 +166,7 @@ export default function GroupsSection() {
                 subKey={!id ? "groupsDescription" : ""}
                 helpUrl={!id ? helpUrls.groupsUrl : ""}
                 divider={!id}
+                actionDropdownTitle="groupAction"
                 dropdownItems={
                   id && canManageGroup
                     ? [
@@ -223,19 +228,6 @@ export default function GroupsSection() {
                   >
                     <GroupAttributes />
                   </Tab>
-                  {canViewRoles && (
-                    <Tab
-                      eventKey={3}
-                      data-testid="role-mapping-tab"
-                      title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
-                    >
-                      <GroupRoleMapping
-                        id={id!}
-                        name={currentGroup()?.name!}
-                        canManageGroup={canManageGroup}
-                      />
-                    </Tab>
-                  )}
                   {canViewPermissions && (
                     <Tab
                       eventKey={4}
@@ -261,7 +253,9 @@ export default function GroupsSection() {
                             <TabTitleText>{t("adminEvents")}</TabTitleText>
                           }
                         >
-                          <AdminEvents resourcePath={`groups/${id}`} />
+                          <AdminEvents
+                            resourcePath={`organizations/${orgId}/groups/${id}`}
+                          />
                         </Tab>
                         <Tab
                           eventKey="membershipEvents"
@@ -269,7 +263,9 @@ export default function GroupsSection() {
                             <TabTitleText>{t("membershipEvents")}</TabTitleText>
                           }
                         >
-                          <AdminEvents resourcePath={`users/*/groups/${id}`} />
+                          <AdminEvents
+                            resourcePath={`organizations/${orgId}/groups/${id}/members/*`}
+                          />
                         </Tab>
                         <Tab
                           eventKey="childGroupEvents"
@@ -277,7 +273,9 @@ export default function GroupsSection() {
                             <TabTitleText>{t("childGroupEvents")}</TabTitleText>
                           }
                         >
-                          <AdminEvents resourcePath={`groups/${id}/children`} />
+                          <AdminEvents
+                            resourcePath={`organizations/${orgId}/groups/${id}/children`}
+                          />
                         </Tab>
                       </Tabs>
                     </Tab>

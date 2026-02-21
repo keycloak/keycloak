@@ -22,6 +22,7 @@ import {
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
 import { AngleRightIcon, EllipsisVIcon } from "@patternfly/react-icons";
+import { useGroupResource } from "../../context/group-resource/GroupResourceContext";
 import { unionBy } from "lodash-es";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -72,6 +73,7 @@ const GroupTreeContextMenu = ({
   const [deleteOpen, toggleDeleteOpen] = useToggle();
   const navigate = useNavigate();
   const { realm } = useRealm();
+  const orgId = useGroupResource().getOrgId();
 
   return (
     <>
@@ -80,7 +82,7 @@ const GroupTreeContextMenu = ({
           id={group.id}
           rename={group}
           refresh={() => {
-            navigate(toGroups({ realm }));
+            navigate(toGroups({ realm, orgId }));
             refresh();
           }}
           handleModalToggle={toggleRenameOpen}
@@ -101,7 +103,7 @@ const GroupTreeContextMenu = ({
         toggleDialog={toggleDeleteOpen}
         selectedRows={[group]}
         refresh={() => {
-          navigate(toGroups({ realm }));
+          navigate(toGroups({ realm, orgId }));
           refresh();
         }}
       />
@@ -170,6 +172,8 @@ export const GroupTree = ({
   canViewDetails,
 }: GroupTreeProps) => {
   const { adminClient } = useAdminClient();
+  const isOrgGroups = useGroupResource().isOrgGroups();
+  const orgId = useGroupResource().getOrgId();
 
   const { t } = useTranslation();
   const { realm } = useRealm();
@@ -224,9 +228,12 @@ export const GroupTree = ({
 
   useFetch(
     async () => {
+      const groupsEndpoint = isOrgGroups
+        ? `organizations/${orgId}/groups`
+        : "groups";
       const groups = await fetchAdminUI<GroupRepresentation[]>(
         adminClient,
-        "groups",
+        groupsEndpoint,
         Object.assign(
           {
             first: `${first}`,
@@ -241,7 +248,7 @@ export const GroupTree = ({
       if (activeItem) {
         subGroups = await fetchAdminUI<GroupRepresentation[]>(
           adminClient,
-          `groups/${activeItem.id}/children`,
+          `${groupsEndpoint}/${activeItem.id}/children`,
           {
             first: `${firstSub}`,
             max: `${SUBGROUP_COUNT}`,
@@ -332,11 +339,12 @@ export const GroupTree = ({
         toGroups({
           realm,
           id: path.map((g) => g.id).join("/"),
+          orgId,
         }),
       );
     } else {
       addAlert(t("noViewRights"), AlertVariant.warning);
-      navigate(toGroups({ realm }));
+      navigate(toGroups({ realm, orgId }));
     }
   };
 
