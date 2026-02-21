@@ -2,8 +2,8 @@ package org.keycloak.testsuite.util.oauth;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.util.JsonSerialization;
@@ -27,7 +27,7 @@ public abstract class AbstractHttpResponse {
             this.response = response;
             this.statusCode = response.getStatusLine().getStatusCode();
 
-            this.headers = new HashMap<>();
+            this.headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             for (Header h : response.getAllHeaders()) {
                 headers.put(h.getName(), h.getValue());
             }

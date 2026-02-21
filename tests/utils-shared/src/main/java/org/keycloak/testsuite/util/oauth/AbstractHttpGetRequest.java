@@ -1,8 +1,8 @@
 package org.keycloak.testsuite.util.oauth;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.keycloak.utils.MediaType;
 
@@ -13,10 +13,9 @@ public abstract class AbstractHttpGetRequest<T, R> {
 
     protected final AbstractOAuthClient<?> client;
 
-    private HttpGet get;
     protected String endpointOverride;
     protected String bearerToken;
-    protected Map<String, String> headers = new HashMap<>();
+    protected Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
     public AbstractHttpGetRequest(AbstractOAuthClient<?> client) {
         this.client = client;
@@ -52,7 +51,7 @@ public abstract class AbstractHttpGetRequest<T, R> {
     }
 
     public R send() {
-        get = new HttpGet(endpointOverride != null ? endpointOverride : getEndpoint());
+        HttpGet get = new HttpGet(endpointOverride != null ? endpointOverride : getEndpoint());
 
         initRequest();
 

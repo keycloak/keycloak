@@ -2,10 +2,10 @@ package org.keycloak.testsuite.util.oauth;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.util.BasicAuthHelper;
@@ -32,7 +32,7 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected HttpPost post;
 
-    protected Map<String, String> headers = new HashMap<>();
+    protected Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     protected List<NameValuePair> parameters = new LinkedList<>();
     protected HttpEntity entity;
 
@@ -128,7 +128,7 @@ public abstract class AbstractHttpPostRequest<T, R> {
 
     protected void authorization() {
         String clientId = this.clientId != null ? this.clientId : client.config().getClientId();
-        String clientSecret = this.clientId != null ? this.clientSecret : client.config().getClientSecret();
+        String clientSecret = this.clientSecret != null ? this.clientSecret : client.config().getClientSecret();
 
         if (clientAssertion != null && clientAssertionType != null) {
             parameter("client_assertion_type", clientAssertionType);
