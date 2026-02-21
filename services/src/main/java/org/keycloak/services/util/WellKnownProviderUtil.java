@@ -37,7 +37,6 @@ public class WellKnownProviderUtil {
         return sessionFactory.getProviderFactoriesStream(WellKnownProvider.class)
                 .map(providerFactory -> (WellKnownProviderFactory) providerFactory)
                 .filter(wellKnownProviderFactory -> alias.equals(wellKnownProviderFactory.getAlias()))
-                .sorted(Comparator.comparingInt(WellKnownProviderFactory::getPriority))
-                .findFirst();
+                .min(Comparator.comparingInt(WellKnownProviderFactory::getPriority));
     }
 }
