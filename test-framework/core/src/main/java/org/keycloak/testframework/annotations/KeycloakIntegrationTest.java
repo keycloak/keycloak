@@ -11,11 +11,17 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 
+/**
+ * Enables the test framework for tests
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @ExtendWith({KeycloakIntegrationTestExtension.class})
 public @interface KeycloakIntegrationTest {
 
+    /**
+     * Used to define custom configuration for the Keycloak server
+     */
     Class<? extends KeycloakServerConfig> config() default DefaultKeycloakServerConfig.class;
 
 }

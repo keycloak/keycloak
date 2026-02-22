@@ -91,6 +91,7 @@ import org.keycloak.protocol.saml.SamlMetadataKeyLocator;
 import org.keycloak.protocol.saml.SamlMetadataPublicKeyLoader;
 import org.keycloak.protocol.saml.SamlPrincipalType;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.SamlProtocolFactory;
 import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.SamlSessionUtils;
@@ -154,6 +155,7 @@ public class SAMLEndpoint {
     protected final KeycloakSession session;
     protected final ClientConnection clientConnection;
     protected final HttpHeaders headers;
+    protected final long maxInflatingSize;
 
 
     public SAMLEndpoint(KeycloakSession session, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, UserAuthenticationIdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
@@ -165,6 +167,8 @@ public class SAMLEndpoint {
         this.session = session;
         this.clientConnection = session.getContext().getConnection();
         this.headers = session.getContext().getRequestHeaders();
+        SamlProtocolFactory factory = (SamlProtocolFactory) session.getKeycloakSessionFactory().getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
+        this.maxInflatingSize = factory.getMaxInflatingSize();
     }
 
     @GET
@@ -298,6 +302,12 @@ public class SAMLEndpoint {
 
         protected Response handleSamlRequest(String samlRequest, String relayState) {
             SAMLDocumentHolder holder = extractRequestDocument(samlRequest);
+            if (holder == null) {
+                event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                event.detail(Details.REASON, Errors.INVALID_SAML_DOCUMENT);
+                event.error(Errors.INVALID_REQUEST);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
+            }
             RequestAbstractType requestAbstractType = (RequestAbstractType) holder.getSamlObject();
             // validate destination
             if (isDestinationRequired() &&
@@ -878,12 +888,12 @@ public class SAMLEndpoint {
 
         @Override
         protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
-            return SAMLRequestParser.parseRequestRedirectBinding(samlRequest);
+            return SAMLRequestParser.parseRequestRedirectBinding(samlRequest, maxInflatingSize);
         }
 
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
-            return SAMLRequestParser.parseResponseRedirectBinding(response);
+            return SAMLRequestParser.parseResponseRedirectBinding(response, maxInflatingSize);
         }
 
         @Override

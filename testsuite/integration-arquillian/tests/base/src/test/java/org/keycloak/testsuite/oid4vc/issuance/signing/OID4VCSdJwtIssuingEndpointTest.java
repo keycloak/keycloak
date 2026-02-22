@@ -60,6 +60,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -373,7 +374,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 1. Retrieving the credential-offer-uri
         final String credentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
+        CredentialOfferURI credOfferUri = oauth.oid4vc()
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
                 .username("john")
@@ -381,14 +382,11 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 .send()
                 .getCredentialOfferURI();
 
-        assertNotNull("A valid offer uri should be returned", credentialOfferURI);
+        assertNotNull("A valid offer uri should be returned", credOfferUri);
 
         // 2. Using the uri to get the actual credential offer
-        CredentialsOffer credentialsOffer = oauth.oid4vc()
-                .credentialOfferRequest(credentialOfferURI)
-                .bearerToken(token)
-                .send()
-                .getCredentialsOffer();
+        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc().doCredentialOfferRequest(credOfferUri);
+        CredentialsOffer credentialsOffer = credentialOfferResponse.getCredentialsOffer();
 
         assertNotNull("A valid offer should be returned", credentialsOffer);
 

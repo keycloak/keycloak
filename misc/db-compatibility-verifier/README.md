@@ -3,7 +3,7 @@
 ## Overview
 
 This Maven plugin is used to verify the database compatibility of Keycloak. It ensures that all database schema changes
-(ChangeSets) are explicitly marked as either supported or unsupported by the rolling upgrades feature.
+are explicitly marked as either supported or unsupported by the rolling upgrades feature.
 
 ## Goals
 
@@ -16,21 +16,41 @@ The plugin provides the following goals:
 
 ## Usage
 
-### `snapshot` - Creates a snapshot of the current database ChangeSets.
+### `snapshot` - Creates a snapshot of the current database ChangeSets and org.keycloak.migration.migrators.Migration implementations.
 
-This goal is used to create an initial snapshot of the database ChangeSets. It creates a supported and unsupported JSON
-file, specified via the `db.verify.supportedFile` and `db.verify.unsupportedFile` property, respectively.
+This goal is used to create an initial snapshot of liquibase ChangeSets and org.keycloak.migration.migrators.Migration implementations.
+It creates a supported and unsupported JSON file, specified via the `db.verify.supportedFile` and `db.verify.unsupportedFile` property, respectively.
 
 ```bash
 mvn org.keycloak:db-compatibility-verifier-maven-plugin:999.0.0-SNAPSHOT:snapshot  \
   -Ddb.verify.supportedFile=<relative-path-to-create-json-file> \
-  -Ddb.verify.unsupportedFile=<relative-path-to-create-json-file>
+  -Ddb.verify.unsupportedFile=<relative-path-to-create-json-file> \
+  -Ddb.verify.migration.package=org.keycloak.example # Optional java package containing org.keycloak.migration.migrators.Migration implementations
 ```
 
-The `supportedFile` will be created with a record of all known ChangeSets and the `unsupportedFile` will be initialized
-as an empty JSON array.
+The `supportedFile` will be created with a record of all known ChangeSets and Migrations. The `unsupportedFile` will be initialized
+with empty JSON arrays.
 
-### `verify` - Verifies that all detected ChangeSets recorded in either the supported or unsupported JSON files.
+Each file is created with the following JSON format:
+
+```json
+{
+  "changeSets" : [
+    {
+      "id" : "<id>",
+      "author" : "<author>",
+      "filename" : "<filename>"
+    }
+  ],
+  "migrations" : [
+    {
+      "class" : "<fully-qualified-class-name>"
+    }
+  ]
+}
+```
+
+### `verify` - Verifies that all detected ChangeSets and Migrations are recorded in either the supported or unsupported JSON files.
 
 ```bash
 mvn org.keycloak:db-compatibility-verifier-maven-plugin:999.0.0-SNAPSHOT:verify \
@@ -38,7 +58,7 @@ mvn org.keycloak:db-compatibility-verifier-maven-plugin:999.0.0-SNAPSHOT:verify 
   -Ddb.verify.unsupportedFile=<relative-path-to-json-file>
 ```
 
-### `supported` - Adds one or all missing ChangeSets to the supported JSON file
+### `supported` - Adds one or all missing ChangeSets, or Migration, to the supported JSON file
 
 This goal is used to mark a ChangeSet as supported for rolling upgrades.
 
@@ -60,6 +80,15 @@ mvn org.keycloak:db-compatibility-verifier-maven-plugin:999.0.0-SNAPSHOT:support
   -Ddb.verify.supportedFile=<relative-path-to-json-file> \
   -Ddb.verify.unsupportedFile=<relative-path-to-json-file> \
   -Ddb.verify.changset.addAll=true
+```
+
+To mark a Migration as supported:
+
+```bash
+mvn org.keycloak:db-compatibility-verifier-maven-plugin:999.0.0-SNAPSHOT:supported \
+  -Ddb.verify.supportedFile=<relative-path-to-json-file> \
+  -Ddb.verify.unsupportedFile=<relative-path-to-json-file> \
+  -Ddb.verify.migration.class=org.example.migration.MigrationExample
 ```
 
 ### `unsupported` - Adds one or all missing ChangeSets to the unsupported JSON file
@@ -84,4 +113,13 @@ mvn org.keycloak:db-compatibility-verifier-maven-plugin:999.0.0-SNAPSHOT:unsuppo
   -Ddb.verify.supportedFile=<relative-path-to-json-file> \
   -Ddb.verify.unsupportedFile=<relative-path-to-json-file> \
   -Ddb.verify.changset.addAll=true
+```
+
+To mark a Migration as unsupported:
+
+```bash
+mvn org.keycloak:db-compatibility-verifier-maven-plugin:999.0.0-SNAPSHOT:unsupported \
+  -Ddb.verify.supportedFile=<relative-path-to-json-file> \
+  -Ddb.verify.unsupportedFile=<relative-path-to-json-file> \
+  -Ddb.verify.migration.class=org.example.migration.MigrationExample
 ```

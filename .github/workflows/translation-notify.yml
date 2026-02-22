@@ -1,11 +1,13 @@
 name: Translation Maintainer Notification
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
     paths:
       - 'themes/**/messages_*.properties'
       - 'js/**/messages_*.properties'
+    branches:
+      - main
 
 defaults:
   run:
@@ -18,7 +20,7 @@ jobs:
   notify-maintainers:
     name: Notify language maintainers of changes
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    if: github.event.pull_request.merged == true
 
     steps:
       - name: Checkout repository

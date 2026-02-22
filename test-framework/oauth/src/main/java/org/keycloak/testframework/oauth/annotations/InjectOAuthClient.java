@@ -9,6 +9,9 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.DefaultOAuthClientConfiguration;
 import org.keycloak.testframework.realm.ClientConfig;
 
+/**
+ * Injects a {@link org.keycloak.testframework.oauth.OAuthClient} that can be used to send OAuth request to Keycloak
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface InjectOAuthClient {

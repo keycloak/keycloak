@@ -128,7 +128,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
             long lifespanMs = getLifespanMsLoader(isOffline).apply(realm, sessionUpdates.getClient(), entity);
             long maxIdleTimeMs = getMaxIdleMsLoader(isOffline).apply(realm, sessionUpdates.getClient(), entity);
 
-            MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
+            MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdleTimeMs, lifespanMs), SessionTimeouts.IMMORTAL_FLAG);
 
             if (merged != null) {
                 var c = isOffline ? offlineCacheHolder : cacheHolder;
@@ -274,7 +274,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
         SessionEntityWrapper<V> existing = null;
         try {
             if (getCache(offline) != null) {
-                existing = getCache(offline).putIfAbsent(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+                existing = getCache(offline).putIfAbsent(key, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS);
             }
         } catch (RuntimeException exception) {
             // If the import fails, the transaction can continue with the data from the database.
@@ -324,7 +324,7 @@ abstract public class PersistentSessionsChangelogBasedTransaction<K, V extends S
                 //nothing to import, already expired
                 return;
             }
-            var future = cache.putIfAbsentAsync(key, session, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS)
+            var future = cache.putIfAbsentAsync(key, session, SessionTimeouts.calculateEffectiveSessionLifespan(maxIdle, lifespan), TimeUnit.MILLISECONDS)
                     .exceptionally(throwable -> {
                         // If the import fails, the transaction can continue with the data from the database.
                         LOG.debugf(throwable, "Failed to import session %s", session);

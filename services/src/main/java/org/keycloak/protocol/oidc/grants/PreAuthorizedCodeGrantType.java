@@ -29,6 +29,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -37,6 +38,7 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.representations.AccessToken;
@@ -48,6 +50,8 @@ import org.keycloak.utils.MediaType;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.events.Details.REASON;
+import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
 import static org.keycloak.services.util.DefaultClientSessionContext.fromClientSessionAndScopeParameter;
 
 public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
@@ -76,7 +80,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         if (code == null) {
             // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
             String errorMessage = "Missing parameter: " + PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM;
-            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
@@ -85,7 +89,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         var offerState = offerStorage.findOfferStateByCode(session, code);
         if (offerState == null) {
             var errorMessage = "No credential offer state for code: " + code;
-            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
@@ -101,13 +105,13 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         var userModel = session.users().getUserById(realm, appUserId);
         if (userModel == null) {
             var errorMessage = "No user with ID: " + appUserId;
-            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
         if (!userModel.isEnabled()) {
             var errorMessage = "User '" + userModel.getUsername() + "' disabled";
-            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
@@ -116,14 +120,14 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         ClientModel clientModel = realm.getClientByClientId(appClientId);
         if (clientModel == null) {
             var errorMessage = "No client model for: " + appClientId;
-            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
         UserSessionModel userSession = session.sessions().createUserSession(null, realm, userModel, userModel.getUsername(),
                 null, "pre-authorized-code", false, null,
-                null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
         AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, clientModel, userSession);
         String credentialConfigurationIds = JsonSerialization.valueAsString(credOffer.getCredentialConfigurationIds());
@@ -146,7 +150,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         // Validate empty authorization_details - if parameter is provided but empty, reject it
         if (authorizationDetailsParam != null && (authorizationDetailsParam.trim().isEmpty() || "[]".equals(authorizationDetailsParam.trim()))) {
             var errorMessage = "Invalid authorization_details: parameter cannot be empty";
-            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_REQUEST);
+            event.detail(REASON, errorMessage).error(Errors.INVALID_REQUEST);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
@@ -165,13 +169,13 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         if (authorizationDetailsResponses.size() != 1) {
             boolean emptyAuthDetails = authorizationDetailsResponses.isEmpty();
             String errorMessage = (emptyAuthDetails ? "No" : "Multiple") + " authorization details";
-            event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
         // Add authorization_details to the OfferState and otherClaims
-        var authDetails = (OID4VCAuthorizationDetail) authorizationDetailsResponses.get(0);
+        OID4VCAuthorizationDetail authDetails = (OID4VCAuthorizationDetail) authorizationDetailsResponses.get(0);
         offerState.setAuthorizationDetails(authDetails);
         offerStorage.replaceOfferState(session, offerState);
 
@@ -182,6 +186,20 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 userSession,
                 sessionContext);
 
+        // Add the scope referenced by the credential from specified credential offer to the token scopes
+        String credentialConfigId = authDetails.getCredentialConfigurationId();
+        ClientScopeModel clientScope = OID4VCUtil.getClientScopeByCredentialConfigId(session, realm, credentialConfigId);
+        if (clientScope == null) {
+            String errorMessage = "Client scope was not found for credential configuration ID: " + credentialConfigId;
+            event.detail(Details.CREDENTIAL_TYPE, credentialConfigId);
+            event.detail(REASON, errorMessage)
+                    .error(UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+        accessToken.setScope(clientScope.getName());
+
+        accessToken.setSessionId(null);
         accessToken.setAuthorizationDetails(authorizationDetailsResponses);
 
         // Set audience to credential endpoint for pre-authorized tokens
@@ -200,6 +218,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         try {
             tokenResponse = responseBuilder.build();
             tokenResponse.setAuthorizationDetails(authorizationDetailsResponses);
+            tokenResponse.setScope(clientScope.getName());
         } catch (RuntimeException re) {
             String errorMessage = "Cannot get encryption KEK";
             if (errorMessage.equals(re.getMessage())) {

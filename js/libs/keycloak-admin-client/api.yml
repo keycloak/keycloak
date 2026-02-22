@@ -1,0 +1,269 @@
+---
+openapi: 3.1.0
+components:
+  schemas:
+    Auth:
+      type: object
+      properties:
+        method:
+          type: string
+        secret:
+          type: string
+        certificate:
+          type: string
+    BaseRepresentation:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Resource identifier
+      additionalProperties: true
+    BaseClientRepresentation:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/BaseRepresentation"
+      properties:
+        clientId:
+          type: string
+        displayName:
+          type: string
+        description:
+          type: string
+        enabled:
+          type: boolean
+        appUrl:
+          type: string
+        redirectUris:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        roles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        additionalFields:
+          type: object
+          additionalProperties: {}
+    Flow:
+      type: string
+      enum:
+      - STANDARD
+      - IMPLICIT
+      - DIRECT_GRANT
+      - SERVICE_ACCOUNT
+      - TOKEN_EXCHANGE
+      - DEVICE
+      - CIBA
+    OIDCClientRepresentation:
+      type: object
+      allOf:
+      - $ref: "#/components/schemas/BaseClientRepresentation"
+      properties:
+        loginFlows:
+          type: array
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/Flow"
+        auth:
+          $ref: "#/components/schemas/Auth"
+        webOrigins:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        serviceAccountRoles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        protocol:
+          type: string
+    SAMLClientRepresentation:
+      type: object
+      description: SAML Client configuration
+      allOf:
+      - $ref: "#/components/schemas/BaseClientRepresentation"
+      properties:
+        nameIdFormat:
+          type: string
+        forceNameIdFormat:
+          type: boolean
+        includeAuthnStatement:
+          type: boolean
+        signDocuments:
+          type: boolean
+        signAssertions:
+          type: boolean
+        clientSignatureRequired:
+          type: boolean
+        forcePostBinding:
+          type: boolean
+        frontChannelLogout:
+          type: boolean
+        signatureAlgorithm:
+          type: string
+        signatureCanonicalizationMethod:
+          type: string
+        signingCertificate:
+          type: string
+        allowEcpFlow:
+          type: boolean
+        protocol:
+          type: string
+tags:
+- name: Clients (v2)
+  x-smallrye-profile-admin: ""
+paths:
+  /admin/api/{realmName}/clients/{version}:
+    get:
+      summary: Get all clients
+      description: Returns a list of all clients in the realm
+      operationId: getClients
+      tags:
+      - Clients (v2)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  oneOf:
+                  - $ref: "#/components/schemas/OIDCClientRepresentation"
+                  - $ref: "#/components/schemas/SAMLClientRepresentation"
+                  discriminator:
+                    propertyName: protocol
+                    mapping:
+                      openid-connect: "#/components/schemas/OIDCClientRepresentation"
+                      saml: "#/components/schemas/SAMLClientRepresentation"
+    post:
+      summary: Create a new client
+      description: Creates a new client in the realm
+      operationId: createClient
+      tags:
+      - Clients (v2)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: "#/components/schemas/OIDCClientRepresentation"
+              - $ref: "#/components/schemas/SAMLClientRepresentation"
+              discriminator:
+                propertyName: protocol
+                mapping:
+                  openid-connect: "#/components/schemas/OIDCClientRepresentation"
+                  saml: "#/components/schemas/SAMLClientRepresentation"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: {}
+    parameters:
+    - name: realmName
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: version
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: v\d+
+  /admin/api/{realmName}/clients/{version}/{id}:
+    get:
+      operationId: getClient
+      tags:
+      - Clients (v2)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/OIDCClientRepresentation"
+                - $ref: "#/components/schemas/SAMLClientRepresentation"
+                discriminator:
+                  propertyName: protocol
+                  mapping:
+                    openid-connect: "#/components/schemas/OIDCClientRepresentation"
+                    saml: "#/components/schemas/SAMLClientRepresentation"
+    put:
+      operationId: createOrUpdateClient
+      tags:
+      - Clients (v2)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: "#/components/schemas/OIDCClientRepresentation"
+              - $ref: "#/components/schemas/SAMLClientRepresentation"
+              discriminator:
+                propertyName: protocol
+                mapping:
+                  openid-connect: "#/components/schemas/OIDCClientRepresentation"
+                  saml: "#/components/schemas/SAMLClientRepresentation"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: {}
+    patch:
+      operationId: patchClient
+      tags:
+      - Clients (v2)
+      requestBody:
+        content:
+          application/merge-patch+json: {}
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: "#/components/schemas/OIDCClientRepresentation"
+                - $ref: "#/components/schemas/SAMLClientRepresentation"
+                discriminator:
+                  propertyName: protocol
+                  mapping:
+                    openid-connect: "#/components/schemas/OIDCClientRepresentation"
+                    saml: "#/components/schemas/SAMLClientRepresentation"
+    delete:
+      operationId: deleteClient
+      tags:
+      - Clients (v2)
+      responses:
+        "204":
+          description: No Content
+    parameters:
+    - name: realmName
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: version
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: v\d+
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+info:
+  title: Keycloak API
+  version: 999.0.0-SNAPSHOT

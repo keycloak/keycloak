@@ -137,6 +137,7 @@ import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPost;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
@@ -190,9 +191,6 @@ public class OID4VCIssuerEndpoint {
 
     // lifespan of the preAuthorizedCodes in seconds
     private final int preAuthorizedCodeLifeSpan;
-
-    // constant for the OID4VCI enabled attribute key
-    public static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
 
     /**
      * Credential builders are responsible for initiating the production of
@@ -817,23 +815,20 @@ public class OID4VCIssuerEndpoint {
 
         // Get the credential_configuration_id from the offer state authorization details
         authDetails = offerState.getAuthorizationDetails();
-
-        // Validate authorization_details: either in token or in offer state
-        // For pre-authorized flows, offer state is the source of truth
-        // For authorization code flows, token must contain authorization_details
         if (authDetails == null) {
-            authDetails = getAuthorizationDetailFromToken(accessToken);
-        }
-
-        if (authDetails == null) {
-            var errorMessage = "No authorization_details found in offer state or token";
+            var errorMessage = "No authorization_details found in offer state";
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
 
         // Validate that authorization_details from the token matches the offer state
         // This ensures the correct access token is being used for the credential request
         OID4VCAuthorizationDetail tokenAuthDetails = getAuthorizationDetailFromToken(accessToken);
-        if (tokenAuthDetails != null && !tokenAuthDetails.equals(authDetails)) {
+        if (tokenAuthDetails == null) {
+            var errorMessage = "No authorization_details found in token";
+            throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
+        }
+
+        if (!tokenAuthDetails.equals(authDetails)) {
             var errorMessage = "Authorization details in access token do not match the credential offer state. " +
                     "The access token may not be the one issued for this credential offer.";
             LOGGER.debugf(errorMessage);

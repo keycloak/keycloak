@@ -8,6 +8,9 @@ import java.lang.annotation.Target;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 
+/**
+ * Tests annotated with <code>@DisabledForServers</code> will be skipped for the specified server modes
+ */
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented

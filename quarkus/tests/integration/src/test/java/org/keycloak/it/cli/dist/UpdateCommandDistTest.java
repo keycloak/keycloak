@@ -18,13 +18,10 @@
 package org.keycloak.it.cli.dist;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
@@ -38,7 +35,6 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.jgroups.certificates.DefaultJGroupsCertificateProviderFactory;
-import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibility;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityCheck;
 import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityMetadata;
@@ -50,14 +46,12 @@ import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProvi
 import org.keycloak.spi.infinispan.impl.remote.DefaultCacheRemoteConfigProviderFactory;
 import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.infinispan.compatibility.CachingEmbeddedMetadataProvider.majorMinorOf;
 import static org.keycloak.it.cli.dist.Util.createTempFile;
-import static org.keycloak.quarkus.runtime.configuration.compatibility.DatabaseCompatibilityMetadataProvider.UNSUPPORTED_CHANGE_SET_HASH_KEY;
+import static org.keycloak.quarkus.runtime.configuration.compatibility.DatabaseCompatibilityMetadataProvider.UNSUPPORTED_CHANGES_HASH_KEY;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -313,9 +307,9 @@ public class UpdateCommandDistTest {
         info = JsonSerialization.mapper.readValue(jsonFile, UpdateCompatibilityCheck.METADATA_TYPE_REF);
         Map<String, String> expectedDbMeta = new HashMap<>();
         expectedDbMeta.put(DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().get());
-        String expectedHash = dbMeta.get(UNSUPPORTED_CHANGE_SET_HASH_KEY);
+        String expectedHash = dbMeta.get(UNSUPPORTED_CHANGES_HASH_KEY);
         if (expectedHash != null) {
-            expectedDbMeta.put(UNSUPPORTED_CHANGE_SET_HASH_KEY, expectedHash);
+            expectedDbMeta.put(UNSUPPORTED_CHANGES_HASH_KEY, expectedHash);
         }
         expectedMeta.put(DatabaseCompatibilityMetadataProvider.ID, expectedDbMeta);
 
@@ -327,21 +321,13 @@ public class UpdateCommandDistTest {
         result.assertExitCode(CompatibilityResult.ExitCode.ROLLING.value());
     }
 
-    private Map<String, Map<String, String>> defaultMeta(KeycloakDistribution distribution) throws IOException {
+    private Map<String, Map<String, String>> defaultMeta(KeycloakDistribution distribution) {
         Map<String, String> keycloak = new HashMap<>(1);
         keycloak.put("version", Version.VERSION);
 
         Map<String, String> dbMeta = new HashMap<>();
         dbMeta.put(DatabaseOptions.DB.getKey(), DatabaseOptions.DB.getDefaultValue().get());
-        try (InputStream inputStream = UpdateCommandDistTest.class.getResourceAsStream("/META-INF/rolling-upgrades-unsupported-changes.json")) {
-            if (inputStream != null) {
-                ObjectMapper objectMapper = new ObjectMapper();
-                Set<DatabaseCompatibilityMetadataProvider.ChangeSet> changeSets = objectMapper.readValue(inputStream, new TypeReference<>() {});
-                String changeSetJson = objectMapper.writeValueAsString(changeSets);
-                String hash = HashUtils.sha256UrlEncodedHash(changeSetJson, StandardCharsets.UTF_8);
-                dbMeta.put(UNSUPPORTED_CHANGE_SET_HASH_KEY, hash);
-            }
-        }
+        DatabaseCompatibilityMetadataProvider.addUnsupportedDatabaseChanges(dbMeta);
 
         Map<String, Map<String, String>> m = new HashMap<>();
         m.put(KeycloakCompatibilityMetadataProvider.ID, keycloak);
