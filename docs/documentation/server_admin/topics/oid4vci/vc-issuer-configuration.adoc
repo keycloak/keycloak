@@ -147,6 +147,8 @@ Create a JSON file (e.g., `realm-attributes.json`) with the following content:
 
 The attributes section contains issuer-specific metadata:
 - **preAuthorizedCodeLifespanS** – Defines how long pre-authorized codes remain valid (in seconds).
+- **oid4vc.attestation.trusted_keys** – JSON array of trusted JWK (JSON Web Key) objects for attestation proof validation. Each JWK must include a `kid` (key ID) field. These keys take precedence over realm session keys when there are conflicts. Useful for configuring additional trusted keys beyond the realm's default keys. Format: JSON array of JWK objects, e.g., `[{"kid":"key1","kty":"EC",...},{"kid":"key2","kty":"RSA",...}]`.
+- **oid4vc.attestation.trusted_key_ids** – Comma-separated list of key IDs from the realm's key providers to use for attestation proof validation. Keys are looked up by their `kid` regardless of enabled status, allowing the use of disabled keys that are not exposed in well-known endpoints. This attribute takes the highest priority when merging trusted keys. Format: comma-separated list of key IDs, e.g., `key-id-1,key-id-2,key-id-3`.
 
 ==== Import Realm Attributes
 
@@ -246,7 +248,7 @@ Create a JSON file (e.g., `client-scopes.json`) with the following content:
     "vc.verifiable_credential_type": "my-vct",
     "vc.supported_credential_types": "credential-type-1,credential-type-2",
     "vc.credential_contexts": "context-1,context-2",
-    "vc.proof_signing_alg_values_supported": "ES256",
+    "vc.credential_signing_alg": "ES256",
     "vc.cryptographic_binding_methods_supported": "jwk",
     "vc.signing_key_id": "key-id-123456",
     "vc.display": "[{\"name\": \"IdentityCredential\", \"logo\": {\"uri\": \"https://university.example.edu/public/logo.png\", \"alt_text\": \"a square logo of a university\"}, \"locale\": \"en-US\", \"background_color\": \"#12107c\", \"text_color\": \"#FFFFFF\"}]",
@@ -356,10 +358,10 @@ _Default_: `$\{name}+`
 | The context values of the Verifiable Credential Type. +
 _Default_: `$\{name}+`
 
-| `vc.proof_signing_alg_values_supported`
+| `vc.credential_signing_alg`
 | optional
-| Supported signature algorithms for this credential. +
-_Default_: All present keys supporting JWS algorithms in the realm.
+| Supported signature algorithm for this credential. +
+_Default_: All asymmetric signing algorithms backed by realm keys.
 
 | `vc.cryptographic_binding_methods_supported`
 | optional
@@ -405,6 +407,23 @@ _Default_: `31536000` (one year)
 | optional
 | If this claim should be listed in the credentials metadata. +
 _Default_: `true` but depends on the mapper-type. Claims like `jti`, `nbf`, `exp`, etc. are set to `false` by default.
+
+| `vc.key_attestations_required`
+| optional
+| Indicates whether issuing this credential requires a key attestation. +
+_Default_: `false`.
+
+| `vc.key_attestations_required.key_storage`
+| optional
+| Comma separated list of accepted key-storage attack potential levels (see ISO 18045 levels, e.g. `iso_18045_high`). +
+Only relevant if `vc.key_attestations_required` is present. +
+_Default_: none
+
+| `vc.key_attestations_required.user_authentication`
+| optional
+| Comma separated list of accepted user-authentication attack potential levels (see ISO 18045 levels). +
+Only relevant if `vc.key_attestations_required` is present. +
+_Default_: none
 |===
 
 ==== Attribute Breakdown - ProtocolMappers
@@ -425,6 +444,7 @@ Most claims are dependent on the `protocolMapper`-value, but there are also comm
 | `claim.name`
 | required
 | The name of the attribute that will be added into the Verifiable Credential. +
+Just like with OIDC user attributes, you may use dots to create nested JSON objects. +
 _Default_: _none_
 
 | `userAttribute`

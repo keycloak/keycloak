@@ -459,9 +459,9 @@ public class InfinispanIckleQueryTest extends KeycloakModelTest {
         expectedResults = CLIENTS.stream().map(s -> new ClientSessionKey(userSession, s)).map(Objects::toString).collect(Collectors.toSet());
         assertQuery(query2, objects -> objects.createCacheKey().toString(), expectedResults);
 
-        // each client has user-session * realms active client sessions
-        query = ClientSessionQueries.activeClientCount(cache);
-        expectedResults = CLIENTS.stream().map(s -> String.format("%s-%s", s, USER_SESSIONS.size() * REALMS.size())).collect(Collectors.toSet());
+        // each client has user-session active client sessions
+        query = ClientSessionQueries.activeClientCount(cache, realm);
+        expectedResults = CLIENTS.stream().map(s -> String.format("%s-%s", s, USER_SESSIONS.size())).collect(Collectors.toSet());
         assertQuery(query, objects -> String.format("%s-%s", objects[0], objects[1]), expectedResults);
     }
 

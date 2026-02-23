@@ -7,5 +7,10 @@
 
 We regularly test {project_name} with the following load:
 
+<@profile.ifProduct>
 * 100,000 users
+</@profile.ifProduct>
+<@profile.ifCommunity>
+* 1,000,000 users
+</@profile.ifCommunity>
 * 300 requests per second

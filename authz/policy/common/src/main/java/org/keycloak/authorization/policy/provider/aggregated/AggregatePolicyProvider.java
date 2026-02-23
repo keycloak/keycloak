@@ -18,24 +18,36 @@
 package org.keycloak.authorization.policy.provider.aggregated;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.Decision;
+import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationPolicyProvider;
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.permission.ResourcePermission;
 import org.keycloak.authorization.policy.evaluation.DecisionResultCollector;
 import org.keycloak.authorization.policy.evaluation.DefaultEvaluation;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.evaluation.Result;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
+import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.authorization.DecisionStrategy;
+import org.keycloak.representations.idm.authorization.ResourceType;
 
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class AggregatePolicyProvider implements PolicyProvider {
+public class AggregatePolicyProvider implements PolicyProvider, PartialEvaluationPolicyProvider {
     private static final Logger logger = Logger.getLogger(AggregatePolicyProvider.class);
 
     @Override
@@ -80,5 +92,50 @@ public class AggregatePolicyProvider implements PolicyProvider {
     @Override
     public void close() {
 
+    }
+
+    @Override
+    public boolean supports(Policy policy) {
+        return AggregatePolicyProviderFactory.ID.equals(policy.getType());
+    }
+
+    @Override
+    public Stream<Policy> getPermissions(KeycloakSession session, ResourceType resourceType, ResourceType groupResourceType, UserModel subject) {
+        AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
+        RealmModel realm = session.getContext().getRealm();
+        ClientModel adminPermissionsClient = realm.getAdminPermissionsClient();
+        StoreFactory storeFactory = provider.getStoreFactory();
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(adminPermissionsClient);
+
+        return storeFactory.getPolicyStore().findDependentPolicies(resourceServer, resourceType.getType(), groupResourceType == null ? null : groupResourceType.getType(), AggregatePolicyProviderFactory.ID, null, List.of());
+    }
+
+    @Override
+    public boolean evaluate(KeycloakSession session, Policy policy, UserModel subject) {
+        DecisionStrategy decisionStrategy = policy.getDecisionStrategy();
+        Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+        int grants = 0;
+
+        for (Policy associatedPolicy : associatedPolicies) {
+            PolicyProvider policyProvider = session.getProvider(AuthorizationProvider.class).getProvider(associatedPolicy.getType());
+
+            if (policyProvider instanceof PartialEvaluationPolicyProvider partialPolicyProvider) {
+                if (partialPolicyProvider.evaluate(session, associatedPolicy, subject)) {
+                    grants++;
+                }
+            } else {
+                return false;
+            }
+        }
+
+        if (grants == 0) {
+            return false;
+        }
+
+        return switch (decisionStrategy) {
+            case AFFIRMATIVE -> true;
+            case UNANIMOUS -> grants == associatedPolicies.size();
+            case CONSENSUS -> grants > associatedPolicies.size() - grants;
+        };
     }
 }

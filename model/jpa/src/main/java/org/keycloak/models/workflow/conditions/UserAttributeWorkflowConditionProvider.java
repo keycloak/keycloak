@@ -15,6 +15,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.UserAttributeEntity;
+import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
 import org.keycloak.models.workflow.WorkflowExecutionContext;
 import org.keycloak.models.workflow.WorkflowInvalidStateException;
@@ -33,6 +34,11 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
     }
 
     @Override
+    public ResourceType getSupportedResourceType() {
+        return ResourceType.USERS;
+    }
+
+    @Override
     public boolean evaluate(WorkflowExecutionContext context) {
         validate();
 
@@ -44,8 +50,17 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
         }
 
         String[] parsedKeyValuePair = parseKeyValuePair(expectedAttribute);
-        List<String> values = user.getAttributes().getOrDefault(parsedKeyValuePair[0], List.of());
-        List<String> expectedValues = List.of(parsedKeyValuePair[1].split(","));
+        String key = parsedKeyValuePair[0];
+        String valuePart = parsedKeyValuePair[1];
+
+        // Presence-only: "key:" -> true if user has at least one attribute with that key
+        if (valuePart.isEmpty()) {
+            List<String> values = user.getAttributes().getOrDefault(key, List.of());
+            return !values.isEmpty();
+        }
+
+        List<String> values = user.getAttributes().getOrDefault(key, List.of());
+        List<String> expectedValues = List.of(valuePart.split(","));
 
         return collectionEquals(expectedValues, values);
     }
@@ -56,7 +71,14 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
 
         String[] parsedKeyValuePair = parseKeyValuePair(expectedAttribute);
         String attributeName = parsedKeyValuePair[0];
-        List<String> expectedValues = Arrays.asList(parsedKeyValuePair[1].split(","));
+        String valuePart = parsedKeyValuePair[1];
+
+        // Presence-only: require at least one attribute with this name for the user
+        if (valuePart.isEmpty()) {
+            return cb.greaterThan(createTotalCountSubquery(cb, query, path, attributeName), 0L);
+        }
+
+        List<String> expectedValues = Arrays.asList(valuePart.split(","));
 
         // Subquery to count how many of the expected values the user has
         // to check if there is no missing value
@@ -89,22 +111,27 @@ public class UserAttributeWorkflowConditionProvider implements WorkflowCondition
 
         // Subquery to count total attributes with this name for the user
         // to check if there are no extra values
-        Subquery<Long> totalCountSubquery = query.subquery(Long.class);
-        Root<UserAttributeEntity> attrRoot2 = totalCountSubquery.from(UserAttributeEntity.class);
-        totalCountSubquery.select(cb.count(attrRoot2));
-        totalCountSubquery.where(
-                cb.and(
-                        cb.equal(attrRoot2.get("user").get("id"), path.get("id")),
-                        cb.equal(attrRoot2.get("name"), attributeName)
-                )
-        );
+        createTotalCountSubquery(cb, query, path, attributeName);
 
         // Both counts must equal the expected count (exact match)
         int expectedCount = expectedValues.size();
         return cb.and(
                 cb.equal(matchingCountSubquery, expectedCount),
-                cb.equal(totalCountSubquery, expectedCount)
+                cb.equal(createTotalCountSubquery(cb, query, path, attributeName), expectedCount)
         );
+    }
+
+    private Subquery<Long> createTotalCountSubquery(CriteriaBuilder cb, CriteriaQuery<String> query, Root<?> path, String attributeName) {
+        Subquery<Long> totalCountSubquery = query.subquery(Long.class);
+        Root<UserAttributeEntity> attrRoot = totalCountSubquery.from(UserAttributeEntity.class);
+        totalCountSubquery.select(cb.count(attrRoot));
+        totalCountSubquery.where(
+                cb.and(
+                        cb.equal(attrRoot.get("user").get("id"), path.get("id")),
+                        cb.equal(attrRoot.get("name"), attributeName)
+                )
+        );
+        return totalCountSubquery;
     }
 
     @Override

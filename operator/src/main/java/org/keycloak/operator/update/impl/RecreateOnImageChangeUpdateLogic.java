@@ -20,14 +20,15 @@ package org.keycloak.operator.update.impl;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import org.keycloak.operator.ContextUtils;
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.update.UpdateType;
+
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 /**
  * Implements Keycloak 26.0 logic.

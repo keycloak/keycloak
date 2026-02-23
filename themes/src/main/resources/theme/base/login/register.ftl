@@ -17,7 +17,8 @@
                     <#if passwordRequired?? && (attribute.name == 'username' || (attribute.name == 'email' && realm.registrationEmailAsUsername))>
                         <div class="${properties.kcFormGroupClass!}">
                             <div class="${properties.kcLabelWrapperClass!}">
-                                <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label> *
+                                <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
+                                <span class="required">*</span>
                             </div>
                             <div class="${properties.kcInputWrapperClass!}">
                                 <div class="${properties.kcInputGroup!}" dir="ltr">
@@ -44,7 +45,8 @@
                         <div class="${properties.kcFormGroupClass!}">
                             <div class="${properties.kcLabelWrapperClass!}">
                                 <label for="password-confirm"
-                                       class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label> *
+                                       class="${properties.kcLabelClass!}">${msg("passwordConfirm")}</label>
+                                <span class="required">*</span>
                             </div>
                             <div class="${properties.kcInputWrapperClass!}">
                                 <div class="${properties.kcInputGroup!}" dir="ltr">

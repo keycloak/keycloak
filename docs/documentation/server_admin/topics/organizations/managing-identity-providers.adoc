@@ -42,6 +42,9 @@ The domain from the organization that you want to link with the identity provide
 Hide on login page::
 If this identity provider should be hidden in login pages when the user is authenticating in the scope of the organization.
 
+Hide on login page when organization not resolved::
+If enabled, the identity provider will be hidden on the login page when the organization cannot be resolved based on the user's email domain. Otherwise, the identity provider will be shown on the login page regardless of whether the organization is resolved or not. If 'Hide on login page' is also enabled, the identity provider will always be hidden on the login page.
+
 Redirect when email domain matches::
 If members should be automatically redirected to the identity provider when their email domain matches the domain set to the identity provider. If the domain is set to `Any`, members whose email domain matches *any* of the organization domains will be redirected to the identity provider.
 
@@ -70,7 +73,7 @@ image:images/organizations-edit-identity-provider.png[alt="Editing linked identi
 
 == Unlinking an identity provider from an organization
 
-When an identity provider is unlinked from an organization, it remains available as a realm-level provider that is no longer ssociated with an organization. To delete the unlinked provider, use the *Identity Providers* section in the menu.
+When an identity provider is unlinked from an organization, it remains available as a realm-level provider that is no longer associated with an organization. To delete the unlinked provider, use the *Identity Providers* section in the menu.
 
 .Procedure
 

@@ -56,8 +56,10 @@ import org.junit.runners.MethodSorters;
 import static org.keycloak.testsuite.util.LDAPTestUtils.getGroupDescriptionLDAPAttrName;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -78,6 +80,10 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
         testingClient.testing().ldap(TEST_REALM_NAME).prepareGroupsLDAPTest();
     }
 
+    @Override
+    protected boolean isImportAfterEachMethod() {
+        return true;
+    }
 
     @Test
     public void test01_ldapOnlyGroupMappings() {
@@ -710,17 +716,20 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
             UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
 
-            GroupModel group4 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group4");
-            john.joinGroup(group4);
-
+            GroupModel group14 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1/group14");
             GroupModel group31 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3/group31");
             GroupModel group32 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3/group32");
+            GroupModel group4 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group4");
 
+            assertThat(group14, notNullValue());
+            assertThat(group31, notNullValue());
+            assertThat(group32, notNullValue());
+            assertThat(group4, notNullValue());
+
+            john.joinGroup(group14);
             john.joinGroup(group31);
             john.joinGroup(group32);
-
-            GroupModel group14 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1/group14");
-            john.joinGroup(group14);
+            john.joinGroup(group4);
         });
 
         // Check user group memberships
@@ -731,17 +740,19 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
 
             GroupModel group14 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1/group14");
-            GroupModel group3 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3");
             GroupModel group31 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3/group31");
             GroupModel group32 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3/group32");
             GroupModel group4 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group4");
 
+            assertThat(group14, notNullValue());
+            assertThat(group31, notNullValue());
+            assertThat(group32, notNullValue());
+            assertThat(group4, notNullValue());
+
             Set<GroupModel> groups = john.getGroupsStream().collect(Collectors.toSet());
-            Assert.assertTrue(groups.contains(group14));
-            Assert.assertFalse(groups.contains(group3));
-            Assert.assertTrue(groups.contains(group31));
-            Assert.assertTrue(groups.contains(group32));
-            Assert.assertTrue(groups.contains(group4));
+            assertThat(groups, hasSize(4));
+
+            assertThat(groups, containsInAnyOrder(group14, group31, group32, group4));
 
             long groupsCount = john.getGroupsCount();
             Assert.assertEquals(4, groupsCount);
@@ -757,6 +768,17 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
     @Test
     public void test07_newUserDefaultGroupsImportModeTest() throws Exception {
+
+        // Add some groups to Keycloak
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            GroupModel group3 = appRealm.createGroup("group3");
+            GroupModel group31 = appRealm.createGroup("group31", group3);
+            GroupModel group32 = appRealm.createGroup("group32", group3);
+            GroupModel group4 = appRealm.createGroup("group4");
+        });
 
         // Check user group memberships
         testingClient.server().run(session -> {
@@ -1039,6 +1061,44 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
 
     @Test
     public void test11_fetchUsersGroupsWithPaginationAndInvalidBatchSize() {
+        // Add some groups to Keycloak
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            GroupModel group3 = appRealm.createGroup("group3");
+            GroupModel group31 = appRealm.createGroup("group31", group3);
+            GroupModel group32 = appRealm.createGroup("group32", group3);
+
+            GroupModel group4 = appRealm.createGroup("group4");
+
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1");
+            GroupModel group14 = appRealm.createGroup("group14", group1);
+        });
+
+        // Add user to some newly created KC groups
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+
+            UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
+
+            GroupModel group14 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group1/group14");
+            GroupModel group31 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3/group31");
+            GroupModel group32 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group3/group32");
+            GroupModel group4 = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group4");
+
+            assertThat(group14, notNullValue());
+            assertThat(group31, notNullValue());
+            assertThat(group32, notNullValue());
+            assertThat(group4, notNullValue());
+
+            john.joinGroup(group14);
+            john.joinGroup(group31);
+            john.joinGroup(group32);
+            john.joinGroup(group4);
+        });
+
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();

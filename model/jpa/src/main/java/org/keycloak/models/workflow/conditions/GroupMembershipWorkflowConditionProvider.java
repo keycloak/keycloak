@@ -12,6 +12,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
 import org.keycloak.models.workflow.WorkflowExecutionContext;
 import org.keycloak.models.workflow.WorkflowInvalidStateException;
@@ -25,6 +26,11 @@ public class GroupMembershipWorkflowConditionProvider implements WorkflowConditi
     public GroupMembershipWorkflowConditionProvider(KeycloakSession session,String expectedGroup) {
         this.session = session;
         this.expectedGroup = expectedGroup;
+    }
+
+    @Override
+    public ResourceType getSupportedResourceType() {
+        return ResourceType.USERS;
     }
 
     @Override

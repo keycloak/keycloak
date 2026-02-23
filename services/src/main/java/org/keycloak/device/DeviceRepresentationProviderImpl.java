@@ -2,11 +2,11 @@ package org.keycloak.device;
 
 import jakarta.ws.rs.core.HttpHeaders;
 
+import org.keycloak.cache.LocalCache;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.account.DeviceRepresentation;
 
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import org.jboss.logging.Logger;
 import ua_parser.Client;
 
@@ -14,10 +14,10 @@ public class DeviceRepresentationProviderImpl implements DeviceRepresentationPro
     private static final Logger logger = Logger.getLogger(DeviceActivityManager.class);
     private static final int USER_AGENT_MAX_LENGTH = 512;
 
-    private final LoadingCache<String, Client> cache;
+    private final LocalCache<String, Client> cache;
     private final KeycloakSession session;
 
-    DeviceRepresentationProviderImpl(KeycloakSession session, LoadingCache<String, Client> cache) {
+    DeviceRepresentationProviderImpl(KeycloakSession session, LocalCache<String, Client> cache) {
         this.session = session;
         this.cache = cache;
     }

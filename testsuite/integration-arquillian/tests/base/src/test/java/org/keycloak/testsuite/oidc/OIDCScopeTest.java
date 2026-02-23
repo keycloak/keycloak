@@ -173,7 +173,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         }
     }
 
-
+    
     @Test
     public void testBuiltinOptionalScopes() throws Exception {
         // Login. Assert that just 'profile' and 'email' data are there. 'Address' and 'phone' not

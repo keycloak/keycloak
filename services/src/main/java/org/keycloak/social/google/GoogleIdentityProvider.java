@@ -43,15 +43,18 @@ import org.keycloak.services.ErrorResponseException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class GoogleIdentityProvider extends OIDCIdentityProvider implements SocialIdentityProvider<OIDCIdentityProviderConfig> {
 
+    public static final String ISSUER_URL = "https://accounts.google.com";
     public static final String AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
     public static final String TOKEN_URL = "https://oauth2.googleapis.com/token";
     public static final String PROFILE_URL = "https://openidconnect.googleapis.com/v1/userinfo";
     public static final String TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo";
+    public static final String JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs";
     public static final String DEFAULT_SCOPE = "openid profile email";
 
     private static final String OIDC_PARAMETER_HOSTED_DOMAINS = "hd";
@@ -63,6 +66,10 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         config.setAuthorizationUrl(AUTH_URL);
         config.setTokenUrl(TOKEN_URL);
         config.setUserInfoUrl(PROFILE_URL);
+        getConfig().setUseJwksUrl(true);
+        getConfig().setJwksUrl(JWKS_URL);
+        getConfig().setIssuer(ISSUER_URL);
+        getConfig().setAllowClientIdAsAudience(true);
     }
 
     @Override
@@ -164,4 +171,8 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         throw new IdentityBrokerException("Hosted domain does not match.");
     }
 
+    @Override
+    public boolean isAssertionReuseAllowed() {
+        return true;
+    }
 }

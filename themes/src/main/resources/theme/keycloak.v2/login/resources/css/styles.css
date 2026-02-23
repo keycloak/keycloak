@@ -38,6 +38,7 @@ div.kc-logo-text {
     width: var(--keycloak-logo-width);
     background-repeat: no-repeat;
     background-size: contain;
+    background-position: center;
     margin: 0 auto;
 }
 

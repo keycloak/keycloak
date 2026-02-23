@@ -77,10 +77,12 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
     private static class InputStreamResponseHandler extends AbstractResponseHandler<InputStream> {
 
+        @Override
         public InputStream handleEntity(HttpEntity entity) throws IOException {
             return entity.getContent();
         }
 
+        @Override
         public InputStream handleResponse(HttpResponse response) throws IOException {
             return super.handleResponse(response);
         }
@@ -173,6 +175,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 if (httpClient == null) {
                     long socketTimeout = config.getLong("socket-timeout-millis", 5000L);
                     long establishConnectionTimeout = config.getLong("establish-connection-timeout-millis", -1L);
+                    long connectionRequestTimeout = config.getLong("connection-request-timeout-millis", HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS);
                     int maxPooledPerRoute = config.getInt("max-pooled-per-route", 64);
                     int connectionPoolSize = config.getInt("connection-pool-size", 128);
                     long connectionTTL = config.getLong("connection-ttl-millis", -1L);
@@ -206,6 +209,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
 
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
+                            .connectionRequestTimeout(connectionRequestTimeout, TimeUnit.MILLISECONDS)
                             .maxPooledPerRoute(maxPooledPerRoute)
                             .connectionPoolSize(connectionPoolSize)
                             .connectionTTL(connectionTTL, TimeUnit.MILLISECONDS)
@@ -320,8 +324,14 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                 .property()
                 .name("establish-connection-timeout-millis")
                 .type("long")
-                .helpText("When trying to make an initial socket connection, what is the timeout?")
+                .helpText("Timeout when making an initial socket connection. Only effective if less than the connection-request-timeout-millis.")
                 .defaultValue(-1L)
+                .add()
+                .property()
+                .name("connection-request-timeout-millis")
+                .type("long")
+                .helpText("Timeout when trying to obtain any connection, new or pooled.")
+                .defaultValue(HttpClientBuilder.DEFAULT_CONNECTION_REQUEST_TIMEOUT_MILLIS)
                 .add()
                 .property()
                 .name("max-pooled-per-route")

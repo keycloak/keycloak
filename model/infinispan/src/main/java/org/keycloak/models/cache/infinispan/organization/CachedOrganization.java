@@ -44,7 +44,7 @@ public class CachedOrganization extends AbstractRevisioned implements InRealm {
     private final Set<OrganizationDomainModel> domains;
     private final Set<IdentityProviderModel> idps;
 
-    public CachedOrganization(Long revision, RealmModel realm, OrganizationModel organization) {
+    public CachedOrganization(long revision, RealmModel realm, OrganizationModel organization) {
         super(revision, organization.getId());
         this.realm = realm.getId();
         this.name = organization.getName();

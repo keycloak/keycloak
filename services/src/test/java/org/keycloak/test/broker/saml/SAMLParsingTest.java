@@ -17,9 +17,14 @@
 
 package org.keycloak.test.broker.saml;
 
+import java.io.IOException;
+import java.util.Base64;
+
 import org.keycloak.saml.SAMLRequestParser;
+import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
+import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,12 +36,37 @@ import org.junit.Test;
  */
 public class SAMLParsingTest {
 
-    private static final String SAML_RESPONSE = "PHNhbWxwOkxvZ291dFJlc3BvbnNlIHhtbG5zOnNhbWxwPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6cHJvdG9jb2wiIHhtbG5zPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6YXNzZXJ0aW9uIiBEZXN0aW5hdGlvbj0iaHR0cDovL2xvY2FsaG9zdDo4MDgxL2F1dGgvcmVhbG1zL3JlYWxtLXdpdGgtYnJva2VyL2Jyb2tlci9rYy1zYW1sLWlkcC1iYXNpYy9lbmRwb2ludCIgSUQ9IklEXzlhMTcxZDIzLWM0MTctNDJmNS05YmNhLWMwOTMxMjNmZDY4YyIgSW5SZXNwb25zZVRvPSJJRF9iYzczMDcxMS0yMDM3LTQzZjMtYWQ3Ni03YmMzMzg0MmZiODciIElzc3VlSW5zdGFudD0iMjAxNi0wMi0yOVQxMjowMDoxNC4wNDRaIiBWZXJzaW9uPSIyLjAiPjxzYW1sOklzc3VlciB4bWxuczpzYW1sPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6YXNzZXJ0aW9uIj5odHRwOi8vbG9jYWxob3N0OjgwODIvYXV0aC9yZWFsbXMvcmVhbG0td2l0aC1zYW1sLWlkcC1iYXNpYzwvc2FtbDpJc3N1ZXI+PHNhbWxwOlN0YXR1cz48c2FtbHA6U3RhdHVzQ29kZSBWYWx1ZT0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOnN0YXR1czpTdWNjZXNzIi8+PC9zYW1scDpTdGF0dXM+PC9zYW1scDpMb2dvdXRSZXNwb25zZT4=";
+    private static final String SAML_RESPONSE = "<samlp:LogoutResponse xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns=\"urn:oasis:names:tc:SAML:2.0:assertion\" Destination=\"http://localhost:8081/auth/realms/realm-with-broker/broker/kc-saml-idp-basic/endpoint\" ID=\"ID_9a171d23-c417-42f5-9bca-c093123fd68c\" InResponseTo=\"ID_bc730711-2037-43f3-ad76-7bc33842fb87\" IssueInstant=\"2016-02-29T12:00:14.044Z\" Version=\"2.0\"><saml:Issuer xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\">http://localhost:8082/auth/realms/realm-with-saml-idp-basic</saml:Issuer><samlp:Status><samlp:StatusCode Value=\"urn:oasis:names:tc:SAML:2.0:status:Success\"/></samlp:Status></samlp:LogoutResponse>";
+    private static final String SAML_REQUEST = "<samlp:AuthnRequest xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\" xmlns=\"urn:oasis:names:tc:SAML:2.0:assertion\" xmlns:saml=\"urn:oasis:names:tc:SAML:2.0:assertion\" AssertionConsumerServiceURL=\"http://localhost:8080/realms/master/broker/saml/endpoint\" AttributeConsumingServiceIndex=\"0\" Destination=\"http://localhost:8080/realms/saml/protocol/saml\" ForceAuthn=\"false\" ID=\"ID_7228aef5-4a58-4481-a371-30e4ad7e98f4\" IssueInstant=\"2026-02-16T11:23:32.472Z\" ProtocolBinding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\" Version=\"2.0\"><saml:Issuer>http://localhost:8080/realms/master</saml:Issuer><samlp:NameIDPolicy AllowCreate=\"true\" Format=\"urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified\"/></samlp:AuthnRequest>";
 
     @Test
     public void parseTest() {
-        byte[] samlBytes = PostBindingUtil.base64Decode(SAML_RESPONSE);
+        String base64 = Base64.getEncoder().encodeToString(SAML_RESPONSE.getBytes(GeneralConstants.SAML_CHARSET));
+        byte[] samlBytes = PostBindingUtil.base64Decode(base64);
         SAMLDocumentHolder holder = SAMLRequestParser.parseResponseDocument(samlBytes);
         Assert.assertNotNull(holder);
+    }
+
+    @Test
+    public void parseMimeTest() {
+        String base64 = Base64.getMimeEncoder().encodeToString(SAML_RESPONSE.getBytes(GeneralConstants.SAML_CHARSET));
+        byte[] samlBytes = PostBindingUtil.base64Decode(base64);
+        SAMLDocumentHolder holder = SAMLRequestParser.parseResponseDocument(samlBytes);
+        Assert.assertNotNull(holder);
+    }
+
+    @Test
+    public void parseRequestResponseRedirectBinding() throws IOException {
+        String encodedResponse = RedirectBindingUtil.deflateBase64Encode(SAML_RESPONSE.getBytes(GeneralConstants.SAML_CHARSET_NAME));
+        SAMLDocumentHolder holder = SAMLRequestParser.parseResponseRedirectBinding(encodedResponse, SAML_RESPONSE.length());
+        Assert.assertNotNull(holder);
+        holder = SAMLRequestParser.parseResponseRedirectBinding(encodedResponse, SAML_RESPONSE.length() - 1);
+        Assert.assertNull(holder);
+
+        String encodedRequest = RedirectBindingUtil.deflateBase64Encode(SAML_REQUEST.getBytes(GeneralConstants.SAML_CHARSET_NAME));
+        holder = SAMLRequestParser.parseRequestRedirectBinding(encodedRequest, SAML_REQUEST.length());
+        Assert.assertNotNull(holder);
+        holder = SAMLRequestParser.parseRequestRedirectBinding(encodedRequest, SAML_RESPONSE.length() - 1);
+        Assert.assertNull(holder);
     }
 }

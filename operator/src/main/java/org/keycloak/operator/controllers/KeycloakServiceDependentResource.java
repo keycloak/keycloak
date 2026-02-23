@@ -16,9 +16,15 @@
  */
 package org.keycloak.operator.controllers;
 
-import java.util.Optional;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
@@ -29,11 +35,6 @@ import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
@@ -50,8 +51,7 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
         var builder = new ServiceSpecBuilder().withSelector(Utils.allInstanceLabels(keycloak));
 
         boolean tlsConfigured = isTlsConfigured(keycloak);
-        Optional<HttpSpec> httpSpec = Optional.ofNullable(keycloak.getSpec().getHttpSpec());
-        boolean httpEnabled = httpSpec.map(HttpSpec::getHttpEnabled).orElse(false);
+        boolean httpEnabled = isHttpEnabled(keycloak);
         if (!tlsConfigured || httpEnabled) {
             builder.addNewPort()
                     .withPort(HttpSpec.httpPort(keycloak))
@@ -74,6 +74,12 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
                 .endPort();
 
         return builder.build();
+    }
+
+    static boolean isHttpEnabled(Keycloak keycloak) {
+        Optional<HttpSpec> httpSpec = Optional.ofNullable(keycloak.getSpec().getHttpSpec());
+        boolean httpEnabled = httpSpec.map(HttpSpec::getHttpEnabled).orElse(false);
+        return httpEnabled;
     }
 
     @Override

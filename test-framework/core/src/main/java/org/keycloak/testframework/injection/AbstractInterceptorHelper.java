@@ -22,9 +22,9 @@ public abstract class AbstractInterceptorHelper<I, V> {
             value = intercept(value, interception.supplier, interception.existingInstance);
             registry.getLogger().logIntercepted(value, interception.supplier);
             if (interception.existingInstance != null) {
-                interception.existingInstance.registerDependency(instanceContext);
+                interception.existingInstance.registerDependent(instanceContext);
             } else {
-                interception.requestedInstance.registerDependency(instanceContext);
+                interception.requestedInstance.registerDependent(instanceContext);
             }
         }
         return value;

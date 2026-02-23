@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 TARGET_REMOTE=upstream
 KEYCLOAK_REPO=https://github.com/keycloak/keycloak

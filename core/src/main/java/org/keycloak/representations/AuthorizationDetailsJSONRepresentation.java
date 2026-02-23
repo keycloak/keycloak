@@ -22,15 +22,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import org.keycloak.util.AuthorizationDetailsParser;
+
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * The JSON representation of a Rich Authorization Request's "authorization_details" object.
+ * The "authorization_details" parameter is array of objects and this class represents single entry of that array. It is used as a base
+ * for "authorization_details" for both requests and responses.
  *
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
- * @see {@link <a href="https://datatracker.ietf.org/doc/html/draft-ietf-oauth-rar#section-2">Request parameter "authorization_details"</a>}
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc9396#section-2">Request parameter "authorization_details"</a>
  */
 public class AuthorizationDetailsJSONRepresentation implements Serializable {
 
@@ -126,6 +130,15 @@ public class AuthorizationDetailsJSONRepresentation implements Serializable {
                 '}';
     }
 
+    /**
+     * @param clazz Subtype of {@link AuthorizationDetailsJSONRepresentation}, which will be returned by calling this method
+     * @return this authorizationDetails content cast to the class specified by clazz parameter as long as parser corresponding to the type returned by {@link #getType}
+     * is able to parse this authorizationDetails and convert it to that subtype
+     */
+    public <T extends AuthorizationDetailsJSONRepresentation> T asSubtype(Class<T> clazz) {
+        return AuthorizationDetailsParser.parseToSubtype(this, clazz);
+    }
+
     public String getScopeNameFromCustomData() {
         if (this.getType().equalsIgnoreCase(DYNAMIC_SCOPE_RAR_TYPE) || this.getType().equalsIgnoreCase(STATIC_SCOPE_RAR_TYPE)) {
             List<String> accessList = (List<String>) this.customData.get("access");
@@ -156,4 +169,6 @@ public class AuthorizationDetailsJSONRepresentation implements Serializable {
     public int hashCode() {
         return Objects.hash(type, locations, actions, datatypes, identifier, privileges, customData);
     }
+
+
 }

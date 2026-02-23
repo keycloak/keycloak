@@ -125,12 +125,21 @@ export const AdvancedSettings = ({
   const isClientAuthFederatedEnabled = isFeatureEnabled(
     Feature.ClientAuthFederated,
   );
+  const jwtAuthorizationGrant = isFeatureEnabled(Feature.JWTAuthorizationGrant);
   const transientUsers = useWatch({
     control,
     name: "config.doNotStoreUsers",
     defaultValue: "false",
   });
   const syncModeAvailable = transientUsers === "false";
+  const jwtAuthorizationGrantEnabled = useWatch({
+    control,
+    name: "config.jwtAuthorizationGrantEnabled",
+  });
+  const supportsClientAssertions = useWatch({
+    control,
+    name: "config.supportsClientAssertions",
+  });
   return (
     <>
       {!isOIDC && !isSAML && !isOAuth2 && (
@@ -315,17 +324,29 @@ export const AdvancedSettings = ({
         label="caseSensitiveOriginalUsername"
       />
       {isClientAuthFederatedEnabled && isOIDC && (
-        <>
-          <SwitchField
-            field="config.supportsClientAssertions"
-            label="supportsClientAssertions"
-          />
+        <SwitchField
+          field="config.supportsClientAssertions"
+          label="supportsClientAssertions"
+        />
+      )}
+      {isClientAuthFederatedEnabled &&
+        isOIDC &&
+        supportsClientAssertions === "true" && (
           <SwitchField
             field="config.supportsClientAssertionReuse"
             label="supportsClientAssertionReuse"
           />
-        </>
-      )}
+        )}
+      {isOIDC &&
+        ((isClientAuthFederatedEnabled &&
+          supportsClientAssertions === "true") ||
+          (jwtAuthorizationGrant &&
+            jwtAuthorizationGrantEnabled === "true")) && (
+          <SwitchField
+            field="config.allowClientIdAsAudience"
+            label="allowClientIdAsAudience"
+          />
+        )}
     </>
   );
 };

@@ -30,6 +30,7 @@ import java.util.stream.StreamSupport;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
@@ -390,21 +391,21 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
         ConfigArgsConfigSource.setCliArgs("--db=postgres");
         config = createConfig();
-        assertEquals("primary", config.getConfigValue("quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType").getValue());
-
+        assertTrue(DatabasePropertyMappers.isPostgresqlTargetServerTypeEnabled());
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).anyMatch(DatabasePropertyMappers.PG_TARGET_SERVER_TYPE::equals));
+        assertEquals("primary", config.getConfigValue(DatabasePropertyMappers.PG_TARGET_SERVER_TYPE).getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-url-properties=?targetServerType=any");
         config = createConfig();
-        assertNull(config.getConfigValue("quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType").getValue());
-        assertEquals("jdbc:postgresql://localhost:5432/keycloak?targetServerType=any", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertFalse(DatabasePropertyMappers.isPostgresqlTargetServerTypeEnabled());
 
         ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
         config = createConfig();
-        assertNull(config.getConfigValue("quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType").getValue());
+        assertFalse(DatabasePropertyMappers.isPostgresqlTargetServerTypeEnabled());
 
         ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?targetServerType=any");
         config = createConfig();
-        assertNull(config.getConfigValue("quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType").getValue());
+        assertFalse(DatabasePropertyMappers.isPostgresqlTargetServerTypeEnabled());
     }
 
     // KEYCLOAK-15632
@@ -526,8 +527,9 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testResolvePropertyFromDefaultProfile() {
-        Environment.setProfile(Environment.NON_SERVER_MODE);
-        assertEquals("false", createConfig().getConfigValue("kc.hostname-strict").getValue());
+        Environment.setProfile(org.keycloak.common.util.Environment.NON_SERVER_MODE);
+        var config = createConfig();
+        assertEquals("local", config.getConfigValue("kc.cache").getValue());
 
         Environment.setProfile("prod");
         assertEquals("true", createConfig().getConfigValue("kc.spi-hostname-v2-hostname-strict").getValue());

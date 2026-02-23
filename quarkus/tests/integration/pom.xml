@@ -37,7 +37,7 @@
     <properties>
         <kc.quarkus.tests.dist>raw</kc.quarkus.tests.dist>
         <kc.quarkus.tests.groups>!invalid</kc.quarkus.tests.groups>
-        <approvaltests.version>14.0.0</approvaltests.version>
+        <approvaltests.version>26.1.0</approvaltests.version>
         <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
     </properties>
 

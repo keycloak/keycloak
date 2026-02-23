@@ -54,6 +54,8 @@ import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationDataType;
+import org.keycloak.dom.saml.v2.assertion.SubjectConfirmationType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
@@ -74,6 +76,7 @@ import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
+import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
@@ -82,6 +85,7 @@ import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
 import org.keycloak.saml.validators.ConditionsValidator;
 import org.keycloak.saml.validators.DestinationValidator;
+import org.keycloak.saml.validators.SubjectConfirmationDataValidator;
 
 import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
@@ -97,6 +101,8 @@ import static org.keycloak.adapters.saml.SamlPrincipal.DEFAULT_ROLE_ATTRIBUTE_NA
  */
 public abstract class AbstractSamlAuthenticationHandler implements SamlAuthenticationHandler {
 
+    public static final String MAX_INFLAFING_SIZE_PROP = "org.keycloak.adapters.saml.maxInflatingSize";
+    private static final long MAX_INFLAFING_SIZE = Long.getLong(MAX_INFLAFING_SIZE_PROP, DeflateUtil.DEFAULT_MAX_INFLATING_SIZE);
     protected static Logger log = Logger.getLogger(WebBrowserSsoAuthenticationHandler.class);
 
     protected final HttpFacade facade;
@@ -174,7 +180,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             if (index > -1) {
                 requestUri = requestUri.substring(0, index);
             }
-            holder = SAMLRequestParser.parseRequestRedirectBinding(samlRequest);
+            holder = SAMLRequestParser.parseRequestRedirectBinding(samlRequest, MAX_INFLAFING_SIZE);
         } else {
             postBinding = true;
             holder = SAMLRequestParser.parseRequestPostBinding(samlRequest);
@@ -374,17 +380,21 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         try {
             assertion = AssertionUtil.getAssertion(responseHolder, responseType, deployment.getDecryptionKey());
             ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator);
+            SubjectConfirmationDataValidator.Builder scdvb = new SubjectConfirmationDataValidator.Builder(assertion.getID(), getSubjectConfirmationData(assertion), destinationValidator)
+                    .clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
             try {
                 cvb.clockSkewInMillis(deployment.getIDP().getAllowedClockSkew());
                 cvb.addAllowedAudience(URI.create(deployment.getEntityID()));
                 if (responseType.getDestination() != null) {
                   // getDestination has been validated to match request URL already so it matches SAML endpoint
                   cvb.addAllowedAudience(URI.create(responseType.getDestination()));
+                  scdvb.allowedRecipient(responseType.getDestination());
                 }
+
             } catch (IllegalArgumentException ex) {
                 // warning has been already emitted in DeploymentBuilder
             }
-            if (! cvb.build().isValid()) {
+            if (!cvb.build().isValid() || !scdvb.build().isValid()) {
                 // initiate the login but do not save the request cos it's /saml
                 return initiateLogin(false);
             }
@@ -523,6 +533,19 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
         return failed(null);
     }
 
+    private SubjectConfirmationDataType getSubjectConfirmationData(AssertionType assertion) {
+        if (assertion != null
+                && assertion.getSubject() != null
+                && assertion.getSubject().getConfirmation() != null) {
+            return assertion.getSubject().getConfirmation().stream()
+                    .filter(c -> JBossSAMLURIConstants.SUBJECT_CONFIRMATION_BEARER.get().equals(c.getMethod()))
+                    .findFirst()
+                    .map(SubjectConfirmationType::getSubjectConfirmationData)
+                    .orElse(null);
+        }
+        return null;
+    }
+
     private boolean isSuccessfulSamlResponse(ResponseType responseType) {
         return responseType != null
           && responseType.getStatus() != null
@@ -614,7 +637,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
     }
 
     protected SAMLDocumentHolder extractRedirectBindingResponse(String response) {
-        return SAMLRequestParser.parseRequestRedirectBinding(response);
+        return SAMLRequestParser.parseRequestRedirectBinding(response, MAX_INFLAFING_SIZE);
     }
 
 
@@ -691,7 +714,7 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
         try {
             //byte[] decodedSignature = RedirectBindingUtil.urlBase64Decode(signature);
-            byte[] decodedSignature = Base64.getDecoder().decode(signature);
+            byte[] decodedSignature = Base64.getMimeDecoder().decode(signature);
             byte[] rawQueryBytes = rawQuery.getBytes(StandardCharsets.UTF_8);
 
             SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.getFromXmlMethod(decodedAlgorithm);

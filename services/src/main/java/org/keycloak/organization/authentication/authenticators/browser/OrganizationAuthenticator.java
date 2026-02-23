@@ -183,7 +183,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             // if re-authenticating in the scope of an organization
             context.success();
         } else {
-            attempted(context);
+            attempted(context, username);
         }
     }
 
@@ -199,27 +199,23 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         MultivaluedMap<String, String> parameters = request.getDecodedFormParameters();
         // parameter from the organization selection page
         List<String> alias = parameters.getOrDefault(OrganizationModel.ORGANIZATION_ATTRIBUTE, List.of());
+        OrganizationModel organization;
 
         if (alias.isEmpty()) {
-            OrganizationModel organization = Organizations.resolveOrganization(session, user, domain);
-
-            if (isSSOAuthentication(authSession) && organization != null) {
-                // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
-                authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
-            }
-
-            return organization;
+            organization = Organizations.resolveOrganization(session, user, domain);
+        } else {
+            OrganizationProvider provider = getOrganizationProvider();
+            organization = provider.getByAlias(alias.get(0));
         }
 
-        OrganizationProvider provider = getOrganizationProvider();
-        OrganizationModel organization = provider.getByAlias(alias.get(0));
-
-        if (organization == null) {
+        if (organization == null || !organization.isEnabled()) {
             return null;
         }
 
-        // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
-        authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        if (!alias.isEmpty() || isSSOAuthentication(authSession)) {
+            // make sure the organization selected by the user is available from the client session when running mappers and issuing tokens
+            authSession.setClientNote(OrganizationModel.ORGANIZATION_ATTRIBUTE, organization.getId());
+        }
 
         return organization;
     }
@@ -237,7 +233,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         OrganizationProvider provider = getOrganizationProvider();
-        Stream<OrganizationModel> organizations = provider.getByMember(user);
+        Stream<OrganizationModel> organizations = provider.getByMember(user).filter(OrganizationModel::isEnabled);
 
         if (organizations.count() > 1) {
             LoginFormsProvider form = context.form();
@@ -261,7 +257,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
     private boolean tryRedirectBroker(AuthenticationFlowContext context, OrganizationModel organization, UserModel user, String username, String domain) {
         // the user has credentials set; do not redirect to allow the user to pick how to authenticate
-        if (user != null && user.credentialManager().getStoredCredentialsStream().findAny().isPresent()) {
+        if (user != null && user.credentialManager().getFirstFactorCredentialsStream().findAny().isPresent()) {
             return false;
         }
 
@@ -357,6 +353,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             form.addError(new FormMessage("Your email domain matches the " + organization.getName() + " organization but you don't have an account yet."));
         }
 
+        // user is null, setup webauthn data if enabled
+        if (webauthnAuth.isPasskeysEnabled()) {
+            webauthnAuth.fillContextForm(context);
+        }
         context.challenge(form.createLoginUsername());
     }
 

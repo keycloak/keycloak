@@ -17,11 +17,6 @@
 
 package org.keycloak.operator.testsuite.utils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +30,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.assertj.core.api.ObjectAssert;
-import org.awaitility.Awaitility;
-import org.junit.jupiter.api.Assertions;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakController;
@@ -62,6 +54,14 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.netty.util.NetUtil;
 import io.quarkus.logging.Log;
+import org.assertj.core.api.ObjectAssert;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assertions;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -83,6 +83,10 @@ public final class CRAssert {
             Log.infof("Asserting CR: %s with status:\n%s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
             throw e;
         }
+    }
+
+    public static void assertKeycloakStatusCondition(KeycloakStatus kcStatus, String condition, Boolean status) {
+        assertKeycloakStatusCondition(kcStatus, condition, status, null);
     }
 
     public static void assertKeycloakStatusCondition(KeycloakStatus kcStatus, String condition, Boolean status, String containedMessage) {

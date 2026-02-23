@@ -17,23 +17,16 @@
 
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile;
+import org.keycloak.config.TelemetryOptions;
 import org.keycloak.config.TracingOptions;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 import static org.keycloak.config.TracingOptions.TRACING_COMPRESSION;
 import static org.keycloak.config.TracingOptions.TRACING_ENABLED;
@@ -47,41 +40,40 @@ import static org.keycloak.config.TracingOptions.TRACING_RESOURCE_ATTRIBUTES;
 import static org.keycloak.config.TracingOptions.TRACING_SAMPLER_RATIO;
 import static org.keycloak.config.TracingOptions.TRACING_SAMPLER_TYPE;
 import static org.keycloak.config.TracingOptions.TRACING_SERVICE_NAME;
-import static org.keycloak.config.WildcardOptionsUtil.getWildcardPrefix;
-import static org.keycloak.config.WildcardOptionsUtil.getWildcardValue;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public class TracingPropertyMappers implements PropertyMapperGrouping {
     private static final String OTEL_FEATURE_ENABLED_MSG = "'opentelemetry' feature is enabled";
     private static final String TRACING_ENABLED_MSG = "Tracing is enabled";
-    private static final Logger log = LoggerFactory.getLogger(TracingPropertyMappers.class);
+    private static final Logger log = Logger.getLogger(TracingPropertyMappers.class);
 
     @Override
     public List<PropertyMapper<?>> getPropertyMappers() {
         return List.of(
                 fromOption(TRACING_ENABLED)
                         .isEnabled(TracingPropertyMappers::isFeatureEnabled, OTEL_FEATURE_ENABLED_MSG)
-                        .to("quarkus.otel.enabled") // enable/disable whole OTel, tracing is enabled by default
+                        .to("quarkus.otel.traces.enabled")
                         .build(),
                 fromOption(TRACING_ENDPOINT)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
+                        .mapFrom(TelemetryOptions.TELEMETRY_ENDPOINT)
                         .to("quarkus.otel.exporter.otlp.traces.endpoint")
                         .paramLabel("url")
-                        .validator(TracingPropertyMappers::validateEndpoint)
+                        .validator(TelemetryPropertyMappers::validateEndpoint)
                         .build(),
                 fromOption(TRACING_SERVICE_NAME)
+                        // mapped to 'telemetry-service-name'
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
-                        .to("quarkus.otel.service.name")
                         .paramLabel("name")
                         .build(),
                 fromOption(TRACING_RESOURCE_ATTRIBUTES)
+                        // mapped to 'telemetry-resource-attributes'
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
-                        .to("quarkus.otel.resource.attributes")
                         .paramLabel("attributes")
                         .build(),
                 fromOption(TRACING_PROTOCOL)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
+                        .mapFrom(TelemetryOptions.TELEMETRY_PROTOCOL)
                         .to("quarkus.otel.exporter.otlp.traces.protocol")
                         .paramLabel("protocol")
                         .build(),
@@ -114,7 +106,7 @@ public class TracingPropertyMappers implements PropertyMapperGrouping {
                 fromOption(TRACING_HEADERS)
                         .isEnabled(TracingPropertyMappers::isTracingEnabled, TRACING_ENABLED_MSG)
                         .to("quarkus.otel.exporter.otlp.traces.headers")
-                        .transformer(TracingPropertyMappers::transformTracingHeaders)
+                        .transformer((value, ctx) -> TelemetryPropertyMappers.transformTelemetryHeaders(TRACING_HEADER, value))
                         .isMasked(true) // it may contain sensitive information
                         .build(),
                 fromOption(TRACING_HEADER)
@@ -123,16 +115,6 @@ public class TracingPropertyMappers implements PropertyMapperGrouping {
                         .isMasked(true) // it may contain sensitive information
                         .build()
         );
-    }
-
-    private static void validateEndpoint(String value) {
-        if (StringUtil.isBlank(value)) {
-            throw new PropertyException("URL specified in 'tracing-endpoint' option must not be empty.");
-        }
-
-        if (!isValidUrl(value)) {
-            throw new PropertyException("URL specified in 'tracing-endpoint' option is invalid.");
-        }
     }
 
     private static void validateRatio(String value) {
@@ -151,28 +133,6 @@ public class TracingPropertyMappers implements PropertyMapperGrouping {
         }
     }
 
-    private static String transformTracingHeaders(String value, ConfigSourceInterceptorContext ctx) {
-        if (StringUtil.isNotBlank(value)) {
-            log.debug("HTTP headers for the tracing exporter are overridden by the '%s' parent property".formatted(TRACING_HEADERS.getKey()));
-            return value;
-        }
-
-        Map<String, String> headers = new HashMap<>();
-        String prefix = getWildcardPrefix(TRACING_HEADER.getKey());
-
-        Configuration.getPropertyNames().forEach(key -> {
-            if (key.startsWith(NS_KEYCLOAK_PREFIX) && key.startsWith(NS_KEYCLOAK_PREFIX + prefix)) {
-                String header = getWildcardValue(TRACING_HEADER, key);
-                String headerValue = Configuration.getOptionalValue(key)
-                        .orElseThrow(() -> new PropertyException("Wrong value for the property '%s'".formatted(key)));
-                headers.put(header, headerValue);
-            }
-        });
-        return headers.entrySet().stream()
-                .map(header -> header.getKey() + "=" + header.getValue())
-                .collect(Collectors.joining(","));
-    }
-
     private static boolean isFeatureEnabled() {
         return Profile.isFeatureEnabled(Profile.Feature.OPENTELEMETRY);
     }
@@ -183,14 +143,5 @@ public class TracingPropertyMappers implements PropertyMapperGrouping {
 
     public static boolean isTracingAndEmbeddedInfinispanEnabled() {
         return Configuration.isTrue(TRACING_ENABLED) && CachingPropertyMappers.cacheSetToInfinispan();
-    }
-
-    private static boolean isValidUrl(String url) {
-        try {
-            new URL(url).toURI();
-            return true;
-        } catch (MalformedURLException | URISyntaxException e) {
-            return false;
-        }
     }
 }

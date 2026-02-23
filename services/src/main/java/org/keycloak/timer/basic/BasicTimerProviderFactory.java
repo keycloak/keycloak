@@ -49,7 +49,7 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
     @Override
     public void init(Config.Scope config) {
         transactionTimeout = config.getInt(TRANSACTION_TIMEOUT, 0);
-        timer = new Timer();
+        timer = new Timer(true);
     }
 
     @Override
@@ -59,8 +59,10 @@ public class BasicTimerProviderFactory implements TimerProviderFactory {
 
     @Override
     public void close() {
-        timer.cancel();
-        timer = null;
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
     }
 
     @Override

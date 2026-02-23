@@ -17,7 +17,6 @@
 
 package org.keycloak.sdjwt;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +24,7 @@ import java.util.function.Function;
 
 import org.keycloak.OID4VCConstants;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.rule.CryptoInitRule;
@@ -69,7 +69,8 @@ public abstract class SdJwtVerificationTest {
             IssuerSignedJWT issuerSignedJWT = exampleFlatSdJwtV1().withHashAlg(hashAlg).build();
             SdJwt sdJwt = SdJwt.builder()
                                .withIssuerSignedJwt(issuerSignedJWT)
-                               .build(testSettings.issuerSigContext);
+                               .withIssuerSigningContext(testSettings.issuerSigContext)
+                               .build();
 
             sdJwt.verify(
                 defaultIssuerVerifyingKeys(),
@@ -81,7 +82,9 @@ public abstract class SdJwtVerificationTest {
     @Test
     public void testSdJwtVerification_EnforceIdempotence() throws VerificationException {
         IssuerSignedJWT issuerSignedJWT = exampleFlatSdJwtV1().build();
-        SdJwt sdJwt = SdJwt.builder().withIssuerSignedJwt(issuerSignedJWT).build(testSettings.issuerSigContext);
+        SdJwt sdJwt = SdJwt.builder().withIssuerSignedJwt(issuerSignedJWT)
+                .withIssuerSigningContext(testSettings.issuerSigContext)
+                .build();
 
         sdJwt.verify(
             defaultIssuerVerifyingKeys(),
@@ -97,7 +100,8 @@ public abstract class SdJwtVerificationTest {
     @Test
     public void testSdJwtVerification_SdJwtWithUndisclosedNestedFields() throws VerificationException {
         SdJwt sdJwt = SdJwt.builder().withIssuerSignedJwt(exampleSdJwtWithUndisclosedNestedFieldsV1().build())
-                           .build(testSettings.issuerSigContext);
+                .withIssuerSigningContext(testSettings.issuerSigContext)
+                .build();
 
         sdJwt.verify(
             defaultIssuerVerifyingKeys(),
@@ -117,7 +121,9 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void testSdJwtVerification_RecursiveSdJwt() throws Exception {
-        SdJwt sdJwt = exampleRecursiveSdJwtV1().build(testSettings.issuerSigContext);
+        SdJwt sdJwt = exampleRecursiveSdJwtV1()
+                .withIssuerSigningContext(testSettings.issuerSigContext)
+                .build();
 
         sdJwt.verify(
             defaultIssuerVerifyingKeys(),
@@ -129,8 +135,9 @@ public abstract class SdJwtVerificationTest {
     public void sdJwtVerificationShouldFail_OnInsecureHashAlg() {
         IssuerSignedJWT issuerSignedJWT = exampleFlatSdJwtV1().withHashAlg("sha-224").build();
         SdJwt sdJwt = SdJwt.builder()
-                           .withIssuerSignedJwt(issuerSignedJWT) // not deemed secure
-                           .build(testSettings.issuerSigContext);
+                .withIssuerSignedJwt(issuerSignedJWT) // not deemed secure
+                .withIssuerSigningContext(testSettings.issuerSigContext)
+                .build();
 
         VerificationException exception = assertThrows(
                 VerificationException.class,
@@ -146,7 +153,9 @@ public abstract class SdJwtVerificationTest {
     @Test
     public void sdJwtVerificationShouldFail_WithWrongVerifier() {
         IssuerSignedJWT issuerSignedJWT = exampleFlatSdJwtV1().build();
-        SdJwt sdJwt = SdJwt.builder().withIssuerSignedJwt(issuerSignedJWT).build(testSettings.issuerSigContext);
+        SdJwt sdJwt = SdJwt.builder().withIssuerSignedJwt(issuerSignedJWT)
+                .withIssuerSigningContext(testSettings.issuerSigContext)
+                .build();
         VerificationException exception = assertThrows(
                 VerificationException.class,
                 () -> sdJwt.verify(
@@ -160,7 +169,7 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void sdJwtVerificationShouldFail_IfExpired() {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
 
         ObjectNode claimSet = mapper.createObjectNode();
         claimSet.put("given_name", "John");
@@ -168,8 +177,9 @@ public abstract class SdJwtVerificationTest {
 
         // Exp claim is plain
         SdJwt sdJwtV1 = SdJwt.builder()
-                             .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet, DisclosureSpec.builder().build()).build())
-                             .build(testSettings.issuerSigContext);
+                .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet, DisclosureSpec.builder().build()).build())
+                .withIssuerSigningContext(testSettings.issuerSigContext)
+                .build();
         // Exp claim is undisclosed
         SdJwt sdJwtV2 = SdJwt.builder()
          .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet,
@@ -177,7 +187,8 @@ public abstract class SdJwtVerificationTest {
                                             .withRedListedClaimNames(DisclosureRedList.of(Collections.emptySet()))
                                             .withUndisclosedClaim("exp", "eluV5Og3gSNII8EYnsxA_A")
                                             .build()).build())
-                             .build(testSettings.issuerSigContext);
+                             .withIssuerSigningContext(testSettings.issuerSigContext)
+                             .build();
 
         Function<SdJwt, VerificationException> verify = sdJwt -> {
             return assertThrows(VerificationException.class,
@@ -209,7 +220,7 @@ public abstract class SdJwtVerificationTest {
         // exp: null
         ObjectNode claimSet1 = mapper.createObjectNode();
         claimSet1.put("given_name", "John");
-        claimSet1.put("exp", Instant.now().getEpochSecond() - (31536000));
+        claimSet1.put("exp", Time.currentTime() - (31536000));
 
         // exp: invalid
         ObjectNode claimSet2 = mapper.createObjectNode();
@@ -238,7 +249,8 @@ public abstract class SdJwtVerificationTest {
         {
             SdJwt sdJwtV1 = SdJwt.builder()
                                  .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet1, disclosureSpec).build())
-                                 .build(testSettings.issuerSigContext);
+                                 .withIssuerSigningContext(testSettings.issuerSigContext)
+                                 .build();
             VerificationException exception = verify.apply(sdJwtV1);
             assertTrue(String.format("Unexpected error message:\n\tMessage was: %s", exception.getMessage()),
                        exception.getMessage().matches("Token has expired by exp: now: '\\d+', exp: '\\d+'"));
@@ -246,7 +258,8 @@ public abstract class SdJwtVerificationTest {
         {
             SdJwt sdJwtV2 = SdJwt.builder()
                                  .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet2, disclosureSpec).build())
-                                 .build(testSettings.issuerSigContext);
+                                 .withIssuerSigningContext(testSettings.issuerSigContext)
+                                 .build();
             VerificationException exception = verify.apply(sdJwtV2);
             assertEquals(String.format("Unexpected error message:\n\tMessage was: %s", exception.getMessage()),
                          "Missing required claim 'exp'", exception.getMessage());
@@ -255,7 +268,7 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void sdJwtVerificationShouldFail_IfIssuedInTheFuture() {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
 
         ObjectNode claimSet = mapper.createObjectNode();
         claimSet.put("given_name", "John");
@@ -265,7 +278,8 @@ public abstract class SdJwtVerificationTest {
         SdJwt sdJwtV1 = SdJwt.builder()
                              .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet,
                                                                      DisclosureSpec.builder().build()).build())
-                             .build(testSettings.issuerSigContext);
+                             .withIssuerSigningContext(testSettings.issuerSigContext)
+                             .build();
         // Exp claim is undisclosed
         SdJwt sdJwtV2 = SdJwt.builder()
                              .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet,
@@ -273,7 +287,8 @@ public abstract class SdJwtVerificationTest {
                                                .withRedListedClaimNames(DisclosureRedList.of(Collections.emptySet()))
                                                .withUndisclosedClaim("iat", "eluV5Og3gSNII8EYnsxA_A")
                                                .build()).build())
-                             .build(testSettings.issuerSigContext);
+                             .withIssuerSigningContext(testSettings.issuerSigContext)
+                             .build();
 
         Function<SdJwt, VerificationException> verify = sdJwt -> {
             return assertThrows(VerificationException.class,
@@ -302,7 +317,7 @@ public abstract class SdJwtVerificationTest {
 
     @Test
     public void sdJwtVerificationShouldFail_IfNbfInvalid() {
-        long now = Instant.now().getEpochSecond();
+        long now = Time.currentTime();
 
         ObjectNode claimSet = mapper.createObjectNode();
         claimSet.put("given_name", "John");
@@ -311,7 +326,8 @@ public abstract class SdJwtVerificationTest {
         // Exp claim is plain
         SdJwt sdJwtV1 = SdJwt.builder()
                              .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet, DisclosureSpec.builder().build()).build())
-                             .build(testSettings.issuerSigContext);
+                             .withIssuerSigningContext(testSettings.issuerSigContext)
+                             .build();
         // Exp claim is undisclosed
         SdJwt sdJwtV2 = SdJwt.builder()
                              .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet,
@@ -319,7 +335,8 @@ public abstract class SdJwtVerificationTest {
                                                .withRedListedClaimNames(DisclosureRedList.of(Collections.emptySet()))
                                                .withUndisclosedClaim("iat", "eluV5Og3gSNII8EYnsxA_A")
                                                .build()).build())
-                             .build(testSettings.issuerSigContext);
+                             .withIssuerSigningContext(testSettings.issuerSigContext)
+                             .build();
 
         for (SdJwt sdJwt : Arrays.asList(sdJwtV1, sdJwtV2)) {
             VerificationException exception = assertThrows(
@@ -343,7 +360,8 @@ public abstract class SdJwtVerificationTest {
 
         SdJwt sdJwt = SdJwt.builder().withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet, DisclosureSpec.builder().build())
                                                               .build())
-                           .build(testSettings.issuerSigContext);
+                           .withIssuerSigningContext(testSettings.issuerSigContext)
+                           .build();
 
         VerificationException exception = assertThrows(
                 VerificationException.class,
@@ -367,7 +385,8 @@ public abstract class SdJwtVerificationTest {
                                    DisclosureSpec.builder()
                                                  .withUndisclosedClaim(forbiddenClaimName, "eluV5Og3gSNII8EYnsxA_A")
                                                  .build()).build())
-                .build(testSettings.issuerSigContext);
+                    .withIssuerSigningContext(testSettings.issuerSigContext)
+                    .build();
 
             VerificationException exception = assertThrows(
                     VerificationException.class,
@@ -393,7 +412,8 @@ public abstract class SdJwtVerificationTest {
                                           .withDecoyClaim("G02NSrQfjFXQ7Io09syajA")
                                           .withDecoyClaim("G02NSrQfjFXQ7Io09syajA")
                                           .build()).build())
-                           .build(testSettings.issuerSigContext);
+                           .withIssuerSigningContext(testSettings.issuerSigContext)
+                           .build();
 
         VerificationException exception = assertThrows(
                 VerificationException.class,
@@ -423,7 +443,8 @@ public abstract class SdJwtVerificationTest {
                                                               .build();
                 SdJwt.builder()
                      .withIssuerSignedJwt(exampleFlatSdJwtV2(claimSet, disclosureSpec).build())
-                     .build(testSettings.issuerSigContext);
+                     .withIssuerSigningContext(testSettings.issuerSigContext)
+                     .build();
             }
         );
 
@@ -530,7 +551,8 @@ public abstract class SdJwtVerificationTest {
                     .withIssuerSignedJwt(IssuerSignedJWT.builder()
                                                         .withClaims(claimSet, disclosureSpec)
                                                         .build())
-                    .build(testSettings.issuerSigContext);
+                    .withIssuerSigningContext(testSettings.issuerSigContext)
+                    .build();
     }
 
     private SdJwt.Builder exampleRecursiveSdJwtV1() {

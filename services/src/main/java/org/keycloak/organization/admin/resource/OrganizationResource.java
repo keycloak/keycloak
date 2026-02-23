@@ -137,4 +137,9 @@ public class OrganizationResource {
     public OrganizationIdentityProvidersResource identityProvider() {
         return new OrganizationIdentityProvidersResource(session, organization, adminEvent);
     }
+
+    @Path("groups")
+    public OrganizationGroupsResource groups() {
+        return new OrganizationGroupsResource(session, organization, adminEvent);
+    }
 }

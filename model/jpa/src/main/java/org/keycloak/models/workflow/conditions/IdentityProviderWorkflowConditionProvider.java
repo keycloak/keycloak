@@ -13,6 +13,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
+import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowConditionProvider;
 import org.keycloak.models.workflow.WorkflowExecutionContext;
 import org.keycloak.models.workflow.WorkflowInvalidStateException;
@@ -26,6 +27,11 @@ public class IdentityProviderWorkflowConditionProvider implements WorkflowCondit
     public IdentityProviderWorkflowConditionProvider(KeycloakSession session, String expectedAlias) {
         this.session = session;
         this.expectedAlias = expectedAlias;
+    }
+
+    @Override
+    public ResourceType getSupportedResourceType() {
+        return ResourceType.USERS;
     }
 
     @Override

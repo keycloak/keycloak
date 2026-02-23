@@ -3,12 +3,9 @@ import { ExpandableSection } from "@patternfly/react-core";
 import { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  SelectControl,
-  TextAreaControl,
-  TextControl,
-} from "@keycloak/keycloak-ui-shared";
+import { SelectControl, TextControl } from "@keycloak/keycloak-ui-shared";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
+import { JwksSettings } from "./JwksSettings";
 
 import "./discovery-settings.css";
 
@@ -26,10 +23,6 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
   const validateSignature = useWatch({
     control,
     name: "config.validateSignature",
-  });
-  const useJwks = useWatch({
-    control,
-    name: "config.useJwksUrl",
   });
   const isPkceEnabled = useWatch({
     control,
@@ -104,38 +97,7 @@ const Fields = ({ readOnly, isOIDC }: DiscoverySettingsProps) => {
           {(validateSignature === "true" ||
             jwtAuthorizationGrantEnabled === "true" ||
             supportsClientAssertions == "true") && (
-            <>
-              <DefaultSwitchControl
-                name="config.useJwksUrl"
-                label={t("useJwksUrl")}
-                labelIcon={t("useJwksUrlHelp")}
-                isDisabled={readOnly}
-                stringify
-              />
-              {useJwks === "true" ? (
-                <TextControl
-                  name="config.jwksUrl"
-                  label={t("jwksUrl")}
-                  labelIcon={t("jwksUrlHelp")}
-                  type="url"
-                  readOnly={readOnly}
-                />
-              ) : (
-                <>
-                  <TextAreaControl
-                    name="config.publicKeySignatureVerifier"
-                    label={t("validatingPublicKey")}
-                    labelIcon={t("validatingPublicKeyHelp")}
-                  />
-                  <TextControl
-                    name="config.publicKeySignatureVerifierKeyId"
-                    label={t("validatingPublicKeyId")}
-                    labelIcon={t("validatingPublicKeyIdHelp")}
-                    readOnly={readOnly}
-                  />
-                </>
-              )}
-            </>
+            <JwksSettings readOnly={readOnly} />
           )}
         </>
       )}

@@ -31,11 +31,20 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
             <artifactId>keycloak-test-framework-junit5-config</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-v2-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.tests</groupId>
+            <artifactId>keycloak-tests-custom-providers</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

@@ -28,7 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.when;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.containsString;
 
 @DistributionTest(keepAlive = true,
         enableTls = true,
@@ -53,7 +53,7 @@ public class ManagementHttpsDistTest {
         when().get(url).then()
                 .statusCode(200)
                 .and()
-                .body(is("Keycloak Management Interface"));
+                .body(containsString("Keycloak Management Interface"));
         when().get(url + "/health").then()
                 .statusCode(200);
         when().get(url + "/health/live").then()
@@ -74,7 +74,7 @@ public class ManagementHttpsDistTest {
         when().get(url).then()
                 .statusCode(200)
                 .and()
-                .body(is("Keycloak Management Interface"));
+                .body(containsString("Keycloak Management Interface"));
         when().get(url + "/health").then()
                 .statusCode(200);
         when().get(url + "/health/live").then()

@@ -261,20 +261,16 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         Map<String, List<String>> attributes = new HashMap<>(this);
 
         for (String name : nameSet()) {
-            AttributeMetadata metadata = getMetadata(name);
             RealmModel realm = session.getContext().getRealm();
 
-            if ((UserModel.USERNAME.equals(name) && realm.isRegistrationEmailAsUsername())
-                || isReadableOrWritableDuringRegistration(name)
-                || !isManagedAttribute(name)) {
+            if ((UserModel.USERNAME.equals(name) && realm.isRegistrationEmailAsUsername())) {
                 continue;
             }
 
-            if (metadata == null || !metadata.canEdit(createAttributeContext(metadata))) {
+            if (isReadOnly(name)) {
                 attributes.remove(name);
             }
         }
-
         return attributes;
     }
 

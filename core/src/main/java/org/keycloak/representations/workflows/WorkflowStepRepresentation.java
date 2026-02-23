@@ -8,20 +8,25 @@ import org.keycloak.common.util.MultivaluedHashMap;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_AFTER;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_PRIORITY;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SCHEDULED_AT;
+import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_STATUS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_USES;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_WITH;
 
-@JsonPropertyOrder({CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH})
+@JsonPropertyOrder({CONFIG_USES, CONFIG_AFTER, CONFIG_PRIORITY, CONFIG_WITH, CONFIG_SCHEDULED_AT, CONFIG_STATUS})
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public final class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
+public class WorkflowStepRepresentation extends AbstractWorkflowComponentRepresentation {
 
     private final String uses;
+    private Long scheduledAt;
+    private StepExecutionStatus executionStatus;
 
     public static Builder create() {
         return new Builder();
@@ -36,13 +41,13 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
     }
 
     public WorkflowStepRepresentation(String id, String uses, MultivaluedHashMap<String, String> config) {
-        super(id, config);
-        this.uses = uses;
+        this(id, uses, config, null);
     }
 
-    @JsonIgnore
-    public String getId() {
-        return super.getId();
+    public WorkflowStepRepresentation(String id, String uses, MultivaluedHashMap<String, String> config, Long scheduledAt) {
+        super(id, config);
+        this.uses = uses;
+        this.scheduledAt = scheduledAt;
     }
 
     public String getUses() {
@@ -64,12 +69,31 @@ public final class WorkflowStepRepresentation extends AbstractWorkflowComponentR
         setConfig(CONFIG_AFTER, after);
     }
 
+    @JsonIgnore
     public String getPriority() {
         return getConfigValue(CONFIG_PRIORITY, String.class);
     }
 
     public void setPriority(long ms) {
         setConfig(CONFIG_PRIORITY, String.valueOf(ms));
+    }
+
+    @JsonProperty(CONFIG_SCHEDULED_AT)
+    public Long getScheduledAt() {
+        return this.scheduledAt;
+    }
+
+    public void setScheduledAt(Long scheduledAt) {
+        this.scheduledAt = scheduledAt;
+    }
+
+    @JsonProperty(CONFIG_STATUS)
+    public StepExecutionStatus getExecutionStatus() {
+        return this.executionStatus;
+    }
+
+    public void setExecutionStatus(StepExecutionStatus executionStatus) {
+        this.executionStatus = executionStatus;
     }
 
     @Override

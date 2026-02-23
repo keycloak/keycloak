@@ -18,6 +18,7 @@
 package org.keycloak.tests.admin;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.keycloak.admin.client.resource.AttackDetectionResource;
 import org.keycloak.events.admin.OperationType;
@@ -38,6 +39,7 @@ import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Test;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -77,6 +79,15 @@ public class AttackDetectionResourceTest {
         oauthClient.doPasswordGrantRequest(testUser2.getUsername(), "invalid");
         oauthClient.doPasswordGrantRequest(testUser2.getUsername(), "invalid");
         oauthClient.doPasswordGrantRequest("nosuchuser", "invalid");
+
+        // Check testUser2 to ensure all failure processing is completed
+        await().atMost(5, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> {
+                    Map<String, Object> status = detection.bruteForceUserStatus(testUser2.getId());
+                    assertEquals(2, status.get("numFailures"),
+                            "Waiting for testUser2 processing to complete");
+                });
 
         assertBruteForce(detection.bruteForceUserStatus(testUser.getId()), 2, 1, true, true);
         assertBruteForce(detection.bruteForceUserStatus(testUser2.getId()), 2, 1, true, true);

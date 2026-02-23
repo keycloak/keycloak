@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -105,8 +106,8 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
                        .orElse(false);
     }
 
-    public void setClaimsForCredential(VerifiableCredential verifiableCredential,
-                                       UserSessionModel userSessionModel) {
+    public void setClaim(VerifiableCredential verifiableCredential,
+                         UserSessionModel userSessionModel) {
         // Set the value
         List<String> attributePath = getMetadataAttributePath();
         String propertyName = attributePath.get(attributePath.size() - 1);
@@ -121,9 +122,9 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
         Instant iat = Optional.ofNullable(mapperModel.getConfig())
                 .flatMap(config -> Optional.ofNullable(config.get(VALUE_SOURCE)))
                 .filter(valueSource -> Objects.equals(valueSource, "COMPUTE"))
-                .map(valueSource -> Instant.now())
+                .map(valueSource -> Instant.ofEpochSecond(Time.currentTime()))
                 .orElseGet(() -> Optional.ofNullable(verifiableCredential.getIssuanceDate())
-                        .orElse(Instant.now()));
+                        .orElse(Instant.ofEpochSecond(Time.currentTime())));
 
         Instant normalizedIat = new TimeClaimNormalizer(userSessionModel.getRealm())
                 .normalize(iat);
@@ -141,7 +142,7 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
     }
 
     @Override
-    public void setClaimsForSubject(Map<String, Object> claims, UserSessionModel userSessionModel) {
+    public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         // NoOp
     }
 

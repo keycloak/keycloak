@@ -18,8 +18,7 @@ public class HttpOptions {
 
     public static final Option<String> HTTP_HOST = new OptionBuilder<>("http-host", String.class)
             .category(OptionCategory.HTTP)
-            .description("The HTTP Host.")
-            .defaultValue("0.0.0.0")
+            .description("The HTTP Host. In prod mode or when running on Windows Subsystem For Linux the default is to bind to all network addresses (0.0.0.0), which means the server may be accessible from other machines on your network. Otherwise defaults to localhost.")
             .build();
 
     public static final Option<String> HTTP_RELATIVE_PATH = new OptionBuilder<>("http-relative-path", String.class)
@@ -146,9 +145,21 @@ public class HttpOptions {
 
     public static final Option<Boolean> HTTP_ACCEPT_NON_NORMALIZED_PATHS = new OptionBuilder<>("http-accept-non-normalized-paths", Boolean.class)
             .category(OptionCategory.HTTP)
-            .description("If the server should accept paths that are not normalized according to RFC3986 or that contain a double slash ('//'). While accepting those requests might be relevant for legacy applications, it is recommended to disable it to allow for more concise URL filtering.")
+            .description("If the server should accept paths that are not normalized according to RFC3986 or that contain a double slash ('//') or semicolon (';'). While accepting those requests might be relevant for legacy applications, it is recommended to disable it to allow for more concise URL filtering.")
             .deprecated()
             .defaultValue(Boolean.FALSE)
             .build();
 
+    public static final Option<String> SHUTDOWN_TIMEOUT = new OptionBuilder<>("shutdown-timeout", String.class)
+            .category(OptionCategory.HTTP)
+            .description("The shutdown period waiting for currently running HTTP requests to finish. " + DURATION_DESCRIPTION)
+            .defaultValue("1s")
+            .build();
+
+    public static final Option<String> SHUTDOWN_DELAY = new OptionBuilder<>("shutdown-delay", String.class)
+            .category(OptionCategory.HTTP)
+            .description("Length of the pre-shutdown phase during which the server prepares for shutdown. " + DURATION_DESCRIPTION +
+                    " This period allows for loadbalancer reconfiguration and draining of TLS/HTTP keepalive connections.")
+            .defaultValue("1s")
+            .build();
 }

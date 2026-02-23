@@ -38,13 +38,16 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.GroupRoleMappingEntity;
+import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.UserStoragePrivateUtil;
 
 import static java.util.Optional.ofNullable;
@@ -165,7 +168,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("realm"), realm.getId()));
-        predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
+        predicates.add(builder.equal(root.get("type"), group.getType()));
         predicates.add(builder.equal(root.get("parentId"), group.getId()));
 
         search = search == null ? "" : search;
@@ -173,7 +176,11 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         if (Boolean.TRUE.equals(exact)) {
             predicates.add(builder.like(root.get("name"), search));
         } else {
-            predicates.add(builder.like(builder.lower(root.get("name")), builder.lower(builder.literal("%" + search + "%"))));
+            search = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+            search = search.replace("*", "%");
+            if (search.isEmpty() || search.charAt(search.length() - 1) != '%') search += "%";
+
+            predicates.add(builder.like(builder.lower(root.get("name")), search.toLowerCase(), '\\'));
         }
 
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session), realm, builder, queryBuilder, root));
@@ -367,6 +374,24 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public Type getType() {
         return Type.valueOf(group.getType());
+    }
+
+    @Override
+    public OrganizationModel getOrganization() {
+        OrganizationEntity organization = group.getOrganization();
+        if (organization == null) return null;
+
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        if (orgProvider == null) return null;
+
+        // Temporarily set session realm context to group's realm to avoid realm mismatch
+        RealmModel currentRealm = session.getContext().getRealm();
+        try {
+            session.getContext().setRealm(realm);
+            return orgProvider.getById(organization.getId());
+        } finally {
+            session.getContext().setRealm(currentRealm);
+        }
     }
 
     @Override

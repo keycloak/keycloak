@@ -292,6 +292,9 @@ public class RealmAdminResource {
         if (clientScope == null) {
             throw new NotFoundException("Client scope not found");
         }
+        
+        ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm);
+        
         realm.addDefaultClientScope(clientScope, defaultScope);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE).resourcePath(session.getContext().getUri()).success();

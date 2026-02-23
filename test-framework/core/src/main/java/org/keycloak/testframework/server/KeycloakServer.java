@@ -1,8 +1,10 @@
 package org.keycloak.testframework.server;
 
+import org.keycloak.testframework.config.Config;
+
 public interface KeycloakServer {
 
-    void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder);
+    void start(KeycloakServerConfigBuilder keycloakServerConfigBuilder, boolean tlsEnabled);
 
     void stop();
 
@@ -10,5 +12,8 @@ public interface KeycloakServer {
 
     String getManagementBaseUrl();
 
-    boolean isTlsEnabled();
+    static boolean getDependencyHotDeployEnabled() {
+        return Boolean.parseBoolean(Config.getValueTypeConfig(KeycloakServer.class, "hot.deploy", "false", String.class));
+    }
+
 }

@@ -91,12 +91,14 @@ import org.keycloak.models.sessions.infinispan.stream.AuthClientSessionSetMapper
 import org.keycloak.models.sessions.infinispan.stream.ClientSessionFilterByUser;
 import org.keycloak.models.sessions.infinispan.stream.CollectionToStreamMapper;
 import org.keycloak.models.sessions.infinispan.stream.GroupAndCountCollectorSupplier;
+import org.keycloak.models.sessions.infinispan.stream.LoginFailuresLifespanUpdate;
 import org.keycloak.models.sessions.infinispan.stream.MapEntryToKeyMapper;
 import org.keycloak.models.sessions.infinispan.stream.RemoveKeyConsumer;
 import org.keycloak.models.sessions.infinispan.stream.SessionPredicate;
 import org.keycloak.models.sessions.infinispan.stream.SessionUnwrapMapper;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
+import org.keycloak.models.sessions.infinispan.stream.ValueIdentityBiFunction;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.storage.UserStorageProviderClusterEvent;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -116,6 +118,7 @@ import org.infinispan.protostream.types.java.CommonTypes;
         schemaPackageName = Marshalling.PROTO_SCHEMA_PACKAGE,
         schemaFilePath = "proto/generated",
         allowNullFields = true,
+        orderedMarshallers = true,
 
         // common-types for UUID
         dependsOn = CommonTypes.class,
@@ -228,6 +231,8 @@ import org.infinispan.protostream.types.java.CommonTypes;
                 SessionUnwrapMapper.class,
                 ClientSessionFilterByUser.class,
                 RemoveKeyConsumer.class,
+                ValueIdentityBiFunction.class,
+                LoginFailuresLifespanUpdate.class,
 
                 // infinispan.module.certificates
                 ReloadCertificateFunction.class,

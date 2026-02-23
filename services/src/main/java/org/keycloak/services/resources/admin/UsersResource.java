@@ -450,7 +450,8 @@ public class UsersResource {
                     return session.users().getUsersCount(realm, parameters);
                 }
             }
-        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
+        } else if (last != null || first != null || email != null || username != null || emailVerified != null
+                || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);

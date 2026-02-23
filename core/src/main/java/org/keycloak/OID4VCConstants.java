@@ -5,13 +5,14 @@ package org.keycloak;
  */
 public class OID4VCConstants {
 
+    public static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
+
     // Sd-JWT constants
     public static final String SDJWT_DELIMITER = "~";
     public static final String SD_HASH = "sd_hash";
     /**
      * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
      */
-    public static final String SD_JWT_VC_FORMAT = "dc+sd-jwt";
     public static final String CLAIM_NAME_SD = "_sd";
     public static final String CLAIM_NAME_SD_HASH_ALGORITHM = "_sd_alg";
     public static final String CLAIM_NAME_SD_UNDISCLOSED_ARRAY = "...";
@@ -22,6 +23,23 @@ public class OID4VCConstants {
     public static final String CLAIM_NAME_ISSUER = "iss";
     public static final String CLAIM_NAME_CNF = "cnf";
     public static final String CLAIM_NAME_JWK = "jwk";
+    public static final String CLAIM_NAME_SUB = "sub";
+    public static final String CLAIM_NAME_VC = "vc";
+    public static final String CLAIM_NAME_VCT = "vct";
+
+    // The JWT identifier uniquely identifies a SD_JWT credential
+    // It is useful for:
+    //   * replay protection of the SD-JWT
+    //   * introspection caches
+    //   * deduplication
+    //   * credential revocation tracking (optional)
+    public static final String CLAIM_NAME_JTI = "jti";
+
+    // The credential subject identifier
+    //   * A stable identifier for the VC subject
+    //   * Would in most cases be the subject's DID
+    //   * Can be mapped to user attributes
+    public static final String CLAIM_NAME_SUBJECT_ID = "id";
 
     public static final String KEYBINDING_JWT_TYP = "kb+jwt";
 
@@ -48,6 +66,42 @@ public class OID4VCConstants {
     public static final String RESPONSE_TYPE_IMG_PNG = "image/png";
     public static final String CREDENTIAL_OFFER_URI_CODE_SCOPE = "credential-offer";
 
+    // OID4VCI - https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html
+    public static final String OPENID_CREDENTIAL = "openid_credential";
+    public static final String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
+    public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
+
     private OID4VCConstants() {
+    }
+
+    /**
+     * from the OID4VCI specification:
+     *
+     * <pre>
+     *  Appendix D.2. Attack Potential Resistance
+     *
+     *  This specification defines the following values for key_storage and user_authentication:
+     *  iso_18045_high: It MUST be used when key storage or user authentication is resistant to attack with attack
+     *  potential "High", equivalent to VAN.5 according to [ISO.18045].
+     *  iso_18045_moderate: It MUST be used when key storage or user authentication is resistant to attack with attack
+     *  potential "Moderate", equivalent to VAN.4 according to [ISO.18045]. iso_18045_enhanced-basic: It MUST be used
+     *  when key storage or user authentication is resistant to attack with attack potential "Enhanced-Basic",
+     *  equivalent to VAN.3 according to [ISO.18045]. iso_18045_basic: It MUST be used when key storage or user
+     *  authentication is resistant to attack with attack potential "Basic", equivalent to VAN.2 according to
+     *  [ISO.18045]. Specifications that extend this list MUST choose collision-resistant values.
+     * </pre>
+     * <p>
+     * this tells us that the KeyAttestationResistance is potentially extendable, and must therefore be handled with
+     * strings
+     */
+    public static class KeyAttestationResistanceLevels {
+
+        public static final String HIGH = "iso_18045_high"; // VAN.5
+
+        public static final String MODERATE = "iso_18045_moderate"; // VAN.4
+
+        public static final String ENHANCED_BASIC = "iso_18045_enhanced-basic"; // VAN.3
+
+        public static final String BASIC = "iso_18045_basic"; // VAN.2
     }
 }

@@ -34,6 +34,7 @@ import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";
 import { MembershipsModal } from "./MembershipsModal";
 import useToggle from "../utils/useToggle";
+import { useGroupResource } from "../context/group-resource/GroupResourceContext";
 
 const UserDetailLink = (user: UserRepresentation) => {
   const { realm } = useRealm();
@@ -52,6 +53,7 @@ const UserDetailLink = (user: UserRepresentation) => {
 
 export const Members = () => {
   const { adminClient } = useAdminClient();
+  const groups = useGroupResource();
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const location = useLocation();
@@ -66,11 +68,7 @@ export const Members = () => {
   const [showMemberships, toggleShowMemberships] = useToggle();
   const { hasAccess } = useAccess();
 
-  useFetch(
-    () => adminClient.groups.findOne({ id: group()!.id! }),
-    setCurrentGroup,
-    [],
-  );
+  useFetch(() => groups.findOne({ id: group()!.id! }), setCurrentGroup, []);
 
   const isManager =
     hasAccess("manage-users") || currentGroup?.access!.manageMembership;
@@ -90,8 +88,7 @@ export const Members = () => {
       first: 0,
       max: count,
     };
-    const subGroups: GroupRepresentation[] =
-      await adminClient.groups.listSubGroups(args);
+    const subGroups: GroupRepresentation[] = await groups.listSubGroups(args);
     nestedGroups = nestedGroups.concat(subGroups);
 
     await Promise.all(
@@ -107,7 +104,7 @@ export const Members = () => {
       return [];
     }
 
-    let members = await adminClient.groups.listMembers({
+    let members = await groups.listMembers({
       id: id!,
       briefRepresentation: true,
       first,
@@ -121,7 +118,7 @@ export const Members = () => {
       );
       await Promise.all(
         subGroups.map((g) =>
-          adminClient.groups.listMembers({
+          groups.listMembers({
             id: g.id!,
             briefRepresentation: true,
           }),
@@ -144,7 +141,7 @@ export const Members = () => {
       {addMembers && (
         <MemberModal
           membersQuery={(first, max) =>
-            adminClient.groups.listMembers({ id: id!, first, max })
+            groups.listMembers({ id: id!, first, max })
           }
           onAdd={async (selectedRows) => {
             try {

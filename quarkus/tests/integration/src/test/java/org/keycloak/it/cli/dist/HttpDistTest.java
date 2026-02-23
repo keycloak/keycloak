@@ -33,6 +33,7 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 import io.quarkus.test.junit.main.Launch;
 import org.junit.jupiter.api.Test;
 
+import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.not;
@@ -66,6 +67,8 @@ public class HttpDistTest {
     public void preventNonNormalizedURLs() {
         when().get("/realms/master").then().statusCode(200);
         when().get("/realms/xxx/../master").then().statusCode(400);
+        given().urlEncodingEnabled(false)
+                .when().get("/realms/master;xxx").then().statusCode(400);
     }
 
     @Test
@@ -73,12 +76,14 @@ public class HttpDistTest {
     public void allowNonNormalizedURLs() {
         when().get("/realms/master").then().statusCode(200);
         when().get("/realms/xxx/../master").then().statusCode(200);
+        given().urlEncodingEnabled(false)
+                .when().get("/realms/master;xxx").then().statusCode(200);
     }
 
     @Test
     @Launch({"start-dev", "--https-certificates-reload-period=wrong"})
     public void testHttpCertificateReloadPeriod(CLIResult result) {
-        result.assertError("Text cannot be parsed to a Duration");
+        result.assertError("Invalid duration");
     }
 
     @Test
@@ -102,5 +107,19 @@ public class HttpDistTest {
         result = dist.run("start", "--https-trust-store-file=" + truststorePath, "--hostname-strict=false");
         result.assertExitCode(-1);
         result.assertMessage("ERROR: No trust store password provided");
+    }
+
+    @Test
+    @Launch({"start-dev", "--shutdown-delay=1s", "--shutdown-timeout=0s"})
+    public void testShutdownParametersValidValues() {
+        // Test that valid shutdown parameters are accepted (including 0s)
+        when().get("/realms/master").then().statusCode(200);
+    }
+
+    @Test
+    public void testShutdownParametersNegativeValue(KeycloakDistribution dist) {
+        // Test that negative values are rejected
+        CLIResult result = dist.run("start-dev", "--shutdown-delay=-1s");
+        result.assertError("Invalid duration '-1s'. Duration must be zero or positive");
     }
 }

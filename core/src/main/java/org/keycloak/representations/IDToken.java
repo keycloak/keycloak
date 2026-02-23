@@ -18,7 +18,6 @@
 package org.keycloak.representations;
 
 import java.util.Map;
-import java.util.Optional;
 
 import org.keycloak.TokenCategory;
 import org.keycloak.util.JsonSerialization;
@@ -129,9 +128,6 @@ public class IDToken extends JsonWebToken {
 
     @JsonProperty(PHONE_NUMBER_VERIFIED)
     protected Boolean phoneNumberVerified;
-
-    @JsonProperty(ADDRESS)
-    protected Map<String, Object> address;
 
     @JsonProperty(UPDATED_AT)
     protected Long updatedAt;
@@ -332,28 +328,30 @@ public class IDToken extends JsonWebToken {
         this.phoneNumberVerified = phoneNumberVerified;
     }
 
-    @JsonProperty("address")
+    @JsonIgnore
     public Map<String, Object> getAddressClaimsMap() {
-        return address;
+        Object value = getOtherClaims().get(ADDRESS);
+        return value instanceof Map ? (Map<String, Object>) value : null;
     }
 
     @JsonIgnore
     public AddressClaimSet getAddress() {
-        return Optional.ofNullable(address).map(a -> {
-                           return JsonSerialization.mapper.convertValue(a, AddressClaimSet.class);
-                       })
-                       .orElse(null);
-    }
+        Object value = getOtherClaims().get(ADDRESS);
+        if (value == null) {
+            return null;
+        }
 
-    public void setAddress(Map<String, Object> address) {
-        this.address = address;
+        return JsonSerialization.mapper.convertValue(value, AddressClaimSet.class);
     }
 
     @JsonIgnore
     public void setAddress(AddressClaimSet address) {
-        this.address = Optional.ofNullable(address)
-                               .map(a -> JsonSerialization.mapper.convertValue(a, Map.class))
-                               .orElse(null);
+        getOtherClaims().put(ADDRESS, JsonSerialization.mapper.convertValue(address, Map.class));
+    }
+
+    @JsonIgnore
+    public void setAddress(Map<String, Object> address) {
+        getOtherClaims().put(ADDRESS, address);
     }
 
     public Long getUpdatedAt() {

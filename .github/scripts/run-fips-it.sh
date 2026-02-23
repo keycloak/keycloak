@@ -1,4 +1,5 @@
-#!/bin/bash -x
+#!/usr/bin/env bash
+set -x
 
 rm -f /etc/system-fips
 dnf install -y java-21-openjdk-devel
@@ -20,19 +21,19 @@ export JAVA_HOME=/etc/alternatives/java_sdk_21
 set -o pipefail
 
 # Build adapter distributions
-./mvnw install -DskipTests -f distribution/pom.xml
+./mvnw -B install -DskipTests -f distribution/pom.xml
 if [ $? -ne 0 ]; then
   exit 1
 fi
 
 # Build app servers
-./mvnw install -DskipTests -Pbuild-app-servers -f testsuite/integration-arquillian/servers/app-server/pom.xml
+./mvnw -B install -DskipTests -Pbuild-app-servers -f testsuite/integration-arquillian/servers/app-server/pom.xml
 if [ $? -ne 0 ]; then
   exit 1
 fi
 
 # Prepare Quarkus distribution with BCFIPS
-./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
+./mvnw -B install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
 if [ $? -ne 0 ]; then
   exit 1
 fi

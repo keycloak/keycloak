@@ -17,17 +17,17 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import org.keycloak.operator.controllers.KeycloakController;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.config.v1.Ingress;
 import io.fabric8.openshift.api.model.config.v1.IngressBuilder;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
-
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.controllers.KeycloakController;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.mockito.Mockito;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

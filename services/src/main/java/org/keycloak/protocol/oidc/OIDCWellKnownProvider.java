@@ -52,7 +52,6 @@ import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpoint;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
-import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorFactory;
 import org.keycloak.protocol.oidc.representations.MTLSEndpointAliases;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
@@ -331,12 +330,9 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private List<String> getAuthorizationDetailsTypesSupported() {
-        return session.getKeycloakSessionFactory()
-                .getProviderFactoriesStream(AuthorizationDetailsProcessor.class)
-                .map(AuthorizationDetailsProcessorFactory.class::cast)
-                .map(factory -> Map.entry(factory.getId(), factory.create(session)))
-                .filter(entry -> entry.getValue().isSupported())
-                .map(Map.Entry::getKey)
+        return session.getAllProviders(AuthorizationDetailsProcessor.class).stream()
+                .filter(AuthorizationDetailsProcessor::isSupported)
+                .map(AuthorizationDetailsProcessor::getSupportedType)
                 .toList();
     }
 

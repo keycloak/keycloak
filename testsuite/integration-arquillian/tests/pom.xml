@@ -395,7 +395,6 @@
                         <systemPropertyVariables>
                             <project.build.directory>${project.build.directory}</project.build.directory>
                             <arquillian.xml>${project.build.directory}/dependency/arquillian.xml</arquillian.xml>
-                            <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
 
                             <auth.server>${auth.server}</auth.server>
                             <auth.server.container>${auth.server.container}</auth.server.container>
@@ -593,12 +592,6 @@
                             <!-- needed when running the embedded Quarkus auth server -->
                             <java.util.concurrent.ForkJoinPool.common.threadFactory>io.quarkus.bootstrap.forkjoin.QuarkusForkJoinWorkerThreadFactory</java.util.concurrent.ForkJoinPool.common.threadFactory>
                         </systemPropertyVariables>
-                        <properties>
-                            <property>
-                                <name>listener</name>
-                                <value>org.keycloak.testsuite.util.TestEventsLogger,org.keycloak.testsuite.util.NonIDERunListener</value>
-                            </property>
-                        </properties>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1500,7 +1493,6 @@
                 <dependency>
                     <groupId>net.bytebuddy</groupId>
                     <artifactId>byte-buddy</artifactId>
-                    <version>${byte-buddy.version}</version>
                 </dependency>
 
                 <dependency>
@@ -1569,16 +1561,12 @@
                 </dependency>-->
 
                 <dependency>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
+                    <groupId>org.jboss.logmanager</groupId>
+                    <artifactId>jboss-logmanager</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-reload4j</artifactId>
                 </dependency>
 
                 <dependency>

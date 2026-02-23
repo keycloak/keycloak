@@ -246,7 +246,7 @@ public class ClientsResource {
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         } catch (ModelValidationException e) {
-            throw new ErrorResponseException("validation error", e.getMessage(), Response.Status.BAD_REQUEST);
+            throw new ErrorResponseException(Errors.INVALID_INPUT, e.getMessage(), Response.Status.BAD_REQUEST);
         }
         catch (ClientTypeException cte) {
             throw ErrorResponse.error(cte.getMessage(), cte.getParameters(), Response.Status.BAD_REQUEST);

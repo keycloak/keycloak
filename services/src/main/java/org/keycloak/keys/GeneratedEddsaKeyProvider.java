@@ -47,11 +47,11 @@ public class GeneratedEddsaKeyProvider extends AbstractEddsaKeyProvider {
         String curveName = model.getConfig().getFirst(GeneratedEddsaKeyProviderFactory.EDDSA_ELLIPTIC_CURVE_KEY);
 
         try {
-            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateEddsaKeyBase64Encoded));
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getMimeDecoder().decode(privateEddsaKeyBase64Encoded));
             KeyFactory kf = KeyFactory.getInstance("EdDSA");
             PrivateKey decodedPrivateKey = kf.generatePrivate(privateKeySpec);
 
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicEddsaKeyBase64Encoded));
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getMimeDecoder().decode(publicEddsaKeyBase64Encoded));
             PublicKey decodedPublicKey = kf.generatePublic(publicKeySpec);
 
             KeyPair keyPair = new KeyPair(decodedPublicKey, decodedPrivateKey);

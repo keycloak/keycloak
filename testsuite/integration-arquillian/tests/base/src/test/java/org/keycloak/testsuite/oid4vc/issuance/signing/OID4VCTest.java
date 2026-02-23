@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -25,7 +26,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -46,14 +46,18 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
+import org.keycloak.OID4VCConstants.KeyAttestationResistanceLevels;
+import org.keycloak.VCFormat;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyUse;
@@ -63,21 +67,22 @@ import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.AttestationValidatorUtil;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtProofValidator;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialSubject;
-import org.keycloak.protocol.oid4vc.model.Format;
-import org.keycloak.protocol.oid4vc.model.ISO18045ResistanceLevel;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
+import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -86,9 +91,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -96,14 +103,17 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.util.AuthorizationDetailsParser;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.HttpStatus;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 
+import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCIssuerEndpointTest.TIME_PROVIDER;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getCredentialIssuer;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getJtiGeneratedIdMapper;
@@ -118,12 +128,15 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 	protected static final String CONTEXT_URL = "https://www.w3.org/2018/credentials/v1";
 	protected static final URI TEST_DID = URI.create("did:web:test.org");
 	protected static final List<String> TEST_TYPES = List.of("VerifiableCredential");
-	protected static final Instant TEST_EXPIRATION_DATE = Instant.ofEpochSecond(2000);
+    protected static final Instant TEST_EXPIRATION_DATE = Instant.ofEpochMilli(Time.currentTimeMillis())
+            .plus(365, ChronoUnit.DAYS)
+            .truncatedTo(ChronoUnit.SECONDS);
 	protected static final Instant TEST_ISSUANCE_DATE = Instant.ofEpochSecond(1000);
 
 	protected static final KeyWrapper RSA_KEY = getRsaKey();
 
-    protected static final String sdJwtTypeNaturalPersonScopeName = "oid4vc_natural_person";
+    protected static final String jwtTypeNaturalPersonScopeName = "oid4vc_natural_person_jwt";
+    protected static final String sdJwtTypeNaturalPersonScopeName = "oid4vc_natural_person_sd";
 
     protected static final String sdJwtTypeCredentialScopeName = "sd-jwt-credential";
 	protected static final String sdJwtTypeCredentialConfigurationIdName = "sd-jwt-credential-config-id";
@@ -131,7 +144,23 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 	protected static final String jwtTypeCredentialScopeName = "jwt-credential";
 	protected static final String jwtTypeCredentialConfigurationIdName = "jwt-credential-config-id";
 
+    protected static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
+
 	protected static final String TEST_CREDENTIAL_MAPPERS_FILE = "/oid4vc/test-credential-mappers.json";
+
+    @BeforeClass
+    public static void beforeClass() {
+        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsProcessor.OID4VCAuthorizationDetailsParser());
+    }
+
+    @Override
+    public void addTestRealms(List<RealmRepresentation> testRealms) {
+        log.debug("Adding test realm for import from testrealm.json");
+        InputStream inputStream = getClass().getResourceAsStream("/testrealm.json");
+        RealmRepresentation testRealm = AbstractAdminTest.loadJson(inputStream, RealmRepresentation.class);
+        testRealms.add(testRealm);
+        configureTestRealm(testRealm);
+    }
 
 	protected static CredentialSubject getCredentialSubject(Map<String, Object> claims) {
 		CredentialSubject credentialSubject = new CredentialSubject();
@@ -158,8 +187,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	public static KeyWrapper getECKey(String keyId) {
 		try {
-			Security.addProvider(new BouncyCastleProvider());
-			KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+			KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", BouncyIntegration.PROVIDER);
 			kpg.initialize(256);
 			var keyPair = kpg.generateKeyPair();
 			KeyWrapper kw = new KeyWrapper();
@@ -182,8 +210,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	public static KeyWrapper getEd25519Key(String keyId) {
 		try {
-			Security.addProvider(new BouncyCastleProvider());
-			KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519", "BC");
+			KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519", BouncyIntegration.PROVIDER);
 			var keyPair = kpg.generateKeyPair();
 			KeyWrapper kw = new KeyWrapper();
 			kw.setPrivateKey(keyPair.getPrivate());
@@ -326,9 +353,12 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	public List<ProtocolMapperRepresentation> getProtocolMappers(String scopeName) {
 		return List.of(
+                getSubjectIdMapper(CLAIM_NAME_SUBJECT_ID, UserModel.DID),
 				getUserAttributeMapper("email", "email"),
 				getUserAttributeMapper("firstName", "firstName"),
 				getUserAttributeMapper("lastName", "lastName"),
+				getUserAttributeMapper("address.street_address", "address_street_address"),
+				getUserAttributeMapper("address.locality", "address_locality"),
 				getJtiGeneratedIdMapper(),
 				getStaticClaimMapper(scopeName),
 				getIssuedAtTimeMapper("iat", ChronoUnit.HOURS.name(), "COMPUTE"),
@@ -399,6 +429,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
     public static UserRepresentation getUserRepresentation(
             String fullName,
+            Map<String, String> attributes,
             List<String> realmRoles,
             Map<String, List<String>> clientRoles
     ) {
@@ -415,8 +446,12 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
                 .firstName(firstName)
                 .lastName(lastName)
                 .password("password")
+                .addAttribute("address_street_address", "221B Baker Street")
+                .addAttribute("address_locality", "London")
                 .role("account", "manage-account")
                 .role("account", "view-profile");
+
+        attributes.forEach(userBuilder::addAttribute);
 
         // When Keycloak issues a token for a user and client:
         //
@@ -464,7 +499,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
         return getBearerTokenCodeFlow(oauthClient, client, username, scope).getAccessToken();
     }
 
-    protected AccessTokenResponse getBearerToken(OAuthClient oauthClient, String authCode, AuthorizationDetail... authDetail) {
+    protected AccessTokenResponse getBearerToken(OAuthClient oauthClient, String authCode, OID4VCAuthorizationDetail... authDetail) {
         AccessTokenRequest accessTokenRequest = oauthClient.accessTokenRequest(authCode);
         if (authDetail != null) {
             accessTokenRequest.authorizationDetails(Arrays.asList(authDetail));
@@ -523,6 +558,18 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 		);
 		return protocolMapperRepresentation;
 	}
+
+    protected ProtocolMapperRepresentation getSubjectIdMapper(String subjectProperty, String attributeName) {
+        ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+        protocolMapperRepresentation.setName(attributeName + "-mapper");
+        protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+        protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+        protocolMapperRepresentation.setProtocolMapper("oid4vc-subject-id-mapper");
+        protocolMapperRepresentation.setConfig(Map.of(
+                "claim.name", subjectProperty,
+                "userAttribute", attributeName));
+        return protocolMapperRepresentation;
+    }
 
 	protected ProtocolMapperRepresentation getIssuedAtTimeMapper(String subjectProperty, String truncateToTimeUnit, String valueSource) {
 		ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
@@ -640,23 +687,33 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 													  KeyWrapper attestationKey,
 													  JWK proofJwk,
 													  String cNonce) {
-		return createValidAttestationJwt(session, attestationKey, List.of(proofJwk), cNonce);
-	}
+        return createValidAttestationJwt(session, attestationKey, List.of(proofJwk), cNonce,
+                AttestationValidatorUtil.ATTESTATION_JWT_TYP);
+    }
 
 	protected static String createValidAttestationJwt(KeycloakSession session,
 													  KeyWrapper attestationKey,
 													  List<JWK> proofJwks,
 													  String cNonce) {
+        return createValidAttestationJwt(session, attestationKey, proofJwks, cNonce,
+                AttestationValidatorUtil.ATTESTATION_JWT_TYP);
+    }
+
+    protected static String createValidAttestationJwt(KeycloakSession session,
+                                                      KeyWrapper attestationKey,
+                                                      List<JWK> proofJwks,
+                                                      String cNonce,
+                                                      String typ) {
 		try {
 			KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
 			payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
 			payload.setNonce(cNonce);
 			payload.setAttestedKeys(proofJwks);
-			payload.setKeyStorage(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
-			payload.setUserAuthentication(List.of(ISO18045ResistanceLevel.HIGH.getValue()));
+			payload.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH));
+			payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.HIGH));
 
 			return new JWSBuilder()
-					.type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
+					.type(typ)
 					.kid(attestationKey.getKid())
 					.jsonContent(payload)
 					.sign(new ECDSASignatureSignerContext(attestationKey));
@@ -667,11 +724,14 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	protected static VCIssuanceContext createVCIssuanceContext(KeycloakSession session) {
 		VCIssuanceContext context = new VCIssuanceContext();
+		KeyAttestationsRequired keyAttestationsRequired = new KeyAttestationsRequired();
+		keyAttestationsRequired.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH,
+													  KeyAttestationResistanceLevels.MODERATE));
 		SupportedCredentialConfiguration config = new SupportedCredentialConfiguration()
-				.setFormat(Format.SD_JWT_VC)
+				.setFormat(VCFormat.SD_JWT_VC)
 				.setVct("https://credentials.example.com/test-credential")
 				.setCryptographicBindingMethodsSupported(List.of("jwk"))
-				.setProofTypesSupported(ProofTypesSupported.parse(session, List.of("ES256")));
+				.setProofTypesSupported(ProofTypesSupported.parse(session, keyAttestationsRequired, List.of("ES256")));
 
 		context.setCredentialConfig(config)
 				.setCredentialRequest(new CredentialRequest());
@@ -718,8 +778,8 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 		Map<String, Object> payload = new HashMap<>();
 		payload.put("iat", TIME_PROVIDER.currentTimeSeconds());
 		payload.put("attested_keys", List.of(proofJwk));
-		payload.put("key_storage", List.of(ISO18045ResistanceLevel.HIGH.getValue()));
-		payload.put("user_authentication", List.of(ISO18045ResistanceLevel.HIGH.getValue()));
+		payload.put("key_storage", List.of(KeyAttestationResistanceLevels.HIGH));
+		payload.put("user_authentication", List.of(KeyAttestationResistanceLevels.HIGH));
 		payload.put("nonce", cNonce);
 
 		return payload;

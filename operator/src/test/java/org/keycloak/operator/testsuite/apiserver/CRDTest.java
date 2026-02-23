@@ -17,26 +17,27 @@
 
 package org.keycloak.operator.testsuite.apiserver;
 
+import java.io.FileNotFoundException;
+
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
+import org.keycloak.operator.testsuite.integration.BaseOperatorTest;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+import org.keycloak.operator.update.UpdateStrategy;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubeapitest.junit.EnableKubeAPIServer;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.Resource;
-
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-
-import java.io.FileNotFoundException;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
-import org.keycloak.operator.testsuite.integration.BaseOperatorTest;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
-import org.keycloak.operator.update.UpdateStrategy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,6 +52,25 @@ public class CRDTest {
     @BeforeAll
     public static void before() throws FileNotFoundException {
         BaseOperatorTest.createCRDs(client);
+    }
+
+    @Test
+    public void testOIDCCLientWithoutRequiredFields() {
+        KeycloakOIDCClient cr = new KeycloakOIDCClientBuilder()
+                .withNewMetadata()
+                    .withName("invalid-client")
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .build();
+
+        var eMsg = assertThrows(KubernetesClientException.class, () -> client.resource(cr).create()).getMessage();
+        assertThat(eMsg).contains("spec.keycloakCRName: Required value", "spec.client: Required value", "spec.realm: Required value");
+    }
+
+    @Test
+    public void testOIDCCLient() {
+        roundTrip("/test-serialization-keycloak-oidc-client-cr.yml", KeycloakOIDCClient.class);
     }
 
     @Test
@@ -108,7 +128,7 @@ public class CRDTest {
                 .build();
 
         var eMsg = assertThrows(KubernetesClientException.class, () -> client.resource(cr).create()).getMessage();
-        assertThat(eMsg).contains("spec.update: Invalid value: \"object\": The 'revision' field is required when 'Explicit' strategy is used.");
+        assertThat(eMsg).contains("The 'revision' field is required when 'Explicit' strategy is used.");
     }
 
     private <T extends HasMetadata> void roundTrip(String resourceFile, Class<T> type) {

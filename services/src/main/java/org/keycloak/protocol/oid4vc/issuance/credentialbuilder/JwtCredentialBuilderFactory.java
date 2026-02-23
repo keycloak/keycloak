@@ -20,10 +20,10 @@ package org.keycloak.protocol.oid4vc.issuance.credentialbuilder;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.keycloak.VCFormat;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.OffsetTimeProvider;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.provider.ProviderConfigProperty;
 
 /**
@@ -35,7 +35,7 @@ public class JwtCredentialBuilderFactory implements CredentialBuilderFactory {
 
     @Override
     public String getSupportedFormat() {
-        return Format.JWT_VC;
+        return VCFormat.JWT_VC;
     }
 
     @Override

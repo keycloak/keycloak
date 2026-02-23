@@ -29,6 +29,16 @@ export class Workflows extends Resource<{ realm?: string }> {
     catchNotFound: true,
   });
 
+  public scheduled = this.makeRequest<
+    { userId: string },
+    WorkflowRepresentation[]
+  >({
+    method: "GET",
+    path: "/scheduled/{userId}",
+    urlParamKeys: ["userId"],
+    catchNotFound: true,
+  });
+
   public update = this.makeUpdateRequest<
     { id: string },
     WorkflowRepresentation,

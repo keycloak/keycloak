@@ -33,6 +33,7 @@ import org.keycloak.models.sessions.infinispan.entities.RemoteUserSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.RootAuthenticationSessionEntity;
 
 import org.infinispan.commons.dataconversion.MediaType;
+import org.infinispan.commons.util.TimeQuantity;
 import org.infinispan.configuration.cache.AbstractStoreConfiguration;
 import org.infinispan.configuration.cache.BackupConfiguration;
 import org.infinispan.configuration.cache.BackupFailurePolicy;
@@ -253,6 +254,8 @@ public final class CacheConfigurator {
             builder.clustering().hash().numOwners(1);
             if (sessionCaches.contains(name)) {
                 configureSessionExpirationReaper(builder);
+                // Disable state-transfer to reduce the overhead of new nodes joining
+                builder.clustering().stateTransfer().fetchInMemoryState(false);
             }
         }
     }
@@ -304,6 +307,8 @@ public final class CacheConfigurator {
                 builder.clustering().hash().numOwners(1);
             }
             configureSessionExpirationReaper(builder);
+            // Disable state-transfer to reduce the overhead of new nodes joining
+            builder.clustering().stateTransfer().fetchInMemoryState(false);
         }
     }
 
@@ -390,13 +395,17 @@ public final class CacheConfigurator {
     }
 
     private static ConfigurationBuilder remoteCacheConfigurationBuilder(String name, Config.Scope config, String[] sites, Class<?> indexedEntity, long expirationWakeupPeriodMillis) {
+        return remoteCacheConfigurationBuilder(name, config, sites, indexedEntity, TimeQuantity.valueOf(expirationWakeupPeriodMillis));
+    }
+
+    private static ConfigurationBuilder remoteCacheConfigurationBuilder(String name, Config.Scope config, String[] sites, Class<?> indexedEntity, TimeQuantity expirationWakeupPeriod) {
         var builder = new ConfigurationBuilder();
         builder.clustering().cacheMode(CacheMode.DIST_SYNC);
         builder.clustering().hash().numOwners(Math.max(MIN_NUM_OWNERS_REMOTE_CACHE, config.getInt(numOwnerConfigKey(name), MIN_NUM_OWNERS_REMOTE_CACHE)));
         builder.clustering().stateTransfer().chunkSize(STATE_TRANSFER_CHUNK_SIZE);
         builder.encoding().mediaType(MediaType.APPLICATION_PROTOSTREAM);
         builder.statistics().enable();
-        builder.expiration().enableReaper().wakeUpInterval(expirationWakeupPeriodMillis);
+        builder.expiration().enableReaper().wakeUpInterval(expirationWakeupPeriod.longValue());
 
         if (indexedEntity != null) {
             builder.indexing().enable().addIndexedEntities(Marshalling.protoEntity(indexedEntity));

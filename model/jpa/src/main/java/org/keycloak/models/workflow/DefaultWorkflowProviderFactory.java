@@ -4,17 +4,23 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel.RealmRemovedEvent;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.provider.ProviderEvent;
+import org.keycloak.provider.ProviderEventListener;
 
-public class DefaultWorkflowProviderFactory implements WorkflowProviderFactory<DefaultWorkflowProvider> {
+public class DefaultWorkflowProviderFactory implements WorkflowProviderFactory<DefaultWorkflowProvider>, ProviderEventListener {
 
     static final String ID = "default";
-    private static final long DEFAULT_EXECUTOR_TASK_TIMEOUT = 1000L;
+    private static final long DEFAULT_EXECUTOR_TASK_TIMEOUT = 5000L;
 
     private WorkflowExecutor executor;
     private boolean blocking;
@@ -38,13 +44,43 @@ public class DefaultWorkflowProviderFactory implements WorkflowProviderFactory<D
     @Override
     public void init(Scope config) {
         blocking = config.getBoolean("executorBlocking", false);
-        taskTimeout = config.getLong("executorTaskTimeout", DEFAULT_EXECUTOR_TASK_TIMEOUT);
+        String executorTimeoutStr = config.get("executorTaskTimeout");
+        taskTimeout = executorTimeoutStr == null ? DEFAULT_EXECUTOR_TASK_TIMEOUT : DurationConverter.parseDuration(executorTimeoutStr).toMillis();
     }
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
         this.executor = new WorkflowExecutor(getTaskExecutor(factory), blocking, taskTimeout);
+        factory.register(this);
     }
+
+    @Override
+    public void onEvent(ProviderEvent event) {
+        if (event instanceof PostMigrationEvent ev) {
+            KeycloakModelUtils.runJobInTransaction(ev.getFactory(), session ->
+                    session.realms().getRealmsStream().forEach(realm -> {
+                        session.getContext().setRealm(realm);
+                        DefaultWorkflowProvider provider = create(session);
+
+                        try {
+                            provider.getWorkflows().forEach(provider::rescheduleWorkflow);
+                        } finally {
+                            session.getContext().setRealm(null);
+                            provider.close();
+                        }
+                    }));
+        } else if (event instanceof RealmRemovedEvent ev) {
+            KeycloakSession session = ev.getKeycloakSession();
+            DefaultWorkflowProvider provider = create(session);
+
+            try {
+                provider.getWorkflows().forEach(provider::cancelScheduledWorkflow);
+            } finally {
+                provider.close();
+            }
+        }
+    }
+
 
     @Override
     public void close() {

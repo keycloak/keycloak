@@ -106,20 +106,82 @@ Once started copy/paste the totp secret and press enter. To use a new secret jus
 Mail server
 -----------
 
-To start a test mail server for testing email sending run:
+The Keycloak testsuite includes a standalone mock mail server for testing email-related features such as email verification,
+password reset, and other email notifications.
 
-    mvn exec:java -Pmail-server
-    
-or run org.keycloak.testsuite.MailServer from your favourite IDE!
+**Prerequisite:**
 
-To configure Keycloak to use the above server, enter the following values in the realm configuration in the tab **Email**:
+- Keycloak server running (see [Keycloak server](#keycloak-server) section above)
 
-| Field | Value             | 
-|-------|-------------------|
-| From  | auto@keycloak.org |
-| Host  | localhost         |
-| Port  | 3025              |
+### Running the Mail Server
 
+To start the embedded test mail server for local development and testing:
+
+Start the mail server:
+
+```
+./mvnw -f testsuite/utils/pom.xml exec:java -Pmail-server
+```
+
+or run `org.keycloak.testsuite.MailServer` from your favourite IDE!
+
+The mail server will start on `localhost:3025` and display all received emails in the console.
+
+### Configuring Keycloak
+
+To configure Keycloak to use the test mail server:
+
+1. Open your browser and login to the Keycloak Admin Console with admin credentials.
+
+2. Select the realm you want to configure from the realm dropdown in the top-left corner (e.g., `master` or your test
+   realm).
+
+3. In the left sidebar, navigate to **Realm settings**.
+
+4. Click on the **Email** tab.
+
+6. Enter the following SMTP configuration values:
+
+   | Field | Value               | Description                  |
+   |-------|---------------------|------------------------------|
+   | From  | `auto@keycloak.org` | Email address used as sender |
+   | Host  | `localhost`         | Mail server hostname         |
+   | Port  | `3025`              | Mail server port             |
+
+7. Configure optional settings:
+    - **Enable StartTLS**: Check this box (Yes), or leave it unchecked (No)
+    - **Enable Authentication**: Leave unchecked (No)
+    - **Enable SSL**: Leave unchecked (No)
+
+8. Click **Save** to apply the configuration.
+
+9. Optional Test: Configure an email address for the admin user if not configured already. Then return to the **Email** tab and click **Test connection** to verify the mail server is reachable. You should see a success message and the test email
+   will appear in the mail server console output.
+
+### Testing Email Features
+
+Once configured, you can test various email-related features:
+
+- **Email Verification**:
+    1. In **Realm settings** → **Login** tab, enable "Verify email".
+    2. Register a new user or update an existing user's email.
+    3. Check the mail server console for the verification email.
+
+- **Password Reset**:
+    1. In **Realm settings** → **Login** tab, enable "Forgot password".
+    2. Go to the login page and click "Forgot Password?".
+    3. Enter a user's email and check the mail server console.
+
+- **Update Email**:
+    1. Change a user's email address in the Account Console.
+    2. If email verification is enabled, check the mail server console for the confirmation email.
+
+- **Event Notifications**:
+    1. Configure email event listeners in **Realm settings** → **Events**
+    2. Trigger events and check the mail server console for notifications.
+
+All emails sent by Keycloak will be captured by the test mail server and displayed in the console output with full
+content including subject, recipient, and message body.
 
 LDAP server
 -----------

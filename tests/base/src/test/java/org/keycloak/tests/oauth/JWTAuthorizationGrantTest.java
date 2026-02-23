@@ -28,6 +28,7 @@ public class JWTAuthorizationGrantTest extends AbstractJWTAuthorizationGrantTest
                     .providerId(JWTAuthorizationGrantIdentityProviderFactory.PROVIDER_ID)
                     .alias(IDP_ALIAS)
                     .setAttribute(IdentityProviderModel.ISSUER, IDP_ISSUER)
+                    .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.TRUE.toString())
                     .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
                     .build());
             return realm;

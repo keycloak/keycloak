@@ -34,7 +34,7 @@ We regularly test {project_name} with the following configuration:
 using ROSA HCP.
 
 ** At least one worker node for each availability-zone
-** OpenShift version 4.17.
+** OpenShift version 4.18.
 
 * Amazon Aurora PostgreSQL database
 ** High availability with a primary DB instance in one availability zone, and synchronously replicated readers in the other availability zones
@@ -87,7 +87,7 @@ Read more on each item in the <@links.ha id="single-cluster-building-blocks" /> 
 
 We have successfully scaled to the following load:
 
-* 100,000 users
+* 30,000,000 users
 * 1,000 logins, with 20,000 token refreshes per second.
 
 We used the following setup for this:
@@ -97,11 +97,20 @@ We used the following setup for this:
 * Amazon Aurora PostgreSQL multi-az database deployed in two availability zones
 ** Instance type: `db.r8g.16xlarge` for both reader and writer instance
 
-As the load increased, the CPU usage increased linearly.
+As the load increased, the CPU usage increased linearly. It is possible that {project_name} can scale beyond the values
+documented here, however the resources (CPU, Memory) available to {project_name} and the database need to be scaled accordingly.
 
 </@profile.ifCommunity>
 
 See the <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" /> {section} for more information.
+
+<@profile.ifCommunity>
+[NOTE]
+====
+The link:{keycloak_benchmark_link}[{keycloak_benchmark_name}] can be used to ensure that deployments are able to handle
+the anticipated workload before rolling out to production.
+====
+</@profile.ifCommunity>
 
 [#single-cluster-limitations]
 == Limitations

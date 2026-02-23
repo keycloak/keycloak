@@ -17,6 +17,8 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.io.File;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
@@ -28,10 +30,16 @@ import org.keycloak.it.junit5.extension.Storage;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.io.TempDir;
+import org.testcontainers.shaded.com.google.common.io.Files;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
 @RawDistOnly(reason = "Not possible to mount files using docker.")
@@ -182,6 +190,24 @@ public class ClusterConfigDistTest {
     @Launch({ "start-dev", "--cache-config-file=cache-ispn-custom-cache.xml" })
     void testCustomCacheConfigurationWarning(CLIResult result) {
         result.assertMessage(WARN_DEFAULT_CACHE_MUTATIONS);
+    }
+
+    @Test
+    void testAbsoluteCacheFile(KeycloakDistribution dist, @TempDir Path tempDir) throws Exception {
+        File customCacheFile = tempDir.resolve("my-custom-cache.xml").toFile();
+        File missingCacheFile = tempDir.resolve("my-missing-cache.xml").toFile();
+        try (InputStream is = ClusterConfigDistTest.class.getResourceAsStream("/cache-ispn-custom-cache.xml")) {
+            Files.write(is.readAllBytes(), customCacheFile);
+        }
+
+        LaunchResult result = dist.run("start-dev", "--cache-config-file=" + customCacheFile.getAbsolutePath());
+        Assertions.assertEquals(0, result.exitCode());
+        MatcherAssert.assertThat(result.getOutput(), Matchers.containsString(WARN_DEFAULT_CACHE_MUTATIONS));
+
+        String absolutePath = missingCacheFile.getAbsolutePath();
+        result = dist.run("start-dev", "--cache-config-file=" + absolutePath);
+        Assertions.assertEquals(2, result.exitCode());
+        MatcherAssert.assertThat(result.getErrorOutput(), Matchers.matchesRegex("Cache config file '" + absolutePath + "' does not exist"));
     }
 
     @Test

@@ -97,8 +97,7 @@ public class DisplayObject {
             // lets say we have an invalid value we should not kill the whole execution if just the display value is
             // broken
             LOGGER.debug(e.getMessage(), e);
-            LOGGER.info(String.format("Failed to parse display-metadata for credential: %s", credentialScope.getName()),
-                        e.getMessage());
+            LOGGER.warn("Failed to parse display-metadata for credential '{}': {}", credentialScope.getName(), e.getMessage());
             return null;
         }
     }

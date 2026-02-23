@@ -44,9 +44,16 @@ public interface OrganizationResource {
     @Path("members")
     OrganizationMembersResource members();
 
+    /**
+     * @since Keycloak server 26.5.0.
+     * @return {@link OrganizationInvitationsResource} to manage organization invitations
+     */
     @Path("invitations")
     OrganizationInvitationsResource invitations();
 
     @Path("identity-providers")
     OrganizationIdentityProvidersResource identityProviders();
+
+    @Path("groups")
+    OrganizationGroupsResource groups();
 }

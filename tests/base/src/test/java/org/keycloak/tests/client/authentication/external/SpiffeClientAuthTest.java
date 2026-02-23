@@ -65,7 +65,7 @@ public class SpiffeClientAuthTest extends AbstractBaseClientAuthTest {
 
     @Test
     public void testInvalidTrustDomain() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(SpiffeIdentityProviderConfig.TRUST_DOMAIN_KEY, "spiffe://different-domain");
         });
 

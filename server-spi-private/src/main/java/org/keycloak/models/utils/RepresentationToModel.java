@@ -81,7 +81,9 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationDomainModel;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
@@ -630,7 +632,11 @@ public class RepresentationToModel {
                         existingProtocolMappers.remove(protocolNameKey);
 
                 } else {
-                    resource.addProtocolMapper(toModel(protocolMapperRepresentation));
+                    try {
+                        resource.addProtocolMapper(toModel(protocolMapperRepresentation));
+                    } catch (ModelDuplicateException e) {
+                        throw new ModelValidationException("Cannot add protocol mapper '%s'. %s".formatted(protocolMapperRepresentation.getName(), e.getMessage()));
+                    }
                 }
             }
 

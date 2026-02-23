@@ -24,6 +24,9 @@ The following are the command options:
 *establish-connection-timeout-millis*::
 Maximum time in milliseconds until establishing a connection times out. Default: Not set.
 
+*connection-request-timeout-millis*::
+Maximum time in milliseconds to obtain a connection for a request. Default: 5000ms
+
 *socket-timeout-millis*::
 Maximum time of inactivity between two data packets until a socket connection times out, in milliseconds. Default: 5000ms
 

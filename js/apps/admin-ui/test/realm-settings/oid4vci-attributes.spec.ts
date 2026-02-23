@@ -5,11 +5,38 @@ import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.js";
 import { SERVER_URL, ROOT_PATH } from "../utils/constants.ts";
 import { login } from "../utils/login.js";
+import { selectItem } from "../utils/form.ts";
+
+test("OID4VCI section is hidden in Tokens tab when verifiable credentials are disabled", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed();
+
+  await adminClient.updateRealm(testBed.realm, {
+    verifiableCredentialsEnabled: false,
+  });
+
+  try {
+    await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+    const tokensTab = page.getByTestId("rs-tokens-tab");
+    await tokensTab.click();
+
+    const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+    await expect(oid4vciJumpLink).toBeHidden();
+  } finally {
+    await adminClient.updateRealm(testBed.realm, {
+      verifiableCredentialsEnabled: true,
+    });
+  }
+});
 
 test("OID4VCI section visibility and jump link in Tokens tab", async ({
   page,
 }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -28,7 +55,9 @@ test("OID4VCI section visibility and jump link in Tokens tab", async ({
 test("should render fields and save values with correct attribute keys", async ({
   page,
 }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -62,7 +91,9 @@ test("should render fields and save values with correct attribute keys", async (
 });
 
 test("should persist values after page refresh", async ({ page }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -114,7 +145,9 @@ test("should persist values after page refresh", async ({ page }) => {
 });
 
 test("should validate form fields and save valid values", async ({ page }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -172,7 +205,9 @@ test("should validate form fields and save valid values", async ({ page }) => {
 test("should show validation error for values below minimum threshold", async ({
   page,
 }) => {
-  await using testBed = await createTestBed();
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
   await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
 
   const tokensTab = page.getByTestId("rs-tokens-tab");
@@ -199,4 +234,198 @@ test("should show validation error for values below minimum threshold", async ({
   const validationErrorText =
     "Please ensure the OID4VCI attribute fields are filled with values 30 seconds or greater.";
   await expect(page.getByText(validationErrorText).first()).toBeVisible();
+});
+
+test("should save signed metadata, encryption, and batch issuance settings", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const signedMetadataSwitch = page.getByTestId(
+    "attributes.oid4vci.signed_metadata.enabled",
+  );
+  await signedMetadataSwitch.click({ force: true });
+
+  const signedMetadataLifespan = page.getByTestId(
+    "attributes.oid4vci🍺signed_metadata🍺lifespan",
+  );
+  await signedMetadataLifespan.fill("120");
+
+  const signedMetadataAlgField = page.locator(
+    '[id="attributes.oid4vci🍺signed_metadata🍺alg"]',
+  );
+  await selectItem(page, signedMetadataAlgField, "ES256");
+
+  const requireEncryptionSwitch = page.getByTestId(
+    "attributes.oid4vci.encryption.required",
+  );
+  await requireEncryptionSwitch.click({ force: true });
+
+  const batchIssuanceField = page.locator(
+    '[id="attributes.oid4vci🍺batch_credential_issuance🍺batch_size"]',
+  );
+  const batchIssuanceInput = batchIssuanceField.locator("input");
+  await batchIssuanceInput.fill("5");
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.signed_metadata.enabled"]).toBe(
+    "true",
+  );
+  expect(realmData?.attributes?.["oid4vci.signed_metadata.lifespan"]).toBe(
+    "7200",
+  );
+  expect(realmData?.attributes?.["oid4vci.signed_metadata.alg"]).toBe("ES256");
+  expect(realmData?.attributes?.["oid4vci.encryption.required"]).toBe("true");
+  expect(
+    realmData?.attributes?.["oid4vci.batch_credential_issuance.batch_size"],
+  ).toBe("5");
+});
+
+test("should save time-based correlation mitigation settings", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const strategyField = page.locator(
+    '[id="attributes.oid4vci🍺time🍺claims🍺strategy"]',
+  );
+  await selectItem(page, strategyField, "Randomize");
+
+  const randomizationWindowField = page.locator(
+    '[id="attributes.oid4vci🍺time🍺randomize🍺window🍺seconds"]',
+  );
+  const randomizationWindowInput = randomizationWindowField.locator("input");
+  await randomizationWindowInput.fill("3600");
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  await selectItem(page, strategyField, "Round");
+
+  const roundingUnitField = page.locator(
+    '[id="attributes.oid4vci🍺time🍺round🍺unit"]',
+  );
+  await selectItem(page, roundingUnitField, "Minutes");
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.time.claims.strategy"]).toBe("round");
+  expect(realmData?.attributes?.["oid4vci.time.randomize.window.seconds"]).toBe(
+    "3600",
+  );
+  expect(realmData?.attributes?.["oid4vci.time.round.unit"]).toBe("MINUTE");
+});
+
+test("should save Deflate Compression setting", async ({ page }) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const encryptionSwitch = page.getByTestId(
+    "attributes.oid4vci.encryption.required",
+  );
+  await encryptionSwitch.click({ force: true });
+
+  const deflateSwitch = page.getByTestId(
+    "attributes.oid4vci.request.zip.algorithms",
+  );
+  await deflateSwitch.click({ force: true });
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  let realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
+    "true",
+  );
+
+  await deflateSwitch.click({ force: true });
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vci.request.zip.algorithms"]).toBe(
+    "false",
+  );
+});
+
+test("should save Attestation Trust settings (Trusted Keys and IDs)", async ({
+  page,
+}) => {
+  await using testBed = await createTestBed({
+    verifiableCredentialsEnabled: true,
+  });
+  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
+
+  const tokensTab = page.getByTestId("rs-tokens-tab");
+  await tokensTab.click();
+
+  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
+  await oid4vciJumpLink.click();
+
+  const trustedKeyIdsInput = page.getByTestId("trusted-key-ids");
+  const trustedKeysInput = page.getByTestId("trusted-keys");
+
+  const testKeyIds = "kid-1, kid-2, kid-3";
+  const testTrustedKeysJson =
+    '[{"kty":"RSA","kid":"external-key","n":"...","e":"AQAB"}]';
+
+  await expect(trustedKeyIdsInput).toBeVisible();
+  await expect(trustedKeysInput).toBeVisible();
+
+  await trustedKeyIdsInput.fill(testKeyIds);
+  await trustedKeysInput.fill(testTrustedKeysJson);
+
+  await page.getByTestId("tokens-tab-save").click();
+  await expect(
+    page.getByText("Realm successfully updated").first(),
+  ).toBeVisible();
+
+  const realmData = await adminClient.getRealm(testBed.realm);
+  expect(realmData?.attributes?.["oid4vc.attestation.trusted_key_ids"]).toBe(
+    testKeyIds,
+  );
+  expect(realmData?.attributes?.["oid4vc.attestation.trusted_keys"]).toBe(
+    testTrustedKeysJson,
+  );
 });

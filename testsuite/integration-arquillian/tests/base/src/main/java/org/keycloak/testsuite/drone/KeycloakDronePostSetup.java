@@ -106,6 +106,15 @@ public class KeycloakDronePostSetup {
 
     private void configureHtmlUnitDriver(WebDriver driver) {
         if (driver instanceof HtmlUnitDriver htmlUnitDriver) {
+            var options = htmlUnitDriver.getWebClient().getOptions();
+
+            // Configure timeout for better compatibility with slower CI environments (especially Windows)
+            // Default 60 seconds should be sufficient for most scenarios including broker flows with OTP
+            int timeoutMillis = Integer.parseInt(System.getProperty("htmlunit.timeout", "60000"));
+            log.infof("Setting HtmlUnit timeout: %d ms", timeoutMillis);
+            options.setTimeout(timeoutMillis);
+
+            // Configure TLS settings if provided
             final var keystore = System.getProperty(HTML_UNIT_SSL_KEYSTORE_PROP);
             final var keystorePassword = System.getProperty(HTML_UNIT_SSL_KEYSTORE_PASSWORD_PROP);
             final var keystoreType = System.getProperty(HTML_UNIT_SSL_KEYSTORE_TYPE_PROP);
@@ -115,7 +124,6 @@ public class KeycloakDronePostSetup {
             if (keystore != null && keystorePassword != null && keystoreType != null) {
                 log.infof("Keystore '%s', password '%s', type '%s'", keystore, keystorePassword, keystoreType);
 
-                var options = htmlUnitDriver.getWebClient().getOptions();
                 options.setUseInsecureSSL(true);
                 try {
                     options.setSSLClientCertificateKeyStore(new File(keystore).toURI().toURL(), keystorePassword, keystoreType);

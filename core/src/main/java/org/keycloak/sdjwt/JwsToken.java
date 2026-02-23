@@ -49,16 +49,16 @@ public abstract class JwsToken {
 
     protected JWSInput jwsInput;
 
-    public JwsToken(String jws) {
+    protected JwsToken(String jws) {
         parse(jws);
     }
 
-    public JwsToken(JWSHeader jwsHeader, ObjectNode payload) {
+    protected JwsToken(JWSHeader jwsHeader, ObjectNode payload) {
         this.jwsHeader = jwsHeader;
         this.payload = payload;
     }
 
-    public JwsToken(JWSHeader jwsHeader, ObjectNode payload, SignatureSignerContext signerContext) {
+    protected JwsToken(JWSHeader jwsHeader, ObjectNode payload, SignatureSignerContext signerContext) {
         this.jwsHeader = jwsHeader;
         this.payload = payload;
         this.jws = sign(signerContext);

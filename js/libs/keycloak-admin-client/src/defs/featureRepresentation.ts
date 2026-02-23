@@ -3,6 +3,7 @@ export default interface FeatureRepresentation {
   label: string;
   type: FeatureType;
   enabled: boolean;
+  deprecated?: boolean;
   dependencies: string[];
 }
 

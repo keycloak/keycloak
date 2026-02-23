@@ -37,8 +37,10 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.JsonUtils.splitClaimPath;
@@ -275,6 +277,39 @@ public class OIDCAttributeMapperHelper {
         return null;
     }
 
+    /**
+     * Get or initialize the organization claim as a mutable Map for composition between organization mappers.
+     * Handles conversion from OrganizationMembershipMapper output to Map structure that
+     * OrganizationGroupMembershipMapper can add to. Supports ObjectNode (JSON type), Collection or String
+     * (String type), existing Map, or creates empty Map if null.
+     *
+     * @param token the token
+     * @param claimName the name of the organization claim
+     * @return a mutable Map that can be manipulated; changes will be reflected in the token
+     */
+    public static Map<String, Object> getOrInitializeOrganizationClaimAsMap(IDToken token, String claimName) {
+        Object existingClaim = token.getOtherClaims().get(claimName);
+        Map<String, Object> result;
+
+        if (existingClaim instanceof ObjectNode) {
+            // OrganizationMembershipMapper with JSON_TYPE="JSON"
+            result = JsonSerialization.mapper.convertValue(existingClaim, Map.class);
+        } else if (existingClaim instanceof Collection || existingClaim instanceof String) {
+            // OrganizationMembershipMapper with String type - single alias or Collection of aliases
+            result = new HashMap<>();
+            Stream<?> items = existingClaim instanceof Collection ? ((Collection<?>) existingClaim).stream() : Stream.of(existingClaim);
+            items.filter(Objects::nonNull).forEach(item -> result.put(item.toString(), new HashMap<>()));
+        } else if (existingClaim instanceof Map) {
+            // Already a Map, use as-is
+            result = (Map<String, Object>) existingClaim;
+        } else {
+            result = new HashMap<>();
+        }
+
+        token.setOtherClaims(claimName, result);
+        return result;
+    }
+
     public static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue) {
         mapClaim(token, mappingModel, attributeValue, tokenPropertySetters, token.getOtherClaims());
     }
@@ -315,44 +350,7 @@ public class OIDCAttributeMapperHelper {
         }
 
         // map value to the other claims map
-        mapClaim(split, attributeValue, jsonObject, isMultivalued(mappingModel));
-    }
-
-    private static void mapClaim(List<String> split, Object attributeValue, Map<String, Object> jsonObject, boolean isMultivalued) {
-        final int length = split.size();
-        int i = 0;
-        for (String component : split) {
-            i++;
-            if (i == length && !isMultivalued) {
-                jsonObject.put(component, attributeValue);
-            } else if (i == length) {
-                Object values = jsonObject.get(component);
-                if (values == null) {
-                    jsonObject.put(component, attributeValue);
-                } else {
-                    Collection collectionValues = values instanceof Collection ? (Collection) values : Stream.of(values).collect(Collectors.toSet());
-                    if (attributeValue instanceof Collection) {
-                        ((Collection) attributeValue).stream().forEach(val -> {
-                            if (!collectionValues.contains(val))
-                                collectionValues.add(val);
-                        });
-                    } else if (!collectionValues.contains(attributeValue)) {
-                        collectionValues.add(attributeValue);
-                    }
-                    jsonObject.put(component, collectionValues);
-                }
-            } else {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> nested = (Map<String, Object>) jsonObject.get(component);
-
-                if (nested == null) {
-                    nested = new HashMap<>();
-                    jsonObject.put(component, nested);
-                }
-
-                jsonObject = nested;
-            }
-        }
+        JsonUtils.mapClaim(split, attributeValue, jsonObject, isMultivalued(mappingModel));
     }
 
     public static ProtocolMapperModel createClaimMapper(String name,

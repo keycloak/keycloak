@@ -10,6 +10,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.util.Collections;
 
 public class UserConfigBuilder {
 
@@ -119,6 +120,11 @@ public class UserConfigBuilder {
         rep.setCredentials(Collections.combine(rep.getCredentials(), ModelToRepresentation.toRepresentation(
                 OTPCredentialModel.createTOTP(totpSecret, 6, 30, HmacOTP.HMAC_SHA1))));
         rep.setTotp(true);
+        return this;
+    }
+
+    public UserConfigBuilder serviceAccountId(String serviceAccountClientId) {
+        rep.setServiceAccountClientId(serviceAccountClientId);
         return this;
     }
 

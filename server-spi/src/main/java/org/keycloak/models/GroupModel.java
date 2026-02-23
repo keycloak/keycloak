@@ -341,4 +341,9 @@ public interface GroupModel extends RoleMapperModel {
     default Type getType() {
         return Type.REALM;
     }
+
+    /**
+     * @return Organization this group belongs to, or null if the group is of {@link Type#REALM}.
+     */
+    OrganizationModel getOrganization();
 }

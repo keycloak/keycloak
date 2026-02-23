@@ -42,11 +42,14 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+// LDP_VC format is intentionally disabled to keep scope limited to supported formats.
+@Ignore("LDP_VC format is currently not supported and providers are disabled.")
 public class LDCredentialSignerTest extends OID4VCTest {
 
     @Before
@@ -211,6 +214,8 @@ public class LDCredentialSignerTest extends OID4VCTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
+        testRealm.setVerifiableCredentialsEnabled(true);
+        
         if (testRealm.getComponents() != null) {
             testRealm.getComponents().add("org.keycloak.keys.KeyProvider", getEdDSAKeyProvider());
         } else {

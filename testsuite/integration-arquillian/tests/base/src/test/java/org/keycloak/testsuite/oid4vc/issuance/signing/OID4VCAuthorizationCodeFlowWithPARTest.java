@@ -17,43 +17,28 @@
 
 package org.keycloak.testsuite.oid4vc.issuance.signing;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-import jakarta.ws.rs.core.HttpHeaders;
-
-import org.keycloak.OAuth2Constants;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsResponse;
-import org.keycloak.protocol.oid4vc.model.AuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
-import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
+import org.keycloak.testsuite.util.oauth.ParResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.message.BasicNameValuePair;
 import org.junit.Test;
 
-import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -99,20 +84,19 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         Oid4vcTestContext ctx = new Oid4vcTestContext();
 
         // Get credential issuer metadata
-        HttpGet getCredentialIssuer = new HttpGet(getRealmMetadataPath(TEST_REALM_NAME));
-        try (CloseableHttpResponse response = httpClient.execute(getCredentialIssuer)) {
-            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            ctx.credentialIssuer = JsonSerialization.readValue(s, CredentialIssuer.class);
-        }
+        CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .endpoint(getRealmMetadataPath(TEST_REALM_NAME))
+                .send();
+        assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusCode());
+        ctx.credentialIssuer = metadataResponse.getMetadata();
 
         // Get OpenID configuration
-        HttpGet getOpenidConfiguration = new HttpGet(ctx.credentialIssuer.getAuthorizationServers().get(0) + "/.well-known/openid-configuration");
-        try (CloseableHttpResponse response = httpClient.execute(getOpenidConfiguration)) {
-            assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
-            ctx.openidConfig = JsonSerialization.readValue(s, OIDCConfigurationRepresentation.class);
-        }
+        OpenIDProviderConfigurationResponse openIDProviderConfigurationResponse = oauth.wellknownRequest()
+                .url(ctx.credentialIssuer.getAuthorizationServers().get(0))
+                .send();
+        assertEquals(HttpStatus.SC_OK, openIDProviderConfigurationResponse.getStatusCode());
+        ctx.openidConfig = openIDProviderConfigurationResponse.getOidcConfiguration();
 
         return ctx;
     }
@@ -130,41 +114,29 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         claim.setPath(claimPath);
         claim.setMandatory(true);
 
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(credentialConfigurationId);
         authDetail.setClaims(List.of(claim));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
-        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
 
         // Create PAR request
-        HttpPost parRequest = new HttpPost(ctx.openidConfig.getPushedAuthorizationRequestEndpoint());
-        List<NameValuePair> parParameters = new LinkedList<>();
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, getCredentialClientScope().getName()));
-        parParameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.STATE, "test-state"));
-        parParameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, "test-nonce"));
-
-        UrlEncodedFormEntity parFormEntity = new UrlEncodedFormEntity(parParameters, StandardCharsets.UTF_8);
-        parRequest.setEntity(parFormEntity);
-
-        String requestUri;
-        try (CloseableHttpResponse parResponse = httpClient.execute(parRequest)) {
-            assertEquals(HttpStatus.SC_CREATED, parResponse.getStatusLine().getStatusCode());
-            String parResponseBody = IOUtils.toString(parResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            Map<String, Object> parResult = JsonSerialization.readValue(parResponseBody, Map.class);
-            requestUri = (String) parResult.get("request_uri");
-            assertNotNull("Request URI should not be null", requestUri);
-        }
+        ParResponse parResponse = oauth.pushedAuthorizationRequest()
+                .endpoint(ctx.openidConfig.getPushedAuthorizationRequestEndpoint())
+                .client(oauth.getClientId(), "password")
+                .scopeParam(getCredentialClientScope().getName())
+                .authorizationDetails(authDetails)
+                .state("test-state")
+                .nonce("test-nonce")
+                .send();
+        assertEquals(HttpStatus.SC_CREATED, parResponse.getStatusCode());
+        String requestUri = parResponse.getRequestUri();
+        assertNotNull("Request URI should not be null", requestUri);
 
         // Step 2: Perform authorization with PAR
-        oauth.client(client.getClientId());
+        oauth.client(clientId);
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
 
@@ -173,31 +145,18 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
 
         // Step 3: Exchange authorization code for tokens (WITHOUT authorization_details in token request)
         // This tests that authorization_details from PAR request is processed and returned
-        HttpPost postToken = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> tokenParameters = new LinkedList<>();
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
-        // Note: NO authorization_details parameter in token request - it should come from PAR
-
-        UrlEncodedFormEntity tokenFormEntity = new UrlEncodedFormEntity(tokenParameters, StandardCharsets.UTF_8);
-        postToken.setEntity(tokenFormEntity);
-
-        AccessTokenResponse tokenResponse;
-        try (CloseableHttpResponse tokenHttpResponse = httpClient.execute(postToken)) {
-            assertEquals(HttpStatus.SC_OK, tokenHttpResponse.getStatusLine().getStatusCode());
-            String tokenResponseBody = IOUtils.toString(tokenHttpResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            tokenResponse = JsonSerialization.readValue(tokenResponseBody, AccessTokenResponse.class);
-        }
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(oauth.getClientId(), "password")
+                .send();
+        assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
         // Step 4: Verify authorization_details is present in token response
-        List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(JsonSerialization.writeValueAsString(tokenResponse));
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals("Should have exactly one authorization detail", 1, authDetailsResponse.size());
 
-        OID4VCAuthorizationDetailsResponse authDetailResponse = authDetailsResponse.get(0);
+        OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
         assertEquals("Type should be openid_credential", OPENID_CREDENTIAL, authDetailResponse.getType());
         assertEquals("Credential configuration ID should match", credentialConfigurationId, authDetailResponse.getCredentialConfigurationId());
 
@@ -224,36 +183,29 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         }
 
         // Step 5: Request the actual credential using the identifier
-        HttpPost postCredential = new HttpPost(ctx.credentialIssuer.getCredentialEndpoint());
-        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokenResponse.getToken());
-        postCredential.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+        // When authorization_details are present in the token, credential_identifier must be used
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
 
-        CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialConfigurationId(credentialConfigurationId);
+        assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusCode());
 
-        String requestBody = JsonSerialization.writeValueAsString(credentialRequest);
-        postCredential.setEntity(new StringEntity(requestBody, StandardCharsets.UTF_8));
+        // Parse the credential response
+        CredentialResponse parsedResponse = credentialResponse.getCredentialResponse();
+        assertNotNull("Credential response should not be null", parsedResponse);
+        assertNotNull("Credentials should be present", parsedResponse.getCredentials());
+        assertEquals("Should have exactly one credential", 1, parsedResponse.getCredentials().size());
 
-        try (CloseableHttpResponse credentialResponse = httpClient.execute(postCredential)) {
-            assertEquals(HttpStatus.SC_OK, credentialResponse.getStatusLine().getStatusCode());
-            String responseBody = IOUtils.toString(credentialResponse.getEntity().getContent(), StandardCharsets.UTF_8);
+        // Verify that the issued credential contains the requested claims
+        CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
+        assertNotNull("Credential wrapper should not be null", credentialWrapper);
 
-            // Parse the credential response
-            CredentialResponse parsedResponse = JsonSerialization.readValue(responseBody, CredentialResponse.class);
-            assertNotNull("Credential response should not be null", parsedResponse);
-            assertNotNull("Credentials should be present", parsedResponse.getCredentials());
-            assertEquals("Should have exactly one credential", 1, parsedResponse.getCredentials().size());
+        Object credentialObj = credentialWrapper.getCredential();
+        assertNotNull("Credential object should not be null", credentialObj);
 
-            // Verify that the issued credential contains the requested claims
-            CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
-            assertNotNull("Credential wrapper should not be null", credentialWrapper);
-
-            Object credentialObj = credentialWrapper.getCredential();
-            assertNotNull("Credential object should not be null", credentialObj);
-
-            // Verify the credential structure
-            verifyCredentialStructure(credentialObj);
-        }
+        // Verify the credential structure
+        verifyCredentialStructure(credentialObj);
     }
 
     @Test
@@ -262,40 +214,28 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
 
         // Step 1: Create PAR request with INVALID authorization_details
         // Create authorization details with INVALID credential configuration ID
-        AuthorizationDetail authDetail = new AuthorizationDetail();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId("INVALID_CONFIG_ID"); // This should cause failure
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
-        List<AuthorizationDetail> authDetails = List.of(authDetail);
-        String authDetailsJson = JsonSerialization.writeValueAsString(authDetails);
+        List<OID4VCAuthorizationDetail> authDetails = List.of(authDetail);
 
         // Create PAR request
-        HttpPost parRequest = new HttpPost(ctx.openidConfig.getPushedAuthorizationRequestEndpoint());
-        List<NameValuePair> parParameters = new LinkedList<>();
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, getCredentialClientScope().getName()));
-        parParameters.add(new BasicNameValuePair("authorization_details", authDetailsJson));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.STATE, "test-state"));
-        parParameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, "test-nonce"));
-
-        UrlEncodedFormEntity parFormEntity = new UrlEncodedFormEntity(parParameters, StandardCharsets.UTF_8);
-        parRequest.setEntity(parFormEntity);
-
-        String requestUri;
-        try (CloseableHttpResponse parResponse = httpClient.execute(parRequest)) {
-            assertEquals(HttpStatus.SC_CREATED, parResponse.getStatusLine().getStatusCode());
-            String parResponseBody = IOUtils.toString(parResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            Map<String, Object> parResult = JsonSerialization.readValue(parResponseBody, Map.class);
-            requestUri = (String) parResult.get("request_uri");
-            assertNotNull("Request URI should not be null", requestUri);
-        }
+        ParResponse parResponse = oauth.pushedAuthorizationRequest()
+                .endpoint(ctx.openidConfig.getPushedAuthorizationRequestEndpoint())
+                .client(oauth.getClientId(), "password")
+                .scopeParam(getCredentialClientScope().getName())
+                .authorizationDetails(authDetails)
+                .state("test-state")
+                .nonce("test-nonce")
+                .send();
+        assertEquals(HttpStatus.SC_CREATED, parResponse.getStatusCode());
+        String requestUri = parResponse.getRequestUri();
+        assertNotNull("Request URI should not be null", requestUri);
 
         // Step 2: Perform authorization with PAR
-        oauth.client(client.getClientId());
+        oauth.client(clientId);
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
 
@@ -303,24 +243,16 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertNotNull("Authorization code should not be null", code);
 
         // Step 3: Exchange authorization code for tokens (should fail because of invalid authorization_details)
-        HttpPost postToken = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> tokenParameters = new LinkedList<>();
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .client(oauth.getClientId(), "password")
+                .send();
 
-        UrlEncodedFormEntity tokenFormEntity = new UrlEncodedFormEntity(tokenParameters, StandardCharsets.UTF_8);
-        postToken.setEntity(tokenFormEntity);
-
-        try (CloseableHttpResponse tokenHttpResponse = httpClient.execute(postToken)) {
-            // Should fail because authorization_details from PAR request cannot be processed
-            assertEquals(HttpStatus.SC_BAD_REQUEST, tokenHttpResponse.getStatusLine().getStatusCode());
-            String tokenResponseBody = IOUtils.toString(tokenHttpResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            assertTrue("Error message should indicate authorization_details processing failure",
-                    tokenResponseBody.contains("authorization_details was used in authorization request but cannot be processed for token response"));
-        }
+        // Should fail because authorization_details from PAR request cannot be processed
+        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
+        String errorDescription = tokenResponse.getErrorDescription();
+        assertTrue("Error message should indicate authorization_details processing failure",
+                errorDescription != null && errorDescription.contains("authorization_details was used in authorization request but cannot be processed for token response"));
     }
 
     @Test
@@ -328,30 +260,18 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
         // Step 1: Create PAR request WITHOUT authorization_details
-        HttpPost parRequest = new HttpPost(ctx.openidConfig.getPushedAuthorizationRequestEndpoint());
-        List<NameValuePair> parParameters = new LinkedList<>();
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, getCredentialClientScope().getName()));
-        parParameters.add(new BasicNameValuePair(OAuth2Constants.STATE, "test-state"));
-        parParameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, "test-nonce"));
-
-        UrlEncodedFormEntity parFormEntity = new UrlEncodedFormEntity(parParameters, StandardCharsets.UTF_8);
-        parRequest.setEntity(parFormEntity);
-
-        String requestUri;
-        try (CloseableHttpResponse parResponse = httpClient.execute(parRequest)) {
-            assertEquals(HttpStatus.SC_CREATED, parResponse.getStatusLine().getStatusCode());
-            String parResponseBody = IOUtils.toString(parResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            Map<String, Object> parResult = JsonSerialization.readValue(parResponseBody, Map.class);
-            requestUri = (String) parResult.get("request_uri");
-            assertNotNull("Request URI should not be null", requestUri);
-        }
+        ParResponse parResponse = oauth.pushedAuthorizationRequest()
+                .endpoint(ctx.openidConfig.getPushedAuthorizationRequestEndpoint())
+                .client(oauth.getClientId(), "password")
+                .scopeParam(getCredentialClientScope().getName())
+                .state("test-state")
+                .nonce("test-nonce")
+                .send();
+        assertEquals(HttpStatus.SC_CREATED, parResponse.getStatusCode());
+        String requestUri = parResponse.getRequestUri();
+        assertNotNull("Request URI should not be null", requestUri);
 
         // Step 2: Perform authorization with PAR
-        oauth.client(client.getClientId());
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
 
@@ -359,26 +279,13 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertNotNull("Authorization code should not be null", code);
 
         // Step 3: Exchange authorization code for tokens
-        HttpPost postToken = new HttpPost(ctx.openidConfig.getTokenEndpoint());
-        List<NameValuePair> tokenParameters = new LinkedList<>();
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.AUTHORIZATION_CODE));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CODE, code));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.REDIRECT_URI, oauth.getRedirectUri()));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, oauth.getClientId()));
-        tokenParameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_SECRET, "password"));
-
-        UrlEncodedFormEntity tokenFormEntity = new UrlEncodedFormEntity(tokenParameters, StandardCharsets.UTF_8);
-        postToken.setEntity(tokenFormEntity);
-
-        AccessTokenResponse tokenResponse;
-        try (CloseableHttpResponse tokenHttpResponse = httpClient.execute(postToken)) {
-            assertEquals(HttpStatus.SC_OK, tokenHttpResponse.getStatusLine().getStatusCode());
-            String tokenResponseBody = IOUtils.toString(tokenHttpResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            tokenResponse = JsonSerialization.readValue(tokenResponseBody, AccessTokenResponse.class);
-        }
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
+                .endpoint(ctx.openidConfig.getTokenEndpoint())
+                .send();
+        assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
         // Step 4: Verify NO authorization_details in token response (since none was in PAR request)
-        List<OID4VCAuthorizationDetailsResponse> authDetailsResponse = parseAuthorizationDetails(JsonSerialization.writeValueAsString(tokenResponse));
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         assertTrue("authorization_details should NOT be present in the response when not used in PAR request",
                 authDetailsResponse == null || authDetailsResponse.isEmpty());
     }
@@ -390,27 +297,5 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
     protected void verifyCredentialStructure(Object credentialObj) {
         // Default implementation - subclasses should override
         assertNotNull("Credential object should not be null", credentialObj);
-    }
-
-    /**
-     * Parse authorization details from the token response.
-     */
-    protected List<OID4VCAuthorizationDetailsResponse> parseAuthorizationDetails(String responseBody) {
-        try {
-            // Parse the JSON response to extract authorization_details
-            Map<String, Object> responseMap = JsonSerialization.readValue(responseBody, Map.class);
-            Object authDetailsObj = responseMap.get("authorization_details");
-
-            if (authDetailsObj == null) {
-                return Collections.emptyList();
-            }
-
-            // Convert to list of OID4VCAuthorizationDetailsResponse
-            return JsonSerialization.readValue(JsonSerialization.writeValueAsString(authDetailsObj),
-                    new TypeReference<List<OID4VCAuthorizationDetailsResponse>>() {
-                    });
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse authorization_details from response", e);
-        }
     }
 }

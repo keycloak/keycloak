@@ -91,7 +91,6 @@
                                                 <i>${authenticator.createdAt}</i>
                                             </span>
                                         </div>
-                                        </div>
                                         <div class="${properties.kcSelectAuthListItemFillClass!}"></div>
                                     </div>
                                 </li>

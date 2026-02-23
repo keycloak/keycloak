@@ -61,7 +61,9 @@ public class FeatureCompatibilityMetadataProviderTest extends AbstractCompatibil
         return Arrays.stream(Profile.Feature.values())
               // It's not possible to disable HOSTNAME_V2 so ignore it when testing
               .filter(f -> f != Profile.Feature.HOSTNAME_V2)
-              .filter(f -> f.getUpdatePolicy() == Profile.FeatureUpdatePolicy.ROLLING)
+                .filter(f -> f != Profile.Feature.ROLLING_UPDATES_V1)
+                .filter(f -> f != Profile.Feature.ROLLING_UPDATES_V2)
+                .filter(f -> f.getUpdatePolicy() == Profile.FeatureUpdatePolicy.ROLLING)
               .filter(f ->
                     // Filter features that have a dependency that does not support Rolling update as these will cause a cluster recreate
                     DEPENDENT_FEATURES.getOrDefault(f, Set.of())

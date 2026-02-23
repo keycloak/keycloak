@@ -20,9 +20,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
@@ -210,6 +212,94 @@ public interface OrganizationProvider extends Provider {
      * @return the organizations the {@code member} belongs to or an empty stream if the user doesn't belong to any.
      */
     Stream<OrganizationModel> getByMember(UserModel member);
+
+    /**
+     * Creates a new group within the given {@link OrganizationModel}.
+     * The internal ID of the group will be created automatically.
+     * The created group will be of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION}.
+     * If {@code toParent} is {@code null}, the group will be created as a top-level organization group,
+     * as a direct child of the organization's internal group structure.
+     * If {@code toParent} is provided, the group will be created as a subgroup of the specified parent.
+     *
+     * @param organization the organization to create the group in
+     * @param name the name of the group to create
+     * @param toParent the parent group under which to create the new group. If {@code null},
+     *                 the group is created as a top-level organization group. If provided, must be
+     *                 an organization group (type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION})
+     *                 belonging to the same organization.
+     * @return the newly created {@link GroupModel}
+     * @throws ModelException if {@code organization} or {@code name} is {@code null}
+     * @throws ModelValidationException if {@code toParent} is not an organization group or does not
+     *                                  belong to the specified organization
+     */
+    default GroupModel createGroup(OrganizationModel organization, String name, GroupModel toParent) {
+        return createGroup(organization, null, name, toParent);
+    }
+
+    /**
+     * Creates a new group with the given {@code id} within the given {@link OrganizationModel}.
+     * The created group will be of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION}.
+     * If {@code toParent} is {@code null}, the group will be created as a top-level organization group,
+     * as a direct child of the organization's internal group structure.
+     * If {@code toParent} is provided, the group will be created as a subgroup of the specified parent.
+     *
+     * @param organization the organization to create the group in
+     * @param id the id of the group. If {@code null}, an id will be generated automatically.
+     * @param name the name of the group to create
+     * @param toParent the parent group under which to create the new group. If {@code null},
+     *                 the group is created as a top-level organization group. If provided, must be
+     *                 an organization group (type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION})
+     *                 belonging to the same organization.
+     * @return the newly created {@link GroupModel}
+     * @throws ModelException if {@code organization} or {@code name} is {@code null}
+     * @throws ModelValidationException if {@code toParent} is not an organization group or does not
+     *                                  belong to the specified organization
+     */
+    GroupModel createGroup(OrganizationModel organization, String id, String name, GroupModel toParent);
+
+    /**
+     * Returns the top-level groups of the given {@link OrganizationModel}.
+     *
+     * @param organization the organization
+     * @param firstResult the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param maxResults the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return Stream of top-level groups in the organization. Never returns {@code null}.
+     */
+    Stream<GroupModel> getTopLevelGroups(OrganizationModel organization, Integer firstResult, Integer maxResults);
+
+    /**
+     * Returns groups of the given {@link OrganizationModel} filtered by group name.
+     *
+     * @param organization the organization
+     * @param search the string to search for in group names. Case-sensitive.
+     * @param exact if {@code true}, the groups will be searched using exact match. If {@code false}, partial match is used.
+     * @param firstResult the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param maxResults the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return Stream of groups matching the search criteria. Never returns {@code null}.
+     */
+    Stream<GroupModel> searchGroupsByName(OrganizationModel organization, String search, Boolean exact, Integer firstResult, Integer maxResults);
+
+    /**
+     * Returns groups of the given {@link OrganizationModel} filtered by group attributes.
+     *
+     * @param organization the organization
+     * @param attributes a {@code Map} containing the attributes (name/value) that must match group attributes.
+     * @param firstResult the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param maxResults the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return Stream of groups matching the attribute criteria. Never returns {@code null}.
+     */
+    Stream<GroupModel> searchGroupsByAttributes(OrganizationModel organization, Map<String, String> attributes, Integer firstResult, Integer maxResults);
+
+    /**
+     * Returns all organization groups that the given {@code member} explicitly belongs to within the given {@code organization}.
+     * Only returns groups of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION} that belong to the specified organization.
+     * Membership is explicit - being a member of a child group does not imply membership in parent groups.
+     *
+     * @param organization the organization whose groups to check
+     * @param member the user whose group memberships to retrieve
+     * @return Stream of organization groups the member belongs to. Never returns {@code null}.
+     */
+    Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member);
 
     /**
      * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}.

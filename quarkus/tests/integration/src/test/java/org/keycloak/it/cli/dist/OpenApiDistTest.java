@@ -25,10 +25,15 @@ import org.keycloak.it.junit5.extension.DryRun;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
+import io.restassured.response.ValidatableResponse;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DistributionTest(keepAlive = true, requestPort = 9000, containerExposedPorts = {8080, 9000})
@@ -87,4 +92,36 @@ public class OpenApiDistTest {
     cliResult = dist.run("start-dev", "--openapi-enabled=true", "--features=client-admin-api:v2");
     cliResult.assertError("Disabled option: '--openapi-enabled'. Available only when OpenAPI feature is enabled");
   }
+
+    @Test
+    @Launch({"start-dev", "--openapi-enabled=true", FEATURES_OPTION})
+    void testOpenApiFilter(KeycloakDistribution distribution) {
+      ValidatableResponse response = given()
+            .header("Accept", "application/json")
+                .get(OPENAPI_ENDPOINT)
+            .then();
+
+      // BaseRepresentation has no spec-visible properties and must not appear in the spec
+      response.body(not(containsString("BaseRepresentation")));
+
+      // Verify discriminator is on the parent schema (BaseClientRepresentation) in components section
+      response
+          .body("components.schemas.BaseClientRepresentation.discriminator.propertyName", equalTo("protocol"))
+          .body("components.schemas.BaseClientRepresentation.discriminator.mapping.openid-connect", equalTo("#/components/schemas/OIDCClientRepresentation"))
+          .body("components.schemas.BaseClientRepresentation.discriminator.mapping.saml", equalTo("#/components/schemas/SAMLClientRepresentation"));
+
+      // Verify subtypes have the discriminator property and allOf reference to parent
+      response
+          .body("components.schemas.OIDCClientRepresentation.properties.protocol.type", equalTo("string"))
+          .body("components.schemas.OIDCClientRepresentation.allOf[0].'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"))
+          .body("components.schemas.SAMLClientRepresentation.properties.protocol.type", equalTo("string"))
+          .body("components.schemas.SAMLClientRepresentation.allOf[0].'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"));
+
+      // Verify endpoints reference the parent schema (no inline oneOf)
+      response
+          .body("paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.type", equalTo("array"))
+          .body("paths.'/admin/api/{realmName}/clients/{version}'.get.responses.'200'.content.'application/json'.schema.items.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"))
+          .body("paths.'/admin/api/{realmName}/clients/{version}/{id}'.get.responses.'200'.content.'application/json'.schema.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"))
+          .body("paths.'/admin/api/{realmName}/clients/{version}/{id}'.put.requestBody.content.'application/json'.schema.'$ref'", equalTo("#/components/schemas/BaseClientRepresentation"));
+    }
 }

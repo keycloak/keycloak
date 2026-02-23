@@ -45,6 +45,7 @@ import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
 import { useNavigate } from "react-router-dom";
 import { CopyToClipboardButton } from "../components/copy-to-clipboard-button/CopyToClipboardButton";
+import { GroupResourceContext } from "../context/group-resource/GroupResourceContext";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -187,25 +188,27 @@ export const UserForm = ({
     >
       <FormProvider {...form}>
         {open && (
-          <GroupPickerDialog
-            type="selectMany"
-            text={{
-              title: "selectGroups",
-              ok: "join",
-            }}
-            canBrowse={isManager}
-            onConfirm={async (groups) => {
-              if (user?.id) {
-                await addGroups(groups || []);
-              } else {
-                await addChips(groups || []);
-              }
+          <GroupResourceContext value={adminClient.groups}>
+            <GroupPickerDialog
+              type="selectMany"
+              text={{
+                title: "selectGroups",
+                ok: "join",
+              }}
+              canBrowse={isManager}
+              onConfirm={async (groups) => {
+                if (user?.id) {
+                  await addGroups(groups || []);
+                } else {
+                  await addChips(groups || []);
+                }
 
-              setOpen(false);
-            }}
-            onClose={() => setOpen(false)}
-            filterGroups={selectedGroups}
-          />
+                setOpen(false);
+              }}
+              onClose={() => setOpen(false)}
+              filterGroups={selectedGroups}
+            />
+          </GroupResourceContext>
         )}
         {user?.id && (
           <>

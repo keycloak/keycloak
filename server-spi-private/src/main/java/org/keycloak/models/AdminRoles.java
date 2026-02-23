@@ -69,5 +69,6 @@ public class AdminRoles {
         ALL_ROLES.add(ADMIN);
         ALL_ROLES.add(CREATE_REALM);
         ALL_ROLES.add(REALM_ADMIN);
+        ALL_ROLES.add(VIEW_SYSTEM);
     }
 }

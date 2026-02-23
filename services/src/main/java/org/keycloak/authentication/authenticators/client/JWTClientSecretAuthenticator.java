@@ -32,6 +32,7 @@ import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -55,17 +56,21 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
+        context.attempted();
+
         try {
             ClientAssertionState clientAssertionState = context.getState(ClientAssertionState.class, ClientAssertionState.supplier());
             JsonWebToken jwt = clientAssertionState.getToken();
 
-            // Ignore for client assertions signed by third-parties
-            if (!Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
-                return;
-            }
+            if (jwt != null) {
+                // Ignore for client assertions signed by third-parties
+                if (!Objects.equals(jwt.getIssuer(), jwt.getSubject())) {
+                    return;
+                }
 
-            if (clientAssertionState.getClient() == null) {
-                clientAssertionState.setClient(context.getRealm().getClientByClientId(jwt.getSubject()));
+                if (clientAssertionState.getClient() == null) {
+                    clientAssertionState.setClient(context.getRealm().getClientByClientId(jwt.getSubject()));
+                }
             }
 
             JWTClientValidator validator = new JWTClientValidator(context, this::verifySignature, getId());
@@ -113,7 +118,8 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             signatureValid = jwt != null;
             //try authenticate with client rotated secret
             if (!signatureValid && wrapper.hasRotatedSecret() && !wrapper.isClientRotatedSecretExpired()) {
-                jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(), wrapper.toRotatedClientModel(), JsonWebToken.class);
+                jwt = context.getSession().tokens().decodeClientJWT(validator.getClientAssertion(),
+                        wrapper.toRotatedClientModel(context.getSession()), JsonWebToken.class);
                 signatureValid = jwt != null;
             }
         } catch (Exception e) {
@@ -138,7 +144,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     }
 
     @Override
-    public Map<String, Object> getAdapterConfiguration(ClientModel client) {
+    public Map<String, Object> getAdapterConfiguration(KeycloakSession session, ClientModel client) {
         // e.g. client adapter's keycloak.json
         // "credentials": {
         //   "secret-jwt": {
@@ -147,7 +153,8 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
         //   }
         // }
         Map<String, Object> props = new HashMap<>();
-        props.put("secret", client.getSecret());
+        String secret = client.getSecret();
+        props.put("secret", session.vault().getStringSecret(secret).get().orElse(secret));
         String algorithm = client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
         if (algorithm != null) {
             props.put("algorithm", algorithm);

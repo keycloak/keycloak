@@ -33,6 +33,7 @@ import jakarta.persistence.EntityManagerFactory;
 
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.Environment;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.database.Database;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
@@ -46,7 +47,6 @@ import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
-import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.quarkus.arc.Arc;
@@ -99,6 +99,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         super.postInit(factory);
 
         checkMySQLWaitTimeout();
+        checkMSSQLIsolationLevel();
 
         String id = null;
         String version = null;
@@ -302,8 +303,9 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
     private void checkMySQLWaitTimeout() {
         String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
         Database.Vendor vendor = Database.getVendor(db).orElseThrow();
-        if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor))
+        if (!(Database.Vendor.MYSQL == vendor || Database.Vendor.MARIADB == vendor)) {
             return;
+        }
 
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement();
@@ -320,6 +322,32 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             }
         } catch (SQLException e) {
             logger.warnf(e, "Unable to validate %s 'wait_timeout' due to database exception", vendor);
+        }
+    }
+
+    private void checkMSSQLIsolationLevel() {
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        if (Database.Vendor.MSSQL != vendor) {
+            return;
+        }
+
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement();
+             Statement statement2 = connection.createStatement();
+             ResultSet rs = statement.executeQuery("DBCC USEROPTIONS");
+             ResultSet dbnameRs = statement2.executeQuery("SELECT DB_NAME() as db")) {
+            dbnameRs.next();
+            String dbName = dbnameRs.getString(1);
+            while (rs.next()) {
+                String option = rs.getString(1);
+                String value = rs.getString(2);
+                if ("isolation level".equalsIgnoreCase(option) && (!"read committed snapshot".equalsIgnoreCase(value))) {
+                    logger.warnf("%s 'isolation level' for database '%s' is set to '%s'. Keycloak recommends 'read committed snapshot' isolation level to avoid deadlocks under high load. Please adjust the isolation level by executing 'ALTER DATABASE %s SET READ_COMMITTED_SNAPSHOT ON'.", vendor, dbName, rs.getString(2), dbName);
+                }
+            }
+        } catch (SQLException e) {
+            logger.warnf(e, "Unable to validate %s 'isolation level' due to database exception", vendor);
         }
     }
 }

@@ -21,6 +21,7 @@ import java.util.Collections;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
@@ -41,6 +42,7 @@ public class HardcodedPublicKeyLoader implements PublicKeyLoader {
             keyWrapper = new KeyWrapper();
             keyWrapper.setKid(kid);
             keyWrapper.setUse(KeyUse.SIG);
+            keyWrapper.setAlgorithm(algorithm);
             // depending the algorithm load the correct key from the encoded string
             if (JavaAlgorithm.isRSAJavaAlgorithm(algorithm)) {
                 keyWrapper.setType(KeyType.RSA);
@@ -50,7 +52,8 @@ public class HardcodedPublicKeyLoader implements PublicKeyLoader {
                 keyWrapper.setPublicKey(PemUtils.decodePublicKey(encodedKey, KeyType.EC));
             } else if (JavaAlgorithm.isEddsaJavaAlgorithm(algorithm)) {
                 keyWrapper.setType(KeyType.OKP);
-                keyWrapper.setPublicKey(PemUtils.decodePublicKey(encodedKey, KeyType.OKP));
+                keyWrapper.setPublicKey(PemUtils.decodePublicKey(encodedKey, Algorithm.EdDSA));
+                keyWrapper.setCurve(keyWrapper.getPublicKey().getAlgorithm());
             } else if (JavaAlgorithm.isHMACJavaAlgorithm(algorithm)) {
                 keyWrapper.setType(KeyType.OCT);
                 keyWrapper.setSecretKey(KeyUtils.loadSecretKey(Base64Url.decode(encodedKey), algorithm));

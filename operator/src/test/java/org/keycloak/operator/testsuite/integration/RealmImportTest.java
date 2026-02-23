@@ -17,6 +17,21 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import jakarta.inject.Inject;
+
+import org.keycloak.operator.Config;
+import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.Placeholder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
+import org.keycloak.operator.testsuite.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
@@ -27,29 +42,15 @@ import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
-import jakarta.inject.Inject;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.keycloak.operator.Config;
-import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.Placeholder;
-import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
-import org.keycloak.operator.testsuite.utils.CRAssert;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.assertj.core.api.Assertions.assertThat;
+
 import static org.keycloak.operator.Constants.KEYCLOAK_HTTPS_PORT;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.DONE;
@@ -58,6 +59,8 @@ import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImpor
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurl;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DisabledIfApiServerTest
 @QuarkusTest
@@ -83,7 +86,7 @@ public class RealmImportTest extends BaseOperatorTest {
         k8sclient.resource(getResourceFromFile("example-smtp-secret.yaml", Secret.class)).delete();
     }
 
-    private String getJobArgs() {
+    private List<String> getJobArgs() {
         return k8sclient
                 .batch()
                 .v1()
@@ -96,16 +99,13 @@ public class RealmImportTest extends BaseOperatorTest {
                 .getSpec()
                 .getContainers()
                 .get(0)
-                .getArgs()
-                .stream()
-                .collect(Collectors.joining());
+                .getArgs();
     }
 
     protected static void deploySmtpSecret() {
         K8sUtils.set(k8sclient, getResourceFromFile("example-smtp-secret.yaml", Secret.class));
     }
 
-    @DisabledIfApiServerTest
     @Test
     public void testWorkingRealmImport() {
         // Arrange
@@ -122,7 +122,6 @@ public class RealmImportTest extends BaseOperatorTest {
         assertWorkingRealmImport(kc);
     }
 
-    @DisabledIfApiServerTest
     @Test
     public void testWorkingRealmImportWithReplacement() {
         // Arrange
@@ -205,7 +204,7 @@ public class RealmImportTest extends BaseOperatorTest {
             assertThat(curlOutput).isEqualTo("200");
         });
 
-        assertThat(getJobArgs()).contains("build");
+        assertThat(getJobArgs()).contains("import");
         assertThat(job.getMetadata().getLabels().get("example")).isEqualTo("test");
 
         return envvars;

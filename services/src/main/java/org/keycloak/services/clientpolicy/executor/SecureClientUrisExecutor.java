@@ -17,16 +17,19 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -86,38 +89,40 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
                 confirmSecureRedirectUri(((AuthorizationRequestContext)context).getRedirectUri());
                 return;
             default:
-                return;
         }
     }
 
     private void confirmSecureUris(ClientRepresentation clientRep) throws ClientPolicyException {
         // rootUrl
         String rootUrl = clientRep.getRootUrl();
-        if (rootUrl != null) confirmSecureUris(Arrays.asList(rootUrl), "rootUrl");
+        if (rootUrl != null) confirmSecureUris(List.of(rootUrl), "rootUrl");
 
         // adminUrl
         String adminUrl = clientRep.getAdminUrl();
-        if (adminUrl != null) confirmSecureUris(Arrays.asList(adminUrl), "adminUrl");
+        if (adminUrl != null) confirmSecureUris(List.of(adminUrl), "adminUrl");
 
         // baseUrl
         String baseUrl = clientRep.getBaseUrl();
-        if (baseUrl != null) confirmSecureUris(Arrays.asList(baseUrl), "baseUrl");
-
-        // web origins
-        List<String> webOrigins = clientRep.getWebOrigins();
-        if (webOrigins != null) confirmSecureUris(webOrigins, "webOrigins");
+        if (baseUrl != null) confirmSecureUris(List.of(baseUrl), "baseUrl");
 
         // backchannel logout URL
         String logoutUrl = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL);
-        if (logoutUrl != null) confirmSecureUris(Arrays.asList(logoutUrl), "logoutUrl");
+        if (logoutUrl != null) confirmSecureUris(List.of(logoutUrl), "logoutUrl");
 
         // OAuth2 : redirectUris
         List<String> redirectUris = clientRep.getRedirectUris();
         if (redirectUris != null) confirmSecureUris(redirectUris, "redirectUris");
 
+        // web origins
+        List<String> webOrigins = clientRep.getWebOrigins();
+        if (webOrigins != null) {
+            List<String> resolvedWebOriginUrls = resolveUrlWithRedirects(webOrigins, redirectUris, rootUrl, true);
+            confirmSecureUris(resolvedWebOriginUrls, "webOrigins");
+        }
+
         // OAuth2 : jwks_uri
         String jwksUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.JWKS_URL);
-        if (jwksUri != null) confirmSecureUris(Arrays.asList(jwksUri), "jwksUri");
+        if (jwksUri != null) confirmSecureUris(List.of(jwksUri), "jwksUri");
 
         // OIDD : requestUris
         List<String> requestUris = getAttributeMultivalued(clientRep, OIDCConfigAttributes.REQUEST_URIS);
@@ -125,7 +130,27 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
 
         // CIBA : client notification endpoint
         String clientNotificationEndpoint = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT);
-        if (clientNotificationEndpoint != null) confirmSecureUris(Arrays.asList(clientNotificationEndpoint), "cibaClientNotificationEndpoint");
+        if (clientNotificationEndpoint != null) confirmSecureUris(List.of(clientNotificationEndpoint), "cibaClientNotificationEndpoint");
+
+        // OIDC: Post Logout URL
+        List<String> postLogoutRedirectUris = getAttributeMultivalued(clientRep, OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
+        if (postLogoutRedirectUris != null && !postLogoutRedirectUris.isEmpty()) {
+            List<String> validRedirects = clientRep.getRedirectUris() != null ? clientRep.getRedirectUris() : Collections.emptyList();
+            List<String> resolvedPostLogoutUrls = resolveUrlWithRedirects(postLogoutRedirectUris, validRedirects, clientRep.getRootUrl(), false);
+            confirmSecureUris(resolvedPostLogoutUrls, "postLogoutUris");
+        }
+
+        // logoUri
+        String logoUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.LOGO_URI);
+        if (logoUri != null) confirmSecureUris(List.of(logoUri), "logoUri");
+
+        // termsOfServiceUri
+        String termsOfServiceUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.TOS_URI);
+        if (termsOfServiceUri != null) confirmSecureUris(List.of(termsOfServiceUri), "tosUri");
+
+        // policyUri
+        String policyUri = Optional.ofNullable(clientRep.getAttributes()).orElse(Collections.emptyMap()).get(OIDCConfigAttributes.POLICY_URI);
+        if (policyUri != null) confirmSecureUris(List.of(policyUri), "policyUri");
     }
 
     private List<String> getAttributeMultivalued(ClientRepresentation clientRep, String attrKey) {
@@ -140,9 +165,11 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
         }
 
         for (String uri : uris) {
-            logger.tracev("{0} = {1}", uriType, uri);
-            if (!uri.startsWith("https://")  || uri.contains("*")) {
-                throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid " + uriType);
+            if (!uri.isEmpty()) {
+                logger.tracev("{0} = {1}", uriType, uri);
+                if (!uri.startsWith("https://") || uri.contains("*")) {
+                    throw new ClientPolicyException(OAuthErrorException.INVALID_CLIENT_METADATA, "Invalid " + uriType);
+                }
             }
         }
     }
@@ -156,6 +183,14 @@ public class SecureClientUrisExecutor implements ClientPolicyExecutorProvider<Cl
         if (!redirectUri.startsWith("https://") || redirectUri.contains("*")) {
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Invalid redirect_uri");
         }
+    }
 
+    private List<String> resolveUrlWithRedirects(List<String> originalUrls, List<String> redirectUris,
+                                                 String rootUrl, boolean returnAsOrigins) {
+        if (originalUrls == null || originalUrls.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Set<String> resolvedUrls = RedirectUtils.resolveUrlsWithRedirects(session, originalUrls, rootUrl, redirectUris, returnAsOrigins);
+        return new ArrayList<>(resolvedUrls);
     }
 }

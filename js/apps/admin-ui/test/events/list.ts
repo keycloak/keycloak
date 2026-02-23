@@ -38,6 +38,11 @@ type SearchParam = {
   eventType?: string;
 };
 
+type AdminEventsSearchParam = {
+  resourceType?: string;
+  operationType?: string;
+};
+
 export async function fillSearchPanel(
   page: Page,
   { userId, client, eventType }: SearchParam,
@@ -45,6 +50,24 @@ export async function fillSearchPanel(
   if (userId) await page.getByTestId("userId-searchField").fill(userId);
   if (client) await page.getByTestId("client-searchField").fill(client);
   if (eventType) await selectItem(page, page.getByLabel("Select"), eventType);
+}
+
+export async function fillAdminEventsSearchPanel(
+  page: Page,
+  { resourceType, operationType }: AdminEventsSearchParam,
+) {
+  if (resourceType)
+    await selectItem(
+      page,
+      page.getByLabel("select-resourceTypes"),
+      resourceType,
+    );
+  if (operationType)
+    await selectItem(
+      page,
+      page.getByLabel("select-operationTypes"),
+      operationType,
+    );
 }
 
 export async function assertSearchButtonDisabled(page: Page, disabled = true) {

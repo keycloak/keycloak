@@ -56,6 +56,7 @@ import org.keycloak.models.sessions.infinispan.changes.PersistentSessionUpdateTa
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.SessionUpdateTask;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
+import org.keycloak.models.sessions.infinispan.changes.UserSessionInfinispanChangelogBasedTransaction;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.EmbeddedClientSessionKey;
@@ -70,9 +71,11 @@ import org.keycloak.models.sessions.infinispan.stream.Mappers;
 import org.keycloak.models.sessions.infinispan.stream.SessionWrapperPredicate;
 import org.keycloak.models.sessions.infinispan.stream.UserSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.FuturesHelper;
+import org.keycloak.models.sessions.infinispan.util.SessionExpirationPredicates;
 import org.keycloak.models.sessions.infinispan.util.SessionTimeouts;
 import org.keycloak.utils.StreamsUtil;
 
+import io.reactivex.rxjava3.core.Flowable;
 import org.infinispan.Cache;
 import org.infinispan.commons.api.AsyncCache;
 import org.infinispan.commons.util.concurrent.CompletionStages;
@@ -94,10 +97,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     protected final KeycloakSession session;
 
-    protected final InfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx;
-    protected final InfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx;
-    protected final InfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionTx;
-    protected final InfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionTx;
+    protected final UserSessionInfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx;
+    protected final UserSessionInfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx;
+    protected final UserSessionInfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionTx;
+    protected final UserSessionInfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionTx;
 
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
@@ -109,10 +112,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
 
     public InfinispanUserSessionProvider(KeycloakSession session,
                                          PersisterLastSessionRefreshStore persisterLastSessionRefreshStore,
-                                         InfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx,
-                                         InfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx,
-                                         InfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionTx,
-                                         InfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionTx,
+                                         UserSessionInfinispanChangelogBasedTransaction<String, UserSessionEntity> sessionTx,
+                                         UserSessionInfinispanChangelogBasedTransaction<String, UserSessionEntity> offlineSessionTx,
+                                         UserSessionInfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> clientSessionTx,
+                                         UserSessionInfinispanChangelogBasedTransaction<EmbeddedClientSessionKey, AuthenticatedClientSessionEntity> offlineClientSessionTx,
                                          SessionFunction<UserSessionEntity> offlineSessionCacheEntryLifespanAdjuster,
                                          SessionFunction<AuthenticatedClientSessionEntity> offlineClientSessionCacheEntryLifespanAdjuster) {
         this.session = session;
@@ -464,6 +467,55 @@ public class InfinispanUserSessionProvider implements UserSessionProvider, Sessi
         // StreamsUtil.prepareSortedStreamToWorkInsideOfFlatMapWithTerminalOperations causing unnecessary operations.
         return paginatedStream(StreamsUtil.prepareSortedStreamToWorkInsideOfFlatMapWithTerminalOperations(getUserSessionsStream(realm, predicate, false)
                 .sorted(Comparator.comparing(UserSessionModel::getLastSessionRefresh))), firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm) {
+        var expiration = new SessionExpirationPredicates(realm, true, Time.currentTime());
+        return session.getProvider(UserSessionPersisterProvider.class).readOnlyUserSessionStream(realm, true)
+                .filter(Predicate.not(expiration::isUserSessionExpired));
+    }
+
+    @Override
+    public Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm) {
+        return readOnlyStreamFromCache(UserSessionPredicate.create(realm.getId()), realm, -1, -1);
+    }
+
+    @Override
+    public Stream<UserSessionModel> readOnlyStreamOfflineUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        var expiration = new SessionExpirationPredicates(realm, true, Time.currentTime());
+        return session.getProvider(UserSessionPersisterProvider.class)
+                .readOnlyUserSessionStream(realm, client, true, skip, maxResults)
+                .filter(Predicate.not(expiration::isUserSessionExpired));
+    }
+
+    @Override
+    public Stream<UserSessionModel> readOnlyStreamUserSessions(RealmModel realm, ClientModel client, int skip, int maxResults) {
+        return readOnlyStreamFromCache(UserSessionPredicate.create(realm.getId()).client(client.getId()), realm, skip, maxResults);
+    }
+
+    private Stream<UserSessionModel> readOnlyStreamFromCache(UserSessionPredicate cachePredicate, RealmModel realm, int skip, int maxResults) {
+        if (maxResults == 0) {
+            return Stream.empty();
+        }
+        var predicates = new SessionExpirationPredicates(realm, false, Time.currentTime());
+        var clientSessionCache = getClientSessionCache(false);
+
+        // not great, distributed sort not supported, and we're sorting everything locally
+        // follow-up, iterate by segment and sort the sessions in that segment.
+        var stream = StreamsUtil.paginatedStream(
+                StreamsUtil.closing(getCache(false).entrySet().stream()
+                        .filter(cachePredicate)
+                        .map(Mappers.userSessionEntity())
+                        .sorted(Comparator.comparing(UserSessionEntity::getId))),
+                skip,
+                maxResults);
+
+        return Flowable.fromIterable(stream::iterator)
+                .buffer(512)
+                .map(us -> ImmutableSession.copyOf(session, us, predicates, clientSessionCache))
+                .blockingStream()
+                .flatMap(Function.identity());
     }
 
     @Override

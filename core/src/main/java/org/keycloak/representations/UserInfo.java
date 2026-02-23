@@ -16,10 +16,8 @@
  */
 package org.keycloak.representations;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import org.keycloak.json.StringOrArrayDeserializer;
 import org.keycloak.json.StringOrArraySerializer;
@@ -98,9 +96,6 @@ public class UserInfo {
 
     @JsonProperty("phone_number_verified")
     protected Boolean phoneNumberVerified;
-
-    @JsonProperty("address")
-    protected Map<String, Object> address;
 
     @JsonProperty("updated_at")
     protected Long updatedAt;
@@ -280,28 +275,30 @@ public class UserInfo {
         this.phoneNumberVerified = phoneNumberVerified;
     }
 
-    @JsonProperty("address")
+    @JsonIgnore
     public Map<String, Object> getAddressClaimsMap() {
-        return address;
+        Object value = getOtherClaims().get(IDToken.ADDRESS);
+        return value instanceof Map ? (Map<String, Object>) value : null;
     }
 
     @JsonIgnore
     public AddressClaimSet getAddress() {
-        return Optional.ofNullable(address).map(a -> {
-                           return JsonSerialization.mapper.convertValue(a, AddressClaimSet.class);
-                       })
-                       .orElse(null);
-    }
+        Object value = getOtherClaims().get(IDToken.ADDRESS);
+        if (value == null) {
+            return null;
+        }
 
-    public void setAddress(Map<String, Object> address) {
-        this.address = address;
+        return JsonSerialization.mapper.convertValue(value, AddressClaimSet.class);
     }
 
     @JsonIgnore
     public void setAddress(AddressClaimSet address) {
-        this.address = Optional.ofNullable(address)
-                               .map(a -> JsonSerialization.mapper.convertValue(a, Map.class))
-                               .orElse(null);
+        getOtherClaims().put(IDToken.ADDRESS, JsonSerialization.mapper.convertValue(address, Map.class));
+    }
+
+    @JsonIgnore
+    public void setAddress(Map<String, Object> address) {
+        getOtherClaims().put(IDToken.ADDRESS, address);
     }
 
     public Long getUpdatedAt() {
@@ -341,14 +338,5 @@ public class UserInfo {
     @JsonAnySetter
     public void setOtherClaims(String name, Object value) {
         otherClaims.put(name, value);
-    }
-
-    @Override
-    public String toString() {
-        try {
-            return JsonSerialization.writeValueAsString(this);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

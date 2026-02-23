@@ -15,8 +15,17 @@
 # limitations under the License.
 #
 
-org.keycloak.models.workflow.DisableUserStepProviderFactory
 org.keycloak.models.workflow.NotifyUserStepProviderFactory
+org.keycloak.models.workflow.DisableUserStepProviderFactory
 org.keycloak.models.workflow.DeleteUserStepProviderFactory
+org.keycloak.models.workflow.UnlinkUserStepProviderFactory
 org.keycloak.models.workflow.SetUserAttributeStepProviderFactory
+org.keycloak.models.workflow.RemoveUserAttributeStepProviderFactory
 org.keycloak.models.workflow.AddRequiredActionStepProviderFactory
+org.keycloak.models.workflow.RemoveRequiredActionStepProviderFactory
+org.keycloak.models.workflow.GrantRoleStepProviderFactory
+org.keycloak.models.workflow.RevokeRoleStepProviderFactory
+org.keycloak.models.workflow.JoinGroupStepProviderFactory
+org.keycloak.models.workflow.LeaveGroupStepProviderFactory
+org.keycloak.models.workflow.client.DeleteClientStepProviderFactory
+org.keycloak.models.workflow.client.DisableClientStepProviderFactory

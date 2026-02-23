@@ -33,7 +33,9 @@ public final class InfinispanUtils {
 
     private static final String INFINISPAN_VIRTUAL_THREADS_PROP = "org.infinispan.threads.virtual";
 
-    private static final int MIN_VT_POOL_SIZE = 2;
+    // With Infinispan 15, one of the workers is blocked with the NioServer.Selector.
+    // Requiring three more cores to start using virtual threads.
+    private static final int MIN_VT_POOL_SIZE = 4;
 
     // all providers have the same order
     public static final int PROVIDER_ORDER = 1;
@@ -113,6 +115,18 @@ public final class InfinispanUtils {
             if (getParallelism() < MIN_VT_POOL_SIZE) {
                 throw new RuntimeException("To be able to use Infinispan/JGroups virtual threads, you need to set the Java system property jdk.virtualThreadScheduler.parallelism to at least " + MIN_VT_POOL_SIZE);
             }
+            if (getMaxPoolSize() < MIN_VT_POOL_SIZE) {
+                throw new RuntimeException("To be able to use Infinispan/JGroups virtual threads, you need to set the Java system property jdk.virtualThreadScheduler.maxPoolSize to at least " + MIN_VT_POOL_SIZE);
+            }
+        }
+    }
+
+    private static int getMaxPoolSize() {
+        String maxPoolSizeValue = System.getProperty("jdk.virtualThreadScheduler.maxPoolSize");
+        if (maxPoolSizeValue != null) {
+            return Integer.parseInt(maxPoolSizeValue);
+        } else {
+            return Integer.MAX_VALUE;
         }
     }
 

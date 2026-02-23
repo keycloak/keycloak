@@ -10,12 +10,6 @@ spec:
       value: value1
     - name: features
       value: docker
-    - name: tracing-header-Authorization
-      secret:
-        name: tracing-secret
-        key: token
-    - name: tracing-header-X-Org-Id
-      value: my-org-id
   db:
     vendor: vendor
     usernameSecret:
@@ -107,17 +101,6 @@ spec:
       - step-up-authentication
   transaction:
     xaEnabled: false
-  tracing:
-    enabled: true
-    endpoint: http://my-tracing:4317
-    serviceName: my-best-keycloak
-    protocol: http/protobuf
-    samplerType: parentbased_traceidratio
-    samplerRatio: 0.01
-    compression: gzip
-    resourceAttributes:
-      service.namespace: keycloak-namespace
-      service.name: custom-service-name
   resources:
     requests:
       cpu: "500m"

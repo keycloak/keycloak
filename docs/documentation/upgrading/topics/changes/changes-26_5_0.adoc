@@ -1,6 +1,53 @@
 // ------------------------ Breaking changes ------------------------  //
 == Breaking changes
 
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Loopback Hostname Verification on Windows
+
+Setups on Windows that previously relied on custom machine names or non-standard hostnames for loopback (for example, `127.0.0.1` resolving to a custom name) may require updates to their trusted domain configuration. Only `localhost` and `*.localhost` are now recognized for loopback verification.
+
+{project_name} now consistently normalizes loopback addresses to `localhost` for domain verification across all platforms. This change ensures predictable behavior for trusted domain checks, regardless of the underlying OS.
+
+=== Validation of client session timeouts
+
+Previous versions did not validate client settings against the realm settings for SSO session idle and max lifetime, including the remember me settings of the realm.
+This leads to those settings either not being effective with unexpected results to administrators,
+or to refresh tokens issued where the user session might have already expired when the client was trying to refresh the token.
+
+{project_name} now validates when creating or updating realms that on the realm level the Client session settings do not exceed the SSO session settings.
+
+It also validates that a client specific settings for Client Session Idle and Client Session Max does not exceed the realm settings when a client is created or updated, and will show a validation error when the validation fails.
+It does currently not validate an individual's client settings when the realm SSO settings or remember me changes, though this might change in future releases.
+
+You are only affected by the change:
+
+* if you have configured a client-specific Client Session Idle and Client Session Max setting in the Advanced tab of the client configuration that exceeds the realm settings, or
+* if you configured on the realm level client session settings that exceed the realm session settings.
+
+If you are affected by the change, you will see error messages the next time you update or import an affected client or realm.
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== Welcome Page now includes additional user profile fields
+
+The Welcome Page, used to create the initial administrative user, now includes optional fields for *First name*, *Last name*, and *Email*. These fields allow administrators to provide additional profile information when creating the initial admin user. All new fields are optional and do not affect the existing functionality.
+
+=== PostgreSQL version updates
+
+The latest major release of PostgreSQL 18 is now supported.
+
+We also updated the docs on how to use a TLS certificate for the JDBC-connection when connecting to a PostgreSQL database.
+
+=== EnterpriseDB Advanced 18 support
+
+EDB 18 is now tested and supported in addition to the existing EDB 17 support.
+
 === Method `UserProfile#toRepresentation(boolean)` added
 
 The `UserProfile` interface has a new method `toRepresentation(boolean)`. This method allows clients to specify whether to include
@@ -9,21 +56,16 @@ only the basic attributes in representations or all of them.
 The `UserProfile` interface is a private API and should not be implemented by custom code. However, if you have extensions that
 implement this interface, you will need to update your code to accommodate this new method.
 
-Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
-In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+=== Additional LOGOUT events
 
-=== Corrected encoding when sending OpenID Connect client secrets when acting as a broker
+When logging out sessions via the Account Console {project_name} now creates LOGOUT user events to track this activity.
+The events are connected to the `account` client.
 
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC 6749.
-You are not affected if you configured {project_name} to send the credentials in the request body.
-
-This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
-
-To revert to the old behavior, change the client authentication to the deprecated option *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`).
+When the number of sessions for a user is limited, and you have configured the oldest session to be logged out once the limit is reached, {project_name} now creates LOGOUT user events to track this. The events are connected to the client that triggered the new login.
 
 === Identity Provider refactoring
 
-The private SPI for identity providers have been refactored. This is to allow identity providers to support more use
+The private SPI for identity providers has been refactored. This is to allow identity providers to support more use
 -cases than federated user authentication.
 
 For anyone implementing a custom federated user authentication identity provider and are not extending one provided
@@ -34,25 +76,32 @@ Additionally, both `IdentityProviderModel` and `IdentityProviderRepresentation` 
 configuration like `isHideOnLogin` to be null in order to not include these in Identity Provider types that do
 not need these configurations.
 
-=== Accepting only normalized paths in requests
+=== Account UI shows and manages offline sessions
 
-Previously {project_name} accepted HTTP requests with paths containing double dots (`..`) or double slashes (`//`). When processing them, it normalized the path by collapsing double slashes and normalized the path according to RFC 3986.
-As this has led to a hard-to-configure URL filtering, for example, in reverse proxies, the normalization is now disabled, and {project_name} responds with an HTTP 400 response code.
+The Account UI and its REST API now shows offline sessions of a user together with regular sessions in the *Device Activity* tab.
+A user can log out of those sessions like any other session, including the option *Sign out all devices*.
 
-To analyze rejected requests in the server log, enable debug logging for `org.keycloak.quarkus.runtime.services.RejectNonNormalizedPathFilter`.
+=== Realm default locale attempted for translation fallbacks
 
-To revert to the previous behavior and to accept non-normalized URLs, set the option `http-accept-non-normalized-paths` to `true`. With this configuration, enable and review the HTTP access log to identify problematic requests.
-
-// ------------------------ Notable changes ------------------------ //
-== Notable changes
-
-Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+When localization for a realm is enabled and a translation for a message key is unavailable for the language the user selected, {project_name} now attempts to find a matching message key with the realm's default locale before defaulting to English.
 
 === SPIFFE Identity Provider configuration changed
 
 The SPIFFE Identity Provider preview feature now uses the `trustDomain` configuration instead of `issuer`. This change
 was done to make it more explicit that a `trustDomain` is configured and not the `iss` of the token, which is
 usually not set in SPIFFE JWT SVIDs.
+
+=== Running on Microsoft SQL Server now recommends READ_COMMITTED_SNAPSHOT
+
+On MS SQL Server, the default transaction isolation level is `READ_COMMITTED`, which can lead to deadlocks during high load. Therefore, the recommended isolation level for {project_name} is `READ_COMMITTED_SNAPSHOT`.
+
+Use the following statement to changes this for your database:
+
+[source,sql]
+----
+ALTER DATABASE [your-database-name] SET READ_COMMITTED_SNAPSHOT ON;
+----
+
 
 === `session_state` and `sid` are no longer UUIDs
 
@@ -67,25 +116,13 @@ The `log-console-color` previously defaulted to `false`, but it will now instead
 
 You may still explicitly disable color support by setting the option to `false`.
 
-=== Some message keys no longer support HTML entities
+=== Message keys no longer support HTML or HTML entities in the login theme
 
-The following message keys in translations no longer support HTML entities: `backToLogin`, `backToApplication`, `proceedWithAction`.
+Message keys in translations and error messages generated in the backend no longer support HTML or HTML entities for the login theme.
+The only exception is the message key `termsText` which is used to display the terms and conditions for the respective required action that still allows for a limited set of HTML as before.
+For the Legacy Login Theme, HTML and HTML entities are still partially supported for backward compatibility.
 
-The default themes have already been updated. If you used them in your translations, please update your translation to use the UTF-8 equivalent.
-
-=== User sessions created with "Remember Me" are no longer valid if "Remember Me" is disabled for the realm
-
-When the "Remember Me" option is disabled in the realm settings, all user sessions previously created with the "Remember Me" flag are now considered invalid.
-Users will be required to log in again, and any associated refresh tokens will no longer be usable.
-User sessions created without selecting "Remember Me" are not affected.
-
-=== Correct encoding for OpenID Connect client credentials when acting as a broker
-
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, it now sends the client credentials via basic authentication in the correct encoding as specified in RFC 6749.
-
-This prevents problems with client IDs or passwords that contain, for example, a colon or a percentage sign.
-
-To revert to the old behavior, change the client authentication to *Client secret sent as HTTP Basic authentication without URL encoding (deprecated)* (`client_secret_basic_unencoded`).
+The default login themes have already been updated. If you used them in your translations, please update your translation to use the UTF-8 equivalent if you used HTML entities, and replace HTML with plain text.
 
 === Permissions of the database user for PostgreSQL
 
@@ -94,37 +131,44 @@ If you are running on PostgreSQL as a database for {project_name}, ensure that t
 This is used during upgrades of {project_name} to determine an estimated number of rows in a table.
 If {project_name} does not have permissions to access these tables, it will log a warning and proceed with the less efficient `+SELECT COUNT(*) ...+` operation during the upgrade to determine the number of rows in tables affected by schema changes.
 
+=== Expiration of login failures from the embedded caches
+
+Previous entries in the `loginFailures` cache never expired, and entries accumulated as users entered wrong credentials, increasing the memory consumption.
+
+Starting with this release, entries will expire based on the "`Failure reset time`" configured in the "`Brute force detection`" for the modes "`Lockout temporarily`" and "`Lockout permanently after temporary lockout`". For "`Lockout permanently`", entries will not expire as before, as this mode does not have a "`Failure reset time`".
+
 === Not recommended to use org.keycloak.credential.UserCredentialManager directly in your extensions
 
 If you have user storage extension and you reference the class `org.keycloak.credential.UserCredentialManager` from your providers, it is recommended to avoid using this class directly as it might be
 moved to the private modules in the future releases. The class may be typically used in the method `credentialManager()` of the implementations of `UserModel` interface. In that case,
 it is recommended to replace the code like this:
-```
+
+[source,java]
+----
 @Override
 public SubjectCredentialManager credentialManager() {
     return new UserCredentialManager(keycloakSession, realmModel, this);
 }
-```
+----
+
 with the code similar to this:
-```
+
+[source,java]
+----
 @Override
 public org.keycloak.models.UserCredentialManager credentialManager() {
     return keycloakSession.users().getUserCredentialManager(this);
 }
-```
+----
 
-=== Allowing realm administrators granted with the `realm-admin` role to assign admin roles
+=== HTTP client connection request timeout has a default and is configurable
 
-In previous versions, realm administrators granted with the `realm-admin` role were not able to grant admin roles for delegated realm administrators.
-This was only possible by granting the `admin` role to a master realm user, making this user a server admin.
+In previous versions, the HTTP client (SPI `connections-http-client`, provider `default`) had no default for the connection request timeout, which meant unlimited time.
+In situations with long-running out-going HTTP requests this would cause pool contention.
 
-In this release, realm administrators with the `realm-admin` role can assign admin roles to users in their realm, allowing them to delegate administrative tasks without needing server admin privileges.
+In this release, the default is 5000 milliseconds. You may adjust the default with a new provider option:
 
-If you are using FGAP to delegate administration to users in a realm other than the master realm,
-make sure the users granted with the `realm-admin` role are expected to have this role to avoid privilege escalation.
-
-The documentation is also updated with additional information about the different types of realm administrators.
-For more information, see link:{adminguide_link}#_fine_grained_permissions[Delegating realm administration using permissions].
+- **Connection request timeout property**: `connection-request-timeout-millis` (default: `5000`)
 
 === OCSP request timeouts follow HTTP client configuration
 
@@ -136,16 +180,9 @@ In this release, OCSP requests inherit timeouts from the outgoing HTTP client co
 
 If you relied on the previous 10-second behavior, explicitly set the HTTP client timeouts.
 
-=== Added database indexes on `OFFLINE_CLIENT_SESSION` table
-
-This adds new indexes on `OFFLINE_CLIENT_SESSION` table to improve performance when retrieving or deleting client sessions.
-
-If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
-See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
-
 === Default authorization policies and resources are no longer auto-created
 
-When enabling authorization on a new client (creating a Resource Server), {project_name} no longer automatically creates a "Default Resource", a "Default Policy," and a "Default Permission."
+When enabling authorization on a new client (creating a Resource Server), {project_name} no longer automatically creates a "`Default Resource`", a "`Default Policy`", and a "`Default Permission`".
 
 === Deleting expired sessions from the database
 
@@ -162,30 +199,54 @@ Previously, {project_name} deleted sessions from the database only once the sess
 With the new setup and persistent user sessions enabled, sessions are deleted more timely based on the realm settings on session lifetime and idle time, including the remember me settings. For this, the table `OFFLINE_USER_SESSION` now has a new column `REMEMBER_ME`, that is filled for new sessions and updated incrementally for existing sessions.
 The deletion is triggered currently three minutes after the session has expired to allow for clock skew between instances. Note that this interval can change in future release as we optimize this functionality.
 
+This adds new indexes on `OFFLINE_USER_SESSION` table to improve performance when retrieving or deleting client sessions.
+
+If those tables contain more than 300000 entries, {project_name} will skip the index creation by default during the automatic schema migration and instead log the SQL statement on the console during migration to be applied manually after {project_name}'s startup.
+See the link:{upgradingguide_link}[{upgradingguide_name}] for details on how to configure a different limit.
+
 For each expired user session there is a new user event `USER_SESSION_DELETED` fired.
 As part of this change, the process now deletes rows from the table in small batches, instead of issuing a delete statements that affects the whole table. This should allow for better response times when there are a lot of sessions in the table.
+
+=== Embedded cache state-transfer disabled for session caches with persistence
+
+When persistent sessions are enabled, session data is available in the database and Infinispan session caches are configured to have `num_owners=1`.
+Consequently, state-transfer for embedded caches provides no additional availability for session data, whilst adding significant overhead when {project_name} nodes leave or join the cluster.
+Therefore, we now disable state-transfer when the persistent-user-session feature is enabled.
+Similarly, we now also disable state-transfer for offline session caches when the persistent-user-session feature is disabled.
+
+=== Organization custom attribute named `id` behavior change
+
+Organizations can have custom attributes named `id`. When both organization attributes and organization ID are included in tokens via the organization membership mapper configuration,
+the organization ID will override any custom `id` attribute value. Previously, the organization ID was added first and could be overridden by custom attributes.
+This ensures that the `id` field in the organization claims always contains the actual organization ID.
+
+If you have a custom organization attribute named `id` and rely on its value in tokens, you should rename the attribute to avoid it being overridden by the organization ID.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
 The following sections provide details on deprecated features.
 
-=== Sending OpenID Connect client secret via basic authentication without URL encoding
+=== New centralized OpenTelementry options
 
-In a scenario where {project_name} acts as a broker and connects via OpenID Connect to another identity provider, you can choose to send the client secret as *Client secret sent as HTTP Basic authentication without URL encoding* (`client_secret_basic_unencoded`). While this violates RFC 6749, it can be used to keep the default behavior of earlier versions of {project_name}.
+{project_name} now provides centralized telemetry configuration options that can be shared across all telemetry (OpenTelemetry) components - traces and logs, with future support planned for metrics.
+Individual components can override these global settings when needed.
 
-This behavior is deprecated and will be removed in a future version of {project_name}.
+New options: `telemetry-endpoint`, `telemetry-protocol`, `telemetry-service-name`, and `telemetry-resource-attributes`.
+
+*Deprecation:* The `tracing-service-name` and `tracing-resource-attributes` options are now deprecated in favor of `telemetry-service-name` and `telemetry-resource-attributes`.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+=== Fine-Grained Admin Permissions (FGAP) v1 (deprecated)
+
+Fine-Grained Admin Permissions (FGAP) v1 is now deprecated. This version no longer receives enhancements and improvements  and will be removed in future
+release. Please migrate to FGAP v2 to ensure continued support.
 
 === `AuthenticationManager.AuthResult` is now a record
 
 The inner class `AuthenticationManager.AuthResult` in the `keycloak-services` module is now a record.
 The getter methods like `getSession()` have been deprecated in favor of the `session()` accessors.
-
-=== Accepting HTTP requests with non-normalized paths
-
-The option `http-accept-non-normalized-paths` was introduced to restore the previous behavior where {project_name} accepted non-normalized URLs.
-
-As this behavior can be problematic for URL filtering, it is deprecated and will be removed in a future release.
 
 === Deprecation of methods for removing expired authentication sessions from `AuthenticationSessionProvider`
 
@@ -205,10 +266,28 @@ As `AuthenticationSessionProvider` and `UserSessionProvider` now have an interna
 It is still triggered in this {project_name} version, but will be removed in a future release.
 
 
+=== Fine-Grained Admin Permissions (FGAP) v1
+
+Fine-Grained Admin Permissions (FGAP) v1 is now deprecated. This version no longer receives enhancements and improvements  and will be removed in future
+release. Please migrate to FGAP v2 to ensure continued support.
+
+=== Tracing options `tracing-service-name` and `tracing-resource-attributes`
+
+The `tracing-service-name` and `tracing-resource-attributes` options are now deprecated in favor of the new centralized telemetry options `telemetry-service-name` and `telemetry-resource-attributes`.
+The service name and resource attributes are not directly related to the OpenTelemetry Tracing itself, but to the whole OpenTelemetry settings.
+
+The deprecated options will continue to work, but the new telemetry options take precedence.
+
+Migration path:
+[source]
+----
+tracing-service-name --> telemetry-service-name
+tracing-resource-attributes --> telemetry-resource-attributes
+----
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 
-The following features have been removed from this release.
+=== PostgreSQL 13 (end of life)
 
-=== <TODO>
-
+Version PostgreSQL is end-of-life since November 2025 and therefore no longer supported.

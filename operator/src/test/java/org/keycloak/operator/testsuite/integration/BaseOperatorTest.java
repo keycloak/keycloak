@@ -17,6 +17,50 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.lang.reflect.Method;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.util.TypeLiteral;
+
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.controllers.KeycloakController;
+import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
+import org.keycloak.operator.controllers.KeycloakOIDCClientController;
+import org.keycloak.operator.controllers.KeycloakRealmImportController;
+import org.keycloak.operator.controllers.KeycloakSAMLClientController;
+import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakSAMLClient;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
+import org.keycloak.operator.testsuite.apiserver.ApiServerHelper;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
+
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.MicroTime;
@@ -47,7 +91,6 @@ import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.callback.QuarkusTestAfterEachCallback;
 import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
-
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger.Level;
@@ -56,51 +99,13 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.controllers.KeycloakController;
-import org.keycloak.operator.controllers.KeycloakDeploymentDependentResource;
-import org.keycloak.operator.controllers.KeycloakRealmImportController;
-import org.keycloak.operator.controllers.KeycloakUpdateJobDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus;
-import org.keycloak.operator.testsuite.apiserver.ApiServerHelper;
-import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.opentest4j.TestAbortedException;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import jakarta.enterprise.inject.Instance;
-import jakarta.enterprise.inject.spi.CDI;
-import jakarta.enterprise.util.TypeLiteral;
+import static org.keycloak.operator.Utils.isOpenShift;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.keycloak.operator.Utils.isOpenShift;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
 public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
@@ -248,10 +253,14 @@ public enum OperatorDeployment {local_apiserver,local,remote}
   public static void createCRDs(KubernetesClient client) throws FileNotFoundException {
     K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
     K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
+    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakoidcclients.k8s.keycloak.org-v1.yml"));
+    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaksamlclients.k8s.keycloak.org-v1.yml"));
     K8sUtils.set(client, BaseOperatorTest.class.getResourceAsStream("/service-monitor-crds.yml"));
 
     Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(Keycloak.class).list());
     Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(KeycloakRealmImport.class).list());
+    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(KeycloakOIDCClient.class).list());
+    Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(KeycloakSAMLClient.class).list());
     Awaitility.await().pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> client.resources(ServiceMonitor.class).list());
   }
 
@@ -357,7 +366,7 @@ public enum OperatorDeployment {local_apiserver,local,remote}
       // this can be simplified to just the root deletion after we pick up the fix
       // it can be further simplified after https://github.com/fabric8io/kubernetes-client/issues/5838
       // to just a timed foreground deletion
-      var roots = List.of(Keycloak.class, KeycloakRealmImport.class);
+      var roots = List.of(Keycloak.class, KeycloakRealmImport.class, KeycloakOIDCClient.class, KeycloakSAMLClient.class);
       roots.forEach(c -> k8sclient.resources(c).delete());
       // enforce that at least the statefulset are gone
       try {
@@ -561,8 +570,9 @@ public enum OperatorDeployment {local_apiserver,local,remote}
 
       // Avoid issues with Event Informers between tests
       Log.info("Removing Controllers and application scoped DRs from CDI");
-      Stream.of(KeycloakController.class, KeycloakRealmImportController.class, KeycloakUpdateJobDependentResource.class)
-                      .forEach(c -> CDI.current().destroy(CDI.current().select(c).get()));
+      Stream.of(KeycloakController.class, KeycloakRealmImportController.class, KeycloakOIDCClientController.class,
+              KeycloakSAMLClientController.class, KeycloakUpdateJobDependentResource.class)
+              .forEach(c -> CDI.current().destroy(CDI.current().select(c).get()));
   }
 
   public static String getCurrentNamespace() {

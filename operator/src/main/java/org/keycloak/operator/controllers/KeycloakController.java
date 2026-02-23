@@ -16,6 +16,26 @@
  */
 package org.keycloak.operator.controllers;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
+import jakarta.inject.Inject;
+
+import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.operator.Config;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.ContextUtils;
+import org.keycloak.operator.Utils;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.update.UpdateLogicFactory;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ContainerState;
 import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
@@ -38,24 +58,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkus.logging.Log;
-import jakarta.inject.Inject;
-import org.keycloak.common.util.CollectionUtil;
-import org.keycloak.operator.Config;
-import org.keycloak.operator.Constants;
-import org.keycloak.operator.ContextUtils;
-import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
-import org.keycloak.operator.update.UpdateLogicFactory;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Workflow(
     explicitInvocation = true,
@@ -173,7 +175,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
         var statefulSet = context.getSecondaryResource(StatefulSet.class);
 
         if (!status.isReady()) {
-            updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
+            updateControl.rescheduleAfter(Constants.RETRY_DURATION);
         } else if (statefulSet.filter(watchedResources::isWatching).isPresent()) {
             updateControl.rescheduleAfter(config.keycloak().pollIntervalSeconds(), TimeUnit.SECONDS);
         }

@@ -28,36 +28,12 @@ import static org.junit.Assert.fail;
 
 public class EventOptionsTest {
 
-    /**
-     * This test ensures that list of CLI options is in-sync with the {@link EventType} enum.
-     * That enum is not directly accessible by the CLI classes, that's why there is this test.
-     */
     @Test
-    public void testAllEnumsArePresent() {
-        List<String> expectedValues = new ArrayList<>(EventOptions.USER_EVENT_METRICS_EVENTS.getExpectedValues());
+    public void testDeprecatedArePresent() {
         List<String> deprecatedValues = new ArrayList<>(EventOptions.USER_EVENT_METRICS_EVENTS.getDeprecatedMetadata().get().getDeprecatedValues());
-        List<String> missingOptions = new ArrayList<>();
         for (EventType event : EventType.values()) {
-            if (event.name().endsWith("_ERROR")) {
-                continue;
-            }
-            if (event == EventType.VALIDATE_ACCESS_TOKEN) {
-                // event is deprecated and no longer used in the code base
-                continue;
-            }
             String value = event.name().toLowerCase();
-            if (expectedValues.contains(value)) {
-                expectedValues.remove(value);
-            } else {
-                missingOptions.add(value);
-            }
             deprecatedValues.remove(value);
-        }
-        if (!missingOptions.isEmpty()) {
-            fail("Missing event types " + missingOptions + " in event-metrics-user-events");
-        }
-        if (!expectedValues.isEmpty()) {
-            fail("Unknown event types " + expectedValues + " found in event-metrics-user-events");
         }
         if (!deprecatedValues.isEmpty()) {
             fail("Unknown event types " + deprecatedValues + " found in event-metrics-user-events");

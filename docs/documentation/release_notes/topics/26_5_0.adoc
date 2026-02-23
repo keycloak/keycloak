@@ -1,7 +1,117 @@
 // Release notes should contain only headline-worthy new features,
 // assuming that people who migrate will read the upgrading guide anyway.
 
-= Preview of enhanced HTTP performance
+This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
+
+* Workflows to automate administrative tasks and process within a realm.
+* JWT Authorization Grants, our recommended alternative to external to internal token exchange.
+* Guide for using Keycloak as an authorization server for Model Context Protocol (MCP) servers.
+* Authenticating clients with Kubernetes service account tokens to avoid static client secrets.
+* OpenTelemetry support for metrics and logging, combining all observability information in this popular standard.
+
+Read on to learn more about each new feature. If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[review also the changes listed in the upgrading guide].
+
+= Security and Standards
+
+== JWT Authorization Grant (preview)
+
+{project_name} 26.5 introduces a new feature called JWT Authorization Grant, which adds support for https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523] to use external signed JWT assertions to request OAuth 2.0 access tokens.
+
+To accept signed JWT assertions, a trust relationship must be established between the external provider and {project_name}. This trust relationship can be configured through an identity provider in a dedicated section of the OpenID Connect v1.0 identity provider, or through the new JWT Authorization Grant identity provider.
+
+JWT Authorization Grant is recommended as an alternative to link:{securing_apps_base_link}/token-exchange#_external-token-to-internal-token-exchange[External to internal token exchange V1].
+This feature is in preview, and additional details are available in the link:{securing_apps_base_link}/jwt-authorization-grant[dedicated documentation].
+
+== Using Keycloak as an authorization server for Model Context Protocol (MCP) servers
+
+Using {project_name} as an authorization server for Model Context Protocol (MCP) servers is becoming popular, so this release ships additional documentation on how to do this.
+
+See link:{securing_apps_base_link}/mcp-authz-server[Integrating with Model Context Protocol (MCP)] for the new guide.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+endif::[]
+
+== CORS enhancements
+// https://github.com/keycloak/keycloak/pull/43767
+// https://github.com/keycloak/keycloak/issues/8863
+
+CORS (Cross Origin Resource Sharing) is a browser security feature that controls how web pages on one domain can request resources from a different domain.
+
+For the OpenID Connect Dynamic Client Registration, you can now specify which CORS headers are allowed via the client registration access policies.
+
+For the overall CORS configuration, you can now allow environment specific headers to be allowed using the SPI option `+spi-cors--default--allowed-headers+`.
+
+== Logout confirmation page
+
+The client logout configuration now includes an option to show a logout confirmation page. When enabled, users will see a "`You are logged out`" confirmation page upon successful logout.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/slaskawi[Sebastian Łaskawiec] for the contribution.
+endif::[]
+
+== Hiding OpenID Connect scopes from the discovery endpoint
+// https://github.com/keycloak/keycloak/issues/10388
+
+Previously, all scopes of an OpenID Connect client were advertised in the discovery endpoint.
+
+In some situation you might want to avoid it, as the calling client, for example, an MCP server might not support it, or you might want to hide some scopes for preventing their discovery via public APIs.
+
+You can now prevent this by disabling *Include in OpenID Provider Metadata*.
+
+= Administration
+
+== Workflows (preview)
+
+{project_name} introduces a new preview feature called Workflows, which allows administrators to
+automate administrative tasks and process within a realm, introducing a key capability for Identity Governance and Administration (IGA).
+
+For more details, see the link:{adminguide_link}#_managing_workflows[{adminguide_name}].
+
+== Federated client authentication (preview)
+
+Federated client authentication remains preview due to receiving a number of enhancements and fixes.
+
+There is now preview support to use Kubernetes service accounts tokens as credentials for clients, which avoids static secrets for OpenID Connect clients.
+
+See https://www.keycloak.org/docs/latest/server_admin/index.html#_identity_broker_kubernetes[Kubernetes identity providers] in the {adminguide_name} for details.
+
+== Organization invitation management
+
+Organization administrators can now manage organization invitations through both the Admin Console and REST API:
+
+* View all sent invitations with their current status (Pending, Expired)
+* Resend pending invitations to recipients
+* Delete invitation records from the system
+* Filter invitations by status for easier management
+
+All invitations are now persistently stored in the database, providing better tracking and management capabilities.
+
+The invitation management features are available in the *Invitations* tab when managing an organization in the Admin Console, and through the Organizations REST API endpoints under `+/admin/realms/{realm}/orgs/{orgId}/invitations+`.
+
+== New event `USER_SESSION_DELETED`
+
+For each expired user session there is a new user event `USER_SESSION_DELETED` fired.
+This event is published approximately 3-10 minutes after the session has expired depending on job scheduling and load on the system.
+By default, this event is not persisted.
+
+= Configuring and Running
+
+== Containers for PowerPC 64-bit Little Endian architecture
+
+The containers for both the {project_name} and its operator are not available as well for the PowerPC 64-bit Little Endian (ppc64le) architecture. This is in addition to the existing amd64 and arm64.
+
+We expect this to allow users to optimize their usage of open hardware and power consumption.
+
+== Improved server response times
+
+Authentication, user, and client sessions are now created on the respective {project_name} node and avoid extra remote calls to neighbors when reading or writing them to the embedded caches.
+When you have sticky sessions enabled in your loadbalancer, you will benefit from this feature automatically, and you should see reduced response times when authenticating users.
+
+Expired user sessions are now deleted from the database in small batches, instead of issuing a delete statements that affects the whole table.
+This should allow for better response times when there are a lot of sessions in the table.
+
+== Enhanced HTTP performance (preview)
 
 You can now enable a more efficient way to handle JSON data in the HTTP layer.
 This change increases throughput by ~5%, stabilizes response times, and reduces system resource usage.
@@ -15,22 +125,17 @@ endif::[]
 
 For more details, see the https://www.keycloak.org/server/configuration-production[Configuring Keycloak for production] guide.
 
-= Breaking Fix for Windows in Loopback Hostname Verification
+== Configure retry behavior for outgoing HTTP requests
 
-This release introduces a breaking change for Windows users: setups that previously relied on custom machine names or non-standard hostnames for loopback (e.g., `127.0.0.1` resolving to a custom name) may require updates to their trusted domain configuration. Only `localhost` and `*.localhost` are now recognized for loopback verification.
+{project_name} has now more flexibility how to configure retrying of outgoing HTTP requests. This is useful for handling transient network errors or temporary unavailability
+of the service where {project_name} needs to send HTTP request. Retry behavior is disabled by default and must be explicitly enabled.
+More details are available in the link:{server_guide_base_link}/outgoinghttp[Outgoing HTTP requests documentation].
 
-Keycloak now consistently normalizes loopback addresses to `localhost` for domain verification across all platforms. This change ensures predictable behavior for trusted domain checks, regardless of the underlying OS.
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/chance-coleman[Chance Coleman] for the contribution.
+endif::[]
 
-= Export traces with custom request headers
-
-It is now possible to set request headers for exporting traces via Open Telemetry Protocol (OTLP).
-It is mainly useful for providing tokens in the request.
-
-You can specify these headers via the `tracing-header-<header>` wildcard option, accepting any custom header name.
-
-For more details, see the  link:{tracingguide_link}[{tracingguide_name}] guide.
-
-= Enable/disable features via a single option
+== Enable/disable features via a single option
 
 You can now enable or disable individual features using the `feature-<name>` option (like `feature-spiffe=enabled`).
 
@@ -40,27 +145,52 @@ The `feature-<name>` option takes precedence over both `features` and `features-
 
 For more details, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
 
+== Client certificate lookup compliant with RFC 9440
+
+You can now use a new client certificate lookup provider that is compliant with https://datatracker.ietf.org/doc/html/rfc9440[RFC 9440].
+This enables native support e.g. for Caddy and other reverse proxies that follow the RFC.
+For details, navigate to link:{server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup[Enabling Client Certificate Lookup] section of the documentation.
+
+== Running Keycloak as a Windows service
+
+{project_name} can now be installed and run as a Windows service using Apache Commons Daemon (Procrun). The new `tools windows-service` CLI subcommand simplifies service installation and uninstallation.
+
+The service runs `kc.bat start` as an external process, ensuring all environment variables and configuration files are respected. This provides seamless integration with the Windows Services management console and enables automatic startup on system boot without requiring a user to be logged on.
+
+For more information, see the https://www.keycloak.org/server/windows-service[Running Keycloak as a Windows Service] guide.
+
+= Observability
+
+== OpenTelemetry enhancements
+
+=== OpenTelemetry Logs (preview)
+
+{project_name} now supports exporting logs to OpenTelemetry collectors, enabling centralized log management.
+This preview feature allows you to export {project_name} logs to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs, metrics and traces.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+=== OpenTelemetry Metrics (experimental)
+
+{project_name} now provides the experimental support for exporting metrics to OpenTelemetry collectors by using the https://quarkus.io/guides/telemetry-micrometer-to-opentelemetry[Micrometer-to-OpenTelemetry bridge].
+This experimental feature allows you to export {project_name} metrics to any OpenTelemetry-compatible backend and use the same OpenTelemetry collector for logs, metrics and traces.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+=== Export traces with custom request headers
+
+It is now possible to set request headers for exporting traces via OpenTelemetry Protocol (OTLP).
+It is mainly useful for providing tokens in the request.
+
+You can specify these headers via the `tracing-header-<header>` wildcard option, accepting any custom header name.
+
+For more details, see the  link:{tracingguide_link}[{tracingguide_name}] guide.
+
 == MDC Logging feature (supported)
 
 The `log-mdc:v1` feature has been promoted from a preview feature to a supported feature.
 
 MDC enables Keycloak to enrich log entries with contextual information such as realm, client, user ID and IP address, significantly improving debugging and observability.
 
-For more details, see the https://www.keycloak.org/server/logging#_adding_context_for_log_messages[Adding context for log messages] guide.
+For more details, see the https://www.keycloak.org/server/logging#mdc[Adding context for log messages] guide.
 
-= Organization invitation management
-
-Organization administrators can now manage organization invitations through both the Admin Console and REST API:
-
-* View all sent invitations with their current status (Pending, Expired)
-* Resend pending invitations to recipients
-* Delete invitation records from the system
-* Filter invitations by status for easier management
-
-All invitations are now persistently stored in the database, providing better tracking and management capabilities.
-
-The invitation management features are available in the *Invitations* tab when managing an organization in the Admin Console, and through the Organizations REST API endpoints under `/admin/realms/{realm}/orgs/{orgId}/invitations`.
-
-= Logout confirmation
-
-The client logout configuration page now includes an option to enable logout confirmation. When enabled, users will see "You are logged out" confirmation page upon successful logout.

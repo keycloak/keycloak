@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -70,6 +71,7 @@ import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
+import org.keycloak.validate.validators.PatternValidator;
 
 import static java.util.Optional.ofNullable;
 
@@ -324,7 +326,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         }
 
         // delete cache so new config is parsed and applied next time it is required
-        // throught #configureUserProfile(metadata, session)
+        // through #configureUserProfile(metadata, session)
         if (model != null) {
             model.removeNote(DeclarativeUserProfileProvider.PARSED_CONFIG_COMPONENT_KEY);
         }
@@ -427,6 +429,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         metadata.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
+        addAttributeUserDid(UserModel.DID, metadata);
+
         return metadata;
     }
 
@@ -494,9 +498,11 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
         metadata.addAttribute(TermsAndConditions.USER_ATTRIBUTE, -1, AttributeMetadata.ALWAYS_FALSE,
-                DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
+                        DeclarativeUserProfileProviderFactory::isTermAndConditionsEnabled)
                 .setAttributeDisplayName("${termsAndConditionsUserAttribute}")
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
+
+        addAttributeUserDid(UserModel.DID, metadata);
 
         return metadata;
     }
@@ -506,6 +512,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         defaultProfile.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
+
+        addAttributeUserDid(UserModel.DID, defaultProfile);
 
         return defaultProfile;
     }
@@ -521,21 +529,21 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     }
 
     private void initDefaultConfiguration(Scope config) {
+
         // The user-defined configuration is always parsed during init and should be avoided as much as possible
         // If no user-defined configuration is set, the system default configuration must have been set
         // In Quarkus, the system default configuration is set at build time for optimization purposes
-        UPConfig defaultConfig = ofNullable(config.get("configFile"))
+        UPConfig parsedConfig = ofNullable(config.get("configFile"))
                 .map(Paths::get)
                 .map(UPConfigUtils::parseConfig)
                 .orElse(PARSED_DEFAULT_RAW_CONFIG);
 
-        if (defaultConfig == null) {
-            // as a fallback parse the system default config
-            defaultConfig = UPConfigUtils.parseSystemDefaultConfig();
+        // As fallback parse the system default config
+        if (parsedConfig == null) {
+            parsedConfig = UPConfigUtils.parseSystemDefaultConfig();
         }
 
-        PARSED_DEFAULT_RAW_CONFIG = null;
-        setDefaultConfig(defaultConfig);
+        setDefaultConfig(parsedConfig);
     }
 
     private static Map<String, Object> getEmailAnnotationDecorator(AttributeContext c) {
@@ -585,5 +593,21 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         RealmModel realm = context1.getRealm();
 
         return UpdateEmail.isEnabled(realm);
+    }
+
+    private static boolean isVerifiableCredentialsEnabled(AttributeContext context) {
+        RealmModel realm = context.getSession().getContext().getRealm();
+        boolean oid4vciEnabled = realm.isVerifiableCredentialsEnabled();
+        return oid4vciEnabled;
+    }
+
+    private void addAttributeUserDid(String name, UserProfileMetadata metadata) {
+        Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
+        Predicate<AttributeContext> selector = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
+        Predicate<AttributeContext> readWriteAllowed = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
+        AttributeValidatorMetadata validatorMetadata = new AttributeValidatorMetadata(PatternValidator.ID, new ValidatorConfig(Map.of(
+                "pattern", "^(did:[a-z0-9]+:.+)?$", // simplified pattern
+                "error-message", "Value must start with 'did:scheme:'")));
+        metadata.addAttribute(name, 10, List.of(validatorMetadata), selector, readWriteAllowed, required, readWriteAllowed).setAttributeDisplayName("${did}");
     }
 }

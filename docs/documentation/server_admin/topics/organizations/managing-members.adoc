@@ -4,7 +4,7 @@
 =  Managing members
 [role="_abstract"]
 
-An organization member is basically a realm user but with a link to a single organization. They are logically separated
+An organization member is basically a realm user but with a link to one or more organizations. They are logically separated
 from other users in a realm so that you know exactly which users belong to an organization.
 
 There are different ways to add, or onboard, a member to an organization:
@@ -20,6 +20,11 @@ However, you can narrow the users to only those associated with an organization 
 
 .Managing organization members
 image:images/organizations-manage-members.png[alt="Managing organization members"]
+
+You are also able to manage the membership of a user in an organization from the *Users* section. When you select a user, you can see the list of organizations that the user belongs to and manage those memberships.
+
+.Managing organization members
+image:images/organizations-users-section.png[alt="Managing organization members from the Users section"]
 
 [[_managed_unmanaged_members_]]
 == Managed and unmanaged members
@@ -89,7 +94,7 @@ to provide the same email address used to send the invitation.
 
 == Managing invitations
 
-{project_name} provides comprehensive invitation management capabilities that allow administrators to track, manage, and control 
+{project_name} provides comprehensive invitation management capabilities that allow administrators to track, manage, and control
 organization invitations throughout their lifecycle.
 
 === Viewing invitations

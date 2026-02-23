@@ -104,6 +104,9 @@ public interface Errors {
 
     String INVALID_DPOP_PROOF = "invalid_dpop_proof";
 
+    // https://datatracker.ietf.org/doc/html/rfc9396#name-authorization-error-respons
+    String INVALID_AUTHORIZATION_DETAILS = "invalid_authorization_details";
+
     String NOT_LOGGED_IN = "not_logged_in";
     String UNKNOWN_IDENTITY_PROVIDER = "unknown_identity_provider";
     String ILLEGAL_ORIGIN = "illegal_origin";

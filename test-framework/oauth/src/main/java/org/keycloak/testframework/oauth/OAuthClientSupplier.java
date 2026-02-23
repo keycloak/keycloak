@@ -1,6 +1,10 @@
 package org.keycloak.testframework.oauth;
 
+import java.util.List;
+
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testframework.injection.DependenciesBuilder;
+import org.keycloak.testframework.injection.Dependency;
 import org.keycloak.testframework.injection.InstanceContext;
 import org.keycloak.testframework.injection.RequestedInstance;
 import org.keycloak.testframework.injection.Supplier;
@@ -17,6 +21,15 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 public class OAuthClientSupplier implements Supplier<OAuthClient, InjectOAuthClient> {
+
+    @Override
+    public List<Dependency> getDependencies(RequestedInstance<OAuthClient, InjectOAuthClient> instanceContext) {
+        return DependenciesBuilder.create(KeycloakUrls.class)
+                .add(HttpClient.class)
+                .add(ManagedWebDriver.class)
+                .add(TestApp.class)
+                .add(ManagedRealm.class, instanceContext.getAnnotation().realmRef()).build();
+    }
 
     @Override
     public OAuthClient getValue(InstanceContext<OAuthClient, InjectOAuthClient> instanceContext) {

@@ -6,7 +6,6 @@
     <#if section = "title">
         title
     <#elseif section = "header">
-        <span class="${properties.kcWebAuthnKeyIcon!}"></span>
         ${msg("webauthn-registration-title")}
     <#elseif section = "form">
     <div class="${properties.kcFormClass!}">

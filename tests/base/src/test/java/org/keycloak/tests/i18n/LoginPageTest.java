@@ -431,6 +431,8 @@ public class LoginPageTest {
         String nonExistingUrl = oauth.loginForm().build().split("protocol")[0] + "incorrect-path";
         driver.open(nonExistingUrl);
 
+        errorPage.assertCurrent();
+
         assertThat(driver.page().getPageSource(), containsString(realmLocalizationMessageValue));
     }
 

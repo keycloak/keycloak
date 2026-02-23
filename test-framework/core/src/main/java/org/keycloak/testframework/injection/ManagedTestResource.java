@@ -10,6 +10,10 @@ public abstract class ManagedTestResource {
         return dirty;
     }
 
+    /**
+     * Marking the resource as dirty will result in the test framework re-creating the resource after the test
+     * has executed
+     */
     public void dirty() {
         this.dirty = true;
     }

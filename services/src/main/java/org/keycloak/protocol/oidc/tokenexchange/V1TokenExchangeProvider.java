@@ -140,7 +140,7 @@ public class V1TokenExchangeProvider extends AbstractTokenExchangeProvider {
                 requestedUser = session.users().getUserById(realm, requestedSubject);
             }
 
-            if (requestedUser == null) {
+            if (requestedUser == null || !requestedUser.isEnabled()) {
                 // We always returned access denied to avoid username fishing
                 event.detail(Details.REASON, "requested_subject not found");
                 event.error(Errors.NOT_ALLOWED);

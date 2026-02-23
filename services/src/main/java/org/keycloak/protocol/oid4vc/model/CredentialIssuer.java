@@ -17,8 +17,6 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,9 +46,6 @@ public class CredentialIssuer {
 
     @JsonProperty("authorization_servers")
     private List<String> authorizationServers;
-
-    @JsonProperty("notification_endpoint")
-    private String notificationEndpoint;
 
     @JsonProperty("batch_credential_issuance")
     private BatchCredentialIssuance batchCredentialIssuance;
@@ -112,15 +107,6 @@ public class CredentialIssuer {
         return this;
     }
 
-    public String getNotificationEndpoint() {
-        return notificationEndpoint;
-    }
-
-    public CredentialIssuer setNotificationEndpoint(String notificationEndpoint) {
-        this.notificationEndpoint = notificationEndpoint;
-        return this;
-    }
-
     public BatchCredentialIssuance getBatchCredentialIssuance() {
         return batchCredentialIssuance;
     }
@@ -138,7 +124,8 @@ public class CredentialIssuer {
         if (credentialsSupported == null) {
             throw new IllegalArgumentException("credentialsSupported cannot be null");
         }
-        this.credentialsSupported = Collections.unmodifiableMap(new HashMap<>(credentialsSupported));
+        credentialsSupported.forEach((k, v) -> v.setId(k));
+        this.credentialsSupported = Map.copyOf(credentialsSupported);
         return this;
     }
 

@@ -41,6 +41,7 @@ import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.connections.jpa.support.EntityManagers;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.GroupMemberJoinEvent;
@@ -441,9 +442,21 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         joinGroup(group, null);
     }
 
+    private boolean hasDirectGroup(GroupModel group) {
+        UserGroupMembershipEntity membership = em.createNamedQuery("userMemberOf", UserGroupMembershipEntity.class)
+                .setParameter("user", user)
+                .setParameter("groupId", group.getId())
+                .getSingleResultOrNull();
+        // Avoid keeping it in the persistence context, as the user might be detached for example in a bulk delete
+        if (membership != null) {
+            em.detach(membership);
+        }
+        return membership != null;
+    }
+
     @Override
     public void joinGroup(GroupModel group, MembershipMetadata metadata) {
-        if (RoleUtils.isDirectMember(getGroupsStream(), group)) return;
+        if (hasDirectGroup(group)) return;
         joinGroupImpl(group, metadata);
     }
 
@@ -457,8 +470,10 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         entity.setGroupId(group.getId());
         entity.setMembershipType(metadata == null ? MembershipType.UNMANAGED : metadata.getMembershipType());
         em.persist(entity);
-        em.flush();
-        em.detach(entity);
+        if (!EntityManagers.isBatchMode()) {
+            em.flush();
+            em.detach(entity);
+        }
         GroupMemberJoinEvent.fire(group, this, session);
     }
 
@@ -510,13 +525,28 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         RoleGrantedEvent.fire(role, this, session);
     }
 
+    @Override
+    public boolean hasDirectRole(RoleModel role) {
+        UserRoleMappingEntity membership = em.createNamedQuery("userHasRole", UserRoleMappingEntity.class)
+                .setParameter("user", user)
+                .setParameter("roleId", role.getId())
+                .getSingleResultOrNull();
+        // Avoid keeping it in the persistence context, as the user might be detached for example in a bulk delete
+        if (membership != null) {
+            em.detach(membership);
+        }
+        return membership != null;
+    }
+
     public void grantRoleImpl(RoleModel role) {
         UserRoleMappingEntity entity = new UserRoleMappingEntity();
         entity.setUser(getEntity());
         entity.setRoleId(role.getId());
         em.persist(entity);
-        em.flush();
-        em.detach(entity);
+        if (!EntityManagers.isBatchMode()) {
+            em.flush();
+            em.detach(entity);
+        }
     }
 
     @Override

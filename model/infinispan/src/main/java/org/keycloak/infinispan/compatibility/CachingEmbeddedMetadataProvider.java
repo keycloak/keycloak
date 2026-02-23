@@ -1,6 +1,8 @@
 package org.keycloak.infinispan.compatibility;
 
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
@@ -25,13 +27,21 @@ public class CachingEmbeddedMetadataProvider extends AbstractCompatibilityMetada
     @Override
     public Map<String, String> customMeta() {
         return Map.of(
-              "version", Version.getVersion(),
-              "jgroupsVersion", org.jgroups.Version.printVersion()
+                "version", majorMinorOf(Version.getVersion()),
+                "jgroupsVersion", majorMinorOf(org.jgroups.Version.printVersion())
         );
     }
-
     @Override
     public Stream<String> configKeys() {
         return Stream.of(DefaultCacheEmbeddedConfigProviderFactory.CONFIG, DefaultCacheEmbeddedConfigProviderFactory.STACK);
+    }
+
+    public static String majorMinorOf(String version) {
+        if (version == null || version.isEmpty()) {
+            return version;
+        }
+        // Pattern to grab only the "Major.Minor" (e.g., 16.0)
+        Matcher matcher = Pattern.compile("^(\\d+\\.\\d+)").matcher(version);
+        return matcher.find() ? matcher.group(1) : version;
     }
 }

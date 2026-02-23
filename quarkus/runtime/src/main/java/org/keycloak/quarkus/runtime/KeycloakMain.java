@@ -17,20 +17,22 @@
 
 package org.keycloak.quarkus.runtime;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ForkJoinPool;
 
 import jakarta.enterprise.context.ApplicationScoped;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.Version;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
-import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractNonServerCommand;
 import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 
 import io.quarkus.arc.Arc;
@@ -42,8 +44,8 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 import org.jboss.logging.Logger;
 import picocli.CommandLine;
 
+import static org.keycloak.common.util.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
-import static org.keycloak.quarkus.runtime.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 
 /**
@@ -79,23 +81,20 @@ public class KeycloakMain implements QuarkusApplication {
         main(args, picocli);
     }
 
+    public static void reset(Properties systemProperties) {
+        System.setProperties((Properties) systemProperties.clone());
+        PropertyMappers.reset();
+        PersistedConfigSource.getInstance().getConfigValueProperties().clear();
+        Profile.reset();
+        Configuration.resetConfig();
+        ExecutionExceptionHandler.resetExceptionTransformers();
+    }
+
     public static void main(String[] args, Picocli picocli) {
-        List<String> cliArgs = null;
-        try {
-            cliArgs = Picocli.parseArgs(args);
-        } catch (PropertyException e) {
-            picocli.usageException(e.getMessage(), e.getCause());
-            return;
-        }
+        List<String> cliArgs = List.of(args.length == 0 ? new String[] {"-h"} : args);
 
         if (DryRunMixin.isDryRunBuild() && (cliArgs.contains(DryRunMixin.DRYRUN_OPTION_LONG) || Boolean.valueOf(System.getenv().get(DryRunMixin.KC_DRY_RUN_ENV)))) {
             PersistedConfigSource.getInstance().useDryRunProperties();
-        }
-
-        if (cliArgs.isEmpty()) {
-            cliArgs = new ArrayList<>(cliArgs);
-            // default to show help message
-            cliArgs.add("-h");
         }
 
         // parse arguments and execute any of the configured commands

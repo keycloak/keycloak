@@ -20,13 +20,13 @@ package org.keycloak.it.cli.dist;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Locale;
-import java.util.regex.Pattern;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdmin;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminService;
 import org.keycloak.quarkus.runtime.cli.command.BootstrapAdminUser;
@@ -42,15 +42,15 @@ import org.keycloak.quarkus.runtime.cli.command.UpdateCompatibilityMetadata;
 import io.quarkus.test.junit.main.Launch;
 import org.apache.commons.io.FileUtils;
 import org.approvaltests.Approvals;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.OS;
 
 import static org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
+@WithEnvVars({"KEYCLOAK_COMMAND_MODE", "ALL", "KEYCLOAK_HELP_WIDTH", "80"})
 @DistributionTest
 @RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
+@Tag(DistributionTest.WIN)
 public class HelpCommandDistTest {
 
     public static final String REPLACE_EXPECTED = "KEYCLOAK_REPLACE_EXPECTED";
@@ -193,7 +193,7 @@ public class HelpCommandDistTest {
             for (String cmd : List.of("", "start", "start-dev", "build")) {
                 String debugOption = "--debug";
 
-                if (OS.WINDOWS.isCurrentOs()) {
+                if (Environment.isWindows()) {
                     debugOption = "--debug=8787";
                 }
 
@@ -208,19 +208,20 @@ public class HelpCommandDistTest {
     }
 
     private void assertHelp(CLIResult cliResult) {
-        // normalize the output to prevent changes around the feature toggles or events to mark the output to differ
         String output = cliResult.getOutput()
+                // strip ANSI escape sequences (colors, bold, etc.) that may appear in the output
+                .replaceAll("\u001B\\[[;\\d]*m", "")
+                // normalize the output to prevent changes around the feature toggles or events to mark the output to differ
                 .replaceAll("((Disables|Enables) a set of one or more features. Possible values are: )[^.]{30,}", "$1<...>")
-                .replaceAll("(create a metric.\\s+Possible values are:)[^.]{30,}.[^.]*.", "$1<...>");
+                .replaceAll("(create a metric.\\s+Possible values are:)[^.]{30,}.[^.]*.", "$1<...>")
+                // strip trailing whitespace on each line that picocli may leave
+                .replaceAll("[ \\t]+(?=\\R)", "")
+                .stripTrailing();
 
-        String osName = System.getProperty("os.name");
-        if(osName.toLowerCase(Locale.ROOT).contains("windows")) {
-            // On Windows, all output should have at least one "kc.bat" in it.
-            MatcherAssert.assertThat(output, Matchers.containsString("kc.bat"));
-            output = output.replaceAll("kc.bat", "kc.sh");
-            output = output.replaceAll(Pattern.quote("data\\log\\"), "data/log/");
-            // line wrap which looks differently due to ".bat" vs. ".sh"
-            output = output.replaceAll("including\nbuild ", "including build\n");
+        if (Environment.isWindows()) {
+            output = output
+                    .replace("data\\log\\", "data/log/")
+                    .replace("\r\n", "\n");
         }
 
         try {

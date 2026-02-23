@@ -31,6 +31,11 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 
+/**
+ * Managing organization invitations.
+ *
+ * @since Keycloak server 26.5.0
+ */
 public interface OrganizationInvitationsResource {
 
     /**

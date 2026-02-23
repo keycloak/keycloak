@@ -25,7 +25,7 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
 
     @Test
     public void testNotAllowedIdentityProvider() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ENABLED, "false");
         });
 
@@ -39,7 +39,7 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
 
     @Test
     public void testValidateSignatureDisabled() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "false");
         });
 
@@ -52,6 +52,25 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
         assertSuccess("test-app", response);
     }
 
+    @Test
+    public void testClientIdAllowedAsAudience() {
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", "test-client", IDP_ISSUER));
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Invalid token audience", response, events.poll());
+
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.ALLOW_CLIENT_ID_AS_AUDIENCE, Boolean.TRUE.toString());
+        });
+
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", "test-client", IDP_ISSUER));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
+
+        jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Invalid token audience", response, events.poll());
+    }
+
     public static class JWTAuthorizationGrantRealmConfig extends AbstractJWTAuthorizationGrantTest.JWTAuthorizationGrantRealmConfig {
 
         @Override
@@ -61,6 +80,7 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
                     IdentityProviderBuilder.create()
                             .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                             .alias(IDP_ALIAS)
+                            .setAttribute("clientId", "test-client")
                             .setAttribute(IdentityProviderModel.ISSUER, IDP_ISSUER)
                             .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString())
                             .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")

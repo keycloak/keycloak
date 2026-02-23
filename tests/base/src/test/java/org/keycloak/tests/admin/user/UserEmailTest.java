@@ -614,7 +614,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
 
-        assertEquals("Your account has been updated.", driver.findElement(By.id("kc-page-title")).getText());
+        assertEquals("Account updated", driver.findElement(By.id("kc-page-title")).getText());
 
         String pageSource = driver.page().getPageSource();
 
@@ -696,7 +696,7 @@ public class UserEmailTest extends AbstractUserTest {
 
         passwordUpdatePage.changePassword("new-pass", "new-pass");
 
-        assertEquals("Your account has been updated.", driver.findElement(By.id("kc-page-title")).getText());
+        assertEquals("Account updated", driver.findElement(By.id("kc-page-title")).getText());
 
         String pageSource = driver.page().getPageSource();
 

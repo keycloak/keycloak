@@ -24,7 +24,7 @@ final class WorkflowExecutor {
         this.taskTimeout = taskTimeout;
     }
 
-    void runTask(KeycloakSession session, Runnable task) {
+    void runTask(KeycloakSession session, WorkflowTransactionalTask task) {
         enlistTransaction(session, new WorkflowTask(this, task));
     }
 
@@ -35,7 +35,7 @@ final class WorkflowExecutor {
                     if (error instanceof TimeoutException) {
                         log.warnf("Timeout occurred while processing workflow task: %s", task);
                     }
-                    task.cancel();
+                    task.cancel(error);
                 });
 
         if (blocking) {

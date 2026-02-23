@@ -1,15 +1,18 @@
 package org.keycloak.tests.oauth;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -75,8 +78,9 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         assertFailure("Token expiration is too far in the future and iat claim not present in token", response, events.poll());
 
         //reduce max expiration to 10 seconds
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_MAX_ALLOWED_ASSERTION_EXPIRATION, "10");
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP, "false");
         });
 
         jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER, Time.currentTime() + 11L));
@@ -173,7 +177,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Token reuse detected", response, events.poll());
 
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_REUSE_ALLOWED, "true");
         });
 
@@ -187,14 +191,14 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
     @Test
     public void testSignatureAlg() {
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG, Algorithm.ES256);
         });
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", response);
 
-        realm.updateIdentityProviderWithCleanup(IDP_ALIAS, rep -> {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
             rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_ASSERTION_SIGNATURE_ALG, Algorithm.ES512);
         });
         jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
@@ -211,6 +215,49 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         String jwt = getIdentityProvider().encodeToken(token, newKeys);
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertFailure("Invalid signature", response, events.poll());
+    }
+
+    @Test
+    public void testValidateSignatureFixedKey() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER,
+                    PemUtils.encodeKey(identityProvider.getKeys().getKeyWrapper().getPublicKey()));
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
+    }
+
+    @Test
+    public void testValidateSignatureFixedKeyAndKeyId() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER,
+                    PemUtils.encodeKey(identityProvider.getKeys().getKeyWrapper().getPublicKey()));
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER_KEY_ID,
+                    identityProvider.getKeys().getKeyWrapper().getKid());
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
+    }
+
+    @Test
+    public void testValidateSignatureFixedKeyUsingJwks() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.USE_JWKS_URL, Boolean.FALSE.toString());
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWKS_URL, "");
+            rep.getConfig().put(OIDCIdentityProviderConfig.PUBLIC_KEY_SIGNATURE_VERIFIER, identityProvider.getKeys().getJwksString());
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
     }
 
     @Test
@@ -232,9 +279,65 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
     }
 
     @Test
+    public void textLimitAccessTokenExpiration() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.getConfig().put(OIDCIdentityProviderConfig.JWT_AUTHORIZATION_GRANT_LIMIT_ACCESS_TOKEN_EXP, "true");
+        });
+
+        int accessCodeLifeSpan = realm.admin().toRepresentation().getAccessTokenLifespan();
+        String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken(accessCodeLifeSpan));
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        MatcherAssert.assertThat(response.getExpiresIn(), Matchers.allOf(Matchers.lessThanOrEqualTo(accessCodeLifeSpan), Matchers.greaterThan(accessCodeLifeSpan - 5)));
+
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken(120L));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        MatcherAssert.assertThat(response.getExpiresIn(), Matchers.allOf(Matchers.lessThanOrEqualTo(120), Matchers.greaterThan(115)));
+    }
+
+    @Test
     public void testSuccessGrant() {
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
         assertSuccess("test-app", response);
+    }
+
+    @Test
+    public void testDisabledIdentityProvider() {
+        realm.updateIdentityProvider(IDP_ALIAS, rep -> {
+            rep.setEnabled(false);
+        });
+
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Identity Provider is not enabled", response, events.poll());
+    }
+
+    @Test
+    public void testUserDisabled() {
+        UserRepresentation userRep = user.admin().toRepresentation();
+        userRep.setEnabled(false);
+        user.admin().update(userRep);
+
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("User is not enabled", response, events.poll());
+
+        userRep.setEnabled(true);
+        user.admin().update(userRep);
+    }
+
+    @Test
+    public void testUserWithRequiredAction() {
+        UserRepresentation userRep = user.admin().toRepresentation();
+        userRep.setRequiredActions(Collections.singletonList("UPDATE_PASSWORD"));
+        user.admin().update(userRep);
+
+        String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Account is not fully set up", response, events.poll());
+
+        userRep = user.admin().toRepresentation();
+        userRep.setRequiredActions(Collections.emptyList());
+        user.admin().update(userRep);
     }
 }

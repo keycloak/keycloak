@@ -42,7 +42,7 @@ public class MessageBean {
         if (summary == null)
             summary = newLine;
         else
-            summary = summary + "<br>" + newLine;
+            summary = summary + " " + newLine;
     }
 
     public String getType() {

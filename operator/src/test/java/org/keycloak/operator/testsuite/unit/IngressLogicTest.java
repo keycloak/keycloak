@@ -20,8 +20,6 @@ package org.keycloak.operator.testsuite.unit;
 import java.util.Map;
 import java.util.Optional;
 
-import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import org.junit.jupiter.api.Test;
 import org.keycloak.operator.controllers.KeycloakIngressDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
@@ -29,11 +27,15 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.testsuite.utils.MockController;
 
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import org.junit.jupiter.api.Test;
+
+import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.disableHttps;
 
 public class IngressLogicTest {
 

@@ -29,7 +29,8 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers.Datasources.appendDatasourceMappers;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class DatabasePropertyMappers implements PropertyMapperGrouping {
+public final class DatabasePropertyMappers implements PropertyMapperGrouping {
+    public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
     @Override
@@ -54,9 +55,8 @@ final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .paramLabel("jdbc-url")
                         .build(),
                 fromOption(DatabaseOptions.DB_POSTGRESQL_TARGET_SERVER_TYPE)
-                        .to("quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType")
-                        .mapFrom(DatabaseOptions.DB, DatabasePropertyMappers::getPostgresqlTargetServerType)
-                        .isEnabled(() -> getPostgresqlTargetServerType(Configuration.getConfigValue(DB).getValue(), null) != null)
+                        .to(PG_TARGET_SERVER_TYPE)
+                        .isEnabled(() -> isPostgresqlTargetServerTypeEnabled())
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")
@@ -125,10 +125,11 @@ final class DatabasePropertyMappers implements PropertyMapperGrouping {
             .description("Used for internal purposes of H2 database.")
             .build();
 
-    private static String getPostgresqlTargetServerType(String db, ConfigSourceInterceptorContext context) {
+    public static boolean isPostgresqlTargetServerTypeEnabled() {
+        String db = Configuration.getConfigValue(DB).getValue();
         Database.Vendor vendor = Database.getVendor(db).orElse(null);
         if (vendor != Database.Vendor.POSTGRES) {
-            return null;
+            return false;
         }
 
         String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
@@ -137,14 +138,10 @@ final class DatabasePropertyMappers implements PropertyMapperGrouping {
         if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
                 !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
             // Custom JDBC-Driver, for example, AWS JDBC Wrapper.
-            return null;
+            return false;
         }
-        if (dbUrl != null && dbUrl.contains("targetServerType")) {
-            // targetServerType already set to same or different value in db-url, ignore
-            return null;
-        }
-        log.debug("setting targetServerType for PostgreSQL to 'primary'");
-        return "primary";
+        // targetServerType already set to same or different value in db-url, ignore
+        return dbUrl == null || !dbUrl.contains("targetServerType");
     }
 
     /**

@@ -10,8 +10,8 @@ on:
 
 env:
   MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
-  MINIKUBE_VERSION: v1.37.0
-  KUBERNETES_VERSION: v1.32.9 # OCP 4.19
+  MINIKUBE_VERSION: v1.38.0
+  KUBERNETES_VERSION: v1.35.0
   MINIKUBE_MEMORY: 4096 # Without explicitly setting memory, minikube uses ~25% of available memory which might be too little on smaller GitHub runners for running the tests
 
 defaults:
@@ -90,7 +90,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b589f2d61bf96695c546929c72b38563e856059d # v2.14.0
+        uses: manusa/actions-setup-minikube@8234275e0386fe1cdaf519d28c90f4f03fad89e4 # v2.15.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -100,7 +100,7 @@ jobs:
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: keycloak-dist
           path: quarkus/container
@@ -124,6 +124,7 @@ jobs:
               -Dkc.operator.keycloak.image=keycloak:${{ env.version_remote }} \
               -Dquarkus.kubernetes.env.vars.kc-operator-keycloak-image-pull-policy=Never \
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_remote }} \
+              -Dtest.operator.client-controllers=true \
               --no-transfer-progress -Dtest.operator.deployment=remote ${PARAMS["${{ matrix.suite }}"]}
 
   test-olm:
@@ -137,7 +138,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@b589f2d61bf96695c546929c72b38563e856059d # v2.14.0
+        uses: manusa/actions-setup-minikube@8234275e0386fe1cdaf519d28c90f4f03fad89e4 # v2.15.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -145,15 +146,12 @@ jobs:
           driver: docker
           start args: --memory=${{ env.MINIKUBE_MEMORY }} --addons=registry --insecure-registry=192.168.49.0/24
 
-      - name: Install OPM
+      - name: Install OPM / OC
         uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
         with:
-          source: github
-          opm: 1.21.0
-
-      - name: Install OC
-        uses: redhat-actions/openshift-tools-installer@144527c7d98999f2652264c048c7a9bd103f8a82 # v1.13.1
-        with:
+          # openshift-tools-installer is out-of-date for later opm, which started using the binary name opm-rhelX.
+          # we may have to do our own installation to move past this
+          opm: 4.16.4
           oc: 4
 
       - name: Install Yq
@@ -165,7 +163,7 @@ jobs:
 
       - name: Download keycloak distribution
         id: download-keycloak-dist
-        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6.0.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: keycloak-dist
           path: quarkus/container
@@ -226,7 +224,7 @@ jobs:
 
       - name: Upload inspect report
         if: failure()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: oc-inspect
           path: inspect.*

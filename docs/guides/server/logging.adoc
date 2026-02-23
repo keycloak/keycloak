@@ -286,9 +286,31 @@ You can even specify your own pattern with your required data to be logged, such
 <@kc.start parameters="--http-access-log-pattern='%A %{METHOD} %{REQUEST_URL} %{i,User-Agent}'"/>
 
 WARNING: HTTP Access logs may contain sensitive HTTP headers like `Authorization`, `Cookie`, or external API keys references.
-Be careful with using the `long` pattern or printing the headers by the custom format - you should use it only for development purposes.
+The `Authorization` header and selected sensitive cookies are automatically masked in the HTTP Access log. However, the list of masked items might not be complete. Be careful with using the `long` pattern or printing the headers by the custom format - you should use it only for development purposes. To extend the list of the masked items, see below.
 
 Consult the https://quarkus.io/guides/http-reference#configuring-http-access-logs[Quarkus documentation] for the full list of variables that can be used.
+
+=== Mask specific HTTP headers and cookies
+
+Selected sensitive HTTP headers and cookies are automatically masked in the HTTP Access log.
+
+Masked sensitive HTTP headers:
+
+* `Authorization`
+
+Masked sensitive {project_name} cookies:
+
+* `AUTH_SESSION_ID`
+* `KC_AUTH_SESSION_HASH`
+* `KEYCLOAK_IDENTITY`
+* `KEYCLOAK_SESSION`
+* `AUTH_SESSION_ID_LEGACY`
+* `KEYCLOAK_IDENTITY_LEGACY`
+* `KEYCLOAK_SESSION_LEGACY`
+
+In order to extend the list of the masked items (e.g. to accommodate for headers and cookies used by your custom extensions), configure the `http-access-log-masked-headers` and `http-access-log-masked-cookies` options.
+
+<@kc.start parameters="--http-access-log-enabled=true --http-access-log-masked-headers=X-Custom,Y-Api-Token --http-access-log-masked-cookies=MY_COOKIE,MY_SECOND_COOKIE"/>
 
 === Exclude specific URL paths
 
@@ -300,7 +322,47 @@ You can use regular expressions to exclude them, such as:
 
 In this case, all calls to the `/realms/my-internal-realm/` and subsequent paths will be excluded from the HTTP Access log.
 
-<@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-* log-mdc*">
+=== Log to dedicated file with rotation
+
+Instead of keeping the HTTP access logs in the normal server log, you can write them to a dedicated log file.
+This helps you separate HTTP access logs from the server logs and maintain audit trails.
+When file logging is enabled, HTTP access logs are not written to the console.
+
+==== Enable file logging
+
+You can enable file logging as follows:
+
+<@kc.start parameters="--http-access-log-enabled=true --http-access-log-file-enabled=true"/>
+
+This automatically creates a file called `keycloak-http-access.log` in the `/data/log` directory of your distribution.
+
+==== Change file name and suffix
+
+You can change the name of the log file using the `http-access-log-file-name` property.
+To change the file suffix (`.log` is the default), use the `http-access-log-file-suffix` property.
+
+For example, to write HTTP access logs to the file `my-http-logs.txt`:
+
+<@kc.start parameters="--http-access-log-enabled=true --http-access-log-file-enabled=true --http-access-log-file-name=my-http-logs --http-access-log-file-suffix=txt"/>
+
+==== File rotation
+
+By default, the HTTP access log file is rotated daily.
+
+When the daily rotation occurs, a date-based suffix '.+{yyyy-MM-dd}+' is added to the log file name from the previous day, keeping access logs separated by date (for example, `keycloak-http-access.2052-02-29.log`).
+
+To disable rotation, use the following configuration:
+
+<@kc.start parameters="--http-access-log-enabled=true --http-access-log-file-enabled=true --http-access-log-file-rotate=false"/>
+
+[[logs-export-opentelemetry]]
+== Telemetry Logs export (OpenTelemetry)
+
+It is possible to export OpenTelemetry logs from your deployment to the OpenTelemetry collector for centralized log management.
+
+For more details, see the <@links.observability id="telemetry"/> guide.
+
+<@opts.printRelevantOptions includedOptions="log log-*" excludedOptions="log-console-* log-file log-file-* log-syslog-* log-mdc* telemetry-logs-*">
 
 === Console
 <@opts.includeOptions includedOptions="log-console-*"/>
@@ -316,6 +378,9 @@ In this case, all calls to the `/realms/my-internal-realm/` and subsequent paths
 
 === Mapped Diagnostic Context (MDC)
 <@opts.includeOptions includedOptions="log-mdc*"/>
+
+=== Telemetry Logs (OpenTelemetry)
+<@opts.includeOptions includedOptions="telemetry-logs-*"/>
 
 </@opts.printRelevantOptions>
 

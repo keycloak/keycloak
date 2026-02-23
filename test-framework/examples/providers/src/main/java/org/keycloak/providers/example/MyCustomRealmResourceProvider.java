@@ -11,6 +11,8 @@ import org.keycloak.services.resource.RealmResourceProvider;
 
 /**
  *
+ * @see org.keycloak.providers.example.MyCustomProviderWithinSameModuleTest
+ * @see org.keycloak.test.examples.MyCustomProviderTest
  * @author <a href="mailto:svacek@redhat.com">Simon Vacek</a>
  */
 public class MyCustomRealmResourceProvider  implements RealmResourceProvider {

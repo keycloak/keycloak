@@ -35,6 +35,11 @@ public class ProxyOptions {
             .defaultValue(Boolean.FALSE)
             .build();
 
+    public static final Option<Boolean> PROXY_X_FORWARDED_PREFIX_HEADER_ENABLED = new OptionBuilder<>("proxy-allow-x-forwarded-prefix-header", Boolean.class)
+            .category(OptionCategory.PROXY)
+            .defaultValue(Boolean.FALSE)
+            .build();
+
     public static final Option<Boolean> PROXY_TRUSTED_HEADER_ENABLED = new OptionBuilder<>("proxy-trusted-header-enabled", Boolean.class)
             .category(OptionCategory.PROXY)
             .defaultValue(Boolean.FALSE)

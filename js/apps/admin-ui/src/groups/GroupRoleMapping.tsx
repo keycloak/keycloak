@@ -1,17 +1,22 @@
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { AlertVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useAdminClient } from "../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { RoleMapping, Row } from "../components/role-mapping/RoleMapping";
+import { useGroupResource } from "../context/group-resource/GroupResourceContext";
 
 type GroupRoleMappingProps = {
   id: string;
   name: string;
+  canManageGroup: boolean;
 };
 
-export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
-  const { adminClient } = useAdminClient();
+export const GroupRoleMapping = ({
+  id,
+  name,
+  canManageGroup,
+}: GroupRoleMappingProps) => {
+  const groups = useGroupResource();
 
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
@@ -22,7 +27,7 @@ export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
         .filter((row) => row.client === undefined)
         .map((row) => row.role as RoleMappingPayload)
         .flat();
-      await adminClient.groups.addRealmRoleMappings({
+      await groups.addRealmRoleMappings({
         id,
         roles: realmRoles,
       });
@@ -30,7 +35,7 @@ export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
         rows
           .filter((row) => row.client !== undefined)
           .map((row) =>
-            adminClient.groups.addClientRoleMappings({
+            groups.addClientRoleMappings({
               id,
               clientUniqueId: row.client!.id!,
               roles: [row.role as RoleMappingPayload],
@@ -43,5 +48,13 @@ export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
     }
   };
 
-  return <RoleMapping name={name} id={id} type="groups" save={assignRoles} />;
+  return (
+    <RoleMapping
+      isManager={canManageGroup}
+      name={name}
+      id={id}
+      type="groups"
+      save={assignRoles}
+    />
+  );
 };

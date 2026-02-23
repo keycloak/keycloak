@@ -87,6 +87,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
@@ -749,9 +750,13 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
                 FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
                         context.getUsername(), context.getToken());
-                session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
+                try {
+                    session.users().addFederatedIdentity(realmModel, federatedUser, federatedIdentityModel);
+                } catch (ModelDuplicateException de) {
+                    String idpDisplayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, context.getIdpConfig());
+                    return redirectToErrorPage(authSession, Status.CONFLICT, Messages.IDENTITY_PROVIDER_ALREADY_LINKED_TO_CURRENT_USER, de, idpDisplayName);
+                }
             }
-
 
             String isRegisteredNewUser = authSession.getAuthNote(BROKER_REGISTERED_NEW_USER);
             if (Boolean.parseBoolean(isRegisteredNewUser)) {
@@ -785,7 +790,6 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             }
 
             return finishOrRedirectToPostBrokerLogin(authSession, context, true);
-
         }  catch (Exception e) {
             return redirectToErrorPage(authSession, Response.Status.INTERNAL_SERVER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
         }
@@ -1027,8 +1031,15 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 }
             }
         } else {
-            this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, newModel);
-            federatedUser = authenticatedUser;
+            try {
+                this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, newModel);
+                federatedUser = authenticatedUser;
+            } catch(ModelDuplicateException e) {
+                logger.warnf(e,"Cannot link user '%s' to identity provider '%s' as the link already exists for this user and identity provider",
+                        authenticatedUser.getUsername(), context.getIdpConfig().getAlias());
+                String idpDisplayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, context.getIdpConfig());
+                return redirectToErrorWhenLinkingFailed(authSession, Messages.IDENTITY_PROVIDER_ALREADY_LINKED_TO_CURRENT_USER, idpDisplayName);
+            }
         }
 
         updateFederatedIdentity(context, federatedUser);

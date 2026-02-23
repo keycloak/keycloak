@@ -35,6 +35,10 @@ public interface X509ClientCertificateLookup extends Provider {
     /**
      * Returns a client certificate, and optionally any certificates
      * in the certificate chain.
+     * <p>
+     * IMPORTANT: implementations should ensure that the source of the certificate is trusted.
+     * See for example the {@link HttpRequest#isProxyTrusted()} method.
+     *
      * @return
      */
     X509Certificate[] getCertificateChain(HttpRequest httpRequest) throws GeneralSecurityException;

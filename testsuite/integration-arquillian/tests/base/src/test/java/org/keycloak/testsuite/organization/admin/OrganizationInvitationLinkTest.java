@@ -18,6 +18,8 @@
 package org.keycloak.testsuite.organization.admin;
 
 import java.io.IOException;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,11 +32,15 @@ import java.util.function.Predicate;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.cookie.CookieType;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
@@ -48,6 +54,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -55,7 +62,10 @@ import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.MailUtils.EmailBody;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.util.JsonSerialization;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
@@ -72,6 +82,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 
 public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
 
@@ -188,6 +199,52 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testInviteWithAccountClientCustomBaseUrl() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invited", "invited@myemail.com");
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        try (
+            ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
+                .setBaseUrl(OAuthClient.APP_AUTH_ROOT)
+                .update();
+            Response response = organization.members().inviteExistingUser(user.getId());
+        ) {
+            assertThat(response.getStatus(), equalTo(Response.Status.NO_CONTENT.getStatusCode()));
+
+            acceptInvitation(organization, user, "AUTH_RESPONSE");
+        }
+    }
+
+    @Test
+    public void testInviteNewUserRegistrationWithAccountClientCustomBaseUrl() throws IOException, MessagingException {
+        String email = "inviteduser@email";
+        String firstName = "Homer";
+        String lastName = "Simpson";
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        try (
+            ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
+                .setBaseUrl(OAuthClient.APP_AUTH_ROOT)
+                .update();
+        ) {
+            organization.members().inviteUser(email, firstName, lastName).close();
+
+            registerUser(organization, email);
+
+            List<UserRepresentation> users = testRealm().users().searchByEmail(email, true);
+            assertThat(users, not(empty()));
+            MemberRepresentation member = organization.members().member(users.get(0).getId()).toRepresentation();
+            Assert.assertNotNull(member);
+            assertThat(member.getMembershipType(), equalTo(MembershipType.MANAGED));
+            getCleanup().addCleanup(() -> testRealm().users().get(users.get(0).getId()).remove());
+
+            assertThat(driver.getTitle(), containsString("AUTH_RESPONSE"));
+        }
+    }
+
+    @Test
     public void testInviteNewUserRegistration() throws IOException, MessagingException {
         String email = "inviteduser@email";
         String firstName = "Homer";
@@ -209,6 +266,41 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
         // authenticated to the account console
         Assert.assertTrue(driver.getPageSource().contains("Account Management"));
         Assert.assertNotNull(driver.manage().getCookieNamed(CookieType.IDENTITY.getName()));
+    }
+
+    @Test
+    public void testRegistrationUsingRegistrationEndpoint() throws Exception {
+        String email = "inviteduser@email";
+        String firstName = "Homer";
+        String lastName = "Simpson";
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        organization.members().inviteUser(email, firstName, lastName).close();
+
+        URI link = URI.create(getInvitationLinkFromEmail());
+        NameValuePair tokenParam = URLEncodedUtils.parse(link, StandardCharsets.UTF_8).stream()
+                .filter((np) -> "token".equals(np.getName()))
+                .findAny().orElse(null);
+        assertThat(tokenParam, notNullValue());
+        JWSInput token = new JWSInput(tokenParam.getValue());
+        Map<String, String> tokenClaims = token.readJsonContent(Map.class);
+        tokenClaims.put("email", "myemail@some.org");
+        String modifiedToken = new JWSBuilder().content(JsonSerialization.writeValueAsString(tokenClaims).getBytes(StandardCharsets.UTF_8)).none();
+        modifiedToken = token.getEncodedHeader() + modifiedToken.substring(modifiedToken.indexOf('.'));
+        modifiedToken = modifiedToken + token.getEncodedSignature();
+
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setRegistrationAllowed(true);
+        testRealm().update(realm);
+        oauth.clientId("broker-app");
+        loginPage.open(realm.getRealm());
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+        String registerUrl = UriBuilder.fromUri(driver.getCurrentUrl())
+                .queryParam("token", modifiedToken)
+                .build().toString();
+        driver.navigate().to(registerUrl);
+        errorPage.assertCurrent();
     }
 
     @Test

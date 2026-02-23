@@ -1,4 +1,5 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
+set -e
 
 TEAMS="teams.yml"
 BUG="ISSUE_TEMPLATE/bug.yml"
