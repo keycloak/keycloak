@@ -1,0 +1,157 @@
+package org.keycloak.protocol.oauth2.cimd.clientpolicy.executor;
+
+import java.util.List;
+
+import org.keycloak.Config;
+import org.keycloak.common.Profile;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderFactory;
+
+/**
+ * The abstract class is the factory class of {@link AbstractClientIdMetadataDocumentExecutor}.
+ *
+ * <p>It provides the following configurations:
+ * <ul>
+ *     <li>Client ID Verification / Client Metadata Verification (URL related)</li>
+ *     <ul>
+ *         <li>Allow http scheme: allows http scheme of a URI (for development environment)<</li>
+ *     </ul>
+ *     <li>Client ID Validation</li>
+ *     <ul>
+ *         <li>Trusted domains: only allow a URI whose hostname is under the one of the permitted domain (wildcard * can be used)</li>
+ *     </ul>
+ *     <li>Client Metadata Validation</li>
+ *     <ul>
+ *         <li>Restrict same domain: only allow {client_id} and {redirect_uri} parameter of an authorization request whose hostname is under the one of the permitted domain (wildcard * can be used)</li>
+ *         <li>Required properties: only allow a client metadata that includes all required properties</li>
+ *     </ul>
+ * </ul>
+ *
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
+ */
+public abstract class AbstractClientIdMetadataDocumentExecutorFactory
+        implements ClientPolicyExecutorProviderFactory, EnvironmentDependentProviderFactory {
+
+    // Client ID Verification
+    public static final String ALLOW_HTTP_SCHEME = "cimd-allow-http-scheme";
+
+    // Client ID Validation
+    public static final String TRUSTED_DOMAINS = "cimd-allow-permitted-domains";
+
+    // Client Metadata Validation
+    public static final String REQUIRED_PROPERTIES = "cimd-required-properties";
+    public static final String RESTRICT_SAME_DOMAIN = "cimd-restrict-same-domain";
+
+    // Factory Global Settings
+    public static final String CONFIG_CIMD_PROVIDER_NAME = "cimd-provider-name";
+    public static final String CONFIG_MIN_CACHE_TIME = "min-cache-time";
+    public static final String CONFIG_MAX_CACHE_TIME = "max-cache-time";
+    public static final String CONFIG_UPPER_LIMIT_METADATA_BYTES = "upper-limit-metadata-bytes";
+
+    protected ClientIdMetadataDocumentExecutorFactoryProviderConfig providerConfig;
+
+    @Override
+    public void init(Config.Scope config) {
+        providerConfig = new ClientIdMetadataDocumentExecutorFactoryProviderConfig(config);
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public String getHelpText() {
+        return "On receiving an authorization request, this executor process the request by following OAuth Client ID Metadata Document (Internet Draft).";
+    }
+
+    static protected void addCommonConfigProperties(List<ProviderConfigProperty> configProperties) {
+        // Client ID Verification / Client Metadata Verification (URL related)
+        ProviderConfigProperty property = new ProviderConfigProperty(
+                ALLOW_HTTP_SCHEME,
+                "Allow http scheme",
+                "If ON, then the executor allows http scheme as a valid Client ID URL and property of Client Metadata whose value is URL: client_uri, logo_uri, tos_uri, policy_uri, jwks_uri. " +
+                        "It can be ON only for development environment. It must be OFF in production environment. ",
+                ProviderConfigProperty.BOOLEAN_TYPE,
+                false);
+        configProperties.add(property);
+
+        // Client ID Validation
+        property = new ProviderConfigProperty(
+                TRUSTED_DOMAINS,
+                "Trusted domains",
+                "If some domains are filled, the executor only accepts the following URL-formatted parameters whose host part matches one of the filled domains: " +
+                        "Authorization request parameters: client_id, redirect_uri, " +
+                        "Client metadata properties: client_id, redirect_uris, jwks_uri, logo_uri, policy_uri, tos_uri, client_uri. " +
+                        "The domains are checked by using regex. " +
+                        "If the domains not filled, the executor denies all such the parameters and properties. " +
+                        "For example, use pattern like this '(.*)\\.example\\.org' if you want to accept the parameter / property whose domain is 'example.org'." +
+                        "Don't forget to use escaping of special characters like dots as otherwise dot is interpreted as any character in regex!",
+                ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
+                null);
+        configProperties.add(property);
+
+        // Client Metadata Validation
+        property = new ProviderConfigProperty(
+                RESTRICT_SAME_DOMAIN,
+                "Restrict same domain",
+                "If ON, then the executor checks Client ID URL and Redirect URI of an authorization request " +
+                "and properties of client metadata whose value is URI are under the same one of allow permitted domains.",
+                ProviderConfigProperty.BOOLEAN_TYPE,
+                false);
+        configProperties.add(property);
+
+        property = new ProviderConfigProperty(
+                REQUIRED_PROPERTIES,
+                "Required properties",
+                "If client metadata does not include all the properties, the executor does not accept the client metadata.",
+                ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
+                null);
+        configProperties.add(property);
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(CONFIG_CIMD_PROVIDER_NAME)
+                .type("string")
+                .helpText("Provider to use for the CIMD")
+                .defaultValue(ClientIdMetadataDocumentExecutorFactoryProviderConfig.DEFAULT_CONFIG_CIMD_PROVIDER_NAME)
+                .add()
+
+                .property()
+                .name(CONFIG_MIN_CACHE_TIME)
+                .type("int")
+                .helpText("Min cache time of client metadata in seconds for the CIMD.")
+                .defaultValue(ClientIdMetadataDocumentExecutorFactoryProviderConfig.DEFAULT_CONFIG_MIN_CACHE_TIME)
+                .add()
+
+                .property()
+                .name(CONFIG_MAX_CACHE_TIME)
+                .type("int")
+                .helpText("Max cache time of client metadata in seconds for the CIMD.")
+                .defaultValue(ClientIdMetadataDocumentExecutorFactoryProviderConfig.DEFAULT_CONFIG_MAX_CACHE_TIME)
+                .add()
+
+                .property()
+                .name(CONFIG_UPPER_LIMIT_METADATA_BYTES)
+                .type("int")
+                .helpText("Client metadata upper limit in byte for the CIMD.")
+                .defaultValue(ClientIdMetadataDocumentExecutorFactoryProviderConfig.DEFAULT_CONFIG_UPPER_LIMIT_METADATA_BYTES)
+                .add()
+
+                .build();
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.CIMD);
+    }
+}
