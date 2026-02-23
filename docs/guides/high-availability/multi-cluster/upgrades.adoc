@@ -14,12 +14,12 @@ Deploying different {project_name} major/minor versions on each of the sites is 
 exposed to user requests via the load balancer until both {project_name} deployments have been upgraded and their
 {jdgserver_name} clusters synchronized.
 
-Patch upgrades can be deployed with zero-downtime, using the `rolling-updates:v2` feature. It is technically
-possible for upgrades to be rolled out to both sites simultaneously, however we recommend that upgrades be rolled out to one
+Patch upgrades can be deployed with zero-downtime.
+It is technically possible for upgrades to be rolled out to both sites simultaneously, however we recommend that upgrades be rolled out to one
 site at a time in order to simplify monitoring and debugging. For example, all nodes in site A should be upgraded to the
 new {project_name} version before the upgrade is rolled out to nodes in site B.
 
-See the <@links.operator id="rolling-updates" /> guide for more details on how to use the `rolling-updates:v2` Feature.
+See the <@links.operator id="rolling-updates" /> guide for more details.
 
 == {jdgserver_name} upgrades
 

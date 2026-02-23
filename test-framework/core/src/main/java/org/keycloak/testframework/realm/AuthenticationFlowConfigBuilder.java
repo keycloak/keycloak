@@ -2,6 +2,7 @@ package org.keycloak.testframework.realm;
 
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.testframework.util.Collections;
 
 public class AuthenticationFlowConfigBuilder {
 

@@ -12,5 +12,6 @@ include::workflows/scheduling-workflows.adoc[leveloffset=+2]
 include::workflows/defining-conditions.adoc[leveloffset=+2]
 include::workflows/defining-steps.adoc[leveloffset=+2]
 include::workflows/understanding-workflows-engine.adoc[leveloffset=+2]
+include::workflows/handling-failures.adoc[leveloffset=+2]
 include::workflows/understanding-common-use-cases.adoc[leveloffset=+2]
 

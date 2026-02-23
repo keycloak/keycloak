@@ -46,7 +46,8 @@ public interface OrganizationGroupsResource {
             @QueryParam("search") String search,
             @QueryParam("exact") Boolean exact,
             @QueryParam("first") Integer first,
-            @QueryParam("max") Integer max
+            @QueryParam("max") Integer max,
+            @QueryParam("briefRepresentation") boolean briefRepresentation
     );
 
     @Path("{group-id}")

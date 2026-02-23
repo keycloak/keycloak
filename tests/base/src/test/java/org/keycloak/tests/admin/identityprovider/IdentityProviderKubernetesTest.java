@@ -51,7 +51,7 @@ public class IdentityProviderKubernetesTest extends AbstractIdentityProviderTest
         try (Response response = managedRealm.admin().identityProviders().create(identityProvider)) {
             Assertions.assertEquals(400, response.getStatus());
             ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-            assertEquals("Issuer URL already used for IDP 'kubernetes1'", error.getErrorMessage());
+            assertEquals("Issuer URL already used for IDP 'kubernetes1', Issuer must be unique if the idp supports JWT Authorization Grant or Federated Client Authentication", error.getErrorMessage());
         }
 
     }
@@ -84,7 +84,7 @@ public class IdentityProviderKubernetesTest extends AbstractIdentityProviderTest
         } catch (WebApplicationException ex) {
             Assertions.assertEquals(400, ex.getResponse().getStatus());
             ErrorRepresentation error = ex.getResponse().readEntity(ErrorRepresentation.class);
-            assertEquals("Issuer URL already used for IDP 'kubernetes1'", error.getErrorMessage());
+            assertEquals("Issuer URL already used for IDP 'kubernetes1', Issuer must be unique if the idp supports JWT Authorization Grant or Federated Client Authentication", error.getErrorMessage());
         }
 
     }

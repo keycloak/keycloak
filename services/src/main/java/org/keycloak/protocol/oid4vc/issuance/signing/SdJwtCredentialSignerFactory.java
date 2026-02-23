@@ -17,14 +17,14 @@
 
 package org.keycloak.protocol.oid4vc.issuance.signing;
 
+import org.keycloak.VCFormat;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oid4vc.model.Format;
 
 public class SdJwtCredentialSignerFactory implements CredentialSignerFactory {
 
     @Override
     public String getSupportedFormat() {
-        return Format.SD_JWT_VC;
+        return VCFormat.SD_JWT_VC;
     }
 
     @Override

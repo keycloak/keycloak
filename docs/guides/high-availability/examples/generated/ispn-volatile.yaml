@@ -36,6 +36,7 @@ data:
         metrics:
           namesAsTags: true
           histograms: false
+          legacy: true
         tracing:
           enabled: true
           collector-endpoint: "http://tempo-tempo.monitoring.svc:4318"

@@ -20,7 +20,7 @@ import org.keycloak.provider.ProviderEventListener;
 public class DefaultWorkflowProviderFactory implements WorkflowProviderFactory<DefaultWorkflowProvider>, ProviderEventListener {
 
     static final String ID = "default";
-    private static final long DEFAULT_EXECUTOR_TASK_TIMEOUT = 1000L;
+    private static final long DEFAULT_EXECUTOR_TASK_TIMEOUT = 5000L;
 
     private WorkflowExecutor executor;
     private boolean blocking;

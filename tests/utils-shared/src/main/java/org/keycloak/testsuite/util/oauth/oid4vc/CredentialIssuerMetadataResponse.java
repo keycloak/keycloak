@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth.oid4vc;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
@@ -34,12 +35,13 @@ public class CredentialIssuerMetadataResponse extends AbstractHttpResponse {
         }
     }
 
-    public CredentialIssuer getMetadata() {
-        return metadata;
-    }
-
     public String getContent() {
-        return content;
+        return Optional.ofNullable(content).orElseThrow(() ->
+                new IllegalStateException(String.format("[%s] %s", getError(), getErrorDescription())));
     }
 
+    public CredentialIssuer getMetadata() {
+        return Optional.ofNullable(metadata).orElseThrow(() ->
+                new IllegalStateException(String.format("[%s] %s", getError(), getErrorDescription())));
+    }
 }

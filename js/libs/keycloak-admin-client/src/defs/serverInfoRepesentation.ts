@@ -32,6 +32,7 @@ export interface ServerInfoRepresentation {
 export interface ThemeInfoRepresentation {
   name: string;
   locales?: string[];
+  description?: string;
 }
 
 export interface SpiInfoRepresentation {

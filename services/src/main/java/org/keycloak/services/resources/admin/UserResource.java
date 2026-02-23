@@ -789,7 +789,11 @@ public class UserResource {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
-            logger.warn("Could not update user password.", e);
+            String exceptionMessage = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            logger.warnf("Could not update password for user %s. Reason: %s", user.getUsername(), exceptionMessage);
+            if (logger.isTraceEnabled()) {
+                logger.trace("Could not update user password.", e);
+            }
             Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
             throw new ErrorResponseException(e.getMessage(), MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
                     Status.BAD_REQUEST);

@@ -61,7 +61,7 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
     }
 
     @Override
-    public void scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId) {
+    public ScheduleResult scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId) {
         WorkflowStateEntity entity = em.find(WorkflowStateEntity.class, executionId);
         Duration duration = DurationConverter.parseDuration(step.getAfter());
         if (duration == null) {
@@ -78,9 +78,11 @@ public class JpaWorkflowStateProvider implements WorkflowStateProvider {
             entity.setScheduledStepId(step.getId());
             entity.setScheduledStepTimestamp(Instant.now().plus(duration).toEpochMilli());
             em.persist(entity);
+            return ScheduleResult.CREATED;
         } else {
             entity.setScheduledStepId(step.getId());
             entity.setScheduledStepTimestamp(Instant.now().plus(duration).toEpochMilli());
+            return ScheduleResult.UPDATED;
         }
     }
 

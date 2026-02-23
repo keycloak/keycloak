@@ -5,11 +5,7 @@ import java.util.UUID;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.WorkflowStateProvider.ScheduledStep;
 
-import org.jboss.logging.Logger;
-
 final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext {
-
-    private static final Logger log = Logger.getLogger(DefaultWorkflowExecutionContext.class);
 
     private final String resourceId;
     private final String executionId;
@@ -17,7 +13,7 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
     private final WorkflowEvent event;
     private final KeycloakSession session;
     private final WorkflowStep step;
-    private boolean completed;
+    private Integer restartPosition;
 
     /**
      * A new execution context for a workflow event. The execution ID is randomly generated.
@@ -41,19 +37,8 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
     }
 
     /**
-     * A new execution context for a workflow event, resuming a previously scheduled step. The execution ID is taken from the scheduled step
-     * with no current step, indicating that the workflow is being restarted due to an event.
-     *
-     * @param workflow the workflow
-     * @param event the event
-     * @param step the scheduled step
-     */
-    DefaultWorkflowExecutionContext(KeycloakSession session, Workflow workflow, WorkflowEvent event, ScheduledStep step) {
-        this(session, workflow, event, null, step.executionId(), event.getResourceId());
-    }
-
-    /**
-     * A execution context for a scheduled step, resuming the workflow from that step. The execution ID is taken from the scheduled step.
+     * An execution context for a scheduled step, resuming the workflow from that step. The execution ID and resource ID are
+     * taken from the scheduled step.
      *
      * @param session the session
      * @param workflow the workflow
@@ -70,8 +55,7 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
      * @param context the existing context
      */
     DefaultWorkflowExecutionContext(KeycloakSession session, DefaultWorkflowExecutionContext context) {
-        this(session, context.getWorkflow(), context.getEvent(), context.getCurrentStepId(), context.getExecutionId(), context.getResourceId());
-        completed = context.isCompleted();
+        this(session, new Workflow(session, context.getWorkflow()), context.getEvent(), context.getCurrentStepId(), context.getExecutionId(), context.getResourceId());
     }
 
     /**
@@ -82,8 +66,7 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
      * @param step the current step
      */
     DefaultWorkflowExecutionContext(KeycloakSession session, DefaultWorkflowExecutionContext context, WorkflowStep step) {
-        this(session, context.getWorkflow(), context.getEvent(), step.getId(), context.getExecutionId(), context.getResourceId());
-        completed = context.isCompleted();
+        this(session, new Workflow(session, context.getWorkflow()), context.getEvent(), step.getId(), context.getExecutionId(), context.getResourceId());
     }
 
     private DefaultWorkflowExecutionContext(KeycloakSession session, Workflow workflow, WorkflowEvent event, String stepId, String executionId, String resourceId) {
@@ -113,6 +96,10 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
 
     @Override
     public WorkflowStep getNextStep() {
+        if (restartPosition != null) {
+            // we are restarting the workflow, so we ignore the current step and return the step at the restart position
+            return workflow.getSteps().skip(restartPosition).findFirst().orElse(null);
+        }
         return workflow.getSteps(step.getId()).skip(1).findFirst().orElse(null);
     }
 
@@ -128,16 +115,8 @@ final class DefaultWorkflowExecutionContext implements WorkflowExecutionContext 
         return step;
     }
 
-    boolean isCompleted() {
-        return this.completed;
-    }
-
-    void complete() {
-        completed = true;
-    }
-
     void restart(int position) {
-        new RestartWorkflowTask(this, position).run(session);
+        this.restartPosition = position;
     }
 
     KeycloakSession getSession() {

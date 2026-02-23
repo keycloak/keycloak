@@ -2,25 +2,27 @@ package org.keycloak.testsuite.util.oauth.oid4vc;
 
 import java.io.IOException;
 
+import jakarta.ws.rs.core.UriBuilder;
+
+import org.keycloak.protocol.oid4vc.model.OfferResponseType;
 import org.keycloak.testsuite.util.oauth.AbstractHttpGetRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
+import org.keycloak.util.Strings;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 
 public class CredentialOfferUriRequest extends AbstractHttpGetRequest<CredentialOfferUriRequest, CredentialOfferUriResponse> {
 
-    private String credentialConfigurationId;
+    private final String credConfigId;
     private Boolean preAuthorized;
-    private String username;
-    private String clientIdParam;
+    private Boolean txCode;
+    private String targetUser;
+    private Integer expireAt;
+    private OfferResponseType responseType;
 
-    public CredentialOfferUriRequest(AbstractOAuthClient<?> client) {
+    CredentialOfferUriRequest(AbstractOAuthClient<?> client, String credConfigId) {
         super(client);
-    }
-
-    public CredentialOfferUriRequest credentialConfigurationId(String credentialConfigurationId) {
-        this.credentialConfigurationId = credentialConfigurationId;
-        return this;
+        this.credConfigId = credConfigId;
     }
 
     public CredentialOfferUriRequest preAuthorized(Boolean preAuthorized) {
@@ -28,19 +30,36 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
         return this;
     }
 
-    public CredentialOfferUriRequest username(String username) {
-        this.username = username;
+    public CredentialOfferUriRequest txCode(Boolean txCode) {
+        this.txCode = txCode;
         return this;
     }
 
-    public CredentialOfferUriRequest clientId(String clientId) {
-        this.clientIdParam = clientId;
+    public CredentialOfferUriRequest targetUser(String targetUser) {
+        this.targetUser = targetUser;
+        return this;
+    }
+
+    public CredentialOfferUriRequest expireAt(Integer expireAt) {
+        this.expireAt = expireAt;
+        return this;
+    }
+
+    public CredentialOfferUriRequest responseType(OfferResponseType responseType) {
+        this.responseType = responseType;
         return this;
     }
 
     @Override
     protected String getEndpoint() {
-        return client.getEndpoints().getOid4vcCredentialOfferUri(credentialConfigurationId, preAuthorized, username, clientIdParam);
+        UriBuilder builder = UriBuilder.fromUri(client.getEndpoints().getOid4vcCredentialOfferUri());
+        if (!Strings.isEmpty(credConfigId)) builder.queryParam("credential_configuration_id", credConfigId);
+        if (preAuthorized != null) builder.queryParam("pre_authorized", preAuthorized);
+        if (txCode != null) builder.queryParam("tx_code", txCode);
+        if (!Strings.isEmpty(targetUser)) builder.queryParam("target_user", targetUser);
+        if (expireAt != null) builder.queryParam("expire", expireAt);
+        if (responseType != null) builder.queryParam("type", responseType.getValue());
+        return builder.build().toString();
     }
 
     @Override

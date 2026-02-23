@@ -5,13 +5,14 @@ package org.keycloak;
  */
 public class OID4VCConstants {
 
+    public static final String OID4VCI_ENABLED_ATTRIBUTE_KEY = "oid4vci.enabled";
+
     // Sd-JWT constants
     public static final String SDJWT_DELIMITER = "~";
     public static final String SD_HASH = "sd_hash";
     /**
      * SD-JWT-Credentials {@see https://drafts.oauth.net/oauth-sd-jwt-vc/draft-ietf-oauth-sd-jwt-vc.html}
      */
-    public static final String SD_JWT_VC_FORMAT = "dc+sd-jwt";
     public static final String CLAIM_NAME_SD = "_sd";
     public static final String CLAIM_NAME_SD_HASH_ALGORITHM = "_sd_alg";
     public static final String CLAIM_NAME_SD_UNDISCLOSED_ARRAY = "...";
@@ -64,6 +65,11 @@ public class OID4VCConstants {
     public static final String WELL_KNOWN_OPENID_CREDENTIAL_ISSUER = "openid-credential-issuer";
     public static final String RESPONSE_TYPE_IMG_PNG = "image/png";
     public static final String CREDENTIAL_OFFER_URI_CODE_SCOPE = "credential-offer";
+
+    // OID4VCI - https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html
+    public static final String OPENID_CREDENTIAL = "openid_credential";
+    public static final String CREDENTIAL_IDENTIFIERS = "credential_identifiers";
+    public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
 
     private OID4VCConstants() {
     }

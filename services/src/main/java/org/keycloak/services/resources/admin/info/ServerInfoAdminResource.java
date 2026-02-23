@@ -249,6 +249,8 @@ public class ServerInfoAdminResource {
                             ti.setLocales(locales.replaceAll(" ", "").split(","));
                         }
 
+                        ti.setDescription(getThemeDescription(theme));
+
                         themes.add(ti);
                     }
                 } catch (IOException e) {
@@ -256,6 +258,10 @@ public class ServerInfoAdminResource {
                 }
             }
         }
+    }
+
+    private String getThemeDescription(Theme theme) throws IOException {
+        return theme.getProperties().getProperty("description");
     }
 
     private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {

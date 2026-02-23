@@ -56,6 +56,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
+import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.UseLightweightAccessTokenExecutorFactory;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -606,6 +607,43 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         }
 
         setScopeProtocolMapper("master", OIDCLoginProtocolFactory.BASIC_SCOPE, "sub", true, false, false);
+    }
+
+    @Test
+    public void testPublicClientWithLightweightAccessTokenViaDirectGrant() throws Exception {
+        // Setup client policy with client-access-type=public + lightweight token executor
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                (new ClientPoliciesUtil.ClientProfileBuilder()).createProfile(PROFILE_NAME, "Lightweight Token for Public Clients")
+                        .addExecutor(UseLightweightAccessTokenExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Public Client Policy", Boolean.TRUE)
+                        .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID,
+                                ClientPoliciesUtil.createClientAccessTypeConditionConfig(List.of(ClientAccessTypeConditionFactory.TYPE_PUBLIC)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Create public client with direct access grants
+        String publicClientId = generateSuffixedName("public-direct-grant-client");
+        createClientByAdmin(publicClientId, (ClientRepresentation clientRep) -> {
+            clientRep.setPublicClient(Boolean.TRUE);
+            clientRep.setDirectAccessGrantsEnabled(Boolean.TRUE);
+        });
+
+        // Perform direct access grant (POST with username/password)
+        oauth.client(publicClientId);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        // Verify lightweight token
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
+        AccessTokenContext ctx = testingClient.testing(REALM_NAME).getTokenContext(token.getId());
+        Assert.assertEquals(AccessTokenContext.TokenType.LIGHTWEIGHT, ctx.getTokenType());
+        Assert.assertEquals(TEST_USER_PASSWORD, ctx.getGrantType());
     }
 
     private void removeSession(final String sessionId) {

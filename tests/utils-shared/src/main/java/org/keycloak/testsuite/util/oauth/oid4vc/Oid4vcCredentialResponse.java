@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.util.oauth.oid4vc;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
@@ -21,7 +22,7 @@ public class Oid4vcCredentialResponse extends AbstractHttpResponse {
     }
 
     public CredentialResponse getCredentialResponse() {
-        return credentialResponse;
+        return Optional.ofNullable(credentialResponse).orElseThrow(() ->
+                new IllegalStateException(String.format("[%s] %s", getError(), getErrorDescription())));
     }
-
 }

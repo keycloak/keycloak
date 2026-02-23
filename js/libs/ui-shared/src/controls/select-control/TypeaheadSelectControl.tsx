@@ -304,6 +304,11 @@ export const TypeaheadSelectControl = <
                   value={key(option)}
                   isFocused={focusedItemIndex === index}
                   isActive={field.value.includes(getValue(option))}
+                  description={
+                    !isString(option) && "description" in option
+                      ? option.description
+                      : undefined
+                  }
                 >
                   {getValue(option)}
                 </SelectOption>

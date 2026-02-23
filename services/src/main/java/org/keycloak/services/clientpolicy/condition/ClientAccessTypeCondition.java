@@ -70,6 +70,7 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
     public ClientPolicyVote applyPolicy(ClientPolicyContext context) throws ClientPolicyException {
         switch (context.getEvent()) {
             case AUTHORIZATION_REQUEST:
+            case RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST:
             case TOKEN_REQUEST:
             case TOKEN_RESPONSE:
             case SERVICE_ACCOUNT_TOKEN_REQUEST:

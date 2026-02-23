@@ -12,8 +12,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.hibernate.validator.constraints.URL;
 
+@Schema(description = "Base client representation with common properties for all client types")
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.EXISTING_PROPERTY,

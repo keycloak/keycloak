@@ -221,6 +221,12 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
             config.setAuthorizationDetailsTypesSupported(authorizationDetailsTypesSupported);
         }
 
+        if (Profile.isFeatureEnabled(Profile.Feature.CIMD)) {
+            config.setClientIdMetadataDocumentSupported(true);
+        } else {
+            config.setClientIdMetadataDocumentSupported(false);
+        }
+
         config = checkConfigOverride(config);
         return config;
     }

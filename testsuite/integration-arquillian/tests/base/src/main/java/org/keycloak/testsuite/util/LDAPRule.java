@@ -161,6 +161,32 @@ public class LDAPRule extends ExternalResource {
                     break;
             }
         }
+
+        Annotation passwordPolicyAnnotations = description.getAnnotation(LDAPPasswordPolicy.class);
+        if (passwordPolicyAnnotations != null) {
+            LDAPPasswordPolicy passwordPolicy = (LDAPPasswordPolicy) passwordPolicyAnnotations;
+
+            log.debugf("Enabling LDAP password policy: mustChange=%s.", passwordPolicy.mustChange());
+
+            defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_PPOLICY_ENABLED, "true");
+            defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_PPOLICY_MUST_CHANGE, String.valueOf(passwordPolicy.mustChange()));
+
+            if (passwordPolicy.mustChange()) {
+                // Workaround for password policy behavior:
+                //
+                // Issue: When embedded LDAP server (ApacheDS) receives a password change request
+                // from an admin account, it sets pwdReset=TRUE. Since Keycloak uses an admin account
+                // for any password change, this creates an infinite loop where users are repeatedly
+                // forced to change their password after each login.
+                //
+                // Workaround: For mustChange password policy tests, disable access control on the
+                // embedded LDAP server. This allows Keycloak to authenticate as a regular user
+                // instead of admin, preventing the pwdReset flag from being automatically set on
+                // password changes. The bind DN is overridden in getConfig().
+                defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ACCESS_CONTROL, "false");
+            }
+        }
+
         return super.apply(base, description);
     }
 
@@ -261,6 +287,18 @@ public class LDAPRule extends ExternalResource {
                 // Configure the LDAP server to accept not secured connections from clients by default
                 System.setProperty("PROPERTY_SET_CONFIDENTIALITY_REQUIRED", "false");
         }
+        switch (defaultProperties.getProperty(LDAPEmbeddedServer.PROPERTY_PPOLICY_ENABLED, "false")) {
+            case "true":
+                config.put(LDAPConstants.ENABLE_LDAP_PASSWORD_POLICY, "true");
+                break;
+            default:
+                config.put(LDAPConstants.ENABLE_LDAP_PASSWORD_POLICY, "false");
+        }
+        if (defaultProperties.getProperty(LDAPEmbeddedServer.PROPERTY_PPOLICY_MUST_CHANGE) != null) {
+            // See Workaround for password policy behavior comment in apply() for why a non-admin bind DN is needed.
+            config.put(LDAPConstants.BIND_DN, "uid=keycloak-admin," + config.get(LDAPConstants.BASE_DN));
+            config.put(LDAPConstants.BIND_CREDENTIAL, "secret");
+        }
         return config;
     }
 
@@ -311,5 +349,11 @@ public class LDAPRule extends ExternalResource {
 
     public boolean isEmbeddedServer() {
         return ldapTestConfiguration.isStartEmbeddedLdapServer();
+    }
+
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface LDAPPasswordPolicy {
+        public boolean mustChange() default false;
     }
 }

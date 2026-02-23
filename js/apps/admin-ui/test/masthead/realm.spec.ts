@@ -36,11 +36,14 @@ test.describe.serial("Realm tests", () => {
   });
 
   test.afterAll(async () => {
-    await Promise.all(
-      [testRealmName, newRealmName, editedRealmName, specialCharsName].map(
-        (realm) => adminClient.deleteRealm(realm),
-      ),
-    );
+    for (const realm of [
+      testRealmName,
+      newRealmName,
+      editedRealmName,
+      specialCharsName,
+    ]) {
+      await adminClient.deleteRealm(realm);
+    }
   });
 
   test("should fail creating duplicated or empty name realm", async ({

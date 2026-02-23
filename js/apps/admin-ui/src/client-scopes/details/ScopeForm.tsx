@@ -32,7 +32,7 @@ import { toClientScopes } from "../routes/ClientScopes";
 import { removeEmptyOid4vcAttributes } from "./oid4vciAttributes";
 
 const OID4VC_PROTOCOL = "oid4vc";
-const VC_FORMAT_JWT_VC = "jwt_vc";
+const VC_FORMAT_JWT_VC = "jwt_vc_json";
 const VC_FORMAT_SD_JWT = "dc+sd-jwt";
 
 // Validation function for comma-separated lists
@@ -80,7 +80,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
 
   // Get available hash algorithms from server info
   const hashAlgorithms = serverInfo?.providers?.hash?.providers
-    ? Object.keys(serverInfo.providers.hash.providers)
+    ? Object.keys(serverInfo.providers.hash.providers).map((alg) =>
+        alg.toLowerCase(),
+      )
     : [];
 
   // Get available asymmetric signature algorithms from server info
@@ -424,7 +426,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                   defaultValue:
                     clientScope?.attributes?.[
                       "vc.credential_build_config.hash_algorithm"
-                    ] ?? "SHA-256",
+                    ] ?? "sha-256",
                 }}
                 options={hashAlgorithms.map((alg) => ({
                   key: alg,

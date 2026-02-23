@@ -23,12 +23,12 @@ import java.util.Set;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
-import org.keycloak.admin.api.AdminApi;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
+import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -41,7 +41,6 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -52,7 +51,8 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.junit.jupiter.api.BeforeAll;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.services.cors.Cors.ACCESS_CONTROL_ALLOW_METHODS;
@@ -65,10 +65,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @KeycloakIntegrationTest(config = ClientApiV2Test.AdminV2Config.class)
-public class ClientApiV2Test {
-
-    public static final String HOSTNAME_LOCAL_ADMIN = "http://localhost:8080/admin/api/master/clients/v2";
-    private static ObjectMapper mapper;
+public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @InjectHttpClient
     CloseableHttpClient client;
@@ -82,14 +79,9 @@ public class ClientApiV2Test {
     @InjectAdminClient(ref = "noAccessClient", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
     Keycloak noAccessAdminClient;
 
-    @BeforeAll
-    public static void setupMapper() {
-        mapper = new ObjectMapper();
-    }
-
     @Test
     public void getClient() throws Exception {
-        HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/account");
+        HttpGet request = new HttpGet(getClientsApiUrl() + "/account");
         setAuthHeader(request);
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
@@ -100,7 +92,7 @@ public class ClientApiV2Test {
 
     @Test
     public void jsonPatchClient() throws Exception {
-        HttpPatch request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/account");
+        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_PATCH_JSON);
         try (var response = client.execute(request)) {
@@ -111,9 +103,9 @@ public class ClientApiV2Test {
 
     @Test
     public void jsonMergePatchClient() throws Exception {
-        HttpPatch request = new HttpPatch(HOSTNAME_LOCAL_ADMIN + "/account");
+        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
         setAuthHeader(request);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, AdminApi.CONTENT_TYPE_MERGE_PATCH);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("I'm also a description");
@@ -129,8 +121,37 @@ public class ClientApiV2Test {
     }
 
     @Test
+    public void jsonMergePatchClientInvalid() throws Exception {
+        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+
+        request.setEntity(new StringEntity("patch client invalid"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
+        }
+
+        request.setEntity(new StringEntity("{\"invalid\":\"nothing\"}"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
+        }
+
+        request.setEntity(new StringEntity("{}"));
+        try (var response = client.execute(request)) {
+            EntityUtils.consumeQuietly(response.getEntity());
+            assertEquals(200, response.getStatusLine().getStatusCode());
+        }
+
+        request.setEntity(new StringEntity(""));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with null"));
+        }
+    }
+
+    @Test
     public void putFailsWithDifferentClientId() throws Exception {
-        HttpPut request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/account");
+        HttpPut request = new HttpPut(getClientsApiUrl() + "/account");
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -146,7 +167,7 @@ public class ClientApiV2Test {
 
     @Test
     public void putCreateOrUpdates() throws Exception {
-        HttpPut request = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/other");
+        HttpPut request = new HttpPut(getClientsApiUrl() + "/other");
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -175,7 +196,7 @@ public class ClientApiV2Test {
 
     @Test
     public void createClient() throws Exception {
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -201,7 +222,7 @@ public class ClientApiV2Test {
 
     @Test
     public void deleteClient() throws Exception {
-        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/to-delete");
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/to-delete");
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -215,13 +236,13 @@ public class ClientApiV2Test {
             assertEquals(201, response.getStatusLine().getStatusCode());
         }
 
-        HttpGet getRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/to-delete");
+        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/to-delete");
         setAuthHeader(getRequest);
         try (var response = client.execute(getRequest)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
         }
 
-        HttpDelete deleteRequest = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/to-delete");
+        HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/to-delete");
         setAuthHeader(deleteRequest);
         try (var response = client.execute(deleteRequest)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
@@ -235,7 +256,7 @@ public class ClientApiV2Test {
     @Test
     public void getClientsMixedProtocols() throws Exception {
         // Create an OIDC client with OIDC-specific fields
-        HttpPost oidcRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost oidcRequest = new HttpPost(getClientsApiUrl());
         setAuthHeader(oidcRequest);
         oidcRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -254,7 +275,7 @@ public class ClientApiV2Test {
         }
 
         // Create a SAML client with SAML-specific fields
-        HttpPost samlRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost samlRequest = new HttpPost(getClientsApiUrl());
         setAuthHeader(samlRequest);
         samlRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -279,7 +300,7 @@ public class ClientApiV2Test {
         }
 
         // Get all clients - this should work with mixed protocols
-        HttpGet getRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN);
+        HttpGet getRequest = new HttpGet(getClientsApiUrl());
         setAuthHeader(getRequest);
 
         try (var response = client.execute(getRequest)) {
@@ -315,7 +336,7 @@ public class ClientApiV2Test {
         }
 
         // Get individual OIDC client and verify OIDC-specific fields
-        HttpGet getOidcRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/mixed-test-oidc");
+        HttpGet getOidcRequest = new HttpGet(getClientsApiUrl() + "/mixed-test-oidc");
         setAuthHeader(getOidcRequest);
 
         try (var response = client.execute(getOidcRequest)) {
@@ -328,7 +349,7 @@ public class ClientApiV2Test {
         }
 
         // Get individual SAML client and verify SAML-specific fields
-        HttpGet getSamlRequest = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/mixed-test-saml");
+        HttpGet getSamlRequest = new HttpGet(getClientsApiUrl() + "/mixed-test-saml");
         setAuthHeader(getSamlRequest);
 
         try (var response = client.execute(getSamlRequest)) {
@@ -345,13 +366,13 @@ public class ClientApiV2Test {
         }
 
         // Cleanup
-        HttpDelete deleteOidc = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/mixed-test-oidc");
+        HttpDelete deleteOidc = new HttpDelete(getClientsApiUrl() + "/mixed-test-oidc");
         setAuthHeader(deleteOidc);
         try (var response = client.execute(deleteOidc)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
         }
 
-        HttpDelete deleteSaml = new HttpDelete(HOSTNAME_LOCAL_ADMIN + "/mixed-test-saml");
+        HttpDelete deleteSaml = new HttpDelete(getClientsApiUrl() + "/mixed-test-saml");
         setAuthHeader(deleteSaml);
         try (var response = client.execute(deleteSaml)) {
             assertEquals(204, response.getStatusLine().getStatusCode());
@@ -360,7 +381,7 @@ public class ClientApiV2Test {
 
     @Test
     public void OIDCClientRepresentationValidation() throws Exception {
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -408,16 +429,16 @@ public class ClientApiV2Test {
 
     @Test
     public void authenticationRequired() throws Exception {
-        HttpGet request = new HttpGet(HOSTNAME_LOCAL_ADMIN + "/account");
+        HttpGet request = new HttpGet(getClientsApiUrl() + "/account");
         setAuthHeader(request, noAccessAdminClient);
         try (var response = client.execute(request)) {
-            assertEquals(401, response.getStatusLine().getStatusCode());
+            assertEquals(403, response.getStatusLine().getStatusCode());
         }
     }
 
     @Test
     public void createFullClient() throws Exception {
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -433,7 +454,7 @@ public class ClientApiV2Test {
 
     @Test
     public void createFullClientWrongServiceAccountRoles() throws Exception {
-        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        HttpPost request = new HttpPost(getClientsApiUrl());
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -450,7 +471,7 @@ public class ClientApiV2Test {
     @Test
     public void declarativeRoleManagement() throws Exception {
         // 1. Create a client with initial roles
-        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/declarative-role-test");
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/declarative-role-test");
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -468,7 +489,7 @@ public class ClientApiV2Test {
         }
 
         // 2. Update with completely new roles - should remove old ones and add new ones
-        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/declarative-role-test");
+        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/declarative-role-test");
         setAuthHeader(updateRequest);
         updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -515,7 +536,7 @@ public class ClientApiV2Test {
     @Test
     public void declarativeServiceAccountRoleManagement() throws Exception {
         // 1. Create a client with service account and initial realm roles
-        HttpPut createRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/sa-declarative-test");
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/sa-declarative-test");
         setAuthHeader(createRequest);
         createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -535,7 +556,7 @@ public class ClientApiV2Test {
         }
 
         // 2. Update with completely new roles - should remove old ones and add new ones
-        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/sa-declarative-test");
+        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/sa-declarative-test");
         setAuthHeader(updateRequest);
         updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -615,7 +636,7 @@ public class ClientApiV2Test {
 
     @Test
     public void preflight() throws Exception {
-        HttpOptions request = new HttpOptions(HOSTNAME_LOCAL_ADMIN);
+        HttpOptions request = new HttpOptions(getClientsApiUrl());
         request.setHeader(ORIGIN_HEADER, "http://localhost:8080");
 
         // we can improve preflight logic in follow-up issues
@@ -624,6 +645,183 @@ public class ClientApiV2Test {
             var header = response.getFirstHeader(ACCESS_CONTROL_ALLOW_METHODS);
             assertThat(header, notNullValue());
             assertThat(header.getValue(), is("DELETE, POST, GET, PUT"));
+        }
+    }
+
+    @Test
+    public void createClientWithInvalidRedirectUriFragment() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-invalid-fragment");
+        rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
+        assertClientCreationFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+    }
+
+    @Test
+    public void createClientWithInvalidRedirectUriScheme() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-invalid-scheme");
+        rep.setRedirectUris(Set.of("javascript:alert(1)"));
+        assertClientCreationFailsWithError(rep, "Each redirect URL must be valid");
+    }
+
+    @Test
+    @Disabled("Root URL fragment validation not yet implemented in V2 API")
+    public void createClientWithInvalidRootUrl() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-invalid-root-url");
+        rep.setAppUrl("http://localhost:3000#fragment");
+        assertClientCreationFailsWithError(rep, "Root URL must not contain an URL fragment");
+    }
+
+    @Test
+    public void createSamlClientWithInvalidRedirectUriFragment() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-invalid-fragment");
+        rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
+        assertClientCreationFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+    }
+
+    @Test
+    public void createSamlClientWithInvalidRedirectUriScheme() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-invalid-scheme");
+        rep.setRedirectUris(Set.of("javascript:alert(1)"));
+        assertClientCreationFailsWithError(rep, "Each redirect URL must be valid");
+    }
+
+    @Test
+    @Disabled("Root URL fragment validation not yet implemented in V2 API")
+    public void createSamlClientWithInvalidRootUrl() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-invalid-root-url");
+        rep.setAppUrl("http://localhost:3000#fragment");
+        assertClientCreationFailsWithError(rep, "Root URL must not contain an URL fragment");
+    }
+
+    @Test
+    public void updateClientWithInvalidRedirectUriFragment() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-update-invalid-fragment");
+        rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
+        assertClientUpdateFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+    }
+
+    @Test
+    public void updateClientWithInvalidRedirectUriScheme() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-update-invalid-scheme");
+        rep.setRedirectUris(Set.of("javascript:alert(1)"));
+        assertClientUpdateFailsWithError(rep, "A redirect URI uses an illegal scheme");
+    }
+
+    @Test
+    @Disabled("Root URL fragment validation not yet implemented in V2 API")
+    public void updateClientWithInvalidRootUrl() throws Exception {
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("client-update-invalid-root-url");
+        rep.setAppUrl("http://localhost:3000#fragment");
+        assertClientUpdateFailsWithError(rep, "Root URL must not contain an URL fragment");
+    }
+
+    @Test
+    public void updateSamlClientWithInvalidRedirectUriFragment() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-update-invalid-fragment");
+        rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
+        assertClientUpdateFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+    }
+
+    @Test
+    public void updateSamlClientWithInvalidRedirectUriScheme() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-update-invalid-scheme");
+        rep.setRedirectUris(Set.of("javascript:alert(1)"));
+        assertClientUpdateFailsWithError(rep, "A redirect URI uses an illegal scheme");
+    }
+
+    @Test
+    @Disabled("Root URL fragment validation not yet implemented in V2 API")
+    public void updateSamlClientWithInvalidRootUrl() throws Exception {
+        SAMLClientRepresentation rep = new SAMLClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId("saml-client-update-invalid-root-url");
+        rep.setAppUrl("http://localhost:3000#fragment");
+        assertClientUpdateFailsWithError(rep, "Root URL must not contain an URL fragment");
+    }
+
+    /**
+     * Helper method to verify that client creation fails with the expected validation error.
+     * This verifies that ValidationUtil.validateClient is called after the full model is populated.
+     */
+    private void assertClientCreationFailsWithError(BaseClientRepresentation rep, String expectedErrorMessage) throws Exception {
+        HttpPost request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            String body = EntityUtils.toString(response.getEntity());
+            assertThat(body, containsString(expectedErrorMessage));
+        }
+    }
+
+    /**
+     * Helper method to verify that client update fails with the expected validation error.
+     * First creates a valid client, then attempts to update it with invalid data.
+     */
+    private void assertClientUpdateFailsWithError(BaseClientRepresentation rep, String expectedErrorMessage) throws Exception {
+        String clientId = rep.getClientId();
+
+        // First, create a valid client
+        HttpPut createRequest = new HttpPut(getClientsApiUrl() + "/" + clientId);
+        setAuthHeader(createRequest);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        BaseClientRepresentation validRep;
+        if (rep instanceof SAMLClientRepresentation) {
+            validRep = new SAMLClientRepresentation();
+        } else {
+            validRep = new OIDCClientRepresentation();
+        }
+        validRep.setClientId(clientId);
+        validRep.setEnabled(true);
+
+        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(validRep)));
+
+        try (var response = client.execute(createRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(201));
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+
+        // Now try to update with invalid data
+        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/" + clientId);
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            String body = EntityUtils.toString(response.getEntity());
+            assertThat(body, containsString(expectedErrorMessage));
+        }
+
+        // Cleanup: delete the created client
+        HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + clientId);
+        setAuthHeader(deleteRequest);
+        try (var response = client.execute(deleteRequest)) {
+            EntityUtils.consumeQuietly(response.getEntity());
         }
     }
 
@@ -649,12 +847,6 @@ public class ClientApiV2Test {
         // not implemented yet
         // rep.setAdditionalFields(Map.of("key1", "val1", "key2", "val2"));
         return rep;
-    }
-
-    // TODO Rewrite the tests to not need explicit auth. They should use the admin client directly.
-    private void setAuthHeader(HttpMessage request, Keycloak adminClient) {
-        String token = adminClient.tokenManager().getAccessTokenString();
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
     }
 
     private void setAuthHeader(HttpMessage request) {

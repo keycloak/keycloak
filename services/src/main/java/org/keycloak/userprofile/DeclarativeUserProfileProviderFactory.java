@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -74,7 +75,6 @@ import org.keycloak.validate.validators.PatternValidator;
 
 import static java.util.Optional.ofNullable;
 
-import static org.keycloak.common.Profile.Feature.OID4VC_VCI;
 import static org.keycloak.common.util.ObjectUtil.isBlank;
 import static org.keycloak.userprofile.DefaultAttributes.READ_ONLY_ATTRIBUTE_KEY;
 import static org.keycloak.userprofile.UserProfileContext.ACCOUNT;
@@ -83,8 +83,6 @@ import static org.keycloak.userprofile.UserProfileContext.REGISTRATION;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_EMAIL;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_PROFILE;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
-import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
-import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
 public class DeclarativeUserProfileProviderFactory implements UserProfileProviderFactory, AmphibianProviderFactory<UserProfileProvider> {
 
@@ -431,6 +429,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         metadata.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
+        addAttributeUserDid(UserModel.DID, metadata);
+
         return metadata;
     }
 
@@ -502,6 +502,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
                 .setAttributeDisplayName("${termsAndConditionsUserAttribute}")
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
 
+        addAttributeUserDid(UserModel.DID, metadata);
+
         return metadata;
     }
 
@@ -510,6 +512,8 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
         defaultProfile.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE);
+
+        addAttributeUserDid(UserModel.DID, defaultProfile);
 
         return defaultProfile;
     }
@@ -539,25 +543,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
             parsedConfig = UPConfigUtils.parseSystemDefaultConfig();
         }
 
-        // Modify the user profile to use when --features=oid4vc-vci is enabled
-        if (Profile.isFeatureEnabled(OID4VC_VCI)) {
-            addUserDidAttribute(parsedConfig);
-        }
-
         setDefaultConfig(parsedConfig);
-    }
-
-    public static void addUserDidAttribute(UPConfig config) {
-        if (config.getAttribute(UserModel.DID) == null) {
-            UPAttribute attr = new UPAttribute(UserModel.DID);
-            attr.setDisplayName("${did}");
-            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
-            attr.setValidations(Map.of(PatternValidator.ID, Map.of(
-                    "pattern", "^did:.+:.+$",
-                    "error-message", "Value must start with 'did:scheme:'")));
-            config.addOrReplaceAttribute(attr);
-            PARSED_DEFAULT_RAW_CONFIG = null;
-        }
     }
 
     private static Map<String, Object> getEmailAnnotationDecorator(AttributeContext c) {
@@ -607,5 +593,21 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         RealmModel realm = context1.getRealm();
 
         return UpdateEmail.isEnabled(realm);
+    }
+
+    private static boolean isVerifiableCredentialsEnabled(AttributeContext context) {
+        RealmModel realm = context.getSession().getContext().getRealm();
+        boolean oid4vciEnabled = realm.isVerifiableCredentialsEnabled();
+        return oid4vciEnabled;
+    }
+
+    private void addAttributeUserDid(String name, UserProfileMetadata metadata) {
+        Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
+        Predicate<AttributeContext> selector = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
+        Predicate<AttributeContext> readWriteAllowed = DeclarativeUserProfileProviderFactory::isVerifiableCredentialsEnabled;
+        AttributeValidatorMetadata validatorMetadata = new AttributeValidatorMetadata(PatternValidator.ID, new ValidatorConfig(Map.of(
+                "pattern", "^(did:[a-z0-9]+:.+)?$", // simplified pattern
+                "error-message", "Value must start with 'did:scheme:'")));
+        metadata.addAttribute(name, 10, List.of(validatorMetadata), selector, readWriteAllowed, required, readWriteAllowed).setAttributeDisplayName("${did}");
     }
 }

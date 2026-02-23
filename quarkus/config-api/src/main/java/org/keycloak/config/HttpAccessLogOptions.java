@@ -63,7 +63,7 @@ public class HttpAccessLogOptions {
 
     public static final Option<String> HTTP_ACCESS_LOG_FILE_NAME = new OptionBuilder<>("http-access-log-file-name", String.class)
             .category(OptionCategory.HTTP_ACCESS_LOG)
-            .description("The HTTP access log file base name, which will create a log file name concatenating base and suffix (e.g. 'keycloak-http-access.log'). The file is located in the '/data' directory of the distribution.")
+            .description("The HTTP access log file base name, which will create a log file name concatenating base and suffix (e.g. 'keycloak-http-access.log'). The file is located in the '/data/log' directory of the distribution.")
             .defaultValue("keycloak-http-access")
             .build();
 

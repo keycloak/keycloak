@@ -4,6 +4,9 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.injection.ManagedTestResource;
 
+/**
+ * Utilities to work with managed clients
+ */
 public class ManagedClient extends ManagedTestResource {
 
     private final ClientRepresentation createdRepresentation;
@@ -16,22 +19,46 @@ public class ManagedClient extends ManagedTestResource {
         this.clientResource = clientResource;
     }
 
+    /**
+     * The UUID of the client
+     * @return client UUID
+     */
     public String getId() {
         return createdRepresentation.getId();
     }
 
+    /**
+     * The clientId of the client
+     * @return client clientId
+     */
     public String getClientId() {
         return createdRepresentation.getClientId();
     }
 
+    /**
+     * The client secret if set
+     * @return client secret
+     */
     public String getSecret() {
         return createdRepresentation.getSecret();
     }
 
+    /**
+     * Admin client resource for the client to view or update the configuration of the client. Updates should in general
+     * not be done directly through the client resource as it will leave the client in a unexpected state for sub-sequent
+     * tests
+     *
+     * @return client resource
+     */
     public ClientResource admin() {
         return clientResource;
     }
 
+    /**
+     * Update the client within a test with automatic reset to the original configuration after the test has completed
+     *
+     * @param updates the update to the client
+     */
     public void updateWithCleanup(ManagedClient.ClientUpdate... updates) {
         ClientRepresentation rep = admin().toRepresentation();
 

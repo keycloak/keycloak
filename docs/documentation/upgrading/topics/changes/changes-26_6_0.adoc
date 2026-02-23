@@ -14,6 +14,18 @@ It was also not aligned with how other script-based features work in {project_na
 
 If you have existing JavaScript-based policies, make sure to enable the `scripts` feature when starting {project_name}.
 
+=== Stricter Validation for Client URIs (secure-client-uris)
+The 'secure-client-uris' client policy executor has been updated to enforce stricter validation on Client URIs. This aligns with FAPI 2.0 security requirements by mandating TLS (HTTPS) for client endpoints.
+
+HTTPS Enforcement: The following URIs must now use the https scheme. Existing clients configured with http in these fields will fail validation during updates:
+'Post logout redirect URIs', 'Logo URL', 'Policy URL', and 'Terms of Service URL'.
+
+Expanded Wildcard Support: The + wildcard character is now allowed in 'Valid post logout redirect URIs' and 'Web origins'.
+Configuring + defers validation to the client's standard 'Valid redirect URIs'. Since redirect URIs are already checked for HTTPS, using the wildcard maintains FAPI 2.0 compliance while reducing configuration duplication.
+
+Administrators must ensure that all configured URIs for the fields listed above use https. Clients attempting to update or register with http in these fields will fail validation when using the 'secure-client-uris' executor.
+
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -25,6 +37,13 @@ It also lists significant changes to internal APIs.
 When running the server in dev mode on a platform other than Windows Subsystem For Linux, the `http-host` setting will default to localhost.
 This ensures your dev instance won't be accessible from
 other machines. If you want the previous behavior of binding to all interfaces, then explicitly set `http-host` to `0.0.0.0`.
+
+=== Graceful shutdown of HTTP stack
+
+Starting with this version, {project_name} will apply a shutdown delay and a shutdown timeout of one second each to allow a graceful termination.
+
+Users should adjust those values depending on their proxy setup.
+See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown[Graceful HTTP shutdown] in the reverse proxy guide for more information.
 
 === `X-Forwarded-Prefix` Header is now supported
 
@@ -46,6 +65,24 @@ registration request. Now the specified method is respected, so for example when
 it is required to authenticate the client really with the client secret sent as a parameter in the POST request body.
 
 It is still possible to make the OIDC client allow both methods and clients migrated from previous versions are set by default to allow authentication with both methods.
+
+=== Zero-downtime patch releases enabled by default
+
+Zero-downtime patch releases are now enabled by default. This feature, previously in preview as `rolling-updates:v2`, allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
+
+The `rolling-updates:v2` feature flag is no longer required.
+
+When using the {project_name} Operator, set the update strategy to `Auto` to benefit from this functionality.
+
+For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
+
+=== Infinispan 16 upgrade
+
+{project_name} now uses Infinispan 16.0 for embedded distributed caching. This upgrade brings improved performance, enhanced security, and better support for zero-downtime upgrade in patch releases.
+
+If you are using an external {jdgserver_name} server for example in a multi-cluster setup, you should upgrade to version 16.0 as this is the version {project_name} was tested with.
+
+When upgrading the external {jdgserver_name}, enable the legacy metrics to ensure that alerts and dashboard still receive the same metrics as before. See https://www.keycloak.org/observability/metrics-for-troubleshooting-external-infinispan-multi-cluster[External Infinispan metrics] and where to add `legacy: true` to the ConfigMap.
 
 === Usage of virtual threads for embedded caches
 
@@ -100,11 +137,9 @@ They should avoid keeping the returned items in memory by for example binding th
 
 A similar change was done for the `UserSessionPersisterProvider`.
 
-== More changes for the `server-info` system information
+=== OpenJDK upgrade
 
-In version 26.4.0, the `server-info` endpoint changed to just return the system information for administrators in the admin realm. Nevertheless, the version property was detected to be needed by some products that interact with {project_name}. Now that property is included for administrators in the realm with permission `manage-realm`.
-
-The workaround of the `view-system` permission is more restricted too. It can only be assigned by administrators in the master realm using link:{adminguide_link}#_fine_grained_permissions[FGAP]. This permission will be deleted in a future version.
+The official container images for server and the Operator now use OpenJDK 25 instead of previously used OpenJDK 21.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

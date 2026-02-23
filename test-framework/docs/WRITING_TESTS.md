@@ -99,6 +99,137 @@ public class Test2 {
 In this example the realm from `Test1` would be destroyed and a new realm created for `Test2` since different
 configuration is requested.
 
+### Injection support in config classes
+
+`RealmConfig`, `ClientConfig` and `UserConfig` supports injecting dependencies into the config. This can be useful 
+when the configuration depends on how other resources are configured. For example:
+
+```java
+public static class MyClient implements ClientConfig {
+
+    @InjectDependency
+    KeycloakUrls keycloakUrls;
+
+    @Override
+    public ClientConfigBuilder configure(ClientConfigBuilder client) {
+        return client.redirectUris(keycloakUrls.getAdmin());
+    }
+}
+```
+
+Only dependencies (including transitive dependencies) defined by the suppliers can be injected into config classes. 
+
+## Realm cleanup
+
+The test framework aims to re-use as much as possible to reduce execution time. This is especially relevant to 
+managed realms. By default, a managed realm has its lifecycle set to `CLASS`, which means the same realm will be
+re-used for all tests methods within the same test class.
+
+It's also possible to change the lifecycle to `GLOBAL` where the realm will be shared for all test classes. This can
+be beneficial for large and complex realms, but bear in mind that tests will need to carefully clean after 
+themselves.
+
+In the end choosing the lifecycle of the realm depends on how much (if any) cleanup tests have to perform.
+
+To help with cleanup `ManagedRealm` provides some convenience methods to help test clean-up after themselves. In general 
+the above methods should be called at the start of the test method before any changes are made.
+
+### `dirty()`
+
+If a limited number of tests require a lot of cleanup it can be expensive to do so, and result in larger and more 
+complex test methods. Marking the realm as dirty within a test method will cause it to be re-created after the test
+method has executed:
+
+```java
+@Test
+public void testSomething() {
+    managedRealm.dirty();
+    
+    // Make loads of changes to the realm
+}
+```
+
+If most or all test methods are using `dirty()` consider using lifecycle `CLASS` instead for the managed realm.
+
+### `updateWithCleanup(...)`
+
+If a limited number of test methods require changes to the realm configuration the `updateWithCleanup(...)` method
+can be used:
+
+```java
+@Test
+public void testSomethingThatRequiresRegistration() {
+    managedRealm.updateWithCleanup(r -> r.registrationAllowed(true));
+    
+    // Test registration
+}
+```
+
+The changes will then be reverted after the test method has executed.
+
+### `update` and `add` methods
+
+There are a number of utilities that allow adding or updating resources within a realm, with cleanup after the test 
+method has executed. This allows for example adding a user that is only required for a single test method:
+
+```java
+@Test
+public void testUser() {
+    managedRealm.addUser(UserConfigBuilder.create().username("myuser"));
+}
+```
+
+There are a limit number of supported resources at the moment, and more will be added as needed, eventually 
+supporting the majority of resources within a realm.
+
+### `cleanup().add(...)`
+
+Adding cleanup to the realm will allow cleaning up anything within the realm:
+
+```java
+@Test
+public void testWithCleanup() {
+    managedRealm.cleanup().add(r -> r.roles().get("foo").remove());
+}
+```
+
+## Setup and Cleanup
+
+Typically, for a JUnit test `beforeAll` and `afterAll` are used to setup the environment for tests, but these are not
+very useful when using the test framework since these need to be `static` and does not have access to any injected 
+resources.
+
+Instead, the test framework allows annotating `non-static` methods with no parameters using `@TestSetup` and 
+`@TestCleanup`. Methods annotated with `@TestSetup` will be executed before all tests, and methods annotated with
+`@TestCleanup` after all test methods have completed. For example:
+
+```java
+@InjectRealm(lifecycle = LifeCycle.CLASS)
+ManagedRealm realm;
+
+@TestSetup
+public void setupRealms() {
+    RealmRepresentation rep = realm.admin().toRepresentation();
+    Assertions.assertNull(rep.getAttributes().get("test.setup"));
+    rep.getAttributes().put("test.setup", "myvalue");
+    realm.admin().update(rep);
+}
+
+@TestCleanup
+public void cleanupRealms() {
+    RealmRepresentation rep = realm.admin().toRepresentation();
+    Assertions.assertEquals("myvalue", rep.getAttributes().get("test.setup"));
+    rep.getAttributes().remove("test.setup");
+    realm.admin().update(rep);
+}
+```
+
+One thing to bear in mind when using `@TestSetup` and `@TestCleanup` is any injected resources with lifecycle `METHOD`.
+As these will be re-created for each test method, any changes done in `@TestSetup` will to those resources will be
+reverted after the first test has executed.
+
+Avoid using `@TestSetup` for anything that can be configured using `config`.
+
 ## Multiple instances
 
 By default, all resources are granted the default reference, and other resources that depend on them don't need to

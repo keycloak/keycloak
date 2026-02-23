@@ -22,7 +22,9 @@ import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
+import io.quarkus.arc.properties.IfBuildProperty;
 
+@IfBuildProperty(name = "test.operator.client-controllers", stringValue = "true")
 @ControllerConfiguration
 public class KeycloakSAMLClientController extends KeycloakClientBaseController<KeycloakSAMLClient, SAMLClientRepresentation, KeycloakSAMLClientRepresentation> {
 

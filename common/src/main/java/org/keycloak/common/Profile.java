@@ -146,8 +146,8 @@ public class Profile {
 
         LOGOUT_ALL_SESSIONS_V1("Logout all sessions logs out only regular sessions", Type.DEPRECATED, 1),
 
-        ROLLING_UPDATES_V1("Rolling Updates", Type.DEFAULT, 1),
-        ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.PREVIEW, 2),
+        ROLLING_UPDATES_V1("Rolling Updates", Type.DEPRECATED, 1),
+        ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.DEFAULT, 2),
 
         WORKFLOWS("Workflows", Type.PREVIEW),
 
@@ -158,6 +158,8 @@ public class Profile {
         HTTP_OPTIMIZED_SERIALIZERS("Optimized JSON serializers for better performance of the HTTP layer", Type.PREVIEW),
 
         OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
+
+        CIMD("OAuth Client ID Metadata Document", Type.EXPERIMENTAL),
 
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
@@ -312,7 +314,8 @@ public class Profile {
         }
     }
 
-    private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(Feature.HOSTNAME_V2.getUnversionedKey())));
+    private static final Set<String> ESSENTIAL_FEATURES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(Feature.HOSTNAME_V2.getUnversionedKey(), Feature.ROLLING_UPDATES_V2.getUnversionedKey())));
 
     private static final Logger logger = Logger.getLogger(Profile.class);
 

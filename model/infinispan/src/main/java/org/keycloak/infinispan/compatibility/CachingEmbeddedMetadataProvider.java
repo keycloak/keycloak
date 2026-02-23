@@ -6,7 +6,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.compatibility.AbstractCompatibilityMetadataProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
@@ -27,15 +26,9 @@ public class CachingEmbeddedMetadataProvider extends AbstractCompatibilityMetada
 
     @Override
     public Map<String, String> customMeta() {
-        String rawIspnVersion = Version.getVersion();
-        String rawJgroupsVersion = org.jgroups.Version.printVersion();
-        if (Profile.isFeatureEnabled(Profile.Feature.ROLLING_UPDATES_V2)) {
-            rawIspnVersion = majorMinorOf(rawIspnVersion);
-            rawJgroupsVersion = majorMinorOf(rawJgroupsVersion);
-        }
         return Map.of(
-                "version", rawIspnVersion,
-                "jgroupsVersion", rawJgroupsVersion
+                "version", majorMinorOf(Version.getVersion()),
+                "jgroupsVersion", majorMinorOf(org.jgroups.Version.printVersion())
         );
     }
     @Override
@@ -43,7 +36,7 @@ public class CachingEmbeddedMetadataProvider extends AbstractCompatibilityMetada
         return Stream.of(DefaultCacheEmbeddedConfigProviderFactory.CONFIG, DefaultCacheEmbeddedConfigProviderFactory.STACK);
     }
 
-    private static String majorMinorOf(String version) {
+    public static String majorMinorOf(String version) {
         if (version == null || version.isEmpty()) {
             return version;
         }

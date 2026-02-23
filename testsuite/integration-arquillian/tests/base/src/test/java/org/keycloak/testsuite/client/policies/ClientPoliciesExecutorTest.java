@@ -1216,14 +1216,14 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
                 clientRep.setAdminUrl("https://client.example.com/admin/");
                 // baseUrl
                 clientRep.setBaseUrl("https://client.example.com/base/");
+                // OAuth2 : redirectUris
+                clientRep.setRedirectUris(Arrays.asList("https://client.example.com/redirect/", "https://client.example.com/callback/"));
                 // web origins
                 clientRep.setWebOrigins(Arrays.asList("https://valid.other.client.example.com/", "https://valid.another.client.example.com/"));
                 // backchannel logout URL
                 Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
                 attributes.put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "https://client.example.com/logout/");
                 clientRep.setAttributes(attributes);
-                // OAuth2 : redirectUris
-                clientRep.setRedirectUris(Arrays.asList("https://client.example.com/redirect/", "https://client.example.com/callback/"));
                 // OAuth2 : jwks_uri
                 attributes.put(OIDCConfigAttributes.JWKS_URL, "https://client.example.com/jwks/");
                 clientRep.setAttributes(attributes);
@@ -1340,6 +1340,45 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         } catch (ClientPolicyException e) {
             assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
             assertEquals("Invalid cibaClientNotificationEndpoint", e.getErrorDetail());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // OIDC: logo_uri
+                Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+                attributes.put("logoUri", "http://client.example.com/logo/");
+                clientRep.setAttributes(attributes);
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid logoUri", e.getErrorDetail());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // OIDC: tos_uri (Terms of Service)
+                Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+                attributes.put("tosUri", "http://client.example.com/tos/");
+                clientRep.setAttributes(attributes);
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid tosUri", e.getErrorDetail());
+        }
+
+        try {
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // OIDC: policy_uri
+                Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+                attributes.put("policyUri", "http://client.example.com/policy/");
+                clientRep.setAttributes(attributes);
+            });
+            fail();
+        } catch (ClientPolicyException e) {
+            assertEquals(OAuthErrorException.INVALID_CLIENT_METADATA, e.getError());
+            assertEquals("Invalid policyUri", e.getErrorDetail());
         }
     }
 
@@ -1828,6 +1867,135 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
             UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
             post.setEntity(formEntity);
             return client.execute(post);
+        }
+    }
+
+    @Test
+    public void testSecureClientRegisteringUriEnforceExecutorWithRedirectWildcard() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Ensimmainen Profiili")
+                        .addExecutor(SecureClientUrisExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Ensimmainen Politiikka", Boolean.TRUE)
+                        .addCondition(ClientUpdaterContextConditionFactory.PROVIDER_ID,
+                                createClientUpdateContextConditionConfig(Arrays.asList(
+                                        ClientUpdaterContextConditionFactory.BY_AUTHENTICATED_USER,
+                                        ClientUpdaterContextConditionFactory.BY_INITIAL_ACCESS_TOKEN,
+                                        ClientUpdaterContextConditionFactory.BY_REGISTRATION_ACCESS_TOKEN)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+
+        String cid = null;
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        try {
+            cid = createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+                clientRep.setServiceAccountsEnabled(Boolean.TRUE);
+                clientRep.setRedirectUris(List.of("https://client.example.com/redirect/"));
+            });
+        } catch (Exception e) {
+            fail();
+        }
+
+        try {  // Redirect relative wildcard - '+' as single value
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // rootUrl
+                clientRep.setRootUrl("https://client.example.com/");
+                // adminUrl
+                clientRep.setAdminUrl("https://client.example.com/admin/");
+                // baseUrl
+                clientRep.setBaseUrl("https://client.example.com/base/");
+                // OAuth2 : redirectUris
+                clientRep.setRedirectUris(Arrays.asList("https://client.example.com/redirect/", "https://client.example.com/callback/"));
+                // web origins
+                clientRep.setWebOrigins(List.of("+"));
+                // backchannel logout URL
+                Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+                attributes.put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "https://client.example.com/logout/");
+                clientRep.setAttributes(attributes);
+                // OIDC: postLogoutUris
+                setAttributeMultivalued(clientRep, OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, List.of("+"));
+                // OAuth2 : jwks_uri
+                attributes.put(OIDCConfigAttributes.JWKS_URL, "https://client.example.com/jwks/");
+                clientRep.setAttributes(attributes);
+                // OIDC : requestUris
+                setAttributeMultivalued(clientRep, OIDCConfigAttributes.REQUEST_URIS, Arrays.asList("https://client.example.com/request/", "https://client.example.com/reqobj/"));
+                // CIBA Client Notification Endpoint
+                attributes.put(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, "https://client.example.com/client-notification/");
+                clientRep.setAttributes(attributes);
+            });
+        } catch (Exception e) {
+            fail();
+        }
+
+        try { // Redirect relative wildcard - '+' with multiple values
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // rootUrl
+                clientRep.setRootUrl("https://client.example.com/");
+                // adminUrl
+                clientRep.setAdminUrl("https://client.example.com/admin/");
+                // baseUrl
+                clientRep.setBaseUrl("https://client.example.com/base/");
+                // OAuth2 : redirectUris
+                clientRep.setRedirectUris(List.of("https://client.example.com/redirect/"));
+                // web origins
+                clientRep.setWebOrigins(Arrays.asList("https://valid.other.client.example.com/", "https://valid.another.client.example.com/", "+"));
+                // backchannel logout URL
+                Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+                attributes.put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "https://client.example.com/logout/");
+                clientRep.setAttributes(attributes);
+                // OIDC: postLogoutUris
+                setAttributeMultivalued(clientRep, OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, Arrays.asList("https://client.example.com/postlogout/", "+"));
+                // OAuth2 : jwks_uri
+                attributes.put(OIDCConfigAttributes.JWKS_URL, "https://client.example.com/jwks/");
+                clientRep.setAttributes(attributes);
+                // OIDC : requestUris
+                setAttributeMultivalued(clientRep, OIDCConfigAttributes.REQUEST_URIS, Arrays.asList("https://client.example.com/request/", "https://client.example.com/reqobj/"));
+                // CIBA Client Notification Endpoint
+                attributes.put(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, "https://client.example.com/client-notification/");
+                clientRep.setAttributes(attributes);
+            });
+        } catch (Exception e) {
+            fail();
+        }
+
+        try { // Redirect relative wildcard - '+' with no redirect value added
+            updateClientByAdmin(cid, (ClientRepresentation clientRep) -> {
+                // rootUrl
+                clientRep.setRootUrl("https://client.example.com/");
+                // adminUrl
+                clientRep.setAdminUrl("https://client.example.com/admin/");
+                // baseUrl
+                clientRep.setBaseUrl("https://client.example.com/base/");
+                // OAuth2 : redirectUris
+                clientRep.setRedirectUris(null);
+                // web origins
+                clientRep.setWebOrigins(Arrays.asList("+", "https://valid.other.client.example.com/"));
+                // backchannel logout URL
+                Map<String, String> attributes = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
+                attributes.put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, "https://client.example.com/logout/");
+                clientRep.setAttributes(attributes);
+                // OIDC: postLogoutUris
+                setAttributeMultivalued(clientRep, OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, Arrays.asList("https://client.example.com/postlogout/", "+"));
+                // OAuth2 : jwks_uri
+                attributes.put(OIDCConfigAttributes.JWKS_URL, "https://client.example.com/jwks/");
+                clientRep.setAttributes(attributes);
+                // OIDC : requestUris
+                setAttributeMultivalued(clientRep, OIDCConfigAttributes.REQUEST_URIS, Arrays.asList("https://client.example.com/request/", "https://client.example.com/reqobj/"));
+                // CIBA Client Notification Endpoint
+                attributes.put(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, "https://client.example.com/client-notification/");
+                clientRep.setAttributes(attributes);
+            });
+        } catch (Exception e) {
+            fail();
         }
     }
 }

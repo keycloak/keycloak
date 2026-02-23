@@ -7,8 +7,6 @@ import org.keycloak.admin.api.client.ClientsApi;
 
 public interface AdminApi {
 
-    String CONTENT_TYPE_MERGE_PATCH = "application/merge-patch+json";
-
     /**
      * Retrieve the Clients API group by version
      */

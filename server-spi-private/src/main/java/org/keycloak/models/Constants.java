@@ -135,6 +135,8 @@ public final class Constants {
     // multiple values into single string
     public static final String CFG_DELIMITER = "##";
 
+    public static final String INCLUDE_REDIRECTS = "+";
+
     // Better performance to use this instead of String.split
     public static final Pattern CFG_DELIMITER_PATTERN = Pattern.compile("\\s*" + CFG_DELIMITER + "\\s*");
 
@@ -225,4 +227,8 @@ public final class Constants {
 
     // Internal note for storing authorization details response in client session context
     public static final String AUTHORIZATION_DETAILS_RESPONSE = "authorization_details_response";
+
+    // This attribute can be used in a realm import definition to signal that default client scopes should be created in addition to the client scopes defined by the realm import definition.
+    // When this attribute is omitted or set to false, the default client scopes are not created if at least one other client scope is defined by the realm import definition.
+    public static final String CREATE_DEFAULT_CLIENT_SCOPES = "CreateDefaultClientScopes";
 }

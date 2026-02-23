@@ -17,7 +17,6 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
@@ -40,7 +39,7 @@ import org.keycloak.util.JsonSerialization;
 import org.jboss.logging.Logger;
 import org.junit.Test;
 
-import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -154,7 +153,7 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);

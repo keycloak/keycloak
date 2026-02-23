@@ -176,7 +176,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     protected Map<String, Map<String,String>> realmLocalizationTexts;
 
-    public CachedRealm(Long revision, RealmModel model) {
+    public CachedRealm(long revision, RealmModel model) {
         super(revision, model.getId());
         name = model.getName();
         displayName = model.getDisplayName();
@@ -243,7 +243,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         emailTheme = model.getEmailTheme();
 
         requiredCredentials = model.getRequiredCredentialsStream().collect(Collectors.toList());
-        userActionTokenLifespans = Collections.unmodifiableMap(new HashMap<>(model.getUserActionTokenLifespans()));
+        userActionTokenLifespans = Map.copyOf(model.getUserActionTokenLifespans());
 
         smtpConfig = model.getSmtpConfig();
         browserSecurityHeaders = model.getBrowserSecurityHeaders();
@@ -288,11 +288,11 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
         authenticatorConfigs = model.getAuthenticatorConfigsStream()
                 .collect(Collectors.toMap(AuthenticatorConfigModel::getId, Function.identity()));
-        List<RequiredActionConfigModel> requiredActionConfigsList = model.getRequiredActionConfigsStream().collect(Collectors.toList());
-        for (RequiredActionConfigModel requiredActionConfig : requiredActionConfigsList) {
-            requiredActionProviderConfigs.put(requiredActionConfig.getId(), requiredActionConfig);
-            requiredActionProviderConfigsByAlias.put(requiredActionConfig.getAlias(), requiredActionConfig);
-        }
+        model.getRequiredActionConfigsStream()
+                .forEach(requiredActionConfig -> {
+                    requiredActionProviderConfigs.put(requiredActionConfig.getId(), requiredActionConfig);
+                    requiredActionProviderConfigsByAlias.put(requiredActionConfig.getAlias(), requiredActionConfig);
+                });
 
         requiredActionProviderList = model.getRequiredActionProvidersStream().collect(Collectors.toList());
         for (RequiredActionProviderModel action : requiredActionProviderList) {
@@ -316,7 +316,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         model.getComponentsStream().forEach(component ->
             componentsByParent.add(component.getParentId(), component)
         );
-        components = model.getComponentsStream().collect(Collectors.toMap(component -> component.getId(), Function.identity()));
+        components = model.getComponentsStream().collect(Collectors.toMap(ComponentModel::getId, Function.identity()));
 
         try {
             attributes = model.getAttributes();

@@ -77,7 +77,7 @@ public class OrganizationGroupDeletionTest extends AbstractOrganizationTest {
         }
 
         // Verify groups exist
-        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null);
+        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null, true);
         assertThat(groups, hasSize(2)); // Engineering, Sales (Backend is nested)
 
         // Delete organization

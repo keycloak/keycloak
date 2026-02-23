@@ -53,7 +53,7 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
     private final Type type;
     private final String organizationId;
 
-    public CachedGroup(Long revision, RealmModel realm, GroupModel group) {
+    public CachedGroup(long revision, RealmModel realm, GroupModel group) {
         super(revision, group.getId());
         this.realm = realm.getId();
         this.name = group.getName();

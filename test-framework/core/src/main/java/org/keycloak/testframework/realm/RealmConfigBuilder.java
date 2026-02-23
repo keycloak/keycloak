@@ -18,6 +18,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.util.Collections;
 
 public class RealmConfigBuilder {
 

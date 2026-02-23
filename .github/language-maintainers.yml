@@ -1,0 +1,88 @@
+# Language maintainers for Keycloak translations
+# This file maps language codes to their responsible maintainers. It is used to notify them once a translation changes.
+# Format: language_code: [list of GitHub usernames]
+
+languages:
+  ca:
+    name: Catalan
+    maintainers:
+      - jmallach
+      - Ecron
+  cs:
+    name: Czech
+    maintainers:
+      - pionl
+      - pschiffe
+  de:
+    name: German
+    maintainers:
+      - robson90
+      - ahus1
+  el:
+    name: Greek
+    maintainers:
+      - infl00p
+      - knaiskes
+  es:
+    name: Spanish
+    maintainers:
+      - herver1971
+      - anthieni
+  fr:
+    name: French
+    maintainers:
+      - Dodouce
+      - GitSpoon
+  it:
+    name: Italian
+    maintainers:
+      - GioviQ
+      - EdoardoTona
+  ja:
+    name: Japanese
+    maintainers:
+      - y-tabata
+      - wadahiro
+      - tnorimat
+      - k-tamura
+  nl:
+    name: Dutch
+    maintainers:
+      - janher
+      - edewit
+  pt_BR:
+    name: Portuguese (Brazil)
+    maintainers:
+      - rafaelrddc
+      - felipebz
+      - julianorodrigox
+  ro:
+    name: Romanian
+    maintainers:
+      - edwint88
+      - liviuroman
+  ru:
+    name: Russian
+    maintainers:
+      - petrov9
+      - pasternake
+  sl:
+    name: Slovenian
+    maintainers:
+      - mathmul
+      - SaraPristovnik
+  tr:
+    name: Turkish
+    maintainers:
+      - spctr
+      - ariferol
+  zh_Hans:
+    name: Simplified Chinese
+    maintainers:
+      - jasonqsong
+      - charliedcc
+  zh_Hant:
+    name: Traditional Chinese
+    maintainers:
+      - allen0099
+      - benwater12

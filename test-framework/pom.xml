@@ -34,6 +34,7 @@
 
     <properties>
         <version.testcontainers>2.0.3</version.testcontainers>
+        <version.shrinkwrap>1.2.6</version.shrinkwrap>
     </properties>
 
     <dependencyManagement>
@@ -79,6 +80,16 @@
                 <artifactId>testcontainers-postgresql</artifactId>
                 <version>${version.testcontainers}</version>
             </dependency>
+            <dependency>
+                <groupId>org.jboss.shrinkwrap</groupId>
+                <artifactId>shrinkwrap-api</artifactId>
+                <version>${version.shrinkwrap}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.shrinkwrap</groupId>
+                <artifactId>shrinkwrap-impl-base</artifactId>
+                <version>${version.shrinkwrap}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -86,6 +97,7 @@
         <module>bom</module>
         <module>core</module>
         <module>junit5-config</module>
+        <module>test-containers</module>
         <module>db-edb</module>
         <module>db-mariadb</module>
         <module>db-mssql</module>
@@ -95,6 +107,7 @@
         <module>db-tidb</module>
         <module>email-server</module>
         <module>examples</module>
+        <module>infinispan-server</module>
         <module>oauth</module>
         <module>remote</module>
         <module>remote-providers</module>

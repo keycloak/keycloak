@@ -26,6 +26,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.constants.OID4VCIConstants;
@@ -33,7 +34,6 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.JwtCredentialBuilder;
@@ -48,7 +48,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.protocol.oid4vc.model.Format;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
@@ -61,6 +60,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -70,8 +70,8 @@ import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -102,7 +102,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
@@ -130,7 +130,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
@@ -163,7 +163,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
@@ -200,7 +200,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
             org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
             String token = tokenResponse.getAccessToken();
-            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+            List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
             String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
             final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
@@ -245,7 +245,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
             org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
             String token = tokenResponse.getAccessToken();
-            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+            List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
             String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
             final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
@@ -289,7 +289,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
             String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
             org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
             String token = tokenResponse.getAccessToken();
-            List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+            List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
             String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
             final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
@@ -374,23 +374,19 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 1. Retrieving the credential-offer-uri
         final String credentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
-                .credentialOfferUriRequest()
-                .credentialConfigurationId(credentialConfigurationId)
+        CredentialOfferURI credOfferUri = oauth.oid4vc()
+                .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
-                .username("john")
+                .targetUser("john")
                 .bearerToken(token)
                 .send()
                 .getCredentialOfferURI();
 
-        assertNotNull("A valid offer uri should be returned", credentialOfferURI);
+        assertNotNull("A valid offer uri should be returned", credOfferUri);
 
         // 2. Using the uri to get the actual credential offer
-        CredentialsOffer credentialsOffer = oauth.oid4vc()
-                .credentialOfferRequest(credentialOfferURI.getNonce())
-                .bearerToken(token)
-                .send()
-                .getCredentialsOffer();
+        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc().doCredentialOfferRequest(credOfferUri);
+        CredentialsOffer credentialsOffer = credentialOfferResponse.getCredentialsOffer();
 
         assertNotNull("A valid offer should be returned", credentialsOffer);
 
@@ -425,7 +421,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         assertNotNull("Access token should be present", theToken);
 
         // Extract credential_identifier from authorization_details in token response
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = accessTokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = accessTokenResponse.getOid4vcAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
@@ -487,7 +483,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                             scopeName,
                             jwtVcConfig.getScope());
                     assertEquals("The sd-jwt-credential should be offered in the jwt_vc format.",
-                            Format.SD_JWT_VC,
+                            VCFormat.SD_JWT_VC,
                             jwtVcConfig.getFormat());
 
                     assertNotNull("The sd-jwt-credential can optionally provide a claims claim.",

@@ -143,12 +143,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-hibernate-validator</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.glassfish.expressly</groupId>
-                    <artifactId>expressly</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- SmallRye -->

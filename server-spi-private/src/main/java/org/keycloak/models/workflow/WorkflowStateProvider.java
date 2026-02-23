@@ -94,8 +94,9 @@ public interface WorkflowStateProvider extends Provider {
      * @param step the workflow step to schedule
      * @param resourceId the ID of the resource associated with this scheduled step
      * @param executionId the ID of the workflow execution
+     * @return {@code CREATED} if the execution was created (when the workflow first activates for a resource), {@code UPDATED) if it was just updated.
      */
-    void scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId);
+    ScheduleResult scheduleStep(Workflow workflow, WorkflowStep step, String resourceId, String executionId);
 
     /**
      * Retrieves the scheduled step for a specific workflow and resource combination.
@@ -151,4 +152,9 @@ public interface WorkflowStateProvider extends Provider {
      * @param scheduledAt the timestamp (in milliseconds) when this step was scheduled
      */
     record ScheduledStep(String workflowId, String stepId, String resourceId, String executionId, long scheduledAt) {}
+
+    enum ScheduleResult {
+        CREATED,
+        UPDATED
+    }
 }

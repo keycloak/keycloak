@@ -30,6 +30,12 @@ public class TimeOffSet {
         currentOffset = initOffset;
     }
 
+    /**
+     * Set the timeoffset on the Keycloak server
+     *
+     * @param offset the timeoffset
+     * @throws RuntimeException
+     */
     public void set(int offset) throws RuntimeException {
         currentOffset = offset;
 
@@ -57,6 +63,11 @@ public class TimeOffSet {
 
     }
 
+    /**
+     * Retrive the current time offset
+     *
+     * @return the time offset
+     */
     public int get() {
         return currentOffset;
     }

@@ -77,6 +77,10 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             }
             event.detail(Details.IDENTITY_PROVIDER, identityProviderModel.getAlias());
 
+            if (!identityProviderModel.isEnabled()) {
+                throw new RuntimeException("Identity Provider is not enabled");
+            }
+
             if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).getJWTAuthorizationGrantAllowedIdentityProviders().contains(identityProviderModel.getAlias())) {
                 throw new RuntimeException("Identity Provider is not allowed for the client");
             }
@@ -103,6 +107,12 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             UserModel user = this.session.users().getUserByFederatedIdentity(realm, federatedIdentityModel);
             if (user == null) {
                 throw new RuntimeException("User not found");
+            }
+            if (!user.isEnabled()) {
+                throw new RuntimeException("User is not enabled");
+            }
+            if (user.getRequiredActionsStream().findAny().isPresent()) {
+                throw new RuntimeException("Account is not fully set up");
             }
             event.user(user);
             event.detail(Details.USERNAME, user.getUsername());

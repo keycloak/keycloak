@@ -19,6 +19,7 @@ package org.keycloak.services.managers;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.BadRequestException;
@@ -79,6 +80,7 @@ import org.keycloak.utils.SMTPUtil;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
 
 /**
  * Per request object
@@ -197,8 +199,8 @@ public class RealmManager {
         String baseUrl = "/admin/" + Encode.encodePathAsIs(realm.getName()) + "/console/";
         adminConsole.setBaseUrl(baseUrl);
         adminConsole.addRedirectUri(baseUrl + "*");
-        adminConsole.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
-        adminConsole.setWebOrigins(Collections.singleton("+"));
+        adminConsole.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, Constants.INCLUDE_REDIRECTS);
+        adminConsole.setWebOrigins(Collections.singleton(Constants.INCLUDE_REDIRECTS));
 
         adminConsole.setEnabled(true);
         adminConsole.setAlwaysDisplayInConsole(false);
@@ -647,8 +649,7 @@ public class RealmManager {
                 setupOfflineTokens(realm, rep);
             }
 
-
-            if (rep.getClientScopes() == null) {
+            if (isCreateDefaultClientScopes(rep)) {
                 createDefaultClientScopes(realm);
             }
 
@@ -717,6 +718,12 @@ public class RealmManager {
         }
 
         return realm;
+    }
+
+    private boolean isCreateDefaultClientScopes(RealmRepresentation rep) {
+        Map<String, String> attributes = rep.getAttributesOrEmpty();
+        String createDefaultClientScopes = attributes.remove(CREATE_DEFAULT_CLIENT_SCOPES);
+        return rep.getClientScopes() == null || Boolean.parseBoolean(createDefaultClientScopes);
     }
 
     private String determineDefaultRoleName(RealmRepresentation rep) {

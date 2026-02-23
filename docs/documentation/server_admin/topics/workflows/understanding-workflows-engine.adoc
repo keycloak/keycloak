@@ -34,16 +34,19 @@ You can adjust this interval based on your realm's needs and the expected freque
 Most of the time, steps are executed in a short amount of time. However, there might be cases where a step takes longer
 to execute due to various reasons, such as network latency depending on an external service delays, or complex processing logic.
 
-By default, the timeout for executing a step is set to *1 second*. If a step takes longer than this timeout to execute,
-it will be marked as failed, and the workflow execution will be halted. If the step is scheduled, it will run again
-in the next execution window of the background task. If the step is not scheduled, the workflow execution will be marked as failed
-and that step won't be retried.
+By default, the timeout for executing a workflow is set to *5 seconds*. The amount of steps that are processed in a single run
+depends on the number of immediate steps that are defined in the workflow, as they are executed sequentially in the same run. Once
+the workflow encounters a scheduled step, it schedules the step and terminates the execution.
 
-You can configure the timeout for step execution by setting the following server configuration option:
+If a workflow execution takes longer than the defined timeout, the engine will fail the current step, and it will attempt
+to run this step in the next execution of the workflow. This is done to prevent long-running executions from blocking the workflow task thread pool
+and impacting the execution of other workflows.
 
-*   `spi-workflow--default--executor-task-timeout`: Defines the timeout for executing a workflow step. It follows the same format used in the workflow step `after` field,
-where you can specify the interval as a number followed by a time unit (`ms`, `s` - default, `m`, `h`, `d`) or using the ISO-8601 duration format.
+You can configure the timeout for the workflow executor task by setting the following server configuration option:
 
+*   `spi-workflow--default--executor-task-timeout`: Defines the timeout for executing a workflow. It follows the same format
+used in the workflow step `after` field, where you can specify the interval as a number followed by a time unit (`ms`, `s` - default, `m`, `h`, `d`)
+or using the ISO-8601 duration format.
 
 == Performance considerations
 

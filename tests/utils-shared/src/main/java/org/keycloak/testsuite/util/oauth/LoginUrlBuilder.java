@@ -1,5 +1,7 @@
 package org.keycloak.testsuite.util.oauth;
 
+import java.util.Arrays;
+
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -18,6 +20,12 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
 
     public LoginUrlBuilder param(String name, String value) {
         parameter(name, value);
+        return this;
+    }
+
+    public LoginUrlBuilder scope(String... scopes) {
+        String joinedScopes = String.join(" ", Arrays.asList(scopes));
+        parameter(OAuth2Constants.SCOPE, joinedScopes);
         return this;
     }
 

@@ -35,7 +35,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.oid4vci.Oid4vcProtocolMapperModel;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailResponse;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -66,7 +65,7 @@ import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static org.keycloak.OAuth2Constants.OPENID_CREDENTIAL;
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -119,10 +118,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         Oid4vcTestContext ctx = new Oid4vcTestContext();
 
         // Get credential issuer metadata
-        CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc()
-                .issuerMetadataRequest()
-                .endpoint(getRealmMetadataPath(TEST_REALM_NAME))
-                .send();
+        CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc().doIssuerMetadataRequest();
         assertEquals(HttpStatus.SC_OK, metadataResponse.getStatusCode());
         ctx.credentialIssuer = metadataResponse.getMetadata();
 
@@ -151,7 +147,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         // ===== STEP 2: Second login - Regular SSO (should NOT return authorization_details) =====
         // Second login WITHOUT OID4VCI scope and WITHOUT authorization_details.
-        oauth.client(client.getClientId(), "password");
         oauth.scope(OAuth2Constants.SCOPE_OPENID);
         oauth.openLoginForm();
 
@@ -161,7 +156,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Exchange second code for tokens WITHOUT authorization_details using OAuthClient
         AccessTokenResponse secondTokenResponse = oauth.accessTokenRequest(secondCode)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
         assertEquals("Second token exchange should succeed", HttpStatus.SC_OK, secondTokenResponse.getStatusCode());
 
@@ -169,18 +163,12 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         assertNull("Second token (regular SSO) should NOT have authorization_details", secondTokenResponse.getAuthorizationDetails());
 
         // ===== STEP 4: Verify second token cannot be used for credential requests =====
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
-        CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialIdentifier(credentialIdentifier);
 
         // Credential request with second token should fail using OID4VCI utilities
-        Oid4vcCredentialRequest credentialRequestBuilder = oauth.oid4vc()
-                .credentialRequest()
-                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
                 .bearerToken(secondTokenResponse.getAccessToken())
-                .credentialIdentifier(credentialIdentifier);
-
-        Oid4vcCredentialResponse credentialResponse = credentialRequestBuilder.send();
+                .send();
 
         // Credential request with second token should fail
         // The second token doesn't have the OID4VCI scope, so it should fail
@@ -190,9 +178,9 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         String error = credentialResponse.getError();
         String errorDescription = credentialResponse.getErrorDescription();
 
-        assertEquals("Credential request should fail with unknown credential configuration when OID4VCI scope is missing",
+        assertEquals("Credential request should fail with unknown credential configuration when OID4VCI scope is missing or authorization_details missing from the token",
             "UNKNOWN_CREDENTIAL_CONFIGURATION", error);
-        assertEquals("Scope check failure", errorDescription);
+        assertEquals("No authorization_details found in token", errorDescription);
     }
 
     // Test for the whole authorization_code flow with the credentialRequest using credential_configuration_id
@@ -261,7 +249,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         // Extract values from refreshed token for credential request
         String accessToken = tokenResponseRef.getAccessToken();
-        List<OID4VCAuthorizationDetailResponse> authDetails = tokenResponseRef.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetails = tokenResponseRef.getOid4vcAuthorizationDetails();
 
         String credentialIdentifier = null;
         if (authDetails != null && !authDetails.isEmpty()) {
@@ -270,18 +258,13 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
                 credentialIdentifier = credentialIdentifiers.get(0);
             }
         }
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
 
         // Request the actual credential using the refreshed token
-        Oid4vcCredentialRequest credentialRequest = oauth.oid4vc()
-                .credentialRequest()
-                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
-                .bearerToken(accessToken);
-        if (credentialIdentifier != null) {
-            credentialRequest.credentialIdentifier(credentialIdentifier);
-        }
-        Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
-        assertSuccessfulCredentialResponse(credentialResponse);
+        Oid4vcCredentialResponse credRequestResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .bearerToken(accessToken)
+                .send();
+        assertSuccessfulCredentialResponse(credRequestResponse);
     }
 
     // Test for the authorization_code flow with "mandatory" claim specified in the "authorization_details" parameter
@@ -511,7 +494,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // First token exchange - should succeed
         AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
@@ -521,7 +503,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Second token exchange with same code - should fail
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
@@ -532,7 +513,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Verify error event was fired
         // Note: When code is reused, user is null but session from first successful use may still exist
         events.expect(EventType.CODE_TO_TOKEN_ERROR)
-                .client(client.getClientId())
+                .client(clientId)
                 .user((String) null)
                 .session(AssertEvents.isSessionId())
                 .error(Errors.INVALID_CODE)
@@ -551,7 +532,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest("invalid-code-12345")
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
@@ -562,7 +542,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Verify error event was fired
         // Note: When code is invalid (never valid), there is no session because authentication never occurred
         events.expect(EventType.CODE_TO_TOKEN_ERROR)
-                .client(client.getClientId())
+                .client(clientId)
                 .user((String) null)
                 .session((String) null)
                 .error(Errors.INVALID_CODE)
@@ -581,7 +561,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
 
         assertEquals("Token exchange should succeed without authorization_details (it's optional)",
@@ -611,7 +590,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
@@ -641,7 +619,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .withClientId(client.getClientId())
+                .withClientId(clientId)
                 .withClientSecret("password")
                 // redirect_uri is intentionally omitted
                 .send();
@@ -672,7 +650,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .withClientId(client.getClientId())
+                .withClientId(clientId)
                 .withClientSecret("password")
                 .withRedirectUri("http://invalid-redirect-uri")
                 .send();
@@ -705,7 +683,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // This tests error handling for invalid JSON payloads
         events.clear();
 
-        Oid4vcCredentialResponse credentialResponse = new InvalidCredentialRequest(malformedJson, oauth)
+        Oid4vcCredentialResponse credentialResponse = new InvalidCredentialRequest(oauth, malformedJson)
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
@@ -751,7 +729,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "wrong-secret")
+                .client(clientId, "wrong-secret")
                 .send();
 
         assertEquals(HttpStatus.SC_UNAUTHORIZED, errorResponse.getStatusCode());
@@ -798,7 +776,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
         // Perform authorization code flow with malformed authorization_details in the authorization request.
-        oauth.client(client.getClientId());
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm()
                 .param(OAuth2Constants.AUTHORIZATION_DETAILS, "invalid-json")
@@ -811,7 +788,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
@@ -840,7 +816,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .authorizationDetails(differentAuthDetails)
                 .send();
 
@@ -866,13 +841,10 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Request credential with unknown credential_configuration_id only (no credential_identifier).
         // Server now requires credential_identifier when authorization_details are present,
         // so this request is treated as an invalid credential request.
-        Oid4vcCredentialRequest credentialRequest = oauth.oid4vc()
-                .credentialRequest()
-                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .credentialConfigurationId("unknown-credential-config-id")
                 .bearerToken(tokenResponse.getAccessToken())
-                .credentialConfigurationId("unknown-credential-config-id");
-
-        Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
+                .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
         assertEquals("INVALID_CREDENTIAL_REQUEST", credentialResponse.getError());
@@ -895,14 +867,13 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Clear events before credential request
         events.clear();
 
-        // Request credential with mismatched credential_identifier (from different flow)
-        Oid4vcCredentialRequest credentialRequest = oauth.oid4vc()
-                .credentialRequest()
-                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
-                .bearerToken(tokenResponse.getAccessToken())
-                .credentialIdentifier("00000000-0000-0000-0000-000000000000");
+        CredentialRequest credRequest = new CredentialRequest().setCredentialIdentifier("00000000-0000-0000-0000-000000000000");
 
-        Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
+        // Request credential with mismatched credential_identifier (from different flow)
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier("00000000-0000-0000-0000-000000000000")
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
         assertEquals("UNKNOWN_CREDENTIAL_IDENTIFIER", credentialResponse.getError());
@@ -928,7 +899,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Request credential without credential_configuration_id or credential_identifier.
         // Server now requires credential_identifier when authorization_details are present,
         // so an empty credential request results in INVALID_CREDENTIAL_REQUEST.
-        Oid4vcCredentialResponse credentialResponse = new InvalidCredentialRequest("{}", oauth)
+        Oid4vcCredentialResponse credentialResponse = new InvalidCredentialRequest(oauth, "{}")
                 .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
@@ -979,7 +950,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     // Successful authorization_code flow
     private AccessTokenResponse authzCodeFlow(Oid4vcTestContext ctx, List<ClaimsDescription> claimsForAuthorizationDetailsParameter, boolean expectUserAlreadyAuthenticated) throws Exception {
         // Perform authorization code flow to get authorization code
-        oauth.client(client.getClientId(), "password");
         oauth.scope(getCredentialClientScope().getName()); // Add the credential scope
         if (expectUserAlreadyAuthenticated) {
             oauth.openLoginForm();
@@ -1001,7 +971,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Exchange authorization code for tokens with authorization_details
         return oauth.accessTokenRequest(code)
                 .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(client.getClientId(), "password")
                 .authorizationDetails(authDetails)
                 .send();
     }
@@ -1009,11 +978,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     // Test successful token response. Returns "Credential identifier" of the VC credential
     private String assertTokenResponse(AccessTokenResponse tokenResponse) throws Exception {
         // Extract authorization_details from token response
-        List<OID4VCAuthorizationDetailResponse> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals(1, authDetailsResponse.size());
 
-        OID4VCAuthorizationDetailResponse authDetailResponse = authDetailsResponse.get(0);
+        OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
         assertNotNull("Credential identifiers should be present", authDetailResponse.getCredentialIdentifiers());
         assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
 
@@ -1030,19 +999,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     private Oid4vcCredentialRequest getCredentialRequest(Oid4vcTestContext ctx, BiFunction<String, String, CredentialRequest> credentialRequestSupplier, AccessTokenResponse tokenResponse,
                                                          String credentialConfigurationId, String credentialIdentifier) throws Exception {
         // Request the actual credential using the identifier
-        CredentialRequest credentialRequest = credentialRequestSupplier.apply(credentialConfigurationId, credentialIdentifier);
+        CredentialRequest credRequest = credentialRequestSupplier.apply(credentialConfigurationId, credentialIdentifier);
 
         Oid4vcCredentialRequest request = oauth.oid4vc()
-                .credentialRequest()
-                .endpoint(ctx.credentialIssuer.getCredentialEndpoint())
+                .credentialRequest(credRequest)
                 .bearerToken(tokenResponse.getAccessToken());
-
-        if (credentialRequest.getCredentialConfigurationId() != null) {
-            request.credentialConfigurationId(credentialRequest.getCredentialConfigurationId());
-        }
-        if (credentialRequest.getCredentialIdentifier() != null) {
-            request.credentialIdentifier(credentialRequest.getCredentialIdentifier());
-        }
 
         return request;
     }
@@ -1122,7 +1083,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
      * @return the authorization code
      */
     protected String performAuthorizationCodeLogin() {
-        oauth.client(client.getClientId());
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm().doLogin("john", "password");
         String code = oauth.parseLoginResponse().getCode();
@@ -1137,7 +1097,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
      * @return the authorization code
      */
     protected String performAuthorizationCodeLoginWithAuthorizationDetails(String authorizationDetailsJson) {
-        oauth.client(client.getClientId());
         oauth.scope(getCredentialClientScope().getName());
         oauth.loginForm()
                 // Encode JSON so UriBuilder does not treat '{' or '}' as URI template characters
@@ -1156,7 +1115,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
      */
     protected AssertEvents.ExpectedEvent expectCredentialRequestError() {
         return events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
-                .client(client.getClientId())
+                .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())
                 .error(Errors.INVALID_REQUEST);

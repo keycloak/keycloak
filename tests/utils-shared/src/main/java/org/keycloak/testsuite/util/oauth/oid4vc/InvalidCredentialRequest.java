@@ -2,9 +2,12 @@ package org.keycloak.testsuite.util.oauth.oid4vc;
 
 import java.io.IOException;
 
+import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 
 /**
  * Request class for sending invalid credential requests for testing purposes.
@@ -14,10 +17,11 @@ import org.apache.http.client.methods.CloseableHttpResponse;
  * This should only be used in test cases that specifically test error handling
  * for invalid requests. For valid requests, use {@link Oid4vcCredentialRequest} instead.
  */
-public class InvalidCredentialRequest extends AbstractOid4vcRequest<InvalidCredentialRequest, Oid4vcCredentialResponse> {
-    private final String bodyJson;
+public class InvalidCredentialRequest extends AbstractHttpPostRequest<InvalidCredentialRequest, Oid4vcCredentialResponse> {
 
-    public InvalidCredentialRequest(String bodyJson, AbstractOAuthClient<?> client) {
+    private String bodyJson;
+
+    public InvalidCredentialRequest(AbstractOAuthClient<?> client, String bodyJson) {
         super(client);
         this.bodyJson = bodyJson;
     }
@@ -28,8 +32,8 @@ public class InvalidCredentialRequest extends AbstractOid4vcRequest<InvalidCrede
     }
 
     @Override
-    protected Object getBody() {
-        return bodyJson;
+    protected void initRequest() {
+        entity = new StringEntity(bodyJson, ContentType.APPLICATION_JSON);
     }
 
     @Override

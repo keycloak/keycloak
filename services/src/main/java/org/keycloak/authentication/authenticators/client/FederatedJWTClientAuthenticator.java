@@ -97,7 +97,7 @@ public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator
             }
 
             ClientAssertionIdentityProviderFactory.LookupResult lookup = strategy.lookup(context);
-            if (lookup == null || lookup.identityProviderModel() == null || lookup.clientModel() == null) {
+            if (lookup == null || lookup.identityProviderModel() == null || !lookup.identityProviderModel().isEnabled() || lookup.clientModel() == null) {
                 return;
             }
 

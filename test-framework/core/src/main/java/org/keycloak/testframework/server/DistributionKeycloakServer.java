@@ -8,20 +8,15 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
@@ -39,7 +34,6 @@ import org.keycloak.testframework.util.ProcessUtils;
 import org.keycloak.testframework.util.TmpDir;
 
 import io.quarkus.fs.util.ZipUtils;
-import io.quarkus.maven.dependency.Dependency;
 import org.jboss.logging.Logger;
 import org.jetbrains.annotations.NotNull;
 
@@ -69,7 +63,6 @@ public class DistributionKeycloakServer implements KeycloakServer {
         this.tlsEnabled = tlsEnabled;
 
         List<String> args = keycloakServerConfigBuilder.toArgs();
-        Set<Dependency> dependencies = keycloakServerConfigBuilder.toDependencies();
 
         try {
             boolean installationCreated = createInstallation();
@@ -77,8 +70,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
                 killPreviousProcess();
             }
 
-            File providersDir = new File(keycloakHomeDir, "providers");
-            List<File> existingProviders = listExistingProviders(providersDir);
+            ProviderDeployer providerDeployer = new ProviderDeployer(log, keycloakHomeDir, keycloakServerConfigBuilder.toDependencies(), KeycloakServer.getDependencyHotDeployEnabled());
 
             if (!installationCreated && reuse && ping()) {
                 checkRunning();
@@ -87,10 +79,8 @@ public class DistributionKeycloakServer implements KeycloakServer {
                 String startedWithArgs = startupArgsFile.isFile() ? FileUtils.readStringFromFile(startupArgsFile) : null;
                 String requestedArgs = String.join(" ", args);
 
-                Set<String> requestedDependencies = dependencies.stream().map(d -> d.getGroupId() + "__" + d.getArtifactId() + ".jar").collect(Collectors.toSet());
-                Set<String> startedWithDependencies = existingProviders.stream().map(File::getName).collect(Collectors.toSet());
-
-                if (requestedArgs.equals(startedWithArgs) && setEquals(requestedDependencies, startedWithDependencies)) {
+                boolean dependenciesChanged = providerDeployer.updateDependencies();
+                if (requestedArgs.equals(startedWithArgs) && !dependenciesChanged) {
                     log.trace("Re-using already running Keycloak");
                     return;
                 } else {
@@ -100,9 +90,9 @@ public class DistributionKeycloakServer implements KeycloakServer {
                         throw new RuntimeException("Running Keycloak not started with required arguments or providers, and could not kill the current process");
                     }
                 }
+            } else {
+                providerDeployer.updateDependencies();
             }
-
-            updateProviders(existingProviders, dependencies, providersDir);
 
             OutputHandler outputHandler = startKeycloak(args);
 
@@ -172,37 +162,6 @@ public class DistributionKeycloakServer implements KeycloakServer {
         }
 
         return outputHandler;
-    }
-
-    private static void updateProviders(List<File> existingProviders, Set<Dependency> dependencies, File providersDir) throws IOException {
-        existingProviders.stream()
-                .filter(f -> f.getName().endsWith(".jar"))
-                .filter(f -> {
-                    String fileName = f.getName();
-                    String groupId = fileName.substring(0, fileName.indexOf("__"));
-                    String artifactId = fileName.substring(fileName.indexOf("__") + 2, fileName.lastIndexOf(".jar"));
-                    return dependencies.stream().noneMatch(d -> d.getGroupId().equals(groupId) && d.getArtifactId().equals(artifactId));
-                }).forEach(f -> {
-                    log.trace("Deleted non-requested provider: " + f.getAbsolutePath());
-                    FileUtils.delete(f);
-                    FileUtils.delete(new File(f.getAbsolutePath() + ".lastModified"));
-                });
-
-        Path providersPath = providersDir.toPath();
-        for (Dependency d : dependencies) {
-            Path dependencyPath = Maven.resolveArtifact(d.getGroupId(), d.getArtifactId());
-            File dependencyFile = dependencyPath.toFile();
-            Path targetPath = providersPath.resolve(d.getGroupId() + "__" + d.getArtifactId() + ".jar");
-            File targetFile = targetPath.toFile();
-            File targetLastModified = new File(targetFile.getAbsolutePath() + ".lastModified");
-            long lastModified = targetLastModified.isFile() ? FileUtils.readLongFromFile(targetLastModified) : -1;
-
-            if (lastModified != dependencyPath.toFile().lastModified() || !targetFile.isFile()) {
-                log.trace("Adding or overriding existing provider: " + targetPath.toFile().getAbsolutePath());
-                Files.copy(dependencyPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                Files.writeString(targetLastModified.toPath(), Long.toString(dependencyFile.lastModified()));
-            }
-        }
     }
 
     @Override
@@ -368,20 +327,6 @@ public class DistributionKeycloakServer implements KeycloakServer {
         }
 
         return Maven.resolveArtifact("org.keycloak", "keycloak-quarkus-dist").toFile();
-    }
-
-    private boolean setEquals(Set<String> a, Set<String> b) {
-        return a.size() == b.size() && a.containsAll(b);
-    }
-
-    private List<File> listExistingProviders(File providersDir) {
-        if (providersDir.isDirectory()) {
-            File[] files = providersDir.listFiles(n -> n.getName().endsWith(".jar"));
-            if (files != null) {
-                return Arrays.stream(files).toList();
-            }
-        }
-        return List.of();
     }
 
     private class OutputHandler implements Runnable {
