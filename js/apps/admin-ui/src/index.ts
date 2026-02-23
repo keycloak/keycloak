@@ -125,7 +125,11 @@ export { UserDataTableToolbarItems } from "./components/users/UserDataTableToolb
 export { ViewHeader } from "./components/view-header/ViewHeader";
 export { WizardSectionHeader } from "./components/wizard-section-header/WizardSectionHeader";
 export { DefaultSwitchControl } from "./components/SwitchControl";
-export { useAccess, AccessContextProvider, AccessContext } from "./context/access/Access";
+export {
+  useAccess,
+  AccessContextProvider,
+  AccessContext,
+} from "./context/access/Access";
 export { fetchAdminUI } from "./context/auth/admin-ui-endpoint";
 export {
   useRealm,
@@ -136,7 +140,11 @@ export {
   useServerInfo,
   ServerInfoProvider,
 } from "./context/server-info/ServerInfoProvider";
-export { useWhoAmI, WhoAmIContextProvider, WhoAmIContext } from "./context/whoami/WhoAmI";
+export {
+  useWhoAmI,
+  WhoAmIContextProvider,
+  WhoAmIContext,
+} from "./context/whoami/WhoAmI";
 export {
   useErrorBoundary,
   ErrorBoundaryProvider,
