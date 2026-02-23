@@ -16,10 +16,12 @@
  */
 package org.keycloak.services.clientpolicy.executor;
 
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.utils.MapperTypeSerializer;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -39,16 +41,17 @@ public class JWTAuthorizationGrantAudienceExecutor implements ClientPolicyExecut
     private final KeycloakSession session;
     private Configuration configuration;
 
+    // Map of allowed audiences in the form clientId->Audience, but serialized
     public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
 
         @JsonProperty(JWTAuthorizationGrantAudienceExecutorFactory.ALLOWED_AUDIENCE)
-        protected Set<String> allowedAudience;
+        protected String allowedAudience;
 
-        public Set<String> getAllowedAudience() {
+        public String getAllowedAudience() {
             return allowedAudience;
         }
 
-        public void setAllowedAudience(Set<String> allowedAudience) {
+        public void setAllowedAudience(String allowedAudience) {
             this.allowedAudience = allowedAudience;
         }
     }
@@ -93,10 +96,15 @@ public class JWTAuthorizationGrantAudienceExecutor implements ClientPolicyExecut
             // just continue with normal processing in this situations
             return;
         }
+        final List<String> validAudience = getAllowedAudience().get(session.getContext().getClient().getClientId());
+        if (validAudience == null) {
+            // no audience defined for this client
+            return;
+        }
 
-        if (configuration.getAllowedAudience().contains(audience[0])) {
+        if (validAudience.contains(audience[0])) {
             // set the audience as validated by this executor
-            logger.tracef("Allowing extra audience '%s' for the jwt authorization grant request.", audience[0]);
+            logger.tracef("Allowing custom audience '%s' for the jwt authorization grant request.", audience[0]);
             jwtAuthnGrantContext.getAuthorizationGrantContext().setAudienceAlreadyValidated();
             return;
         }
@@ -104,5 +112,9 @@ public class JWTAuthorizationGrantAudienceExecutor implements ClientPolicyExecut
         // the audience is not the ones defined in this executor, throw error
         logger.tracef("Rejecting invalid audience '%s' for the jwt authorization grant request.", audience[0]);
         throw new ClientPolicyException(OAuthErrorException.INVALID_GRANT, "Invalid token audience");
+    }
+
+    private Map<String, List<String>> getAllowedAudience() {
+        return MapperTypeSerializer.deserialize(configuration.getAllowedAudience());
     }
 }

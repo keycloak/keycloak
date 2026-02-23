@@ -36,14 +36,13 @@ export const MapComponent = ({
   const { getValues, setValue, register } = useFormContext();
   const [map, setMap] = useState<IdKeyValueType[]>([]);
   const fieldName = convertToName(name!);
+  const value = getValues(fieldName) || defaultValue || "[]";
 
   useEffect(() => {
     register(fieldName);
-    const values: KeyValueType[] = JSON.parse(
-      getValues(fieldName) || defaultValue || "[]",
-    );
+    const values: KeyValueType[] = JSON.parse(value);
     setMap(values.map((value) => ({ ...value, id: generateId() })));
-  }, []);
+  }, [value, fieldName, register]);
 
   const appendNew = () =>
     setMap([...map, { key: "", value: "", id: generateId() }]);

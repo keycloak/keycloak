@@ -60,7 +60,7 @@ public class JWTAuthorizationGrantAudienceExecutorFactory implements ClientPolic
     @Override
     public String getHelpText() {
         return """
-               Executor that configures new and exclusive valid audiences for the JWT Authorization Grant type.
+               Executor that configures new and exclusive valid audiences per client for the JWT Authorization Grant type.
                The default audiences valid for the grant are not valid anymore.
                Note this behavior breaks the standard and can have major security implications.
                """;
@@ -71,9 +71,13 @@ public class JWTAuthorizationGrantAudienceExecutorFactory implements ClientPolic
         return ProviderConfigurationBuilder.create()
                 .property()
                 .name(ALLOWED_AUDIENCE)
-                .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
-                .label("Allowed audience")
-                .helpText("List of new and exclusive valid audiences for the JWT Authhorization Grant")
+                .type(ProviderConfigProperty.MAP_TYPE)
+                .label("Allowed audience per client")
+                .helpText(
+                        """
+                        Mapping for valid audiences per client. The key is the clientId and the value is the valid audience
+                        which will be enforced for that client.
+                        """)
                 .add()
                 .build();
     }

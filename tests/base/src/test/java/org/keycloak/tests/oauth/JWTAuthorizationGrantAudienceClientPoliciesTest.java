@@ -16,8 +16,6 @@
  */
 package org.keycloak.tests.oauth;
 
-import java.util.Set;
-
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.clientpolicy.condition.IdentityProviderConditionFactory;
@@ -125,7 +123,7 @@ public class JWTAuthorizationGrantAudienceClientPoliciesTest extends BaseAbstrac
             super.configure(realm);
             JWTAuthorizationGrantAudienceExecutor.Configuration config =
                     new JWTAuthorizationGrantAudienceExecutor.Configuration();
-            config.setAllowedAudience(Set.of("allowed-aud1", "allowed-aud2"));
+            config.setAllowedAudience("[{\"key\":\"test-app\",\"value\":\"allowed-aud1\"},{\"key\":\"test-app\",\"value\":\"allowed-aud2\"}]");
 
             realm.clientProfile(ClientProfileBuilder.create()
                     .name("executor")
