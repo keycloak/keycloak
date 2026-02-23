@@ -141,6 +141,10 @@ A similar change was done for the `UserSessionPersisterProvider`.
 
 The official container images for server and the Operator now use OpenJDK 25 instead of previously used OpenJDK 21.
 
+== Updated HTTP status code for invalid_grant errors
+
+Authentication failures resulting in an invalid_grant now correctly return an HTTP 400 status code instead of 401 for Direct Grant, X.509, and UMA Permission Grant flows.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
