@@ -727,6 +727,7 @@ public class SAMLEndpoint {
             CacheControlUtil.noBackButtonCacheControlHeader(session);
             Optional<ClientModel> oClient = SAMLEndpoint.this.session.clients()
               .searchClientsByAttributes(realm, Collections.singletonMap(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME, clientUrlName), 0, 1)
+              .filter(ClientModel::isEnabled)
               .findFirst();
 
             if (! oClient.isPresent()) {
