@@ -43,7 +43,12 @@ export type PartialImportProps = {
 // or a single realm object.
 type ImportedMultiRealm = RealmRepresentation | RealmRepresentation[];
 
-type NonRoleResource = "users" | "clients" | "groups" | "identityProviders";
+type NonRoleResource =
+  | "users"
+  | "clients"
+  | "groups"
+  | "identityProviders"
+  | "organizationMemberships";
 type RoleResource = "realmRoles" | "clientRoles";
 type Resource = NonRoleResource | RoleResource;
 
@@ -58,6 +63,7 @@ const INITIAL_RESOURCES: Readonly<ResourceChecked> = {
   identityProviders: false,
   realmRoles: false,
   clientRoles: false,
+  organizationMemberships: false,
 };
 
 export const PartialImportDialog = (props: PartialImportProps) => {
@@ -166,7 +172,8 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       targetHasResource("clients") ||
       targetHasResource("identityProviders") ||
       targetHasRealmRoles() ||
-      targetHasClientRoles()
+      targetHasClientRoles() ||
+      targetHasResource("organizationMemberships")
     );
   };
 
@@ -248,6 +255,9 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       jsonToImport.identityProviders = targetRealm.identityProviders;
     if (resourcesToImport["clients"])
       jsonToImport.clients = targetRealm.clients;
+    if (resourcesToImport["organizationMemberships"])
+      jsonToImport.organizationMemberships =
+        targetRealm.organizationMemberships;
     if (resourcesToImport["realmRoles"] || resourcesToImport["clientRoles"]) {
       jsonToImport.roles = targetRealm.roles;
       if (!resourcesToImport["realmRoles"]) delete jsonToImport.roles?.realm;
@@ -360,6 +370,11 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                     resourceDataListItem("realmRoles", t("realmRoles"))}
                   {targetHasClientRoles() &&
                     resourceDataListItem("clientRoles", t("clientRoles"))}
+                  {targetHasResource("organizationMemberships") &&
+                    resourceDataListItem(
+                      "organizationMemberships",
+                      t("organizationMemberships"),
+                    )}
                 </DataList>
               </StackItem>
               <StackItem>
@@ -437,6 +452,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       ["CLIENT_ROLE", t("clientRoles")],
       ["IDP", t("identityProviders")],
       ["GROUP", t("groups")],
+      ["ORGANIZATION_MEMBERSHIP", t("organizationMemberships")],
     ]);
 
     return <span>{typeMap.get(importRecord.resourceType)}</span>;

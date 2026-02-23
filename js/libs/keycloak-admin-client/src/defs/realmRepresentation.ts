@@ -8,6 +8,7 @@ import type RolesRepresentation from "./rolesRepresentation.js";
 import type ClientProfilesRepresentation from "./clientProfilesRepresentation.js";
 import type ClientPoliciesRepresentation from "./clientPoliciesRepresentation.js";
 import type RoleRepresentation from "./roleRepresentation.js";
+import type OrganizationMembershipRepresentation from "./organizationMembershipRepresentation.js";
 
 /**
  * https://www.keycloak.org/docs-api/11.0/rest-api/index.html#_realmrepresentation
@@ -131,6 +132,7 @@ export default interface RealmRepresentation {
   users?: UserRepresentation[];
   verifyEmail?: boolean;
   waitIncrementSeconds?: number;
+  organizationMemberships?: OrganizationMembershipRepresentation[];
 }
 
 export type PartialImportRealmRepresentation = RealmRepresentation & {

@@ -50,6 +50,7 @@ public class PartialImportManager {
         partialImports.add(new IdentityProviderMappersPartialImport());
         partialImports.add(new GroupsPartialImport());
         partialImports.add(new UsersPartialImport());
+        partialImports.add(new OrganizationMembershipsPartialImport());
     }
 
     public PartialImportResults saveResources() {

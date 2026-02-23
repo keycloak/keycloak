@@ -38,6 +38,7 @@ public class PartialImportRepresentation {
     protected List<IdentityProviderRepresentation> identityProviders;
     protected List<IdentityProviderMapperRepresentation> identityProviderMappers;
     protected RolesRepresentation roles;
+    protected List<OrganizationMembershipRepresentation> organizationMemberships;
 
     public boolean hasUsers() {
         return (users != null) && !users.isEmpty();
@@ -61,6 +62,10 @@ public class PartialImportRepresentation {
 
     public boolean hasClientRoles() {
         return (roles != null) && (roles.getClient() != null) && (!roles.getClient().isEmpty());
+    }
+
+    public boolean hasOrganizationMemberships() {
+        return (organizationMemberships != null) && !organizationMemberships.isEmpty();
     }
 
     public String getIfResourceExists() {
@@ -122,5 +127,13 @@ public class PartialImportRepresentation {
 
     public void setRoles(RolesRepresentation roles) {
         this.roles = roles;
+    }
+
+    public List<OrganizationMembershipRepresentation> getOrganizationMemberships() {
+        return organizationMemberships;
+    }
+
+    public void setOrganizationMemberships(List<OrganizationMembershipRepresentation> organizationMemberships) {
+        this.organizationMemberships = organizationMemberships;
     }
 }
