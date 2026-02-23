@@ -6,10 +6,14 @@ import { LogoContext } from "./LogoContext";
 import { ThemeColors } from "./ThemeColors";
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
+  themeName?: string;
+  themeDescription?: string;
   fileName?: string;
   favicon?: File;
   logo?: File;
   bgimage?: File;
+  logoWidth?: string;
+  logoHeight?: string;
 };
 
 type QuickThemeProps = {
@@ -104,18 +108,18 @@ styles=css/login.css css/theme-styles.css
         .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
         .join("\n");
 
-    const logoCss = (
+    const loginCss = (
       await fetch(joinPath(environment.resourceUrl, "/theme/login.css"))
     ).text();
-    zip.file("theme/quick-theme/common/resources/css/login.css", logoCss);
+    zip.file("theme/quick-theme/common/resources/css/styles.css", loginCss);
 
     zip.file(
       "theme/quick-theme/common/resources/css/theme-styles.css",
       `:root {
-        --keycloak-bg-logo-url: url('../${bgimageName}');
-        --keycloak-logo-url: url('../${logoName}');
-        --keycloak-logo-height: 63px;
-        --keycloak-logo-width: 300px;
+        ${bgimage ? `--keycloak-bg-logo-url: url('../${bgimageName}');` : ""}
+        ${logo ? `--keycloak-logo-url: url('../${logoName}');` : ""}
+        --keycloak-logo-height: ${realm.logoHeight};
+        --keycloak-logo-width: ${realm.logoWidth};
         ${toCss(styles.light)}
       }
       .pf-v5-theme-dark {
