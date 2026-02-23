@@ -57,7 +57,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
 
-        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null, false);
+        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null, null, false, false);
         assertThat(groups, hasSize(1));
         assertThat(groups.get(0).getName(), is("test-group"));
         assertThat(groups.get(0).getPath(), is("/test-group"));
@@ -66,7 +66,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         assertThat(groups.get(0).getAttributes().get("department").get(0), is("Engineering"));
 
         // retrieve brief rep
-        groups = orgResource.groups().getAll(null, null, null, null, true);
+        groups = orgResource.groups().getAll(null, null, null, null, null, true, false);
         assertThat(groups, hasSize(1));
         assertThat(groups.get(0).getAttributes(), nullValue());
     }
@@ -103,7 +103,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
             groupId = ApiUtil.getCreatedId(response);
         }
 
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
+        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
         assertNotNull(retrieved);
         assertThat(retrieved.getName(), is("test-group"));
         assertThat(retrieved.getPath(), is("/test-group"));
@@ -128,7 +128,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         }
 
         // Retrieve and verify attributes are included
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
+        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
         assertNotNull(retrieved.getAttributes());
         assertThat(retrieved.getAttributes().get("department"), hasSize(1));
         assertThat(retrieved.getAttributes().get("department").get(0), is("Engineering"));
@@ -152,7 +152,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         }
 
         // Retrieve and verify role mappings are null
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
+        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
         assertThat(retrieved, notNullValue());
         assertThat(retrieved.getRealmRoles(), nullValue());
         assertThat(retrieved.getClientRoles(), nullValue());
@@ -183,7 +183,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         }
 
         // Verify the update
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
+        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
         assertThat(retrieved.getName(), is("updated-name"));
         assertThat(retrieved.getPath(), is("/updated-name"));
         assertThat(retrieved.getDescription(), is("Updated description"));
@@ -207,7 +207,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         orgResource.groups().group(groupId).delete();
 
         // Verify it's deleted
-        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, 0, 10, true);
+        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, 0, 10, true, false);
         assertThat(groups, hasSize(0));
     }
 
@@ -239,6 +239,10 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         assertThat(subGroups, hasSize(1));
         assertThat(subGroups.get(0).getName(), is("child-group"));
         assertThat(subGroups.get(0).getPath(), is("/parent-group/child-group"));
+
+        // Verify parent's subgroup count
+        GroupRepresentation parentWithCount = orgResource.groups().group(parentId).toRepresentation(true);
+        assertThat(parentWithCount.getSubGroupCount(), is(1L));
     }
 
     @Test
@@ -452,6 +456,14 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         subGroups = orgResource.groups().group(parent2Id).getSubGroups(null, null, 0, 10);
         assertThat(subGroups, hasSize(1));
         assertThat(subGroups.get(0).getName(), is("child-group"));
+
+        // Verify parent1's count decreased
+        GroupRepresentation parent1WithCount = orgResource.groups().group(parent1Id).toRepresentation(true);
+        assertThat(parent1WithCount.getSubGroupCount(), is(0L));
+
+        // Verify parent2's count increased
+        GroupRepresentation parent2WithCount = orgResource.groups().group(parent2Id).toRepresentation(true);
+        assertThat(parent2WithCount.getSubGroupCount(), is(1L));
     }
 
     @Test
@@ -525,9 +537,69 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         }
 
         // Search for groups containing "sales" with exact=false
-        List<GroupRepresentation> results = orgResource.groups().getAll("sales", false, null, null, true);
+        List<GroupRepresentation> results = orgResource.groups().getAll("sales", null, false, null, null, true, false);
 
         // Should only return groups with "sales" in the name: "sales" and "sales-team"
         assertThat(results, hasSize(2));
+    }
+
+    @Test
+    public void testSubGroupCountQueryParameter() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create parent with 3 subgroups
+        GroupRepresentation parentRep = new GroupRepresentation();
+        parentRep.setName("parent");
+        String parentId;
+        try (Response response = orgResource.groups().addTopLevelGroup(parentRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            parentId = ApiUtil.getCreatedId(response);
+        }
+
+        // Add 3 children
+        for (int i = 1; i <= 3; i++) {
+            GroupRepresentation childRep = new GroupRepresentation();
+            childRep.setName("child-" + i);
+            try (Response response = orgResource.groups().group(parentId).addSubGroup(childRep)) {
+                assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            }
+        }
+
+        // Test with subGroupsCount = true
+        GroupRepresentation withCount = orgResource.groups().group(parentId).toRepresentation(true);
+        assertThat(withCount.getSubGroupCount(), is(3L));
+
+        // Test with subGroupsCount = false (default)
+        GroupRepresentation withoutCount = orgResource.groups().group(parentId).toRepresentation(false);
+        assertThat(withoutCount.getSubGroupCount(), nullValue());
+
+        // Test group with no subgroups
+        GroupRepresentation leafRep = new GroupRepresentation();
+        leafRep.setName("leaf-group");
+        String leafId;
+        try (Response response = orgResource.groups().addTopLevelGroup(leafRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            leafId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation leafWithCount = orgResource.groups().group(leafId).toRepresentation(true);
+        assertThat(leafWithCount.getSubGroupCount(), is(0L));
+
+        // Test getAll() with subGroupsCount parameter
+        List<GroupRepresentation> allWithCount = orgResource.groups().getAll(null, null, null, null, null, false, true);
+        assertThat(allWithCount, hasSize(2)); // parent, leaf-group
+        allWithCount.forEach(g -> assertThat(g.getSubGroupCount(), notNullValue()));
+
+        List<GroupRepresentation> allWithoutCount = orgResource.groups().getAll(null, null, null, null, null, false, false);
+        assertThat(allWithoutCount, hasSize(2));
+        allWithoutCount.forEach(g -> assertThat(g.getSubGroupCount(), nullValue()));
+
+        // Test getGroupByPath with subGroupsCount
+        GroupRepresentation byPathWithCount = orgResource.groups().getGroupByPath("/parent", true);
+        assertThat(byPathWithCount.getSubGroupCount(), is(3L));
+
+        GroupRepresentation byPathWithoutCount = orgResource.groups().getGroupByPath("/parent", false);
+        assertThat(byPathWithoutCount.getSubGroupCount(), nullValue());
     }
 }

@@ -316,6 +316,17 @@ public interface OrganizationProvider extends Provider {
     Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member, Integer first, Integer max);
 
     /**
+     * Returns the internal organization group for the given {@link OrganizationModel}.
+     * The internal group is a special group with the same name as the organization's ID,
+     * used as the root of the organization's group hierarchy.
+     *
+     * @param organization the organization
+     * @return the internal organization group
+     * @throws org.keycloak.models.ModelException if the organization or its internal group is not found
+     */
+    GroupModel getOrganizationGroup(OrganizationModel organization);
+
+    /**
      * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}.
      *
      * @param organization the organization

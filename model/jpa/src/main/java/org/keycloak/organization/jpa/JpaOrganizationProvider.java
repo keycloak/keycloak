@@ -815,7 +815,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         return groupProvider.createGroup(getRealm(), null, Type.ORGANIZATION, orgId, null);
     }
 
-    private GroupModel getOrganizationGroup(OrganizationModel organization) {
+    @Override
+    public GroupModel getOrganizationGroup(OrganizationModel organization) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         OrganizationEntity entity = getEntity(organization.getId());
         GroupModel group = getOrganizationGroup(entity);

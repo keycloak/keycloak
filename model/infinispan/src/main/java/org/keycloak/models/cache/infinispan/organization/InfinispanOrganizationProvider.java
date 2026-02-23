@@ -365,6 +365,11 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public GroupModel getOrganizationGroup(OrganizationModel organization) {
+        return getDelegate().getOrganizationGroup(organization);
+    }
+
+    @Override
     public boolean addIdentityProvider(OrganizationModel organization, IdentityProviderModel identityProvider) {
         boolean added = getDelegate().addIdentityProvider(organization, identityProvider);
         if (added) {
