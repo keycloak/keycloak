@@ -19,14 +19,24 @@ package org.keycloak.testsuite.adapter.servlet;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.saml.RandomSecret;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
+import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.testsuite.adapter.AbstractAdapterTest;
+import org.keycloak.testsuite.adapter.page.SAMLServlet;
 import org.keycloak.testsuite.adapter.page.SalesPostAssertionAndResponseSig;
+import org.keycloak.testsuite.adapter.page.SalesPostEncServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.Creator;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
@@ -40,14 +50,19 @@ import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
+import jakarta.ws.rs.core.Response.Status;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import jakarta.ws.rs.core.Response.Status;
+import java.security.PublicKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.XMLConstants;
 import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.namespace.QName;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.xml.security.encryption.XMLCipher;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -67,7 +82,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
-import org.keycloak.saml.common.util.DocumentUtil;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PRIVATE_KEY;
@@ -197,16 +211,48 @@ public class SamlSignatureTest extends AbstractAdapterTest {
             evilAssertion.setAttribute("ID", "_evil_assertion_ID");
             document.getDocumentElement().insertBefore(evilAssertion, assertion);
         }
+
+        public static void encryptedAssertionWithoutSignature(Document document, PublicKey publicKey) {
+            // remove the signature for the whole response
+            removeDocumentSignature(document);
+            // get the assertion signed
+            Element assertion = (Element) document.getElementsByTagNameNS(ASSERTION_NSURI.get(), "Assertion").item(0);
+            // create a second assertion and encrypt it, put it first
+            Element evilAssertion = (Element) assertion.cloneNode(true);
+            evilAssertion.setAttributeNS(XMLConstants.XMLNS_ATTRIBUTE_NS_URI, "xmlns:" + assertion.getPrefix(), JBossSAMLURIConstants.ASSERTION_NSURI.get());
+            Element signature = (Element) evilAssertion.getElementsByTagNameNS(XMLSignature.XMLNS, "Signature").item(0);
+            evilAssertion.removeChild(signature);
+            document.getDocumentElement().insertBefore(evilAssertion, assertion);
+            final int keySize = XMLEncryptionUtil.getKeyLengthFromURI(XMLCipher.AES_256_GCM);
+            try {
+                XMLEncryptionUtil.encryptElement(
+                        new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get(), assertion.getPrefix()),
+                        document, publicKey,
+                        new SecretKeySpec(RandomSecret.createRandomSecret(keySize/8), XMLEncryptionUtil.getJCEKeyAlgorithmFromURI(XMLCipher.AES_256_GCM)),
+                        keySize,
+                        new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(), JBossSAMLConstants.ENCRYPTED_ASSERTION.get(), assertion.getPrefix()),
+                        true);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Page
     private SalesPostAssertionAndResponseSig salesPostAssertionAndResponseSigPage;
+    @Page
+    private SalesPostEncServlet salesPostEncPage;
 
     private UserRepresentation user;
 
     @Deployment(name = SalesPostAssertionAndResponseSig.DEPLOYMENT_NAME)
     protected static WebArchive salesPostAssertionAndResponseSig() {
         return samlServletDeployment(SalesPostAssertionAndResponseSig.DEPLOYMENT_NAME, SendUsernameServlet.class);
+    }
+
+    @Deployment(name = SalesPostEncServlet.DEPLOYMENT_NAME)
+    protected static WebArchive salesPostEnc() {
+        return samlServletDeployment(SalesPostEncServlet.DEPLOYMENT_NAME, SendUsernameServlet.class);
     }
 
     @Override
@@ -231,6 +277,9 @@ public class SamlSignatureTest extends AbstractAdapterTest {
         final ClientBuilder salesPostClient = signingSamlClient(APP_CLIENT_ID)
           .baseUrl("http://localhost:8080/sales-post-assertion-and-response-sig")
           .redirectUris("http://localhost:8080/sales-post-assertion-and-response-sig/*");
+        final ClientBuilder salesPostEncClient = signingSamlClient(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST_ENC)
+          .baseUrl("http://localhost:8080/sales-post-enc")
+          .redirectUris("http://localhost:8080/sales-post-enc/*");
         final String brokerBaseUrl = getAuthServerRoot() + "realms/" + BROKER;
         final ClientBuilder brokerRealmIdPClient = signingSamlClient(brokerBaseUrl)
           .baseUrl(brokerBaseUrl + "/broker/" + REALM_NAME + "/endpoint")
@@ -241,6 +290,7 @@ public class SamlSignatureTest extends AbstractAdapterTest {
           .publicKey(REALM_PUBLIC_KEY)
           .privateKey(REALM_PRIVATE_KEY)
           .client(salesPostClient)
+          .client(salesPostEncClient)
           .client(brokerRealmIdPClient)
           .roles(RolesBuilder.create().realmRole(REQUIRED_ROLE))
           .build()
@@ -296,8 +346,12 @@ public class SamlSignatureTest extends AbstractAdapterTest {
     }
 
     private void testSamlResponseModificationsClient(Consumer<Document> samlResponseModifier, Consumer<CloseableHttpResponse> assertions) {
+        testSamlResponseModificationsClient(salesPostAssertionAndResponseSigPage, samlResponseModifier, assertions);
+    }
+
+    private void testSamlResponseModificationsClient(SAMLServlet page, Consumer<Document> samlResponseModifier, Consumer<CloseableHttpResponse> assertions) {
         new SamlClientBuilder()
-          .navigateTo(salesPostAssertionAndResponseSigPage)
+          .navigateTo(page)
           .processSamlResponse(Binding.POST).build()
           .login().user(user).build()
           .processSamlResponse(Binding.POST).transformDocument(d -> { samlResponseModifier.accept(d); return d; }).build()
@@ -400,5 +454,21 @@ public class SamlSignatureTest extends AbstractAdapterTest {
     @Test
     public void testNoDocumentSignatureOnlyOneAssertionSignedBelowResponse() throws Exception {
         testSamlResponseModifications(XSWHelpers::noDocumentSignatureOnlyOneAssertionSignedBelowResponse, false);
+    }
+
+    @Test
+    public void testEncryptedAssertionWithoutSignature() throws Exception {
+        KeysMetadataRepresentation keysMetadata = adminClient.realm(REALM_NAME).keys().getKeyMetadata();
+        String kid = keysMetadata.getActive().get("RSA-OAEP");
+        KeyMetadataRepresentation keyMetadata = keysMetadata.getKeys().stream()
+                .filter(k -> kid.equals(k.getKid())).findAny().orElse(null);
+        PublicKey realmPubKey = KeycloakModelUtils.getPublicKey(keyMetadata.getPublicKey());
+        PublicKey clientPubKey = KeycloakModelUtils.getPublicKey(AbstractSamlTest.SAML_CLIENT_SALES_POST_ENC_PUBLIC_KEY);
+
+        testSamlResponseModificationsClient(salesPostEncPage,
+                d -> XSWHelpers.encryptedAssertionWithoutSignature(d, clientPubKey),
+                SamlSignatureTest::assertUserAccessDenied);
+        testSamlResponseModificationsBroker(d -> XSWHelpers.encryptedAssertionWithoutSignature(d, realmPubKey),
+                SamlSignatureTest::assertNotUpdateProfilePage);
     }
 }
