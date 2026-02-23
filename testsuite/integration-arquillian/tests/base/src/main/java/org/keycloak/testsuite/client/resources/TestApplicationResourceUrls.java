@@ -65,12 +65,4 @@ public class TestApplicationResourceUrls {
 
         return builder.build().toString();
     }
-
-    public static String getClientIdMetadataUri(String path) {
-        UriBuilder builder = oidcClientEndpoints()
-                .path(TestOIDCEndpointsApplicationResource.class, "getClientIdMetadata")
-                .resolveTemplate("path", path);
-
-        return builder.build().toString();
-    }
 }

@@ -36,7 +36,6 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
@@ -76,19 +75,14 @@ import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelP
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.rest.TestApplicationResourceProviderFactory;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
-import org.keycloak.testsuite.rest.representation.TestClientIdMetadataDocumentRequest;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.common.crypto.CryptoConstants.EC_KEY_SECP256R1;
@@ -107,17 +101,14 @@ public class TestingOIDCEndpointsApplicationResource {
     private final ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests;
     private final ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications;
     private final ConcurrentMap<String, String> intentClientBindings;
-    private final ConcurrentMap<String, TestClientIdMetadataDocumentRequest> clientIdMetadataDocumentRequests;
 
     public TestingOIDCEndpointsApplicationResource(TestApplicationResourceProviderFactory.OIDCClientData oidcClientData,
             ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests, ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications,
-            ConcurrentMap<String, String> intentClientBindings,
-            ConcurrentMap<String, TestClientIdMetadataDocumentRequest> clientIdMetadataDocumentRequests) {
+            ConcurrentMap<String, String> intentClientBindings) {
         this.clientData = oidcClientData;
         this.authenticationChannelRequests = authenticationChannelRequests;
         this.cibaClientNotifications = cibaClientNotifications;
         this.intentClientBindings = intentClientBindings;
-        this.clientIdMetadataDocumentRequests = clientIdMetadataDocumentRequests;
     }
 
     @GET
@@ -789,76 +780,5 @@ public class TestingOIDCEndpointsApplicationResource {
             response.setIsBound(Boolean.TRUE);
         }
         return response;
-    }
-
-    @GET
-    @Path("/set-client-id-metadata")
-    @NoCache
-    public void setClientIdMetadata(@QueryParam("path") String path, @QueryParam("encodedClientMetadata") String encodedClientMetadata, @QueryParam("cacheControlHeaderValue") String cacheControlHeaderValue) {
-        System.out.println("::::: setClientIdMetadata: encodedClientMetadata = " + encodedClientMetadata);
-        System.out.println("::::: setClientIdMetadata: cacheControlHeaderValue = " + cacheControlHeaderValue);
-        if (cacheControlHeaderValue == null || cacheControlHeaderValue.isEmpty()) cacheControlHeaderValue = "no-cache"; // default
-        byte[] serializedRequestObject = Base64Url.decode(encodedClientMetadata);
-        OIDCClientRepresentation oidcClientRepresentation = null;
-        try {
-            oidcClientRepresentation = JsonSerialization.readValue(serializedRequestObject, OIDCClientRepresentation.class);
-        } catch (IOException e) {
-            throw new BadRequestException("deserialize client metadata failed : " + e.getMessage());
-        }
-        this.clientIdMetadataDocumentRequests.put(path, new TestClientIdMetadataDocumentRequest(oidcClientRepresentation, cacheControlHeaderValue, null));
-    }
-
-    @POST
-    @Path("/register-client-id-metadata")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
-    public OIDCClientRepresentation registerClientIdMetadata(OIDCClientRepresentation oidcClientRepresentation, @QueryParam("cacheControlHeaderValue") String cacheControlHeaderValue, @QueryParam("command") String command) {
-        String[] parts = oidcClientRepresentation.getClientId().split("/");
-        System.out.println("::::: registerClientIdMetadata: oidcClientRepresentation = " + oidcClientRepresentation);
-        System.out.println("::::: registerClientIdMetadata: path = " + parts[parts.length - 1]);
-        System.out.println("::::: registerClientIdMetadata: cacheControlHeaderValue = " + cacheControlHeaderValue);
-        if (cacheControlHeaderValue == null || cacheControlHeaderValue.isEmpty()) cacheControlHeaderValue = "no-cache"; // default
-        this.clientIdMetadataDocumentRequests.put(parts[parts.length - 1], new TestClientIdMetadataDocumentRequest(oidcClientRepresentation, cacheControlHeaderValue, command));
-        return oidcClientRepresentation;
-    }
-
-    @GET
-    @Path("/get-client-id-metadata/{path}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getClientIdMetadata(@PathParam("path") String path) {
-        TestClientIdMetadataDocumentRequest testClientIdMetadataDocumentRequest = this.clientIdMetadataDocumentRequests.get(path);
-        OIDCClientRepresentation oidcClientRepresentation = testClientIdMetadataDocumentRequest.getOidcClientRepresentation();
-        String rawCacheControlHeaderValue = testClientIdMetadataDocumentRequest.getRawCacheControlHeaderValue();
-        String command = testClientIdMetadataDocumentRequest.getCommand();
-
-        System.out.println("::::: getClientIdMetadata: this.oidcClientRepresentation = " + oidcClientRepresentation);
-        System.out.println("::::: getClientIdMetadata: this.oidcClientRepresentation client id = " + oidcClientRepresentation.getClientId());
-        System.out.println("::::: getClientIdMetadata: this.clientMetadataCacheControlHeaders cacheControlHeaderValue = " + rawCacheControlHeaderValue);
-
-        Response.ResponseBuilder builder;
-        if ("NotModified".equals(command)) {
-            builder = Response.status(Status.NOT_MODIFIED);
-        } else if ("NotFound".equals(command)) {
-            builder = Response.status(Status.NOT_FOUND);
-        } else if ("MalformedResponse".equals(command)) {
-            String json = "{\"nullone\":null, \"emptyone\":\"\", \"blankone\": \" \", \"withvalue\" : \"my value\", \"withbooleanvalue\" : true, \"withnumbervalue\" : 10}";
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode jsonNode;
-            try {
-                jsonNode = mapper.readTree(json);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
-            builder = Response.status(Status.OK).entity(jsonNode);
-        } else {
-            builder = Response.status(Status.OK).entity(oidcClientRepresentation);
-        }
-
-        if (rawCacheControlHeaderValue != null) {
-            builder.header("Cache-Control", rawCacheControlHeaderValue);
-        }
-
-        return builder.build();
     }
 }
