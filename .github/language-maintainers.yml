@@ -38,6 +38,13 @@ languages:
     maintainers:
       - GioviQ
       - EdoardoTona
+  id:
+    name: Indonesian
+    maintainers:
+      - atriwidada
+      - princeofgiri
+      - syahmins
+      - raniaamina
   ja:
     name: Japanese
     maintainers:

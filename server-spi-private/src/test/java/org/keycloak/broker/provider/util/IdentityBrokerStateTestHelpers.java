@@ -1865,5 +1865,15 @@ public class IdentityBrokerStateTestHelpers {
         @Override
         public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
         }
+
+        @Override
+        public void setScimEnabled(boolean enabled) {
+
+        }
+
+        @Override
+        public boolean isScimEnabled() {
+            return false;
+        }
     }
 }

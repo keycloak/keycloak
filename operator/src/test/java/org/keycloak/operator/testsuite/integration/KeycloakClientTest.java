@@ -59,7 +59,6 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@DisabledIfApiServerTest
 @Tag(BaseOperatorTest.SLOW)
 @QuarkusTest
 public class KeycloakClientTest extends BaseOperatorTest {
@@ -93,6 +92,7 @@ public class KeycloakClientTest extends BaseOperatorTest {
         k8sclient.secrets().withName(CLIENT_TLS_SECRET).delete();
     }
 
+    @DisabledIfApiServerTest
     @Test
     public void testBasicSamlClientCreationAndDeletionHttp() throws InterruptedException {
         var kc = getTestKeycloakDeployment(false);
@@ -126,11 +126,13 @@ public class KeycloakClientTest extends BaseOperatorTest {
     }
 
     @Test
+    @DisabledIfApiServerTest
     public void testBasicOIDCClientCreationAndDeletionHttp() throws InterruptedException {
         helpTestBasicOIDCClientCreationAndDeletion(false);
     }
 
     @Test
+    @DisabledIfApiServerTest
     public void testBasicOIDCClientCreationAndDeletionHttps() throws InterruptedException {
         helpTestBasicOIDCClientCreationAndDeletion(true);
     }
@@ -219,6 +221,26 @@ public class KeycloakClientTest extends BaseOperatorTest {
         // we don't expect users to do this
         initCustomBootstrapAdminServiceAccount(kc);
         deployKeycloak(k8sclient, kc, true);
+    }
+    
+    @Test
+    public void testFeatureRequired() {
+        var kc = getTestKeycloakDeployment(true);
+        K8sUtils.deployKeycloak(k8sclient, kc, false);
+
+        KeycloakSAMLClient client = new KeycloakSAMLClientBuilder().withNewMetadata().withName("new-client")
+                .endMetadata().withNewSpec().withRealm("master").withKeycloakCRName(kc.getMetadata().getName())
+                .withNewClient().withEnabled(true).endClient().endSpec().build();
+
+        K8sUtils.set(k8sclient, client);
+
+        Awaitility.await().ignoreExceptions()
+                .until(() -> Optional.ofNullable(k8sclient.resource(client).get().getStatus())
+                        .filter(s -> s.getConditions().stream()
+                                .anyMatch(c -> Boolean.TRUE.equals(c.getStatus())
+                                        && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())
+                                        && c.getMessage().contains(KeycloakClientBaseController.CLIENT_ADMIN_API_V2)))
+                        .isPresent());
     }
 
 }

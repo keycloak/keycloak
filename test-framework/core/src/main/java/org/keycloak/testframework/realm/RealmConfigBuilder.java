@@ -18,6 +18,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.util.Collections;
 
 public class RealmConfigBuilder {
 
@@ -382,6 +383,11 @@ public class RealmConfigBuilder {
 
     public RealmConfigBuilder webAuthnPolicyAcceptableAaguids(List<String> aaguids) {
         rep.setWebAuthnPolicyAcceptableAaguids(aaguids);
+        return this;
+    }
+
+    public RealmConfigBuilder scimEnabled(boolean enabled) {
+        rep.setScimEnabled(enabled);
         return this;
     }
 

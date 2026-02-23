@@ -315,6 +315,7 @@
         <module>test-framework</module>
         <module>tests</module>
         <module>quarkus</module>
+        <module>scim</module>
     </modules>
 
     <dependencyManagement>
@@ -1341,6 +1342,27 @@
                 <version>${microprofile-metrics-api.version}</version>
             </dependency>
 
+            <!-- SCIM -->
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-scim-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-scim-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-scim-services</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-scim-model</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

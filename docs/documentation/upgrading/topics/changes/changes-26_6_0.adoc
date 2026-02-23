@@ -145,6 +145,11 @@ The official container images for server and the Operator now use OpenJDK 25 ins
 
 Authentication failures resulting in an invalid_grant now correctly return an HTTP 400 status code instead of 401 for Direct Grant, X.509, and UMA Permission Grant flows.
 
+=== Re-indexing required for external Infinispan Server
+
+With the `clusterless` feature enabled and `persistent-user-sessions` disabled, a re-index is required due to schema changes.
+{project_name} triggers the re-index on startup, but this may delay server startup depending on the number of sessions stored, and/or return incorrect results during the re-index process.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

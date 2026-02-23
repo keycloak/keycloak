@@ -32,6 +32,7 @@ public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory
 
     public static final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:pre-authorized_code";
     public static final String CODE_REQUEST_PARAM = "pre-authorized_code";
+    public static final String TX_CODE_PARAM = "tx_code";
 
     @Override
     public OAuth2GrantType create(KeycloakSession session) {

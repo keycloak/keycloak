@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.testframework.util.Collections;
 
 public class ClientConfigBuilder {
 

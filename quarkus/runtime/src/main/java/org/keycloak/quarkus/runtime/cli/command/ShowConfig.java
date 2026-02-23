@@ -92,10 +92,9 @@ public final class ShowConfig extends AbstractCommand {
                 if (!property.equals(from)) {
                     ConfigValue value = getConfigValue(from);
                     if (value.getValue() != null) {
-                        return;
+                        configValue = value;
+                        property = from;
                     }
-                    configValue = value;
-                    property = from;
                 }
             }
 
@@ -104,10 +103,8 @@ public final class ShowConfig extends AbstractCommand {
             }
 
             if (property.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
-                if (mapper == null) {
-                    quarkusValues.add(configValue);
-                    return;
-                }
+                quarkusValues.add(configValue);
+                return;
             } else if (!property.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
                 return;
             }

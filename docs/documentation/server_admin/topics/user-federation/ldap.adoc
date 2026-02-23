@@ -152,6 +152,7 @@ This mapper grants a specified {project_name} role to each {project_name} user f
 Group Mapper::
 This mapper maps LDAP groups from a branch of an LDAP tree into groups within {project_name}. This mapper also propagates user-group mappings from LDAP into user-group mappings in {project_name}.
 
+[[_msad_mapper]]
 MSAD User Account Mapper::
 This mapper is specific to Microsoft Active Directory (MSAD). It can integrate the MSAD user account state into the {project_name} account state, such as enabled account or  expired password. This mapper uses the `userAccountControl`, and `pwdLastSet` LDAP attributes, specific to MSAD and are not the LDAP standard. For example, if the value of `pwdLastSet` is `0`, the {project_name} user must update their password. The result is an UPDATE_PASSWORD required action added to the user. If the value of  `userAccountControl` is `514` (disabled account), the {project_name} user is disabled.
 
@@ -169,6 +170,30 @@ By default, LDAP servers such as MSAD, RHDS, or FreeIPA hash and salt passwords.
 
 WARNING: Always verify that user passwords are properly hashed and not stored as plaintext by inspecting a changed
 directory entry using `ldapsearch` and base64 decode the `userPassword` attribute value.
+
+[[_ldap_password_policy]]
+==== Enabling password change after reset
+
+You can force users to change their password after an administrator resets their password. This feature is useful for
+security reasons because it prevents users from using the temporary password set by the administrator for a long time.
+
+For that, enable the `Enable LDAP password policy` setting so that a `UPDATE_PASSWORD` required action will be added to
+the user whenever the LDAP server indicates that the user must update their password.
+
+{project_name} is usually configured to connect to the LDAP server using an administrator account even when users are
+updating their password. In this case, some LDAP servers, if not configured properly, will always force a password change
+after the user changes their password because the LDAP server will see that the password was changed by an administrator
+account and not by the user itself.
+
+When enabling this feature, make sure your LDAP server is configured to not force users to change their password a
+second time after the user changes their password. Not doing so might cause a password change loop where the user is
+forced to change their password every time they log in.
+
+[NOTE]
+====
+This capability is based on https://datatracker.ietf.org/doc/html/draft-behera-ldap-password-policy-11[Password Policy for LDAP Directories (IETF draft-behera-ldap-password-policy)].
+For Microsoft Active Directory, use the <<_msad_mapper,MSAD User Account Mapper>> instead.
+====
 
 [[_ldap_connection_pool]]
 ==== Configuring the connection pool
@@ -243,6 +268,3 @@ with your LDAP server.
 in your environment. For example if login of some user takes lot of time, you can consider attach his LDAP entry showing count of `member` attributes
 of various "group" entries. In this case, it might be useful to add if those group entries are mapped to some Group LDAP mapper (or Role LDAP Mapper)
 in {project_name} and so on.
-
-
-

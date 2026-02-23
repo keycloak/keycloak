@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testframework.util.Collections;
 
 public class RoleConfigBuilder {
 

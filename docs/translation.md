@@ -100,8 +100,10 @@ The goal is to merge those pull requests within 2-3 working days.
 Translations are reviewed in Weblate by language maintainers for their correctness, still maintainers do some minimal checks as outlined below.
 
 1. Check that the changes to the `messages_*.properties` files are syntactically correct.
-2. Do a spot-check with Google Translate to avoid malicious community translations.
-3. If the changes are ok, approve the PR and merge it. For pull requests created by Weblate there is no referenced GitHub issue, therefore reference the ID of the pull request in the squash-message.
+2. Do a spot-check with Google Translate or Claude to avoid malicious community translations.
+   Claude prompt:
+   > Analyze pull request (URL) and list new or updated translations that significantly deviate from the English message that it translates. 
+3. If the changes are ok, approve the PR and squash-merge it. For pull requests created by Weblate there is no referenced GitHub issue, therefore reference the ID of the pull request in the squash-message.
 4. Once the PR is merged, notify the respective language maintainers via a comment in the pull request that there are changes for their languages.
 
 **Tasks of the language maintainers:**

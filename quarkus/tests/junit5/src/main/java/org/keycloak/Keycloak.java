@@ -57,7 +57,6 @@ import io.quarkus.maven.dependency.Dependency;
 import io.quarkus.maven.dependency.DependencyBuilder;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import picocli.CommandLine;
 
 import static java.util.Optional.ofNullable;
 
@@ -343,14 +342,6 @@ public class Keycloak {
             @Override
             public void start() {
                 throw new AssertionError();
-            }
-
-            @Override
-            protected int execute(CommandLine cmd, String[] argArray) {
-                if (this.getParsedCommand().filter(ac -> ac instanceof AbstractAutoBuildCommand).isPresent()) {
-                    return super.execute(cmd, argArray);
-                }
-                return 0;
             }
 
             @Override

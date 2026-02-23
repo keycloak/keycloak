@@ -31,6 +31,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
@@ -127,7 +128,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         if (oid4vcDetail.getCredentialIdentifiers() != null && !oid4vcDetail.getCredentialIdentifiers().isEmpty()) {
             for (String credentialId : oid4vcDetail.getCredentialIdentifiers()) {
                 // Check if offer state already exists
-                CredentialOfferStorage.CredentialOfferState existingState = offerStorage.findOfferStateByCredentialId(session, credentialId);
+                CredentialOfferState existingState = offerStorage.findOfferStateByCredentialId(session, credentialId);
 
                 if (existingState == null) {
                     // Create a new offer state for authorization code flow
@@ -137,7 +138,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
                     // Use a reasonable expiration time (e.g., 1 hour)
                     int expiration = Time.currentTime() + 3600;
-                    CredentialOfferStorage.CredentialOfferState offerState = new CredentialOfferStorage.CredentialOfferState(
+                    CredentialOfferState offerState = new CredentialOfferState(
                             credOffer, client.getClientId(), user.getId(), expiration);
                     offerState.setAuthorizationDetails(oid4vcDetail);
 

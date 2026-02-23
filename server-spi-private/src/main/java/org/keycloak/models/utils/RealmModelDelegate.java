@@ -1190,4 +1190,14 @@ public class RealmModelDelegate implements RealmModel {
     public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
         delegate.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
     }
+
+    @Override
+    public void setScimEnabled(boolean enabled) {
+        delegate.setScimEnabled(enabled);
+    }
+
+    @Override
+    public boolean isScimEnabled() {
+        return delegate.isScimEnabled();
+    }
 }

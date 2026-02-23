@@ -176,7 +176,8 @@ public class JsonUtils {
                 }
 
                 currentNode = currentNode.get(currentNodeName);
-                if (arrayIndex > -1 && currentNode.isArray()) {
+
+                if (currentNode != null && arrayIndex > -1 && currentNode.isArray()) {
                     currentNode = currentNode.get(arrayIndex);
                 }
 
