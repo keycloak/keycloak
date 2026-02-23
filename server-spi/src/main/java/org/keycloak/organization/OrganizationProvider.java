@@ -302,6 +302,20 @@ public interface OrganizationProvider extends Provider {
     Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member);
 
     /**
+     * Returns organization groups that the given {@code member} explicitly belongs to within the given {@code organization},
+     * with pagination support.
+     * Only returns groups of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION} that belong to the specified organization.
+     * Membership is explicit - being a member of a child group does not imply membership in parent groups.
+     *
+     * @param organization the organization whose groups to check
+     * @param member the user whose group memberships to retrieve
+     * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
+     * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
+     * @return Stream of organization groups the member belongs to. Never returns {@code null}.
+     */
+    Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member, Integer first, Integer max);
+
+    /**
      * Associate the given {@link IdentityProviderModel} with the given {@link OrganizationModel}.
      *
      * @param organization the organization

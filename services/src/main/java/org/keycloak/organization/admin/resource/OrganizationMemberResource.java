@@ -45,6 +45,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.representations.idm.OrganizationRepresentation;
@@ -253,6 +254,32 @@ public class OrganizationMemberResource {
 
         return provider.getByMember(member)
                 .map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
+    }
+
+    @Path("{member-id}/groups")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation( summary = "Returns the organization group memberships for a member with the specified id", description = "Searches for a" +
+            "user with the given id. If one is found, and is currently a member of the organization, returns the groups from the organization" +
+            "where the user is member of. Otherwise, an error response with status NOT_FOUND is returned")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
+            @APIResponse(responseCode = "400", description = "Bad Request")
+    })
+    public Stream<GroupRepresentation> groupMemberships(@PathParam("member-id") String memberId,
+                                                        @QueryParam("first") Integer firstResult,
+                                                        @QueryParam("max") Integer maxResults,
+                                                        @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+        if (StringUtil.isBlank(memberId)) {
+            throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
+        }
+
+        UserModel member = getUser(memberId);
+
+        return provider.getOrganizationGroupsByMember(organization, member, firstResult, maxResults)
+                .map(group -> ModelToRepresentation.toRepresentation(group, !briefRepresentation));
     }
 
     @Path("count")

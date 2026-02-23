@@ -36,6 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 
@@ -315,5 +316,171 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
         } catch (Exception e) {
             assertThat(e.getMessage(), containsString(Status.CONFLICT.toString()));
         }
+    }
+
+    @Test
+    public void testGetMemberGroupMemberships() {
+        // Test basic retrieval of member's group memberships
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        MemberRepresentation member = addMember(orgResource);
+
+        // Create three groups
+        GroupRepresentation engineeringRep = new GroupRepresentation();
+        engineeringRep.setName("Engineering");
+        String engineeringId;
+        try (Response response = orgResource.groups().addTopLevelGroup(engineeringRep)) {
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation salesRep = new GroupRepresentation();
+        salesRep.setName("Sales");
+        String salesId;
+        try (Response response = orgResource.groups().addTopLevelGroup(salesRep)) {
+            salesId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation supportRep = new GroupRepresentation();
+        supportRep.setName("Support");
+        String supportId;
+        try (Response response = orgResource.groups().addTopLevelGroup(supportRep)) {
+            supportId = ApiUtil.getCreatedId(response);
+        }
+
+        // Add member to all three groups
+        orgResource.groups().group(engineeringId).addMember(member.getId());
+        orgResource.groups().group(salesId).addMember(member.getId());
+        orgResource.groups().group(supportId).addMember(member.getId());
+
+        // Get member's group memberships without pagination
+        List<GroupRepresentation> memberGroups = orgResource.members().member(member.getId()).groups(null, null, true);
+
+        // Verify member is in all three groups
+        assertThat(memberGroups, hasSize(3));
+    }
+
+    @Test
+    public void testGetMemberGroupMembershipsWithPagination() {
+        // Test pagination of member's group memberships
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        MemberRepresentation member = addMember(orgResource);
+
+        // Create five groups
+        String[] groupIds = new String[5];
+        for (int i = 0; i < 5; i++) {
+            GroupRepresentation groupRep = new GroupRepresentation();
+            groupRep.setName("Group" + i);
+            try (Response response = orgResource.groups().addTopLevelGroup(groupRep)) {
+                groupIds[i] = ApiUtil.getCreatedId(response);
+            }
+            orgResource.groups().group(groupIds[i]).addMember(member.getId());
+        }
+
+        // Test pagination: first page (first 2)
+        List<GroupRepresentation> firstPage = orgResource.members().member(member.getId()).groups(0, 2, true);
+        assertThat(firstPage, hasSize(2));
+
+        // Test pagination: second page (next 2)
+        List<GroupRepresentation> secondPage = orgResource.members().member(member.getId()).groups(2, 2, true);
+        assertThat(secondPage, hasSize(2));
+
+        // Test pagination: third page (last 1)
+        List<GroupRepresentation> thirdPage = orgResource.members().member(member.getId()).groups(4, 2, true);
+        assertThat(thirdPage, hasSize(1));
+
+        // Test getting all without pagination
+        List<GroupRepresentation> allGroups = orgResource.members().member(member.getId()).groups(null, null, true);
+        assertThat(allGroups, hasSize(5));
+    }
+
+    @Test
+    public void testGetMemberGroupMembershipsEmpty() {
+        // Test retrieval when member has no group memberships
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        MemberRepresentation member = addMember(orgResource);
+
+        // Get member's group memberships - should be empty
+        List<GroupRepresentation> memberGroups = orgResource.members().member(member.getId()).groups(null, null, true);
+
+        assertThat(memberGroups, hasSize(0));
+    }
+
+    @Test
+    public void testGetMemberGroupMembershipsWithHierarchy() {
+        // Test that only explicit memberships are returned, not parent groups
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        MemberRepresentation member = addMember(orgResource);
+
+        // Create Engineering -> Backend hierarchy
+        GroupRepresentation engineeringRep = new GroupRepresentation();
+        engineeringRep.setName("Engineering");
+        String engineeringId;
+        try (Response response = orgResource.groups().addTopLevelGroup(engineeringRep)) {
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation backendRep = new GroupRepresentation();
+        backendRep.setName("Backend");
+        String backendId;
+        try (Response response = orgResource.groups().group(engineeringId).addSubGroup(backendRep)) {
+            backendId = response.readEntity(GroupRepresentation.class).getId();
+        }
+
+        // Add member ONLY to Backend (child group)
+        orgResource.groups().group(backendId).addMember(member.getId());
+
+        // Get member's group memberships
+        List<GroupRepresentation> memberGroups = orgResource.members().member(member.getId()).groups(null, null, true);
+
+        // Should only return Backend, NOT Engineering (no implicit parent membership)
+        assertThat(memberGroups, hasSize(1));
+        assertEquals("Backend", memberGroups.get(0).getName());
+    }
+
+    @Test
+    public void testGetMemberGroupMembershipsAfterRemoval() {
+        // Test that group memberships are correctly reflected after removal
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        MemberRepresentation member = addMember(orgResource);
+
+        // Create two groups
+        GroupRepresentation engineeringRep = new GroupRepresentation();
+        engineeringRep.setName("Engineering");
+        String engineeringId;
+        try (Response response = orgResource.groups().addTopLevelGroup(engineeringRep)) {
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation salesRep = new GroupRepresentation();
+        salesRep.setName("Sales");
+        String salesId;
+        try (Response response = orgResource.groups().addTopLevelGroup(salesRep)) {
+            salesId = ApiUtil.getCreatedId(response);
+        }
+
+        // Add member to both groups
+        orgResource.groups().group(engineeringId).addMember(member.getId());
+        orgResource.groups().group(salesId).addMember(member.getId());
+
+        // Verify member is in both groups
+        List<GroupRepresentation> memberGroups = orgResource.members().member(member.getId()).groups(null, null, true);
+        assertThat(memberGroups, hasSize(2));
+
+        // Remove from Engineering
+        orgResource.groups().group(engineeringId).removeMember(member.getId());
+
+        // Verify member is now only in Sales
+        List<GroupRepresentation> updatedGroups = orgResource.members().member(member.getId()).groups(null, null, true);
+        assertThat(updatedGroups, hasSize(1));
+        assertEquals("Sales", updatedGroups.get(0).getName());
     }
 }
