@@ -781,6 +781,10 @@ public final class KeycloakModelUtils {
                     return null;
                 }
                 OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+                if (orgProvider == null) {
+                    // Organization feature disabled, cannot resolve organization group paths
+                    return null;
+                }
                 String parentId = parent.getId();
                 group = orgProvider.searchGroupsByName(org, nameBuilder.toString(), true, null, null)
                     .filter(g -> parentId.equals(g.getParentId()))

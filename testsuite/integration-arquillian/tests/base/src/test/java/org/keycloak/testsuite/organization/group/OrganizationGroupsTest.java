@@ -544,6 +544,64 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testFindGroupByPathWithNestedOrganizationGroups() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create a 3-level hierarchy: parent/child/grandchild
+        GroupRepresentation parentRep = new GroupRepresentation();
+        parentRep.setName("parent");
+        String parentId;
+        try (Response response = orgResource.groups().addTopLevelGroup(parentRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            parentId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation childRep = new GroupRepresentation();
+        childRep.setName("child");
+        try (Response response = orgResource.groups().group(parentId).addSubGroup(childRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        List<GroupRepresentation> subGroups = orgResource.groups().group(parentId).getSubGroups(null, null, null, null);
+        assertThat(subGroups, hasSize(1));
+        assertThat(subGroups.get(0).getName(), is("child"));
+        String childId = subGroups.get(0).getId();
+
+        GroupRepresentation grandchildRep = new GroupRepresentation();
+        grandchildRep.setName("grandchild");
+        try (Response response = orgResource.groups().group(childId).addSubGroup(grandchildRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        // Test resolving the full path - this exercises the recursive getGroupModel path
+        GroupRepresentation found = orgResource.groups().getGroupByPath("/parent/child/grandchild", false);
+        assertThat(found, notNullValue());
+        assertThat(found.getName(), is("grandchild"));
+        assertThat(found.getPath(), is("/parent/child/grandchild"));
+
+        // Test resolving intermediate paths
+        GroupRepresentation foundChild = orgResource.groups().getGroupByPath("/parent/child", false);
+        assertThat(foundChild, notNullValue());
+        assertThat(foundChild.getName(), is("child"));
+        assertThat(foundChild.getPath(), is("/parent/child"));
+
+        // Test resolving top-level path
+        GroupRepresentation foundParent = orgResource.groups().getGroupByPath("/parent", false);
+        assertThat(foundParent, notNullValue());
+        assertThat(foundParent.getName(), is("parent"));
+        assertThat(foundParent.getPath(), is("/parent"));
+
+        // Test non-existent path
+        try {
+            orgResource.groups().getGroupByPath("/parent/nonexistent", false);
+            fail("Should have thrown NotFoundException");
+        } catch (jakarta.ws.rs.NotFoundException e) {
+            // Expected
+        }
+    }
+
+    @Test
     public void testSubGroupCountQueryParameter() {
         OrganizationRepresentation orgRep = createOrganization();
         OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
