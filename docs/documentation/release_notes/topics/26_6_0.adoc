@@ -54,6 +54,9 @@ When using the {project_name} Operator, set the update strategy to `Auto` to ben
 
 For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
 
+= Step-up authentication for SAML (preview)
+
+The feature `step-up-authentication-saml` extends the step-up authentication to include the SAML protocol and clients. This feature is in preview mode. Additional information is available in the link:{adminguide_link}#_step-up-authentication-saml[{adminguide_name}].
 
 = Java 25 support
 

@@ -51,6 +51,7 @@ import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.broker.saml.SAMLDataMarshaller;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.connections.httpclient.HttpClientProvider;
@@ -79,6 +80,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
@@ -89,6 +91,7 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.protocol.saml.profile.ecp.SamlEcpProfileService;
@@ -175,6 +178,15 @@ public class SamlService extends AuthorizationEndpointBase {
         protected boolean redirectToAuthentication;
 
         protected abstract Response error(KeycloakSession session, AuthenticationSessionModel authenticationSession, Response.Status status, String message, Object... parameters);
+
+        protected Response sendProtocolError(AuthenticationSessionModel authSession, LoginProtocol.Error error, String errorMessage) {
+            LoginProtocol protocol = session.getProvider(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
+            protocol.setRealm(realm)
+                    .setHttpHeaders(session.getContext().getRequestHeaders())
+                    .setUriInfo(session.getContext().getUri())
+                    .setEventBuilder(event);
+            return protocol.sendError(authSession, error, errorMessage);
+        }
 
         protected Response basicChecks(String samlRequest, String samlResponse, String artifact) {
             logger.tracef("basicChecks(%s, %s, %s)%s", samlRequest, samlResponse, artifact, getShortStackTrace());
@@ -522,6 +534,36 @@ public class SamlService extends AuthorizationEndpointBase {
 
             for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
                 requestAbstractType = it.next().beforeProcessingLoginRequest(requestAbstractType, authSession);
+            }
+
+            if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION_SAML)) {
+                // step-up level of authentication
+                Map<String, Integer> acrLoaMap = AcrUtils.getUriLoaMap(authSession.getClient());
+
+                if (!acrLoaMap.isEmpty()) {
+                    // only process the requested authn context if LoA defined
+                    String acrValue;
+                    if (requestAbstractType.getRequestedAuthnContext() != null
+                            && !requestAbstractType.getRequestedAuthnContext().getAuthnContextClassRef().isEmpty()) {
+                        acrValue = SamlProtocolUtils.getSelectedLoA(requestAbstractType.getRequestedAuthnContext(),
+                                acrLoaMap, AcrUtils.getMinimumAcrValue(client));
+                        if (acrValue == null) {
+                            logger.debug("No AuthnContextClassRef is valid for the requested context.");
+                            event.detail(Details.REASON, "Invalid RequestedAuthnContext");
+                            event.error(Errors.INVALID_REQUEST);
+                            return sendProtocolError(authSession, LoginProtocol.Error.LOA_INVALID, null);
+                        }
+                    } else {
+                        acrValue = AcrUtils.getMinimumAcrValue(client);
+                    }
+
+                    if (acrValue != null) {
+                        logger.tracef("SAML step-up authentication set to force using context '%s'", acrValue);
+                        authSession.setClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION, "true");
+                        authSession.setClientNote(SamlProtocol.SAML_AUTHN_CONTEXT_CLASS_REF, acrValue);
+                        authSession.setClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION, String.valueOf(acrLoaMap.get(acrValue)));
+                    }
+                }
             }
 
             //If unset we fall back to default "false"
