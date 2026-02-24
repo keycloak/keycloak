@@ -64,6 +64,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
@@ -125,6 +126,13 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
                     && clientSessionCtx.getClientSession().getNote(AuthenticationProcessor.FIRST_OFFLINE_ACCESS) != null) {
                 // the online session can be removed if first created for offline access
                 session.sessions().removeUserSession(realm, userSession);
+                // also remove the root authentication session to prevent AUTH_SESSION_ID cookie reuse by a different user
+                // consistent with backchannel logout and logout endpoint which both clean up root auth sessions
+                logger.tracef("Removing root authentication session '%s' after first offline access", userSession.getId());
+                RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, userSession.getId());
+                if (rootAuthSession != null) {
+                    session.authenticationSessions().removeRootAuthenticationSession(realm, rootAuthSession);
+                }
             }
         } else {
             TokenContextEncoderProvider encoder = session.getProvider(TokenContextEncoderProvider.class);
