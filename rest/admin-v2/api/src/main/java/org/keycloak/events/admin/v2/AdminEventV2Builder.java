@@ -34,8 +34,8 @@ import org.keycloak.services.resources.admin.AdminEventBuilder;
  * - Representation is serialized without stripping secrets (v2 representations handle this differently).
  */
 public class AdminEventV2Builder extends AdminEventBuilder {
-    private static final String API_VERSION_DETAIL_KEY = "apiVersion";
-    private static final String API_VERSION_V2 = "v2";
+    public static final String API_VERSION_DETAIL_KEY = "apiVersion";
+    public static final String API_VERSION_V2 = "v2";
 
     public AdminEventV2Builder(RealmModel realm, AdminAuth auth, KeycloakSession session, ClientConnection clientConnection) {
         super(realm, auth, session, clientConnection);

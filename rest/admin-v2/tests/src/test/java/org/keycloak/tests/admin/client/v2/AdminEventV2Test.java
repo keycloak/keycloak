@@ -30,6 +30,7 @@ import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import org.keycloak.services.PatchTypeNames;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -42,6 +43,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
@@ -50,6 +52,9 @@ import org.apache.http.util.EntityUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.keycloak.events.admin.v2.AdminEventV2Builder.API_VERSION_DETAIL_KEY;
+import static org.keycloak.events.admin.v2.AdminEventV2Builder.API_VERSION_V2;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -116,7 +121,7 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
 
             // Find the v2 event (has apiVersion=v2 in details)
             AdminEventRepresentation v2Event = events.stream()
-                    .filter(e -> e.getDetails() != null && "v2".equals(e.getDetails().get("apiVersion")))
+                    .filter(e -> e.getDetails() != null && API_VERSION_V2.equals(e.getDetails().get(API_VERSION_DETAIL_KEY)))
                     .findFirst()
                     .orElse(null);
 
@@ -148,26 +153,56 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
                 assertEquals(200, response.getStatusLine().getStatusCode());
             }
 
-            // Verify v2 UPDATE event was fired
-            List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
-
-            // Find the v2 event (has apiVersion=v2 in details)
-            AdminEventRepresentation v2Event = events.stream()
-                    .filter(e -> e.getDetails() != null && "v2".equals(e.getDetails().get("apiVersion")))
-                    .findFirst()
-                    .orElse(null);
-
-            assertThat("V2 event should be present for update with apiVersion=v2 detail", v2Event, notNullValue());
-            assertThat("V2 event should have UPDATE operation", v2Event.getOperationType(), is(OperationType.UPDATE.toString()));
-            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2/%s".formatted(TEST_CLIENT_ID)));
-
-            var representation = v2Event.getRepresentation();
-            assertThat("V2 event should have representation", representation, notNullValue());
-            assertThat("V2 event should have updated client representation description", representation, containsString("\"description\":\"Updated description\""));
-            assertThat("V2 event should have masked secret in representation", representation, containsString("\"secret\":\"**********\""));
+            assertUpdateEventFired("Updated description");
         } finally {
             deleteTestClient();
         }
+    }
+
+    @Test
+    public void patchClientFiresV2Event() throws Exception {
+        createTestClient();
+        try {
+            masterRealm.admin().clearAdminEvents();
+
+            HttpPatch patchRequest = new HttpPatch(getClientsApiUrl() + "/" + TEST_CLIENT_ID);
+            setAuthHeader(patchRequest);
+
+            patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+
+            OIDCClientRepresentation patch = new OIDCClientRepresentation();
+            patch.setDescription("Patched description");
+
+            patchRequest.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
+
+            try (var response = client.execute(patchRequest)) {
+                assertEquals(200, response.getStatusLine().getStatusCode());
+            }
+
+            assertUpdateEventFired("Patched description");
+        } finally {
+            deleteTestClient();
+        }
+    }
+
+    private void assertUpdateEventFired(String newDescription){
+        // Verify v2 UPDATE event was fired
+        List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
+
+        // Find the v2 event (has apiVersion=v2 in details)
+        AdminEventRepresentation v2Event = events.stream()
+                .filter(e -> e.getDetails() != null && API_VERSION_V2.equals(e.getDetails().get(API_VERSION_DETAIL_KEY)))
+                .findFirst()
+                .orElse(null);
+
+        assertThat("V2 event should be present for update with apiVersion=v2 detail", v2Event, notNullValue());
+        assertThat("V2 event should have UPDATE operation", v2Event.getOperationType(), is(OperationType.UPDATE.toString()));
+        assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2/%s".formatted(TEST_CLIENT_ID)));
+
+        var representation = v2Event.getRepresentation();
+        assertThat("V2 event should have representation", representation, notNullValue());
+        assertThat("V2 event should have updated client representation description", representation, containsString("\"description\":\"%s\"".formatted(newDescription)));
+        assertThat("V2 event should have masked secret in representation", representation, containsString("\"secret\":\"**********\""));
     }
 
     @Test
@@ -179,7 +214,7 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
 
             // Find the v2 event
             AdminEventRepresentation v2Event = events.stream()
-                    .filter(e -> e.getDetails() != null && "v2".equals(e.getDetails().get("apiVersion")))
+                    .filter(e -> e.getDetails() != null && API_VERSION_V2.equals(e.getDetails().get(API_VERSION_DETAIL_KEY)))
                     .findFirst()
                     .orElse(null);
 
@@ -234,7 +269,7 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
 
             // Find the v2 event
             AdminEventRepresentation v2Event = events.stream()
-                    .filter(e -> e.getDetails() != null && "v2".equals(e.getDetails().get("apiVersion")))
+                    .filter(e -> e.getDetails() != null && API_VERSION_V2.equals(e.getDetails().get(API_VERSION_DETAIL_KEY)))
                     .findFirst()
                     .orElse(null);
 
