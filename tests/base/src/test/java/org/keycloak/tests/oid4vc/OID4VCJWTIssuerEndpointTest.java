@@ -45,12 +45,15 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
@@ -81,6 +84,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
@@ -1314,6 +1318,79 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response2.getStatusCode(), "Second offer should fail on second access (replay protection)");
         assertEquals(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), response2.getError(), "Error type should be INVALID_CREDENTIAL_OFFER_REQUEST");
+    }
+
+    @Test
+    public void testCredentialIssuerSigningDefaultKeyAndAlg() {
+        KeysMetadataRepresentation keyMetadata = testRealm.admin().keys().getKeyMetadata();
+
+        String kid = "";
+        String alg = "";
+        jwtTypeCredentialScope.getAttributes().put(CredentialScopeModel.VC_SIGNING_KEY_ID, kid);
+        jwtTypeCredentialScope.getAttributes().put(CredentialScopeModel.VC_SIGNING_ALG, alg);
+        testRealm.admin().clientScopes().get(jwtTypeCredentialScope.getId()).update(jwtTypeCredentialScope);
+        testCredentialIssuanceSigningConfiguration(keyMetadata.getActive().get(Constants.DEFAULT_SIGNATURE_ALGORITHM), Constants.DEFAULT_SIGNATURE_ALGORITHM);
+    }
+
+    @Test
+    public void testCredentialIssuerSigningSpecificAlg() {
+        String kid = "";
+        String alg = Algorithm.ES256;
+        jwtTypeCredentialScope.getAttributes().put(CredentialScopeModel.VC_SIGNING_KEY_ID, kid);
+        jwtTypeCredentialScope.getAttributes().put(CredentialScopeModel.VC_SIGNING_ALG, alg);
+        testRealm.admin().clientScopes().get(jwtTypeCredentialScope.getId()).update(jwtTypeCredentialScope);
+        testCredentialIssuanceSigningConfiguration(null, Algorithm.ES256);
+    }
+
+    @Test
+    public void testCredentialIssuerSigningSpecificKey() {
+        KeysMetadataRepresentation keyMetadata = testRealm.admin().keys().getKeyMetadata();
+
+        String kid = keyMetadata.getActive().get(Constants.DEFAULT_SIGNATURE_ALGORITHM);
+        String alg = Constants.DEFAULT_SIGNATURE_ALGORITHM;
+        jwtTypeCredentialScope.getAttributes().put(CredentialScopeModel.VC_SIGNING_KEY_ID, kid);
+        jwtTypeCredentialScope.getAttributes().put(CredentialScopeModel.VC_SIGNING_ALG, alg);
+        testRealm.admin().clientScopes().get(jwtTypeCredentialScope.getId()).update(jwtTypeCredentialScope);
+        testCredentialIssuanceSigningConfiguration(keyMetadata.getActive().get(Constants.DEFAULT_SIGNATURE_ALGORITHM), Constants.DEFAULT_SIGNATURE_ALGORITHM);
+    }
+
+    public void testCredentialIssuanceSigningConfiguration(String kid, String alg) {
+        String scopeName = jwtTypeCredentialScope.getName();
+        String credConfigId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        testCredentialIssuanceWithAuthZCodeFlow(jwtTypeCredentialScope,
+                (testScope) -> {
+                    String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+                    return getBearerToken(oauth, authCode, authDetail).getAccessToken();
+                },
+                m -> {
+                    String accessToken = (String) m.get("accessToken");
+                    WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
+                    CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
+
+                    try (Response response = credentialTarget.request()
+                            .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
+                            .post(Entity.json(credentialRequest))) {
+                        assertEquals(200, response.getStatus());
+                        CredentialResponse credentialResponse = JsonSerialization.readValue(response.readEntity(String.class),
+                                CredentialResponse.class);
+                        JWSHeader jwsHeader = TokenVerifier.create((String) credentialResponse.getCredentials().get(0).getCredential(),
+                                JsonWebToken.class).getHeader();
+
+                        if (kid != null) {
+                            assertEquals(jwsHeader.getKeyId(), kid);
+                        }
+                        assertEquals(jwsHeader.getRawAlgorithm(), alg);
+
+                    } catch (VerificationException | IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 
     private String getCNonce() {

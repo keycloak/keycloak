@@ -17,8 +17,8 @@ import { useAdminClient } from "../../admin-client";
 import { getProtocolName } from "../../clients/utils";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import {
-  ClientScopeDefaultOptionalType,
   allClientScopeTypes,
+  ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -69,15 +69,6 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const isFeatureEnabled = useIsFeatureEnabled();
   const isDynamicScopesEnabled = isFeatureEnabled(Feature.DynamicScopes);
 
-  // Get available signature algorithms from server info
-  const signatureAlgorithms = useMemo(
-    () =>
-      serverInfo?.providers?.signature?.providers
-        ? Object.keys(serverInfo.providers.signature.providers)
-        : [],
-    [serverInfo],
-  );
-
   // Get available hash algorithms from server info
   const hashAlgorithms = serverInfo?.providers?.hash?.providers
     ? Object.keys(serverInfo.providers.hash.providers).map((alg) =>
@@ -86,10 +77,19 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     : [];
 
   // Get available asymmetric signature algorithms from server info
-  const asymmetricSigAlgOptions = useMemo(
+  const asymmetricAlgorithms = useMemo(
     () => serverInfo?.cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? [],
     [serverInfo],
   );
+
+  const asymmetricSigAlgOptions = useMemo(() => {
+    const mappedOptions = asymmetricAlgorithms.map((alg) => ({
+      key: alg,
+      value: alg,
+    }));
+
+    return [{ key: "", value: t("useDefaultAlg") }, ...mappedOptions];
+  }, [asymmetricAlgorithms, t]);
 
   // Fetch realm keys for signing_key_id dropdown
   const [realmKeys, setRealmKeys] = useState<KeyMetadataRepresentation[]>([]);
@@ -104,7 +104,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   );
 
   // Prepare key options for SelectControl
-  // Filter only active keys suitable for signing credentials
+  // Filter only active keys suitable for signing credentials AND using asymmetric algorithms
   const keyOptions = useMemo(() => {
     const options = [{ key: "", value: t("useDefaultKey") }];
     if (realmKeys && realmKeys.length > 0) {
@@ -114,7 +114,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             key.kid &&
             key.status === "ACTIVE" &&
             key.algorithm &&
-            signatureAlgorithms.includes(key.algorithm),
+            asymmetricAlgorithms.includes(key.algorithm),
         )
         .map((key) => ({
           key: key.kid!,
@@ -123,7 +123,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       options.push(...keyOptions);
     }
     return options;
-  }, [realmKeys, signatureAlgorithms, t]);
+  }, [realmKeys, asymmetricAlgorithms, t]);
 
   const displayOnConsentScreen: string = useWatch({
     control,
@@ -159,6 +159,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     realmRepresentation?.verifiableCredentialsEnabled;
   const isNotSaml = selectedProtocol != "saml";
 
+  const isSigningKeySelected = useWatch({
+    control,
+    name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.signing_key_id",
+    ),
+    defaultValue: clientScope?.attributes?.["vc.signing_key_id"] ?? "",
+  });
+
   const setDynamicRegex = (value: string, append: boolean) =>
     setValue(
       convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
@@ -172,9 +180,26 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     convertToFormValues(clientScope ?? {}, setValue);
   }, [clientScope, setValue]);
 
+  useEffect(() => {
+    if (isSigningKeySelected) {
+      const selectedKeyInfo = realmKeys.find(
+        (k) => k.kid === isSigningKeySelected,
+      );
+      if (selectedKeyInfo?.algorithm) {
+        setValue(
+          convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+            "attributes.vc.credential_signing_alg",
+          ),
+          selectedKeyInfo.algorithm,
+          { shouldDirty: true },
+        );
+      }
+    }
+  }, [isSigningKeySelected, realmKeys, setValue]);
+
   /* Form-level validation handles correctness; here we only prune known optional
-     OID4VC fields when empty. If new attributes are added, extend
-     OID4VC_ATTRIBUTE_KEYS (and related validation) so they participate in cleanup. */
+       OID4VC fields when empty. If new attributes are added, extend
+       OID4VC_ATTRIBUTE_KEYS (and related validation) so they participate in cleanup. */
   const onSubmit = (values: ClientScopeDefaultOptionalType) => {
     const isOid4vc = values.protocol === OID4VC_PROTOCOL;
     const cleaned = isOid4vc ? removeEmptyOid4vcAttributes(values) : values;
@@ -408,10 +433,8 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                     clientScope?.attributes?.["vc.credential_signing_alg"] ??
                     "",
                 }}
-                options={asymmetricSigAlgOptions.map((alg) => ({
-                  key: alg,
-                  value: alg,
-                }))}
+                options={asymmetricSigAlgOptions}
+                isDisabled={!!isSigningKeySelected}
               />
             )}
             {hashAlgorithms.length > 0 && (
