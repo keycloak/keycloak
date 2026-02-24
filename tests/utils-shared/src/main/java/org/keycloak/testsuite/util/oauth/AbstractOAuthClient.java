@@ -75,6 +75,10 @@ public abstract class AbstractOAuthClient<T> {
         return client();
     }
 
+    public AuthorizationEndpointRequest authorizationRequest() {
+        return new AuthorizationEndpointRequest(this);
+    }
+
     public LoginUrlBuilder loginForm() {
         return new LoginUrlBuilder(this);
     }
@@ -313,5 +317,4 @@ public abstract class AbstractOAuthClient<T> {
     private T client() {
         return (T) this;
     }
-
 }
