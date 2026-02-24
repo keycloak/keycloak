@@ -26,7 +26,7 @@ import { useParams } from "../utils/useParams";
 import { DetailOrganizationHeader } from "./DetailOraganzationHeader";
 import { IdentityProviders } from "./IdentityProviders";
 import { MembersSection } from "./MembersSection";
-import OrganizationGroupsSection from "./OrganizationGroupsSection";
+import GroupsSection from "../groups/GroupsSection";
 import {
   OrganizationForm,
   OrganizationFormType,
@@ -169,7 +169,7 @@ export default function DetailOrganization() {
             title={<TabTitleText>{t("groups")}</TabTitleText>}
             {...groupsTab}
           >
-            <OrganizationGroupsSection orgId={id} />
+            <GroupsSection orgId={id} />
           </Tab>
           <Tab
             id="identityProviders"
