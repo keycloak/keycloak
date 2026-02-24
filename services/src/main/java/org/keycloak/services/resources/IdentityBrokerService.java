@@ -531,6 +531,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             context.setToken(null);
         }
 
+        ClientModel client = authenticationSession.getClient();
+
+        if (!client.isEnabled()) {
+            return redirectToErrorPage(Status.BAD_REQUEST, Messages.CLIENT_NOT_FOUND, null, providerAlias);
+        }
+
         StatusResponseType loginResponse = (StatusResponseType) context.getContextData().get(SAMLEndpoint.SAML_LOGIN_RESPONSE);
         if (loginResponse != null) {
             for(Iterator<SamlAuthenticationPreprocessor> it = SamlSessionUtils.getSamlAuthenticationPreprocessorIterator(session); it.hasNext();) {
@@ -538,7 +544,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
         }
 
-        session.getContext().setClient(authenticationSession.getClient());
+        session.getContext().setClient(client);
 
         context.getIdp().preprocessFederatedIdentity(session, realmModel, context);
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
@@ -621,7 +627,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             ctx.saveToAuthenticationSession(authenticationSession, AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE);
 
             URI redirect = LoginActionsService.firstBrokerLoginProcessor(session.getContext().getUri())
-                    .queryParam(Constants.CLIENT_ID, authenticationSession.getClient().getClientId())
+                    .queryParam(Constants.CLIENT_ID, client.getClientId())
                     .queryParam(Constants.TAB_ID, authenticationSession.getTabId())
                     .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authenticationSession))
                     .build(realmModel.getName());
