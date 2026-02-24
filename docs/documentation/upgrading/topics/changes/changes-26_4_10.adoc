@@ -27,3 +27,7 @@ bin/kc.[sh|bat] --spi-login-protocol--saml--max-inflating-size=524288
 ----
 
 The same restriction is applied for the link:{saml_galleon_layers_link}[{project_name} SAML Galleon feature pack]. Although, in this case, you need to add a system property to the Wildfly/EAP server to change the default maximum size: `-Dorg.keycloak.adapters.saml.maxInflatingSize=524288`.
+
+=== HTTP Access log does not contain specific sensitive information
+
+Specific sensitive information is omitted from the HTTP Access log, such as the value of the `Authorization` HTTP header. Moreover, values of specific sensitive {project_name} cookies, such as `KEYCLOAK_SESSION`, `KEYCLOAK_IDENTITY`, or `AUTH_SESSION_ID`, are also omitted.

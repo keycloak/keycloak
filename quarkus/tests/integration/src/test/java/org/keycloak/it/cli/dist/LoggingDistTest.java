@@ -31,10 +31,15 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.keycloak.config.LoggingOptions;
+import org.keycloak.connections.httpclient.HttpClientBuilder;
+import org.keycloak.cookie.CookieType;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.DryRun;
@@ -46,6 +51,13 @@ import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import io.quarkus.deployment.util.FileUtil;
 import io.quarkus.test.junit.main.Launch;
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.util.EntityUtils;
+import org.hamcrest.Matchers;
+
+import static org.keycloak.OAuth2Constants.DPOP_HTTP_HEADER;
 
 @DistributionTest(keepAlive = true)
 @RawDistOnly(reason = "Too verbose for docker and enough to check raw dist")
@@ -301,5 +313,68 @@ public class LoggingDistTest {
         when().get("http://127.0.0.1:8080/realms/master/clients/account/redirect").then()
                 .statusCode(200);
         cliResult.assertNoMessage("http://127.0.0.1:8080/realms/master/clients/account/redirect");
+    }
+
+    @Test
+    @Launch({"start-dev", "--http-access-log-enabled=true", "--http-access-log-pattern=long"})
+    void httpAccessLogMaskedCookies(CLIResult cliResult) {
+        assertHttpAccessLogMaskedCookies(cliResult);
+    }
+
+    @Test
+    @Launch({"start-dev", "--http-access-log-enabled=true", "--http-access-log-pattern='%{ALL_REQUEST_HEADERS}'"})
+    void httpAccessLogMaskedCookiesDiffFormat(CLIResult cliResult) {
+        assertHttpAccessLogMaskedCookies(cliResult);
+    }
+
+    private void assertHttpAccessLogMaskedCookies(CLIResult cliResult) {
+        var defaultMaskedCookies = new ArrayList<>(List.of(CookieType.OLD_UNUSED_COOKIES));
+        defaultMaskedCookies.add(CookieType.AUTH_SESSION_ID);
+        defaultMaskedCookies.add(CookieType.AUTH_SESSION_ID_HASH);
+        defaultMaskedCookies.add(CookieType.IDENTITY);
+        defaultMaskedCookies.add(CookieType.SESSION);
+
+        var hiddenCookiesFromApplicationProps = Arrays.stream("AUTH_SESSION_ID,KC_AUTH_SESSION_HASH,KEYCLOAK_IDENTITY,KEYCLOAK_SESSION,AUTH_SESSION_ID_LEGACY,KEYCLOAK_IDENTITY_LEGACY,KEYCLOAK_SESSION_LEGACY".split(",")).toList();
+
+        assertThat(hiddenCookiesFromApplicationProps, Matchers.containsInAnyOrder(
+                defaultMaskedCookies.stream()
+                        .map(CookieType::getName)
+                        .toArray(String[]::new))
+        );
+
+        cliResult.assertStartedDevMode();
+
+        try (var httpClient = new HttpClientBuilder().build()) {
+            var baseRequest = RequestBuilder.post().setUri("http://localhost:8080/realms/master");
+
+            var sensitiveCookiesRequest = baseRequest.addHeader(HttpHeaders.AUTHORIZATION, "Bearer something-that-should-be-hidden");
+            hiddenCookiesFromApplicationProps.forEach(cookie -> sensitiveCookiesRequest.addHeader("Cookie", cookie + "=something-that-should-be-hidden"));
+
+            try (CloseableHttpResponse response = httpClient.execute(sensitiveCookiesRequest.build())) {
+                assertThat(response, notNullValue());
+                EntityUtils.consumeQuietly(response.getEntity());
+            }
+
+            var differentAuthorizationHeader = baseRequest
+                    .addHeader(HttpHeaders.AUTHORIZATION, DPOP_HTTP_HEADER + " something-that-should-be-hidden")
+                    .addHeader(HttpHeaders.CONTENT_LANGUAGE, "cs")
+                    .addHeader("Cookie", "SOMETHING=something-not-sensitive")
+                    .build();
+
+            try (CloseableHttpResponse response = httpClient.execute(differentAuthorizationHeader)) {
+                assertThat(response, notNullValue());
+                EntityUtils.consumeQuietly(response.getEntity());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Verify that sensitive cookie values are masked in the access log
+        cliResult.assertMessage("[org.keycloak.http.access-log]");
+        cliResult.assertMessage("Authorization: Bearer ...");
+        cliResult.assertMessage("Authorization: DPoP ...");
+        cliResult.assertMessage("Cookie: SOMETHING=something-not-sensitive");
+        cliResult.assertMessage("Content-Language: cs");
+        hiddenCookiesFromApplicationProps.forEach(cookie -> cliResult.assertMessage("Cookie: %s=...".formatted(cookie)));
     }
 }
