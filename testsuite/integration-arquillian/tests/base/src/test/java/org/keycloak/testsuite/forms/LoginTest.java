@@ -334,10 +334,10 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
             Assert.assertEquals("login-test", loginPage.getUsername());
             Assert.assertEquals("", loginPage.getPassword());
 
-            // KEYCLOAK-2024
-            Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+            // User validation happens before password validation, so disabled user error is shown
+            Assert.assertEquals("Account is disabled, contact your administrator.", loginPage.getError());
 
-            events.expectLogin().user(userId).session((String) null).error("invalid_user_credentials")
+            events.expectLogin().user(userId).session((String) null).error("user_disabled")
                     .detail(Details.USERNAME, "login-test")
                     .removeDetail(Details.CONSENT)
                     .assertEvent();
