@@ -50,6 +50,12 @@ public class KeycloakDependency extends ArtifactDependency {
         }
 
         @Override
+        public Builder setVersion(String version) {
+            super.setVersion(version);
+            return this;
+        }
+
+        @Override
         public KeycloakDependency build() {
             return new KeycloakDependency(this);
         }
