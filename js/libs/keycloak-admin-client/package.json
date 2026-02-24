@@ -37,9 +37,9 @@
       ]
     },
     "generate:openapi": {
-      "command": "kiota generate -l typescript -d api.yml -c AdminClient -o ./src/generated",
+      "command": "kiota generate -l typescript -d openapi.yaml -c AdminClient -o ./src/generated",
       "files": [
-        "api.yml"
+        "openapi.yaml"
       ],
       "output": [
         "src/generated"

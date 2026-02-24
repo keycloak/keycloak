@@ -1,4 +1,5 @@
-package org.keycloak.quarkus.runtime.oas;
+package org.keycloak.admin.internal.openapi;
+
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,7 +13,7 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.quarkus.smallrye.openapi.OpenApiFilter;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.OASFilter;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
@@ -22,20 +23,23 @@ import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
+import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
-@OpenApiFilter(OpenApiFilter.RunStage.BUILD)
+import static org.keycloak.services.PatchTypeNames.JSON_MERGE;
+
 public class OASModelFilter implements OASFilter {
 
-    private final IndexView index;
     private final Logger log = Logger.getLogger(OASModelFilter.class);
     private final Map<String, ClassInfo> simpleNameToClassInfoMap = new HashMap<>();
 
     public static final String REF_PREFIX = "#/components/schemas/";
+    private static final DotName JSON_NODE = DotName.createSimple(JsonNode.class);
 
     public OASModelFilter(IndexView indexView) {
-        this.index = indexView;
         log.debug("Index size: " + indexView.getKnownClasses().size());
 
         indexView.getKnownClasses().forEach(classInfo -> {
@@ -58,6 +62,8 @@ public class OASModelFilter implements OASFilter {
         openAPI.setPaths(paths);
 
         removeSchemaAndRefs(openAPI, "BaseRepresentation");
+
+        fixJsonMergePatchRequestObject(openAPI);
 
         Map<String, Set<Schema>> discriminatorPropertiesToBeAdded = new HashMap<>();
 
@@ -111,6 +117,57 @@ public class OASModelFilter implements OASFilter {
                 .filter(s -> !refToRemove.equals(s.getRef()))
                 .collect(Collectors.toList());
         setter.accept(filtered.isEmpty() ? null : filtered);
+    }
+
+    /**
+     * Currently, if endpoint consumes 'application/merge-patch+json' and the request object is 'JsonNode',
+     * SmallRye OpenAPI generates array type schema for the endpoint.
+     * See <a href="https://github.com/smallrye/smallrye-open-api/issues/2494">issue 2494</a> for more context.
+     * What we need is either no schema, or an object with additional properties, so that the generated client
+     * doesn't have empty body. This method removes schema.
+     */
+    private void fixJsonMergePatchRequestObject(OpenAPI openAPI) {
+        if (openAPI.getPaths() == null) {
+            return;
+        }
+
+        openAPI.getPaths().getPathItems().forEach((path, pathItem) -> {
+            if (pathItem.getPATCH() != null && pathItem.getPATCH().getRequestBody() != null) {
+                var patchOp = pathItem.getPATCH();
+                var requestBody = patchOp.getRequestBody();
+
+                if (requestBody.getContent() != null && requestBody.getContent().getMediaType(JSON_MERGE) != null
+                        && hasJsonNodeParameter(patchOp.getOperationId())) {
+                    var mediaTypeObject = requestBody.getContent().getMediaType(JSON_MERGE);
+                    mediaTypeObject.setSchema(null);
+                    log.debugf("Removed request body schema from PATCH path '%s' operation '%s' using content type '%s'", path, patchOp.getOperationId(), JSON_MERGE);
+                }
+            }
+        });
+    }
+
+    /**
+     * Detects REST interface method which name matches the operation name.
+     */
+    private boolean hasJsonNodeParameter(String operationId) {
+        if (operationId == null) {
+            return false;
+        }
+
+        for (ClassInfo classInfo : simpleNameToClassInfoMap.values()) {
+            for (MethodInfo method : classInfo.methods()) {
+                if (method.name().equals(operationId)) {
+                    for (Type paramType : method.parameterTypes()) {
+                        if (JSON_NODE.equals(paramType.name())) {
+                            log.debugf("Method '%s#%s' has parameter with type '%s'", classInfo.name(), method.name());
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
