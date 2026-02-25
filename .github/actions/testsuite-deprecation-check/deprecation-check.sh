@@ -10,8 +10,6 @@ if [ $GITHUB_EVENT_NAME == "pull_request" ]; then
   echo "Checking testsuite module additions/changes."
   echo "----------------------------------------------------------------------------------------"
 
-  # echo $(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq .)
-
   ADDED_FILES=$(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq 'map(select(.filename | startswith("testsuite/")) | select (.status | contains("added")) | {filename}) | length')
   CHANGED_FILES=$(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq 'map(select(.filename | startswith("testsuite/")) | select (.additions >= 50) | {filename}) | length')
 
