@@ -5,12 +5,12 @@ import java.util.List;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 
 public class OID4VCUtil {
 
@@ -34,7 +34,7 @@ public class OID4VCUtil {
 
         List<ClientScopeModel> clientScopes = session.clientScopes()
                 .getClientScopesByProtocol(realmModel, OID4VC_PROTOCOL)
-                .filter(it -> credentialConfigId.equals(it.getAttribute(CredentialScopeModel.CONFIGURATION_ID)))
+                .filter(it -> credentialConfigId.equals(it.getAttribute(VC_CONFIGURATION_ID)))
                 .toList();
         if (clientScopes.size() > 1) {
             List<String> clientScopeNames = clientScopes.stream()

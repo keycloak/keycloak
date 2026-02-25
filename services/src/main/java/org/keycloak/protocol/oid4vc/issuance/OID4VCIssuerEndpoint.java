@@ -142,6 +142,7 @@ import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_REQUEST;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
@@ -470,7 +471,7 @@ public class OID4VCIssuerEndpoint {
         //
         ClientScopeModel credentialClientScope = session.clientScopes()
                 .getClientScopesByProtocol(realmModel, OID4VC_PROTOCOL)
-                .filter(it -> credConfigId.equals(it.getAttribute(CredentialScopeModel.CONFIGURATION_ID)))
+                .filter(it -> credConfigId.equals(it.getAttribute(VC_CONFIGURATION_ID)))
                 .findFirst()
                 .orElse(null);
         if (credentialClientScope == null) {

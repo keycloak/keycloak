@@ -134,9 +134,9 @@ public class CredentialRequest {
         Map<String, String> searchAttributeMap =
                 Optional.ofNullable(credentialConfigurationId)
                         .map(credentialIdentifier -> {
-                            return Map.of(CredentialScopeModel.CONFIGURATION_ID, credentialConfigurationId);
+                            return Map.of(CredentialScopeModel.VC_CONFIGURATION_ID, credentialConfigurationId);
                         }).orElseGet(() -> {
-                            return Map.of(CredentialScopeModel.CREDENTIAL_IDENTIFIER, credentialIdentifier);
+                            return Map.of(CredentialScopeModel.VC_IDENTIFIER, credentialIdentifier);
                         });
 
         RealmModel currentRealm = keycloakSession.getContext().getRealm();
