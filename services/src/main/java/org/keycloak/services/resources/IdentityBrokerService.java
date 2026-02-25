@@ -130,11 +130,6 @@ import org.jboss.resteasy.reactive.NoCache;
 
 import static org.keycloak.broker.provider.AbstractIdentityProvider.BROKER_REGISTERED_NEW_USER;
 
-/**
- * <p></p>
- *
- * @author Pedro Igor
- */
 public class IdentityBrokerService implements UserAuthenticationIdentityProvider.AuthenticationCallback {
 
     // Authentication session note, which references identity provider that is currently linked
@@ -301,7 +296,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         }
 
 
-        IdentityProviderModel identityProviderModel = session.identityProviders().getByAlias(providerAlias);
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel(session, providerAlias);
         if (identityProviderModel == null) {
             event.error(Errors.UNKNOWN_IDENTITY_PROVIDER);
             UriBuilder builder = UriBuilder.fromUri(redirectUri)
@@ -339,6 +334,16 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         event.success();
 
         return performClientInitiatedAccountLogin(providerAlias, clientSessionCode);
+    }
+
+    private static IdentityProviderModel getIdentityProviderModel(KeycloakSession session, String providerAlias) {
+        IdentityProviderModel model = session.identityProviders().getByAlias(providerAlias);
+
+        if (model == null || !model.isEnabled()) {
+            throw new IdentityBrokerException("Identity Provider [" + providerAlias + "] not found.");
+        }
+
+        return model;
     }
 
     public Response performClientInitiatedAccountLogin(String providerAlias, ClientSessionCode<AuthenticationSessionModel> clientSessionCode) {
@@ -394,7 +399,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             ClientSessionCode<AuthenticationSessionModel> clientSessionCode = new ClientSessionCode<>(session, realmModel, authSession);
             clientSessionCode.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
-            IdentityProviderModel identityProviderModel = session.identityProviders().getByAlias(providerAlias);
+            IdentityProviderModel identityProviderModel = getIdentityProviderModel(session, providerAlias);
             if (identityProviderModel == null) {
                 throw new IdentityBrokerException("Identity Provider [" + providerAlias + "] not found.");
             }
@@ -1352,7 +1357,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     }
 
     public static UserAuthenticationIdentityProvider<?> getIdentityProvider(KeycloakSession session, String alias) {
-        IdentityProviderModel identityProviderModel = session.identityProviders().getByAlias(alias);
+        IdentityProviderModel identityProviderModel = getIdentityProviderModel(session, alias);
         UserAuthenticationIdentityProvider<?> identityProvider = getIdentityProvider(session, identityProviderModel, UserAuthenticationIdentityProvider.class);
         if (identityProvider == null) {
             throw new IdentityBrokerException("Identity Provider [" + alias + "] not found.");
@@ -1383,7 +1388,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     }
 
     private IdentityProviderModel getIdentityProviderConfig(String providerAlias) {
-        IdentityProviderModel model = session.identityProviders().getByAlias(providerAlias);
+        IdentityProviderModel model = getIdentityProviderModel(session, providerAlias);
         if (model == null) {
             throw new IdentityBrokerException("Configuration for identity provider [" + providerAlias + "] not found.");
         }
