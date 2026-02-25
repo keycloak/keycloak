@@ -47,6 +47,8 @@ import jakarta.transaction.Transaction;
 
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.cache.AlternativeLookupProvider;
@@ -70,6 +72,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.GroupProviderFactory;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -944,6 +947,78 @@ public final class KeycloakModelUtils {
 
         // Search for the group starting from the internal organization group as parent
         return getGroupModel(session, realm, orgInternalGroup, split, 0);
+    }
+
+    /**
+     * Validates and retrieves the organization for an Identity Provider mapper.
+     * This performs all necessary checks to ensure the IdP-organization relationship is valid:
+     * - Organizations feature is enabled
+     * - Organization exists and is enabled
+     * - Bidirectional link exists (organization still has this IdP)
+     *
+     * @param session the Keycloak session
+     * @param idpModel the identity provider model
+     * @return the validated organization if all checks pass, null otherwise
+     */
+    public static OrganizationModel getOrganizationForIdpMapper(KeycloakSession session, IdentityProviderModel idpModel) {
+        String idpOrgId = idpModel.getOrganizationId();
+        if (idpOrgId == null) {
+            return null;
+        }
+
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        if (orgProvider != null && orgProvider.isEnabled()) {
+            OrganizationModel organization = orgProvider.getById(idpOrgId);
+
+            if (organization != null && organization.isEnabled() && organization.getIdentityProviders().anyMatch(idp -> idp.getAlias().equals(idpModel.getAlias()))) {
+                return organization;
+            }
+        }
+
+        logger.warnf("Cannot obtain organization '%s' linked to IdP '%s'", idpModel.getAlias(), idpOrgId);
+
+        return null;
+    }
+
+    /**
+     * Retrieves and validates a group for use in an Identity Provider mapper.
+     * This method handles organization-aware group lookup.
+     *
+     * When the IdP is linked to an organization, this method first attempts to find the group
+     * within that organization's groups. If not found (or IdP not linked to org), it falls back
+     * to searching realm groups.
+     *
+     * @param session the Keycloak session
+     * @param realm the realm
+     * @param mapperModel the mapper model configuration containing the group path
+     * @param context the brokered identity context containing the IdP configuration
+     * @return the group if found and valid, null otherwise (mapper should be skipped)
+     */
+    public static GroupModel getGroupForIdpMapper(KeycloakSession session,
+                                                   RealmModel realm,
+                                                   IdentityProviderMapperModel mapperModel,
+                                                   BrokeredIdentityContext context) {
+        String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
+        GroupModel group = null;
+
+        // Check if IdP is linked to organization and validate the relationship
+        OrganizationModel organization = getOrganizationForIdpMapper(session, context.getIdpConfig());
+
+        if (organization != null) {
+            group = findGroupByPath(session, realm, organization, groupPath);
+        }
+
+        // If not found in organization (or IdP not in org context), try as realm group
+        if (group == null) {
+            group = findGroupByPath(session, realm, groupPath);
+        }
+
+        if (group == null) {
+            logger.warnf("Unable to find group by path '%s' referenced by mapper '%s' on realm '%s'.", groupPath, mapperModel.getName(), realm.getName());
+            return null;
+        }
+
+        return group;
     }
 
     public static Stream<RoleModel> getClientScopeMappingsStream(ClientModel client, ScopeContainerModel container) {

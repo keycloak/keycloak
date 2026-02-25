@@ -348,6 +348,7 @@ public class IdentityProviderResource {
         }
 
         IdentityProviderMapperModel model = RepresentationToModel.toModel(mapper);
+
         try {
 //            model = realm.addIdentityProviderMapper(model);
             model = session.identityProviders().createMapper(model);
@@ -408,6 +409,7 @@ public class IdentityProviderResource {
         IdentityProviderMapperModel model = session.identityProviders().getMapperById(id);
         if (model == null) throw new NotFoundException("Model not found");
         model = RepresentationToModel.toModel(rep);
+
         session.identityProviders().updateMapper(model);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -518,4 +520,5 @@ public class IdentityProviderResource {
         IdentityProvider<?> provider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
         return provider.reloadKeys();
     }
+
 }
