@@ -1162,7 +1162,7 @@ jobs:
         run: ./mvnw package -f test-framework/pom.xml
 
       - name: Run tests with embedded server
-        run: KC_TEST_SERVER=embedded ./mvnw package -f test-framework/examples/pom.xml -Dtest=CustomConfigTest,RunOnServerTest,TlsEnabledTest
+        run: KC_TEST_SERVER=embedded ./mvnw package -f test-framework/tests/pom.xml -Dtest=CustomConfigTest,RunOnServerTest,TlsEnabledTest
 
   base-new-integration-tests:
     name: Base IT (new)
