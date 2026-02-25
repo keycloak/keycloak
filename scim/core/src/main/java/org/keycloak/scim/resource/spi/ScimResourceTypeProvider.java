@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 
 /**
@@ -89,7 +90,7 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      *
      * @return a stream of all resources of this type
      */
-    Stream<R> getAll();
+    Stream<R> getAll(SearchRequest searchRequest);
 
     /**
      * Deletes a resource of this type by its identifier. This method is invoked when a client requests the deletion of a specific resource,

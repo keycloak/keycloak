@@ -13,7 +13,7 @@ import static java.util.Objects.requireNonNull;
 
 public abstract class AbstractScimResourceClient<R extends ResourceTypeRepresentation> implements AutoCloseable {
 
-    private final ScimClient client;
+    protected final ScimClient client;
     private final Class<R> resourceTypeClass;
 
     public AbstractScimResourceClient(ScimClient client, Class<R> resourceType) {
@@ -55,6 +55,7 @@ public abstract class AbstractScimResourceClient<R extends ResourceTypeRepresent
         }
     }
 
+    @SuppressWarnings("unchecked")
     protected ListResponse<R> doFilter(ResourceFilter filter) {
         SimpleHttpRequest request = doGet("");
         String query = filter.build();

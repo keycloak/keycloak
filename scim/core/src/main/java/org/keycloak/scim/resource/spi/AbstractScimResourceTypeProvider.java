@@ -10,6 +10,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.scim.protocol.ForbiddenException;
+import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.ModelSchema;
 
@@ -83,8 +84,8 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     }
 
     @Override
-    public Stream<R> getAll() {
-        return getModels().map(m -> {
+    public Stream<R> getAll(SearchRequest searchRequest) {
+        return getModels(searchRequest).map(m -> {
             if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm())) {
                 return get(m.getId());
             }
@@ -124,7 +125,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     protected abstract boolean onDelete(String id);
 
-    protected abstract Stream<M> getModels();
+    protected abstract Stream<M> getModels(SearchRequest searchRequest);
 
     protected abstract M getModel(String id);
 
@@ -136,6 +137,19 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
                 schema.populate(model, resource);
             }
         }
+    }
+
+    protected String[] splitScimAttribute(String scimAttrPath) {
+        // first split the attribute path into schema and attribute name. If no schema is specified, use the core user schema by default
+        String schemaName;
+        int lastColon = scimAttrPath.lastIndexOf(':');
+        if (lastColon > 0 && (scimAttrPath.contains("://") || scimAttrPath.startsWith("urn:"))) {
+            schemaName = scimAttrPath.substring(0, lastColon);
+            scimAttrPath = scimAttrPath.substring(lastColon + 1);
+        } else {
+            schemaName = this.schema.getName();
+        }
+        return new String[] {schemaName, scimAttrPath};
     }
 
     private R createResourceTypeInstance() {
