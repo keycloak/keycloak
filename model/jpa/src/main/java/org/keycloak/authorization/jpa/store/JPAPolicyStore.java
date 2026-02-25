@@ -183,11 +183,13 @@ public class JPAPolicyStore implements PolicyStore {
                     }
 
                     predicates.add(root.joinMap("config").key().in(value[0]));
-                    predicates.add(builder.like(root.joinMap("config").value().as(String.class), "%" + value[1] + "%"));
+                    String escapedConfigValue = value[1].replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                    predicates.add(builder.like(root.joinMap("config").value().as(String.class), "%" + escapedConfigValue + "%", '\\'));
                     break;
                 case TYPE:
                 case NAME:
-                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + value[0].toLowerCase() + "%"));
+                    String escapedValue = value[0].toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + escapedValue + "%", '\\'));
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported filter [" + filterOption + "]");
@@ -407,7 +409,8 @@ public class JPAPolicyStore implements PolicyStore {
             predicates.add(cb.equal(associatedPolicyConfig.key(), configKey));
 
             for (String value : configValues) {
-                configValuePredicates.add(cb.like(associatedPolicyConfig.value().as(String.class), "%" + value + "%"));
+                String escapedValue = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                configValuePredicates.add(cb.like(associatedPolicyConfig.value().as(String.class), "%" + escapedValue + "%", '\\'));
             }
 
             predicates.add(cb.or(configValuePredicates.toArray(new Predicate[0])));

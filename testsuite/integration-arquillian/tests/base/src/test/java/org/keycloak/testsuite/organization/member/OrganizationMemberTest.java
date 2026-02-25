@@ -428,6 +428,55 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testSearchMembersWithSqlWildcards() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        // Create members with SQL wildcard characters in various fields
+        UserRepresentation user1 = addMember(organization, "john_doe@test.org", "John", "Doe");
+        UserRepresentation user2 = addMember(organization, "johnadoe@test.org", "Johna", "Doe");
+        UserRepresentation user3 = addMember(organization, "johnbdoe@test.org", "Johnb", "Doe");
+
+        // Search with underscore in username - should match literally, not as wildcard
+        List<MemberRepresentation> members = organization.members().search("john_", false, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getUsername(), is(equalTo("john_doe@test.org")));
+
+        // Search with percent character - should match literally, not as wildcard
+        UserRepresentation user4 = addMember(organization, "50%@test.org", "Fifty", "Percent");
+        UserRepresentation user5 = addMember(organization, "500@test.org", "Five", "Hundred");
+        UserRepresentation user6 = addMember(organization, "50abc@test.org", "Fiftyabc", "Test");
+
+        members = organization.members().search("50%", false, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getUsername(), is(equalTo("50%@test.org")));
+
+        // Test exact search with SQL wildcards
+        members = organization.members().search("john_doe@test.org", true, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getUsername(), is(equalTo("john_doe@test.org")));
+
+        members = organization.members().search("50%@test.org", true, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getUsername(), is(equalTo("50%@test.org")));
+
+        // Test search by first name with underscore
+        UserRepresentation user7 = addMember(organization, "test_fn@test.org", "Test_Name", "LastName");
+        UserRepresentation user8 = addMember(organization, "testafn@test.org", "TestaName", "LastName");
+
+        members = organization.members().search("Test_", false, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getFirstName(), is(equalTo("Test_Name")));
+
+        // Test search by last name with percent
+        UserRepresentation user9 = addMember(organization, "test_ln@test.org", "FirstName", "50%_Last");
+        UserRepresentation user10 = addMember(organization, "test_ln2@test.org", "FirstName", "50a_Last");
+
+        members = organization.members().search("50%_", false, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getLastName(), is(equalTo("50%_Last")));
+    }
+
+    @Test
     public void testAddMemberFromDifferentRealm() {
         String orgId = createOrganization().getId();
 
