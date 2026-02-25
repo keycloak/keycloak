@@ -17,10 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.issuance;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -109,6 +106,7 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
+import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
@@ -125,13 +123,10 @@ import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Strings;
 import org.keycloak.utils.MediaType;
+import org.keycloak.utils.QRCodeUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
@@ -177,8 +172,8 @@ public class OID4VCIssuerEndpoint {
      */
     private AuthenticationManager.AuthResult cachedAuthResult;
 
-    private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
-    private static final int DEFAULT_CODE_LIFESPAN_S = 30;
+    public static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
+    public static final int DEFAULT_CODE_LIFESPAN_S = 30;
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String NONCE_PATH = "nonce";
@@ -602,14 +597,9 @@ public class OID4VCIssuerEndpoint {
     }
 
     private byte[] generateQrCode(CredentialOfferURI credOfferURI, int width, int height) {
-        String encodedOfferUri = URLEncoder.encode(credOfferURI.getCredentialOfferUri(), StandardCharsets.UTF_8);
+        String offerUri = OID4VCUtil.getOfferAsUri(session, credOfferURI.getNonce());
         try {
-            QRCodeWriter qrCodeWriter = new QRCodeWriter();
-            String contents = "openid-credential-offer://?credential_offer_uri=" + encodedOfferUri;
-            BitMatrix bitMatrix = qrCodeWriter.encode(contents, BarcodeFormat.QR_CODE, width, height);
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            MatrixToImageWriter.writeToStream(bitMatrix, "png", bos);
-            return bos.toByteArray();
+            return QRCodeUtils.encodeAsQRBytes(offerUri, width, height);
         } catch (WriterException | IOException e) {
             String msg = String.format("Cannot create a qr code of dimension %s:%s", width, height);
             throw new IllegalStateException(msg, e);
