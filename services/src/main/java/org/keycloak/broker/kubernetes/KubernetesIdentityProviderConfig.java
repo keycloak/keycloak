@@ -3,6 +3,7 @@ package org.keycloak.broker.kubernetes;
 
 import org.keycloak.broker.oidc.IssuerValidation;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.RealmModel;
 
 
@@ -40,6 +41,6 @@ public class KubernetesIdentityProviderConfig extends IdentityProviderModel impl
     @Override
     public void validate(RealmModel realm) {
         super.validate(realm);
-        validateIssuer(realm);
+        validateIssuer(realm, IdentityProviderType.CLIENT_ASSERTION);
     }
 }

@@ -31,8 +31,7 @@ public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAu
 
         String jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", oAuthClient.getEndpoints().getIssuer(), IDP_ISSUER));
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        EventAssertion event = assertFailure("JWT Authorization Granted is not enabled for the identity provider", response, events.poll());
-        event.details(Details.IDENTITY_PROVIDER, IDP_ALIAS);
+        EventAssertion event = assertFailure("No Identity Provider for provided issuer", response, events.poll());
         event.details(Details.IDENTITY_PROVIDER_ISSUER, IDP_ISSUER);
         event.details(Details.IDENTITY_PROVIDER_USER_ID, "basic-user-id");
     }
