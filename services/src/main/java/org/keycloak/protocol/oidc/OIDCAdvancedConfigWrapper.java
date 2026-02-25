@@ -20,12 +20,14 @@ package org.keycloak.protocol.oidc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.MapperTypeSerializer;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
 
@@ -278,6 +280,11 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     public List<String> getJWTAuthorizationGrantAllowedIdentityProviders() {
         List<String> allowedIDPs = getAttributeMultivalued(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_IDP);
         return allowedIDPs == null ? Collections.emptyList() : allowedIDPs;
+    }
+
+    public Map<String, List<String>> getJWTAuthorizationGrantAudience() {
+        String audiences = getAttribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_AUDIENCE);
+        return MapperTypeSerializer.deserialize(audiences);
     }
 
     public String getTlsClientAuthSubjectDn() {

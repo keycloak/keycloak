@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.util.List;
+
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
@@ -81,7 +83,8 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
                 throw new RuntimeException("Identity Provider is not enabled");
             }
 
-            if(!OIDCAdvancedConfigWrapper.fromClientModel(context.getClient()).getJWTAuthorizationGrantAllowedIdentityProviders().contains(identityProviderModel.getAlias())) {
+            OIDCAdvancedConfigWrapper oidcClient = OIDCAdvancedConfigWrapper.fromClientModel(context.getClient());
+            if(!oidcClient.getJWTAuthorizationGrantAllowedIdentityProviders().contains(identityProviderModel.getAlias())) {
                 throw new RuntimeException("Identity Provider is not allowed for the client");
             }
 
@@ -130,9 +133,11 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             }
 
             // Validate audience if not validated previously by client policies
-            if (!authorizationGrantContext.isAudienceAlreadyValidated()) {
-                authorizationGrantContext.validateTokenAudience(jwtAuthorizationGrantProvider.getAllowedAudienceForJWTGrant(), false);
+            List<String> validAudiences = oidcClient.getJWTAuthorizationGrantAudience().get(identityProviderModel.getAlias());
+            if (validAudiences == null) {
+                validAudiences = jwtAuthorizationGrantProvider.getAllowedAudienceForJWTGrant();
             }
+            authorizationGrantContext.validateTokenAudience(validAudiences, false);
 
             RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
             AuthenticationSessionModel authSession = createSessionModel(rootAuthSession, user, client, scopeParam);

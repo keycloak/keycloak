@@ -1,4 +1,4 @@
-import { HelpItem, generateId } from "@keycloak/keycloak-ui-shared";
+import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import {
   ActionList,
   ActionListItem,
@@ -18,10 +18,6 @@ import { useTranslation } from "react-i18next";
 import { KeyValueType } from "../key-value-form/key-value-convert";
 import type { ComponentProps } from "./components";
 
-type IdKeyValueType = KeyValueType & {
-  id: number;
-};
-
 export const MapComponent = ({
   name,
   label,
@@ -33,28 +29,19 @@ export const MapComponent = ({
 }: ComponentProps) => {
   const { t } = useTranslation();
 
-  const { getValues, setValue, register } = useFormContext();
-  const [map, setMap] = useState<IdKeyValueType[]>([]);
+  const { watch, setValue } = useFormContext();
+  const [map, setMap] = useState<KeyValueType[]>([]);
   const fieldName = convertToName(name!);
-  const value = getValues(fieldName) || defaultValue || "[]";
-
+  const value = watch(fieldName, defaultValue || "[]");
   useEffect(() => {
-    register(fieldName);
-    const values: KeyValueType[] = JSON.parse(value);
-    setMap(values.map((value) => ({ ...value, id: generateId() })));
-  }, [value, fieldName, register]);
+    const values: KeyValueType[] = JSON.parse(value ? value : "[]");
+    setMap(values);
+  }, [value]);
 
-  const appendNew = () =>
-    setMap([...map, { key: "", value: "", id: generateId() }]);
+  const appendNew = () => setMap([...map, { key: "", value: "" }]);
 
   const update = (val = map) => {
-    setValue(
-      fieldName,
-      JSON.stringify(
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        val.filter((e) => e.key !== "").map(({ id, ...entry }) => entry),
-      ),
-    );
+    setValue(fieldName, JSON.stringify(val.filter((e) => e.key !== "")));
   };
 
   const updateKey = (index: number, key: string) => {
@@ -65,108 +52,113 @@ export const MapComponent = ({
     updateEntry(index, { ...map[index], value });
   };
 
-  const updateEntry = (index: number, entry: IdKeyValueType) =>
+  const updateEntry = (index: number, entry: KeyValueType) =>
     setMap([...map.slice(0, index), entry, ...map.slice(index + 1)]);
 
   const remove = (index: number) => {
     const value = [...map.slice(0, index), ...map.slice(index + 1)];
-    setMap(value);
     update(value);
   };
 
-  return map.length !== 0 ? (
+  return (
     <FormGroup
       label={t(label!)}
       labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
       isRequired={required}
     >
-      <Flex direction={{ default: "column" }}>
-        <Flex>
-          <FlexItem
-            grow={{ default: "grow" }}
-            spacer={{ default: "spacerNone" }}
-          >
-            <strong>{t("key")}</strong>
-          </FlexItem>
-          <FlexItem grow={{ default: "grow" }}>
-            <strong>{t("value")}</strong>
-          </FlexItem>
-        </Flex>
-        {map.map((attribute, index) => (
-          <Flex key={attribute.id} data-testid="row">
-            <FlexItem grow={{ default: "grow" }}>
-              <TextInput
-                name={`${fieldName}.${index}.key`}
-                placeholder={t("keyPlaceholder")}
-                aria-label={t("key")}
-                defaultValue={attribute.key}
-                data-testid={`${fieldName}.${index}.key`}
-                onChange={(_event, value) => updateKey(index, value)}
-                onBlur={() => update()}
-              />
-            </FlexItem>
-            <FlexItem
-              grow={{ default: "grow" }}
-              spacer={{ default: "spacerNone" }}
-            >
-              <TextInput
-                name={`${fieldName}.${index}.value`}
-                placeholder={t("valuePlaceholder")}
-                aria-label={t("value")}
-                defaultValue={attribute.value}
-                data-testid={`${fieldName}.${index}.value`}
-                onChange={(_event, value) => updateValue(index, value)}
-                onBlur={() => update()}
-              />
-            </FlexItem>
-            <FlexItem>
-              <Button
-                variant="link"
-                title={t("removeAttribute")}
-                isDisabled={isDisabled}
-                onClick={() => remove(index)}
-                data-testid={`${fieldName}.${index}.remove`}
+      {map.length !== 0 ? (
+        <>
+          <Flex direction={{ default: "column" }}>
+            <Flex>
+              <FlexItem
+                grow={{ default: "grow" }}
+                spacer={{ default: "spacerNone" }}
               >
-                <MinusCircleIcon />
-              </Button>
-            </FlexItem>
+                <strong>{t("key")}</strong>
+              </FlexItem>
+              <FlexItem grow={{ default: "grow" }}>
+                <strong>{t("value")}</strong>
+              </FlexItem>
+            </Flex>
+            {map.map((attribute, index) => (
+              <Flex key={index} data-testid="row">
+                <FlexItem grow={{ default: "grow" }}>
+                  <TextInput
+                    name={`${fieldName}.${index}.key`}
+                    placeholder={t("keyPlaceholder")}
+                    aria-label={t("key")}
+                    defaultValue={attribute.key}
+                    data-testid={`${fieldName}.${index}.key`}
+                    onChange={(_event, value) => updateKey(index, value)}
+                    onBlur={() => update()}
+                  />
+                </FlexItem>
+                <FlexItem
+                  grow={{ default: "grow" }}
+                  spacer={{ default: "spacerNone" }}
+                >
+                  <TextInput
+                    name={`${fieldName}.${index}.value`}
+                    placeholder={t("valuePlaceholder")}
+                    aria-label={t("value")}
+                    defaultValue={attribute.value}
+                    data-testid={`${fieldName}.${index}.value`}
+                    onChange={(_event, value) => updateValue(index, value)}
+                    onBlur={() => update()}
+                  />
+                </FlexItem>
+                <FlexItem>
+                  <Button
+                    variant="link"
+                    title={t("removeAttribute")}
+                    isDisabled={isDisabled}
+                    onClick={() => remove(index)}
+                    data-testid={`${fieldName}.${index}.remove`}
+                  >
+                    <MinusCircleIcon />
+                  </Button>
+                </FlexItem>
+              </Flex>
+            ))}
           </Flex>
-        ))}
-      </Flex>
-      <ActionList>
-        <ActionListItem>
-          <Button
-            data-testid={`${fieldName}-add-row`}
-            className="pf-v5-u-px-0 pf-v5-u-mt-sm"
-            variant="link"
-            icon={<PlusCircleIcon />}
-            onClick={() => appendNew()}
-          >
-            {t("addAttribute", { label })}
-          </Button>
-        </ActionListItem>
-      </ActionList>
-    </FormGroup>
-  ) : (
-    <EmptyState
-      data-testid={`${name}-empty-state`}
-      className="pf-v5-u-p-0"
-      variant="xs"
-    >
-      <EmptyStateBody>{t("missingAttributes", { label })}</EmptyStateBody>
-      <EmptyStateFooter>
-        <Button
-          data-testid={`${name}-add-row`}
-          variant="link"
-          icon={<PlusCircleIcon />}
-          size="sm"
-          onClick={appendNew}
-          isDisabled={isDisabled}
+          <ActionList>
+            <ActionListItem>
+              <Button
+                data-testid={`${fieldName}-add-row`}
+                className="pf-v5-u-px-0 pf-v5-u-mt-sm"
+                variant="link"
+                icon={<PlusCircleIcon />}
+                onClick={() => appendNew()}
+              >
+                {t("addAttribute", { label: t(label!) })}
+              </Button>
+            </ActionListItem>
+          </ActionList>
+        </>
+      ) : (
+        <EmptyState
+          data-testid={`${name}-empty-state`}
+          className="pf-v5-u-p-0"
+          variant="xs"
         >
-          {t("addAttribute", { label })}
-        </Button>
-      </EmptyStateFooter>
-    </EmptyState>
+          <EmptyStateBody>
+            {t("missingAttributes", { label: t(label!) })}
+          </EmptyStateBody>
+          <EmptyStateFooter>
+            <Button
+              data-testid={`${name}-add-row`}
+              variant="link"
+              icon={<PlusCircleIcon />}
+              size="sm"
+              onClick={appendNew}
+              isDisabled={isDisabled}
+            >
+              {t("addAttribute", { label: t(label!) })}
+            </Button>
+          </EmptyStateFooter>
+        </EmptyState>
+      )}
+    </FormGroup>
   );
 };
