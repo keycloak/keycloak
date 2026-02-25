@@ -1,4 +1,5 @@
 import type { KeycloakAdminClient } from "../client.js";
+import type { PaginationQuery, SearchQuery } from "./users.js";
 import type GroupRepresentation from "../defs/groupRepresentation.js";
 import type { ManagementPermissionReference } from "../defs/managementPermissionReference.js";
 import type MappingsRepresentation from "../defs/mappingsRepresentation.js";
@@ -222,6 +223,16 @@ export class Groups extends Resource<{ realm?: string }> {
     method: "GET",
     path: "/{id}/role-mappings/clients/{clientUniqueId}",
     urlParamKeys: ["id", "clientUniqueId"],
+  });
+
+  public listOrgGroups = this.makeRequest<
+    { id: string; briefRepresentation?: boolean } & PaginationQuery &
+      SearchQuery,
+    GroupRepresentation[]
+  >({
+    method: "GET",
+    path: "/../members/{id}/groups",
+    urlParamKeys: ["id"],
   });
 
   public addClientRoleMappings = this.makeRequest<
