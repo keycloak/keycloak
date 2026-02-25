@@ -139,6 +139,7 @@ public class AbstractOAuth2IdentityProviderTest {
 
 		public TestProvider(OAuth2IdentityProviderConfig config) {
 			super(null, config);
+            config.setEnabled(true);
 		}
 
 		@Override
