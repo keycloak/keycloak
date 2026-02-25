@@ -45,6 +45,10 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
       <style>{`
         .login-preview {
             ${Object.entries(cssVars)
+              .filter(
+                ([key]) =>
+                  !["logoWidth", "logoHeight", "borderRadius"].includes(key),
+              )
               .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
               .join("\n")}
 
@@ -53,6 +57,8 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
           --keycloak-bg-logo-url: url('${bgUrl}');
           ${logoHeight ? `--keycloak-logo-height: ${logoHeight};` : ""}
           ${logoWidth ? `--keycloak-logo-width: ${logoWidth};` : ""}
+          ${cssVars["borderRadius"] ? `--pf-v5-global--BorderRadius--sm: ${cssVars["borderRadius"]};` : ""}
+          ${cssVars["borderRadius"] ? `--pf-v5-global--BorderRadius--lg: ${cssVars["borderRadius"]};` : ""}
         }
 
         /* Apply background to #keycloak-bg */
@@ -68,7 +74,7 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
 
         /* Force single column layout */
         .login-preview .${properties.kcLoginContainer} {
-          grid-template-columns: 34rem !important;
+          grid-template-columns: minmax(0, 34rem) !important;
           grid-template-areas: "header"
                                "main" !important;
         }
