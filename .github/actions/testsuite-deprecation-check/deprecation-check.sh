@@ -10,8 +10,10 @@ if [ $GITHUB_EVENT_NAME == "pull_request" ]; then
   echo "Checking testsuite module additions/changes."
   echo "----------------------------------------------------------------------------------------"
 
-  ADDED_FILES=$(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq 'map(select(.filename | contains("testsuite/")) | select (.status | contains("added")) | {filename}) | length')
-  CHANGED_FILES=$(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq 'map(select(.filename | contains("testsuite/")) | select (.additions >= 50) | {filename}) | length')
+  # echo $(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq .)
+
+  ADDED_FILES=$(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq 'map(select(.filename | startswith("testsuite/")) | select (.status | contains("added")) | {filename}) | length')
+  CHANGED_FILES=$(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq 'map(select(.filename | startswith("testsuite/")) | select (.additions >= 50) | {filename}) | length')
 
   # Check if changed files matches regex
   if [[ $ADDED_FILES > 0 || $CHANGED_FILES > 0 ]]  ; then
