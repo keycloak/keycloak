@@ -38,6 +38,9 @@ public abstract class AbstractLoginPage extends AbstractPage {
     @FindBy(id = "kc-locale-dropdown")
     private WebElement localeDropdownBase;  // base theme
 
+    @FindBy(id = "kc-attempted-username") // Username during re-authentication
+    private WebElement attemptedUsernameLabel;
+
     public AbstractLoginPage(ManagedWebDriver driver) {
         super(driver);
     }
@@ -60,6 +63,16 @@ public abstract class AbstractLoginPage extends AbstractPage {
             // Fallback for Login v1
             WebElement langLink = localeDropdownBase.findElement(By.xpath("//a[text()[contains(.,'" + language + "')]]"));
             langLink.click();
+        }
+    }
+
+    public String getAttemptedUsername() {
+        try {
+            String text = attemptedUsernameLabel.getAttribute("value");
+            if (text == null) return attemptedUsernameLabel.getText();
+            return text;
+        } catch (NoSuchElementException e) {
+            return null;
         }
     }
 

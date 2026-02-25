@@ -229,6 +229,46 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder revokeRefreshToken(boolean enabled) {
+        rep.setRevokeRefreshToken(enabled);
+        return this;
+    }
+
+    public RealmConfigBuilder refreshTokenMaxReuse(Integer refreshTokenMaxReuse) {
+        rep.setRefreshTokenMaxReuse(refreshTokenMaxReuse);
+        return this;
+    }
+
+    public RealmConfigBuilder ssoSessionIdleTimeout(Integer ssoSessionIdleTimeout) {
+        rep.setSsoSessionIdleTimeout(ssoSessionIdleTimeout);
+        return this;
+    }
+
+    public RealmConfigBuilder ssoSessionIdleTimeoutRememberMe(Integer ssoSessionIdleTimeoutRememberMe) {
+        rep.setSsoSessionIdleTimeoutRememberMe(ssoSessionIdleTimeoutRememberMe);
+        return this;
+    }
+
+    public RealmConfigBuilder ssoSessionMaxLifespan(Integer ssoSessionMaxLifespan) {
+        rep.setSsoSessionMaxLifespan(ssoSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmConfigBuilder ssoSessionMaxLifespanRememberMe(Integer ssoSessionMaxLifespanRememberMe) {
+        rep.setSsoSessionMaxLifespanRememberMe(ssoSessionMaxLifespanRememberMe);
+        return this;
+    }
+
+    public RealmConfigBuilder clientSessionMaxLifespan(Integer clientSessionMaxLifespan) {
+        rep.setClientSessionMaxLifespan(clientSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmConfigBuilder clientSessionIdleTimeout(Integer clientSessionIdleTimeout) {
+        rep.setClientSessionIdleTimeout(clientSessionIdleTimeout);
+        return this;
+    }
+
     public RealmConfigBuilder bruteForceProtected(boolean enabled) {
         rep.setBruteForceProtected(enabled);
         return this;

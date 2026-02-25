@@ -1,0 +1,121 @@
+package org.keycloak.testframework.ui.webdriver;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import org.htmlunit.WebClient;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+
+/**
+ * Helper class for managing tabs in browser.
+ * Tabs are indexed from 0. (f.e. first tab has index 0)
+ *
+ * <p>Note: For one particular WebDriver has to exist only one BrowserTabUtil instance. (Right order of tabs)</p>
+ *
+ * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
+ */
+public class BrowserTabUtils {
+
+    private final ManagedWebDriver managedDriver;
+    private WebDriver driver;
+    private JavascriptExecutor jsExecutor;
+    private List<String> tabs;
+
+    BrowserTabUtils(ManagedWebDriver managedDriver) {
+        this.managedDriver = managedDriver;
+    }
+
+    void init() {
+        this.driver = managedDriver.driver();
+
+        if (driver instanceof JavascriptExecutor) {
+            this.jsExecutor = (JavascriptExecutor) driver;
+        } else {
+            throw new RuntimeException("WebDriver must be instance of JavascriptExecutor");
+        }
+
+        // HtmlUnit doesn't work very well with JS and it's recommended to use this settings.
+        // HtmlUnit validates all scripts and then fails. It turned off the validation.
+        if (driver instanceof HtmlUnitDriver) {
+            WebClient client = ((HtmlUnitDriver) driver).getWebClient();
+            client.getOptions().setThrowExceptionOnScriptError(false);
+            client.getOptions().setThrowExceptionOnFailingStatusCode(false);
+        }
+
+        tabs = new ArrayList<>(driver.getWindowHandles());
+    }
+
+
+    public String getActualWindowHandle() {
+        return driver.getWindowHandle();
+    }
+
+    public void switchToTab(String windowHandle) {
+        driver.switchTo().window(windowHandle);
+    }
+
+    public void switchToTab(int index) {
+        assertValidIndex(index);
+        switchToTab(tabs.get(index));
+    }
+
+    public void newTab(String url) {
+        jsExecutor.executeScript("window.open(arguments[0]);", url);
+
+        final Set<String> handles = driver.getWindowHandles();
+        final String tabHandle = handles.stream()
+                .filter(tab -> !tabs.contains(tab))
+                .findFirst()
+                .orElse(null);
+
+        if (handles.size() > tabs.size() + 1) {
+            throw new RuntimeException("Too many window handles. You can only create a new one by this method.");
+        }
+
+        if (tabHandle == null) {
+            throw new RuntimeException("Creating the new tab failed.");
+        }
+
+        tabs.add(tabHandle);
+        switchToTab(tabHandle);
+    }
+
+    public void closeTab(int index) {
+        assertValidIndex(index);
+
+        if (index == 0 || getCountOfTabs() == 1)
+            throw new RuntimeException("You must not close the original tab.");
+
+        switchToTab(index);
+        driver.close();
+
+        tabs.remove(index);
+        switchToTab(index - 1);
+    }
+
+    public int getCountOfTabs() {
+        return tabs.size();
+    }
+
+    /**
+     * Close all browser tabs with the exception of the single original tab (tab with index 0), which should be always kept opened
+     */
+    public void closeTabs() {
+        for (int i = 1; i < getCountOfTabs(); i++) {
+            closeTab(i);
+        }
+    }
+
+    private boolean validIndex(int index) {
+        return (index >= 0 && tabs != null && index < tabs.size());
+    }
+
+    private void assertValidIndex(int index) {
+        if (!validIndex(index))
+            throw new IndexOutOfBoundsException("Invalid index of tab.");
+    }
+
+}
