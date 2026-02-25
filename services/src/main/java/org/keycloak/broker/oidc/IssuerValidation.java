@@ -5,6 +5,7 @@ import java.util.Objects;
 
 import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.util.Strings;
@@ -21,7 +22,7 @@ public interface IssuerValidation {
 
     boolean isEnabled();
 
-    default void validateIssuer(RealmModel realm) {
+    default void validateIssuer(RealmModel realm, IdentityProviderType type) {
 
         String issuer = getConfig().get(ISSUER);
         if (Strings.isEmpty(issuer)) {
@@ -35,7 +36,7 @@ public interface IssuerValidation {
             AlternativeLookupProvider lookupProvider = session.getProvider(AlternativeLookupProvider.class);
 
             if (lookupProvider != null) {
-                IdentityProviderModel existingIdp = lookupProvider.lookupIdentityProviderFromIssuer(session, getConfig().get(ISSUER));
+                IdentityProviderModel existingIdp = lookupProvider.lookupIdentityProviderFromIssuer(session, type, getConfig().get(ISSUER));
                 if (existingIdp != null && (getInternalId() == null || !Objects.equals(existingIdp.getInternalId(), getInternalId()))) {
                     throw new IllegalArgumentException("Issuer URL already used for IDP '" + existingIdp.getAlias() + "', Issuer must be unique if the idp supports JWT Authorization Grant or Federated Client Authentication");
                 }

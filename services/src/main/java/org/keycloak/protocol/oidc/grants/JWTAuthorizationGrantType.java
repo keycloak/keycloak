@@ -31,6 +31,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -71,7 +72,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             //select the idp using the issuer claim
             String jwtIssuer = authorizationGrantContext.getIssuer();
             AlternativeLookupProvider lookupProvider = context.getSession().getProvider(AlternativeLookupProvider.class);
-            IdentityProviderModel identityProviderModel = lookupProvider.lookupIdentityProviderFromIssuer(session, jwtIssuer);
+            IdentityProviderModel identityProviderModel = lookupProvider.lookupIdentityProviderFromIssuer(session, IdentityProviderType.JWT_AUTHORIZATION_GRANT, jwtIssuer);
             if (identityProviderModel == null) {
                 throw new RuntimeException("No Identity Provider for provided issuer");
             }

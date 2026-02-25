@@ -51,8 +51,8 @@ public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
         // Kubernetes idp - Kubernetes idp: not allowed
         testCreateIdentityProviderDuplicateNotAllowed(KubernetesIdentityProviderFactory.PROVIDER_ID, KubernetesIdentityProviderFactory.PROVIDER_ID, issuer);
 
-        // JWTAuthorizationGrant idp - Kubernetes idp: not allowed
-        testCreateIdentityProviderDuplicateNotAllowed(JWTAuthorizationGrantIdentityProviderFactory.PROVIDER_ID, KubernetesIdentityProviderFactory.PROVIDER_ID, issuer);
+        // JWTAuthorizationGrant idp - Kubernetes idp: allowed as they are different type (jwt vs client assertion)
+        testCreateIdentityProviderDuplicateAllowed(JWTAuthorizationGrantIdentityProviderFactory.PROVIDER_ID, KubernetesIdentityProviderFactory.PROVIDER_ID, issuer);
 
         // JWTAuthorizationGrant idp - OIDC idp: allowed
         testCreateIdentityProviderDuplicateAllowed(JWTAuthorizationGrantIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID, issuer, false, false);
@@ -60,7 +60,7 @@ public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
         // JWTAuthorizationGrant idp - OIDC idp: not allowed
         testCreateIdentityProviderDuplicateNotAllowed(JWTAuthorizationGrantIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID, issuer, true, false);
 
-        // Kubernetes idp - OIDC idp: not allowed
+        // Kubernetes idp - OIDC idp client assertions: not allowed
         testCreateIdentityProviderDuplicateNotAllowed(KubernetesIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID, issuer, false, true);
 
         // OIDC idp - OIDC idp: allowed
@@ -84,7 +84,7 @@ public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
     public void testCreateUpdateDuplicateIdentityProviderDisabled() {
         String issuer = "http://localhost:8080";
 
-        // test two OIDC adapters not allowed
+        // test two OIDC adapters not allowed, both with jwt and no assertions
         testCreateIdentityProviderDuplicateAllowedNoCleanUp(OIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID,
                 issuer, true, false, false);
 
@@ -116,10 +116,26 @@ public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
         idp1Rep = idp1.toRepresentation();
         idp1Rep.setEnabled(true);
         idp1.update(idp1Rep);
+
+        // make both enabled one with jwt and the other with client assertions
+        idp1Rep = idp1.toRepresentation();
+        idp1Rep.setEnabled(true);
+        idp1Rep.getConfig().put("jwtAuthorizationGrantEnabled", Boolean.FALSE.toString());
+        idp1Rep.getConfig().put("supportsClientAssertions", Boolean.TRUE.toString());
+        idp1.update(idp1Rep);
+        idp2Rep = idp2.toRepresentation();
+        idp2Rep.setEnabled(true);
+        idp1Rep.getConfig().put("jwtAuthorizationGrantEnabled", Boolean.TRUE.toString());
+        idp1Rep.getConfig().put("supportsClientAssertions", Boolean.FALSE.toString());
+        idp2.update(idp2Rep);
     }
 
     public void testCreateIdentityProviderDuplicateNotAllowed(String providerId1, String providerId2, String issuer) {
         testCreateIdentityProviderDuplicateAllowed(providerId1, providerId2, issuer, false, false, false);
+    }
+
+    public void testCreateIdentityProviderDuplicateAllowed(String providerId1, String providerId2, String issuer) {
+        testCreateIdentityProviderDuplicateAllowed(providerId1, providerId2, issuer, false, false, true);
     }
 
     public void testCreateIdentityProviderDuplicateNotAllowed(String providerId1, String providerId2, String issuer, boolean JWTAuthorizationGrantEnabled, boolean federatedAuthenticationEnabled) {
