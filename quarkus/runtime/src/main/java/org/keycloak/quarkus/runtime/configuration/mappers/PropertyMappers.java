@@ -195,8 +195,12 @@ public final class PropertyMappers {
         return MAPPERS.getWildcardMappers();
     }
 
-    public static WildcardPropertyMapper<?> getWildcardMappedFrom(Option<?> from) {
-        return MAPPERS.wildcardConfig.wildcardMapFrom.get(from.getKey());
+    public static List<WildcardPropertyMapper<?>> getWildcardsMappedFrom(Option<?> from) {
+        var result = MAPPERS.wildcardConfig.wildcardMapFrom.get(from.getKey());
+        if (result == null) {
+            return List.of();
+        }
+        return result;
     }
 
     public static boolean isSupported(PropertyMapper<?> mapper) {
@@ -372,11 +376,11 @@ public final class PropertyMappers {
      */
     private static class WildcardMappersConfig {
         private final Set<WildcardPropertyMapper<?>> wildcardMappers = new HashSet<>();
-        private final Map<String, WildcardPropertyMapper<?>> wildcardMapFrom = new HashMap<>();
+        private final MultivaluedHashMap<String, WildcardPropertyMapper<?>> wildcardMapFrom = new MultivaluedHashMap<>();
 
         public void addMapper(WildcardPropertyMapper<?> mapper) {
             if (mapper.getMapFrom() != null) {
-                wildcardMapFrom.put(mapper.getMapFrom(), mapper);
+                wildcardMapFrom.add(mapper.getMapFrom(), mapper);
             }
             wildcardMappers.add(mapper);
         }

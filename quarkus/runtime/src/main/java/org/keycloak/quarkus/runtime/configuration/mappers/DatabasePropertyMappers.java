@@ -276,7 +276,12 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                     customTransformer.accept(created);
                 }
 
-                datasourceMappers.add(created.build());
+                PropertyMapper<?> mapper = created.build();
+                if (mapper.getMapFrom() == null && mapper.getDefaultValue().isPresent() && !getDatasourceOption(DB)
+                        .orElseThrow().getConnectedOptions().contains(mapper.getOption().getKey())) {
+                    throw new AssertionError("Mapper should be connected to the primary to be discovered");
+                }
+                datasourceMappers.add(mapper);
             }
 
             datasourceMappers.addAll(mappers);

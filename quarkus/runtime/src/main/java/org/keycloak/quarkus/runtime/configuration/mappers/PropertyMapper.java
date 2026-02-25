@@ -694,7 +694,7 @@ public class PropertyMapper<T> {
         return !option.getConnectedOptions().isEmpty();
     }
 
-    String getMapFrom() {
+    public String getMapFrom() {
         return mapFrom;
     }
 

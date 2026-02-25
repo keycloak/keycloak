@@ -160,10 +160,10 @@ public class DatabaseOptions {
         private static final Map<Option<?>, Consumer<OptionBuilder<?>>> DATASOURCES_OVERRIDES_OPTIONS = Map.of(
                 DatabaseOptions.DB, builder -> builder
                         .defaultValue(Optional.empty()) // no default value for DB kind for datasources
-                        .connectedOptions(
-                                getDatasourceOption(DatabaseOptions.DB_URL).orElseThrow(),
-                                TransactionOptions.TRANSACTION_XA_ENABLED_DATASOURCE
-                        )
+                        .connectedOptions(TransactionOptions.TRANSACTION_XA_ENABLED_DATASOURCE,
+                                getDatasourceOption(DB_POOL_MAX_SIZE).orElseThrow(),
+                                getDatasourceOption(DB_SQL_JPA_DEBUG).orElseThrow(),
+                                getDatasourceOption(DB_SQL_LOG_SLOW_QUERIES).orElseThrow())
         );
 
         private static final Map<String, Option<?>> cachedDatasourceOptions = new HashMap<>();
