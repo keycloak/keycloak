@@ -5,22 +5,24 @@ REF="$2"
 
 CHANGE_ID=$(echo $REF | cut -f 3 -d '/')
 
-echo "========================================================================================"
-echo "Checking testsuite module additions/changes."
-echo "----------------------------------------------------------------------------------------"
-
-ADDED_FILES=$(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq 'map(select(.filename | contains("testsuite/")) | select (.status | contains("added")) | {filename}) | length')
-CHANGED_FILES=$(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq 'map(select(.filename | contains("testsuite/")) | select (.additions >= 50) | {filename}) | length')
-
-# Check if changed files matches regex
-if [[ $ADDED_FILES > 0 || $CHANGED_FILES > 0 ]]  ; then
+if [ $GITHUB_EVENT_NAME == "pull_request" ]; then
   echo "========================================================================================"
-  echo "Deprecated testsuite module: "
-  echo " * Adding new file(s) is forbidden."
-  echo " * Maximum 50 lines can be added to a single file."
-  echo ""
-  echo "Please, migrate the added/changed file(s) and use the new test framework instead."
-  echo "See: https://github.com/keycloak/keycloak/tree/main/testsuite/DEPRECATED.md for more details."
+  echo "Checking testsuite module additions/changes."
   echo "----------------------------------------------------------------------------------------"
-  exit 1
+
+  ADDED_FILES=$(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq 'map(select(.filename | contains("testsuite/")) | select (.status | contains("added")) | {filename}) | length')
+  CHANGED_FILES=$(gh api -X GET --paginate repos/$REPOSITORY/pulls/$CHANGE_ID/files --jq 'map(select(.filename | contains("testsuite/")) | select (.additions >= 50) | {filename}) | length')
+
+  # Check if changed files matches regex
+  if [[ $ADDED_FILES > 0 || $CHANGED_FILES > 0 ]]  ; then
+    echo "========================================================================================"
+    echo "Deprecated testsuite module: "
+    echo " * Adding new file(s) is forbidden."
+    echo " * Maximum 50 lines can be added to a single file."
+    echo ""
+    echo "Please, migrate the added/changed file(s) and use the new test framework instead."
+    echo "See: https://github.com/keycloak/keycloak/tree/main/testsuite/DEPRECATED.md for more details."
+    echo "----------------------------------------------------------------------------------------"
+    exit 1
+  fi
 fi
