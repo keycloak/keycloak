@@ -1,6 +1,17 @@
 // Release notes should contain only headline-worthy new features,
 // assuming that people who migrate will read the upgrading guide anyway.
 
+= Keycloak Test Framework Full Support
+
+The Keycloak Test Framework, based on JUnit6, is now fully supported.
+
+It replaces the previous solution built on top of Arquillian and JUnit4.
+Behind the scenes the framework handles the lifecycle of Keycloak, the database, and any injected resources such as realms and clients.
+
+Tests simply declare what they want, including specific configuration, and the framework takes care of the rest.
+
+For more information, see https://github.com/keycloak/keycloak/tree/main/test-framework#readme[Keycloak Test Framework]
+
 = Sensitive Keycloak information is not displayed in the HTTP Access log
 
 If you are using the HTTP Access logging capability, sensitive information is omitted.
