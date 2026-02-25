@@ -635,6 +635,43 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    public void sqlWildcardEscaping() {
+        // Test underscore character doesn't act as SQL wildcard
+        createUser("john_doe", "john_doe@test.com");
+        createUser("johnadoe", "johnadoe@test.com");
+        createUser("johnbdoe", "johnbdoe@test.com");
+
+        List<UserRepresentation> users = managedRealm.admin().users().search("john_", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getUsername(), is("john_doe"));
+
+        // Test percent character doesn't act as SQL wildcard - use email since username doesn't allow %
+        createUser("fifty", "50%@test.com");
+        createUser("fivehundred", "500@test.com");
+        createUser("fiftyabc", "50abc@test.com");
+
+        users = managedRealm.admin().users().search("50%", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getEmail(), is("50%@test.com"));
+
+        // Test combination of wildcards - underscore in email
+        createUser("testuser", "test_email@example.com");
+        createUser("testauser", "testaemail@example.com");
+
+        users = managedRealm.admin().users().search("test_email", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getEmail(), is("test_email@example.com"));
+
+        // Test both percent and underscore in email
+        createUser("testpercent", "50%_test@test.com");
+        createUser("testatest", "50atest@test.com");
+
+        users = managedRealm.admin().users().search("50%_", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getEmail(), is("50%_test@test.com"));
+    }
+
+    @Test
     public void exactSearch() {
         List<String> userIds = createUsers();
 
