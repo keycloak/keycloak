@@ -178,6 +178,7 @@ export const Members = () => {
             toggleShowMemberships();
           }}
           user={selectedUser!}
+          orgId={groups.getOrgId()}
         />
       )}
       <KeycloakDataTable
