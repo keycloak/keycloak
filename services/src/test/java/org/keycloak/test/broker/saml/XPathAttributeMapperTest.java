@@ -113,7 +113,7 @@ public class XPathAttributeMapperTest {
         config.put(XPathAttributeMapper.ATTRIBUTE_NAME, attributeNameToSearch);
         config.put(XPathAttributeMapper.USER_ATTRIBUTE, attribute);
         config.put(XPathAttributeMapper.ATTRIBUTE_XPATH, xpath);
-        BrokeredIdentityContext context = new BrokeredIdentityContext("brokeredIdentityContext", new IdentityProviderModel());
+        BrokeredIdentityContext context = new BrokeredIdentityContext("brokeredIdentityContext", createIdentityProviderModel());
         AssertionType assertion = AssertionUtil.createAssertion("assertionId", NameIDType.deserializeFromString("nameIDType"));
         AttributeStatementType statement = new AttributeStatementType();
         assertion.addStatement(statement);
@@ -134,5 +134,13 @@ public class XPathAttributeMapperTest {
 
         Object userAttributes = context.getContextData().get("user.attributes." + attribute);
         return userAttributes == null ? null : ((List<?>) userAttributes).get(0).toString();
+    }
+
+    private IdentityProviderModel createIdentityProviderModel() {
+        IdentityProviderModel model = new IdentityProviderModel();
+
+        model.setEnabled(true);
+
+        return model;
     }
 }
