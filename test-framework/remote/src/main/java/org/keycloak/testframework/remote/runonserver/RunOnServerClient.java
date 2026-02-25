@@ -44,6 +44,17 @@ public class RunOnServerClient {
     }
 
     /**
+     * Retrieve String value from the server. It returns decoded string value (exactly same value returned by the remote method on the server side)
+     *
+     * @param function the function to execute
+     * @return decoded string value (exactly same value returned by the remote method on the server side)
+     * @throws RunOnServerException
+     */
+    public String fetchString(FetchOnServer function) throws RunOnServerException {
+        return fetch(function, String.class);
+    }
+
+    /**
      * Retrieve some value from the Keycloak server using the specified function
      * @param function the function to execute
      * @param clazz the return type
@@ -53,7 +64,7 @@ public class RunOnServerClient {
      */
     public <T> T fetch(FetchOnServer function, Class<T> clazz) throws RunOnServerException {
         try {
-            String s = fetchString(function);
+            String s = fetchStringInternal(function);
             return s == null ? null : JsonSerialization.readValue(s, clazz);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -66,7 +77,7 @@ public class RunOnServerClient {
      * @return the value
      * @throws RunOnServerException
      */
-    public String fetchString(FetchOnServer function) throws RunOnServerException {
+    private String fetchStringInternal(FetchOnServer function) throws RunOnServerException {
         String encoded = SerializationUtil.encode(function);
 
         String result = runOnServer(encoded);

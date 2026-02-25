@@ -11,7 +11,6 @@ KcOidcUserSessionLimitsBrokerTest
 KcSamlUserSessionLimitsBrokerTest
 AbstractUserSessionLimitsBrokerTest
 UserSessionLimitsTest
-RefreshTokenTest
 OfflineTokenTest
 AccessTokenTest
 LogoutTest
