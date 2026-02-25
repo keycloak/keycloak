@@ -1,13 +1,10 @@
 package org.keycloak.testframework.server;
 
-import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
 import org.keycloak.Keycloak;
 import org.keycloak.common.Version;
-import org.keycloak.it.utils.Maven;
-
-import org.eclipse.aether.artifact.Artifact;
+import org.keycloak.testframework.util.MavenProjectUtil;
 
 public class EmbeddedKeycloakServer implements KeycloakServer {
 
@@ -20,10 +17,8 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
         this.tlsEnabled = tlsEnabled;
 
         for(KeycloakDependency dependency : keycloakServerConfigBuilder.toDependencies()) {
-            var version = Optional.ofNullable(Maven.getArtifact(dependency.getGroupId(), dependency.getArtifactId()))
-                    .map(Artifact::getVersion)
-                    .orElse("");
-            builder.addDependency(dependency.getGroupId(), dependency.getArtifactId(), version);
+            KeycloakDependency updatedDependency = MavenProjectUtil.updateDependencyDetails(dependency);
+            builder.addDependency(updatedDependency.getGroupId(), updatedDependency.getArtifactId(), updatedDependency.getVersion());
         }
 
         keycloak = builder.start(keycloakServerConfigBuilder.toArgs());

@@ -58,6 +58,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
@@ -152,7 +153,8 @@ public class OrganizationGroupsResource {
                                                  @QueryParam("exact") @DefaultValue("false") Boolean exact,
                                                  @QueryParam("first") Integer first,
                                                  @QueryParam("max") Integer max,
-                                                 @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+                                                 @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
+                                                 @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
         Stream<GroupModel> groups;
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
@@ -162,9 +164,15 @@ public class OrganizationGroupsResource {
         } else {
             groups = organizationProvider.getTopLevelGroups(organization, first, max);
         }
-        return groups.map(briefRepresentation ?
-                ModelToRepresentation::groupToBriefRepresentation :
-                group -> ModelToRepresentation.toRepresentation(group, true));
+        return groups.map(group -> {
+            GroupRepresentation rep = briefRepresentation ?
+                    ModelToRepresentation.groupToBriefRepresentation(group) :
+                    ModelToRepresentation.toRepresentation(group, true);
+            if (subGroupsCount) {
+                rep.setSubGroupCount(group.getSubGroupsCount());
+            }
+            return rep;
+        });
     }
 
     @GET
@@ -179,12 +187,17 @@ public class OrganizationGroupsResource {
             @APIResponse(responseCode = "403", description = "Forbidden"),
             @APIResponse(responseCode = "404", description = "Not Found")
     })
-    public GroupRepresentation getGroupByPath(@PathParam("path") String path) {
+    public GroupRepresentation getGroupByPath(@PathParam("path") String path,
+                                              @Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
         GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, organization, path);
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
         }
-        return ModelToRepresentation.groupToBriefRepresentation(found);
+        GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(found);
+        if (subGroupsCount) {
+            rep.setSubGroupCount(found.getSubGroupsCount());
+        }
+        return rep;
     }
 
     @Path("{group-id}")

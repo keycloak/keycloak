@@ -696,6 +696,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     @Override
     public Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member) {
+        return getOrganizationGroupsByMember(organization, member, null, null);
+    }
+
+    @Override
+    public Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member, Integer first, Integer max) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         throwExceptionIfObjectIsNull(member, "Member");
 
@@ -716,7 +721,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         query.setParameter("orgId", organization.getId());
         query.setParameter("internalOrgGroupId", getOrganizationGroup(organization).getId());
 
-        return closing(query.getResultStream()
+        return closing(paginateQuery(query, first, max).getResultStream()
                 .map(realm::getGroupById)
                 .filter(Objects::nonNull));
     }
@@ -810,7 +815,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         return groupProvider.createGroup(getRealm(), null, Type.ORGANIZATION, orgId, null);
     }
 
-    private GroupModel getOrganizationGroup(OrganizationModel organization) {
+    @Override
+    public GroupModel getOrganizationGroup(OrganizationModel organization) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         OrganizationEntity entity = getEntity(organization.getId());
         GroupModel group = getOrganizationGroup(entity);

@@ -94,8 +94,10 @@ public class OrganizationGroupResource {
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK")
     })
-    public GroupRepresentation getGroup() {
-        return ModelToRepresentation.toRepresentation(group, true);
+    public GroupRepresentation getGroup(@Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
+        GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, true);
+        if (subGroupsCount) rep.setSubGroupCount(group.getSubGroupsCount());
+        return rep;
     }
 
     @DELETE

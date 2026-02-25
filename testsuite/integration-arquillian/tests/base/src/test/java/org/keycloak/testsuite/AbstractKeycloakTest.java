@@ -114,6 +114,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author tkyjovsk
  */
+@Deprecated(forRemoval = true)
 @RunWith(KcArquillian.class)
 @RunAsClient
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)

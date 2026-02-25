@@ -81,6 +81,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -747,7 +748,7 @@ public final class KeycloakModelUtils {
         }
         String[] split = splitPath(path, escapeSlashesInGroupPath(session));
         if (split.length == 0) return null;
-        return getGroupModel(session.groups(), realm, null, split, 0);
+        return getGroupModel(session, realm, null, split, 0);
     }
 
     /**
@@ -764,17 +765,35 @@ public final class KeycloakModelUtils {
         if (path == null || path.length == 0) {
             return null;
         }
-        return getGroupModel(session.groups(), realm, null, path, 0);
+        return getGroupModel(session, realm, null, path, 0);
     }
 
-    private static GroupModel getGroupModel(GroupProvider groupProvider, RealmModel realm, GroupModel parent, String[] split, int index) {
+    private static GroupModel getGroupModel(KeycloakSession session, RealmModel realm, GroupModel parent, String[] split, int index) {
         StringBuilder nameBuilder = new StringBuilder();
         for (int i = index; i < split.length; i++) {
             nameBuilder.append(split[i]);
-            GroupModel group = groupProvider.getGroupByName(realm, parent, nameBuilder.toString());
+
+            GroupModel group;
+            if (parent != null && GroupModel.Type.ORGANIZATION.equals(parent.getType())) {
+                // For organization groups, use OrganizationProvider.searchGroupsByName
+                OrganizationModel org = parent.getOrganization();
+                if (org == null) {
+                    return null;
+                }
+                OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+                String parentId = parent.getId();
+                group = orgProvider.searchGroupsByName(org, nameBuilder.toString(), true, null, null)
+                    .filter(g -> parentId.equals(g.getParentId()))
+                    .findFirst()
+                    .orElse(null);
+            } else {
+                // For realm groups (or null parent), use GroupProvider.getGroupByName
+                group = session.groups().getGroupByName(realm, parent, nameBuilder.toString());
+            }
+
             if (group != null) {
                 if (i < split.length-1) {
-                    return getGroupModel(groupProvider, realm, group, split, i+1);
+                    return getGroupModel(session, realm, group, split, i+1);
                 } else {
                     return group;
                 }
@@ -914,12 +933,8 @@ public final class KeycloakModelUtils {
             return null;
         }
 
-        // Find the internal organization group (top-level group with name = organization UUID)
-        GroupModel orgInternalGroup = session.groups().getGroupByName(realm, null, organization.getId());
-        if (orgInternalGroup == null) {
-            // Internal organization group not found
-            return null;
-        }
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        GroupModel orgInternalGroup = orgProvider.getOrganizationGroup(organization);
 
         // Split the path
         String[] split = splitPath(path, escapeSlashesInGroupPath(session));
@@ -928,7 +943,7 @@ public final class KeycloakModelUtils {
         }
 
         // Search for the group starting from the internal organization group as parent
-        return getGroupModel(session.groups(), realm, orgInternalGroup, split, 0);
+        return getGroupModel(session, realm, orgInternalGroup, split, 0);
     }
 
     public static Stream<RoleModel> getClientScopeMappingsStream(ClientModel client, ScopeContainerModel container) {

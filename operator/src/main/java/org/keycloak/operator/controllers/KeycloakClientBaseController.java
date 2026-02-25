@@ -72,6 +72,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.internal.CertUtils;
@@ -204,6 +205,14 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
         return updateControl;
     }
+    
+    private boolean isServerReady(Context<R> context, R resource) {
+        StatefulSet existingDeployment = context.getClient().resources(StatefulSet.class)
+                .inNamespace(resource.getMetadata().getNamespace()).withName(resource.getSpec().getKeycloakCRName())
+                .get();
+
+        return existingDeployment != null && KeycloakRealmImportController.getReadyReplicas(existingDeployment) > 0;
+    }
 
     // TODO: this doesn't mesh well with the current feature concept
     // we specifically need v2 enabled, so we can't simply check for client-admin-api
@@ -281,8 +290,11 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         this.addressOverride = addressOverride;
     }
 
-    private <V> V invoke(R resource, Context<?> context, Keycloak keycloak,
+    private <V> V invoke(R resource, Context<R> context, Keycloak keycloak,
             Function<ClientApi, V> action) {
+        if (!isServerReady(context, resource)) {
+            throw new RuntimeException("A replica of the server is not yet ready. The operatiorn will be retried");
+        }
         try (var kcAdmin = getAdminClient(context.getClient(), keycloak, addressOverride)) {
             var target = getWebTarget(kcAdmin);
             AdminRootV2 root = org.keycloak.admin.client.Keycloak.getClientProvider().targetProxy(target,

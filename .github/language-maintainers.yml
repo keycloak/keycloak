@@ -38,6 +38,11 @@ languages:
     maintainers:
       - GioviQ
       - EdoardoTona
+  hy:
+    name: Armenian
+    maintainers:
+      - mikron
+      - roubkar
   id:
     name: Indonesian
     maintainers:

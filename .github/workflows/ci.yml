@@ -87,6 +87,18 @@ jobs:
           fi
           echo "run-additional-dbs-tests=$RUN_ADDITIONAL_DBS_TESTS" >> $GITHUB_OUTPUT
 
+  testsuite-deprecation-check:
+    name: Testsuite Deprecation Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: conditional
+        uses: ./.github/actions/testsuite-deprecation-check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+
   build:
     name: Build
     if: needs.conditional.outputs.ci == 'true'
@@ -1252,6 +1264,7 @@ jobs:
       - base-new-integration-tests
       - mixed-cluster-compatibility-tests
       - admin-v2-tests
+      - testsuite-deprecation-check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0

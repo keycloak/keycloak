@@ -1,0 +1,61 @@
+[[ssrf]]
+=== Mitigating Server-Side Request Forgery (SSRF)
+
+**Server-Side Request Forgery (SSRF)** is a security vulnerability where an attacker induces the server ({project_name}, in this case) to make requests to an unintended destination. In {project_name}, this risk is primarily associated with client fields that trigger requests from the server, such as the **JWKS URI**.
+
+If these fields are not strictly validated, a malicious administrator, a compromised account or a Dynamic Client Registration could point them toward internal network resources or loopback interfaces (e.g., `http://localhost:8080/any`), allowing the attacker to probe or attack the internal infrastructure from the {project_name} server itself.
+
+To mitigate this threat, {project_name} provides a solution using <<_client_policies, Client Policies>> with some executors like *Secure Client Uris* to provide baseline protection for transport security and wildcards, but especially with  the **Secure Client URIs Pattern** executor.
+
+==== Secure Client URIs Pattern Executor
+
+This executor enforces a strict security policy by validating client URIs against an **allowlist of patterns**. If a URI does not match at least one of the configured patterns, the client creation or update is rejected.
+
+It can be used not only for `JWKS URI` but to validate all available uri fields of the client like including `rootUrl`, `adminUrl`, `redirectUris`, `webOrigins` and others.
+
+.Configuration Properties
+[cols="1,3", options="header"]
+|===
+|Configuration
+|Description
+
+|Allowed URI Patterns
+| A list of Regular Expressions. A client URI is considered valid **only** if it matches at least one of these patterns. If this list is empty or invalid, the executor blocks **all** URIs.
+
+|Client URI Fields to validate
+|A list of specific client fields to validate (e.g., `jwksUri`, `adminUrl`). If left empty, **all** supported URI fields are validated by default. The list is available in the configuration.
+|===
+
+==== Anti-SSRF Pattern Examples
+
+To effectively prevent SSRF, Regular Expressions should be designed to exclude IP addresses and local hostnames.
+
+**1. Restricting to Trusted Domains**
+
+This pattern ensures that the {project_name} server only communicates with official domains, preventing the use of `localhost` or numerical IP addresses.
+
+* **Pattern:** `^https://([a-zA-Z0-9-]+\.)?mycompany\.com(/.*)?$`
+* **Effect:** Blocks attempts to use loopback addresses (e.g., `http://localhost:8080`) or cloud metadata endpoints.
+
+**2. Enforcing HTTPS**
+
+SSRF often exploits unencrypted protocols to bypass internal security controls. Enforcing HTTPS via patterns reduces the attack surface.
+
+* **Pattern:** `^https://[a-zA-Z0-9.-]+(/.*)?$`
+* **Result:** Rejects the use of the `http://` scheme, which is frequently used to probe internal services.
+
+NOTE: https can be enforced also with the *Secure Client Uris* executor but only together with wildcards and for all the client URIs
+
+**3. Specific Provider Allowlisting**
+
+If your clients use JWKS URI from third-party providers, only add the specific domains belonging to those providers.
+
+* **Pattern:** `^https://trusted-provider\.io/.*`
+* **Result:** All other domains will be rejected for JWKS requests.
+
+
+[WARNING]
+.Regular Expression Syntax
+====
+This executor uses Java Regular Expressions. Ensure you correctly escape special characters (for example, use `\.` to indicate a literal dot). An incorrect pattern could prevent legitimate updates to clients. It is recommended to test regexes in a non-production environment.
+====
