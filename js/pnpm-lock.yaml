@@ -1993,8 +1993,8 @@ packages:
     resolution: {integrity: sha512-BNoCY6SXXPQ7gF2opIP4GBE+Xw7U+pHMYKuzjgCN3GwiaIR09UUeKfheyIry77QtrCBlC0KK0q5/TER/tYh3PQ==}
     engines: {node: '>= 0.4'}
 
-  asgard-tide@file:../../../asgard:
-    resolution: {directory: ../../../asgard, type: directory}
+  asgard-tide@0.13.16:
+    resolution: {integrity: sha512-4XW9b/dIggCduCrcAwloxJhNs11sXtTdh84Oe9tfx43AbXjWCHlyeYyO5/P/ojkY5Lyel9fYw2/EfimJKoHzyA==}
 
   assertion-error@2.0.1:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
@@ -2833,8 +2833,8 @@ packages:
   heimdall-tide@0.1.1:
     resolution: {integrity: sha512-+S0c+yyZFIIjcWx4wljOnvrIZmq99h5hZOyP3Dqd6sWNFAN7ejPmgnd3LM7m2aWMV1aX2vb9wmg8dknOr0CxMw==}
 
-  heimdall-tide@file:../../../heimdall:
-    resolution: {directory: ../../../heimdall, type: directory}
+  heimdall-tide@0.13.16:
+    resolution: {integrity: sha512-9XSEUJ2aOZdSPCxq3h9Y6s2EcgaF6kEdFDzAEfqP2R+rHuLG7A14D1yWtl3oPBNfyFWDP3uD7lQT8AmCx1YGCA==}
 
   hermes-estree@0.25.1:
     resolution: {integrity: sha512-0wUoCcLp+5Ev5pDW2OriHC2MJCbwLwuRx+gAqMTOkGKJJiBCLjtrvy4PWUGn6MIVefecRpzoOZ/UV6iGdOr+Cw==}
@@ -5542,7 +5542,7 @@ snapshots:
 
   '@tidecloak/js@file:../../../tidecloak-js/packages/tidecloak-js':
     dependencies:
-      heimdall-tide: file:../../../heimdall
+      heimdall-tide: 0.13.16
 
   '@tsconfig/node10@1.0.11': {}
 
@@ -6084,7 +6084,7 @@ snapshots:
       get-intrinsic: 1.3.0
       is-array-buffer: 3.0.5
 
-  asgard-tide@file:../../../asgard: {}
+  asgard-tide@0.13.16: {}
 
   assertion-error@2.0.1: {}
 
@@ -7026,9 +7026,9 @@ snapshots:
 
   heimdall-tide@0.1.1: {}
 
-  heimdall-tide@file:../../../heimdall:
+  heimdall-tide@0.13.16:
     dependencies:
-      asgard-tide: file:../../../asgard
+      asgard-tide: 0.13.16
 
   hermes-estree@0.25.1: {}
 

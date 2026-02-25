@@ -113,8 +113,6 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
     if (!config) return null;
 
     const originKey = `client-origin-auth-${window.location.origin}`;
-    console.log(originKey)
-    console.log(config)
     const clientOriginAuth = config[originKey];
 
     const kc = new TideCloak({

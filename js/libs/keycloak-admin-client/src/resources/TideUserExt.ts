@@ -127,6 +127,56 @@ public getChangeSetRequests = this.makeRequest<
     path: "/tide-admin/change-set/commit/batch",
   });
 
+  // ── Policy Template endpoints ───────────────────────────────────
+
+  public createPolicyTemplate = this.makeRequest<
+    {
+      name: string;
+      description?: string;
+      contractCode: string;
+      modelId: string;
+      approvalType?: string;
+      executionType?: string;
+      params?: Record<string, string>;
+      parameters?: Array<{
+        name: string;
+        type: string;
+        helpText: string;
+        required: boolean;
+        defaultValue?: string;
+        options?: string[];
+      }>;
+    },
+    { success: boolean; name: string; description: string; modelId: string }
+  >({
+    method: "POST",
+    path: "/tide-admin/policy-templates",
+  });
+
+  public listPolicyTemplates = this.makeRequest<
+    void,
+    Array<{
+      id: string;
+      name: string;
+      description?: string;
+      contractCode: string;
+      modelId: string;
+      approvalType?: string;
+      executionType?: string;
+      parameters?: Array<{
+        name: string;
+        type: string;
+        helpText: string;
+        required: boolean;
+        defaultValue?: string;
+        options?: string[];
+      }>;
+    }>
+  >({
+    method: "GET",
+    path: "/tide-admin/policy-templates",
+  });
+
   constructor(client: KeycloakAdminClient) {
     super(client, {
       path: "/admin/realms/{realm}",
