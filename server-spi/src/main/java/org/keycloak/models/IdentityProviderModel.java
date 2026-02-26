@@ -59,6 +59,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String SYNC_MODE = "syncMode";
     public static final String MIN_VALIDITY_TOKEN = "minValidityToken";
     public static final String FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION = "fedClientAssertionMaxExp";
+    public static final String FEDERATED_CLIENT_ASSERTION_AUDIENCE = "fedClientAssertionAudience";
 	public static final String SHOW_IN_ACCOUNT_CONSOLE = "showInAccountConsole";
     public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
 
@@ -371,6 +372,14 @@ public class IdentityProviderModel implements Serializable {
             }
         }
         return DEFAULT_MIN_VALIDITY_TOKEN;
+    }
+
+    public String getFederatedClientAssertionAudience() {
+        return getConfig().get(FEDERATED_CLIENT_ASSERTION_AUDIENCE);
+    }
+
+    public void setFederatedClientAssertionAudience(String clientAssertionAudience) {
+        getConfig().put(FEDERATED_CLIENT_ASSERTION_AUDIENCE, clientAssertionAudience);
     }
 
     public int getFederatedClientAssertionMaxExpiration() {

@@ -112,4 +112,22 @@ test.describe.serial("Edit OIDC Provider", () => {
     await clickCancelMapper(page);
     await assertOnMappingPage(page);
   });
+
+  test("should set and persist federated client assertion audience", async ({
+    page,
+  }) => {
+    const customAudience = "https://my-audience.example.com";
+    await page
+      .getByTestId("config.fedClientAssertionAudience")
+      .fill(customAudience);
+    await clickSaveButton(page);
+    await assertNotificationMessage(page, "Provider successfully updated");
+
+    await goToIdentityProviders(page);
+    await clickTableRowItem(page, oidcProviderName);
+
+    await expect(
+      page.getByTestId("config.fedClientAssertionAudience"),
+    ).toHaveValue(customAudience);
+  });
 });

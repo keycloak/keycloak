@@ -18,6 +18,7 @@
  */
 package org.keycloak.authentication.authenticators.client;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.common.util.Time;
@@ -119,6 +120,7 @@ public abstract class AbstractBaseJWTValidator {
     public boolean validateTokenAudience(List<String> expectedAudiences, boolean multipleAudienceAllowed) {
         JsonWebToken token = clientAssertionState.getToken();
         if (!token.hasAnyAudience(expectedAudiences)) {
+            logger.debugf("Invalid token audience '%s'. Expected audiences=%s", Arrays.toString(token.getAudience()), expectedAudiences);
             return failure("Invalid token audience");
         }
 
