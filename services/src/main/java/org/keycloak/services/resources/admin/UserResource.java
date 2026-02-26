@@ -136,8 +136,6 @@ import org.jboss.resteasy.reactive.NoCache;
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
 
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
 /**
