@@ -169,12 +169,10 @@ The default value is 5 minutes, which is the same value used by the current {pro
 * `transaction-migration-timeout`: Controls the timeout for transactions responsible for migrating the database schema to a new version.
 The default value is 30 minutes, as schema migrations may take a while to complete for large tables.
 
-=== Database charset checks during startup
+=== Database character encoding checks during startup
 
 {project_name} will log a warning if the database is not configured to use UTF-8 encoding.
 This check applies to all supported databases.
-
-In the future, we may make it a hard requirement and {project_name} will not start if the proper encoding is not configured.
 
 For details on configuring UTF-8 encoding for your database, see the https://www.keycloak.org/server/db[Configuring the database] guide.
 
@@ -208,6 +206,12 @@ The feature link:{securing_apps_token_exchange_link}#_legacy-token-exchange[Lega
 The methods `getUserSessionsStream(RealmModel realm, ClientModel client)`, `getUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults)`, and `getOfflineUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults)` are deprecated for removal.
 They are replaced with read-only alternatives to reduce memory consumption.
 See the `UserSessionProvider` API changes section in notable changes for further information.
+
+=== Non-UTF-8 database character encoding deprecated
+
+Running {project_name} on a database that is not using UTF-8 as a charset is now deprecated.
+
+In the current version {project_name} will log a warning if the database is not configured to use UTF-8 encoding. Future versions might refuse to work with database that is not configured to use UTF-8 encoding.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features

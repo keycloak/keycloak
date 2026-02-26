@@ -218,6 +218,7 @@ For a given database, this choice might result in a shorter maximum string lengt
 
 The recommended character set to use is summarized in the table below, as most recent versions of these databases already use it by default.
 
+[%autowidth]
 |===
 |Vendor |Recommended Character Set |Example Database Creation
 
@@ -232,7 +233,8 @@ CREATE DATABASE keycloak
 ----
 
 |Microsoft SQL Server
-|UTF-8 collation (ending with `_UTF8`)
+|UTF-8 collation +
+(ending with `_UTF8`)
 a|
 [source,sql]
 ----

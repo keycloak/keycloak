@@ -417,6 +417,11 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         checkEncoding(vendor, "utf8mb4"::equals, "'utf8mb4' encoding", "SELECT default_character_set_name FROM information_schema.SCHEMATA WHERE schema_name = DATABASE()");
     }
 
+    /**
+     * Check if the database is running against a database with a valid UTF-8 character encoding.
+     * <p>
+     * Non-UTF-8-character encodings have been deprecated in 26.6.
+     */
     private void checkEncoding(Database.Vendor vendor, Predicate<String> isValid, String recommendation, String query) {
         try (var connection = getConnection();
              var statement = connection.createStatement();
