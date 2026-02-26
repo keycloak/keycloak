@@ -69,18 +69,30 @@ public class TruststoreBuilder {
 
     /**
      * Include the Kubernetes and/or OpenShift service CA truststore paths if enabled and the files exist.
+     * Uses the default well-known Kubernetes service account paths.
      *
-     * @param truststores the existing truststore paths
+     * @param trustStores the existing truststore paths
      */
     public static void includeKubernetesTrustStorePaths(List<String> trustStores) {
-        File kubernetesCA = new File(KUBERNETES_CA_PATH);
+        includeKubernetesTrustStorePaths(trustStores, KUBERNETES_CA_PATH, SERVICE_CA_PATH);
+    }
+
+    /**
+     * Include the Kubernetes and/or OpenShift service CA truststore paths if enabled and the files exist.
+     *
+     * @param trustStores the existing truststore paths
+     * @param kubernetesCaPath path to the Kubernetes service account CA certificate
+     * @param serviceCaPath path to the OpenShift service CA certificate
+     */
+    public static void includeKubernetesTrustStorePaths(List<String> trustStores, String kubernetesCaPath, String serviceCaPath) {
+        File kubernetesCA = new File(kubernetesCaPath);
         if (kubernetesCA.exists() && kubernetesCA.isFile()) {
-            trustStores.add(KUBERNETES_CA_PATH);
+            trustStores.add(kubernetesCaPath);
         }
 
-        File serviceCA = new File(SERVICE_CA_PATH);
+        File serviceCA = new File(serviceCaPath);
         if (serviceCA.exists() && serviceCA.isFile()) {
-            trustStores.add(SERVICE_CA_PATH);
+            trustStores.add(serviceCaPath);
         }
     }
 

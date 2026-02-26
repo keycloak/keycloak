@@ -41,6 +41,8 @@ To disable automatically trusting the cluster CAs entirely:
 
 Note that if the corresponding files are not mounted into the container, they will not be included regardless of the option values.
 
+WARNING: When `https-client-auth` is set to `required` or `request` without an explicit `https-trust-store-file`, mTLS client certificate validation falls back to the system truststore. With `truststore-kubernetes-enabled=true`, this means certificates signed by the Kubernetes cluster CA will be accepted as valid client certificates. If this is not desired, either set `https-trust-store-file` explicitly or disable `truststore-kubernetes-enabled`.
+
 == Hostname Verification Policy
 
 You may refine how hostnames are verified by TLS connections with the `tls-hostname-verifier` property.

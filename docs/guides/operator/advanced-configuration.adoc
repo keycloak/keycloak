@@ -392,6 +392,10 @@ spec:
       value: "false"
 ----
 
+To prevent the service account token from being mounted in the pod, set `automountServiceAccountToken` to `false` in the Keycloak CR spec.
+This also disables the Kubernetes CA truststore auto-discovery described above.
+This option cannot be `false` if you plan to use an external Infinispan cluster, the Kubernetes service accounts identity provider, or any custom provider logic that expects to implicitly use the Kubernetes API.
+
 === Admin Bootstrapping
 
 When you create a new instance the Keycloak CR spec.bootstrapAdmin stanza may be used to configure the bootstrap user and/or service account. If you do not specify anything for the spec.bootstrapAdmin, the operator will create a Secret named "metadata.name"-initial-admin with a username temp-admin and a generated password. If you specify a Secret name for the bootstrap admin user, then the Secret will need to contain `username` and `password` key value pairs. If you specify a Secret name for bootstrap admin service account, then the Secret will need to contain `client-id` and `client-secret` key value pairs.
