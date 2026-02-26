@@ -38,6 +38,11 @@ export const OpenIdConnectCompatibilityModes = ({
     ),
     false,
   );
+  const jwtAuthorizationGrantIdP = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.oauth2.jwt.authorization.grant.idp",
+    ),
+  );
   return (
     <FormAccess
       role="manage-clients"
@@ -212,12 +217,14 @@ export const OpenIdConnectCompatibilityModes = ({
         />
       )}
       {isFeatureEnabled(Feature.JWTAuthorizationGrant) &&
-        jwtAuthorizationGrantEnabled.toString() === "true" && (
+        jwtAuthorizationGrantEnabled.toString() === "true" &&
+        jwtAuthorizationGrantIdP && (
           <MapComponent
             name="attributes.oauth2.jwt.authorization.grant.audience"
             label="jwtAuthorizationGrantAudience"
             helpText="jwtAuthorizationGrantAudienceHelp"
             convertToName={convertAttributeNameToForm}
+            options={jwtAuthorizationGrantIdP.split("##")}
           />
         )}
       <ActionGroup>
