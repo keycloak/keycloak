@@ -35,7 +35,7 @@ This behavior is enabled by default and does not require the Operator. It can be
 
 * `--truststore-kubernetes-enabled=true|false` (default: `true`)
 
-When `truststore-kubernetes-enabled` is set to `true`, {project_name} will also discover and include the OpenShift Service CA if it is present on the filesystem. To disable automatically trusting the cluster CAs entirely:
+To disable automatically trusting the cluster CAs entirely:
 
 <@kc.start parameters="--truststore-kubernetes-enabled=false" />
 
