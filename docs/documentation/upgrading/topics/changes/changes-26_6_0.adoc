@@ -178,6 +178,12 @@ In the future, we may make it a hard requirement and {project_name} will not sta
 
 For details on configuring UTF-8 encoding for your database, see the https://www.keycloak.org/server/db[Configuring the database] guide.
 
+As part of this change, the database configuration documentation has been updated:
+
+* For MySQL and MariaDB, the documentation now recommends using `utf8mb4` as the character set.
+The previously documented `utf8mb3` (or `utf8`) character set has been removed from the documentation due to its limitations in storing certain Unicode characters.
+* Previously recommended JDBC driver settings for Oracle, MySQL, and MariaDB have been removed from the documentation, as current versions of these databases use appropriate default values.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
