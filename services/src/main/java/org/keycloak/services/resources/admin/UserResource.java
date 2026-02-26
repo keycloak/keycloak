@@ -63,6 +63,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -134,8 +135,7 @@ import org.jboss.resteasy.reactive.NoCache;
 
 import static java.util.Collections.emptyList;
 import static java.util.Optional.ofNullable;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
-import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
+
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
 /**
@@ -812,19 +812,13 @@ public class UserResource {
             throw new BadRequestException("Can't reset password as account is read only");
         } catch (PasswordPolicyNotMetException e) {
             logger.warn("Password policy not met for user " + e.getUsername(), e);
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(),
-                    MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
-                    Status.BAD_REQUEST);
+            throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         } catch (ModelIllegalStateException e) {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException e) {
             logger.warn("Could not update user password.", e);
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(e.getMessage(),
-                    MessageFormat.format(messages.getProperty(e.getMessage(), e.getMessage()), e.getParameters()),
-                    Status.BAD_REQUEST);
+            throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         }
         if (cred.isTemporary() != null && cred.isTemporary()) {
             user.addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
@@ -1251,10 +1245,7 @@ public class UserResource {
             logger.error(e.getMessage(), e);
             throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         } catch (ModelException me) {
-            Properties messages = AdminRoot.getMessages(session, realm, auth.adminAuth().getToken().getLocale());
-            throw new ErrorResponseException(me.getMessage(),
-                    MessageFormat.format(messages.getProperty(me.getMessage(), me.getMessage()), me.getParameters()),
-                    Status.BAD_REQUEST);
+            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -1305,7 +1296,13 @@ public class UserResource {
     public Map<String, List<String>> getUnmanagedAttributes() {
         auth.users().requireView(user);
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+
         UserProfile profile = provider.create(USER_API, user);
+        Map<String, List<String>> managedAttributes = profile.getAttributes().getReadable();
+        Map<String, List<String>> unmanagedAttributes = profile.getAttributes().getUnmanagedAttributes();
+        managedAttributes.entrySet().removeAll(unmanagedAttributes.entrySet());
+        Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
+        attributes.entrySet().removeAll(managedAttributes.entrySet());
 
         attributes.remove(UserModel.USERNAME);
         attributes.remove(UserModel.EMAIL);
