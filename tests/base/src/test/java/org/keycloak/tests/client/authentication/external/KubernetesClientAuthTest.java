@@ -41,7 +41,7 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
     OAuthIdentityProvider identityProvider;
 
     public KubernetesClientAuthTest() {
-        super(ISSUER, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID);
+        super(ISSUER, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID, IDP_ALIAS);
     }
 
     @Override
@@ -93,6 +93,11 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
         token.iat((long) (Time.currentTime() - 300));
         token.subject(EXTERNAL_CLIENT_ID);
         return token;
+    }
+
+    @Override
+    public ManagedRealm getRealm() {
+        return realm;
     }
 
     public static class KubernetesServerConfig extends ClientAuthIdpServerConfig {
