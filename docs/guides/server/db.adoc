@@ -412,6 +412,35 @@ XA recovery defaults to enabled and will use the file system location `KEYCLOAK_
 
 NOTE: Enabling XA transactions in a containerized environment does not fully support XA recovery unless stable storage is available at that path.
 
+== Configuring transaction timeouts
+
+{project_name} provides two CLI options to control transaction timeout behavior:
+
+`transaction-default-timeout`::
+Controls the transaction timeout for regular transactions.
+The default value is 5 minutes.
++
+To configure a different timeout, for example 10 minutes:
++
+<@kc.start parameters="--transaction-default-timeout=10m"/>
+
+`transaction-migration-timeout`::
+Controls the timeout for transactions responsible for migrating the database schema to a new version.
+The default value is 30 minutes, as schema migrations may take a while to complete for large tables.
++
+To configure a different timeout, for example 1 hour:
++
+<@kc.start parameters="--transaction-migration-timeout=1h"/>
+
+Both options accept values as an ISO 8601 duration, an integer number of seconds, or an integer followed by one of `ms` (milliseconds), `s` (seconds), `m` (minutes), `h` (hours), or `d` (days).
+These options can be configured via CLI, environment variables, or the `conf/keycloak.conf` configuration file.
+
+[NOTE]
+====
+The `transaction-default-timeout` option takes precedence over the unsupported `quarkus.transaction-manager.default-transaction-timeout` Quarkus property.
+If you are using the Quarkus property, migrate to the supported `transaction-default-timeout` option and remove the Quarkus property from your configuration.
+====
+
 == Setting JPA provider configuration option for migrationStrategy
 
 To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA provider as follows:
@@ -557,7 +586,7 @@ quarkus.datasource.user-store.jdbc.transactions=xa
 WARNING: Use Quarkus properties **without quotation** for the datasource name, as properties with the quoted datasource name clash with the new datasource options mapping.
 Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.datasource."user-store".db-kind=h2` to prevent any issues.
 
-<@opts.printRelevantOptions includedOptions="db db-* transaction-xa-enabled" excludedOptions="db-*-<datasource>">
+<@opts.printRelevantOptions includedOptions="db db-* transaction-xa-enabled transaction-default-timeout transaction-migration-timeout" excludedOptions="db-*-<datasource>">
 
 === Additional datasources options
 <@opts.includeOptions includedOptions="*-<datasource>"/>

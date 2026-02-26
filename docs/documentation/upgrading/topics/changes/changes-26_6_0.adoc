@@ -25,6 +25,16 @@ Configuring + defers validation to the client's standard 'Valid redirect URIs'. 
 
 Administrators must ensure that all configured URIs for the fields listed above use https. Clients attempting to update or register with http in these fields will fail validation when using the 'secure-client-uris' executor.
 
+=== New CLI option overrides Quarkus transaction timeout property
+
+A new CLI option `transaction-default-timeout` has been introduced to configure the default transaction timeout in {project_name}.
+This new option will override any value set in the `quarkus.transaction-manager.default-transaction-timeout` Quarkus property.
+
+While using Quarkus properties directly is not the supported way to configure {project_name}, some users may have used `quarkus.transaction-manager.default-transaction-timeout` to customize the transaction timeout.
+If you are using this Quarkus property, the new `transaction-default-timeout` CLI option will take precedence and override your configuration when upgrading to this version.
+
+To maintain your desired transaction timeout configuration, migrate to using the `transaction-default-timeout` CLI option and remove the `quarkus.transaction-manager.default-transaction-timeout` property from your configuration.
+
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -148,6 +158,16 @@ Authentication failures resulting in an invalid_grant now correctly return an HT
 
 With the `clusterless` feature enabled and `persistent-user-sessions` disabled, a re-index is required due to schema changes.
 {project_name} triggers the re-index on startup, but this may delay server startup depending on the number of sessions stored, and/or return incorrect results during the re-index process.
+
+=== New CLI options for transaction timeout configuration
+
+Two new CLI options are now available to control transaction timeout behavior:
+
+* `transaction-default-timeout`: Controls the transaction timeout for regular transactions.
+The default value is 5 minutes, which is the same value used by the current {project_name} version.
+
+* `transaction-migration-timeout`: Controls the timeout for transactions responsible for migrating the database schema to a new version.
+The default value is 30 minutes, as schema migrations may take a while to complete for large tables.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
