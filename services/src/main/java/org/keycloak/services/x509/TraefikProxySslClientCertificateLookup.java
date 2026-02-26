@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,11 +21,13 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
+import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
 import org.keycloak.common.util.PemException;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.http.HttpRequest;
+
+import org.jboss.logging.Logger;
 
 /**
  * The provider allows to extract X.509 client certificates forwarded
@@ -43,7 +45,6 @@ import org.keycloak.http.HttpRequest;
  *     pem = true
  * </pre>
  *
- * @author Red Hat
  * @see <a href="https://doc.traefik.io/traefik/middlewares/http/passtlsclientcert/">Traefik PassTLSClientCert middleware</a>
  */
 public class TraefikProxySslClientCertificateLookup implements X509ClientCertificateLookup {
@@ -51,12 +52,13 @@ public class TraefikProxySslClientCertificateLookup implements X509ClientCertifi
     private static final Logger log = Logger.getLogger(TraefikProxySslClientCertificateLookup.class);
 
     protected final String sslClientCertHttpHeader;
+    private final boolean certIsUrlEncoded;
+    protected int certificateChainLength;
 
-    public TraefikProxySslClientCertificateLookup(String sslClientCertHttpHeader) {
-        if (sslClientCertHttpHeader == null || sslClientCertHttpHeader.isBlank()) {
-            throw new IllegalArgumentException("sslClientCertHttpHeader must not be blank");
-        }
+    public TraefikProxySslClientCertificateLookup(String sslClientCertHttpHeader, boolean certIsUrlEncoded, int certificateChainLength) {
         this.sslClientCertHttpHeader = sslClientCertHttpHeader;
+        this.certIsUrlEncoded = certIsUrlEncoded;
+        this.certificateChainLength = certificateChainLength;
     }
 
     @Override
@@ -73,13 +75,14 @@ public class TraefikProxySslClientCertificateLookup implements X509ClientCertifi
             return new X509Certificate[0];
         }
 
-        // Traefik URL-encodes each PEM certificate (spaces become '+', special chars become '%XX').
-        // Multiple certificates are separated by commas (not URL-encoded).
-        // URL-decode the entire header value to get PEM blocks separated by commas.
-        String decodedHeaderValue = URLDecoder.decode(headerValue, StandardCharsets.UTF_8);
+        // Traefik may URL-encode - see https://github.com/traefik/traefik/issues/9669
+        if (certIsUrlEncoded) {
+            headerValue = URLDecoder.decode(headerValue, StandardCharsets.UTF_8);
+        }
 
         try {
-            X509Certificate[] certs = PemUtils.decodeCertificates(decodedHeaderValue);
+            X509Certificate[] certs = Stream.of(headerValue.split(",")).map(PemUtils::decodeCertificate)
+                    .limit(certificateChainLength + 1).toArray(X509Certificate[]::new);
             if (certs.length == 0) {
                 log.warnf("HTTP header \"%s\" does not contain any valid X.509 certificates", sslClientCertHttpHeader);
             } else {

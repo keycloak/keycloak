@@ -187,23 +187,23 @@ The server supports some of the most commons TLS termination proxies such as:
 
 [%autowidth]
 |===
-|Proxy|Provider
+|Provider|Proxies
 
-|Apache HTTP Server
 |apache
+|Apache HTTP Server
 
-|HAProxy
 |haproxy
+|HAProxy
 
-|NGINX
 |nginx
+|NGINX
 
-|Traefik (PassTLSClientCert middleware with `pem: true`)
 |traefik
-|===
+|Traefik (PassTLSClientCert middleware with `pem: true`)
 
-Besides the providers for particular proxies from the table above, there is also an implementation for proxies that are compliant to link:https://datatracker.ietf.org/doc/rfc9440/[RFC 9440].
-Please refer to the provider by the name `rfc9440`.
+|rfc9440
+|Proxies that are compliant to link:https://datatracker.ietf.org/doc/rfc9440/[RFC 9440]
+|===
 
 To configure how client certificates are retrieved from the requests you need to:
 
@@ -224,13 +224,13 @@ The available options for configuring a provider are:
 
 |ssl-client-cert
 | The name of the header holding the client certificate
-| all
+| all (defaults to the most likely name for the provider)
 
 |ssl-cert-chain-prefix
 | The prefix of the headers holding additional certificates in the chain and used to retrieve individual
 certificates accordingly to the length of the chain. For instance, a value `CERT_CHAIN` will tell the server
 to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if `certificate-chain-length` is set to `10`.
-| all but `rfc9440`
+| `apache`, `haproxy`, `nginx`
 
 |ssl-cert-chain
 | The name of the header holding additional certificates in the chain. This is not a prefix but the full name of the header
@@ -238,8 +238,8 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 | `rfc9440`
 
 |certificate-chain-length
-| The maximum length of the certificate chain.
-| all
+| The maximum length of the certificate chain beyond the client certificate
+| all (defaults to 1)
 
 |trust-proxy-verification
 | Enable trusting NGINX proxy certificate verification, instead of forwarding the certificate to {project_name} and verifying it in {project_name}.
@@ -247,7 +247,7 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 
 |cert-is-url-encoded
 | Whether the forwarded certificate is url-encoded or not. In NGINX, this corresponds to the `$ssl_client_cert` and `$ssl_client_escaped_cert` variables.
-| `nginx`
+| `nginx` (defaults to false), `traefik` (defaults to true)
 
 |===
 

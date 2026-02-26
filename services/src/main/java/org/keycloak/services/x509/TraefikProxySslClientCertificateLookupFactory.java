@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,10 +17,11 @@
 
 package org.keycloak.services.x509;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+
+import org.jboss.logging.Logger;
 
 /**
  * Factory for the Traefik proxy SSL client certificate lookup provider.
@@ -44,19 +45,34 @@ public class TraefikProxySslClientCertificateLookupFactory implements X509Client
     private static final String PROVIDER = "traefik";
 
     protected static final String HTTP_HEADER_CLIENT_CERT = "sslClientCert";
-    protected static final String HTTP_HEADER_CLIENT_CERT_DEFAULT = "X-Forwarded-Tls-Client-Cert";
+    public static final String HTTP_HEADER_CLIENT_CERT_DEFAULT = "X-Forwarded-Tls-Client-Cert";
+
+    protected static final String CERT_IS_URL_ENCODED = "cert-is-url-encoded";
+    protected final static String HTTP_HEADER_CERT_CHAIN_LENGTH = "certificateChainLength";
+    protected final static int HTTP_HEADER_CERT_CHAIN_LENGTH_DEFAULT = 1;
 
     protected String sslClientCertHttpHeader;
+    private boolean certIsUrlEncoded;
+    protected int certificateChainLength;
 
     @Override
     public void init(Config.Scope config) {
+        certificateChainLength = config.getInt(HTTP_HEADER_CERT_CHAIN_LENGTH, HTTP_HEADER_CERT_CHAIN_LENGTH_DEFAULT);
+        if (certificateChainLength < 0) {
+            throw new IllegalArgumentException("certificateChainLength must be greater or equal to zero");
+        }
         sslClientCertHttpHeader = config.get(HTTP_HEADER_CLIENT_CERT, HTTP_HEADER_CLIENT_CERT_DEFAULT);
+        if (sslClientCertHttpHeader == null || sslClientCertHttpHeader.isBlank()) {
+            throw new IllegalArgumentException("sslClientCertHttpHeader must not be blank");
+        }
+        certIsUrlEncoded = config.getBoolean(CERT_IS_URL_ENCODED, false);
         logger.tracev("{0}:   ''{1}''", HTTP_HEADER_CLIENT_CERT, sslClientCertHttpHeader);
+        logger.tracev("{0}:   ''{1}''", CERT_IS_URL_ENCODED, certIsUrlEncoded);
     }
 
     @Override
     public X509ClientCertificateLookup create(KeycloakSession session) {
-        return new TraefikProxySslClientCertificateLookup(sslClientCertHttpHeader);
+        return new TraefikProxySslClientCertificateLookup(sslClientCertHttpHeader, certIsUrlEncoded, certificateChainLength);
     }
 
     @Override
