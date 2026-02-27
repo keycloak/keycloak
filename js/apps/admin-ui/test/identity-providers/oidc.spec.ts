@@ -79,7 +79,7 @@ test.describe.serial("OIDC identity provider test", () => {
   test("should set and persist federated client assertion audience", async ({
     page,
   }) => {
-    await createOIDCProvider(page, oidcProviderName, secret);
+    await clickTableRowItem(page, oidcProviderName);
 
     await switchOn(page, "#supportsClientAssertions");
 
