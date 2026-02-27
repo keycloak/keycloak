@@ -27,6 +27,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
@@ -53,15 +54,21 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
         boolean tlsConfigured = isTlsConfigured(keycloak);
         boolean httpEnabled = isHttpEnabled(keycloak);
         if (!tlsConfigured || httpEnabled) {
+            int containerPort = HttpSpec.httpPort(keycloak);
+            int servicePort = HttpSpec.serviceHttpPort(keycloak);
             builder.addNewPort()
-                    .withPort(HttpSpec.httpPort(keycloak))
+                    .withPort(servicePort)
+                    .withTargetPort(new IntOrString(containerPort))
                     .withName(Constants.KEYCLOAK_HTTP_PORT_NAME)
                     .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
                     .endPort();
         }
         if (tlsConfigured) {
+            int containerPort = HttpSpec.httpsPort(keycloak);
+            int servicePort = HttpSpec.serviceHttpsPort(keycloak);
             builder.addNewPort()
-                    .withPort(HttpSpec.httpsPort(keycloak))
+                    .withPort(servicePort)
+                    .withTargetPort(new IntOrString(containerPort))
                     .withName(Constants.KEYCLOAK_HTTPS_PORT_NAME)
                     .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
                     .endPort();
@@ -105,5 +112,12 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
 
     public static String getServiceName(HasMetadata keycloak) {
         return keycloak.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
+    }
+
+    public static String getServiceName(Keycloak keycloak) {
+        return Optional.ofNullable(keycloak.getSpec())
+                .map(spec -> spec.getHttpSpec())
+                .map(HttpSpec::getServiceName)
+                .orElse(keycloak.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX);
     }
 }
