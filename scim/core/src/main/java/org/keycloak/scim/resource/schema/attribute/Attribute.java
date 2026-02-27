@@ -36,7 +36,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
      * @return the builder
      */
     public static <M extends Model, R extends ResourceTypeRepresentation> Builder<M, R> simple(String name) {
-        return new Builder<>(name, null);
+        return (Builder<M, R>) new Builder<>(name, null).string();
     }
 
     /**
@@ -49,7 +49,9 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
      * @return the builder
      */
     public static <M extends Model, R extends ResourceTypeRepresentation> Builder<M, R> complex(String name, Class<?> complexType) {
-        return new Builder<>(name, complexType);
+        Builder<M, R> builder = new Builder<>(name, complexType);
+        builder.type = "complex";
+        return builder;
     }
 
     private final String name;
@@ -116,6 +118,10 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
     private void setType(String type) {
         this.type = type;
+    }
+
+    public String getType() {
+        return type;
     }
 
     private void setMutability(String mutability) {
@@ -213,14 +219,20 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
         public Builder<M, R> withAttribute(String name, String alias, TriConsumer<M, String, String> modelSetter) {
             String subName = this.name + "." + name;
-            Attribute<M, R> attribute = new Attribute<>(subName, new AttributeMapper<>(modelSetter, new ComplexAttributeSetter<>(this.name, name, complexType)), this.name, alias);
-            attribute.setModelAttributeResolver(modelAttributeResolver);
+            Attribute<M, R> attribute = assembleAttribute(subName, this.name, alias,
+                    new AttributeMapper<>(modelSetter, new ComplexAttributeSetter<>(this.name, name, complexType)),
+                    modelAttributeResolver, "string", null, false, null);
             attributes.add(attribute);
             return this;
         }
 
         public Builder<M, R> modelAttributeResolver(Function<Attribute<M, R>, String> resolver) {
             this.modelAttributeResolver = resolver;
+            return this;
+        }
+
+        public Builder<M, R> string() {
+            this.type = "string";
             return this;
         }
 
@@ -240,17 +252,28 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         }
 
         public List<Attribute<M, R>> build() {
-            Attribute<M, R> attribute = new Attribute<>(name, new AttributeMapper<>(modelSetter, representationSetter, modelRemover, modelAdder), this.name);
-            attribute.setModelAttributeResolver(modelAttributeResolver);
-            attribute.setType(type);
-            attribute.setMutability(mutability);
-            attribute.setMultivalued(multivalued);
-            attribute.setComplexType(complexType);
+            Attribute<M, R> attribute = assembleAttribute(name, null, null,
+                    new AttributeMapper<>(modelSetter, representationSetter, modelRemover, modelAdder),
+                    modelAttributeResolver, type, mutability, multivalued, complexType);
             if (attributes.isEmpty()) {
                 // do not add the root attribute if there are subattributes
                 attributes.add(attribute);
             }
             return attributes;
+        }
+
+        private Attribute<M, R> assembleAttribute(String name, String parentName, String alias,
+                                                   AttributeMapper<M, R> mapper,
+                                                   Function<Attribute<M, R>, String> modelAttributeResolver,
+                                                   String type, String mutability,
+                                                   boolean multivalued, Class<?> complexType) {
+            Attribute<M, R> attribute = new Attribute<>(name, mapper, parentName, alias);
+            attribute.setModelAttributeResolver(modelAttributeResolver);
+            attribute.setType(type);
+            attribute.setMutability(mutability);
+            attribute.setMultivalued(multivalued);
+            attribute.setComplexType(complexType);
+            return attribute;
         }
 
         public Builder<M, R> multivalued() {

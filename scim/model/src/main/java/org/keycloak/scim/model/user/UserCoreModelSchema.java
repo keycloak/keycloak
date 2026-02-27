@@ -32,6 +32,16 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     }
 
     @Override
+    public String getName() {
+        return "User";
+    }
+
+    @Override
+    public String getDescription() {
+        return "User Account";
+    }
+
+    @Override
     protected Map<String, Attribute<UserModel, User>> doGetAttributes() {
         List<Attribute<UserModel, User>> attributes = new ArrayList<>();
 
