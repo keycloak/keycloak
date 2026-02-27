@@ -97,15 +97,6 @@ public class InfinispanSingleUseObjectProvider implements SingleUseObjectProvide
     }
 
     @Override
-    public boolean replace(String key, Map<String, String> oldNotes, Map<String, String> notes, long lifespanInSeconds) {
-        if (persistRevokedTokens && key.endsWith(REVOKED_KEY)) {
-            throw new ModelException("Revoked tokens can't be replaced");
-        }
-
-        return singleUseObjectCache.replace(key, new SingleUseObjectValueEntity(oldNotes), new SingleUseObjectValueEntity(notes), lifespanInSeconds, TimeUnit.SECONDS);
-    }
-
-    @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
         SingleUseObjectValueEntity tokenValue = new SingleUseObjectValueEntity(null);
         SingleUseObjectValueEntity existing = singleUseObjectCache.putIfAbsent(key, tokenValue, lifespanInSeconds, TimeUnit.SECONDS);

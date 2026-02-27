@@ -87,11 +87,6 @@ public class RemoteInfinispanSingleUseObjectProvider implements SingleUseObjectP
     }
 
     @Override
-    public boolean replace(String key, Map<String, String> oldNotes, Map<String, String> notes, long lifespanInSeconds) {
-        return withReturnValue().replace(key, wrap(oldNotes), wrap(notes), lifespanInSeconds, TimeUnit.SECONDS);
-    }
-
-    @Override
     public boolean putIfAbsent(String key, long lifespanInSeconds) {
         try {
             boolean result = withReturnValue().putIfAbsent(key, wrap(null), lifespanInSeconds, TimeUnit.SECONDS) == null;

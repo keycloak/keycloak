@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,7 +29,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -55,6 +56,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.HashProvider;
@@ -67,6 +69,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.migration.migrators.MigrationUtils;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -74,6 +77,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -303,6 +307,12 @@ public class TokenManager {
                                             String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, String scopeParameter) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
 
+        if (realm.isRevokeRefreshToken()) {
+            // If refresh tokens are revoked, we need to serialize all requests to avoid wrong conclusions.
+            // This needs to be called before we load the user session from the database or the cache
+            createTemporaryExclusiveLockForTokenRefreshOperation(session, refreshToken);
+        }
+
         event.session(refreshToken.getSessionState())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, refreshToken.getType());
@@ -360,7 +370,7 @@ public class TokenManager {
             validation.newToken.setAuthorizationDetails(authorizationDetails);
             validation.clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetails);
         }
-        
+
         if (clientConfig.isUseRefreshToken()) {
             //refresh token must have same scope as old refresh token (type, scope, expiration)
             responseBuilder.generateRefreshToken(refreshToken, clientSession);
@@ -379,6 +389,32 @@ public class TokenManager {
         storeRefreshTimingInformation(event, refreshToken, validation.newToken);
 
         return responseBuilder;
+    }
+
+    private void createTemporaryExclusiveLockForTokenRefreshOperation(KeycloakSession session, RefreshToken refreshToken) {
+        String lockId = "refreshLock:" + refreshToken.getSessionId() + ":" + getReuseIdKey(refreshToken);
+        Retry.executeWithBackoff((int iteration) -> {
+            // This assumes that 60 seconds is the maximum time this operation will take
+            if (!session.singleUseObjects().putIfAbsent(lockId, 60)) {
+                throw new RuntimeException("Unable to acquire serialization lock for token refresh");
+            }
+
+            // Trigger the session provider, to ensure that it enlists first for enlistAfterCompletion
+            session.sessions();
+
+            KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    KeycloakModelUtils.runJobInTransaction(factory, s -> s.singleUseObjects().remove(lockId));
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    KeycloakModelUtils.runJobInTransaction(factory, s -> s.singleUseObjects().remove(lockId));
+                }
+            });
+        }, Duration.of(10, ChronoUnit.SECONDS), 10);
     }
 
     private Function<String, String> transformScopes(KeycloakSession session, Set<String> requestedScopes) {
@@ -411,9 +447,10 @@ public class TokenManager {
         if (realm.isRevokeRefreshToken()) {
             AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
             try {
-                int newCount = validateTokenReuse(session, realm, refreshToken, clientSession, true);
+                validateTokenReuse(session, realm, refreshToken, clientSession, true);
                 String key = getReuseIdKey(refreshToken);
-                clientSession.setRefreshTokenUseCount(key, newCount);
+                int currentCount = clientSession.getRefreshTokenUseCount(key);
+                clientSession.setRefreshTokenUseCount(key, currentCount + 1);
             } catch (OAuthErrorException oee) {
                 if (logger.isDebugEnabled()) {
                     logger.debugf("Failed validation of refresh token %s due it was used before. Realm: %s, client: %s, user: %s, user session: %s. Will detach client session from user session",
@@ -426,8 +463,7 @@ public class TokenManager {
     }
 
     // Will throw OAuthErrorException if validation fails
-    // Will return how much times the refresh token reused in case the refreshFlag is true. Will return -1 if refreshFlag is false
-    public int validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken, AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
+    public void validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken, AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
         int startupTime = session.getProvider(UserSessionProvider.class).getStartupTime(realm);
         String key = getReuseIdKey(refreshToken);
         String refreshTokenId = clientSession.getRefreshToken(key);
@@ -443,7 +479,7 @@ public class TokenManager {
                 clientSession.setRefreshToken(key, refreshToken.getId());
                 clientSession.setRefreshTokenUseCount(key, 0);
             } else {
-                return -1;
+                return;
             }
         }
 
@@ -451,31 +487,6 @@ public class TokenManager {
         if (currentCount > realm.getRefreshTokenMaxReuse()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
                 "Maximum allowed refresh token reuse exceeded");
-        }
-
-        if (refreshFlag) {
-            // Put object into cache first
-            String singleUseCacheKey = "rt:" + refreshToken.getId();
-            session.singleUseObjects().putIfAbsent(singleUseCacheKey, 60);
-
-            // Replace the value in the store atomically and compare with the old value. If replace fails, it means other thread replaced in the meantime and we need to repeat
-            boolean replaced = false;
-            int newCount = currentCount + 1;
-            while (!replaced) {
-                Map<String, String> notes = session.singleUseObjects().get(singleUseCacheKey);
-                Map<String, String> newNotes = new ConcurrentHashMap<>(notes);
-                newCount = notes.containsKey("count") ? Integer.parseInt(notes.get("count")) + 1 : currentCount + 1;
-                newNotes.put("count", String.valueOf(newCount));
-                replaced = session.singleUseObjects().replace(singleUseCacheKey, notes, newNotes, 60);
-
-                if ((newCount - 1) > realm.getRefreshTokenMaxReuse()) {
-                    throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Maximum allowed refresh token reuse exceeded",
-                            "Maximum allowed refresh token reuse exceeded");
-                }
-            }
-            return newCount;
-        } else {
-            return -1;
         }
     }
 

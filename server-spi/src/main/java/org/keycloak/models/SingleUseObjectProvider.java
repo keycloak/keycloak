@@ -68,19 +68,6 @@ public interface SingleUseObjectProvider extends Provider {
     boolean replace(String key, Map<String, String> notes);
 
     /**
-     * Replaces data associated with the given key in the store. The value is replaced just if there is value present in the store associated with the given key
-     * AND if current value saved in the store equals to "oldNotes".
-     *
-     * @param key String
-     * @param oldNotes Value, which must be present in the store under given key. If different value is present in the store for the given key, then the data will not be
-     *                 replaced and this method returns false.
-     * @param notes Map<String, String> New data to be stored
-     * @param lifespanInSeconds Minimum lifespan for which successfully added key will be kept in the cache.
-     * @return {@code true} if the object was replaced successfully, otherwise {@code false}.
-     */
-    boolean replace(String key, Map<String, String> oldNotes, Map<String, String> notes, long lifespanInSeconds);
-
-    /**
      * Will try to put the key into the cache. It will succeed just if key is not already there.
      *
      * @param key
