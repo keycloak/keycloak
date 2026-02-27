@@ -114,13 +114,10 @@ public class InteropTest extends AbstractClientApiV2Test {
             ClientRepresentationComparator.ComparisonResult result = 
                 ClientRepresentationComparator.compare(createdV1Client, v2Client);
 
-            System.out.println("=== createWithV1AssertWithV2 ===");
-            System.out.println(result);
-
             assertTrue(result.allMatch(), "V1 and V2 representations should match:\n" + result);
+        } finally {
+            realm.clients().get(clientUuid).remove();
         }
-
-        realm.clients().get(clientUuid).remove();
     }
 
     /**
@@ -171,13 +168,11 @@ public class InteropTest extends AbstractClientApiV2Test {
             ClientRepresentationComparator.ComparisonResult result = 
                 ClientRepresentationComparator.compare(fullV1Client, fetchedV2Client);
 
-            System.out.println("=== createWithV2AssertWithV1 ===");
-            System.out.println(result);
-
             assertTrue(result.allMatch(), "V1 and V2 representations should match:\n" + result);
+        } finally {
+            realm.clients().get(clientUuid).remove();
         }
 
-        realm.clients().get(clientUuid).remove();
     }
 
     /**
@@ -241,18 +236,15 @@ public class InteropTest extends AbstractClientApiV2Test {
             ClientRepresentationComparator.ComparisonResult result = 
                 ClientRepresentationComparator.compare(updatedV1Client, fetchedV2Client);
 
-            System.out.println("=== updateWithV2AssertWithV1 ===");
-            System.out.println(result);
-
             assertTrue(result.allMatch(), "V1 and V2 representations should match after update:\n" + result);
 
             assertThat(updatedV1Client.getName(), is("Updated Name via V2"));
             assertThat(updatedV1Client.getDescription(), is("Updated description via V2 API"));
             assertThat(updatedV1Client.isServiceAccountsEnabled(), is(true));
+        } finally {
+            realm.clients().get(clientUuid).remove();
         }
-
-        realm.clients().get(clientUuid).remove();
-    }
+}
 
     public static class ServerConfig implements KeycloakServerConfig {
         @Override
