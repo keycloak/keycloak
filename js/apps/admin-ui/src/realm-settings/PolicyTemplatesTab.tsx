@@ -166,13 +166,22 @@ export const PolicyTemplatesTab = () => {
 
     setIsSubmitting(true);
     try {
-      await adminClient.tideUsersExt.createPolicyTemplate({
-        name: formData.name,
-        description: formData.description,
-        contractCode: formData.contractCode,
-        modelId: "default",
-        parameters: formData.parameters,
-      });
+      if (editingTemplate?.id) {
+        await adminClient.tideUsersExt.updatePolicyTemplate({
+          id: editingTemplate.id,
+          name: formData.name,
+          description: formData.description,
+          contractCode: formData.contractCode,
+          parameters: formData.parameters,
+        });
+      } else {
+        await adminClient.tideUsersExt.createPolicyTemplate({
+          name: formData.name,
+          description: formData.description,
+          contractCode: formData.contractCode,
+          parameters: formData.parameters,
+        });
+      }
 
       addAlert(
         editingTemplate ? "Template updated" : "Template created",
@@ -195,9 +204,15 @@ export const PolicyTemplatesTab = () => {
     continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
-      // TODO: call delete endpoint when backend supports it
-      addAlert("Template deleted", AlertVariant.success);
-      refresh();
+      try {
+        await adminClient.tideUsersExt.deletePolicyTemplate({
+          id: selectedTemplate!.id!,
+        });
+        addAlert("Template deleted", AlertVariant.success);
+        refresh();
+      } catch (error) {
+        addError("Failed to delete template", error);
+      }
     },
   });
 

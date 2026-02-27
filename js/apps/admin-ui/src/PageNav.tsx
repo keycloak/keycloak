@@ -105,8 +105,13 @@ export const PageNav = () => {
       const clientRequest = await adminClient.tideUsersExt.getRequestedChangesForClients();
       const realmSettingsRequest = await adminClient.tideUsersExt.getRequestedChangesForRagnarokSettings();
       const realmLicensingRequest = await adminClient.tideUsersExt.getRequestedChangesForRealmLicensing();
+      let policyCount = 0;
+      try {
+        const realmPolicy: any = await adminClient.tideUsersExt.getRealmPolicy();
+        if (realmPolicy && realmPolicy.status === "pending") policyCount = 1;
+      } catch (_) { /* ignore */ }
 
-      setClientRequestCount(userRequest.length + roleRequest.length + clientRequest.length + realmSettingsRequest.length + realmLicensingRequest.length)
+      setClientRequestCount(userRequest.length + roleRequest.length + clientRequest.length + realmSettingsRequest.length + realmLicensingRequest.length + policyCount)
     }
 
     getCount();
@@ -179,6 +184,8 @@ export const PageNav = () => {
                 path="/change-requests"
                 label={changeRequestsCount > 0 ? changeRequestsCount.toString() : undefined}
               />
+              {/** TIDECLOAK IMPLEMENTATION */}
+              <LeftNav title="Policies" path="/tide-policies" />
             </NavGroup>
           )}
 

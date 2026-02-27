@@ -31,6 +31,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { RolesChangeRequestsList } from "./RolesChangeRequestsList"
 import { ClientChangeRequestsList } from './ClientChangeRequestsList';
 import { SettingsChangeRequestsList } from './SettingsChangeRequestsList';
+import { PolicyChangeRequestsList } from './PolicyChangeRequestsList';
 import { groupRequestsByDraftId } from './utils/bundleUtils';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { useAccess } from '../context/access/Access';
@@ -67,6 +68,7 @@ export default function ChangeRequestsSection() {
   const [roleRequestCount, setRoleRequestCount] = useState(0);
   const [clientRequestCount, setClientRequestCount] = useState(0);
   const [realmSettingsRequestCount, setRealmSettingsRequestCount] = useState(0);
+  const [policyRequestCount, setPolicyRequestCount] = useState(0);
   const [isTideEnabled, setIsTideEnabled] = useState<boolean>(true)
 
 
@@ -399,6 +401,7 @@ export default function ChangeRequestsSection() {
   const roleRequestsTab = useTab("roles");
   const clientRequestsTab = useTab("clients");
   const settingsRequestsTab = useTab("settings");
+  const policiesTab = useTab("policies");
 
   const [toggleCancelDialog, CancelConfirm] = useConfirmDialog({
     titleKey: "Cancel Change Request",
@@ -433,6 +436,11 @@ export default function ChangeRequestsSection() {
   const updateSettingsCounter = (counter: number) => {
     if (counter !== realmSettingsRequestCount) {
       setRealmSettingsRequestCount(counter);
+    }
+  };
+  const updatePolicyCounter = (counter: number) => {
+    if (counter !== policyRequestCount) {
+      setPolicyRequestCount(counter);
     }
   };
 
@@ -542,6 +550,21 @@ export default function ChangeRequestsSection() {
             {...settingsRequestsTab}
           >
             <SettingsChangeRequestsList updateCounter={updateSettingsCounter} />
+          </Tab>
+          <Tab
+            title={
+              <>
+                <TabTitleText>Policies</TabTitleText>
+                {policyRequestCount > 0 && (
+                  <Label className="keycloak-admin--role-mapping__client-name pf-v5-u-ml-sm">
+                    {policyRequestCount}
+                  </Label>
+                )}
+              </>
+            }
+            {...policiesTab}
+          >
+            <PolicyChangeRequestsList updateCounter={updatePolicyCounter} />
           </Tab>
         </RoutableTabs>
       </PageSection>
