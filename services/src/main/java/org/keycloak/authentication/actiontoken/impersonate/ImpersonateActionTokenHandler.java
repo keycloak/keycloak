@@ -27,16 +27,12 @@ import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseObjectKeyModel;
-import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.ErrorPage;
@@ -68,6 +64,13 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
         UserModel user = session.users().getUserById(realm, token.getUserId());
         ClientConnection clientConnection = tokenContext.getClientConnection();
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
+
+        // Normally, action tokens are invalidated after the intended required action is executed. However, since
+        // impersonation doesn't have a required action and is instead executed immediately when the token is handled,
+        // we need to invalidate the token here to prevent it from being used multiple times.
+        if (!AuthenticationManager.invalidateActionToken(session, token.serializeKey(), 0L)) {
+            return handleImpersonationError(tokenContext, "Action token already used", Status.BAD_REQUEST);
+        }
 
         if (user == null) {
             return handleImpersonationError(tokenContext, "User not found", Status.NOT_FOUND);
@@ -102,12 +105,6 @@ public class ImpersonateActionTokenHandler extends AbstractActionTokenHandler<Im
                 .detail(Details.IMPERSONATOR_REALM, token.getImpersonatorRealm())
                 .detail(Details.IMPERSONATOR, token.getImpersonatorUsername())
                 .success();
-
-        SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(token.serializeKey());
-        if (actionTokenKey != null) {
-            SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
-            singleUseObjectProvider.put(actionTokenKey.serializeKey(), actionTokenKey.getExp() - Time.currentTime(), null);
-        }
 
         return Response.status(Response.Status.FOUND)
                 .location(redirect)

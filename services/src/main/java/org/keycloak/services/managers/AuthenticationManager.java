@@ -1067,6 +1067,15 @@ public class AuthenticationManager {
         return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, errorMessage == null ? Messages.INVALID_CODE : errorMessage);
     }
 
+    /**
+     * Invalidates the action token by putting a revoked entry into the single use object provider. This is used to prevent replay of the same action token.
+     * @return true if the token was successfully invalidated, false if it was already invalidated
+     */
+    public static boolean invalidateActionToken(KeycloakSession session, String actionTokenKeyToInvalidate, long skewSeconds) {
+        SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
+        SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
+        return singleUseObjectProvider.putIfAbsent(actionTokenKeyToInvalidate + SingleUseObjectProvider.REVOKED_KEY, actionTokenKey.getExp() - Time.currentTime() + skewSeconds);
+    }
 
     public static Response finishedRequiredActions(KeycloakSession session, AuthenticationSessionModel authSession, UserSessionModel userSession,
                                                    ClientConnection clientConnection, HttpRequest request, UriInfo uriInfo, EventBuilder event) {
@@ -1079,8 +1088,7 @@ public class AuthenticationManager {
                     return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
 
-                SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
-                if (!singleUseObjectProvider.putIfAbsent(actionTokenKeyToInvalidate + SingleUseObjectProvider.REVOKED_KEY, actionTokenKey.getExp() - Time.currentTime() + CLOCK_SKEW_SECONDS)) {
+                if (!invalidateActionToken(session, actionTokenKeyToInvalidate, CLOCK_SKEW_SECONDS)) {
                     return handleActionTokenVerificationException(session, event, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);
                 }
             }
