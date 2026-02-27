@@ -72,3 +72,13 @@ The feature `step-up-authentication-saml` extends the step-up authentication to 
 = Java 25 support
 
 {project_name} now supports running with JRE 25. OpenJDK 25 is also now used in the official container images.
+
+= Configurable Kubernetes Service name and port in the Keycloak Operator
+
+The {project_name} Operator now supports overriding the name and port of the Kubernetes Service it creates for a Keycloak deployment.
+
+Previously, the Service name was always derived as `<cr-name>-service` and the Service port always matched the container port.
+You can now use the `spec.http.serviceName`, `spec.http.serviceHttpsPort`, and `spec.http.serviceHttpPort` fields to
+configure these independently, allowing simplified access URLs and stable service names during migrations.
+
+For more details, see the https://www.keycloak.org/operator/advanced-configuration[Advanced configuration] guide.
