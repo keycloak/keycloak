@@ -2,7 +2,7 @@
 
 == Migrating the database
 
-{project_name} can automatically migrate the database schema, or you can choose to do it manually. By default the
+{project_name} can automatically migrate the database schema, or you can choose to do it manually. By default, the
 database is automatically migrated when you start the new installation for the first time.
 
 [NOTE]
@@ -14,6 +14,18 @@ Before you migrate the database, shut down all {project_name} nodes running the 
 ====
 Migration is not supported with the default H2 based `dev-file` database type.
 ====
+
+=== Migration timeout configuration
+
+The migration time of the database schema and its contents can vary depending on hardware, release and the amount of data.
+By default {project_name} sets a migration timeout of 30 minutes.
+
+To change the migration timeout, use the option `transaction-migration-timeout` to configure a longer value if your environment requires this.
+
+[source,bash]
+----
+kc.[sh|bat] start --transaction-migration-timeout=60m
+----
 
 === Automatic relational database migration
 
@@ -55,6 +67,9 @@ default `connections-jpa` provider:
 kc.[sh|bat] start --spi-connections-jpa--quarkus--migration-export=<path>/<file.sql>
 ----
 
-For further details on how to apply this file to the database, see the documentation for your relational database.
 After the changes have been written to the file, the server exits.
 
+For further details on how to run the statements in the file against the database, see the documentation for your relational database.
+
+Once you have run the statements, you can start the new {project_name} version.
+On the first startup, it might perform additional data migrations that are required in addition to the schema migrations.
