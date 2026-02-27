@@ -544,7 +544,7 @@ spec:
 
 By default, the operator creates a Kubernetes Service named `<cr-name>-service` (for example, `example-kc-service`) whose port numbers match the container ports.
 
-You can override the Service name and expose different port numbers on the Service while the pods continue to listen on their original ports.
+You can override the Service name and expose different port numbers on the Service while the Pods continue to listen on their original ports.
 This is useful when you want a cleaner URL (for example, `https://keycloak.mynamespace.svc` instead of `https://keycloak-service.mynamespace.svc:8443`), or when migrating from an existing deployment where the Service name must remain stable.
 
 .Custom Service name and port
@@ -557,7 +557,7 @@ metadata:
 spec:
   http:
     httpsPort: 8443          # port the pod listens on (default: 8443)
-    serviceHttpsPort: 443    # port exposed on the Service
+    serviceHttpsPort: 443    # port exposed on the Service (default: same as httpsPort)
     serviceName: keycloak    # overrides the default "example-kc-service"
 ----
 
