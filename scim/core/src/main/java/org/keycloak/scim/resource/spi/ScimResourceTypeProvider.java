@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.Model;
 import org.keycloak.provider.Provider;
 import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
+import org.keycloak.scim.resource.schema.ModelSchema;
 
 /**
  * <p>A provider of a SCIM resource type.
@@ -40,6 +42,8 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      * @return the schema URI of the resource type
      */
     String getSchema();
+
+    <M extends Model> List<ModelSchema<M, R>> getSchemas();
 
     /**
      * Returns the schema extensions names of the resource type managed by this provider.

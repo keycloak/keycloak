@@ -149,16 +149,17 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     @Override
     public String getSchema() {
-        return schema.getName();
+        return schema.getId();
     }
 
+    @Override
     public List<ModelSchema<M, R>> getSchemas() {
         return schemas;
     }
 
     @Override
     public List<String> getSchemaExtensions() {
-        return schemaExtensions.stream().map(ModelSchema::getName).toList();
+        return schemaExtensions.stream().map(ModelSchema::getId).toList();
     }
 
     protected abstract R onCreate(R resource);
@@ -175,7 +176,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     protected void populate(M model, R resource) {
         for (ModelSchema<M, R> schema : schemas) {
-            if (resource.hasSchema(schema.getName())) {
+            if (resource.hasSchema(schema.getId())) {
                 schema.populate(model, resource);
             }
         }

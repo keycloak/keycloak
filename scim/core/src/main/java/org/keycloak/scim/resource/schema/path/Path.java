@@ -16,7 +16,7 @@ public final class Path {
 
     public <R extends ResourceTypeRepresentation> Path(ModelSchema<?, ?> schema, String rawPath) {
         if (rawPath == null) {
-            this.path = schema.getName();
+            this.path = schema.getId();
             this.filter = null;
         } else {
             int filterStartIdx = rawPath.indexOf("[");
