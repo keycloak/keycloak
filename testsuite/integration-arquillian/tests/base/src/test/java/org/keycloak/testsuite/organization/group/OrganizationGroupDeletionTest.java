@@ -77,7 +77,7 @@ public class OrganizationGroupDeletionTest extends AbstractOrganizationTest {
         }
 
         // Verify groups exist
-        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null, true);
+        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null, null, true, false);
         assertThat(groups, hasSize(2)); // Engineering, Sales (Backend is nested)
 
         // Delete organization
@@ -137,7 +137,7 @@ public class OrganizationGroupDeletionTest extends AbstractOrganizationTest {
         }
 
         // Verify unmanaged user still exists
-        UserRepresentation foundUser = testRealm().users().get(unmanagedMember.getId()).toRepresentation();
+        UserRepresentation foundUser = testRealm().users().get(unmanagedMember.getId()).toRepresentation(false);
         assertNotNull(foundUser);
         assertThat(foundUser.getEmail(), is("unmanaged@example.com"));
     }
@@ -175,7 +175,7 @@ public class OrganizationGroupDeletionTest extends AbstractOrganizationTest {
         }
 
         // Member should still exist (unmanaged)
-        UserRepresentation foundUser = testRealm().users().get(member.getId()).toRepresentation();
+        UserRepresentation foundUser = testRealm().users().get(member.getId()).toRepresentation(false);
         assertNotNull(foundUser);
 
         // Cannot verify groups are deleted via org API since org no longer exists
@@ -224,7 +224,7 @@ public class OrganizationGroupDeletionTest extends AbstractOrganizationTest {
 
         // Group should be deleted
         try {
-            orgResource.groups().group(groupId).toRepresentation();
+            orgResource.groups().group(groupId).toRepresentation(false);
             fail("Group should have been deleted");
         } catch (Exception e) {
             assertThat(e.getMessage(), containsString(Response.Status.NOT_FOUND.toString()));
@@ -256,7 +256,7 @@ public class OrganizationGroupDeletionTest extends AbstractOrganizationTest {
         orgResource.groups().group(backendId).delete();
 
         // Engineering should still exist
-        GroupRepresentation engineering = orgResource.groups().group(engineeringId).toRepresentation();
+        GroupRepresentation engineering = orgResource.groups().group(engineeringId).toRepresentation(false);
         assertNotNull(engineering);
         assertThat(engineering.getName(), is("Engineering"));
 
@@ -305,7 +305,7 @@ public class OrganizationGroupDeletionTest extends AbstractOrganizationTest {
         }
 
         // User should still exist
-        UserRepresentation user = testRealm().users().get(member.getId()).toRepresentation();
+        UserRepresentation user = testRealm().users().get(member.getId()).toRepresentation(false);
         assertNotNull(user);
 
         // User should no longer be in Org A

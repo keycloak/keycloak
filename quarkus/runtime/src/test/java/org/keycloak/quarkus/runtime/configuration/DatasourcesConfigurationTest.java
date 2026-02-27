@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.configuration;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.keycloak.quarkus.runtime.Environment;
@@ -498,7 +499,12 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "kc.db-kind-user-store",
                 "quarkus.datasource.\"user-store\".db-kind",
                 "quarkus.datasource.\"user-store\".jdbc.url",
-                "quarkus.datasource.\"user-store\".jdbc.transactions"
+                "quarkus.datasource.\"user-store\".jdbc.transactions",
+                "quarkus.datasource.\"user-store\".jdbc.max-size",
+                "quarkus.datasource.\"user-store\".jdbc.driver",
+                "quarkus.datasource.jdbc.min-size",
+                "quarkus.datasource.jdbc.driver",
+                "quarkus.datasource.jdbc.url"
         ));
 
         // verify the db-kind is there only once
@@ -507,11 +513,8 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 .count();
         assertThat(quarkusDbKindCount, is(1L));
 
-        assertThat(propertyNames, not(hasItems(
-                "kc.db-dialect-user-store",
-                "quarkus.datasource.\"user-store\".username",
-                "quarkus.datasource.\"user-store\".password",
-                "quarkus.datasource.\"user-store\".jdbc.driver"
-        )));
+        Stream.of("quarkus.datasource.\"user-store\".username"
+                , "quarkus.datasource.\"user-store\".password")
+                .forEach(n -> assertThat(propertyNames, not(hasItem(n))));
     }
 }

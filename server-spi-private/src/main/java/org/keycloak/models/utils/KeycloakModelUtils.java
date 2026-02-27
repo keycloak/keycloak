@@ -47,6 +47,8 @@ import jakarta.transaction.Transaction;
 
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.cache.AlternativeLookupProvider;
@@ -70,6 +72,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.GroupProviderFactory;
+import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -81,6 +84,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -747,7 +751,7 @@ public final class KeycloakModelUtils {
         }
         String[] split = splitPath(path, escapeSlashesInGroupPath(session));
         if (split.length == 0) return null;
-        return getGroupModel(session.groups(), realm, null, split, 0);
+        return getGroupModel(session, realm, null, split, 0);
     }
 
     /**
@@ -764,17 +768,39 @@ public final class KeycloakModelUtils {
         if (path == null || path.length == 0) {
             return null;
         }
-        return getGroupModel(session.groups(), realm, null, path, 0);
+        return getGroupModel(session, realm, null, path, 0);
     }
 
-    private static GroupModel getGroupModel(GroupProvider groupProvider, RealmModel realm, GroupModel parent, String[] split, int index) {
+    private static GroupModel getGroupModel(KeycloakSession session, RealmModel realm, GroupModel parent, String[] split, int index) {
         StringBuilder nameBuilder = new StringBuilder();
         for (int i = index; i < split.length; i++) {
             nameBuilder.append(split[i]);
-            GroupModel group = groupProvider.getGroupByName(realm, parent, nameBuilder.toString());
+
+            GroupModel group;
+            if (parent != null && GroupModel.Type.ORGANIZATION.equals(parent.getType())) {
+                // For organization groups, use OrganizationProvider.searchGroupsByName
+                OrganizationModel org = parent.getOrganization();
+                if (org == null) {
+                    return null;
+                }
+                OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+                if (orgProvider == null) {
+                    // Organization feature disabled, cannot resolve organization group paths
+                    return null;
+                }
+                String parentId = parent.getId();
+                group = orgProvider.searchGroupsByName(org, nameBuilder.toString(), true, null, null)
+                    .filter(g -> parentId.equals(g.getParentId()))
+                    .findFirst()
+                    .orElse(null);
+            } else {
+                // For realm groups (or null parent), use GroupProvider.getGroupByName
+                group = session.groups().getGroupByName(realm, parent, nameBuilder.toString());
+            }
+
             if (group != null) {
                 if (i < split.length-1) {
-                    return getGroupModel(groupProvider, realm, group, split, i+1);
+                    return getGroupModel(session, realm, group, split, i+1);
                 } else {
                     return group;
                 }
@@ -914,12 +940,8 @@ public final class KeycloakModelUtils {
             return null;
         }
 
-        // Find the internal organization group (top-level group with name = organization UUID)
-        GroupModel orgInternalGroup = session.groups().getGroupByName(realm, null, organization.getId());
-        if (orgInternalGroup == null) {
-            // Internal organization group not found
-            return null;
-        }
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        GroupModel orgInternalGroup = orgProvider.getOrganizationGroup(organization);
 
         // Split the path
         String[] split = splitPath(path, escapeSlashesInGroupPath(session));
@@ -928,7 +950,79 @@ public final class KeycloakModelUtils {
         }
 
         // Search for the group starting from the internal organization group as parent
-        return getGroupModel(session.groups(), realm, orgInternalGroup, split, 0);
+        return getGroupModel(session, realm, orgInternalGroup, split, 0);
+    }
+
+    /**
+     * Validates and retrieves the organization for an Identity Provider mapper.
+     * This performs all necessary checks to ensure the IdP-organization relationship is valid:
+     * - Organizations feature is enabled
+     * - Organization exists and is enabled
+     * - Bidirectional link exists (organization still has this IdP)
+     *
+     * @param session the Keycloak session
+     * @param idpModel the identity provider model
+     * @return the validated organization if all checks pass, null otherwise
+     */
+    public static OrganizationModel getOrganizationForIdpMapper(KeycloakSession session, IdentityProviderModel idpModel) {
+        String idpOrgId = idpModel.getOrganizationId();
+        if (idpOrgId == null) {
+            return null;
+        }
+
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        if (orgProvider != null && orgProvider.isEnabled()) {
+            OrganizationModel organization = orgProvider.getById(idpOrgId);
+
+            if (organization != null && organization.isEnabled() && organization.getIdentityProviders().anyMatch(idp -> idp.getAlias().equals(idpModel.getAlias()))) {
+                return organization;
+            }
+        }
+
+        logger.warnf("Cannot obtain organization '%s' linked to IdP '%s'", idpModel.getAlias(), idpOrgId);
+
+        return null;
+    }
+
+    /**
+     * Retrieves and validates a group for use in an Identity Provider mapper.
+     * This method handles organization-aware group lookup.
+     *
+     * When the IdP is linked to an organization, this method first attempts to find the group
+     * within that organization's groups. If not found (or IdP not linked to org), it falls back
+     * to searching realm groups.
+     *
+     * @param session the Keycloak session
+     * @param realm the realm
+     * @param mapperModel the mapper model configuration containing the group path
+     * @param context the brokered identity context containing the IdP configuration
+     * @return the group if found and valid, null otherwise (mapper should be skipped)
+     */
+    public static GroupModel getGroupForIdpMapper(KeycloakSession session,
+                                                   RealmModel realm,
+                                                   IdentityProviderMapperModel mapperModel,
+                                                   BrokeredIdentityContext context) {
+        String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
+        GroupModel group = null;
+
+        // Check if IdP is linked to organization and validate the relationship
+        OrganizationModel organization = getOrganizationForIdpMapper(session, context.getIdpConfig());
+
+        if (organization != null) {
+            group = findGroupByPath(session, realm, organization, groupPath);
+        }
+
+        // If not found in organization (or IdP not in org context), try as realm group
+        if (group == null) {
+            group = findGroupByPath(session, realm, groupPath);
+        }
+
+        if (group == null) {
+            logger.warnf("Unable to find group by path '%s' referenced by mapper '%s' on realm '%s'.", groupPath, mapperModel.getName(), realm.getName());
+            return null;
+        }
+
+        return group;
     }
 
     public static Stream<RoleModel> getClientScopeMappingsStream(ClientModel client, ScopeContainerModel container) {

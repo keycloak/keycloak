@@ -45,7 +45,7 @@ team/core-shared:
   - area/admin/client-js
   - area/admin/ui
 
-team/sre:
+team/production-readiness:
   - area/observability
 
 team/community:

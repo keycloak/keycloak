@@ -18,6 +18,7 @@ package org.keycloak.models.cache.infinispan.organization;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -330,6 +331,13 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member, Integer first, Integer max) {
+        // Don't cache paginated queries - delegate directly to DB
+        // This follows the same pattern as searchGroupsByName to avoid caching partial results
+        return getDelegate().getOrganizationGroupsByMember(organization, member, first, max);
+    }
+
+    @Override
     public Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member) {
         if (userCache == null) {
             return getDelegate().getOrganizationGroupsByMember(organization, member);
@@ -353,7 +361,12 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
         RealmModel realm = getRealm();
         return cached.getGroupIds().stream()
                 .map(realm::getGroupById)
-                .filter(java.util.Objects::nonNull);
+                .filter(Objects::nonNull);
+    }
+
+    @Override
+    public GroupModel getOrganizationGroup(OrganizationModel organization) {
+        return getDelegate().getOrganizationGroup(organization);
     }
 
     @Override

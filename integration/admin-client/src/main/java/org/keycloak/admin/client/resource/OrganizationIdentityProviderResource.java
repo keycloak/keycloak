@@ -17,12 +17,18 @@
 
 package org.keycloak.admin.client.resource;
 
+import java.util.List;
+
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
 public interface OrganizationIdentityProviderResource {
@@ -33,4 +39,15 @@ public interface OrganizationIdentityProviderResource {
 
     @DELETE
     Response delete();
+
+    @Path("groups")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> getGroups(@QueryParam("search") String search,
+                                        @QueryParam("q") String searchQuery,
+                                        @QueryParam("exact") @DefaultValue("false") Boolean exact,
+                                        @QueryParam("first") Integer first,
+                                        @QueryParam("max") Integer max,
+                                        @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
+                                        @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount);
 }

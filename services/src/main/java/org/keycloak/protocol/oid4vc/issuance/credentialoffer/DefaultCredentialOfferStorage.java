@@ -57,7 +57,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
 
     @Override
     public void putOfferState(KeycloakSession session, CredentialOfferState entry) {
-        long lifespanSeconds = calculateLifespanSeconds(entry.getExpiration());
+        long lifespanSeconds = calculateLifespanSeconds(entry.getExpireAt());
         
         // Skip storing if already expired (following pattern from InfinispanSingleUseObjectProviderFactory)
         if (lifespanSeconds <= 0) {
@@ -110,7 +110,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
             session.singleUseObjects().replace(it, Map.of(ENTRY_KEY, entryJson));
         });
         Optional.ofNullable(entry.getAuthorizationDetails()).ifPresent(it -> {
-            long lifespanSeconds = calculateLifespanSeconds(entry.getExpiration());
+            long lifespanSeconds = calculateLifespanSeconds(entry.getExpireAt());
             it.getCredentialIdentifiers().forEach( cid -> {
                 if (session.singleUseObjects().contains(cid)) {
                     session.singleUseObjects().replace(cid, Map.of(ENTRY_KEY, entryJson));

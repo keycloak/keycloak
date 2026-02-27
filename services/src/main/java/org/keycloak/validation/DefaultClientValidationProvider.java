@@ -16,6 +16,7 @@
  */
 package org.keycloak.validation;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -28,10 +29,12 @@ import java.util.Set;
 
 import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.ciba.CibaClientValidation;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
@@ -193,6 +196,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validatePairwiseInClientModel(context);
         new CibaClientValidation(context).validate();
         validateJwks(context);
+        validateAcrLoaMap(context);
         validateDefaultAcrValues(context);
         validateMinimumAcrValue(context);
         validateClientSessionTimeout(context);
@@ -206,6 +210,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateUrls(context);
         validatePairwiseInOIDCClient(context);
         new CibaClientValidation(context).validate();
+        validateAcrLoaMap(context);
         validateDefaultAcrValues(context);
         validateMinimumAcrValue(context);
         //context.getSession().getContext().getRealm().
@@ -394,11 +399,11 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
 
     private void validateDefaultAcrValues(ValidationContext<ClientModel> context) {
         ClientModel client = context.getObjectToValidate();
+        if (!OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+            return;
+        }
         List<String> defaultAcrValues = AcrUtils.getDefaultAcrValues(client);
         Map<String, Integer> acrToLoaMap = AcrUtils.getAcrLoaMap(client);
-        if (acrToLoaMap.isEmpty()) {
-            acrToLoaMap = AcrUtils.getAcrLoaMap(client.getRealm());
-        }
         for (String configuredAcr : defaultAcrValues) {
             if (acrToLoaMap.containsKey(configuredAcr)) continue;
             if (LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
@@ -408,19 +413,48 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
     }
 
+    private void validateAcrLoaMap(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        if (!SamlProtocol.LOGIN_PROTOCOL.equals(client.getProtocol()) && !OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+            return;
+        }
+        String value = client.getAttribute(Constants.ACR_LOA_MAP);
+        if (value != null && StringUtil.isNotBlank(value)) {
+            try {
+                Map<String, Integer> map = AcrUtils.parseAcrLoaMap(value);
+                if (SamlProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+                    for (String uri : map.keySet()) {
+                        new URI(uri);
+                    }
+                }
+            } catch (IOException e) {
+                context.addError(Constants.ACR_LOA_MAP, "Invalid client configuration (ACR-LOA map) for client");
+            } catch (URISyntaxException e) {
+                context.addError(Constants.ACR_LOA_MAP, "Invalid URI for ACR-LOA map: " + e.getInput());
+            }
+        }
+    }
+
     private void validateMinimumAcrValue(ValidationContext<ClientModel> context) {
         ClientModel client = context.getObjectToValidate();
+        if (!SamlProtocol.LOGIN_PROTOCOL.equals(client.getProtocol()) && !OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+            return;
+        }
         String minimumAcrValue = AcrUtils.getMinimumAcrValue(client);
         if (minimumAcrValue != null) {
-            Map<String, Integer> acrToLoaMap = AcrUtils.getAcrLoaMap(client);
-            if (acrToLoaMap.isEmpty()) {
-                acrToLoaMap = AcrUtils.getAcrLoaMap(client.getRealm());
-            }
+            if (OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol())) {
+                Map<String, Integer> acrToLoaMap = AcrUtils.getAcrLoaMap(client);
 
-            if(!acrToLoaMap.containsKey(minimumAcrValue)) {
-                if (LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
-                        .noneMatch(level -> minimumAcrValue.equals(String.valueOf(level)))) {
-                    context.addError("minimumAcrValue", "Minimum ACR value needs to be value specified in the ACR-To-Loa mapping or number level from set realm browser flow");
+                if (!acrToLoaMap.containsKey(minimumAcrValue)) {
+                    if (LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
+                            .noneMatch(level -> minimumAcrValue.equals(String.valueOf(level)))) {
+                        context.addError("minimumAcrValue", "Minimum ACR value needs to be value specified in the ACR-To-Loa mapping or number level from set realm browser flow");
+                    }
+                }
+            } else {
+                Map<String, Integer> acrToLoaMap = AcrUtils.getUriLoaMap(client);
+                if (!acrToLoaMap.containsKey(minimumAcrValue)) {
+                    context.addError("minimumAcrValue", "Minimum ACR value needs to be a URI specified in the ACR-To-Loa mapping");
                 }
             }
         }

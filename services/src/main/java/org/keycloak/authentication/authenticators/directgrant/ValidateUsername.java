@@ -75,7 +75,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
         if (user == null) {
             AuthenticatorUtils.dummyHash(context);
             context.getEvent().error(Errors.USER_NOT_FOUND);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
@@ -84,7 +84,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
             AuthenticatorUtils.dummyHash(context);
             context.getEvent().detail(Details.REASON, "User is a service account");
             context.getEvent().error(Errors.INVALID_USER);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
             return;
         }
@@ -94,7 +94,7 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
             AuthenticatorUtils.dummyHash(context);
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);
-            Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_grant", "Invalid user credentials");
+            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.forceChallenge(challengeResponse);
             return;
         }

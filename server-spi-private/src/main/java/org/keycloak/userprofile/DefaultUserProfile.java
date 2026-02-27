@@ -92,11 +92,16 @@ public final class DefaultUserProfile implements UserProfile {
 
     @Override
     public UserModel create() throws ValidationException {
+        return create(true);
+    }
+
+    @Override
+    public UserModel create(boolean validate) throws ValidationException {
         if (user != null) {
             throw new RuntimeException("User already created");
         }
 
-        if (!validated) {
+        if (validate && !validated) {
             validate();
         }
 

@@ -1527,6 +1527,16 @@ public class SamlProtocolTest {
         }
 
         @Override
+        public void setScimEnabled(boolean enabled) {
+            // noop
+        }
+
+        @Override
+        public boolean isScimEnabled() {
+            return false;
+        }
+
+        @Override
         public RequiredActionConfigModel getRequiredActionConfigById(String id) {
             return null;
         }

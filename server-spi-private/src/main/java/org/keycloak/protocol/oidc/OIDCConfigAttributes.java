@@ -101,6 +101,7 @@ public final class OIDCConfigAttributes {
     public static final String LOGO_URI = "logoUri";
     public static final String TOS_URI = "tosUri";
     public static final String POLICY_URI = "policyUri";
+    public static final String SECTOR_IDENTIFIER_URI = "sectorIdentifierUri";
     private OIDCConfigAttributes() {
     }
 

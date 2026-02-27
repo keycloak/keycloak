@@ -21,11 +21,13 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -38,6 +40,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
@@ -48,6 +51,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -61,12 +65,14 @@ public class OrganizationIdentityProvidersResource {
     private final KeycloakSession session;
     private final OrganizationProvider organizationProvider;
     private final OrganizationModel organization;
+    private final AdminEventBuilder adminEvent;
 
     public OrganizationIdentityProvidersResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
         this.realm = session == null ? null : session.getContext().getRealm();
         this.session = session;
         this.organizationProvider = session == null ? null : session.getProvider(OrganizationProvider.class);
         this.organization = organization;
+        this.adminEvent = adminEvent;
     }
 
     @POST
@@ -135,6 +141,51 @@ public class OrganizationIdentityProvidersResource {
         }
 
         return toRepresentation(broker);
+    }
+
+    /**
+     * Returns organization groups for the identity provider with the specified alias.
+     * It allows filtering and displaying only the organization groups that are valid for the given identity provider.
+     *
+     * Only returns groups if the identity provider is associated with the organization and the organization
+     * is enabled. Otherwise, returns an error or empty stream.
+     *
+     * @param alias the identity provider alias
+     * @param search a string to search for in group names
+     * @param searchQuery a query to search for group attributes, in the format 'key1:value1 key2:value2'
+     * @param exact if true, perform exact match on the search parameter
+     * @param first the position of the first result (pagination offset)
+     * @param max the maximum number of results to return
+     * @param briefRepresentation if true, return brief group representation; otherwise return full representation
+     * @return a stream of organization groups associated with the organization
+     */
+    @Path("{alias}/groups")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Returns organization groups for the identity provider",
+        description = "Returns organization groups that can be used in identity provider mappers. " +
+                "Only returns groups if the identity provider is associated with the organization.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = GroupRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Stream<GroupRepresentation> getGroups(
+            @Parameter(description = "The alias of the identity provider") @PathParam("alias") String alias,
+            @Parameter(description = "A string to search for in group names") @QueryParam("search") String search,
+            @Parameter(description = "A query to search for group attributes, in the format 'key1:value1 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "If true, perform exact match on the search parameter") @QueryParam("exact") @DefaultValue("false") Boolean exact,
+            @Parameter(description = "The position of the first result (pagination offset)") @QueryParam("first") Integer first,
+            @Parameter(description = "The maximum number of results to return") @QueryParam("max") Integer max,
+            @Parameter(description = "If true, return brief representation; otherwise return full representation") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
+            @Parameter(description = "If true, include subgroups count in the response") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
+
+        // Validate that the identity provider is associated with the organization
+        getIdentityProvider(alias);
+
+        OrganizationGroupsResource groupsResource = new OrganizationGroupsResource(session, organization, adminEvent);
+        return groupsResource.getGroups(search, searchQuery, exact, first, max, briefRepresentation, subGroupsCount);
     }
 
     @Path("{alias}")

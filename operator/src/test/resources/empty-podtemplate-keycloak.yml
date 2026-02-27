@@ -13,6 +13,8 @@ spec:
       value: postgres
     - name: db-password
       value: testpassword
+    - name: shutdown-delay
+      value: "0s"
   hostname:
     hostname: example.com
   unsupported:

@@ -12,8 +12,6 @@ import java.util.stream.Collectors;
 import org.keycloak.common.Profile;
 import org.keycloak.testframework.infinispan.CacheType;
 
-import io.quarkus.maven.dependency.Dependency;
-import io.quarkus.maven.dependency.DependencyBuilder;
 import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -26,9 +24,11 @@ public class KeycloakServerConfigBuilder {
     private final Set<String> features = new HashSet<>();
     private final Set<String> featuresDisabled = new HashSet<>();
     private final LogBuilder log = new LogBuilder();
-    private final Set<Dependency> dependencies = new HashSet<>();
+    private final Set<KeycloakDependency> dependencies = new HashSet<>();
     private CacheType cacheType = CacheType.LOCAL;
     private boolean externalInfinispan = false;
+    private String shutdownDelay = "0s";
+    private String shutdownTimeout = "1s";
 
     private KeycloakServerConfigBuilder(String command) {
         this.command = command;
@@ -93,6 +93,16 @@ public class KeycloakServerConfigBuilder {
 
     public boolean isExternalInfinispanEnabled() {
         return this.externalInfinispan;
+    }
+
+    public KeycloakServerConfigBuilder shutdownDelay(String shutdownDelay) {
+        this.shutdownDelay = shutdownDelay;
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder shutdownTimeout(String shutdownTimeout) {
+        this.shutdownTimeout = shutdownTimeout;
+        return this;
     }
 
     /**
@@ -172,8 +182,27 @@ public class KeycloakServerConfigBuilder {
      * @return
      */
     public KeycloakServerConfigBuilder dependency(String groupId, String artifactId) {
-        dependencies.add(new DependencyBuilder().setGroupId(groupId).setArtifactId(artifactId).build());
+        return dependency(groupId, artifactId, false, false);
+    }
+
+    public KeycloakServerConfigBuilder dependency(String groupId, String artifactId, boolean hotDeployable) {
+        return dependency(groupId, artifactId, hotDeployable, false);
+    }
+
+    private KeycloakServerConfigBuilder dependency(String groupId, String artifactId, boolean hotDeployable, boolean dependencyCurrentProject) {
+        dependencies.add(
+                new KeycloakDependency.Builder()
+                        .setGroupId(groupId)
+                        .setArtifactId(artifactId)
+                        .hotDeployable(hotDeployable)
+                        .dependencyCurrentProject(dependencyCurrentProject)
+                        .build()
+        );
         return this;
+    }
+
+    public KeycloakServerConfigBuilder dependencyCurrentProject() {
+        return dependency("", "", false, true);
     }
 
     public class LogBuilder {
@@ -271,6 +300,10 @@ public class KeycloakServerConfigBuilder {
         // Cache setup -> supported values: local or ispn
         option("cache", cacheType.name().toLowerCase());
 
+        // Shutdown options - defaults optimised for test speed
+        option("shutdown-delay", shutdownDelay);
+        option("shutdown-timeout", shutdownTimeout);
+
         log.build();
 
         List<String> args = new LinkedList<>();
@@ -288,7 +321,7 @@ public class KeycloakServerConfigBuilder {
         return args;
     }
 
-    Set<Dependency> toDependencies() {
+    Set<KeycloakDependency> toDependencies() {
         return dependencies;
     }
 

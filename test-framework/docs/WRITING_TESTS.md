@@ -119,6 +119,58 @@ public static class MyClient implements ClientConfig {
 
 Only dependencies (including transitive dependencies) defined by the suppliers can be injected into config classes. 
 
+### Server configuration
+
+Additionally, also the Keycloak server can be configured. For example, start-up options can be set, features enabled,
+and dependencies added. Adding a dependency is how a specific provider can be deployed.
+
+```java
+static class ServerConfig implements KeycloakServerConfig {
+    @Override
+    public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+        return config.features(Profile.Feature.AUTHORIZATION)
+                .option("metrics-enabled", "true")
+                .dependency("org.bouncycastle", "bc-fips");
+    }
+}
+```
+
+The code above instructs Keycloak to enable the authorization feature, turn on metrics collection and adds the
+BouncyCastle FIPS cryptography library as a runtime dependency.
+
+#### Hot deployment
+
+If the `distribution` mode is used while testing a dependency currently being developed in the local project,
+enable hot deployment. This scenario would be typical for Keycloak extension developers.
+
+```java
+static class ServerConfig implements KeycloakServerConfig {
+    @Override
+    public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+        return config.dependency("org.example", "very-cool-extension", true);
+    }
+}
+```
+
+The third parameter marks the dependency above as hot deployable. When tests run with `KC_TEST_SERVER_HOT_DEPLOY=true`,
+all hot deployable dependencies are loaded from compiled sources instead of from the maven repository, eliminating
+the need to build the dependency first.
+
+If the tests are in the same Maven module as the provider:
+
+```java
+static class ServerConfig implements KeycloakServerConfig {
+    @Override
+    public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+        return config.dependencyCurrentProject();
+    }
+}
+```
+
+This automatically deploys the current project's compiled classes.
+
+NOTE: hot deployment is exclusive to the `distribution` mode. `embedded` mode does it by design.
+
 ## Realm cleanup
 
 The test framework aims to re-use as much as possible to reduce execution time. This is especially relevant to 

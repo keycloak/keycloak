@@ -274,7 +274,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
                     .post(Entity.form(form));
-            assertEquals(401, response.getStatus());
+            assertEquals(400, response.getStatus());
             response.close();
         }
 
@@ -287,7 +287,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
                     .post(Entity.form(form));
-            assertEquals(401, response.getStatus());
+            assertEquals(400, response.getStatus());
             response.close();
         }
 

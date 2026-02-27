@@ -145,7 +145,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
         }
     }
 
-    private Integer getReadyReplicas(StatefulSet existingDeployment) {
+    static Integer getReadyReplicas(StatefulSet existingDeployment) {
         return Optional.ofNullable(existingDeployment.getStatus()).map(StatefulSetStatus::getReadyReplicas).orElse(0);
     }
 

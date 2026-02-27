@@ -4,8 +4,10 @@ import java.io.IOException;
 
 import jakarta.ws.rs.core.UriBuilder;
 
+import org.keycloak.protocol.oid4vc.model.OfferResponseType;
 import org.keycloak.testsuite.util.oauth.AbstractHttpGetRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
+import org.keycloak.util.Strings;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 
@@ -13,8 +15,10 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
 
     private final String credConfigId;
     private Boolean preAuthorized;
-    private String username;
-    private String clientId;
+    private Boolean txCode;
+    private String targetUser;
+    private Integer expireAt;
+    private OfferResponseType responseType;
 
     CredentialOfferUriRequest(AbstractOAuthClient<?> client, String credConfigId) {
         super(client);
@@ -26,23 +30,35 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
         return this;
     }
 
-    public CredentialOfferUriRequest username(String username) {
-        this.username = username;
+    public CredentialOfferUriRequest txCode(Boolean txCode) {
+        this.txCode = txCode;
         return this;
     }
 
-    public CredentialOfferUriRequest clientId(String clientId) {
-        this.clientId = clientId;
+    public CredentialOfferUriRequest targetUser(String targetUser) {
+        this.targetUser = targetUser;
+        return this;
+    }
+
+    public CredentialOfferUriRequest expireAt(Integer expireAt) {
+        this.expireAt = expireAt;
+        return this;
+    }
+
+    public CredentialOfferUriRequest responseType(OfferResponseType responseType) {
+        this.responseType = responseType;
         return this;
     }
 
     @Override
     protected String getEndpoint() {
         UriBuilder builder = UriBuilder.fromUri(client.getEndpoints().getOid4vcCredentialOfferUri());
-        if (credConfigId != null && !credConfigId.isBlank()) builder.queryParam("credential_configuration_id", credConfigId);
+        if (!Strings.isEmpty(credConfigId)) builder.queryParam("credential_configuration_id", credConfigId);
         if (preAuthorized != null) builder.queryParam("pre_authorized", preAuthorized);
-        if (clientId != null && !clientId.isBlank()) builder.queryParam("client_id", clientId);
-        if (username != null && !username.isBlank()) builder.queryParam("username", username);
+        if (txCode != null) builder.queryParam("tx_code", txCode);
+        if (!Strings.isEmpty(targetUser)) builder.queryParam("target_user", targetUser);
+        if (expireAt != null) builder.queryParam("expire", expireAt);
+        if (responseType != null) builder.queryParam("type", responseType.getValue());
         return builder.build().toString();
     }
 

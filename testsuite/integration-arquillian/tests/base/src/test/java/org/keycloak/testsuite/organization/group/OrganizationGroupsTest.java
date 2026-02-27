@@ -19,6 +19,7 @@ package org.keycloak.testsuite.organization.group;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -34,6 +35,7 @@ import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -57,7 +59,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
         }
 
-        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null, false);
+        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, null, null, false, false);
         assertThat(groups, hasSize(1));
         assertThat(groups.get(0).getName(), is("test-group"));
         assertThat(groups.get(0).getPath(), is("/test-group"));
@@ -66,7 +68,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         assertThat(groups.get(0).getAttributes().get("department").get(0), is("Engineering"));
 
         // retrieve brief rep
-        groups = orgResource.groups().getAll(null, null, null, null, true);
+        groups = orgResource.groups().getAll(null, null, null, null, null, true, false);
         assertThat(groups, hasSize(1));
         assertThat(groups.get(0).getAttributes(), nullValue());
     }
@@ -103,7 +105,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
             groupId = ApiUtil.getCreatedId(response);
         }
 
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
+        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
         assertNotNull(retrieved);
         assertThat(retrieved.getName(), is("test-group"));
         assertThat(retrieved.getPath(), is("/test-group"));
@@ -128,7 +130,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         }
 
         // Retrieve and verify attributes are included
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
+        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
         assertNotNull(retrieved.getAttributes());
         assertThat(retrieved.getAttributes().get("department"), hasSize(1));
         assertThat(retrieved.getAttributes().get("department").get(0), is("Engineering"));
@@ -152,7 +154,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         }
 
         // Retrieve and verify role mappings are null
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
+        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
         assertThat(retrieved, notNullValue());
         assertThat(retrieved.getRealmRoles(), nullValue());
         assertThat(retrieved.getClientRoles(), nullValue());
@@ -183,7 +185,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         }
 
         // Verify the update
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
+        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
         assertThat(retrieved.getName(), is("updated-name"));
         assertThat(retrieved.getPath(), is("/updated-name"));
         assertThat(retrieved.getDescription(), is("Updated description"));
@@ -207,7 +209,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         orgResource.groups().group(groupId).delete();
 
         // Verify it's deleted
-        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, 0, 10, true);
+        List<GroupRepresentation> groups = orgResource.groups().getAll(null, null, null, 0, 10, true, false);
         assertThat(groups, hasSize(0));
     }
 
@@ -239,6 +241,10 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         assertThat(subGroups, hasSize(1));
         assertThat(subGroups.get(0).getName(), is("child-group"));
         assertThat(subGroups.get(0).getPath(), is("/parent-group/child-group"));
+
+        // Verify parent's subgroup count
+        GroupRepresentation parentWithCount = orgResource.groups().group(parentId).toRepresentation(true);
+        assertThat(parentWithCount.getSubGroupCount(), is(1L));
     }
 
     @Test
@@ -452,6 +458,14 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         subGroups = orgResource.groups().group(parent2Id).getSubGroups(null, null, 0, 10);
         assertThat(subGroups, hasSize(1));
         assertThat(subGroups.get(0).getName(), is("child-group"));
+
+        // Verify parent1's count decreased
+        GroupRepresentation parent1WithCount = orgResource.groups().group(parent1Id).toRepresentation(true);
+        assertThat(parent1WithCount.getSubGroupCount(), is(0L));
+
+        // Verify parent2's count increased
+        GroupRepresentation parent2WithCount = orgResource.groups().group(parent2Id).toRepresentation(true);
+        assertThat(parent2WithCount.getSubGroupCount(), is(1L));
     }
 
     @Test
@@ -525,9 +539,213 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         }
 
         // Search for groups containing "sales" with exact=false
-        List<GroupRepresentation> results = orgResource.groups().getAll("sales", false, null, null, true);
+        List<GroupRepresentation> results = orgResource.groups().getAll("sales", null, false, null, null, true, false);
 
         // Should only return groups with "sales" in the name: "sales" and "sales-team"
         assertThat(results, hasSize(2));
+    }
+
+    @Test
+    public void testFindGroupByPathWithNestedOrganizationGroups() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create a 3-level hierarchy: parent/child/grandchild
+        GroupRepresentation parentRep = new GroupRepresentation();
+        parentRep.setName("parent");
+        String parentId;
+        try (Response response = orgResource.groups().addTopLevelGroup(parentRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            parentId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation childRep = new GroupRepresentation();
+        childRep.setName("child");
+        try (Response response = orgResource.groups().group(parentId).addSubGroup(childRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        List<GroupRepresentation> subGroups = orgResource.groups().group(parentId).getSubGroups(null, null, null, null);
+        assertThat(subGroups, hasSize(1));
+        assertThat(subGroups.get(0).getName(), is("child"));
+        String childId = subGroups.get(0).getId();
+
+        GroupRepresentation grandchildRep = new GroupRepresentation();
+        grandchildRep.setName("grandchild");
+        try (Response response = orgResource.groups().group(childId).addSubGroup(grandchildRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        // Test resolving the full path - this exercises the recursive getGroupModel path
+        GroupRepresentation found = orgResource.groups().getGroupByPath("/parent/child/grandchild", false);
+        assertThat(found, notNullValue());
+        assertThat(found.getName(), is("grandchild"));
+        assertThat(found.getPath(), is("/parent/child/grandchild"));
+
+        // Test resolving intermediate paths
+        GroupRepresentation foundChild = orgResource.groups().getGroupByPath("/parent/child", false);
+        assertThat(foundChild, notNullValue());
+        assertThat(foundChild.getName(), is("child"));
+        assertThat(foundChild.getPath(), is("/parent/child"));
+
+        // Test resolving top-level path
+        GroupRepresentation foundParent = orgResource.groups().getGroupByPath("/parent", false);
+        assertThat(foundParent, notNullValue());
+        assertThat(foundParent.getName(), is("parent"));
+        assertThat(foundParent.getPath(), is("/parent"));
+
+        // Test non-existent path
+        try {
+            orgResource.groups().getGroupByPath("/parent/nonexistent", false);
+            fail("Should have thrown NotFoundException");
+        } catch (jakarta.ws.rs.NotFoundException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testSubGroupCountQueryParameter() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create parent with 3 subgroups
+        GroupRepresentation parentRep = new GroupRepresentation();
+        parentRep.setName("parent");
+        String parentId;
+        try (Response response = orgResource.groups().addTopLevelGroup(parentRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            parentId = ApiUtil.getCreatedId(response);
+        }
+
+        // Add 3 children
+        for (int i = 1; i <= 3; i++) {
+            GroupRepresentation childRep = new GroupRepresentation();
+            childRep.setName("child-" + i);
+            try (Response response = orgResource.groups().group(parentId).addSubGroup(childRep)) {
+                assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            }
+        }
+
+        // Test with subGroupsCount = true
+        GroupRepresentation withCount = orgResource.groups().group(parentId).toRepresentation(true);
+        assertThat(withCount.getSubGroupCount(), is(3L));
+
+        // Test with subGroupsCount = false (default)
+        GroupRepresentation withoutCount = orgResource.groups().group(parentId).toRepresentation(false);
+        assertThat(withoutCount.getSubGroupCount(), nullValue());
+
+        // Test group with no subgroups
+        GroupRepresentation leafRep = new GroupRepresentation();
+        leafRep.setName("leaf-group");
+        String leafId;
+        try (Response response = orgResource.groups().addTopLevelGroup(leafRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            leafId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation leafWithCount = orgResource.groups().group(leafId).toRepresentation(true);
+        assertThat(leafWithCount.getSubGroupCount(), is(0L));
+
+        // Test getAll() with subGroupsCount parameter
+        List<GroupRepresentation> allWithCount = orgResource.groups().getAll(null, null, null, null, null, false, true);
+        assertThat(allWithCount, hasSize(2)); // parent, leaf-group
+        allWithCount.forEach(g -> assertThat(g.getSubGroupCount(), notNullValue()));
+
+        List<GroupRepresentation> allWithoutCount = orgResource.groups().getAll(null, null, null, null, null, false, false);
+        assertThat(allWithoutCount, hasSize(2));
+        allWithoutCount.forEach(g -> assertThat(g.getSubGroupCount(), nullValue()));
+
+        // Test getGroupByPath with subGroupsCount
+        GroupRepresentation byPathWithCount = orgResource.groups().getGroupByPath("/parent", true);
+        assertThat(byPathWithCount.getSubGroupCount(), is(3L));
+
+        GroupRepresentation byPathWithoutCount = orgResource.groups().getGroupByPath("/parent", false);
+        assertThat(byPathWithoutCount.getSubGroupCount(), nullValue());
+    }
+
+    @Test
+    public void testMoveGroupToTopLevel() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create parent group
+        GroupRepresentation parentRep = new GroupRepresentation();
+        parentRep.setName("parent-group");
+        String parentId;
+        try (Response response = orgResource.groups().addTopLevelGroup(parentRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            parentId = ApiUtil.getCreatedId(response);
+        }
+
+        // Create child group under parent
+        GroupRepresentation childRep = new GroupRepresentation();
+        childRep.setName("child-group");
+        try (Response response = orgResource.groups().group(parentId).addSubGroup(childRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        // Verify initial state: parent has 1 subgroup
+        List<GroupRepresentation> subGroups = orgResource.groups().group(parentId).getSubGroups(null, null, null, null);
+        assertThat(subGroups, hasSize(1));
+        assertThat(subGroups.get(0).getName(), is("child-group"));
+        String childId = subGroups.get(0).getId();
+
+        // Verify child's path shows it's under parent
+        GroupRepresentation child = orgResource.groups().group(childId).toRepresentation(false);
+        assertThat(child.getPath(), is("/parent-group/child-group"));
+
+        // Move child to top-level by calling addTopLevelGroup with ID
+        GroupRepresentation moveRep = new GroupRepresentation();
+        moveRep.setId(childId);
+        moveRep.setName("child-group");
+        try (Response response = orgResource.groups().addTopLevelGroup(moveRep)) {
+            assertThat(response.getStatus(), is(Status.NO_CONTENT.getStatusCode()));
+        }
+
+        // Verify child is now top-level (path should not include parent)
+        child = orgResource.groups().group(childId).toRepresentation(false);
+        assertThat(child.getPath(), is("/child-group"));
+
+        // Verify parent no longer has subgroups
+        subGroups = orgResource.groups().group(parentId).getSubGroups(null, null, null, null);
+        assertThat(subGroups, hasSize(0));
+
+        // Verify getAll returns both as top-level groups
+        List<GroupRepresentation> topLevelGroups = orgResource.groups().getAll(null, null, null, null, null, true, false);
+        assertThat(topLevelGroups, hasSize(2));
+        Set<String> groupNames = topLevelGroups.stream().map(GroupRepresentation::getName).collect(java.util.stream.Collectors.toSet());
+        assertThat(groupNames, containsInAnyOrder("parent-group", "child-group"));
+    }
+
+    @Test
+    public void testMoveGroupToTopLevelValidation() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create a realm group (not org group)
+        GroupRepresentation realmGroupRep = new GroupRepresentation();
+        realmGroupRep.setName("realm-group");
+        try (Response response = testRealm().groups().add(realmGroupRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+            String realmGroupId = ApiUtil.getCreatedId(response);
+
+            // Try to move realm group to org top-level - should fail
+            GroupRepresentation moveRep = new GroupRepresentation();
+            moveRep.setId(realmGroupId);
+            moveRep.setName("realm-group");
+            try (Response moveResponse = orgResource.groups().addTopLevelGroup(moveRep)) {
+                assertThat(moveResponse.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
+            }
+
+            testRealm().groups().group(realmGroupId).remove();
+        }
+
+        // Try to move non-existent group - should fail
+        GroupRepresentation nonExistentRep = new GroupRepresentation();
+        nonExistentRep.setId("non-existent-id");
+        nonExistentRep.setName("non-existent");
+        try (Response response = orgResource.groups().addTopLevelGroup(nonExistentRep)) {
+            assertThat(response.getStatus(), is(Status.NOT_FOUND.getStatusCode()));
+        }
     }
 }

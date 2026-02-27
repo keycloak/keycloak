@@ -630,7 +630,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
                     .post(Entity.form(form));
-            assertEquals(401, response.getStatus());
+            assertEquals(400, response.getStatus());
             response.close();
         }
 
@@ -643,7 +643,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
                     .post(Entity.form(form));
-            assertEquals(401, response.getStatus());
+            assertEquals(400, response.getStatus());
             response.close();
         }
         {   // test no password
@@ -654,7 +654,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             Response response = grantTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, header)
                     .post(Entity.form(form));
-            assertEquals(401, response.getStatus());
+            assertEquals(400, response.getStatus());
             response.close();
         }
 
@@ -749,7 +749,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
             // wrong password is 401 => Invalid user credentials
             try (Response response = executeGrantAccessTokenRequestWrongPassword(grantTarget)) {
-                assertEquals(401, response.getStatus());
+                assertEquals(400, response.getStatus());
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode jsonNode = objectMapper.readTree(response.readEntity(String.class));
                 assertEquals("invalid_grant", jsonNode.get("error").asText());

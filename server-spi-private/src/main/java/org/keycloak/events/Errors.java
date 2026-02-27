@@ -68,6 +68,8 @@ public interface Errors {
     String INVALID_FORM = "invalid_form";
     String INVALID_CONFIG = "invalid_config";
     String EXPIRED_CODE = "expired_code";
+    String MISSING_TX_CODE = "missing_tx_code";
+    String INVALID_TX_CODE = "invalid_tx_code";
     String INVALID_INPUT = "invalid_input";
     String COOKIE_NOT_FOUND = "cookie_not_found";
     String ALREADY_LOGGED_IN = "already_logged_in";

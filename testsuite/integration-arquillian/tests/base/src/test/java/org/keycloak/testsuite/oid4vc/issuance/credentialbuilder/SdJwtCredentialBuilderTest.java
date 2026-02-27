@@ -124,8 +124,8 @@ public class SdJwtCredentialBuilderTest extends CredentialBuilderTest {
 
         ArrayNode sdArrayNode = (ArrayNode) jwt.getPayload().get(CLAIM_NAME_SD);
         if (sdArrayNode != null) {
-            assertEquals("The algorithm should be included",
-                    credentialBuildConfig.getHashAlgorithm(),
+            assertEquals("The algorithm should be included and lowercase",
+                    credentialBuildConfig.getHashAlgorithm().toLowerCase(),
                     jwt.getPayload().get(CLAIM_NAME_SD_HASH_ALGORITHM).asText());
         }
 

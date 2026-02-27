@@ -54,7 +54,7 @@ public class GroupMovedEvent extends InvalidationEvent implements RealmCacheInva
     }
 
     public static GroupMovedEvent create(GroupModel group, GroupModel toParent, String realmId) {
-        return new GroupMovedEvent(group.getId(), group.getId(), toParent == null ? null : toParent.getId(), realmId);
+        return new GroupMovedEvent(group.getId(), toParent == null ? null : toParent.getId(), group.getParentId(), realmId);
     }
 
     @Override

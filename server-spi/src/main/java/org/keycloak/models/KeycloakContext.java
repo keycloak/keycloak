@@ -131,4 +131,8 @@ public interface KeycloakContext {
      * @return the {@link UserModel} bound to this context.
      */
     UserModel getUser();
+
+    boolean hasPermission(String realmResourceType, String scope);
+
+    boolean hasPermission(Model model, String realmResourceType, String scope);
 }

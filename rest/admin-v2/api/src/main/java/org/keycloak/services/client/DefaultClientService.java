@@ -14,6 +14,9 @@ import jakarta.annotation.Nullable;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.events.admin.v2.AdminEventV2Builder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -27,6 +30,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
@@ -43,7 +47,9 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 
-// TODO
+/**
+ * Default implementation of ClientService for Admin API v2.
+ */
 public class DefaultClientService implements ClientService {
     private static final ObjectMapper MAPPER = new ObjectMapperResolver().getContext(null);
 
@@ -54,6 +60,7 @@ public class DefaultClientService implements ClientService {
     // v1 resources
     private final RealmAdminResource realmResource;
     private final ClientsResource clientsResource;
+    private final AdminEventBuilder adminEventBuilder;
     private ClientResource clientResource;
 
     public DefaultClientService(@Nonnull KeycloakSession session,
@@ -67,6 +74,9 @@ public class DefaultClientService implements ClientService {
         this.realmResource = realmResource;
         this.clientsResource = realmResource.getClients();
         this.clientResource = clientResource;
+        RealmModel realm = session.getContext().getRealm();
+        this.adminEventBuilder = new AdminEventV2Builder(realm, permissions.adminAuth(), session, session.getContext().getConnection())
+                .resource(ResourceType.CLIENT);
     }
 
     public DefaultClientService(@Nonnull KeycloakSession session,
@@ -150,9 +160,26 @@ public class DefaultClientService implements ClientService {
         if (client instanceof OIDCClientRepresentation oidcClient) {
             handleServiceAccount(model, oidcClient);
         }
-        var updated = mapper.fromModel(model);
 
-        return new CreateOrUpdateResult(updated, created);
+        fireAdminEvent(created ? OperationType.CREATE : OperationType.UPDATE, mapper.fromModel(model));
+
+        return new CreateOrUpdateResult(mapper.fromModel(model), created);
+    }
+
+    /**
+     * Fires a v2 admin event for client operations (only enabled for testing now to avoid duplicated admin events)
+     *
+     * @param operationType the type of operation (CREATE, UPDATE, DELETE)
+     * @param representation the v2 representation of the client
+     */
+    private void fireAdminEvent(OperationType operationType, BaseClientRepresentation representation) {
+        if (Boolean.parseBoolean(System.getProperty("kc.admin-v2.client-service.events.enabled","false"))) {
+            adminEventBuilder
+                    .operation(operationType)
+                    .resourcePath(session.getContext().getUri())
+                    .representation(representation)
+                    .success();
+        }
     }
 
     @Override

@@ -30,7 +30,7 @@ import static org.keycloak.utils.StringUtil.isNotBlank;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface UserModel extends RoleMapperModel {
+public interface UserModel extends RoleMapperModel, Model {
     String ID = "id";
     String USERNAME = "username";
     String FIRST_NAME = "firstName";
@@ -64,8 +64,6 @@ public interface UserModel extends RoleMapperModel {
         UserModel getUser();
         KeycloakSession getKeycloakSession();
     }
-
-    String getId();
 
     // No default method here to allow Abstract subclasses where the username is provided in a different manner
     String getUsername();

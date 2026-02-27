@@ -95,6 +95,7 @@ public class Profile {
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
 
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
+        STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.PREVIEW, Feature.STEP_UP_AUTHENTICATION),
 
         CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.PREVIEW),
 
@@ -159,11 +160,15 @@ public class Profile {
 
         OPENAPI("OpenAPI specification served at runtime", Type.EXPERIMENTAL, CLIENT_ADMIN_API_V2),
 
+        CIMD("OAuth Client ID Metadata Document", Type.EXPERIMENTAL),
+
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
          */
         @Deprecated
-        INSTAGRAM_BROKER("Instagram Identity Broker", Type.DEPRECATED, 1);
+        INSTAGRAM_BROKER("Instagram Identity Broker", Type.DEPRECATED, 1),
+
+        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.EXPERIMENTAL);
 
         private final Type type;
         private final String label;

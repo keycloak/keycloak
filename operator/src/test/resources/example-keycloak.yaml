@@ -22,3 +22,5 @@ spec:
   additionalOptions:
     - name: metrics-enabled
       value: "true"
+    - name: shutdown-delay
+      value: "0s"

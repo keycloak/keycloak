@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc.grants;
 
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,6 +47,7 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.Strings;
 import org.keycloak.utils.MediaType;
 
 import org.jboss.logging.Logger;
@@ -75,9 +77,10 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
-        String code = formParams.getFirst(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM);
+        String preAuthCode = formParams.getFirst(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM);
+        String txCode = formParams.getFirst(PreAuthorizedCodeGrantTypeFactory.TX_CODE_PARAM);
 
-        if (code == null) {
+        if (preAuthCode == null) {
             // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
             String errorMessage = "Missing parameter: " + PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM;
             event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
@@ -86,9 +89,9 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        var offerState = offerStorage.findOfferStateByCode(session, code);
+        var offerState = offerStorage.findOfferStateByCode(session, preAuthCode);
         if (offerState == null) {
-            var errorMessage = "No credential offer state for code: " + code;
+            var errorMessage = "No credential offer state for pre-auth code: " + preAuthCode;
             event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
@@ -99,33 +102,49 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
                     "Code is expired", Response.Status.BAD_REQUEST);
         }
+
+        String expTxCode = offerState.getTxCode();
+        if (expTxCode != null) {
+            if (Strings.isEmpty(txCode)) {
+                event.error(Errors.MISSING_TX_CODE);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
+                        "Missing TxCode", Response.Status.BAD_REQUEST);
+            }
+            // Prevent timing attacks - execution time does not depend on where the first difference occurs
+            if (!MessageDigest.isEqual(expTxCode.getBytes(), txCode.getBytes())) {
+                event.error(Errors.INVALID_TX_CODE);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
+                        "Invalid TxCode", Response.Status.BAD_REQUEST);
+            }
+        }
+
         var credOffer = offerState.getCredentialsOffer();
 
-        var appUserId = offerState.getUserId();
-        var userModel = session.users().getUserById(realm, appUserId);
-        if (userModel == null) {
-            var errorMessage = "No user with ID: " + appUserId;
+        var targetUserId = offerState.getUserId();
+        var targetUserModel = session.users().getUserById(realm, targetUserId);
+        if (targetUserModel == null) {
+            var errorMessage = "No user with ID: " + targetUserId;
             event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
-        if (!userModel.isEnabled()) {
-            var errorMessage = "User '" + userModel.getUsername() + "' disabled";
+        if (!targetUserModel.isEnabled()) {
+            var errorMessage = "User '" + targetUserModel.getUsername() + "' disabled";
             event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        var appClientId = offerState.getClientId();
-        ClientModel clientModel = realm.getClientByClientId(appClientId);
+        var targetClientId = offerState.getClientId();
+        ClientModel clientModel = realm.getClientByClientId(targetClientId);
         if (clientModel == null) {
-            var errorMessage = "No client model for: " + appClientId;
+            var errorMessage = "No client model for: " + targetClientId;
             event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        UserSessionModel userSession = session.sessions().createUserSession(null, realm, userModel, userModel.getUsername(),
+        UserSessionModel userSession = session.sessions().createUserSession(null, realm, targetUserModel, targetUserModel.getUsername(),
                 null, "pre-authorized-code", false, null,
                 null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
@@ -142,7 +161,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         session.getContext().setClient(clientModel);
 
         event.client(clientModel)
-                .user(userModel);
+                .user(targetUserModel);
 
         // Check if authorization_details parameter was explicitly provided
         String authorizationDetailsParam = formParams.getFirst(OAuth2Constants.AUTHORIZATION_DETAILS);

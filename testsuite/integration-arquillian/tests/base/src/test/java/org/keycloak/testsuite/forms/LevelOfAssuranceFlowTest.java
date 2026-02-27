@@ -198,12 +198,20 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     }
 
     public static void configureStepUpFlow(KeycloakTestingClient testingClient) {
-        configureStepUpFlow(testingClient, ConditionalLoaAuthenticator.DEFAULT_MAX_AGE, 0, 0);
+        configureStepUpFlow(TEST_REALM_NAME, testingClient, ConditionalLoaAuthenticator.DEFAULT_MAX_AGE, 0, 0);
+    }
+
+    public static void configureStepUpFlow(String realmName, KeycloakTestingClient testingClient) {
+        configureStepUpFlow(realmName, testingClient, ConditionalLoaAuthenticator.DEFAULT_MAX_AGE, 0, 0);
     }
 
     private static void configureStepUpFlow(KeycloakTestingClient testingClient, int maxAge1, int maxAge2, int maxAge3) {
-        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(FLOW_ALIAS));
-        testingClient.server(TEST_REALM_NAME)
+        configureStepUpFlow(TEST_REALM_NAME, testingClient, maxAge1, maxAge2, maxAge3);
+    }
+
+    private static void configureStepUpFlow(String realmName, KeycloakTestingClient testingClient, int maxAge1, int maxAge2, int maxAge3) {
+        testingClient.server(realmName).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(FLOW_ALIAS));
+        testingClient.server(realmName)
                 .run(session -> FlowUtil.inCurrentRealm(session).selectFlow(FLOW_ALIAS).inForms(forms -> forms.clear()
                         // level 1 authentication
                         .addSubFlowExecution("level1-subflow", AuthenticationFlow.BASIC_FLOW, Requirement.CONDITIONAL, subFlow -> {

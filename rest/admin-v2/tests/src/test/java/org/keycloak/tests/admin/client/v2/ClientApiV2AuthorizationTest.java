@@ -4,22 +4,31 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.authorization.Logic;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
+import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
+import org.keycloak.services.PatchTypeNames;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
+import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
@@ -54,6 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 @KeycloakIntegrationTest(config = ClientApiV2AuthorizationTest.AdminV2WithAuthzConfig.class)
 public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
+    private static final String FGAP_USER_ID = "00000000000000000000";
 
     @InjectHttpClient
     CloseableHttpClient client;
@@ -63,6 +73,9 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
 
     @InjectAdminClientFactory
     AdminClientFactory adminClientFactory;
+
+    @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
+    ManagedClient adminPermissionClient;
 
     @Override
     public String getRealmName() {
@@ -307,7 +320,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         createTestClient("test-patch-admin");
         HttpPatch request = new HttpPatch(getClientsApiUrl() + "/test-patch-admin");
         setAuthHeader(request, adminClients.get("realm-admin"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, "application/merge-patch+json");
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("Patched");
         request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
@@ -320,7 +333,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         createTestClient("test-patch-view");
         request = new HttpPatch(getClientsApiUrl() + "/test-patch-view");
         setAuthHeader(request, adminClients.get("view-clients"));
-        request.setHeader(HttpHeaders.CONTENT_TYPE, "application/merge-patch+json");
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
         request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(403));
@@ -340,7 +353,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
 
         // does not exist
         request = new HttpPatch(getClientsApiUrl() + "/does-not-exist");
-        request.setHeader(HttpHeaders.CONTENT_TYPE, "application/merge-patch+json");
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
         patch = new OIDCClientRepresentation();
         patch.setDescription("Patched-non-existing");
         request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
@@ -452,6 +465,129 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         }
     }
 
+    @Test
+    public void fgapGetClient() throws Exception {
+        createTestClient("fgap-view-test");
+
+        // BEFORE permission: fgap-user cannot view fgap-view-test (403)
+        HttpGet request = new HttpGet(getClientsApiUrl() + "/fgap-view-test");
+        setAuthHeader(request, adminClients.get("fgap-user"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        }
+
+        // Create FGAP permission for fgap-view-test
+        createFgapPermissionForClient("fgap-view-test");
+
+        // AFTER permission: fgap-user CAN view fgap-view-test (200)
+        try (var response = client.execute(request)) {
+            EntityUtils.consumeQuietly(response.getEntity());
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
+        }
+
+        // fgap-user CANNOT view fgap-denied-client (no permission granted) (403)
+        request = new HttpGet(getClientsApiUrl() + "/fgap-denied-client");
+        setAuthHeader(request, adminClients.get("fgap-user"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        }
+    }
+
+    @Test
+    public void fgapUpdateClient() throws Exception {
+        createTestClient("fgap-update-test");
+
+        // BEFORE permission: fgap-user cannot update fgap-update-test (403)
+        HttpPut request = new HttpPut(getClientsApiUrl() + "/fgap-update-test");
+        setAuthHeader(request, adminClients.get("fgap-user"));
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("fgap-update-test", "updated-role"))));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        }
+
+        // Create FGAP permission for fgap-update-test
+        createFgapPermissionForClient("fgap-update-test");
+
+        // AFTER permission: fgap-user CAN update fgap-update-test (200)
+        try (var response = client.execute(request)) {
+            EntityUtils.consumeQuietly(response.getEntity());
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
+        }
+
+        // fgap-user CANNOT update fgap-denied-client (no permission granted) (403)
+        request = new HttpPut(getClientsApiUrl() + "/fgap-denied-client");
+        setAuthHeader(request, adminClients.get("fgap-user"));
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        request.setEntity(new StringEntity(mapper.writeValueAsString(createClientRep("fgap-denied-client", "updated-role"))));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        }
+    }
+
+    @Test
+    public void fgapPatchClient() throws Exception {
+        createTestClient("fgap-patch-test");
+
+        OIDCClientRepresentation patch = new OIDCClientRepresentation();
+        patch.setDescription("Patched by FGAP user");
+
+        // BEFORE permission: fgap-user cannot patch fgap-patch-test (403)  
+        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/fgap-patch-test");
+        setAuthHeader(request, adminClients.get("fgap-user"));
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+        request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        }
+
+        // Create FGAP permission for fgap-patch-test
+        createFgapPermissionForClient("fgap-patch-test");
+
+        // AFTER permission: fgap-user CAN patch fgap-patch-test (200)
+        try (var response = client.execute(request)) {
+            EntityUtils.consumeQuietly(response.getEntity());
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
+        }
+
+        // fgap-user CANNOT patch fgap-denied-client (no permission granted) (403)
+        request = new HttpPatch(getClientsApiUrl() + "/fgap-denied-client");
+        setAuthHeader(request, adminClients.get("fgap-user"));
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+        patch.setDescription("Should not be patched");
+        request.setEntity(new StringEntity(mapper.writeValueAsString(patch)));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        }
+    }
+
+    @Test
+    public void fgapDeleteClient() throws Exception {
+        createTestClient("fgap-delete-test");
+
+        // BEFORE permission: fgap-user cannot delete fgap-delete-test (403)
+        HttpDelete request = new HttpDelete(getClientsApiUrl() + "/fgap-delete-test");
+        setAuthHeader(request, adminClients.get("fgap-user"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        }
+
+        // Create FGAP permission for fgap-delete-test
+        createFgapPermissionForClient("fgap-delete-test");
+
+        // AFTER permission: fgap-user CAN delete fgap-delete-test (204)
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(204));
+        }
+
+        // fgap-user CANNOT delete fgap-denied-client (no permission granted) (403)
+        request = new HttpDelete(getClientsApiUrl() + "/fgap-denied-client");
+        setAuthHeader(request, adminClients.get("fgap-user"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(403));
+        }
+    }
+
     private OIDCClientRepresentation createClientRep(String clientId, String... roles) {
         OIDCClientRepresentation rep = new OIDCClientRepresentation();
         rep.setClientId(clientId);
@@ -481,6 +617,47 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
                 .build();
     }
 
+    private void createFgapPermissionForClient(String clientId) throws Exception {
+        createFgapPermissionForClient(clientId, FGAP_USER_ID, AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.VIEW);
+    }
+
+    /**
+     * Creates a fine-grained permission for a specific client.
+     * This grants MANAGE and VIEW scopes for the specified client.
+     */
+    private void createFgapPermissionForClient(String clientId, String userId, String... scopes) throws Exception {
+        var clientUuid = Optional.ofNullable(testRealm.admin().clients().findByClientId(clientId))
+                .filter(f -> !f.isEmpty())
+                .map(f -> f.get(0))
+                .map(ClientRepresentation::getId)
+                .orElseThrow(() -> new AssertionError("Cannot find client"));
+
+        // Create user policy for fgap-user
+        UserPolicyRepresentation userPolicy = new UserPolicyRepresentation();
+        userPolicy.setName("fgap-user-policy-" + clientUuid);
+        userPolicy.setUsers(Set.of(userId));
+        userPolicy.setLogic(Logic.POSITIVE);
+
+        String userPolicyId;
+        try (var response = adminPermissionClient.admin().authorization().policies().user().create(userPolicy)) {
+            assertThat(response.getStatusInfo().getStatusCode(), is(201));
+            userPolicyId = response.readEntity(UserPolicyRepresentation.class).getId();
+        }
+
+        // Create scope permission for the specific client
+        ScopePermissionRepresentation scopePermission = new ScopePermissionRepresentation();
+        scopePermission.setName("fgap-permission-" + clientUuid);
+        scopePermission.setResourceType(AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE);
+        scopePermission.setResources(Set.of(clientUuid));
+        scopePermission.setScopes(Set.of(scopes));
+        scopePermission.setPolicies(Set.of(userPolicyId));
+        scopePermission.setLogic(Logic.POSITIVE);
+
+        try (var response = adminPermissionClient.admin().authorization().permissions().scope().create(scopePermission)) {
+            assertThat(response.getStatusInfo().getStatusCode(), is(201));
+        }
+    }
+
     public static class AdminV2WithAuthzConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
@@ -494,6 +671,7 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name("authztest");
+            realm.adminPermissionsEnabled(true);
             realm.addClient("test-client")
                     .secret("test-secret")
                     .directAccessGrantsEnabled(true);
@@ -550,6 +728,21 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
                     .password("password")
                     .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_REALM);
             CURRENT_USERS.add("manage-realm");
+
+            // FGAP v2
+            // fgap-user has QUERY_CLIENTS role but will be granted fine-grained permissions for specific clients
+            realm.addUser("fgap-user")
+                    .id(FGAP_USER_ID)
+                    .name("FGAP", "User")
+                    .email("fgapuser@localhost")
+                    .emailVerified(true)
+                    .password("password")
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.QUERY_CLIENTS);
+            CURRENT_USERS.add("fgap-user");
+
+            realm.addClient("fgap-denied-client")
+                    .enabled(true);
+
             return realm;
         }
     }

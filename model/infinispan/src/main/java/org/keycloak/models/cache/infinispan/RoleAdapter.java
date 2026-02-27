@@ -121,7 +121,7 @@ public class RoleAdapter implements RoleModel {
     @Override
     public boolean isComposite() {
         if (isUpdated()) return updated.isComposite();
-        return cached.isComposite();
+        return cached.isComposite(session, this::getRoleModel);
     }
 
     @Override

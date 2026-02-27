@@ -26,6 +26,7 @@ import java.util.Optional;
 import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.Token;
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -33,14 +34,20 @@ import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.logging.MappedDiagnosticContextProvider;
 import org.keycloak.logging.MappedDiagnosticContextUtil;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
+import org.keycloak.models.Model;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
@@ -52,7 +59,6 @@ import io.opentelemetry.api.trace.Span;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public abstract class DefaultKeycloakContext implements KeycloakContext {
-
     private RealmModel realm;
 
     private ClientModel client;
@@ -321,5 +327,67 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
 
     private MappedDiagnosticContextProvider mdc() {
         return MappedDiagnosticContextUtil.getMappedDiagnosticContextProvider(session);
+    }
+
+    @Override
+    public boolean hasPermission(String realmResourceType, String scope) {
+        Token token = getBearerToken();
+
+        if (token instanceof AccessToken accessToken) {
+            AdminPermissionEvaluator realmAuth = AdminPermissions.evaluator(session, realm, new AdminAuth(getRealm(), accessToken, getUser(), getClient()));
+
+            return switch (realmResourceType) {
+                case AdminPermissionsSchema.USERS_RESOURCE_TYPE -> {
+                    if (AdminPermissionsSchema.VIEW.equals(scope)) {
+                        yield realmAuth.users().canView();
+                    } else if (AdminPermissionsSchema.MANAGE.equals(scope)) {
+                        yield realmAuth.users().canManage();
+                    }
+                    yield false;
+                }
+                case AdminPermissionsSchema.GROUPS_RESOURCE_TYPE -> {
+                    if (AdminPermissionsSchema.VIEW.equals(scope)) {
+                        yield realmAuth.groups().canView();
+                    } else if (AdminPermissionsSchema.MANAGE.equals(scope)) {
+                        yield realmAuth.groups().canManage();
+                    }
+                    yield false;
+                }
+                default -> false;
+            };
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean hasPermission(Model model, String realmResourceType, String scope) {
+        Token token = getBearerToken();
+
+        if (token instanceof AccessToken accessToken) {
+            AdminPermissionEvaluator realmAuth = AdminPermissions.evaluator(session, realm, new AdminAuth(getRealm(), accessToken, getUser(), getClient()));
+
+            return switch (realmResourceType) {
+                case AdminPermissionsSchema.USERS_RESOURCE_TYPE -> {
+                    if (AdminPermissionsSchema.VIEW.equals(scope)) {
+                        yield realmAuth.users().canView((UserModel) model);
+                    } else if (AdminPermissionsSchema.MANAGE.equals(scope)) {
+                        yield realmAuth.users().canManage((UserModel) model);
+                    }
+                    yield false;
+                }
+                case AdminPermissionsSchema.GROUPS_RESOURCE_TYPE -> {
+                    if (AdminPermissionsSchema.VIEW.equals(scope)) {
+                        yield realmAuth.groups().canView((GroupModel) model);
+                    } else if (AdminPermissionsSchema.MANAGE.equals(scope)) {
+                        yield realmAuth.groups().canManage((GroupModel) model);
+                    }
+                    yield false;
+                }
+                default -> false;
+            };
+        }
+
+        return false;
     }
 }

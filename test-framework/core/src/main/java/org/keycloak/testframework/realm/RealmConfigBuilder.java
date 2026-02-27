@@ -18,6 +18,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.util.Collections;
 
 public class RealmConfigBuilder {
 
@@ -263,6 +264,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder resetClientPolicies() {
+        rep.setParsedClientPolicies(null);
+        return this;
+    }
+
     public RealmConfigBuilder clientPolicy(ClientPolicyRepresentation clienPolicyRep) {
         ClientPoliciesRepresentation clientPolicies = rep.getParsedClientPolicies();
         if (clientPolicies == null) {
@@ -271,6 +277,11 @@ public class RealmConfigBuilder {
         List<ClientPolicyRepresentation> policies = clientPolicies.getPolicies();
         policies.add(clienPolicyRep);
         rep.setParsedClientPolicies(clientPolicies);
+        return this;
+    }
+
+    public RealmConfigBuilder resetClientProfiles() {
+        rep.setParsedClientProfiles(null);
         return this;
     }
 
@@ -382,6 +393,11 @@ public class RealmConfigBuilder {
 
     public RealmConfigBuilder webAuthnPolicyAcceptableAaguids(List<String> aaguids) {
         rep.setWebAuthnPolicyAcceptableAaguids(aaguids);
+        return this;
+    }
+
+    public RealmConfigBuilder scimEnabled(boolean enabled) {
+        rep.setScimEnabled(enabled);
         return this;
     }
 

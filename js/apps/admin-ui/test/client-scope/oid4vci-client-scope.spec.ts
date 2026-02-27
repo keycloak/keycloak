@@ -84,7 +84,7 @@ const TEST_VALUES = {
   ISSUER_DID: "did:key:test123",
   EXPIRY_SECONDS: "86400",
   SIGNING_ALG: "ES256",
-  HASH_ALGORITHM: "SHA-384",
+  HASH_ALGORITHM: "sha-384",
   TOKEN_JWS_TYPE: "dc+sd-jwt",
   VISIBLE_CLAIMS: "id,iat,nbf,exp,jti,given_name",
   DISPLAY:
@@ -465,7 +465,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(page.getByTestId(OID4VCI_FIELDS.ISSUER_DID)).toHaveValue("");
     await expect(page.locator(OID4VCI_FIELDS.SIGNING_ALGORITHM)).toHaveText("");
     await expect(page.locator(OID4VCI_FIELDS.HASH_ALGORITHM)).toContainText(
-      "SHA-256",
+      "sha-256",
     );
     await expect(page.getByTestId(OID4VCI_FIELDS.DISPLAY)).toHaveValue("");
   });
@@ -614,7 +614,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     );
   });
 
-  test("should default to SHA-256 when hash algorithm is not set", async ({
+  test("should default to sha-256 when hash algorithm is not set", async ({
     page,
   }) => {
     await using testBed = await createTestBed({
@@ -639,7 +639,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
 
     await expect(page.locator(OID4VCI_FIELDS.HASH_ALGORITHM)).toContainText(
-      "SHA-256",
+      "sha-256",
     );
   });
 

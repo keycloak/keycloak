@@ -442,7 +442,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
         post.setEntity(formEntity);
 
         try (CloseableHttpResponse response = oauth.httpClient().get().execute(post)) {
-            assertEquals(401, response.getStatusLine().getStatusCode());
+            assertEquals(400, response.getStatusLine().getStatusCode());
             assertEquals("http://localhost", response.getFirstHeader("Access-Control-Allow-Origin").getValue());
         }
     }

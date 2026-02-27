@@ -38,7 +38,6 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
     final protected String name;
     final protected String realm;
     final protected String description;
-    protected boolean composite;
     final protected LazyLoader<RoleModel, Set<String>> composites;
     /**
      * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
@@ -49,15 +48,10 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
 
     public CachedRole(long revision, RoleModel model, RealmModel realm) {
         super(revision, model.getId());
-        composite = model.isComposite();
         description = model.getDescription();
         name = model.getName();
         this.realm = realm.getId();
-        if (composite) {
-            composites = new DefaultLazyLoader<>(roleModel -> roleModel.getCompositesStream().map(RoleModel::getId).collect(Collectors.toSet()), HashSet::new);
-        } else {
-            composites = new DefaultLazyLoader<>(roleModel -> new HashSet<>(), HashSet::new);
-        }
+        composites = new DefaultLazyLoader<>(roleModel -> roleModel.getCompositesStream().map(RoleModel::getId).collect(Collectors.toSet()), HashSet::new);
         attributes = new DefaultLazyLoader<>(roleModel -> new MultivaluedHashMap<>(roleModel.getAttributes()), MultivaluedHashMap::new);
     }
 
@@ -73,13 +67,12 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
         return description;
     }
 
-    public boolean isComposite() {
-        return composite;
+    public boolean isComposite(KeycloakSession session, Supplier<RoleModel> roleModel) {
+        return !getComposites(session, roleModel).isEmpty();
     }
 
     public Set<String> getComposites(KeycloakSession session, Supplier<RoleModel> roleModel) {
         cachedComposites = composites.get(session, roleModel);
-        composite = !cachedComposites.isEmpty();
         return cachedComposites;
     }
 

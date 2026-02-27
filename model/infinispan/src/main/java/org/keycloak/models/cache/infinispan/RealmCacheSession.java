@@ -483,6 +483,12 @@ public class RealmCacheSession implements CacheRealmProvider {
         return adapter;
     }
 
+    /**
+     * Cache that we've triggered an admin role invalidation in this session already.
+     * This avoids loading the admin role again from the database
+     */
+    private boolean adminRoleInvalidated;
+
     private RealmAdapter prepareCachedRealm(String id, KeycloakSession session) {
         CachedRealm cached = cache.get(id, CachedRealm.class);
         RealmAdapter adapter;
@@ -493,17 +499,15 @@ public class RealmCacheSession implements CacheRealmProvider {
                 return null;
             }
 
-            // to accommodate imports of new realms, check to see if the master admin role is up-to-date
-            if (!model.getName().equals(Config.getAdminRealm())) {
+            // To accommodate imports of new realms in a separate process, always evict the admin role.
+            // As an alternative, one could iterate through all composite roles of the Admin role, but that would
+            // load about 20 roles per realm to the cache which is also inefficient.
+            if (!adminRoleInvalidated && !model.getName().equals(Config.getAdminRealm())) {
                 RealmModel adminRealm = session.realms().getRealmByName(Config.getAdminRealm());
                 if (adminRealm != null) {
-                    ClientModel clientModel = session.clients().getClientByClientId(adminRealm, model.getName() + "-realm");
-                    if (clientModel != null) {
-                        RoleModel adminRole = adminRealm.getRole(AdminRoles.ADMIN);
-                        if (adminRole.getCompositesStream().noneMatch(r -> (r.isClientRole() && r.getContainerId().equals(clientModel.getId())))) {
-                            registerRoleInvalidation(adminRole.getId(), adminRole.getName(), adminRole.getContainerId());
-                        }
-                    }
+                    RoleModel adminRole = adminRealm.getRole(AdminRoles.ADMIN);
+                    invalidateRole(adminRole.getId());
+                    adminRoleInvalidated = true;
                 }
             }
 

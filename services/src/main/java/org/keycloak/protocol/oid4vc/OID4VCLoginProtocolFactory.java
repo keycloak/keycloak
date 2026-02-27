@@ -53,24 +53,24 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.VCFormat.SD_JWT_VC;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.CONFIGURATION_ID;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.CONTEXTS;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.EXPIRY_IN_SECONDS;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.EXPIRY_IN_SECONDS_DEFAULT;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.FORMAT;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.HASH_ALGORITHM;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.HASH_ALGORITHM_DEFAULT;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.INCLUDE_IN_METADATA;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.SD_JWT_DECOYS_DEFAULT;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.SD_JWT_NUMBER_OF_DECOYS;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS_DEFAULT;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.TOKEN_JWS_TYPE;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.TOKEN_TYPE_DEFAULT;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.TYPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VCT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONTEXTS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_EXPIRY_IN_SECONDS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_EXPIRY_IN_SECONDS_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_INCLUDE_IN_METADATA;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SUPPORTED_TYPES;
 
 /**
  * Factory for creating all OID4VC related endpoints and the default mappers.
@@ -156,8 +156,8 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     public void addClientScopeDefaults(ClientScopeRepresentation clientScope) {
         String scopeName = clientScope.getName();
 
-        clientScope.getAttributes().computeIfAbsent(FORMAT, k -> VCFormat.getFromScope(scopeName));
-        String format = clientScope.getAttributes().get(FORMAT);
+        clientScope.getAttributes().computeIfAbsent(VC_FORMAT, k -> VCFormat.getFromScope(scopeName));
+        String format = clientScope.getAttributes().get(VC_FORMAT);
 
         int idx = scopeName.lastIndexOf(VCFormat.getScopeSuffix(format));
         String credentialType = idx > 0 ? scopeName.substring(0, idx) : scopeName;
@@ -167,19 +167,19 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         // clientScope.getAttributes().computeIfAbsent(ISSUER_DID, k -> <generate did or use the realm url>)
 
         clientScope.getAttributes().putIfAbsent(INCLUDE_IN_TOKEN_SCOPE, "true");
-        clientScope.getAttributes().putIfAbsent(INCLUDE_IN_METADATA, "true");
-        clientScope.getAttributes().putIfAbsent(CONFIGURATION_ID, scopeName);
-        clientScope.getAttributes().putIfAbsent(TYPES, credentialType);
-        clientScope.getAttributes().putIfAbsent(CONTEXTS, credentialType);
+        clientScope.getAttributes().putIfAbsent(VC_INCLUDE_IN_METADATA, "true");
+        clientScope.getAttributes().putIfAbsent(VC_CONFIGURATION_ID, scopeName);
+        clientScope.getAttributes().putIfAbsent(VC_SUPPORTED_TYPES, credentialType);
+        clientScope.getAttributes().putIfAbsent(VC_CONTEXTS, credentialType);
         clientScope.getAttributes().putIfAbsent(VCT, credentialType);
-        clientScope.getAttributes().putIfAbsent(CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
-        clientScope.getAttributes().putIfAbsent(HASH_ALGORITHM, HASH_ALGORITHM_DEFAULT);
-        clientScope.getAttributes().putIfAbsent(TOKEN_JWS_TYPE, TOKEN_TYPE_DEFAULT);
-        clientScope.getAttributes().putIfAbsent(EXPIRY_IN_SECONDS, String.valueOf(EXPIRY_IN_SECONDS_DEFAULT));
+        clientScope.getAttributes().putIfAbsent(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_HASH_ALGORITHM, VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT);
+        clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_TOKEN_JWS_TYPE, VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT);
+        clientScope.getAttributes().putIfAbsent(VC_EXPIRY_IN_SECONDS, String.valueOf(VC_EXPIRY_IN_SECONDS_DEFAULT));
 
         if (SD_JWT_VC.equals(format)) {
-            clientScope.getAttributes().putIfAbsent(SD_JWT_NUMBER_OF_DECOYS, String.valueOf(SD_JWT_DECOYS_DEFAULT));
-            clientScope.getAttributes().putIfAbsent(SD_JWT_VISIBLE_CLAIMS, SD_JWT_VISIBLE_CLAIMS_DEFAULT);
+            clientScope.getAttributes().putIfAbsent(VC_SD_JWT_NUMBER_OF_DECOYS, String.valueOf(VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT));
+            clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS, VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT);
         }
     }
 

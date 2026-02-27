@@ -98,12 +98,12 @@ public class CredentialBuildConfig {
         return new CredentialBuildConfig().setCredentialIssuer(credentialIssuer)
                                           .setCredentialConfigId(credentialConfiguration.getId())
                                           .setCredentialType(credentialModel.getVct())
-                                          .setTokenJwsType(credentialModel.getTokenJwsType())
+                                          .setTokenJwsType(credentialModel.getBuildConfigTokenJwsType())
                                           .setNumberOfDecoys(credentialModel.getSdJwtNumberOfDecoys())
                                           .setSigningKeyId(credentialModel.getSigningKeyId())
                                           .setSigningAlgorithm(signingAlg)
-                                          .setHashAlgorithm(credentialModel.getHashAlgorithm())
-                                          .setSdJwtVisibleClaims(credentialModel.getSdJwtVisibleClaims());
+                                          .setHashAlgorithm(credentialModel.getBuildConfigHashAlgorithm())
+                                          .setSdJwtVisibleClaims(credentialModel.getBuildConfigSdJwtVisibleClaims());
     }
 
     public String getCredentialIssuer() {
