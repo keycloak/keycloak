@@ -19,11 +19,10 @@ package org.keycloak.operator.testsuite.integration;
 
 import java.time.Duration;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 import org.keycloak.operator.controllers.KeycloakDiscoveryServiceDependentResource;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.testsuite.apiserver.DisabledIfApiServerTest;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
@@ -188,23 +187,22 @@ public class KeycloakServicesTest extends BaseOperatorTest {
                 });
     }
 
+    @DisabledIfApiServerTest
     @Test
     public void testCustomServiceNameAndPort() {
         var kc = getTestKeycloakDeployment(true);
         var containerHttpsPort = K8sUtils.configureHttps(kc, true);
-        var serviceHttpsPort = ThreadLocalRandom.current().nextInt(10300, 10400);
+        var serviceHttpsPort = 443;
 
         kc.getSpec().getHttpSpec().setServiceHttpsPort(serviceHttpsPort);
-        kc.getSpec().getHttpSpec().setServiceName("custom-kc");
-
-        var hostnameSpec = new HostnameSpecBuilder().withStrict(false).build();
-        kc.getSpec().setHostnameSpec(hostnameSpec);
+        String serviceName = "custom-kc";
+        kc.getSpec().getHttpSpec().setServiceName(serviceName);
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
-        assertEquals("custom-kc", KeycloakServiceDependentResource.getServiceName(kc));
+        assertEquals(serviceName, KeycloakServiceDependentResource.getServiceName(kc));
 
-        var service = k8sclient.services().inNamespace(namespace).withName("custom-kc").get();
+        var service = k8sclient.services().inNamespace(namespace).withName(serviceName).get();
         assertThat(service).isNotNull();
         var httpsPort = service.getSpec().getPorts().stream()
                 .filter(p -> "https".equals(p.getName()))
