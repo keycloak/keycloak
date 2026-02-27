@@ -19,9 +19,12 @@ package org.keycloak.operator.testsuite.integration;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.keycloak.operator.controllers.KeycloakDiscoveryServiceDependentResource;
 import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
@@ -183,5 +186,32 @@ public class KeycloakServicesTest extends BaseOperatorTest {
                     ds.getSpec().setSessionAffinityConfig(null);
                     assertThat(ds.getSpec()).isEqualTo(origDiscoverySpecs); // specs should be reconciled back to original values
                 });
+    }
+
+    @Test
+    public void testCustomServiceNameAndPort() {
+        var kc = getTestKeycloakDeployment(true);
+        var containerHttpsPort = K8sUtils.configureHttps(kc, true);
+        var serviceHttpsPort = ThreadLocalRandom.current().nextInt(10300, 10400);
+
+        kc.getSpec().getHttpSpec().setServiceHttpsPort(serviceHttpsPort);
+        kc.getSpec().getHttpSpec().setServiceName("custom-kc");
+
+        var hostnameSpec = new HostnameSpecBuilder().withStrict(false).build();
+        kc.getSpec().setHostnameSpec(hostnameSpec);
+
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        assertEquals("custom-kc", KeycloakServiceDependentResource.getServiceName(kc));
+
+        var service = k8sclient.services().inNamespace(namespace).withName("custom-kc").get();
+        assertThat(service).isNotNull();
+        var httpsPort = service.getSpec().getPorts().stream()
+                .filter(p -> "https".equals(p.getName()))
+                .findFirst().orElseThrow();
+        assertEquals(serviceHttpsPort, httpsPort.getPort());
+        assertEquals(containerHttpsPort, httpsPort.getTargetPort().getIntVal());
+
+        CRAssert.assertKeycloakAccessibleViaService(k8sclient, kc, true, serviceHttpsPort);
     }
 }

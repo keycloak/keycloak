@@ -26,7 +26,6 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
@@ -108,10 +107,6 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
                 .withSpec(getServiceSpec(primary))
                 .build();
         return service;
-    }
-
-    public static String getServiceName(HasMetadata keycloak) {
-        return keycloak.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
     }
 
     public static String getServiceName(Keycloak keycloak) {
