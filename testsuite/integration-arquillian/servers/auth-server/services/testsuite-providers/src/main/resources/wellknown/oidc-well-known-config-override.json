@@ -1,0 +1,7 @@
+{
+  "some-new-property": "some-new-property-value",
+  "some-new-property-compound": {
+    "nested1": "nested-value"
+  },
+  "introspection_endpoint_auth_methods_supported": ["private_key_jwt", "client_secret_jwt", "tls_client_auth", "custom_nonexisting_authenticator"]
+}

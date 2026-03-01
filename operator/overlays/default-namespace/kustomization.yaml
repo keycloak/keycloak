@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+- ../../target
+
+namespace: default
+
+transformers:
+- |-
+  apiVersion: builtin
+  kind: NamespaceTransformer
+  metadata:
+    name: notImportantHere
+    namespace: default
+  setRoleBindingSubjects: allServiceAccounts
+  fieldSpecs:
+  - path: metadata/namespace
+    create: true

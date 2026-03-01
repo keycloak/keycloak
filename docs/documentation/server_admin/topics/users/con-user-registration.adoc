@@ -1,0 +1,27 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="con-user-registration_{context}"]
+= Allowing users to self-register
+
+[role="_abstract"]
+You can use {project_name} as a third-party authorization server to manage application users, including users who self-register. If you enable self-registration, the login page displays a registration link so that user can create an account.
+
+.Registration link
+image:images/registration-link.png[]
+
+A user must add profile information to the registration form to complete registration. The registration form can be customized by removing or adding the fields that must be completed by a user.
+
+.Clarification on identity brokering and admin API
+Even when self-registrations is disabled, new users can be still added to {project_name} by either:
+
+* Administrator can add new users with the usage of admin console (or admin REST API)
+* When identity brokering is enabled, new users authenticated by identity provider may be automatically added/registered in {project_name} storage.
+See the <<_identity_broker_first_login, First login flow section in the Identity Brokering chapter>> for more information.
+
+Also users coming from the <<_user-storage-federation, 3rd-party user storage>> (for example LDAP) are automatically available in {project_name} when the particular user storage is enabled
+
+[role="_additional-resources"]
+.Additional resources
+* For more information on customizing user registration, see the link:{developerguide_link}[{developerguide_name}].

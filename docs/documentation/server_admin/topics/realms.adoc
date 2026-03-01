@@ -1,0 +1,9 @@
+
+== Configuring realms
+
+A realm manages a set of users, credentials, roles, and groups.  A user belongs to and logs into a realm.  Realms are isolated from one another
+and can only manage and authenticate the users that they control.  One {project_name} deployment can define, store, and manage as many realms
+as there is space for in the database.  When deciding whether to have one or more realms think about what kind of isolation you want to have for
+your users and applications.  For example, you might define a realm for the employees of your company and have a separate realm for your customers.
+Your employees would log into the employee realm and only be able to visit internal company applications.  Customers would log into the customer
+realm and only be able to interact with customer-facing apps.  In this section you'll learn some basics about realm creation and configuration.

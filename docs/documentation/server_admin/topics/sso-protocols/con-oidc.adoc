@@ -1,0 +1,20 @@
+[id="con-oidc_{context}"]
+
+=== OpenID Connect
+[role="_abstract"]
+link:https://openid.net/developers/how-connect-works/[OpenID Connect] (OIDC) is an authentication protocol that is an extension of link:https://datatracker.ietf.org/doc/html/rfc6749[OAuth 2.0].
+
+OAuth 2.0 is a framework for building authorization protocols and is incomplete. OIDC, however, is a full authentication and authorization protocol that uses the link:https://www.jwt.io/[Json Web Token] (JWT) standards.  The JWT standards define an identity token JSON format and methods to digitally sign and encrypt data in a compact and web-friendly way.
+
+In general, OIDC implements two use cases. The first case is an application requesting that a  {project_name} server authenticates a user. Upon successful login, the application receives an _identity token_ and an _access token_.
+The _identity token_ contains user information including user name, email, and profile information. The realm digitally signs the _access token_ which contains access information (such as user role mappings) that applications use to determine the resources users can access in the application.
+
+The second use case is a client accessing remote services.
+
+* The client requests an _access token_ from {project_name} to invoke on remote services on behalf of the user.
+* {project_name} authenticates the user and asks the user for consent to grant access to the requesting client.
+* The client receives the _access token_ which is digitally signed by the realm.
+* The client makes REST requests on remote services using the _access token_.
+* The remote REST service extracts the _access token_.
+* The remote REST service verifies the tokens signature.
+* The remote REST service decides, based on access information within the token, to process or reject the request.

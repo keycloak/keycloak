@@ -1,0 +1,61 @@
+{
+    "realm": "demo",
+    "enabled": true,
+    "accessTokenLifespan": 300,
+    "accessCodeLifespan": 10,
+    "accessCodeLifespanUserAction": 600,
+    "sslRequired": "external",
+    "requiredCredentials": [ "password" ],
+    "users" : [
+        {
+            "username" : "bburke@redhat.com",
+            "enabled": true,
+            "email" : "bburke@redhat.com",
+            "credentials" : [
+                { "type" : "Password",
+                  "value" : "password" }
+            ],
+            "realmRoles": [ "user" ]
+        }
+    ],
+    "oauthClients" : [
+        {
+            "name" : "third-party",
+            "enabled": true,
+            "secret": "password"
+        }
+    ],
+    "roles" : {
+        "realm" : [
+            {
+                "name": "user",
+                "description": "Have User privileges"
+            },
+            {
+                "name": "admin",
+                "description": "Have Administrator privileges"
+            }
+        ]
+    },
+
+    "scopeMappings": [
+        {
+            "client": "third-party",
+            "roles": ["user"]
+        }
+    ],
+    "applications": [
+        {
+            "name": "customer-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8080/customer-portal/j_admin_request",
+            "secret": "password"
+        },
+        {
+            "name": "product-portal",
+            "enabled": true,
+            "adminUrl": "http://localhost:8080/product-portal/j_admin_request",
+            "secret": "password"
+        }
+    ]
+}

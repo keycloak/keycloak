@@ -1,0 +1,15 @@
+registry:
+  image: registry:2
+  ports:
+    - 127.0.0.1:5000:5000
+  environment:
+    REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
+    REGISTRY_HTTP_TLS_CERTIFICATE: /opt/certs/localhost.crt
+    REGISTRY_HTTP_TLS_KEY: /opt/certs/localhost.key
+    REGISTRY_AUTH_TOKEN_REALM: http://localhost:8080/auth/realms/docker-test-realm/protocol/docker-v2/auth
+    REGISTRY_AUTH_TOKEN_SERVICE: docker-test-client
+    REGISTRY_AUTH_TOKEN_ISSUER: http://localhost:8080/auth/realms/docker-test-realm
+    REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE: /opt/certs/localhost_trust_chain.pem
+  volumes:
+    - ./data:/data:z
+    - ./certs:/opt/certs:z

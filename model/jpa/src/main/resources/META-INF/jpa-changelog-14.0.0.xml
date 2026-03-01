@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ * Copyright 2021 Red Hat, Inc. and/or its affiliates
+  ~ * and other contributors as indicated by the @author tags.
+  ~ *
+  ~ * Licensed under the Apache License, Version 2.0 (the "License");
+  ~ * you may not use this file except in compliance with the License.
+  ~ * You may obtain a copy of the License at
+  ~ *
+  ~ * http://www.apache.org/licenses/LICENSE-2.0
+  ~ *
+  ~ * Unless required by applicable law or agreed to in writing, software
+  ~ * distributed under the License is distributed on an "AS IS" BASIS,
+  ~ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ * See the License for the specific language governing permissions and
+  ~ * limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-11019">
+        <validCheckSum>7:fae0de241ac0fd0bbc2b380b85e4f567</validCheckSum>
+        <createIndex tableName="OFFLINE_CLIENT_SESSION" indexName="IDX_OFFLINE_CSS_PRELOAD">
+            <column name="CLIENT_ID" type="VARCHAR(36)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+        </createIndex>
+
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_USER">
+            <column name="USER_ID" type="VARCHAR(36)"/>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+        </createIndex>
+
+        <createIndex tableName="OFFLINE_USER_SESSION" indexName="IDX_OFFLINE_USS_BY_USERSESS">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="OFFLINE_FLAG" type="VARCHAR(4)"/>
+            <column name="USER_SESSION_ID" type="VARCHAR(36)"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286">
+        <validCheckSum>7:075d54e9180f49bb0c64ca4218936e81</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <changeSetExecuted id="NONEXISTENT" author="NONEXISTENT" changeLogFile="NONEXISTENT" />  <!-- Effectively disable this changeset -->
+        </preConditions>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="VALUE" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286-revert">
+        <validCheckSum>7:06499836520f4f6b3d05e35a59324910</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <indexExists tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE" />
+            <or>
+                <changeSetExecuted id="14.0.0-KEYCLOAK-18286" author="keycloak" changeLogFile="META-INF/jpa-changelog-14.0.0.xml" />
+                <changeSetExecuted id="14.0.0-KEYCLOAK-18286-mysql" author="keycloak" changeLogFile="META-INF/jpa-changelog-14.0.0.xml" />
+            </or>
+        </preConditions>
+        <dropIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286-supported-dbs">
+        <validCheckSum>7:fad08e83c77d0171ec166bc9bc5d390a</validCheckSum>
+        <validCheckSum>7:72553fac2d2281052acbbbb14aa22ccf</validCheckSum>
+        <validCheckSum>7:b558ad47ea0e4d3c3514225a49cc0d65</validCheckSum>
+
+        <!-- EDB previously did not run this change set, now it does -->
+        <validCheckSum>8:f43dfba07ba249d5d932dc489fd2b886</validCheckSum>
+        <validCheckSum>9:bd2bd0fc7768cf0845ac96a8786fa735</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <or>
+                <dbms type="mysql"/>
+                <dbms type="mariadb"/>
+                <dbms type="postgresql"/>
+                <dbms type="oracle"/>
+            </or>
+        </preConditions>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="VALUE(255)" valueComputed="VALUE(255)" />
+        </createIndex>
+        <modifySql dbms="postgresql">
+            <replace replace="VALUE(255)" with="(value::varchar(250))" />
+        </modifySql>
+        <modifySql dbms="oracle">
+            <replace replace="VALUE(255)" with="SUBSTR(VALUE, 1, 250)" />
+        </modifySql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="14.0.0-KEYCLOAK-18286-unsupported-dbs">
+        <validCheckSum>7:3d2b23076e59c6f70bae703aa01be35b</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <or>
+                    <dbms type="mysql"/>
+                    <dbms type="mariadb"/>
+                    <dbms type="postgresql"/>
+                    <dbms type="oracle"/>
+                </or>
+            </not>
+        </preConditions>
+        <createIndex tableName="CLIENT_ATTRIBUTES" indexName="IDX_CLIENT_ATT_BY_NAME_VALUE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <!-- Do not include VALUE column -->
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="KEYCLOAK-17267-add-index-to-user-attributes">
+        <validCheckSum>7:1a7f28ff8d9e53aeb879d76ea3d9341a</validCheckSum>
+        <createIndex indexName="IDX_USER_ATTRIBUTE_NAME" tableName="USER_ATTRIBUTE">
+            <column name="NAME" type="VARCHAR(255)"/>
+            <column name="VALUE" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="KEYCLOAK-18146-add-saml-art-binding-identifier">
+        <validCheckSum>7:2fd554456fed4a82c698c555c5b751b6</validCheckSum>
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate14_0_0_MigrateSamlArtifactAttribute"/>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,106 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+<#import "/templates/options.adoc" as opts>
+
+<@tmpl.guide
+title="Console logging"
+summary="Print logs to a console output"
+tileVisible="false"
+levelOffset=2 >
+
+The console log handler is enabled by default, providing unstructured log messages for the console.
+As shown in the following section, the more specific console handler configuration takes effect only when the console logging is enabled. Console logging is enabled by default.
+
+== Configuring the console log format
+{project_name} uses a pattern-based logging formatter that generates human-readable text logs by default.
+
+The logging format template for these lines can be applied at the root level. The default format template is:
+
+* `%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n`
+
+The format string supports the symbols in the following table:
+
+[%autowidth]
+|===
+|Symbol|Summary|Description
+
+|%%|%|Renders a simple % character.
+|%c|Category|Renders the log category name.
+|++%d{xxx}++|Date|Renders a date with the given date format string.String syntax defined by `java.text.SimpleDateFormat`
+|%e|Exception|Renders a thrown exception.
+|%h|Hostname|Renders the simple host name.
+|%H|Qualified host name|Renders the fully qualified hostname, which may be the same as the simple host name, depending on the OS configuration.
+|%i|Process ID|Renders the current process PID.
+|%m|Full Message|Renders the log message and an exception, if thrown.
+|%n |Newline|Renders the platform-specific line separator string.
+|%N|Process name|Renders the name of the current process.
+|%p|Level|Renders the log level of the message.
+|%r|Relative time|Render the time in milliseconds since the start of the application log.
+|%s|Simple message|Renders only the log message without exception trace.
+|%t|Thread name|Renders the thread name.
+|%t++{id}++|Thread ID|Render the thread ID.
+|%z{<zone name>}|Timezone|Set the time zone of log output to <zone name>.
+|%L|Line number|Render the line number of the log message.
+|===
+
+== Setting the logging format
+To set the logging format for a logged line, perform these steps:
+
+. Build your desired format template using the preceding table.
+. Enter the following command:
++
+<@kc.start parameters="--log-console-format=\"\'<format>\'\""/>
+
+Note that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI. Therefore, consider setting it in the configuration file instead.
+
+.Example: Abbreviate the fully qualified category name
+<@kc.start parameters="--log-console-format=\"\'%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n\'\""/>
+
+This example abbreviates the category name to three characters by setting `[%c{3.}]` in the template instead of the default `[%c]`.
+
+== Configuring JSON or plain console logging
+By default, the console log handler logs plain unstructured data to the console. To use structured JSON log output instead, enter the following command:
+
+<@kc.start parameters="--log-console-output=json"/>
+
+.Example Log Message
+[source, json]
+----
+{"timestamp":"2025-02-03T14:52:20.290353085+01:00","sequence":9605,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Keycloak 999.0.0-SNAPSHOT on JVM (powered by Quarkus 3.17.8) started in 4.440s. Listening on: http://0.0.0.0:8080","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host-name","processName":"/usr/lib/jvm/jdk-21.0.3+9/bin/java","processId":76944}
+----
+
+When using JSON output, colors are disabled and the format settings set by `--log-console-format` will not apply.
+
+To use unstructured logging, enter the following command:
+
+<@kc.start parameters="--log-console-output=default"/>
+
+.Example Log Message
+[source]
+----
+2025-02-03 14:53:56,653 INFO  [io.quarkus] (main) Keycloak 999.0.0-SNAPSHOT on JVM (powered by Quarkus 3.17.8) started in 4.795s. Listening on: http://0.0.0.0:8080
+----
+
+== Colors
+Colored console log output for unstructured logs is disabled by default. Colors may improve readability, but they can cause problems when shipping logs to external log aggregation systems. To enable or disable color-coded console log output, enter following command:
+
+<@kc.start parameters="--log-console-color=<false|true>"/>
+
+== Configuring the console log level
+Log level for console log handler can be specified by `--log-console-level` property as follows:
+
+<@kc.start parameters="--log-console-level=warn"/>
+
+For more information, see <<Specify log level for each handler>>.
+
+
+<@opts.printRelevantOptions includedOptions="log-console-*" excludedOptions="log-console-async*">
+
+== Asynchronous
+<@opts.includeOptions includedOptions="log-console-async*"/>
+
+</@opts.printRelevantOptions>
+
+</@tmpl.guide>

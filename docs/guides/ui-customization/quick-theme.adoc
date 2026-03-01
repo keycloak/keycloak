@@ -1,0 +1,63 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Customizing with Quick Theme"
+priority=30
+preview="true"
+summary="Learn how to customize the consoles and login screens with the Quick Theme utility.">
+
+"Quick Theme" is an experimental feature which allows you to quickly and easily create themes with new logos and colors.  Often, this is all you need to facilitate branding and skinning for the Account Console, Admin Console, and login page.
+
+== Enabling Quick Theme
+
+Because the "Quick Theme" feature is experimental, you will need to enable this feature using a feature flag as you start the server.
+
+For example:
+[source,bash]
+----
+bin/kc.[sh|bat] start --features=quick-theme
+----
+
+== Setting logos and colors
+The "Quick Theme" tool is shown below.  The theme you create will extend the default {project_name} theme.  Therefore, when you want to create a new theme with the tool you will start out with the default colors and images.
+
+image::ui-customization/quick-theme-overview.png[title="Quick Theme"]
+
+As shown below, when you change a color or image, you get a preview of how your colors and images will look together for various elements of your theme.  The color options correspond to https://www.patternfly.org/developer-resources/global-css-variables/[PatternFly global CSS variables], which are used by {project_name} to create themes.
+
+image::ui-customization/simple-quick-theme-changes.png[title="Preview after changes"]
+
+[TIP]
+====
+The "Quick Theme" tool uses the default color chooser from your browser. Some color choosers, such as in Chrome, have a handy tool to find a color from something on your screen. Notice the "dropper" icon in the lefthand side of the dialog.
+
+image::ui-customization/color-chooser.png[alt="Color chooser with dropper", title="Color chooser with the dropper tool"]
+
+This "dropper" tool can be used to select your background color to match a color in your logo.
+
+.Find a color with the dropper tool
+image::ui-customization/easy-theme-find-color.png[alt="Find a color with the dropper tool", title="Find a color with the dropper tool"]
+====
+
+When your new theme is complete, click *Download theme JAR* to download a theme JAR that is ready for deployment.
+
+=== Deploying your theme
+Once you have downloaded your theme's archive jar, it's time to deploy and try it out. To deploy the archive to {project_name}, add it to the `providers/` directory of {project_name} and restart the server if it is already running.
+
+CAUTION: For security reasons, never deploy a theme unless you are confident of its origin.  An image can be a possible attack vector.  This issue is the reason that {project_name} does not allow automatic deployment of a theme through the Admin Console.  Only those administrators with file access to your production server should deploy a theme in production.
+
+Another deployment option is to "unjar" the archive into the `themes/` directory.  With this option, you explore the theme and make manual changes.
+
+Many compression utilities or "zip tools" support `jar` files and you can use these to "unjar" the file.  If no such utility is available, you can use the `jar` utility that comes with the java JDK.
+
+[source,bash]
+----
+jar xf quick-theme.jar
+----
+
+=== Trying out your new theme
+Your theme includes the images and colors you provided. They appear throughout the Account Console, Admin Console, and login page.
+
+Once your "Quick Theme" archive jar is deployed, you can fully test it using the procedures shown in the <<themes, Themes chapter>>.  Essentially, you just need to choose your new theme on the Realm settings --> Themes tab.
+</@tmpl.guide>

@@ -1,0 +1,228 @@
+
+[[_x509]]
+=== X.509 client certificate user authentication
+
+{project_name} supports logging in with an X.509 client certificate if you have configured the server to use mutual SSL authentication.
+
+A typical workflow:
+
+* A client sends an authentication request over SSL/TLS channel.
+* During the SSL/TLS handshake, the server and the client exchange their x.509/v3 certificates.
+* The container ({appserver_name}) validates the certificate PKIX path and the certificate expiration date.
+* The x.509 client certificate authenticator validates the client certificate by using the following methods:
++
+** Checks the certificate revocation status by using CRL or CRL Distribution Points.
+** Checks the Certificate revocation status by using OCSP (Online Certificate Status Protocol).
+** Validates whether the key in the certificate matches the expected key.
+** Validates whether the extended key in the certificate matches the expected extended key.
++
+* If any of the these checks fail, the x.509 authentication fails. Otherwise, the authenticator extracts the certificate identity and maps it to an existing user.
+
+When the certificate maps to an existing user, the behavior diverges depending on the authentication flow:
+
+* In the Browser Flow, the server prompts users to confirm their identity or sign in with a username and password.
+* In the Direct Grant Flow, the server signs in the user.
+
+IMPORTANT: Note that it is the responsibility of the web container to validate certificate PKIX path. X.509 authenticator on the
+{project_name} side provides just the additional support for check the certificate expiration, certificate revocation status and key usage. If you are
+using {project_name} deployed behind reverse proxy, make sure that your reverse proxy is configured to validate PKIX path. If you
+do not use reverse proxy and users directly access the {appserver_name}, you should be fine as {appserver_name} makes sure that PKIX path is validated as long
+as it is configured as described below.
+
+==== Features
+
+Supported Certificate Identity Sources:
+
+* Match SubjectDN by using regular expressions
+* X500 Subject's email attribute
+* X500 Subject's email from Subject Alternative Name Extension (RFC822Name General Name)
+* X500 Subject's other name from Subject Alternative Name Extension. This other name is the User Principal Name (UPN), typically.
+* X500 Subject's Common Name attribute
+* Match IssuerDN by using regular expressions
+* Certificate Serial Number
+* Certificate Serial Number and IssuerDN
+* SHA-256 Certificate thumbprint
+* Full certificate in PEM format
+
+===== Regular expressions
+{project_name} extracts the certificate identity from Subject DN or Issuer DN by using a regular expression as a filter. For example, this regular expression matches the email attribute:
+
+```
+emailAddress=(.*?)(?:,|$)
+```
+
+The regular expression filtering applies if the `Identity Source` is set to either `Match SubjectDN using regular expression` or `Match IssuerDN using regular expression`.
+
+====== Mapping certificate identity to an existing user
+
+The certificate identity mapping can map the extracted user identity to an existing user's username, email, or a custom attribute whose value matches the certificate identity. For example, setting `Identity source` to _Subject's email_ or `User mapping method` to _Username or email_ makes the X.509 client certificate authenticator use the email attribute in the certificate's Subject DN as the search criteria when searching for an existing user by username or by email.
+
+[IMPORTANT]
+====
+* If you disable *Login with email* at realm settings, the same rules apply to certificate authentication. Users are unable to log in by using the email attribute.
+* Using `Certificate Serial Number and IssuerDN` as an identity source requires two custom attributes for the serial number and the IssuerDN.
+* `SHA-256 Certificate thumbprint` is the lowercase hexadecimal representation of SHA-256 certificate thumbprint.
+* Using `Full certificate in PEM format` as an identity source is limited to the custom attributes mapped to external federation sources, such as LDAP. {project_name} cannot store certificates in its database due to length limitations, so in the case of LDAP, you must enable `Always Read Value From LDAP`.
+====
+
+====== Extended certificate validation
+* Revocation status checking using CRL.
+* Revocation status checking using CRL/Distribution Point.
+* Revocation status checking using OCSP/Responder URI.
+* Certificate KeyUsage validation.
+* Certificate ExtendedKeyUsage validation.
+
+[[_browser_flow]]
+==== Adding X.509 client certificate authentication to browser flows
+
+. Click *Authentication* in the menu.
+. Click the *Browser* flow.
+. From the *Action* list, select *Duplicate*.
+. Enter a name for the copy.
+. Click *Duplicate*.
+. Click *Add step*.
+. Click "X509/Validate Username Form".
+. Click *Add*.
++
+.X509 execution
+image:images/x509-execution.png[X509 Execution]
+
+. Click and drag the "X509/Validate Username Form" over the "Browser Forms" execution.
+. Set the requirement to "ALTERNATIVE".
++
+.X509 browser flow
+image:images/x509-browser-flow.png[X509 Browser Flow]
++
+. Click the *Action* menu.
+. Click the *Bind flow*.
+. Click the *Browser flow* from the drop-down list.
+. Click *Save*.
++
+.X509 browser flow bindings
+image:images/x509-browser-flow-bindings.png[X509 Browser Flow Bindings]
+
+[[_x509-config]]
+==== Configuring X.509 client certificate authentication
+
+.X509 configuration
+image:images/x509-configuration.png[X509 Configuration]
+
+*User Identity Source*::
+Defines the method for extracting the user identity from a client certificate.
+
+*Canonical DN representation enabled*::
+Defines whether to use canonical format to determine a distinguished name. The official link:https://docs.oracle.com/javase/8/docs/api/javax/security/auth/x500/X500Principal.html#getName-java.lang.String-[Java API documentation] describes the format. This option affects the two User Identity Sources _Match SubjectDN using regular expression_ and _Match IssuerDN using regular expression_ only. Enable this option when you set up a new {project_name} instance. Disable this option to retain backward compatibility with existing {project_name} instances.
+
+*Enable Serial Number hexadecimal representation*::
+Represent the link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.1.2.2[serial number] as hexadecimal. The serial number with the sign bit set to 1 must be left padded with 00 octet. For example, a serial number with decimal value _161_, or _a1_ in hexadecimal representation is encoded as _00a1_, according to RFC 5280. See link:https://datatracker.ietf.org/doc/html/rfc5280#appendix-B[RFC 5280, appendix-B] for more details.
+
+*A regular expression*::
+A regular expression to use as a filter for extracting the certificate identity. The expression must contain a single group.
+
+*User Mapping Method*::
+Defines the method to match the certificate identity with an existing user. _Username or email_ searches for existing users by username or email. _Custom Attribute Mapper_ searches for existing users with a custom attribute that matches the certificate identity. The name of the custom attribute is configurable.
+
+*A name of user attribute*::
+A custom attribute whose value matches against the certificate identity. Use multiple custom attributes when attribute mapping is related to multiple values, For example,  'Certificate Serial Number and IssuerDN'.
+
+*CRL Checking Enabled*::
+Check the revocation status of the certificate by using the Certificate Revocation List. The location of the list is defined in the *CRL file path* attribute.
+
+*Enable CRL Distribution Point to check certificate revocation status*::
+Use CDP to check the certificate revocation status. Most PKI authorities include CDP in their certificates.
+
+*CRL file path*::
+The path to a file containing a CRL list. The value must be a path to a valid file if the *CRL Checking Enabled* option is enabled.
+
+*CRL abort if non updated*::
+A CRL conforming to link:https://datatracker.ietf.org/doc/html/rfc5280#section-5.1.2.5[RFC 5280] contains a next update field that indicates the date by which the next CRL will be issued. When that time is passed, the CRL is considered outdated and it should be refreshed. If this option is `true`, the authentication will fail if the CRL is outdated (recommended). If the option is set to `false`, the outdated CRL is still used to validate the user certificates.
+
+*OCSP Checking Enabled*::
+Checks the certificate revocation status by using Online Certificate Status Protocol.
+
+*OCSP Fail-Open Behavior*::
+By default the OCSP check must return a positive response in order to continue with a successful authentication. Sometimes however this check can be inconclusive: for example, the OCSP server could be unreachable, overloaded, or the client certificate may not contain an OCSP responder URI. When this setting is turned ON, authentication will be denied only if an explicit negative response is received by the OCSP responder and the certificate is definitely revoked. If a valid OCSP response is not available the authentication attempt will be accepted.
+
+NOTE: OCSP retry behavior is configured server-wide through the HTTP client provider. See <@links.server id="outgoinghttp"/> for details on configuring retry settings for all outgoing HTTP requests, including OCSP validation.
+
+*OCSP Responder URI*::
+Override the value of the OCSP responder URI in the certificate.
+
+*Validate Key Usage*::
+Verifies the certificate's KeyUsage extension bits are set. For example, "digitalSignature,KeyEncipherment" verifies if bits 0 and 2 in the KeyUsage extension are set.
+Leave this parameter empty to disable the Key Usage validation. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.3[RFC 5280, Section-4.2.1.3] for more information. {project_name} raises an error when a key usage mismatch occurs.
+
+*Validate Extended Key Usage*::
+Verifies one or more purposes defined in the Extended Key Usage extension. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.12[RFC 5280, Section-4.2.1.12] for more information. Leave this parameter empty to disable the Extended Key Usage validation. {project_name} raises an error when flagged as critical by the issuing CA and a key usage extension mismatch occurs.
+
+*Validate Certificate Policy*::
+Verifies one or more policy OIDs as defined in the Certificate Policy extension. See link:https://datatracker.ietf.org/doc/html/rfc5280#section-4.2.1.4[RFC 5280, Section-4.2.1.4]. Leave the parameter empty to disable the Certificate Policy validation. Multiple policies should be separated using a comma.
+
+*Certificate Policy Validation Mode*::
+When more than one policy is specified in the `Validate Certificate Policy` setting, it decides whether the matching should check for all requested policies to be present, or one match is enough for a successful authentication. Default value is `All`, meaning that all requested policies should be present in the client certificate.
+
+*Bypass identity confirmation*::
+If enabled, X.509 client certificate authentication does not prompt the user to confirm the certificate identity. {project_name} signs in the user upon successful authentication.
+
+*Revalidate client certificate*::
+If set, the client certificate trust chain will be always verified at the application level using the certificates present in the configured trust store. This can be useful if the underlying web server does not enforce client certificate chain validation, for example because it is behind a non-validating load balancer or reverse proxy, or when the number of allowed CAs is too large for the mutual SSL negotiation (most browsers cap the maximum SSL negotiation packet size at 32767 bytes, which corresponds to about 200 advertised CAs). By default this option is off.
+
+==== Adding X.509 Client Certificate Authentication to a Direct Grant Flow
+
+
+. Click *Authentication* in the menu.
+. Select *Duplicate* from the "Action list" to make a copy of the built-in "Direct grant" flow.
+. Enter a name for the copy.
+. Click *Duplicate*.
+. Click the created flow.
+. Click the trash can icon 🗑️ of the "Username Validation" and click *Delete*.
+. Click the trash can icon 🗑️ of the "Password" and click *Delete*.
+. Click *Add step*.
+. Click "X509/Validate Username".
+. Click *Add*.
++
+.X509 direct grant execution
+image:images/x509-directgrant-execution.png[X509 Direct Grant Execution]
++
+. Set up the x509 authentication configuration by following the steps described in the <<_browser_flow, x509 Browser Flow>> section.
+. Click the *Bindings* tab.
+. Click the *Direct Grant Flow* drop-down list.
+. Click the newly created "x509 Direct Grant" flow.
+. Click *Save*.
++
+.X509 direct grant flow bindings
+image:images/x509-directgrant-flow-bindings.png[X509 Direct Grant Flow Bindings]
+
+===== Example using CURL
+
+The following example shows how to obtain an access token for a user in the realm `test` with the direct grant flow. The example is using
+*OAuth2 Resource Owner Password Credentials Grant* in the link:{securing_apps_link}[securing apps] section and the confidential client `resource-owner`:
+
+[source,bash,subs="attributes+"]
+----
+curl \
+  -d "client_id=resource-owner" \
+  -d "client_secret=40cc097b-2a57-4c17-b36a-8fdf3fc2d578" \
+  -d "grant_type=password" \
+  --cacert /tmp/truststore.pem \
+  --cert /tmp/keystore.pem:kssecret \
+  "https://localhost:8543/realms/test/protocol/openid-connect/token"
+----
+
+The file `/tmp/truststore.pem` points to the file with the truststore containing the certificate of the {project_name} server. The file `/tmp/keystore.pem` contains
+the private key and certificates corresponding to the {project_name} user, which would be successfully authenticated by this request. It is dependent on the configuration of the authenticator on how
+exactly is the content from the certificate mapped to the {project_name} user as described in <<_x509-config, the configuration section>>. The `kssecret` might be the password of this keystore file.
+
+According to your environment, it might be needed to use more options to CURL commands like for instance:
+
+* Option `--insecure` if you are using self-signed certificates
+* Option `--capath` to include the whole directory containing the certificate authority path
+* Options `--cert-type` or `--key-type` in case you want to use different files than `PEM`
+
+Please consult the documentation of the `curl` tool for the details if needed. If you are using other tools than `curl`,
+consult the documentation of your tool. However, the setup would be similar.  A need exists to include keystore and truststore as well as client credentials in case you are using a confidential
+client.
+
+NOTE: If it is possible, it is preferred to use <<_service_accounts, Service accounts>> together with the MTLS client authentication (client authenticator `X509 Certificate`) rather than using
+the Direct grant with X.509 authentication as direct grant may require sharing of the user certificate with client applications. When using service account, the tokens are obtained on behalf
+of the client itself, which in general is better and more secure practice.

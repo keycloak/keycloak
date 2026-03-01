@@ -1,0 +1,49 @@
+[WARNING]
+====
+* Performance will be lowered when scaling to more Pods (due to additional overhead) and using a multi-cluster setup (due to additional traffic and operations).
+
+* Increased cache sizes can improve the performance when {project_name} instances running for a longer time.
+This will decrease response times and reduce IOPS on the database.
+Still, those caches need to be filled when an instance is restarted, so do not set resources too tight based on the stable state measured once the caches have been filled.
+
+* Use these values as a starting point and perform your own load tests before going into production.
+====
+
+Summary:
+
+* The used CPU scales linearly with the number of requests up to the tested limit below.
+
+Recommendations:
+
+* The base memory usage for a Pod including caches of Realm data and 10,000 cached sessions is 1250 MB of RAM.
+
+* In containers, Keycloak allocates 70% of the memory limit for heap-based memory. It will also use approximately 300 MB of non-heap-based memory.
+To calculate the requested memory, use the calculation above. As memory limit, subtract the non-heap memory from the value above and divide the result by 0.7.
+
+* For each 15 password-based user logins per second, allocate 1 vCPU to the cluster (tested with up to 300 per second).
++
+{project_name} spends most of the CPU time hashing the password provided by the user, and it is proportional to the number of hash iterations.
+
+* For each 120 client credential grants per second, 1 vCPU to the cluster (tested with up to 2000 per second).^*^
++
+Most CPU time goes into creating new TLS connections, as each client runs only a single request.
+
+* For each 120 refresh token requests per second, 1 vCPU to the cluster (tested with up to 435 refresh token requests per second).^*^
+
+* Leave 150% extra head-room for CPU usage to handle spikes in the load.
+This ensures a fast startup of the node, and enough capacity to handle failover tasks.
+Performance of {project_name} dropped significantly when its Pods were throttled in our tests.
+
+* When performing requests with more than 2500 different clients concurrently, not all client information will fit into {project_name}'s caches when those are using the standard cache sizes of 10000 entries each.
+Due to this, the database may become a bottleneck as client data is reloaded frequently from the database.
+To reduce the database usage, increase the `users` cache size by two times the number of concurrently used clients, and the `realms` cache size by four times the number of concurrently used clients.
+
+{project_name}, which by default stores user sessions in the database, requires the following resources for optimal performance on an Aurora PostgreSQL multi-AZ database:
+
+For every 100 login/logout/refresh requests per second:
+
+- Budget for 1400 Write IOPS.
+
+- Allocate between 0.35 and 0.7 vCPU.
+
+The vCPU requirement is given as a range, as with an increased CPU saturation on the database host the CPU usage per request decreases while the response times increase. A lower CPU quota on the database can lead to slower response times during peak loads. Choose a larger CPU quota if fast response times during peak loads are critical. See below for an example.

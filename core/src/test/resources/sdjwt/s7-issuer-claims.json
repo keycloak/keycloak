@@ -1,0 +1,5 @@
+{
+  "iss": "https://issuer.example.com",
+  "iat": 1683000000,
+  "exp": 1883000000
+}

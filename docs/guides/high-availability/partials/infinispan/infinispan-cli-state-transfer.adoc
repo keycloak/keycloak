@@ -1,0 +1,92 @@
+. Trigger the state transfer from the {keep-site} site to the {stale-site} site.
++
+.Command:
+[source,bash,subs="+attributes"]
+----
+site push-site-state --all-caches --site={stale-site-name}
+----
++
+.Output:
+[source,bash,subs="+attributes"]
+----
+{
+  "authenticationSessions" : "ok",
+  "work" : "ok",
+  "loginFailures" : "ok",
+  "actionTokens" : "ok"
+}
+----
+
+. Check the replication status is `online` for all caches.
++
+.Command:
+[source,bash,subs="+attributes"]
+----
+site status --all-caches --site={stale-site-name}
+----
++
+.Output:
+[source,bash,subs="+attributes"]
+----
+{
+  "status" : "online"
+}
+----
+
+. Wait for the state transfer to complete by checking the output of `push-site-status` command for all caches.
++
+.Command:
+[source,bash,subs="+attributes"]
+----
+site push-site-status --cache=actionTokens
+site push-site-status --cache=authenticationSessions
+site push-site-status --cache=loginFailures
+site push-site-status --cache=work
+----
++
+.Output:
+[source,bash,subs="+attributes"]
+----
+{
+  "{stale-site-name}" : "OK"
+}
+{
+  "{stale-site-name}" : "OK"
+}
+{
+  "{stale-site-name}" : "OK"
+}
+{
+  "{stale-site-name}" : "OK"
+}
+----
++
+Check the table in {infinispan-xsite-docs}#rest_v2_xsite_state_push_cross-site-operations-rest[this section for the Cross-Site Documentation] for the possible status values.
++
+If an error is reported, repeat the state transfer for that specific cache.
++
+.Command:
+[source,bash,subs="+attributes"]
+----
+site push-site-state --cache=<cache-name> --site={stale-site-name}
+----
+
+. Clear/reset the state transfer status with the following command
++
+.Command:
+[source,bash,subs="+attributes"]
+----
+site clear-push-site-status --cache=actionTokens
+site clear-push-site-status --cache=authenticationSessions
+site clear-push-site-status --cache=loginFailures
+site clear-push-site-status --cache=work
+----
++
+.Output:
+[source,bash,subs="+attributes"]
+----
+"ok"
+"ok"
+"ok"
+"ok"
+----

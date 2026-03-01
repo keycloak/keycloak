@@ -1,0 +1,25 @@
+{
+     "authenticationFlows": [
+        {
+           "alias": "browser",
+           "authenticationExecutions": [
+              {
+                 "authenticator": "auth-spnego",
+                 "authenticatorFlow": false,
+                 "priority": 20,
+                 "requirement": "ALTERNATIVE",
+                 "userSetupAllowed": false
+              }
+           ],
+           "builtIn": true,
+           "description": "browser based authentification2",
+           "id": "3e6ccf87-5473-4eb0-8cbb-28f6b9e6f4d6",
+           "providerId": "basic-flow",
+           "topLevel": true
+        }
+     ],
+     "displayName": "CEZ",
+     "enabled": true,
+     "id": "cez",
+     "realm": "cez"
+}

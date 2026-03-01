@@ -1,0 +1,2 @@
+<#ftl output_format="plainText">
+${msg("identityProviderLinkBody", identityProviderDisplayName, realmName, identityProviderContext.username, link, linkExpiration, linkExpirationFormatter(linkExpiration))}
