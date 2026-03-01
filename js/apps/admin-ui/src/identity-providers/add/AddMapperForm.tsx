@@ -49,6 +49,13 @@ export const AddMapperForm = ({
           required: t("required"),
         }}
       />
+      <TextControl
+        name="config.mapperOrder"
+        label={t("mapperOrder")}
+        labelIcon={t("mapperOrderHelp")}
+        type="number"
+        min={1}
+      />
       <SelectControl
         name="config.syncMode"
         label={t("syncModeOverride")}
