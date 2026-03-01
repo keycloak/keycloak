@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="ISO-8859-2"?>
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="http://localhost:8080/sales-post-sig/saml" ID="ID_670a76c7-8506-4081-80b3-5ef16df98af8" InResponseTo="ID_cc0ff6f7-b481-4c98-9a79-481d50958290" IssueInstant="2016-12-15T12:42:49.788Z" Version="2.0">
+    <saml:Issuer>http://localhost:11080/auth/realms/saml-demo</saml:Issuer>
+    <samlp:Status>
+        <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+    </samlp:Status>
+    <saml:Assertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion" ID="ID_cf2e2b00-dfb0-4163-b8b5-f2d85586a235" IssueInstant="2016-12-15T12:42:49.787Z" Version="2.0">
+        <saml:Issuer>http://localhost:11080/auth/realms/saml-demo</saml:Issuer>
+        <saml:Subject>
+            <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">ročéíöüßäöü</saml:NameID>
+            <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+                <saml:SubjectConfirmationData InResponseTo="ID_cc0ff6f7-b481-4c98-9a79-481d50958290" NotOnOrAfter="2016-12-15T12:47:47.787Z" Recipient="http://localhost:8080/sales-post-sig/saml"/>
+            </saml:SubjectConfirmation>
+        </saml:Subject>
+        <saml:Conditions NotBefore="2016-12-15T12:42:47.787Z" NotOnOrAfter="2016-12-15T12:43:47.787Z">
+            <saml:AudienceRestriction>
+                <saml:Audience>http://localhost:8080/sales-post-sig/</saml:Audience>
+            </saml:AudienceRestriction>
+        </saml:Conditions>
+        <saml:AuthnStatement AuthnInstant="2016-12-15T12:42:49.788Z" SessionIndex="fb5d5a23-aa34-4528-a29a-6aad8c0ef0e8">
+            <saml:AuthnContext>
+                <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified</saml:AuthnContextClassRef>
+                <saml:AuthnContextDeclRef>http://www.example.com/</saml:AuthnContextDeclRef>
+            </saml:AuthnContext>
+        </saml:AuthnStatement>
+        <saml:AttributeStatement>
+            <saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">view-profile</saml:AttributeValue>
+            </saml:Attribute>
+        </saml:AttributeStatement>
+    </saml:Assertion>
+</samlp:Response>

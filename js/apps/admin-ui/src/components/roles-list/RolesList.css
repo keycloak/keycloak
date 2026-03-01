@@ -1,0 +1,37 @@
+.kc-who-will-appear-button {
+  padding-left: 0px;
+}
+
+.pf-v5-c-button.pf-m-link.kc-groups-link {
+  font-size: var(--pf-v5-global--FontSize--sm);
+  padding-left: 0px;
+  padding-right: var(--pf-v5-global--spacer--xs);
+  padding-top: 0px;
+}
+
+.pf-v5-c-button.pf-m-link.kc-users-link {
+  font-size: var(--pf-v5-global--FontSize--sm);
+  padding-left: var(--pf-v5-global--spacer--xs);
+  padding-right: var(--pf-v5-global--spacer--xs);
+  padding-top: 0px;
+}
+
+.pf-v5-c-button.pf-m-link.kc-groups-link-empty-state {
+  padding-left: var(--pf-v5-global--spacer--xs);
+  padding-right: var(--pf-v5-global--spacer--xs);
+}
+
+.pf-v5-c-button.pf-m-link.kc-users-link-empty-state {
+  padding-left: var(--pf-v5-global--spacer--xs);
+  padding-right: var(--pf-v5-global--spacer--xs);
+}
+
+.pf-v5-c-chip-group.kc-filter-chip-group__table {
+  margin-left: var(--pf-v5-global--spacer--md);
+  margin-bottom: var(--pf-v5-global--spacer--md);
+}
+
+button#default-role-help-icon.pf-v5-c-form__group-label-help {
+  margin-left: var(--pf-v5-global--spacer--xs);
+  vertical-align: middle;
+}

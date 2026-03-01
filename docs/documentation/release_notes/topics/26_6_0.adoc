@@ -1,0 +1,74 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+= Keycloak Test Framework Full Support
+
+The Keycloak Test Framework, based on JUnit6, is now fully supported.
+
+It replaces the previous solution built on top of Arquillian and JUnit4.
+Behind the scenes the framework handles the lifecycle of Keycloak, the database, and any injected resources such as realms and clients.
+
+Tests simply declare what they want, including specific configuration, and the framework takes care of the rest.
+
+For more information, see https://github.com/keycloak/keycloak/tree/main/test-framework#readme[Keycloak Test Framework]
+
+= Sensitive Keycloak information is not displayed in the HTTP Access log
+
+If you are using the HTTP Access logging capability, sensitive information is omitted.
+It means that tokens in the 'Authorization' HTTP header and specific sensitive Keycloak cookies are not shown.
+
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
+
+= HTTP access logs in a dedicated file
+
+HTTP access logs can now be written to a dedicated file, separate from the server logs.
+This makes it easier to process and archive access logs independently for security auditing and compliance monitoring.
+
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
+
+= Telemetry configuration via Keycloak CR
+
+{project_name} now supports configuring the OpenTelemetry properties via Keycloak CR when using Operator.
+These properties are shared among the available OpenTelemetry components - logs, metrics, and traces.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+= Graceful shutdown of HTTP stack
+
+To allow for rolling updates for configuration changes or version updates, a graceful shutdown of {project_name} nodes prevents users seeing error responses when logging in or refreshing their tokens when nodes shut down.
+
+Starting with this version, {project_name} supports a graceful shutdown of the HTTP stack.
+This includes delaying a shutdown after receiving a termination signal, connection draining for HTTP/1.1 and HTTP/2 connections during that period, and a shutdown timeout to finish ongoing requests.
+
+The defaults are a shutdown delay and a shutdown timeout of one second each.
+This should be a good fit for setups where the reverse proxy is using TLS edge termination or re-encrypt, and the reverse proxy is notified about the Keycloak node shutting down at the same time as the Keycloak node.
+This is a common setup for example in Kubernetes environments.
+
+Users should adjust those values depending on their proxy setup.
+See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown[Graceful HTTP shutdown] in the reverse proxy guide for more information.
+
+= Custom request headers for OpenTelemetry
+
+It is now possible to set request headers for exporting telemetry via OpenTelemetry Protocol (OTLP).
+It is mainly useful for providing tokens in the request.
+
+You can specify these headers via the general parent option `telemetry-header-<header>` wildcard option, accepting any custom header name.
+Or you can use the `telemetry-logs-header-<header>` for OpenTelemetry Logs, or `telemetry-metrics-header-<header>` for OpenTelemetry Metrics.
+
+For more details, see the  link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+= Zero-downtime patch releases enabled by default
+
+Zero-downtime patch releases are now enabled by default. This allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
+
+When using the {project_name} Operator, set the update strategy to `Auto` to benefit from this functionality.
+
+For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
+
+= Step-up authentication for SAML (preview)
+
+The feature `step-up-authentication-saml` extends the step-up authentication to include the SAML protocol and clients. This feature is in preview mode. Additional information is available in the link:{adminguide_link}#_step-up-authentication-saml[{adminguide_name}].
+
+= Java 25 support
+
+{project_name} now supports running with JRE 25. OpenJDK 25 is also now used in the official container images.

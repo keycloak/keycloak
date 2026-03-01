@@ -1,0 +1,33 @@
+[[_user-storage-federation]]
+
+== Using external storage
+
+[role="_abstract"]
+Organizations can have databases containing information, passwords, and other credentials. Typically, you cannot migrate existing data storage to a {project_name} deployment so {project_name} can federate existing external user databases. {project_name} supports LDAP and Active Directory, but you can also code extensions for any custom user database by using the {project_name} User Storage SPI.
+
+When a user attempts to log in, {project_name} examines that user's storage to find that user. If {project_name} does not find the user, {project_name} iterates over each User Storage provider for the realm until it finds a match. Data from the external data storage then maps into a standard user model the {project_name} runtime consumes. This user model then maps to OIDC token claims and SAML assertion attributes.
+
+External user databases rarely have the data necessary to support all the features of {project_name}, so the User Storage Provider can opt to store items locally in {project_name} user data storage. Providers can import users locally and sync periodically with external data storage. This approach depends on the capabilities of the provider and the configuration of the provider.  For example, your external user data storage may not support OTP. The OTP can be handled and stored by {project_name}, depending on the provider.
+
+=== Adding a provider
+To add a storage provider, perform the following procedure:
+
+.Procedure
+. Click *User Federation* in the menu.
++
+.User federation
+image:images/user-federation.png[User federation]
++
+. Choose to add a *Kerberos* or *LDAP* provider
++
+{project_name} brings you to that provider's configuration page.
+
+=== Dealing with provider failures
+
+If a User Storage Provider fails, you may not be able to log in and view users in the Admin Console. {project_name} does not detect failures when using a Storage Provider to look up a user, so it cancels the invocation. If you have a Storage Provider with a high priority that fails during user lookup, the login or user query fails with an exception and will not fail over to the next configured provider.
+
+{project_name} searches the local {project_name} user database first to resolve users before any LDAP or custom User Storage Provider. Consider creating an administrator account stored in the local {project_name} user database in case of problems connecting to your LDAP and back ends.
+
+Each LDAP and custom User Storage Provider has an `enable` toggle on its Admin Console page. Disabling the User Storage Provider skips the provider when performing queries, so you can view and log in with user accounts in a different provider with lower priority. If your provider uses an `import` strategy and is disabled, imported users are still available for lookup in read-only mode.
+
+When a Storage Provider lookup fails, {project_name} does not fail over because user databases often have duplicate usernames or duplicate emails between them. Duplicate usernames and emails can cause problems because the user loads from one external data store when the admin expects them to load from another data store.

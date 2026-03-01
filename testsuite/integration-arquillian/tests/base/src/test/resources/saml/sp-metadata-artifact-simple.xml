@@ -1,0 +1,21 @@
+<md:EntityDescriptor entityID="https://keycloak.com" xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata">
+    <md:SPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+        <md:Extensions>
+            <init:RequestInitiator Binding="urn:oasis:names:tc:SAML:profiles:SSO:request-init" Location="https://test.keycloak.com/auth/login/epd" xmlns:init="urn:oasis:names:tc:SAML:profiles:SSO:request-init"/>
+        </md:Extensions>
+        <md:KeyDescriptor>
+            <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                <ds:KeyName>keycloak</ds:KeyName>
+                <ds:X509Data>
+                    <ds:X509SubjectName>CN=keycloak.com</ds:X509SubjectName>
+                    <ds:X509Certificate>MIIFDzCCAvegAwIBAgIUM+Ho+HIxh9p4yV8qT5S+SsyYlY4wDQYJKoZIhvcNAQELBQAwFzEVMBMGA1UEAwwMa2V5Y2xvYWsuY29tMB4XDTE5MDQwNTEzMjAzNFoXDTI5MDQwMjEzMjAzNFowFzEVMBMGA1UEAwwMa2V5Y2xvYWsuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAu+VA5xDggY+wfkA7LFcmRI45UPpUp47nMKVOF11f4jh7XfjztdOcKILDaYdg1N8Ldm1DUZTi81KkTQdUg8DjyaJj/di12UKVJAusaGxfaF6XfVihHtxckVGAuXU4BbPdQZ+qMiPNw0G/mFIIU+9ykIApjAyU4eHuKmjI83oXzCsN5bxZmzcR5QKDa/AwTQtpaTNd7vStm5mS+lIQIwB3g9vYYIIzasoP/H27MfeAg+7jK9BsKQrfUJ+GYsb5S3NBor6K4laeBslbKJUaBu29ekPqLacrwdaq1TJXpbfSOLYlM0vzJmlN/SVavqM3eBvFzIYD4VKg43JwQd/7W7cGVnoawmbaWMPYvZojeNeU9j94BKNchQX606ROqKuAM50zA6m8b8Y6KwF4zHexHDuZXBYTtk/HsDnrO7Y6Hz0KzEtqj/E5YHukvhSYkKj+DP/8nPnJOCE48tVRqmlhMs8LDR5DA1SI4Z+jAiFEuYa6tMFjUTTYl6O1ZijJCTe+K6p4OgfdEUAA3cwdvsGz6jYrJXB1v9WiZKQRLV6LVkPqH6TUcx/hV3Ca9J9+GkkynMDkKBNo6EZZ/XX5pielc2CtSE4vR78rIzkNMpl5DhOh6iDlrT2dI86soGtdSDXm7DQK0HOjZzFpaDl9Q0Xp3C7wgjl2i3JzULLEsOWyzIfE8+ECAwEAAaNTMFEwHQYDVR0OBBYEFO2ScoBwXTfoY24DnYubWuYVKONbMB8GA1UdIwQYMBaAFO2ScoBwXTfoY24DnYubWuYVKONbMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggIBADhbclqOYQwh5cDNq1pdA4XqBNPSGRg9liu84JzuhWnADAO+4fmyr9D1Usr2te1NW5pzGWxcOI8kg05l7ZPut0Vu937aBf9UAR5Q0qK2aV6450kmC4q7+Kw1qEsRbefs/90PFAI7mCnnVAuUCpdZNz8RwONAGsgS43tpfF4ZM5nXYBsFoLP3jQBWeepOx4EkJK+wjywJ55aLpJPznrYH1C1N6Du+Aon1YKkPSzpNEpt2+LBr0844EZOVhrBoL08ClGEgThk6uNycRL0I7nDPddY+27lCqDk5UimMdonvDaXC5K/5Lmf+EWzv3vp6X00e1Wo5YrYZSIv8LLhG9VU8+AfZ1NHmEvEaVz1Dx1H9yl6K9RZ9RRq+bsq6GwCUCqdBkCyFY2jkdpgpcADj1bXTTdKkKEGbq8z5yUKDoXfwmxRJMQmqYh1r61nHG8XLriO8FQc5qUJQpI+ITH8nfqtd4VTDs7QIopWfPihx/r5vk11jB5cGKwGzg5+IlcsQK0OW+se42h0/WNgcMz+rimJzuQta30xPR26McquC8IbrpJhgjwLFEfoZgxHVOGFC9/O8Gc+xi62prly81R1bbhnYCy/BUILEz56yWyXojATpjBacoZTW5EwIHoFjagngi5pOznmzbnbKMhLlioj8IHm/s8YYchBU3mKYufDg+B/jASoI</ds:X509Certificate>
+                </ds:X509Data>
+            </ds:KeyInfo>
+        </md:KeyDescriptor>
+        <md:ArtifactResolutionService Binding="urn:oasis:names:tc:SAML:2.0:bindings:SOAP" Location="https://test.keycloak.com/auth/login/epd/callback/soap" index="1"/>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Artifact" Location="https://test.keycloak.com/auth/login/epd/callback/http-artifact" index="1"/>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://test.keycloak.com/auth/login/epd/callback/http-post" index="2"/>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST-SimpleSign" Location="https://test.keycloak.com/auth/login/epd/callback/http-post-simplesign" index="3"/>
+        <md:AssertionConsumerService Binding="urn:oasis:names:tc:SAML:2.0:bindings:PAOS" Location="https://test.keycloak.com/auth/login/epd/callback/paos" index="4"/>
+    </md:SPSSODescriptor>
+</md:EntityDescriptor>

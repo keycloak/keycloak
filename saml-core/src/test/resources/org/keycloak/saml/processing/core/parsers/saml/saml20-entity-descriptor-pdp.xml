@@ -1,0 +1,58 @@
+<EntityDescriptor xmlns="urn:oasis:names:tc:SAML:2.0:metadata"
+                  xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+                  xmlns:ds="http://www.w3.org/2000/09/xmldsig#"
+                  xmlns:xenc="http://www.w3.org/2001/04/xmlenc#"
+                  entityID="https://IdentityProvider.com/SAML">
+    <ds:Signature>...</ds:Signature>
+    <PDPDescriptor ID="ID" protocolSupportEnumeration="http://www.example.com/ http://www.example.com/">
+        <ds:Signature>
+            <ds:SignedInfo>
+                <ds:CanonicalizationMethod Algorithm="http://www.example.com/">...</ds:CanonicalizationMethod>
+                <ds:SignatureMethod Algorithm="http://www.example.com/">...</ds:SignatureMethod>
+                <ds:Reference URI="http://www.example.com/">...</ds:Reference>
+            </ds:SignedInfo>
+            <ds:SignatureValue>GpM7</ds:SignatureValue>
+            <ds:KeyInfo>
+                <ds:KeyName>string</ds:KeyName>
+            </ds:KeyInfo>
+            <ds:Object>Any text, intermingled with:</ds:Object>
+        </ds:Signature>
+        <Extensions>
+        </Extensions>
+        <KeyDescriptor>
+            <ds:KeyInfo>
+                <ds:KeyName>string</ds:KeyName>
+            </ds:KeyInfo>
+            <EncryptionMethod Algorithm="http://www.example.com/">
+                <xenc:KeySize>1</xenc:KeySize>
+                <xenc:OAEPparams>GpM7</xenc:OAEPparams>
+            </EncryptionMethod>
+        </KeyDescriptor>
+        <Organization>
+            <OrganizationName xml:lang="en-US">string</OrganizationName>
+            <OrganizationDisplayName xml:lang="en-US">string</OrganizationDisplayName>
+            <OrganizationURL xml:lang="en-US">http://www.example.com/</OrganizationURL>
+        </Organization>
+        <ContactPerson contactType="technical">
+            <Company>string</Company>
+            <GivenName>string</GivenName>
+            <SurName>string</SurName>
+            <EmailAddress>http://www.example.com/</EmailAddress>
+            <TelephoneNumber>string</TelephoneNumber>
+        </ContactPerson>
+        <AuthzService Binding="http://www.example.com/" Location="http://www.example.com/">
+        </AuthzService>
+        <AssertionIDRequestService Binding="http://www.example.com/" Location="http://www.example.com/">
+        </AssertionIDRequestService>
+        <NameIDFormat>http://www.example.com/</NameIDFormat>
+    </PDPDescriptor>
+    <Organization>
+        <OrganizationName xml:lang="en">Identity Providers R
+            US</OrganizationName>
+        <OrganizationDisplayName xml:lang="en">
+            Identity Providers R US, a Division of Lerxst Corp.
+        </OrganizationDisplayName>
+        <OrganizationURL
+                xml:lang="en">https://IdentityProvider.com</OrganizationURL>
+    </Organization>
+</EntityDescriptor>

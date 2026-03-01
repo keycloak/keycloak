@@ -1,0 +1,59 @@
+== Breaking changes
+
+Breaking changes are identified as requiring changes from existing users to their configurations.
+
+There are no breaking changes in this release to public APIs or documented behavior.
+
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== Offline access removes the associated online session if the `offline_scope` is requested in the initial exchange
+
+Any offline session in {project_name} is created from an online session. When the `offline_access` scope is requested, the current online session is used to create the associated offline session for the client. Therefore, any `offline_access` request finished, until now, created two sessions: one online and one offline.
+This situation lead to unreliable behavior.  For example, when just the login with `scope=offline_access` was requested, there could be an unused online session created, which is then useless in most cases.
+This situation  caused the unnecessary consumption of server resources.
+
+Starting with this version, {project_name} removes the initial online session if the `offline_scope` is directly requested as the first interaction for the session. The client retrieves the offline token after the code to token exchange that is associated to the offline session, but the previous online session is removed. If the online session has been used before the `offline_scope` request, by the same or another client, the online session remains active as today.
+This situation also means that the SSO session is not created in the browser if the login request with `scope=offline_access` is used and the user was not already authenticated in the SSO beforehand. Although the new behavior makes sense because the client application is just asking for an offline token, it can affect some scenarios that rely on having the online session still active after the initial `offline_scope` token request.
+
+=== New client scope `service_account` for `client_credentials` grant mappers
+
+{project_name} introduces a new client scope at the realm level called `service_account` which is in charge of adding the specific claims for `client_credentials` grant (`client_id`, `clientHost` and `clientAddress`) via protocol mappers. This scope will be automatically assigned to and unassigned from the client when the `serviceAccountsEnabled` option is set or unset in the client configuration.
+
+Previously, the three mappers (`Client Id`, `Client Host` and `Client IP Address`) where added directly to the dedicated scope when the client was configured to enable service accounts, and they were never removed.
+
+The behavior should be effectively the same for most {project_name} deployments because claims in the token are effectively same as before. You might be affected in cases when you are using a client credentials grant
+and you are preparing the {project_name} environment by some tooling that is manually removing or updating the three protocol mappers mentioned above. For instance, if you use an admin CLI script to enable a service-account for a  client and then remove the built-in service-account protocol mappers, you may adjust your CLI to instead remove the assignment of the `service_account` client scope
+from the client instead of removing protocol mappers.
+
+== Deprecation notices
+
+This lists functionality that continues to work as before in this release, but will be removed in a future major release.
+
+=== Default `db` option for production deprecated.
+
+In previous releases, the `db` option defaulted to `dev-file` both in production (`start`) and development (`start-dev`) modes while `dev-file` has never been supported in the production mode. In this release, we have deprecated this behaviour and in some future release the `db` option won't default to `dev-file` in production mode. For `build` or non-optimized `start` and non-server commands `import`, `export`, or `bootstrap-admin` in the production profile, a value should be explicitly supplied. This is to prevent the unintentional usage of the `dev-file` (H2) database in a production environment, which is typically indicative of a misconfiguration.
+
+=== Deprecated APIs for JavaScript Authorization client
+
+The following APIs for the JavaScript Authorization client are deprecated and will be removed in the next major release:
+
+- The `ready` property on the `KeycloakAuthorization` instance.
+- The `init()` method on the `KeycloakAuthorization` instance.
+
+These APIs are no longer needed as initialization is done automatically on demand when calling methods on the `KeycloakAuthorization` instance. You can safely remove any code that depends on these APIs.
+
+=== Deprecated endpoint for initiate registration from OIDC client
+
+The `/realms/<realm>/protocol/openid-connect/registrations` endpoint, which was used for initiating registration by OIDC client, is now deprecated because a standard way exists to initiate registration from the OIDC client. This way is now supported by {project_name}. It uses the parameter `prompt=create`.
+
+=== Deprecating `getAll()` methods in `Organizations` and `OrganizationMembers` APIs
+
+`getAll()` methods in `Organizations` and `OrganizationMembers` APIs are now deprecated and will be removed in the next major release.
+Instead, use corresponding `list(first, max)` methods in `Organizations` and `OrganizationMembers` APIs.
+
+=== Deprecated transport stacks for distributed caches
+
+The `udp`, `jdbc-ping-udp`, `tcp`, `azure`, `ec2` and `google` transport stacks have been deprecated.
+Users should use the TCP based `jdbc-ping` stack as a direct replacement.

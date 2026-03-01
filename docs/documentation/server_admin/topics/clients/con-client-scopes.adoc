@@ -1,0 +1,144 @@
+//[id="con-client-scopes_{context}"]//
+
+[[_client_scopes]]
+= Client scopes
+
+[role="_abstract"]
+Use {project_name} to define a shared client configuration in an entity called a _client scope_. A _client scope_ configures <<_protocol-mappers, protocol mappers>> and <<_role_scope_mappings, role scope mappings>> for multiple clients.
+
+Client scopes also support the OAuth 2 *scope* parameter. Client applications use this parameter to request claims or roles in the access token, depending on the requirement of the application.
+
+include::proc-creating-client-scopes.adoc[]
+
+[[_client_scopes_protocol]]
+== Protocol
+When you create a client scope, choose the *Protocol*. Clients linked in the same scope must have the same protocol.
+
+Each realm has a set of pre-defined built-in client scopes in the menu.
+
+* SAML protocol: The *role_list*. This scope contains one protocol mapper for  the roles list in the SAML assertion.
+* OpenID Connect protocol: Several client scopes are available:
+** *roles*
++
+This scope is not defined in the OpenID Connect specification and is not added automatically to the *scope* claim in the access token. This scope has mappers, which are used to add the roles of the user to the access token and
+add audiences for clients that have at least one client role. These mappers are described in more detail in the <<_oidc_token_role_mappings, Token Role mappings section>> and <<_audience_resolve, Audience section>>.
++
+** *web-origins*
++
+This scope is also not defined in the OpenID Connect specification and not added to the *scope* claiming the access token. This scope is used to add allowed web origins to the access token *allowed-origins* claim.
++
+** *microprofile-jwt*
++
+This scope handles claims defined in the https://github.com/eclipse/microprofile/wiki/JWT_Auth[MicroProfile/JWT Auth Specification]. This scope defines a user property mapper for the *upn* claim and a realm role mapper for the *groups* claim. These mappers can be changed so different properties can be used to create the MicroProfile/JWT specific claims.
++
+** *offline_access*
++
+This scope is used in cases when clients need to obtain offline tokens. More details on offline tokens is available in the  <<_offline-access, Offline Access section>> and in the https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[OpenID Connect specification].
++
+** *profile*
+** *email*
+** *address*
+** *phone*
+
+The client scopes *profile*, *email*, *address* and *phone* are defined in the https://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims[OpenID Connect specification]. These scopes do not have any role scope mappings defined but they do have protocol mappers defined. These mappers correspond to the claims defined in the OpenID Connect specification.
+
+For example, when you open the *phone* client scope and open the *Mappers* tab, you will see the protocol mappers which correspond to the claims defined in the specification for the scope *phone*.
+
+.Client scope mappers
+image:images/client-scopes-phone.png[]
+
+When the *phone* client scope is linked to a client, the client automatically inherits all the protocol mappers defined in the *phone* client scope. Access tokens issued for this client contain the phone number information about the user, assuming that the user has a defined phone number.
+
+Built-in client scopes contain the protocol mappers as defined in the specification. You are free to edit client scopes and create, update, or remove any protocol mappers or role scope mappings.
+
+== Consent related settings
+Client scopes contain options related to the consent screen. Those options are useful if the linked client if *Consent Required* is enabled on the client.
+
+Display On Consent Screen::
+  If *Display On Consent Screen* is enabled, and the scope is added to a client that requires consent, the text specified in *Consent Screen Text* will be displayed on the consent screen. This text is shown when the user is authenticated and before the user is redirected from {project_name} to the client. If *Display On Consent Screen* is disabled, this client scope will not be displayed on the consent screen.
+
+Consent Screen Text::
+  The text displayed on the consent screen when this client scope is added to a client when consent required defaults to the name of client scope. The value for this text can be customised by specifying a substitution variable with *${var-name}* strings. The customised value is  configured within the property files in your theme. See the  link:{developerguide_link}[{developerguide_name}] for more information on customisation.
+
+== Include in token scope
+
+There is the *Include in token scope* switch on the client scope. If on, the name of this client scope will be added to the access token property scope, and to the Token Response and Token Introspection Endpoint
+response claim `scope`. If off, this client scope will be omitted from the token and from the Token Introspection Endpoint response. As mentioned above, some built-in client scopes have this switch disabled, which means
+that they are not included in the `scope` claim even if they are applied for the particular request.
+
+[[_client_scopes_linking]]
+== Link client scope with the client
+Linking between a client scope and a client is configured in the *Client Scopes* tab of the client. Here is how it looks for the client application `myclient`:
+
+.Client scopes linking to client
+image:images/client-scopes-default.png[]
+
+There are two ways of linking between the client scope and the client.
+
+Default Client Scopes::
+This setting is applicable to the OpenID Connect and SAML clients. Default client scopes are applied when issuing OpenID Connect tokens or SAML assertions for a client. The client will inherit Protocol Mappers and Role Scope Mappings that are defined on the client scope. For the OpenID Connect Protocol, the Mappers and Role Scope Mappings are always applied, regardless of the value used for the scope parameter in the OpenID Connect authorization request.
+
+Optional Client Scopes::
+This setting is applicable only for OpenID Connect clients. Optional client scopes are applied when issuing tokens for this client but only when requested by the *scope* parameter in the OpenID Connect authorization request.
+
+=== Example
+For this example, assume the client has *profile* and *email* linked as default client scopes, and *phone* and *address* linked as optional client scopes. The client uses the value of the scope parameter when sending a request to the OpenID Connect authorization endpoint.
+
+[source,bash,subs=+attributes]
+----
+scope=openid phone
+----
+
+The scope parameter contains the string, with the scope values divided by spaces. The value *openid* is the meta-value used for all OpenID Connect requests. The token will contain mappers and role scope mappings from the default client scopes *profile* and *email* as well as *phone*, an optional client scope requested by the scope parameter.
+
+[[_client_scopes_dedicated]]
+=== Dedicated client scope
+
+There is a special client scope, which is linked to every client. It is a dedicated client scope, which is always shown as the first client scope when you click on the tab *Client scopes* of the particular client. 
+For example, for client `myclient`, the client scope is shown as `myclient-dedicated`. This client scope represents the protocol mappers and role scope mappings, which are linked directly to the client itself.
+
+It is not possible to unlink the dedicated client scope from a client. Also, it is not possible to link this dedicated client scope to a different client. In other words, the dedicated client scope is useful
+just for protocol mappers and role scope mappings, which are specific to a single client. In case you want to share the same protocol mapper configuration among multiple clients, it is usually useful to create
+a client scope in the realm tab *Client scopes* and then link this shared client scope to every client that should apply this shared configuration.
+
+In the tab *Scope* of the dedicated client scope, you can define role scope mappings applicable to this client. You can also see the switch *Full scope allowed* in this tab.
+The details about this switch are described in <<_role_scope_mappings, this section>> and in <<_oidc_token_role_mappings,this section>>.
+
+NOTE: In the admin REST API and in the internal {project_name} storage, the dedicated client scope does not exist as its protocol mappers and role scope mappings are internally linked to the client itself. The.
+dedicated client scope is in fact just an abstraction for the admin console UI.
+
+[[_client_scopes_evaluate]]
+== Evaluating Client Scopes
+include::proc-evaluating-client-scopes.adoc[]
+
+[[client-scopes-permissions]]
+== Client scopes permissions
+
+When issuing tokens to a user, the client scope applies only if the user is permitted to use it.
+
+When a client scope does not have any role scope mappings defined, each user is permitted to use this client scope. However, when a client scope has role scope mappings defined, the user must be a member of at least one of the roles. There must be an intersection between the user roles and the roles of the client scope. Composite roles are factored into evaluating this intersection.
+
+If a user is not permitted to use the client scope, no protocol mappers or role scope mappings will be used when generating tokens. The client scope will not appear in the _scope_ value in the token.
+
+== Realm default client scopes
+include::proc-updating-default-scopes.adoc[]
+
+[[_downscoping]]
+== Downscoping
+
+In OAuth/OIDC, *downscoping* is the process of exchanging an existing JWT access token for a new one with a more restricted set of permissions (scopes) and/or a narrower audience. In the OAuth 2.0 refresh token grant type, the https://datatracker.ietf.org/doc/html/rfc6749#section-6[RFC 6749] itself restricts the requested scope, saying that it must not include any scope not originally granted by the resource owner. So, this *downscoping* concept is very common and very recommended for security reasons.
+
+{project_name} provides a <<_client_policies,client policy>> executor that ensures this *downscoping* idea for other grant types. The client executor is called `downscope-assertion-grant-enforcer` and, for the moment, applies for the link:{securing_apps_token_exchange_link}#_standard-token-exchange[Standard token exchange]. When this client executor is enforced, the token exchange is only allowed for the scopes that are already present in the initial JWT (`subject_token` parameter). An error is returned if any other extra scope is requested, no matter if the client configuration permits this scope as optional or default. Default scopes that are configured as *include in token scope* set to *false* (for example `basic` or `acr` in the default configuration) are the only exception. Those scopes are invisible for the requester and are considered compulsory for any grant type. Once this executor is applied for the client, *downscoping* is the only option when exchanging an access token, no additional scopes will ever be granted.
+
+== Scopes explained
+
+The term _scope_ has multiple meanings within {project_name} and across the OAuth/OIDC specifications. Below is a clarification of the different _scopes_ used in {project_name}:
+
+Client scope::
+Client scopes are entities in {project_name} that are configured at the realm level and can be linked to clients. Client scopes are referenced by their name when a request is sent to the {project_name} authorization endpoint with a corresponding value of the *scope* parameter. See the <<_client_scopes_linking, client scopes linking>> section for more details.
+
+Role scope mapping::
+This is available under the *Scope* tab of a client or client scope. Use *Role scope mapping* to limit the roles that can be used in the access tokens. See the <<_role_scope_mappings, Role Scope Mappings section>> for more details.
+
+Authorization scopes::
+The *Authorization Scope* covers the actions that can be performed in the application. See the link:{authorizationguide_link}[Authorization Services Guide] for more details.

@@ -1,0 +1,25 @@
+.. List the current endpoints in the Global Accelerator's EndpointGroup
++
+.Command:
+[source,bash]
+----
+<#noparse>
+ACCELERATOR_NAME= # <1>
+ACCELERATOR_ARN=$(aws globalaccelerator list-accelerators \
+  --query "Accelerators[?Name=='${ACCELERATOR_NAME}'].AcceleratorArn" \
+  --region us-west-2 \ # <2>
+  --output text
+)
+LISTENER_ARN=$(aws globalaccelerator list-listeners \
+  --accelerator-arn ${ACCELERATOR_ARN} \
+  --query "Listeners[*].ListenerArn" \
+  --region us-west-2 \
+  --output text
+)
+aws globalaccelerator list-endpoint-groups \
+  --listener-arn ${LISTENER_ARN} \
+  --region us-west-2
+</#noparse>
+----
+<1> The name of the Accelerator to be updated
+<2> The region must always be set to us-west-2 when querying AWS Global Accelerators

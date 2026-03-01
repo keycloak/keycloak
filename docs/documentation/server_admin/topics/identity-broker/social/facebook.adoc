@@ -1,0 +1,46 @@
+
+[[_facebook]]
+==== Facebook
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the *Add provider* list, select *Facebook*.
++
+.Add identity provider
+image:images/facebook-add-identity-provider.png[Add Identity Provider]
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, open the https://developers.facebook.com/[Meta for Developers].
+.. Click *My Apps*.
+.. Select *Create App*.
++
+.Add a use case
+image:images/meta-add-use-case.png[Add a use case]
++
+.. Select *Other*.
++
+.Select an app type
+image:images/meta-select-app-type.png[Select an app type]
++
+.. Select *Consumer*.
++
+.Create an app
+image:images/meta-create-app.png[Create an app]
++
+.. Fill in all required fields.
+.. Click *Create app*. Meta then brings you to the dashboard.
++
+.Add a product
+image:images/meta-add-product.png[Add Product]
++
+.. Click *Set Up* in the *Facebook Login* box.
+.. Select *Web*.
+.. Enter the *Redirect URI's* value into the *Site URL* field and click *Save*.
+.. In the navigation panel, select *App settings* - *Basic*.
+.. Click *Show* in the *App Secret* field.
+.. Note the *App ID* and the *App Secret*.
+. Enter the https://developers.facebook.com/docs/facebook-login/guides/access-tokens[`App ID` and `App Secret`] values from your Facebook app into the *Client ID* and *Client Secret* fields in {project_name}.
+. Click *Add*
+
+. Enter the required scopes into the *Default Scopes* field. By default, {project_name} uses the *email* scope. See https://developers.facebook.com/docs/graph-api[Graph API] for more information about Facebook scopes.
+
+{project_name} sends profile requests to `graph.facebook.com/me?fields=id,name,email,first_name,last_name` by default. The response contains the id, name, email, first_name, and last_name fields only. To fetch additional fields from the Facebook profile, add a corresponding scope and add the field name in the `Additional user's profile fields` configuration option field. 

@@ -1,0 +1,88 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="HTTP metrics"
+summary="Use metrics to monitor the {project_name} HTTP requests processing."
+tileVisible="false"
+includedOptions="http-metrics-histograms-enabled http-metrics-slos"
+>
+
+<#include "partials/prerequisites-metrics-troubleshooting.adoc" />
+
+== Metrics
+
+=== Processing time
+
+The processing time is exposed by these metrics, to monitor the {project_name} performance and how long it takes to processing the requests.
+
+TIP: On a healthy cluster, the average processing time will remain stable.
+Spikes or increases in the processing time may be an early sign that some node is under load.
+
+====
+*Tags*
+
+`method`:: HTTP method.
+`outcome`:: A more general outcome tag.
+`status`:: The HTTP status code.
+`uri`:: The requested URI.
+====
+
+|===
+|Metric |Description
+
+m| http_server_requests_seconds_count
+| The total number of requests processed.
+
+m| http_server_requests_seconds_sum
+| The total duration for all the requests processed.
+|===
+
+You can enable histograms for this metric by setting `http-metrics-histograms-enabled` to `true`, and add additional buckets for service level objectives using the option `http-metrics-slos`.
+
+include::partials/histogram_note_http.adoc[]
+
+=== Active requests
+
+The current number of active requests is also available.
+
+|===
+|Metric |Description
+
+m| http_server_active_requests
+| The current number of active requests
+
+|===
+
+=== Bandwidth
+
+The metrics below helps to monitor the bandwidth and consumed traffic used by {project_name} and consumed by the requests and responses received or sent.
+
+|===
+|Metric |Description
+
+m| http_server_bytes_written_count
+| The total number of responses sent.
+
+m| http_server_bytes_written_sum
+| The total number of bytes sent.
+
+m| http_server_bytes_read_count
+| The total number of requests received.
+
+m| http_server_bytes_read_sum
+| The total number of bytes received.
+
+|===
+
+include::partials/histogram_note_http.adoc[]
+
+
+== Next steps
+
+Return back to the <@links.observability id="metrics-for-troubleshooting"/> or,
+
+* For single-cluster deployments, proceed to <@links.observability id="metrics-for-troubleshooting-clustering-and-network"/>,
+* and for multi-cluster deployments, proceed to <@links.observability id="metrics-for-troubleshooting-embedded-caches-multi-cluster"/>
+
+</@tmpl.guide>

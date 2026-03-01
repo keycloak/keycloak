@@ -1,0 +1,54 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Concepts to automate {jdgserver_name} CLI commands"
+summary="{jdgserver_name} CLI commands can be automated by creating a `Batch` CR instance."
+tileVisible="false" >
+
+include::../partials/infinispan/infinispan-attributes.adoc[]
+
+When interacting with an external {jdgserver_name} in {kubernetes}, the `Batch` CR allows you to automate this using standard `kubectl` commands.
+
+== When to use it
+
+Use this when automating interactions on {kubernetes}.
+This avoids providing usernames and passwords and checking shell script outputs and their status.
+
+For human interactions, the CLI shell might still be a better fit.
+
+== Example
+
+The following `Batch` CR takes a site offline as described in the operational procedure <@links.ha id="multi-cluster-operate-site-offline" />.
+
+[source,yaml,subs="+attributes"]
+----
+apiVersion: infinispan.org/v2alpha1
+kind: Batch
+metadata:
+  name: take-offline
+  namespace: {ns} #<1>
+spec:
+  cluster: {cluster-name} #<2>
+  config: | #<3>
+    site take-offline --all-caches --site={site-a-cr}
+    site status --all-caches --site={site-a-cr}
+----
+<1> The `Batch` CR must be created in the same namespace as the {jdgserver_name} deployment.
+<2> The name of the Infinispan CR.
+<3> A multiline string containing one or more {jdgserver_name} CLI commands.
+
+Once the CR has been created, wait for the status to show the completion.
+
+[source,bash,subs="+attributes"]
+----
+kubectl -n {ns} wait --for=jsonpath='{.status.phase}'=Succeeded Batch/take-offline
+----
+
+NOTE: Modifying a `Batch` CR instance has no effect. Batch operations are "`one-time`" events that modify Infinispan resources. To update `.spec` fields for the CR, or when a batch operation fails, you must create a new instance of the `Batch` CR.
+
+== Further reading
+
+For more information, see the link:{infinispan-operator-docs}#batch-cr[{jdgserver_name} Operator `Batch` CR documentation].
+
+</@tmpl.guide>

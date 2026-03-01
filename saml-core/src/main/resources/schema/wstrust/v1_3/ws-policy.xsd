@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+(c) 2001-2006 BEA Systems Inc., International Business Machines Corporation, Microsoft Corporation, Inc., SAP AG, Sonic Software, and VeriSign, Inc. All rights reserved.
+
+Permission to copy and display the WS-Policy Specification (the "Specification", which includes WSDL and schema documents), in any medium without fee or royalty is hereby granted, provided that you include the following on ALL copies of the WS-Policy Specification, that you make:
+
+1.	A link or URL to the WS-Policy Specification at one of the Authors' websites
+2.	The copyright notice as shown in the WS-Policy Specification.
+
+BEA Systems, IBM, Microsoft, SAP, Sonic Software, and VeriSign (collectively, the "Authors") each agree to grant you a license, under royalty-free and otherwise reasonable, non-discriminatory terms and conditions, to their respective essential patent claims that they deem necessary to implement the WS-Policy Specification.
+
+THE WS-POLICY SPECIFICATION IS PROVIDED "AS IS," AND THE AUTHORS MAKE NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, OR TITLE; THAT THE CONTENTS OF THE WS-POLICY SPECIFICATION ARE SUITABLE FOR ANY PURPOSE; NOR THAT THE IMPLEMENTATION OF SUCH CONTENTS WILL NOT INFRINGE ANY THIRD PARTY PATENTS, COPYRIGHTS, TRADEMARKS OR OTHER RIGHTS.
+
+THE AUTHORS WILL NOT BE LIABLE FOR ANY DIRECT, INDIRECT, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF OR RELATING TO ANY USE OR DISTRIBUTION OF THE WS-POLICY SPECIFICATION.
+
+The name and trademarks of the Authors may NOT be used in any manner, including advertising or publicity pertaining to the WS-Policy Specification or its contents without specific, written prior permission. Title to copyright in the WS-Policy Specification will at all times remain with the Authors.
+
+No other rights are granted by implication, estoppel or otherwise.
+-->
+<xs:schema
+        targetNamespace="http://schemas.xmlsoap.org/ws/2004/09/policy"
+        xmlns:tns="http://schemas.xmlsoap.org/ws/2004/09/policy"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+        elementFormDefault="qualified"
+        blockDefault="#all">
+
+  <xs:import
+          namespace="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"
+          schemaLocation="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+
+  <xs:import
+          namespace="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+          schemaLocation="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"/>
+
+  <!-- ////////// WS-Policy ////////// -->
+
+  <xs:element name="Policy">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="tns:OperatorContentType">
+          <xs:attribute name="Name" type="xs:anyURI"/>
+          <xs:attribute ref="wsu:Id"/>
+          <xs:anyAttribute namespace="##any" processContents="lax"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="All" type="tns:OperatorContentType"/>
+  <xs:element name="ExactlyOne" type="tns:OperatorContentType"/>
+
+  <xs:complexType name="OperatorContentType">
+    <xs:sequence>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="tns:Policy"/>
+        <xs:element ref="tns:All"/>
+        <xs:element ref="tns:ExactlyOne"/>
+        <xs:element ref="tns:PolicyReference"/>
+        <xs:any namespace="##other" processContents="lax"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:element name="PolicyReference">
+    <xs:complexType>
+      <xs:attribute name="URI" type="xs:anyURI" use="required"/>
+      <xs:attribute name="Digest" type="xs:base64Binary"/>
+      <xs:attribute name="DigestAlgorithm"
+                    type="xs:anyURI"
+                    default="http://schemas.xmlsoap.org/ws/2004/09/policy/Sha1Exc"
+              />
+      <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:attribute name="Optional" type="xs:boolean" default="false"/>
+
+  <!-- ////////// WS-PolicyAttachment ////////// -->
+
+  <xs:attribute name="PolicyURIs">
+    <xs:simpleType>
+      <xs:list itemType="xs:anyURI"/>
+    </xs:simpleType>
+  </xs:attribute>
+
+  <xs:element name="PolicyAttachment">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="tns:AppliesTo"/>
+        <xs:choice maxOccurs="unbounded">
+          <xs:element ref="tns:Policy"/>
+          <xs:element ref="tns:PolicyReference"/>
+        </xs:choice>
+        <!-- omitted only because it causes the content model to be non-determistic
+        <xs:element ref="wsse:Security" minOccurs="0" />
+-->
+        <xs:any namespace="##other"
+                processContents="lax"
+                minOccurs="0"
+                maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:element name="AppliesTo">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any namespace="##any"
+                processContents="lax"
+                maxOccurs="unbounded"/>
+      </xs:sequence>
+      <xs:anyAttribute namespace="##any" processContents="lax"/>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

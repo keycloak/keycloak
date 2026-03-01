@@ -1,0 +1,82 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="con-aia_{context}"]
+= Application initiated actions
+
+Application initiated actions (AIA) allow client applications to request a user to perform an action on the {project_name} side. Usually, when an OIDC client application
+wants a user to log in, it redirects that user to the login URL as described in the <<con-oidc_{context}, OIDC section>>. After login, the user is redirected back to the client application.
+The user performs the actions that were required by the administrator as described in the <<proc-setting-required-actions_{context}, previous section>>
+and then is immediately redirected back to the application. However, AIA allows the client application to request some required actions from the user during login. This can be
+done even if the user is already authenticated on the client and has an active SSO session. It is triggered by adding the `kc_action` parameter to the OIDC login URL with the value containing the requested action.
+For instance `kc_action=UPDATE_PASSWORD` parameter.
+
+A user may cancel an application initiated action. In this case the user is redirected back to the client application.
+The redirect URI will contain the query parameters `kc_action_status=cancelled` and `kc_action` with the name of the cancelled action.
+
+NOTE: The `kc_action` and `kc_action_status` parameters are a {project_name} proprietary mechanism unsupported by the OIDC specification.
+
+NOTE: Application initiated actions are supported only for OIDC clients.
+
+So if AIA is used, an example flow is similar to the following:
+
+* A client application redirects the user to the OIDC login URL with the additional parameter such as `kc_action=UPDATE_PASSWORD`
+
+* There is a `browser` flow always triggered as described in the <<_authentication-flows, Authentication flows section>>. If the user was not authenticated, that user needs to authenticate as during normal login.
+In case the user was already authenticated, that user might be automatically re-authenticated by an SSO cookie without needing to actively re-authenticate and supply the credentials again. In this case, that user will be
+directly redirected to the screen with the particular action (update password in this case). However, in some cases, active re-authentication is required even if the user has an SSO
+cookie (See <<con-aia-reauth_{context}, below>> for the details).
+
+* The screen with particular action (in this case `update password`) is displayed to the user, so that user needs to perform a particular action
+
+* Then user is redirected back to the client application
+
+Note that AIA are used by the {project_name} <<_account-service, Account Console>> to request update password or to reset other credentials such as OTP or WebAuthn.
+
+WARNING: Even if the parameter `kc_action` was used, it is not sufficient to assume that the user always performs the action.  For example, a user could have manually deleted
+the `kc_action` parameter from the browser URL. Therefore, no guarantee exists that the user has an OTP for the account after the client requested `kc_action=CONFIGURE_TOTP`. If you
+want to verify that the user configured two-factor authenticator, the client application may need to check it was configured. For instance
+by checking the claims like `acr` in the tokens.
+
+[id="con-aia-reauth_{context}"]
+== Re-authentication during AIA
+
+In case the user is already authenticated due to an active SSO session, that user usually does not need to actively re-authenticate. However, if that user actively authenticated longer than five minutes ago,
+the client can  still request re-authentication when some AIA is requested. Exceptions exist from this guideline as follows:
+
+* For every required action it is possible to configure the max age on the required action itself in the <<proc-setting-default-required-actions_{context}, Required actions tab>>.
+ If the policy is not configured, it defaults to five minutes.
+
+* The action `delete_account` will always require the user to actively re-authenticate
+
+* The action `UPDATE_PASSWORD` might require the user to actively re-authenticate according to the configured <<maximum-authentication-age,Maximum Authentication Age Password policy>>.
+In case the policy is not configured, it is also possible to configure it on the required action itself in the <<proc-setting-default-required-actions_{context}, Required actions tab>>
+when configuring the particular required action. If the policy is not configured in any of those places, it defaults to five minutes.
+
+* If you want to use a shorter re-authentication, you can still use a parameter query parameter such as  `max_age` with the specified shorter value or eventually `prompt=login`, which will always require user to
+actively re-authenticate as described in the OIDC specification. Note that using `max_age` for a longer value than the default five minutes (or the one specifically configured for the required action) is not supported.
+The `max_age` can be currently used only to make the value shorter than the default five minutes.
+
+* If <<_step-up-flow,Step-up authentication>> is enabled and the action is to add or delete a credential, authentication is required with the level corresponding
+to the given credential. This requirement exists in case the user already has the credential of the particular level. For example, if `otp` and `webauthn` are configured in the authentication flow as 2nd-factor authenticators
+(both in the authentication flow at level 2) and the user already has a 2nd-factor credential (`otp` or `webauthn` in this case), the user is required to authenticate with an existing 2nd-factor credential to add another 2nd-level credential.
+In the same manner, deleting an existing 2nd-factor credential (`otp` or `webauthn` in this case), authentication  with an existing 2nd-factor level credential is required. The requirement exists for security reasons.
+
+[id="con-aia-parameterized_{context}"]
+== Parameterized AIA
+
+Some AIA can require the parameter to be sent together with the action name. For instance, the `Delete Credential` action can be triggered only by AIA and it requires a parameter to be sent together with the name
+of the action, which points to the ID of the removed credential. So the URL for this example would be `kc_action=delete_credential:ce1008ac-f811-427f-825a-c0b878d1c24b`. In this case, the
+part after the colon character (`ce1008ac-f811-427f-825a-c0b878d1c24b`) contains the ID of the credential of the particular user, which is to be deleted. The `Delete Credential` action
+displays the confirmation screen where the user can confirm agreement to delete the credential.
+
+NOTE: The <<_account-service,{project_name} Account Console>> typically uses the `Delete Credential` action when deleting a 2nd-factor credential.  You can check the Account Console for examples if you want
+to use this action directly from your own applications. However, relying on the Account Console is best instead of managing credentials from your own applications.
+
+[id="con-aia-available-actions_{context}"]
+== Available actions
+
+To see all available actions, log in to the Admin Console and select `master` realm. Then go to the right top corner and click on the name of the user -> select `Realm info` -> tab `Provider info`. Then in the table, find SPI `required-action` . In the
+2nd column, there are available providers. Those can be used as values of the `kc_action` parameter (unless parameterized as described above). But note that this can be further restricted based on what actions are enabled for your realm in
+the <<proc-setting-default-required-actions_{context}, Required actions tab>>.

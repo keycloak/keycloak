@@ -1,0 +1,81 @@
+name: Setup Apache Commons Daemon (Procrun)
+description: Download and cache Apache Commons Daemon prunsrv.exe for Windows service tests
+
+inputs:
+  version:
+    description: Apache Commons Daemon version (leave empty for latest)
+    required: false
+    default: ""
+
+outputs:
+  prunsrv-path:
+    description: Path to the prunsrv.exe executable
+    value: ${{ steps.setup.outputs.prunsrv-path }}
+  version:
+    description: The resolved Apache Commons Daemon version
+    value: ${{ steps.resolve-version.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve latest version
+      id: resolve-version
+      shell: pwsh
+      run: |
+        $inputVersion = "${{ inputs.version }}"
+        if ([string]::IsNullOrWhiteSpace($inputVersion)) {
+          Write-Host "No version specified, detecting latest version from Apache downloads..."
+          $indexUrl = "https://downloads.apache.org/commons/daemon/binaries/windows/"
+          $response = Invoke-WebRequest -Uri $indexUrl -UseBasicParsing
+          # Parse the HTML to find the zip file and extract version
+          $match = [regex]::Match($response.Content, 'commons-daemon-(\d+\.\d+\.\d+)-bin-windows\.zip')
+          if ($match.Success) {
+            $version = $match.Groups[1].Value
+            Write-Host "Detected latest version: $version"
+          } else {
+            Write-Error "Could not detect latest version from Apache downloads page"
+            exit 1
+          }
+        } else {
+          $version = $inputVersion
+          Write-Host "Using specified version: $version"
+        }
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+
+    - uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      id: cache
+      name: Cache Apache Commons Daemon
+      with:
+        path: ${{ runner.temp }}/commons-daemon
+        key: commons-daemon-${{ steps.resolve-version.outputs.version }}-windows-amd64
+
+    - name: Download Apache Commons Daemon
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: pwsh
+      run: |
+        $version = "${{ steps.resolve-version.outputs.version }}"
+        $downloadUrl = "https://downloads.apache.org/commons/daemon/binaries/windows/commons-daemon-${version}-bin-windows.zip"
+        $zipPath = Join-Path "${{ runner.temp }}" "commons-daemon.zip"
+        $extractPath = Join-Path "${{ runner.temp }}" "commons-daemon"
+
+        Write-Host "Downloading Apache Commons Daemon $version from $downloadUrl"
+        Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath -UseBasicParsing
+
+        Write-Host "Extracting to $extractPath"
+        Expand-Archive -Path $zipPath -DestinationPath $extractPath -Force
+        Remove-Item $zipPath -Force
+
+    - name: Setup environment
+      id: setup
+      shell: pwsh
+      run: |
+        $prunsrvPath = "${{ runner.temp }}/commons-daemon/amd64/prunsrv.exe"
+
+        if (-not (Test-Path $prunsrvPath)) {
+          Write-Error "prunsrv.exe not found at $prunsrvPath"
+          exit 1
+        }
+
+        Write-Host "Apache Commons Daemon prunsrv.exe found at: $prunsrvPath"
+        echo "COMMONS_DAEMON_HOME=${{ runner.temp }}/commons-daemon/amd64" >> $env:GITHUB_ENV
+        echo "prunsrv-path=$prunsrvPath" >> $env:GITHUB_OUTPUT
