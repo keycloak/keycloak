@@ -1,0 +1,44 @@
+== Log in to the Admin Console
+
+. Go to the {links-admin-console}.
+. Log in with the username and password you created earlier.
+
+== Create a realm
+
+A realm in {project_name} is equivalent to a tenant. Each realm allows an administrator to create isolated groups of applications and users. Initially, {project_name}
+includes a single realm, called `master`. Use this realm only for managing {project_name} and not for managing any applications.
+
+Use these steps to create the first realm.
+
+. Open the {links-admin-console}.
+. Click *Create Realm* next to *Current realm*.
+. Enter `myrealm` in the *Realm name* field.
+. Click *Create*.
+
+.Add realm
+image::add-realm.png[Add realm]
+
+== Create a user
+
+Initially, the realm has no users. Use these steps to create a user:
+
+. Verify that you are still in the *myrealm* realm, which is next to *Current realm*.
+. Click *Users* in the left-hand menu.
+. Click *Create new user*.
+. Fill in the form with the following values:
+** *Username*: `myuser`
+** *First name*: any first name
+** *Last name*: any last name
+. Click *Create*.
+
+.Create user
+image::add-user.png[Create user]
+
+This user needs a password to log in. To set the initial password:
+
+. Click *Credentials* at the top of the page.
+. Fill in the *Set password* form with a password.
+. Toggle *Temporary* to *Off* so that the user does not need to update this password at the first login.
+
+.Set password
+image::set-password.png[Set password]

@@ -1,0 +1,304 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Deploying an AWS Global Accelerator load balancer"
+summary="Deploy an AWS Global Accelerator as the load-balancer building block in a multi-cluster deployment."
+tileVisible="false" >
+
+This topic describes the procedure required to deploy an AWS Global Accelerator to route traffic between multi-cluster {project_name} deployments.
+
+This deployment is intended to be used with the setup described in the <@links.ha id="multi-cluster-concepts"/> {section}.
+Use this deployment with the other building blocks outlined in the <@links.ha id="multi-cluster-building-blocks"/> {section}.
+
+include::../partials/blueprint-disclaimer.adoc[]
+
+== Audience
+
+This {section} describes how to deploy an AWS Global Accelerator instance to handle {project_name} client connection failover for multiple
+availability-zone {project_name} deployments.
+
+== Architecture
+
+To ensure user requests are routed to each {project_name} site we need to utilise a load balancer. To prevent issues with
+DNS caching on the client-side, the implementation should use a static IP address that remains the same
+when routing clients to both availability-zones.
+
+In this {section} we describe how to route all {project_name} client requests via an AWS Global Accelerator load balancer.
+In the event of a {project_name} site failing, the Accelerator ensures that all client requests are routed to the remaining
+healthy site. If both sites are marked as unhealthy, then the Accelerator will "`fail-open`" and forward requests to a site
+chosen at random.
+
+.AWS Global Accelerator Failover
+image::high-availability/accelerator-multi-az.dio.svg[]
+
+An AWS Network Load Balancer (NLB) is created on both ROSA clusters in order to make the Keycloak
+pods available as Endpoints to an AWS Global Accelerator instance. Each cluster endpoint is assigned a weight of
+128 (half of the maximum weight 255) to ensure that accelerator traffic is routed equally to both availability-zones
+when both clusters are healthy.
+
+== Prerequisites
+
+* ROSA based Multi-AZ {project_name} deployment
+
+== Procedure
+. Create Network Load Balancers
++
+Perform the following on each of the {project_name} clusters:
++
+.. Login to the ROSA cluster
++
+.. Create a {kubernetes} load balancer service
++
+.Command:
+[source,bash]
+----
+<#noparse>
+cat <<EOF | kubectl apply -n $NAMESPACE -f - #<1>
+  apiVersion: v1
+  kind: Service
+  metadata:
+    name: accelerator-loadbalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-additional-resource-tags: accelerator=${ACCELERATOR_NAME},site=${CLUSTER_NAME},namespace=${NAMESPACE} # <2>
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-path: "/lb-check"
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "https"
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval: "10" # <3>
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold: "3" # <4>
+      service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold: "3" # <5>
+  spec:
+    ports:
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 8443
+    selector:
+      app: keycloak
+      app.kubernetes.io/instance: keycloak
+      app.kubernetes.io/managed-by: keycloak-operator
+    sessionAffinity: None
+    type: LoadBalancer
+EOF
+</#noparse>
+----
+<1> `$NAMESPACE` should be replaced with the namespace of your {project_name} deployment
+<2> Add additional Tags to the resources created by AWS so that we can retrieve them later. `ACCELERATOR_NAME` should be
+the name of the Global Accelerator created in subsequent steps and `CLUSTER_NAME` should be the name of the current site.
+<3> How frequently the healthcheck probe is executed in seconds
+<4> How many healthchecks must pass for the NLB to be considered healthy
+<5> How many healthchecks must fail for the NLB to be considered unhealthy
++
+.. Take note of the DNS hostname as this will be required later:
++
+.Command:
+[source,bash]
+----
+kubectl -n $NAMESPACE get svc accelerator-loadbalancer --template="{{range .status.loadBalancer.ingress}}{{.hostname}}{{end}}"
+----
++
+.Output:
+[source,bash]
+----
+abab80a363ce8479ea9c4349d116bce2-6b65e8b4272fa4b5.elb.eu-west-1.amazonaws.com
+----
++
+. Create a Global Accelerator instance
++
+.Command:
+[source,bash]
+----
+aws globalaccelerator create-accelerator \
+  --name example-accelerator \ #<1>
+  --ip-address-type DUAL_STACK \ #<2>
+  --region us-west-2 #<3>
+----
+<1> The name of the accelerator to be created, update as required
+<2> Can be 'DUAL_STACK' or 'IPV4'
+<3> All `globalaccelerator` commands must use the region 'us-west-2'
++
+.Output:
+[source,json]
+----
+{
+    "Accelerator": {
+        "AcceleratorArn": "arn:aws:globalaccelerator::606671647913:accelerator/e35a94dd-391f-4e3e-9a3d-d5ad22a78c71", #<1>
+        "Name": "example-accelerator",
+        "IpAddressType": "DUAL_STACK",
+        "Enabled": true,
+        "IpSets": [
+            {
+                "IpFamily": "IPv4",
+                "IpAddresses": [
+                    "75.2.42.125",
+                    "99.83.132.135"
+                ],
+                "IpAddressFamily": "IPv4"
+            },
+            {
+                "IpFamily": "IPv6",
+                "IpAddresses": [
+                    "2600:9000:a400:4092:88f3:82e2:e5b2:e686",
+                    "2600:9000:a516:b4ef:157e:4cbd:7b48:20f1"
+                ],
+                "IpAddressFamily": "IPv6"
+            }
+        ],
+        "DnsName": "a099f799900e5b10d.awsglobalaccelerator.com", #<2>
+        "Status": "IN_PROGRESS",
+        "CreatedTime": "2023-11-13T15:46:40+00:00",
+        "LastModifiedTime": "2023-11-13T15:46:42+00:00",
+        "DualStackDnsName": "ac86191ca5121e885.dualstack.awsglobalaccelerator.com" #<3>
+    }
+}
+
+----
+<1> The ARN associated with the created Accelerator instance, this will be used in subsequent commands
+<2> The DNS name which IPv4 {project_name} clients should connect to
+<3> The DNS name which IPv6 {project_name} clients should connect to
++
+. Create a Listener for the accelerator
++
+.Command:
+[source,bash]
+----
+aws globalaccelerator create-listener \
+  --accelerator-arn 'arn:aws:globalaccelerator::606671647913:accelerator/e35a94dd-391f-4e3e-9a3d-d5ad22a78c71' \
+  --port-ranges '[{"FromPort":443,"ToPort":443}]' \
+  --protocol TCP \
+  --region us-west-2
+----
++
+.Output:
+[source,json]
+----
+{
+    "Listener": {
+        "ListenerArn": "arn:aws:globalaccelerator::606671647913:accelerator/e35a94dd-391f-4e3e-9a3d-d5ad22a78c71/listener/1f396d40",
+        "PortRanges": [
+            {
+                "FromPort": 443,
+                "ToPort": 443
+            }
+        ],
+        "Protocol": "TCP",
+        "ClientAffinity": "NONE"
+    }
+}
+----
++
+. Create an Endpoint Group for the Listener
++
+.Command:
+[source,bash]
+----
+<#noparse>
+CLUSTER_1_ENDPOINT_ARN=$(aws elbv2 describe-load-balancers \
+    --query "LoadBalancers[?DNSName=='abab80a363ce8479ea9c4349d116bce2-6b65e8b4272fa4b5.elb.eu-west-1.amazonaws.com'].LoadBalancerArn" \ #<1>
+    --region eu-west-1 \ #<2>
+    --output text
+)
+CLUSTER_2_ENDPOINT_ARN=$(aws elbv2 describe-load-balancers \
+    --query "LoadBalancers[?DNSName=='a1c76566e3c334e4ab7b762d9f8dcbcf-985941f9c8d108d4.elb.eu-west-1.amazonaws.com'].LoadBalancerArn" \ #<1>
+    --region eu-west-1 \ #<2>
+    --output text
+)
+ENDPOINTS='[
+  {
+    "EndpointId": "'${CLUSTER_1_ENDPOINT_ARN}'",
+    "Weight": 128,
+    "ClientIPPreservationEnabled": false
+  },
+  {
+    "EndpointId": "'${CLUSTER_2_ENDPOINT_ARN}'",
+    "Weight": 128,
+    "ClientIPPreservationEnabled": false
+  }
+]'
+aws globalaccelerator create-endpoint-group \
+  --listener-arn 'arn:aws:globalaccelerator::606671647913:accelerator/e35a94dd-391f-4e3e-9a3d-d5ad22a78c71/listener/1f396d40' \ #<2>
+  --traffic-dial-percentage 100 \
+  --endpoint-configurations ${ENDPOINTS} \
+  --endpoint-group-region eu-west-1 \ #<3>
+  --region us-west-2
+</#noparse>
+----
+<1> The DNS hostname of the Cluster's NLB
+<2> The ARN of the Listener created in the previous step
+<3> This should be the AWS region that hosts the clusters
++
+.Output:
+[source,json]
+----
+<#noparse>
+{
+    "EndpointGroup": {
+        "EndpointGroupArn": "arn:aws:globalaccelerator::606671647913:accelerator/e35a94dd-391f-4e3e-9a3d-d5ad22a78c71/listener/1f396d40/endpoint-group/2581af0dc700",
+        "EndpointGroupRegion": "eu-west-1",
+        "EndpointDescriptions": [
+            {
+                "EndpointId": "arn:aws:elasticloadbalancing:eu-west-1:606671647913:loadbalancer/net/abab80a363ce8479ea9c4349d116bce2/6b65e8b4272fa4b5",
+                "Weight": 128,
+                "HealthState": "HEALTHY",
+                "ClientIPPreservationEnabled": false
+            },
+            {
+                "EndpointId": "arn:aws:elasticloadbalancing:eu-west-1:606671647913:loadbalancer/net/a1c76566e3c334e4ab7b762d9f8dcbcf/985941f9c8d108d4",
+                "Weight": 128,
+                "HealthState": "HEALTHY",
+                "ClientIPPreservationEnabled": false
+            }
+        ],
+        "TrafficDialPercentage": 100.0,
+        "HealthCheckPort": 443,
+        "HealthCheckProtocol": "TCP",
+        "HealthCheckPath": "undefined",
+        "HealthCheckIntervalSeconds": 30,
+        "ThresholdCount": 3
+    }
+}
+</#noparse>
+----
+. Optional: Configure your custom domain
++
+If you are using a custom domain, pointed your custom domain to the AWS Global Load Balancer by configuring an Alias or CNAME in your custom domain.
++
+. Create or update the {project_name} Deployment
++
+Perform the following on each of the {project_name} clusters:
++
+.. Login to the ROSA cluster
++
+.. Ensure the Keycloak CR has the following configuration
++
+[source,yaml]
+----
+<#noparse>
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak
+spec:
+  hostname:
+    hostname: $HOSTNAME # <1>
+  ingress:
+    enabled: false # <2>
+</#noparse>
+----
+<1> The hostname clients use to connect to Keycloak
+<2> Disable the default ingress as all {project_name} access should be via the provisioned NLB
++
+To ensure that request forwarding works as expected, it is necessary for the Keycloak CR to specify the hostname through
+which clients will access the {project_name} instances. This can either be the `DualStackDnsName` or `DnsName` hostname associated
+with the Global Accelerator. If you are using a custom domain, point your custom domain to the AWS Global Accelerator, and use your custom domain here.
+
+== Verify
+To verify that the Global Accelerator is correctly configured to connect to the clusters, navigate to hostname configured above, and you should be presented with the {project_name} admin console.
+
+
+== Further reading
+
+* <@links.ha id="multi-cluster-operate-site-online" />
+* <@links.ha id="multi-cluster-operate-site-offline" />
+
+</@tmpl.guide>

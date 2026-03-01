@@ -1,0 +1,10 @@
+.keycloak-admin--groups__member-count {
+  display: flex;
+  align-items: center;
+}
+
+.keycloak-admin--groups__member-count svg {
+  color: var(--pf-v5-global--Color--200);
+  font-size: var(--pf-v5-global--FontSize--md);
+  margin-right: var(--pf-v5-global--spacer--sm);
+}

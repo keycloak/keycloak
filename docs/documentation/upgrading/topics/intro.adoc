@@ -1,0 +1,12 @@
+[[intro]]
+
+== Upgrading {project_name}
+
+This {section} describes how to upgrade {project_name}. Use the following procedures in this order:
+
+. Review the migration changes from the previous version of {project_name}.
+. Upgrade the {project_name} server.
+. Upgrade the {project_name} adapters.
+. Upgrade the {project_name} Client Libraries (Admin client, Authorization client, Policy enforcer). These are released independently of the {project_name} server
+and could be typically updated independently of the {project_name} server as the last released version of the client libraries should be compatible with the last released version of
+the {project_name} server. For more information, see the link:{upgradingclientlibs_link}[{upgradingclientlibs_name}].

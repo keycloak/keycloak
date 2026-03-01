@@ -1,0 +1,38 @@
+# Get the path the the Husky script.
+DIRNAME="$(dirname "$0")"
+FILE="$DIRNAME/_/husky.sh"
+
+# Exit if Husky is not installed.
+if [ ! -f "$FILE" ]; then
+  exit 0;
+fi
+
+# Change to the js directory.
+cd js
+
+# Exit if dependencies are not installed.
+if [ ! -d "node_modules" ]; then
+  exit 0;
+fi
+
+# Exit if pnpm is not installed.
+if ! [ -x "$(command -v pnpm)" ]; then
+  exit 0;
+fi
+
+echo "Running pre-commit hook…";
+
+# Ensure latest dependencies are installed, and exit if unable to install.
+pnpm install --reporter=silent || {
+  echo "Unable to install dependencies, skipping pre-commit hook.";
+  exit 0;
+}
+
+if git diff --name-only --cached | grep 'index.ts$'
+then
+  echo "pre-commit: Aborting you can't change the index.ts file"
+  exit 1
+fi
+
+# Run lint-staged.
+pnpm exec lint-staged

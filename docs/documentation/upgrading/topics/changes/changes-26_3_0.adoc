@@ -1,0 +1,227 @@
+== Breaking changes
+
+Breaking changes are identified as requiring changes from existing users to their configurations.
+In minor or patch releases, we will only do breaking changes to fix important bugs.
+
+=== Reading information about temporarily locked users
+
+In previous releases there was an inconsistency in the REST endpoint result of getting a user (`+GET /admin/realms/{realm}/users/{user-id}+`) and searching for a user (`+GET /admin/realms/{realm}/users+`). When BruteForce is enabled and a user was temporarily locked out the former endpoint would return `enabled=false` while the latter would return `enabled=true`. If the user was updated and enabled was false due to temporary lockout then the user would be disabled permanently. Both endpoints now return `enabled=true` when a user is temporarily locked out. To check whether a user is temporarily locked out the BruteForceUserResource endpoint should be utilised (`+GET /admin/realms/{realm}/attack-detection/brute-force/users/{userId}+`).
+
+=== User searches through the User API are now respecting the user profile settings
+
+When querying users through the User API, the user representation and their attributes are now taking into account the
+user profile settings defined for the realm.
+
+It might happen that attributes in user representations are no longer available depending on the
+user profile configuration where too much information was returned in the past.
+
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== Different credentials of a user need to have different names
+
+When adding an OTP, WebAuthn or any other 2FA credentials, the name the user assigns to this credential needs to be unique for the given user.
+This allows the user to distinguish between those credentials, and either update or delete them later.
+If a user tries to create a credential with an already existing name, there is an error message and the user is asked to change the name of the new credential.
+
+=== Restrict admin role mappings to server administrators
+
+To enhance security, only users with the `admin` role in the `master` realm (server admins) can assign admin roles. This ensures that critical permissions cannot be delegated by realm-level administrators.
+
+=== Problematic cache configurations ignored
+
+Previous versions of {project_name} warned about problematic configurations, for example, if a wrong number of owners was configured or a cache size was set when it should not have been set when enabling volatile user sessions.
+The docs also stated to update the `cache-ispn.xml` configuration file for volatile user sessions.
+
+The current version will always use safe settings for the number of owners and maximum cache size for the affected user and client session caches, and will log only an INFO message.
+With this behavior, there is no need any more to update the `cache-ispn.xml` configuration file.
+If you previously used a custom `cache-ispn.xml` in order to use volatile user sessions, we recommend reverting those changes and use the standard configuration file.
+
+=== Email verification is now automatically set when using a OpenID Connect broker with `Trust email` is enabled and `Sync Mode` is `FORCE`
+
+Until now, the OpenID Connect broker did not support the standard `email_verified` claim available from the ID Tokens issued by
+OpenID Connect Providers.
+
+In this release, the broker was updated to respect the value from this claim to set the email verification status for the federated (local) user account.
+Whenever users are federated for the first time or re-authenticating, if the `Trust email` setting is enabled and `Sync Mode` is set to `FORCE`,
+the user account will be updated to (un)mark the email as verified.
+If the provider does not send the claim, it defaults to the original behavior and sets the email as verified.
+
+In the future, we might evaluate changing this specific configuration to avoid automatic updates on the email verification
+status on federated user accounts depending on the use cases and the demand from the community.
+
+=== Verify existing account by Email is only executed for the email and username sent by the identity provider
+
+The execution *Verify Existing Account By Email* is one of the alternatives that the *First Login Flow* has to allow a brokering account to be linked to an existing {project_name} user. This step is executed when the user logs in into {project_name} through the broker for the first time, and the identity provider account is already present in {project_name}. The execution sends an email to the current {project_name} address in order to confirm the user controls that account.
+
+Since this release, the *Verify Existing Account By Email* execution is only attempted in the *First Login Flow* if the linking attributes (email and username) sent by the external identity provider are not modified by the user during the review process. This new behavior avoids sending verification emails to an existing {project_name} account that can inadvertently accept the linking.
+
+In case the provider needs to modify the information sent by the identity provider (because emails or usernames are different in the broker), only the other alternative *Verify Existing Account By Re-authentication* is available to link the new account to the existing {project_name} user.
+
+If the data received from the identity provider is mandatory and cannot be modified, then the *Review Profile* step in the *First Login Flow* can be disabled to avoid any user intervention.
+
+For more information, see link:{adminguide_link}#_identity_broker_first_login[the First login flow section of the {adminguide_name}].
+
+=== Signing out from other devices now disabled by default
+
+Previously, when a user updated their credentials, like changing their password or adding another factor like an OTP or Passkey, they had a checkbox *Sign out from other devices* which was checked by default. Since this release, {project_name} displays the checkbox *Sign out from other devices* not checked by default. This checkbox should now be intentionally enabled by the user to logout all the other related sessions associated to the same user.
+
+=== Signing out from other devices logs out offline sessions
+
+Related to the previous point, in previous versions, the *Sign out from other devices* checkbox logged out only regular sessions.
+Starting with this release, it logs out also offline sessions as this is what users would expect to happen given the current screen design.
+
+To revert to the old behavior, enable the deprecated feature `logout-all-sessions:v1`.
+This deprecated feature will be removed in a future version.
+
+=== Updates to the `user-profile-commons.ftl` theme template
+
+The `user-profile-commons.ftl` changed to improve support for localization. See https://github.com/keycloak/keycloak/issues/38029.
+As a result, and if you are extending this template, pages might start displaying a `locale` field. To avoid that, update
+the theme template with the changes aforementioned.
+
+=== Subgroup counts are no longer cached
+
+When returning subgroups of a group, the count of subgroups of each subgroup of a group is no longer cached. With the
+introduction of Fine-Grained Admin Permissions, the result set is filtered at the database level based on any permissions
+defined to a realm so that the count will change accordingly to these permissions.
+
+Instead of caching the count, a query will be executed every time to obtain the expected number of groups an administrator can access.
+
+Most of the time, this change will not impact clients querying the API to fetch the subgroups of a group. However, if not the case,
+a new parameter `subGroupsCount` was introduced to the following endpoints:
+
+* `+/realms/{realm}/groups/{id}/children+`
+* `+/realms/{realm}/groups+`
+
+With this parameter, clients can decide whether the count should be returned to each individual group returned. To not break existing deployments,
+this parameter defaults to `true` so that the count is returned if the parameter is not set.
+
+=== Upgrade procedure changed for the distribution
+
+If you are upgrading {project_name} by downloading the distribution, the upgrade procedure has been changed. Previously it recommended copying over the contents from the `conf/` folder from the old to the new installation.
+The new procedure recommends to re-apply any changes to `cache-ispn.xml` or a custom cache configuration based on the file included in the new version.
+
+This prevents accidentally downgrading functionality, for example, by using an old `cache-ispn.xml` file from a previous version.
+
+=== Default browser flow changes 2FA to include WebAuthn and Recovery Codes
+
+Previously the default *browser* flow had a *Browser - Conditional OTP* conditional sub-flow that enabled One-Time Password (OTP) as a 2nd Factor Authentication (2FA). Starting with this version, the sub-flow is renamed to *Browser - Conditional 2FA*, the *OTP Form* is _Alternative_, and includes two more 2FA methods: *WebAuthn Authenticator* and *Recovery Authentication Code Form*. Both new executions are _Disabled_ by default, but they can be set to _Alternative_ to include them into the flow.
+
+Upgraded realms will not be changed. The updated flow will only be available for new realms. Take this change into consideration if you have automated the realm creation.
+
+=== Syslog counting framing now enabled based on protocol
+
+Syslog messages sent over `tcp` (or `ssl-tcp`) protocol now use counting framing by default, prefixing messages with their size as required by some Syslog servers.
+
+To change this behavior, use the `--log-syslog-counting-framing` option with one of the following values: `protocol-dependent` (default), `true`, or `false`.
+
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== SPI options separating the provider with a single dash
+
+SPI options ending in `-enabled`, `-provider-default`, or `-provider` are treated as build-time options. However, in some instances, this was not correct as a provider could have a configuration property ending in one of those suffixes as well.
+
+To resolve this ambiguity, and any potential ambiguity involving SPI and provider names, a new SPI option format was introduced where the scopes and suffix are separated by `--`(double dash) instead of `-`(dash). The new format then reads as `+spi-<spi-name>--<provider-name>--...+`.
+
+An SPI property ending in `-enabled`, `-provider-default`, or `-provider` should use the new format or else a warning will be emitted. For example `spi-<spi-name>--<provider-name>--enabled` will be recognized as a build-time option without a warning.
+
+For instance, the correct way to reference your custom email template is: `+--spi-email-template--mycustomprovider--enabled+` (not `+--spi-email-template-mycustomprovider-enabled+`).
+
+Options using the legacy format and ending in `-enabled`, `-provider-default`, or `-provider` will still be treated as a build-time option, but may not be in future releases.
+
+=== Kubernetes cache stack has been deprecated
+
+The `kubernetes` cache stack has been deprecated and will be removed in a future release. Users should transition to the `jdbc-ping` stack.
+
+Consequently, the Keycloak Operator now uses the `jdbc-ping` cache stack by default.
+
+=== Deprecation of `method RequiredActionProvider.getMaxAuthAge()`
+The method `RequiredActionProvider.getMaxAuthAge()` is deprecated. It is effectively not used now. Please use the method `RequiredActionProvider.getMaxAuthAge(KeycloakSession session)` instead. This is due to enable individual configuration for required actions.
+
+=== Deprecation of `spi-connections-infinispan-quarkus-site-name`
+
+The option `spi-connections-infinispan-quarkus-site-name` is deprecated and no longer used for multi-site setups, and it will be removed in the future.
+Use `spi-cache-embedded-default-site-name` instead in setups when running with embedded distributed caches.
+See the https://www.keycloak.org/server/all-provider-config[All provider configuration] for more details on these options.
+
+=== Deprecated proprietary protocol for client initiated linking to the identity provider account
+
+When you want the user, who is authenticated to your client application, to link his or her account to a specific identity provider, consider using the Application initiated action (AIA) based
+mechanism with the action `idp_link`. The proprietary custom protocol for client initiated account linking is deprecated now and might be removed in the future versions. For more information, see the
+Client initiated account link section of the link:{developerguide_link}[{developerguide_name}].
+
+=== Deprecated for removal the Instagram Identity Broker
+
+In this release, the Instagram Identity Broker is deprecated for removal and is not enabled by default.
+If you are using this broker, it is recommended to use the Facebook Identity Broker instead.
+
+For more details, see
+https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Instagram social broker].
+
+If you are using the Instagram Identity Broker and want to re-enable it, you can do it by enabling the `instagram-broker`
+feature using the `features` server option:
+
+[source]
+----
+--features=instagram-broker
+----
+
+It has been a while since discussions started about any activity around the Instagram Identity Broker
+and any objection from the community about deprecating it for removal. For more details, see
+https://github.com/keycloak/keycloak/issues/37967[Deprecate for removal the Instagram social broker].
+
+=== Local admin deprecated for removal
+
+`UrlType.LOCAL_ADMIN` and the corresponding welcome theme variable `localAdminUrl` have been deprecated for eventual removal. The default welcome resource will now simply mention localhost rather than providing a URL when an admin user has yet to be created.
+
+=== Deprecated password policy Recovery Codes Warning Threshold
+
+In relation to supported Recovery codes, we deprecated the password policy `Recovery Codes Warning Threshold`. This password policy might be removed in the future major version of {project_name}.
+This password policy was not related to passwords at all, but was related to recovery codes, and hence using password policy is not appropriate way for the configuration of the threshold. It is
+recommended to use the configuration option *Warning Threshold* of the *Recovery Authentication Codes* required action instead of using password policy. For more details, see the link:{adminguide_link}#_recovery-codes[Recovery codes documentation].
+
+=== Scope.getPropertyNames deprecated for removal
+
+The `org.keycloak.Config.Scope.getPropertyNames` method has been deprecated for removal.
+
+=== Deprecation of the Passkeys Conditional UI Authenticator
+
+The preview feature *Passkeys* recently introduced a new *Passkeys Conditional UI Authenticator* that you can use to integrate the passkey auto-fill or conditional UI feature in your login flow. Passkeys are now being seamlessly integrated into {project_name} inside the default username forms. Therefore, the old authenticator is invalid and it is deprecated in this release. The factory and implementation classes will be removed when *Passkeys* are supported in {project_name}.
+
+== Removed features
+
+The following features have been removed from this release.
+
+=== Removal of `jboss.site.name` and `jboss.node.name`
+
+Both system properties have been used internally within Keycloak and have not been part of the official documentation.
+{project_name} will fail to start if those are present.
+
+Instead, use the command line option `spi-cache-embedded-default-site-name` as `jboss.site.name` replacement, and `spi-cache-embedded-default-node-name` as `jboss.node.name` replacement.
+See the https://www.keycloak.org/server/all-provider-config[All provider configuration] for more details on these options.
+
+=== `KeycloakSessionTask.useExistingSession` method removed
+
+`KeycloakSessionTask.useExistingSession` was only useful to private server logic. Now that this logic has been refined, there is no need for this method.
+
+In previous releases there was a default implementation in the interface returning `false`,Wwe considered it unlikely that it was overwritten in implementations.
+
+=== Usage of remote stores embedded caches is restricted
+
+The experimental feature `cache-embedded-remote-store` was removed in this release and usage of remote stores for embedded caches is now restricted.
+
+Consider one of the following cases and recommended migration steps:
+
+* If you are using remote stores for running {project_name} in multiple data centers especially if they do not have a direct networking connection to allow all {project_name} nodes to form a cluster, follow the link:{highavailabilityguide_link}[{highavailabilityguide_name}] for deploying a multi-site {project_name} setup.
+* If you are using remote stores to keep user sessions available after a {project_name} restart, use the `peristent-user-session` feature which is enabled by default.
+
+[WARNING]
+====
+* {project_name} refuses to start if the `persistent-user-session` feature is disabled and remote store is configured for any of the user session caches.
+
+* With the feature `persistent-user-session` feature enabled, the remote store configuration is ignored and {project_name} will print a warning.
+====

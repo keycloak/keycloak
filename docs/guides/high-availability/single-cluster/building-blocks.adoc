@@ -1,0 +1,49 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Building blocks single-cluster deployments"
+summary="Learn about building blocks and suggested setups for single-cluster deployments."
+tileVisible="false" >
+
+The following building blocks are needed to set up a single-cluster deployment.
+
+The building blocks link to a blueprint with an example configuration.
+They are listed in the order in which they need to be installed.
+
+include::../partials/blueprint-disclaimer.adoc[]
+
+[#single-cluster-blocks-prerequisites]
+== Prerequisites
+
+* Understanding the concepts laid out in the <@links.ha id="single-cluster-concepts"/> {section}.
+
+
+[#single-cluster-blocks-low-latency]
+== Multiple availability-zones with low-latency connection
+
+{project_name} requires a low latency network connection for the synchronous replication of data by the database and {project_name} clustering.
+
+include::../partials/network-latency.adoc[]
+
+*Suggested setup:* {kubernetes} cluster consisting of two or more AWS Availability Zones within the same AWS Region.
+
+*Not considered:* {kubernetes} clusters spread across multiple regions on the same or different continents, as it would increase the latency and the likelihood of network failures.
+Synchronous replication of databases as services with Aurora Regional Deployments on AWS is only available within the same region.
+
+
+[#single-cluster-blocks-database]
+== Database
+
+A synchronously replicated database available across all availability-zones.
+
+*Blueprint:* <@links.ha id="single-cluster-deploy-aurora"/>.
+
+[#single-cluster-blocks-keycloak]
+== {project_name}
+
+A clustered deployment of {project_name} with pods distributed across availability-zones.
+
+*Blueprint:* <@links.ha id="single-cluster-deploy-keycloak" />.
+
+</@tmpl.guide>

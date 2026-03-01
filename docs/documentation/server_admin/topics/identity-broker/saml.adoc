@@ -1,0 +1,165 @@
+
+=== SAML v2.0 Identity Providers
+
+{project_name} can broker identity providers based on the SAML v2.0 protocol.
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `SAML v2.0`.
++
+.Add identity provider
+image:images/saml-add-identity-provider.png[Add Identity Provider]
++
+. Enter your initial configuration options. See <<_general-idp-config, General IDP Configuration>> for more information about configuration options.
+
+.SAML Config
+|===
+|Configuration|Description
+
+|Service Provider Entity ID
+|The SAML Entity ID that the remote Identity Provider uses to identify requests from this Service Provider. By default, this setting is set to the realms base URL `<root>{kc_realms_path}/{realm-name}`.
+
+|Identity Provider Entity ID
+|The Entity ID used to validate the Issuer for received SAML assertions. If empty, no Issuer validation is performed.
+
+|Single Sign-On Service URL
+|The SAML endpoint that starts the authentication process.  If your SAML IDP publishes an IDP entity descriptor, the value of this field is specified there.
+
+|Artifact service URL
+|The SAML artifact resolution endpoint. If your SAML IDP publishes an IDP entity descriptor, the value of this field is specified there.
+
+|Single Logout Service URL
+|The SAML logout endpoint. If your SAML IDP publishes an IDP entity descriptor, the value of this field is specified there.
+
+|Backchannel Logout
+|Toggle this switch to *ON* if your SAML IDP supports back channel logout.
+
+|NameID Policy Format
+|The URI reference corresponding to a name identifier format. By default, {project_name} sets it to `urn:oasis:names:tc:SAML:2.0:nameid-format:persistent`.
+
+|Principal Type
+|Specifies which part of the SAML assertion will be used to identify and track external user identities. Can be either Subject NameID or SAML attribute (either by name or by friendly name). Subject NameID value can not be set together with 'urn:oasis:names:tc:SAML:2.0:nameid-format:transient' NameID Policy Format value.
+
+|Principal Attribute
+|If a Principal type is non-blank, this field specifies the name ("Attribute [Name]") or the friendly name ("Attribute [Friendly Name]") of the identifying attribute.
+
+|Allow create
+|Allow the external identity provider to create a new identifier to represent the principal.
+
+|HTTP-POST Binding Response
+|Controls the SAML binding in response to any SAML requests sent by an external IDP. When *OFF*, {project_name} uses Redirect Binding.
+
+|ARTIFACT Binding Response
+|Controls the SAML binding in response to any SAML requests sent by an external IDP. When *OFF*, {project_name} evaluates the HTTP-POST Binding Response configuration.
+
+|HTTP-POST Binding for AuthnRequest
+|Controls the SAML binding when requesting authentication from an external IDP. When *OFF*, {project_name} uses Redirect Binding.
+
+|Want AuthnRequests Signed
+|When *ON*, {project_name} uses the realm's keypair to sign requests sent to the external SAML IDP.
+
+|Want Assertions Signed
+|Indicates whether this service provider expects a signed Assertion.
+
+|Want Assertions Encrypted
+|Indicates whether this service provider expects an encrypted Assertion.
+
+|Signature Algorithm
+|If *Want AuthnRequests Signed* is *ON*, the signature algorithm to use. Note that `SHA1` based algorithms are deprecated and may be removed in a future release.
+We recommend to use some more secure algorithm instead of `*_SHA1`. Also, with `*_SHA1` algorithms, verifying signatures
+do not work if the SAML identity provider (for example another instance of {project_name}) runs on Java 17 or higher.
+
+|Encryption Algorithm
+|Encryption algorithm, which is used by SAML IDP for encryption of SAML
+documents, assertions, or IDs. The corresponding decryption key for decrypt
+SAML document parts will be chosen based on this configured algorithm and
+should be available in realm keys for the encryption (ENC) usage. If the
+algorithm is not configured, any supported algorithm is allowed and a
+decryption key will be chosen based on the algorithm specified in SAML document
+itself.
+
+|SAML Signature Key Name
+|Signed SAML documents sent using POST binding contain the identification of signing key in `KeyName` element, which, by default, contains the {project_name} key ID. External SAML IDPs can expect a different key name. This switch controls whether `KeyName` contains:
+* `KEY_ID` - Key ID.
+* `CERT_SUBJECT` - the subject from the certificate corresponding to the realm key. Microsoft Active Directory Federation Services expect `CERT_SUBJECT`.
+* `NONE` - {project_name} omits the key name hint from the SAML message.
+
+|Force Authentication
+|The user must enter their credentials at the external IDP even when the user is already logged in.
+
+|Validate Signature
+|When *ON*, the realm expects SAML requests and responses from the external IDP to be digitally signed.
+
+|Metadata descriptor URL
+|External URL where Identity Provider publishes the `IDPSSODescriptor` metadata. This URL is used to download the Identity Provider certificates when the `Reload keys` or `Import keys` actions are clicked.
+
+|Use metadata descriptor URL
+|When *ON*, the certificates to validate signatures are automatically downloaded from the `Metadata descriptor URL` and cached in {project_name}. The SAML provider can validate signatures in two different ways. If a specific certificate is requested (usually in `POST` binding) and it is not in the cache, certificates are automatically refreshed from the URL. If all certificates are requested to validate the signature (`REDIRECT` binding) the refresh is only done after a max cache time. This maximum time can be specified in the descriptor itself, `cacheDuration` or `validUntil` attributes, or the cache provider defines one. See https://www.keycloak.org/server/all-provider-config[public-key-storage] spi in the all provider config guide for more information about how the cache works.
+
+When the option is *OFF*, the certificates in `Validating X509 Certificates` are used to validate signatures.
+
+|Validating X509 Certificates
+|The public certificates {project_name} uses to validate the signatures of SAML requests and responses from the external IDP when `Use metadata descriptor URL` is *OFF*. Multiple certificates can be entered separated by comma (`,`). The certificates can be re-imported from the `Metadata descriptor URL` clicking the `Import Keys` action in the identity provider page. The action downloads the current certificates in the metadata endpoint and assigns them to the config in this same option. You need to click `Save` to definitely store the re-imported certificates.
+
+|Sign Service Provider Metadata
+|When *ON*, {project_name} uses the realm's key pair to sign the <<_identity_broker_saml_sp_descriptor, SAML Service Provider Metadata descriptor>>.
+
+|Pass subject
+|Controls if {project_name} forwards a `login_hint` query parameter to the IDP. {project_name} adds this field's value to the login_hint parameter in the AuthnRequest's Subject so destination providers can pre-fill their login form.
+
+|Attribute Consuming Service Index
+|Identifies the attribute set to request to the remote IDP. {project_name} automatically adds the attributes mapped in the identity provider configuration to the autogenerated SP metadata document.
+
+|Attribute Consuming Service Name
+|A descriptive name for the set of attributes that are advertised in the autogenerated SP metadata document.
+|===
+
+You can import all configuration data by providing a URL or a file pointing to the SAML IDP entity descriptor of the external IDP. If you are connecting to a {project_name} external IDP, you can import the IDP settings from the URL `<root>{kc_realms_path}/{realm-name}/protocol/saml/descriptor`. This link is an XML document describing metadata about the IDP. You can also import all this configuration data by providing a URL or XML file pointing to the external SAML IDP's entity descriptor to connect to.
+
+[[_identity_broker_saml_requested_authncontext]]
+==== Requesting specific AuthnContexts
+Identity Providers facilitate clients specifying constraints on the authentication method verifying the user identity. For example, asking for MFA, Kerberos authentication, or security requirements. These constraints use particular AuthnContext criteria. A client can ask for one or more criteria and specify how the Identity Provider must match the requested AuthnContext, exactly, or by satisfying other equivalents.
+
+You can list the criteria your Service Provider requires by adding ClassRefs or DeclRefs in the Requested AuthnContext Constraints section. Usually, you need to provide either ClassRefs or DeclRefs, so check with your Identity Provider documentation which values are supported. If no ClassRefs or DeclRefs are present, the Identity Provider does not enforce additional constraints.
+
+.Requested AuthnContext Constraints
+|===
+|Configuration|Description
+
+|Comparison
+|The method the Identity Provider uses to evaluate the context requirements. The available values are `Exact`, `Minimum`, `Maximum`, or `Better`. The default value is `Exact`.
+
+|AuthnContext ClassRefs
+|The AuthnContext ClassRefs describing the required criteria.
+
+|AuthnContext DeclRefs
+|The AuthnContext DeclRefs describing the required criteria.
+|===
+
+[[_identity_broker_saml_sp_descriptor]]
+==== SP Descriptor
+
+When you access the provider's SAML SP metadata, look for the `Endpoints` item in the identity provider configuration settings. It contains a `SAML 2.0 Service Provider Metadata` link which generates the SAML entity descriptor for the Service Provider. You can download the descriptor or copy its URL and then import it into the remote Identity Provider.
+
+This metadata is also available publicly by going to the following URL:
+
+[source,subs=+attributes]
+----
+http[s]://{host:port}{kc_realms_path}/{realm-name}/broker/{broker-alias}/endpoint/descriptor
+----
+
+Ensure you save any configuration changes before accessing the descriptor.
+
+[[_identity_broker_saml_login_hint]]
+==== Send subject in SAML requests
+
+By default, a social button pointing to a SAML Identity Provider redirects the user to the following login URL:
+
+[source,subs=+attributes]
+----
+http[s]://{host:port}{kc_realms_path}/${realm-name}/broker/{broker-alias}/login
+----
+
+Adding a query parameter named `login_hint` to this URL adds the parameter's value to SAML request as a Subject attribute. If this query parameter is empty, {project_name} does not add a subject to the request.
+
+Enable the "Pass subject" option to send the subject in SAML requests.

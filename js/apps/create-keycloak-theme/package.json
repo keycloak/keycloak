@@ -1,0 +1,34 @@
+{
+  "name": "create-keycloak-theme",
+  "version": "999.0.0-SNAPSHOT",
+  "description": "Create a new Keycloak ui project based on a template",
+  "main": "create.js",
+  "type": "module",
+  "scripts": {
+    "start": "node create.js"
+  },
+  "bin": {
+    "create-keycloak-theme": "./create.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^14.0.2",
+    "fs-extra": "^11.3.3",
+    "mustache": "^4.2.0",
+    "simple-git": "^3.30.0"
+  },
+  "author": {
+    "name": "Red Hat, Inc.",
+    "url": "https://www.keycloak.org/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keycloak/keycloak.git",
+    "directory": "js/apps/create-keycloak-theme"
+  },
+  "homepage": "https://www.keycloak.org/"
+}

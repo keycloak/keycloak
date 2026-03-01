@@ -1,0 +1,2 @@
+- hosts: keycloak
+  roles: [keycloak_remote_installer]

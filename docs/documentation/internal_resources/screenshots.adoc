@@ -1,0 +1,140 @@
+[[screenshot_guidelines]]
+= Documentation Screenshots Guidelines
+
+[[summary]]
+== Summary
+* Images should be saved as *PNG* or *JPG*, with a width of at least *660 px*, at *110 dpi*. Try to keep file size less than *300 KB*.
+* Screenshots supplement the text, not replace it.  *Do not rely on images to provide information or context*.
+* *Do not include any testing/pre-release labels*.
+* *Do not include any personally identifying information*.
+* Capture just the part of the screen or window that users must focus on; *do not include window headers in the final screenshots unless completely necessary*.
+* Manipulate your screenshots to *condense important information* in them and limit empty GUI space and other inconsequential parts.
+
+[[general]]
+== General Guidelines
+* Screen captures can be useful and successful when they achieve one or more of these objectives:
+** Illustrate a user interface that is fairly complex or difficult to explain in text
+** Help the user find a small element in a complex user interface
+** Show the results of a series of steps or user actions
+** Orient readers who are reading the publication without the user interface in front of them
+* Use the smallest number of screenshots possible.
+* Use screenshots to provide verification for the reader, rather than instruction. In other words, screenshots supplement the text, not replace it.  *Do not rely on images to provide information or context*. Instead, use them only to provide the reader with orientation.
+
+[NOTE]
+=====================================================================
+Example 1:  Do not tell the reader to fill out a form according to the image; instead list the values needed for the form in text.
+=====================================================================
+
+[NOTE]
+=====================================================================
+Example 2: Do not include an image of the directory tree; instead tell the user exactly where to find the file in running text (…​/standalone/configuration/standalone.xml).
+=====================================================================
+* Bearing in mind the impact on localization and accessibility, you should aim to write your document so that, were you to remove all screenshots from the book, the text would still make sense.
+
+[NOTE]
+=====================================================================
+For example: Do not write "see image below" or "as is shown in the image"
+=====================================================================
+* When you are snapping a GUI form, fill it with relevant input first.
+* Make sure the screenshots *do not include any testing/pre-release labels*.
+* Make sure the screenshots *do not include any personally identifying information*.
+
+[NOTE]
+=====================================================================
+For example: Always use 'test' as the username or fake contact information. If including the browser title bar hide your bookmarks and use a default browser theme.
+=====================================================================
+
+[TIP]
+=====================================================================
+Use Chrome Dev Tools to select elements on the page and rewrite their contents.
+=====================================================================
+* Include the cursor, mouse pointer, or menus only when their presence is significant.
+* Increase font size in the browser if it is hard to read before snapping the image.
+* Capture just the part of the screen or window that users must focus on.
+
+[NOTE]
+=====================================================================
+For example: Unless necessary, *do not include window headers in the final screenshots* to indicate your currently used window manager or desktop environment.
+=====================================================================
+* If possible, try not to cut any elements on the screen.
+* Show the user interface elements exactly as they are displayed for most users for quick recognition.
+
+[NOTE]
+=====================================================================
+For example: If you have a custom theme on your system, disable it and take the screenshot using the default theme.
+=====================================================================
+* Do not add borders around or drop shadows to your screenshots.
+* Do not use rounded corners. If the screenshot contains rounded corners, then that's ok, of course. But, the screenshot itself should remain squared.
+
+[[specs]]
+== Tech Specs
+* Image width should be at least *660 px* (internal tools will automatically resize the image to a max width of 660 px).
+* The preferred format is *PNG* or *JPG* .
+* The output resolution of images should be *110 dpi* to ensure good quality in the generated PDF.
+
+[TIP]
+=====================================================================
+In GIMP, select Image/Scale Image... to set resolution
+=====================================================================
+* If possible, try to keep screenshot size less than *300 KB*.
+* If possible, avoid snapping images in various terminals with 8-bit color scale or less.
+* Manipulate your screenshots to condense important information in them and limit empty GUI space and other inconsequential parts.
+
+[NOTE]
+=====================================================================
+For example: You can do this by setting a low screen resolution or resizing your browser window to a smaller size. Keep in mind that you should only do this if it does not adversely affect the readability of the image.
+=====================================================================
+
+[NOTE]
+=====================================================================
+If you need to take a screenshot of the entire window, use a tool such as the https://chrome.google.com/webstore/detail/window-resizer/kkelicaakdanhinjdeammmilcgefonfh?hl=en[_Window Resizer_] Google Chrome extension to ensure the browser window is a set size before taking the screenshot. This helps ensure that all full window screenshots are of standard dimensions.
+=====================================================================
+* If necessary, call attention to hard to find parts of the screenshot with red outlines (border: #C00, width:1px) or with a transparent gray (#ECECEC) layer over unimportant parts of the picture.
+
+[[accessibility]]
+== Accessibility
+* Section 508 compliance requires that all of the information is available in a text format for accessibility reasons (for instance, screen readers can not extract information from images).
+* Also, a large number of screenshots can possibly slow download of docs for those on very slow connections (rarer for most enterprises these days).
+
+[[asciidoc]]
+== AsciiDoc Syntax
+* Insert a block-level image, which uses a double colon (::). Good for screenshots, diagrams, etc.
+
+** Example 1: Include an image title in title case (which automatically appends a Figure #).
++
+----
+.Image Title
+image::icon.png[Alt text, 50, 50]
+----
+
+** Example 2: Insert an inline image. Note, there is only one colon (:) used here.
++
+----
+This is an inline image. image:icon.png[Alt text] Cool!
+----
+
+[[questions]]
+== Additional Questions
+* When should I add a screenshot to my book?
+** When  introducing a new part of the UI.
+** When the UI is suboptimal and some elements are difficult to find, located in unusual places, hidden, or somehow less visible.
+* When, in the development cycle, should I add my screenshots?
+** Add them as late in the cycle as possible, preferably during the review process. At this late stage, hopefully there will be fewer UI changes to the product.
+
+[TIP]
+=====================================================================
+Add a placeholder for the screenshot early on in the development cycle. This way it will not be forgotten.
+=====================================================================
+* What image editor should I use?
+** The recommended graphical editor is GIMP.
+
+[[extensions]]
+== Browser Extensions
+
+[[resizing]]
+=== Resizing
+There are a couple simple browser extensions that can assist in resizing your browser to the appropriate dimensions.
+
+* Google Chrome extension: https://chrome.google.com/webstore/detail/window-resizer/kkelicaakdanhinjdeammmilcgefonfh?hl=en[_Window Resizer_]
+* Firefox add-on: https://addons.mozilla.org/en-US/firefox/addon/firesizer/[_Firesizer_]
+** You will also need to install the Addon Bar: https://addons.mozilla.org/en-US/firefox/addon/the-addon-bar/[_The Addon Bar (Restored)_]

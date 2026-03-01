@@ -1,0 +1,21 @@
+# Ignore false positives for https://securityscorecards.dev/viewer/?uri=github.com/keycloak/keycloak
+
+# Reason
+[[IgnoredVulns]]
+id = "GHSA-9mvj-f7w8-pvh2"
+reason = "reason"
+
+# Reason
+[[IgnoredVulns]]
+id = "GHSA-67mh-4wv8-2f99"
+reason = "reason"
+
+# Reason
+[[IgnoredVulns]]
+id = "GHSA-gxr4-xjj5-5px2"
+reason = "reason"
+
+# Reason
+[[IgnoredVulns]]
+id = "GHSA-jpcq-cgw6-v4j6"
+reason = "reason"

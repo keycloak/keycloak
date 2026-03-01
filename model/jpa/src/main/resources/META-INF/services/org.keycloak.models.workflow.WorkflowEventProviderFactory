@@ -1,0 +1,13 @@
+# user event providers
+org.keycloak.models.workflow.events.UserAuthenticatedWorkflowEventFactory
+org.keycloak.models.workflow.events.UserCreatedWorkflowEventFactory
+org.keycloak.models.workflow.events.UserFedIdentityAddedWorkflowEventFactory
+org.keycloak.models.workflow.events.UserFedIdentityRemovedWorkflowEventFactory
+org.keycloak.models.workflow.events.UserGroupMembershipAddedWorkflowEventFactory
+org.keycloak.models.workflow.events.UserGroupMembershipRemovedWorkflowEventFactory
+org.keycloak.models.workflow.events.UserRoleGrantedWorkflowEventFactory
+org.keycloak.models.workflow.events.UserRoleRevokedWorkflowEventFactory
+
+# client event providers
+org.keycloak.models.workflow.events.ClientAuthenticatedWorkflowEventFactory
+org.keycloak.models.workflow.events.ClientCreatedWorkflowEventFactory

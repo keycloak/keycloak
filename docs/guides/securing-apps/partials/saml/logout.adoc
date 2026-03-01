@@ -1,0 +1,60 @@
+== Logout
+
+There are multiple ways you can log out from a web application.
+For Jakarta EE servlet containers, you can call `HttpServletRequest.logout()`. For any other browser application, you can point
+the browser at any url of your web application that has a security constraint and pass in a query parameter GLO, i.e. `$$http://myapp?GLO=true$$`.
+This will log you out if you have an SSO session with your browser.
+
+[[_saml_logout_in_cluster]]
+=== Logout in clustered environment
+
+Internally, the SAML adapter stores a mapping between the SAML session index, principal name (when known), and HTTP session ID.
+This mapping can be maintained in JBoss application server family (WildFly 10/11, EAP 6/7) across cluster for distributable
+applications. As a precondition, the HTTP sessions need to be distributed across cluster (i.e. application is marked with
+`<distributable/>` tag in application's `web.xml`).
+
+To enable the functionality, add the following section to your `/WEB_INF/web.xml` file:
+
+[source,xml]
+----
+<context-param>
+    <param-name>keycloak.sessionIdMapperUpdater.classes</param-name>
+    <param-value>org.keycloak.adapters.saml.wildfly.infinispan.InfinispanSessionCacheIdMapperUpdater</param-value>
+</context-param>
+----
+
+If the session cache of the deployment is named `_deployment-cache_`, the cache used for SAML mapping will be named
+as `_deployment-cache_.ssoCache`. The name of the cache can be overridden by a context parameter
+`keycloak.sessionIdMapperUpdater.infinispan.cacheName`. The cache container containing the cache will be the same as
+the one containing the deployment session cache, but can be overridden by a context parameter
+`keycloak.sessionIdMapperUpdater.infinispan.containerName`.
+
+By default, the configuration of the SAML mapping cache will be derived from session cache. The configuration can
+be manually overridden in cache configuration section of the server just the same as other caches.
+
+Currently, to provide reliable service, it is recommended to use replicated cache for the SAML session cache.
+Using distributed cache may lead to results where the SAML logout request would land to a node with no access
+to SAML session index to HTTP session mapping which would lead to unsuccessful logout.
+
+[[_saml_logout_in_cross_dc]]
+=== Logout in multi-cluster deployments
+
+Special handling is needed for handling sessions that span multiple data centers. Imagine the following scenario:
+
+1. Login requests are handled within cluster in data center 1.
+
+2. Admin issues logout request for a particular SAML session, the request lands in data center 2.
+
+The data center 2 has to log out all sessions that are present in data center 1 (and all other data centers that
+share HTTP sessions).
+
+To cover this case, the SAML session cache described <<_saml_logout_in_cluster,above>> needs to be replicated
+not only within individual clusters but across all the data centers for example
+https://docs.redhat.com/en/documentation/red_hat_data_grid/6.6/html/administration_and_configuration_guide/chap-externalize_sessions#Externalize_HTTP_Session_from_JBoss_EAP_6.x_to_JBoss_Data_Grid[via standalone Infinispan/JDG server]:
+
+1. A cache has to be added to the standalone Infinispan/JDG server.
+
+2. The cache from previous item has to be added as a remote store for the respective SAML session cache.
+
+Once remote store is found to be present on SAML session cache during deployment, it is watched for changes
+and the local SAML session cache is updated accordingly.

@@ -1,0 +1,33 @@
+= Highlights
+
+== Client Policies and Financial-grade API (FAPI) Support
+
+The {project_name} server has now official support for client policies and Financial-grade API (FAPI). This capability was previewed in earlier versions, but now
+it is more polished and properly documented. Thanks to https://github.com/tnorimat[Takashi Norimatsu], who did most of the work on this. Also thanks
+to https://github.com/DmitryMishchuk[Dmytro Mishchuk], https://github.com/andriimurashkin[Andrii Murashkin] and https://github.com/HryhoriiHevorkian[Hryhorii Hevorkian], who did a great deal of the work on this feature as well.
+Finally thanks to all the members of the https://github.com/keycloak/kc-sig-fapi/blob/main/members.adoc[FAPI Special interest group] for their help and feedback.
+
+== Improvements to User Profile SPI and support for declarative configuration
+
+In this version, there were several improvements to the User Profile SPI in order
+to prepare the ground on how users profiles are managed in {project_name}.
+
+One of these improvements is the support for configuring user profiles through the administration console. For more
+details proceed to link:{adminguide_link}#user-profile[{adminguide_name}]
+
+Thanks to the community and all the individuals involved in this effort.
+
+== Improvements to offline sessions
+
+Offline session preloading has been improved and should be faster thanks to https://github.com/Flintholm[Peter Flintholm].
+
+ifeval::[{project_community}==true]
+As a preview feature, offline session preloading can be skipped in favor of lazy loading thanks
+to https://github.com/thomasdarimont[Thomas Darimont]'s efforts. This feature has to be explicitly
+activated in the server configuration, see Server administration guide for details.
+endif::[]
+
+
+== Other improvements
+
+* The support for configuring maximum number of active authentication sessions. The default value is set to 300 authentication sessions (browser tabs) per a browser's session

@@ -1,0 +1,148 @@
+[id="con-advanced-settings_{context}"]
+= Advanced configuration
+[role="_abstract"]
+
+After completing the fields on the *Settings* tab, you can use the other tabs to perform advanced configuration.
+ifeval::[{project_community}==true]
+For example, you can use the *Roles* or *Client scopes* tabs to configure client roles defined for the client or manage client scopes for the client. Also, see the remaining sections in this chapter for other capabilities.
+endif::[]
+
+== Advanced tab
+
+When you click the *Advanced* tab, additional fields are displayed.  For details on a specific field, click the question mark icon for that field.  However, certain fields are described in detail in this section.
+
+== Fine grain OpenID Connect configuration
+
+*Logo URL*
+
+URL that references a logo for the Client application.
+
+*Policy URL*
+
+URL that the Relying Party Client provides to the End-User to read about how the profile data will be used.
+
+*Terms of Service URL*
+
+URL that the Relying Party Client provides to the End-User to read about the Relying Party's terms of service.
+
+[[_jwe-id-token-encryption]]
+*Signed and Encrypted ID Token Support*
+
+{project_name} can encrypt ID tokens according to the https://datatracker.ietf.org/doc/html/rfc7516[Json Web Encryption (JWE)] specification. The administrator determines if ID tokens are encrypted for each client.
+
+The key used for encrypting the ID token is the Content Encryption Key (CEK). {project_name} and a client must negotiate which CEK is used and how it is delivered. The method used to determine the CEK is the Key Management Mode. The Key Management Mode that {project_name} supports is Key Encryption.
+
+In Key Encryption:
+
+. The client generates an asymmetric cryptographic key pair.
+. The public key is used to encrypt the CEK.
+. {project_name} generates a CEK per ID token
+. {project_name} encrypts the ID token using this generated CEK
+. {project_name} encrypts the CEK using the client's public key.
+. The client decrypts this encrypted CEK using their private key
+. The client decrypts the ID token using the decrypted CEK.
+
+No party, other than the client, can decrypt the ID token.
+
+The client must pass its public key for encrypting CEK to {project_name}. {project_name} supports downloading public keys from a URL provided by the client. The client must provide public keys according to the https://datatracker.ietf.org/doc/html/rfc7517[Json Web Keys (JWK)] specification.
+
+The procedure is:
+
+. Open the client's *Keys* tab.
+. Toggle *JWKS URL* to ON.
+. Input the client's public key URL in the *JWKS URL* textbox.
+
+Key Encryption's algorithms are defined in the https://datatracker.ietf.org/doc/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports:
+
+* RSAES-PKCS1-v1_5(RSA1_5)
+* RSAES OAEP using default parameters (RSA-OAEP)
+* RSAES OAEP 256 using SHA-256 and MFG1 (RSA-OAEP-256)
+
+The procedure to select the algorithm is:
+
+. Open the client's *Advanced* tab.
+. Open *Fine Grain OpenID Connect Configuration*.
+. Select the algorithm from *ID Token Encryption Content Encryption Algorithm* pulldown menu.
+
+== OpenID Connect Compatibility Modes
+
+This section exists for backward compatibility.  Click the question mark icons for details on each field.
+
+[[_mtls-client-certificate-bound-tokens]]
+*OAuth 2.0 Mutual TLS Certificate Bound Access Tokens Enabled*
+
+Mutual TLS binds an access token and a refresh token together with a client certificate, which is exchanged during a TLS handshake. This binding prevents an attacker from using stolen tokens.
+
+This type of token is a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify if the sender of the token is legitimate.
+
+If this setting is on, the workflow is:
+
+. A token request is sent to the token endpoint in an authorization code flow or hybrid flow.
+. {project_name} requests a client certificate.
+. {project_name} receives the client certificate.
+. {project_name} successfully verifies the client certificate.
+
+If verification fails, {project_name} rejects the token.
+
+In the following cases, {project_name} will verify the client sending the access token or the refresh token:
+
+* A token refresh request is sent to the token endpoint with a holder-of-key refresh token.
+* A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token.
+* A logout request is sent to non-OIDC compliant {project_name} proprietary Logout endpoint with a holder-of-key refresh token.
+
+See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-3[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
+
+[NOTE]
+====
+{project_name} client adapters do not support holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
+====
+
+
+[[_client_advanced_settings_oidc]]
+*Advanced Settings for OIDC*
+
+The Advanced Settings for OpenID Connect allows you to configure overrides at the client level for <<_timeouts, session and token timeouts>>.
+
+image:images/client-advanced-settings-oidc.png[Advanced Settings]
+
+|===
+|Configuration|Description
+
+|Access Token Lifespan
+|The value overrides the realm option with same name.
+
+|Client Session Idle
+|The value overrides the realm option with same name. The value should be shorter than the global *SSO Session Idle*.
+
+|Client Session Max
+|The value overrides the realm option with same name. The value should be shorter than the global *SSO Session Max*.
+
+|Client Offline Session Idle
+|This setting allows you to configure a shorter offline session idle timeout for the client. The timeout is amount of time the session remains idle before {project_name} revokes its offline token. If not set, realm <<_offline-session-idle,Offline Session Idle>> is used.
+
+|Client Offline Session Max
+|This setting allows you to configure a shorter offline session max lifespan for the client. The lifespan is the maximum time before {project_name} revokes the corresponding offline token. This option needs <<_offline-session-max-limited,Offline Session Max Limited>> enabled globally in the realm, and defaults to <<_offline-session-max,Offline Session Max>>.
+
+|===
+
+[[_mapping-acr-to-loa-client]]
+*ACR to Level of Authentication (LoA) Mapping*
+
+In the advanced settings of a client, you can define which `Authentication Context Class Reference (ACR)` value is mapped to which `Level of Authentication (LoA)`.
+This mapping can be specified also at the realm as mentioned in the <<_mapping-acr-to-loa-realm,ACR to LoA Mapping>>. A best practice is to configure this mapping at the
+realm level, which allows to share the same settings across multiple clients.
+
+The `Default ACR Values` can be used to specify the default values when the login request is sent from this client to {project_name} without `acr_values` parameter and without
+a `claims` parameter that has an `acr` claim attached. See https://openid.net/specs/openid-connect-registration-1_0.html#ClientMetadata[official OIDC dynamic client registration specification].
+
+WARNING: Note that default ACR values are used as the default level, however it cannot be reliably used to enforce login with the particular level.
+For example, assume that you configure the `Default ACR Values` to level 2. Then by default, users will be required to authenticate with level 2.
+However, when the user explicitly attaches the parameter into login request such as `acr_values=1`, then the level 1 will be used. As a result, if the client
+really requires level 2, the client is encouraged to check the presence of the `acr` claim inside ID Token and double-check that it contains the requested level 2.
+To actually enforce the usage of a certain ACR on the {project_name} side, use the `Minimum ACR Value` setting.
+This allows administrators to enforce ACRs even on applications that are not able to validate the requested `acr` claim inside the token.
+
+
+image:images/client-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
+
+For further details see  <<_step-up-flow,Step-up Authentication>> and  https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[the official OIDC specification].

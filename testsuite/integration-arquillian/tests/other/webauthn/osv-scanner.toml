@@ -1,0 +1,19 @@
+# Ignore false positives for https://securityscorecards.dev/viewer/?uri=github.com/keycloak/keycloak
+
+# guava is a test dependency coming from htmlunit3-driver, not shipped with the server distribution. 
+# There are no plans to upgrading it considering the effort and breaking changes.
+[[IgnoredVulns]]
+id = "GHSA-5mg8-w23w-74h3"
+reason = "suppressed because guava, a transitive dependency from htmlunit3-driver, isn’t included in the server distribution."
+
+# guava is a test dependency coming from htmlunit3-driver, not shipped with the server distribution. 
+# There are no plans to upgrading it considering the effort and breaking changes.
+[[IgnoredVulns]]
+id = "GHSA-7g45-4rm6-3mm3"
+reason = "suppressed because guava, a transitive dependency from htmlunit3-driver, isn’t included in the server distribution."
+
+# commons-io is a test dependency coming from htmlunit, not shipped with the server distribution. 
+# There are no plans to upgrading it considering the effort and breaking changes.
+[[IgnoredVulns]]
+id = "GHSA-78wr-2p64-hpwj"
+reason = "suppressed because commons-io, a transitive dependency from htmlunit, isn’t included in the server distribution."
