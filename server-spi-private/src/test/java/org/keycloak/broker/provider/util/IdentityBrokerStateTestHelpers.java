@@ -1867,12 +1867,12 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
-        public void setScimEnabled(boolean enabled) {
+        public void setScimApiEnabled(boolean enabled) {
 
         }
 
         @Override
-        public boolean isScimEnabled() {
+        public boolean isScimApiEnabled() {
             return false;
         }
     }
