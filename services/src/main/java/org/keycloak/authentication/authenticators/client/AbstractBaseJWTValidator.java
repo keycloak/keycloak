@@ -37,7 +37,7 @@ public abstract class AbstractBaseJWTValidator {
 
     private static final Logger logger = Logger.getLogger(AbstractBaseJWTValidator.class);
 
-    protected final ClientAssertionState clientAssertionState;
+    protected ClientAssertionState clientAssertionState;
     protected final KeycloakSession session;
     protected final int currentTime;
 
