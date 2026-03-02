@@ -36,8 +36,6 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.http.Header;
-import org.apache.http.NameValuePair;
 import org.jboss.logging.Logger;
 
 /**
@@ -578,9 +576,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 throw invalidClientIdMetadata(ERR_METADATA_FETCH_FAILED);
             }
 
-            Header[] headers = response.getAllHeaders();
-            String headerKey = Arrays.stream(headers).map(NameValuePair::getName).filter(HttpHeaders.CACHE_CONTROL::equalsIgnoreCase).findFirst().orElse(null); // both header and value are case-insensitive
-            String cacheControlHeaderValue = headerKey != null ? Arrays.stream(headers).filter(i->headerKey.equals(i.getName())).findFirst().get().getValue() : null;
+            String cacheControlHeaderValue = response.getFirstHeader(HttpHeaders.CACHE_CONTROL);
             ClientMetadataCacheControl clientMetadataCacheControl = new ClientMetadataCacheControl(cacheControlHeaderValue, providerConfig.getMinCacheTime(), providerConfig.getMaxCacheTime());
 
             if (isUpdate) {
