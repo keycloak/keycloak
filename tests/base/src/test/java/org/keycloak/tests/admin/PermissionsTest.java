@@ -215,6 +215,9 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.flows().getClientAuthenticatorProviders(), clients.get(AdminRoles.MANAGE_CLIENTS), true);
         invoke(realm -> realm.flows().getClientAuthenticatorProviders(), clients.get(AdminRoles.QUERY_USERS), false);
         invoke(realm -> realm.flows().getPerClientConfigDescription(), clients.get(AdminRoles.QUERY_CLIENTS), true);
+        for (String role : AdminRoles.ALL_QUERY_ROLES) {
+            invoke(realm -> realm.clients().get(foo.getId()).roles().list(), clients.get(role), false);
+        }
     }
 
     @Test
@@ -303,6 +306,9 @@ public class PermissionsTest extends AbstractPermissionsTest {
         // this should throw forbidden as "create-client" role isn't enough
         invoke(realm -> clients.get(AdminRoles.CREATE_CLIENT).realm(REALM_NAME).roles().list(),
                 clients.get(AdminRoles.CREATE_CLIENT), false);
+        for (String role : AdminRoles.ALL_QUERY_ROLES) {
+            invoke(realm -> realm.roles().list(), clients.get(role), false);
+        }
         invoke(realm -> realm.roles().get("sample-role").toRepresentation(),
                 Resource.REALM, false);
         invoke(realm -> realm.roles().get("sample-role").update(newRole),
