@@ -37,7 +37,7 @@
       ]
     },
     "generate:openapi": {
-      "command": "kiota generate -l typescript -d openapi.yaml -c AdminClient -o ./src/generated",
+      "command": "cross-env OPENAPI_FILE=openapi.yaml tsx generate.ts",
       "files": [
         "openapi.yaml"
       ],
@@ -64,7 +64,6 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^10.2.0",
-    "@kiota-community/kiota-gen": "^1.0.2",
     "@microsoft/kiota": "^1.29.0",
     "@types/chai": "^5.2.2",
     "@types/lodash-es": "^4.17.12",
