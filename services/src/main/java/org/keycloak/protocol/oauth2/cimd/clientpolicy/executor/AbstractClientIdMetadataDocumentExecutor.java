@@ -511,7 +511,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         //  It checks if a host part is under one of trusted domains.
         //  It checks if an address resolved from a property whose value is URI is loopback address.
         //  It checks if an address resolved from a property whose value is URI is private address.
-        verifyUri(clientId, (error, logMessageTemplate) -> {
+        List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
+        verifyUri(clientId, trustedDomains, (error, logMessageTemplate) -> {
             getLogger().warnv(logMessageTemplate, "client_id", clientId);
             throw invalidClientIdMetadata(error);
         });
@@ -655,46 +656,19 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         // CIMD (mandatory): client_id
         // RFC 7591 (mandagory): redirect_uris
         // RFC 7591 (optional): logo_uri, client_uri, tos_uri, policy_uri, jwks_uri
-        verifyUri(clientOIDC.getClientId(), (error, logMessageTemplate) -> {
-            getLogger().warnv(logMessageTemplate, "client_id", clientOIDC.getClientId());
-            throw invalidClientIdMetadata(error);
-        });
+
+        List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
+        verifyUriProperty(clientOIDC.getClientId(), "client_id", trustedDomains);
+
         for (String redirect_uri : clientOIDC.getRedirectUris()) {
-            verifyUri(redirect_uri, (error, logMessageTemplate) -> {
-                getLogger().warnv(logMessageTemplate, "redirect_uris", redirect_uri);
-                throw invalidClientIdMetadata(error);
-            });
+            verifyUriProperty(redirect_uri, "redirect_uris", trustedDomains);
         }
-        if (clientOIDC.getLogoUri() != null) {
-            verifyUri(clientOIDC.getLogoUri(), (error, logMessageTemplate) -> {
-                getLogger().warnv(logMessageTemplate, "logo_uri", clientOIDC.getLogoUri());
-                throw invalidClientIdMetadata(error);
-            });
-        }
-        if (clientOIDC.getClientUri() != null) {
-            verifyUri(clientOIDC.getClientUri(), (error, logMessageTemplate) -> {
-                getLogger().warnv(logMessageTemplate, "client_uri", clientOIDC.getClientUri());
-                throw invalidClientIdMetadata(error);
-            });
-        }
-        if (clientOIDC.getTosUri() != null) {
-            verifyUri(clientOIDC.getTosUri(), (error, logMessageTemplate) -> {
-                getLogger().warnv(logMessageTemplate, "tos_uri", clientOIDC.getTosUri());
-                throw invalidClientIdMetadata(error);
-            });
-        }
-        if (clientOIDC.getPolicyUri() != null) {
-            verifyUri(clientOIDC.getPolicyUri(), (error, logMessageTemplate) -> {
-                getLogger().warnv(logMessageTemplate, "policy_uri", clientOIDC.getPolicyUri());
-                throw invalidClientIdMetadata(error);
-            });
-        }
-        if (clientOIDC.getJwksUri() != null) {
-            verifyUri(clientOIDC.getJwksUri(), (error, logMessageTemplate) -> {
-                getLogger().warnv(logMessageTemplate, "jwks_uri", clientOIDC.getJwksUri());
-                throw invalidClientIdMetadata(error);
-            });
-        }
+ 
+        verifyUriPropertyIfPresent(clientOIDC.getLogoUri(), "logo_uri", trustedDomains);
+        verifyUriPropertyIfPresent(clientOIDC.getClientUri(), "client_uri", trustedDomains);
+        verifyUriPropertyIfPresent(clientOIDC.getTosUri(), "tos_uri", trustedDomains);
+        verifyUriPropertyIfPresent(clientOIDC.getPolicyUri(), "policy_uri", trustedDomains);
+        verifyUriPropertyIfPresent(clientOIDC.getJwksUri(), "jwks_uri", trustedDomains);
 
         URI clientIdURIfromMetadata;
         try {
@@ -708,6 +682,19 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         return clientIdURIfromMetadata;
     }
 
+    private void verifyUriProperty(String uriString, String propertyName, List<String> trustedDomains) throws ClientPolicyException {
+        verifyUri(uriString, trustedDomains, (error, logMessageTemplate) -> {
+            getLogger().warnv(logMessageTemplate, propertyName, uriString);
+            throw invalidClientIdMetadata(error);
+        });
+    }
+
+    private void verifyUriPropertyIfPresent(String uriString, String propertyName, List<String> trustedDomains) throws ClientPolicyException {
+        if (uriString != null) {
+            verifyUriProperty(uriString, propertyName, trustedDomains);
+        }
+    }
+
     // any access to parent folder /../ or current /./ is unsafe with or without encoding
     private final static Pattern UNSAFE_PATH_PATTERN = Pattern.compile(
             "(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){1,2}(/|%2[fF]|%5[cC]|\\\\)|(/|%2[fF]|%5[cC]|\\\\)(%2[eE]|\\.){1,2}$");
@@ -716,10 +703,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         return UNSAFE_PATH_PATTERN.matcher(redirectUri.getRawPath()).find();
     }
 
-    private void verifyUri(String uriString, ErrorHandler errorHandler) throws ClientPolicyException {
-        // allow trusted domain
-        List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
-        if (trustedDomains == null || trustedDomains.isEmpty()) {
+    private void verifyUri(String uriString, List<String> trustedDomains, ErrorHandler errorHandler) throws ClientPolicyException {
+        if (trustedDomains.isEmpty()) {        // allow trusted domain
             getLogger().debug("trusted domain list is vacant.");
             throw invalidClientIdMetadata(ERR_NOTALLOWED_DOMAIN);
         }
