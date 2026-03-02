@@ -645,30 +645,30 @@ public class UserSearchTest extends AbstractUserTest {
         assertThat(users, hasSize(1));
         assertThat(users.get(0).getUsername(), is("john_doe"));
 
-        // Test percent character doesn't act as SQL wildcard
-        createUser("50%", "fifty@test.com");
-        createUser("500", "fivehundred@test.com");
-        createUser("50abc", "fiftyabc@test.com");
+        // Test percent character doesn't act as SQL wildcard - use email since username doesn't allow %
+        createUser("fifty", "50%@test.com");
+        createUser("fivehundred", "500@test.com");
+        createUser("fiftyabc", "50abc@test.com");
 
         users = managedRealm.admin().users().search("50%", null, null);
         assertThat(users, hasSize(1));
-        assertThat(users.get(0).getUsername(), is("50%"));
+        assertThat(users.get(0).getEmail(), is("50%@test.com"));
 
         // Test combination of wildcards - underscore in email
-        createUser("test_user", "test_email@example.com");
+        createUser("testuser", "test_email@example.com");
         createUser("testauser", "testaemail@example.com");
 
         users = managedRealm.admin().users().search("test_email", null, null);
         assertThat(users, hasSize(1));
         assertThat(users.get(0).getEmail(), is("test_email@example.com"));
 
-        // Test percent in first name
-        createUser("user_pct", "pct@test.com");
-        users.get(0).setFirstName("50%");
-        managedRealm.admin().users().get(users.get(0).getId()).update(users.get(0));
+        // Test both percent and underscore in email
+        createUser("testpercent", "50%_test@test.com");
+        createUser("testatest", "50atest@test.com");
 
-        users = managedRealm.admin().users().search("50%", null, null);
-        assertThat(users.stream().filter(u -> "50%".equals(u.getFirstName())).count(), is(1L));
+        users = managedRealm.admin().users().search("50%_", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getEmail(), is("50%_test@test.com"));
     }
 
     @Test

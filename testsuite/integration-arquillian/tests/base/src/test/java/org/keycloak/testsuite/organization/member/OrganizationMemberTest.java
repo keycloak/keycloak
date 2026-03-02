@@ -442,13 +442,13 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(members.get(0).getUsername(), is(equalTo("john_doe@test.org")));
 
         // Search with percent character - should match literally, not as wildcard
-        UserRepresentation user4 = addMember(organization, "50%@test.org", "Fifty", "Percent");
+        UserRepresentation user4 = addMember(organization, "fifty", "50%@test.org", "Fifty", "Percent", true);
         UserRepresentation user5 = addMember(organization, "500@test.org", "Five", "Hundred");
         UserRepresentation user6 = addMember(organization, "50abc@test.org", "Fiftyabc", "Test");
 
         members = organization.members().search("50%", false, null, null);
         assertThat(members, hasSize(1));
-        assertThat(members.get(0).getUsername(), is(equalTo("50%@test.org")));
+        assertThat(members.get(0).getEmail(), is(equalTo("50%@test.org")));
 
         // Test exact search with SQL wildcards
         members = organization.members().search("john_doe@test.org", true, null, null);
@@ -457,23 +457,23 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         members = organization.members().search("50%@test.org", true, null, null);
         assertThat(members, hasSize(1));
-        assertThat(members.get(0).getUsername(), is(equalTo("50%@test.org")));
+        assertThat(members.get(0).getEmail(), is(equalTo("50%@test.org")));
 
-        // Test search by first name with underscore
-        UserRepresentation user7 = addMember(organization, "test_fn@test.org", "Test_Name", "LastName");
-        UserRepresentation user8 = addMember(organization, "testafn@test.org", "TestaName", "LastName");
+        // Test search by email with underscore
+        UserRepresentation user7 = addMember(organization, "testfn", "test_fn@test.org", "TestName", "LastName", true);
+        UserRepresentation user8 = addMember(organization, "testafn", "testafn@test.org", "TestaName", "LastName", true);
 
-        members = organization.members().search("Test_", false, null, null);
+        members = organization.members().search("test_", false, null, null);
         assertThat(members, hasSize(1));
-        assertThat(members.get(0).getFirstName(), is(equalTo("Test_Name")));
+        assertThat(members.get(0).getEmail(), is(equalTo("test_fn@test.org")));
 
-        // Test search by last name with percent
-        UserRepresentation user9 = addMember(organization, "test_ln@test.org", "FirstName", "50%_Last");
-        UserRepresentation user10 = addMember(organization, "test_ln2@test.org", "FirstName", "50a_Last");
+        // Test search by email with both percent and underscore
+        UserRepresentation user9 = addMember(organization, "testpercent", "50%_test@test.org", "FirstName", "Last", true);
+        UserRepresentation user10 = addMember(organization, "testatest", "50atest@test.org", "FirstName", "Last", true);
 
         members = organization.members().search("50%_", false, null, null);
         assertThat(members, hasSize(1));
-        assertThat(members.get(0).getLastName(), is(equalTo("50%_Last")));
+        assertThat(members.get(0).getEmail(), is(equalTo("50%_test@test.org")));
     }
 
     @Test
