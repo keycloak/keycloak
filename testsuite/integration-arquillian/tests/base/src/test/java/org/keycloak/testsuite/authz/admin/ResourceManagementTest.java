@@ -342,6 +342,13 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         assertEquals(0, updated.getScopes().size());
     }
 
+    private ResourceRepresentation createResourceRepresentation(String name, String type) {
+        ResourceRepresentation resource = new ResourceRepresentation();
+        resource.setName(name);
+        resource.setType(type);
+        return resource;
+    }
+
     private ResourceRepresentation createResourceWithDefaultScopes() {
         ResourceRepresentation resource = createResource();
 

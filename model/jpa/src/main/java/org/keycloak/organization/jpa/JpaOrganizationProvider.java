@@ -427,11 +427,15 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
             orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
         } else {
-            value = "%" + value + "%";
-            orPredicates.add(builder.like(from.get(USERNAME), value));
-            orPredicates.add(builder.like(from.get(EMAIL), value));
-            orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value));
-            orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value));
+            boolean startsWithWildcard = value.startsWith("*");
+            boolean endsWithWildcard = value.endsWith("*");
+            value = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+            if (!startsWithWildcard) value = "%" + value;
+            if (value.isEmpty() || !endsWithWildcard) value += "%";
+            orPredicates.add(builder.like(from.get(USERNAME), value, '\\'));
+            orPredicates.add(builder.like(from.get(EMAIL), value, '\\'));
+            orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value, '\\'));
+            orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value, '\\'));
         }
 
         return orPredicates.toArray(Predicate[]::new);

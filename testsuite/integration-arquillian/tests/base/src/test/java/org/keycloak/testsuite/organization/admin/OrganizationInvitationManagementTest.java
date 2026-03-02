@@ -280,11 +280,51 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     }
 
     @Test
+    public void testInvitationSearchWithSqlWildcards() {
+        // Create invitations with SQL wildcard characters in email
+        sendInvitation("john_doe@test-org.com", "John", "Doe");
+        sendInvitation("johnadoe@test-org.com", "Johna", "Doe");
+        sendInvitation("johnbdoe@test-org.com", "Johnb", "Doe");
+
+        // Search by email with underscore - should match literally
+        List<OrganizationInvitationRepresentation> invitations =
+            organization.invitations().list(null, "john_", null, null, null, null, null);
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getEmail(), equalTo("john_doe@test-org.com"));
+
+        // Create invitations with percent character
+        sendInvitation("50%@test-org.com", "Fifty", "Percent");
+        sendInvitation("500@test-org.com", "Five", "Hundred");
+        sendInvitation("50abc@test-org.com", "Fiftyabc", "Test");
+
+        // Search by email with percent - should match literally
+        invitations = organization.invitations().list(null, "50%", null, null, null, null, null);
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getEmail(), equalTo("50%@test-org.com"));
+
+        // Test search by first name with SQL wildcards
+        sendInvitation("test_fn@test-org.com", "Test_Name", "LastName");
+        sendInvitation("testafn@test-org.com", "TestaName", "LastName");
+
+        invitations = organization.invitations().list(null, null, "Test_", null, null, null, null);
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getFirstName(), equalTo("Test_Name"));
+
+        // Test search by last name with SQL wildcards
+        sendInvitation("test_ln@test-org.com", "FirstName", "50%_Last");
+        sendInvitation("test_ln2@test-org.com", "FirstName", "50a_Last");
+
+        invitations = organization.invitations().list(null, null, null, null, "50%_", null, null);
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getLastName(), equalTo("50%_Last"));
+    }
+
+    @Test
     public void testMultipleOrganizationInvitationIsolation() {
         // Create second organization
         OrganizationRepresentation org2Rep = createOrganization("test-org-2", "test-org-2.com");
         OrganizationResource organization2 = testRealm().organizations().get(org2Rep.getId());
-        
+
         // Create invitations in both organizations
         sendInvitation("user@test-org.com", "User", "One");
         sendInvitationToOrganization(organization2, "user@test-org-2.com", "User", "Two");
