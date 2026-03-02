@@ -373,10 +373,10 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         validateClientMetadata(clientIdURI, redirectUriURI, clientOIDCWithCacheControl.getOidcClientRepresentation());
 
         if (fetchOp == FetchOperation.CREATE) {
-            // Update Client Metadata
+            // Create Client Metadata
             provider.createClientMetadata(clientOIDCWithCacheControl);
         } else if (fetchOp == FetchOperation.UPDATE) {
-            // Create Client Metadata
+            // Update Client Metadata
             provider.updateClientMetadata(clientOIDCWithCacheControl);
         }
     }
@@ -558,7 +558,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
      * @param isUpdate indicates the client metadata has been already created
      * @param provider {@link ClientIdMetadataDocumentProvider} for updating cache expiry time
      * @return {@code OIDCClientRepresentationWithCacheControl} a combination of a client metadata and Cache-Control header value accompanied by the metadata response.
-     * {@code null} if a client metadata was re-fetched but the HTTP response status code is 307 Not Modified.
+     * {@code null} if a client metadata was re-fetched but the HTTP response status code is 304 Not Modified.
      * @throws ClientPolicyException when fetching a client metadata fails.
      */
     protected OIDCClientRepresentationWithCacheControl fetchClientMetadata(final URI clientIdURI, final boolean isUpdate,
@@ -664,7 +664,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         //  It checks if an address resolved from a property whose value is URI is loopback address.
         //  It checks if an address resolved from a property whose value is URI is private address.
         // CIMD (mandatory): client_id
-        // RFC 7591 (mandagory): redirect_uris
+        // RFC 7591 (mandatory): redirect_uris
         // RFC 7591 (optional): logo_uri, client_uri, tos_uri, policy_uri, jwks_uri
 
         List<String> trustedDomains = convertContentFilledList(getConfiguration().getTrustedDomains());
