@@ -41,6 +41,14 @@ The JWT authorization grant and the client assertion authentication use the `iss
 
 If you have identity providers defined with the same issuer and tested the JWT authorization grants or client assertions features, please update the providers accordingly before the upgrade. You can update the issuer or disable the provider to avoid the duplicates.
 
+=== Stricter access control for fetching user profile configuration and metadata
+
+In order to improve security, the access control for fetching user profile configuration and metadata from a realm has been made stricter,
+and it is no longer possible to fetch this information if the administrator is granted with any administrative role.
+
+Instead, the administrator must have explicit permissions to view or manage users, or by
+having the `view-realm`, or `manage-realm`, or `view-users`, or `manage-users`, or `query-users` roles.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
