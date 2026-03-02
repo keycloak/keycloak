@@ -137,7 +137,10 @@ export default function GroupsSection({ orgId }: { orgId?: string } = {}) {
           handleModalToggle={() => setRename(undefined)}
         />
       )}
-      <PageSection variant={PageSectionVariants.light} className="pf-v5-u-p-0">
+      <PageSection
+        variant={PageSectionVariants.light}
+        className="pf-v5-u-p-0 keycloak-admin--groups__section"
+      >
         <Drawer isInline isExpanded={open} key={key} position="left">
           <DrawerContent
             panelContent={

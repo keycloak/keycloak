@@ -8,3 +8,10 @@
   font-size: var(--pf-v5-global--FontSize--md);
   margin-right: var(--pf-v5-global--spacer--sm);
 }
+
+.keycloak-admin--groups__section {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0%;
+  height: 100vh;
+}
