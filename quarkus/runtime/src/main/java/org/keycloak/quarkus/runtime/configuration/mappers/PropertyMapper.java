@@ -116,8 +116,8 @@ public class PropertyMapper<T> {
      * <p>
      * In preference order we are looking for:
      * <pre>
-     *  [ {@link #from} ] ---> [ {@link #mapFrom} ] ---> [ {@link #getDefaultValue()} ] ---> [ {@link #to} ]
-     * (explicit)     (derived)           (fallback)         (fallback)
+     *  [ {@link #from} ] ---> [ quarkus property ] ---> [ {@link #mapFrom} ] ---> [ {@link #getDefaultValue()} ] ---> [ {@link #to} ]
+     * (explicit)     (direct quarkus.properties)   (derived)           (fallback)         (fallback)
      * </pre>
      * <p>
      *
@@ -137,6 +137,19 @@ public class PropertyMapper<T> {
         // we don't want the NestedPropertyMappingInterceptor to restart the chain here, so we force a proceed
         // this ensures that mapFrom transformers, and regular transformers are applied exclusively - not chained
         ConfigValue config = convertValue(NestedPropertyMappingInterceptor.proceed(context, from));
+
+        // If the 'from' (kc.*) property was not explicitly set by the user, check whether the quarkus
+        // property was set directly in quarkus.properties. Those values take precedence over mapFrom
+        // and default values to avoid breaking users who relied on unsupported quarkus properties
+        // before the corresponding kc.* option existed.
+        // The !name.equals(from) guard ensures we only apply this when looking up the quarkus 'to'
+        // property (e.g., quarkus.http.port), not when looking up the kc.* 'from' property itself.
+        if (!name.equals(from) && (config == null || !Configuration.isUserModifiable(config))) {
+            ConfigValue directQuarkusValue = context.proceed(name);
+            if (directQuarkusValue != null && Configuration.isUserModifiable(directQuarkusValue)) {
+                return directQuarkusValue;
+            }
+        }
 
         boolean parentValue = false;
         if (mapFrom != null && (config == null || config.getValue() == null)) {

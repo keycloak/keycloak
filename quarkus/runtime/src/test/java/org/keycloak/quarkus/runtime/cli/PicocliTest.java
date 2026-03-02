@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.common.Profile;
@@ -157,8 +158,9 @@ public class PicocliTest extends AbstractConfigurationTest {
     @Test
     public void testCleanStartDev() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
-        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("WARN"));
-        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().toUpperCase().contains("ERROR"));
+        String out = filterSecondClassOptionWarnings(nonRunningPicocli.getOutString());
+        assertFalse(nonRunningPicocli.getOutString(), out.toUpperCase().contains("WARN"));
+        assertFalse(nonRunningPicocli.getOutString(), out.toUpperCase().contains("ERROR"));
     }
 
     @Test
@@ -409,9 +411,22 @@ public class PicocliTest extends AbstractConfigurationTest {
      */
     private NonRunningPicocli build(String... args) {
         return build(out -> {
-            assertFalse(out, out.contains("first-class"));
-            assertFalse(out, out.toUpperCase().contains("WARN"));
+            // second-class option warnings about quarkus.* properties are expected behavior
+            String filtered = filterSecondClassOptionWarnings(out);
+            assertFalse(filtered, filtered.contains("first-class"));
+            assertFalse(filtered, filtered.toUpperCase().contains("WARN"));
         }, args);
+    }
+
+    /**
+     * Filters out the expected "Please use the first-class option" warnings that are emitted
+     * when quarkus.* properties in quarkus.properties have corresponding supported kc.* options.
+     * These warnings are expected and intentional behavior; other WARN messages should still fail.
+     */
+    private String filterSecondClassOptionWarnings(String out) {
+        return out.lines()
+                .filter(line -> !line.contains("Please use the first-class option `"))
+                .collect(Collectors.joining("\n"));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -757,6 +772,25 @@ public class PicocliTest extends AbstractConfigurationTest {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=localhost", "--spi-hostname-v2-hostname=second-class");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         assertThat(nonRunningPicocli.getOutString(), containsString("Please use the first-class option `kc.hostname` instead of `kc.spi-hostname-v2-hostname`"));
+    }
+
+    @Test
+    public void quarkusPropertyInQuarkusPropertiesWarning() {
+        // quarkus.http.port=9090 is set in test quarkus.properties without a corresponding kc.http-port setting
+        // This should trigger a warning to use the first-class option instead
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                containsString("Please use the first-class option `kc.http-port` instead of `quarkus.http.port`"));
+    }
+
+    @Test
+    public void quarkusPropertyInQuarkusPropertiesNoWarningWhenKcOptionSet() {
+        // When kc.http-port is explicitly set, no warning about quarkus.http.port should be emitted
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-port=7070");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                not(containsString("Please use the first-class option `kc.http-port` instead of `quarkus.http.port`")));
     }
 
     @Test

@@ -269,6 +269,20 @@ public class Picocli {
             // - this allows for efficient resolution of wildcard values and checking spi options
             Configuration.getPropertyNames().forEach(name -> {
                 if (!name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+                    // Check if a quarkus.* property from quarkus.properties has a corresponding kc.* option.
+                    // If so, warn the user to use the supported kc.* option instead.
+                    if (name.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
+                        PropertyMapper<?> quarkusMapper = PropertyMappers.getMapper(name);
+                        if (quarkusMapper != null && !name.equals(quarkusMapper.forKey(name).getFrom())) {
+                            ConfigValue quarkusValue = getUnmappedValue(name);
+                            if (quarkusValue.getValue() != null && isUserModifiable(quarkusValue)) {
+                                ConfigValue fromValue = getUnmappedValue(quarkusMapper.forKey(name).getFrom());
+                                if (!isUserModifiable(fromValue)) {
+                                    secondClassOptions.put(name, quarkusMapper.forKey(name).getFrom());
+                                }
+                            }
+                        }
+                    }
                     return; // there are canonical mappings to kc. values - no need to consider alternative forms
                 }
                 if (!options.includeRuntime) {
