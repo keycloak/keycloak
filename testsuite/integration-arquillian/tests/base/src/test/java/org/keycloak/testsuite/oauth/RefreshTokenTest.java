@@ -18,9 +18,11 @@ package org.keycloak.testsuite.oauth;
 
 import java.io.Closeable;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
@@ -717,6 +719,76 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         } finally {
             RealmManager.realm(adminClient.realm("test")).revokeRefreshToken(false);
         }
+    }
+
+    // GH issue 45647
+    @Test
+    public void refreshTokenRevokeWithConcurrentRefreshTokenRequests() {
+        try {
+            RealmManager.realm(adminClient.realm("test"))
+                    .revokeRefreshToken(true);
+
+            testRefreshTokenConcurrentReuse(1);
+        } finally {
+            RealmManager.realm(adminClient.realm("test"))
+                    .revokeRefreshToken(false);
+        }
+    }
+
+    // GH issue 45647
+    @Test
+    public void refreshTokenRevokeAndReuseWithConcurrentRefreshTokenRequests() {
+        try {
+            RealmManager.realm(adminClient.realm("test"))
+                    .refreshTokenMaxReuse(2)
+                    .revokeRefreshToken(true);
+
+            testRefreshTokenConcurrentReuse(3);
+        } finally {
+            RealmManager.realm(adminClient.realm("test"))
+                    .refreshTokenMaxReuse(0)
+                    .revokeRefreshToken(false);
+        }
+    }
+
+    private void testRefreshTokenConcurrentReuse(int expectedSuccessfulRefreshes) {
+        int THREADS_COUNT = 5;
+
+        oauth.doLogin("test-user@localhost", "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
+
+        // Try concurrent requests for refresh-token requests
+        AtomicInteger successCounts = new AtomicInteger(0);
+        AtomicInteger errorCounts = new AtomicInteger(0);
+        Runnable runnable = () -> {
+            AccessTokenResponse response2 = oauth.doRefreshTokenRequest(response1.getRefreshToken());
+            if (response2.getStatusCode() == 200) {
+                successCounts.incrementAndGet();
+            } else {
+                assertEquals(400, response2.getStatusCode());
+                errorCounts.incrementAndGet();
+            }
+        };
+
+        List<Thread> threads = new ArrayList<>();
+        for (int i = 0 ; i < THREADS_COUNT ; i++) {
+            threads.add(new Thread(runnable));
+        }
+        for (Thread t : threads) {
+            t.start();
+        }
+        for (Thread t : threads) {
+            try {
+                t.join();
+            } catch(InterruptedException ie) {
+                Assert.fail("Interrupted exception thrown in one of the threads during token refresh");
+            }
+        }
+
+        // Check expected successful count of refreshes
+        assertEquals("Expected only " + expectedSuccessfulRefreshes + " successful refreshes, but was successfully refreshed " + successCounts.get() + " times", expectedSuccessfulRefreshes, successCounts.get());
+        assertEquals(THREADS_COUNT - expectedSuccessfulRefreshes, errorCounts.get());
     }
 
     @Test
