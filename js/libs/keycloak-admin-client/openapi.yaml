@@ -12,9 +12,14 @@ components:
         certificate:
           type: string
     BaseClientRepresentation:
+      type: object
       description: Base client representation with common properties for all client
         types
-      type: object
+      discriminator:
+        propertyName: protocol
+        mapping:
+          openid-connect: "#/components/schemas/OIDCClientRepresentation"
+          saml: "#/components/schemas/SAMLClientRepresentation"
       properties:
         clientId:
           type: string
@@ -38,11 +43,6 @@ components:
             type: string
         protocol:
           type: string
-      discriminator:
-        propertyName: protocol
-        mapping:
-          openid-connect: "#/components/schemas/OIDCClientRepresentation"
-          saml: "#/components/schemas/SAMLClientRepresentation"
     Flow:
       type: string
       enum:
@@ -55,6 +55,8 @@ components:
       - CIBA
     OIDCClientRepresentation:
       type: object
+      allOf:
+      - $ref: "#/components/schemas/BaseClientRepresentation"
       properties:
         loginFlows:
           type: array
@@ -75,11 +77,11 @@ components:
             type: string
         protocol:
           type: string
+    SAMLClientRepresentation:
+      type: object
+      description: SAML Client configuration
       allOf:
       - $ref: "#/components/schemas/BaseClientRepresentation"
-    SAMLClientRepresentation:
-      description: SAML Client configuration
-      type: object
       properties:
         nameIdFormat:
           type: string
@@ -107,8 +109,6 @@ components:
           type: boolean
         protocol:
           type: string
-      allOf:
-      - $ref: "#/components/schemas/BaseClientRepresentation"
 tags:
 - name: Clients (v2)
   x-smallrye-profile-admin: ""
