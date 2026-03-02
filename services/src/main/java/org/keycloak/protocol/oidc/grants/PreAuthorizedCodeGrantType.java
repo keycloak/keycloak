@@ -30,16 +30,16 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
-import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager.AccessTokenResponseBuilder;
 import org.keycloak.representations.AccessToken;
@@ -206,17 +206,17 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 sessionContext);
 
         // Add the scope referenced by the credential from specified credential offer to the token scopes
-        String credentialConfigId = authDetails.getCredentialConfigurationId();
-        ClientScopeModel clientScope = OID4VCUtil.getClientScopeByCredentialConfigId(session, realm, credentialConfigId);
-        if (clientScope == null) {
-            String errorMessage = "Client scope was not found for credential configuration ID: " + credentialConfigId;
-            event.detail(Details.CREDENTIAL_TYPE, credentialConfigId);
-            event.detail(REASON, errorMessage)
-                    .error(UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
+        String credConfigId = authDetails.getCredentialConfigurationId();
+        CredentialScopeModel credScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(realm,
+                () -> session.clientScopes().getClientScopesStream(realm), credConfigId);
+        if (credScope == null) {
+            String errorMessage = "Credential client scope was not found for credential_configuration_id: " + credConfigId;
+            event.detail(Details.CREDENTIAL_TYPE, credConfigId);
+            event.detail(REASON, errorMessage).error(UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
-        accessToken.setScope(clientScope.getName());
+        accessToken.setScope(credScope.getName());
 
         accessToken.setSessionId(null);
         accessToken.setAuthorizationDetails(authorizationDetailsResponses);
@@ -237,7 +237,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         try {
             tokenResponse = responseBuilder.build();
             tokenResponse.setAuthorizationDetails(authorizationDetailsResponses);
-            tokenResponse.setScope(clientScope.getName());
+            tokenResponse.setScope(credScope.getName());
         } catch (RuntimeException re) {
             String errorMessage = "Cannot get encryption KEK";
             if (errorMessage.equals(re.getMessage())) {

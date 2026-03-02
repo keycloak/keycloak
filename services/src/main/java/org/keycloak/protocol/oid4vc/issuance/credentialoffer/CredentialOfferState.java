@@ -24,11 +24,12 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.saml.RandomSecret;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+
+import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialOfferState {
@@ -55,9 +56,9 @@ public class CredentialOfferState {
 
     @Transient
     public Optional<String> getPreAuthorizedCode() {
-        return Optional.ofNullable(credentialsOffer.getGrants())
-                .map(PreAuthorizedGrant::getPreAuthorizedCode)
-                .map(PreAuthorizedCode::getPreAuthorizedCode);
+        return Optional.ofNullable(credentialsOffer.getGrant(PRE_AUTH_GRANT_TYPE))
+                .map(it -> (PreAuthorizedCodeGrant) it)
+                .map(PreAuthorizedCodeGrant::getPreAuthorizedCode);
     }
 
     public void generateTxCode() {

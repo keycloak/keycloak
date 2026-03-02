@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -69,11 +70,11 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
         entry.getPreAuthorizedCode().ifPresent(it -> {
             session.singleUseObjects().put(it, lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
         });
-        Optional.ofNullable(entry.getAuthorizationDetails()).ifPresent(it -> {
-            it.getCredentialIdentifiers().forEach( cid -> {
-                session.singleUseObjects().put(cid, lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
-            });
-        });
+        OID4VCAuthorizationDetail authDetails = entry.getAuthorizationDetails();
+        if (authDetails != null && authDetails.getCredentialIdentifiers() != null) {
+            authDetails.getCredentialIdentifiers().forEach( cid ->
+                    session.singleUseObjects().put(cid, lifespanSeconds, Map.of(ENTRY_KEY, entryJson)));
+        }
     }
 
     @Override

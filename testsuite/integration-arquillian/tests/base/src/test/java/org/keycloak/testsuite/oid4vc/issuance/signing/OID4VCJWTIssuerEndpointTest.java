@@ -53,8 +53,7 @@ import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -238,7 +237,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                     authenticator.setTokenString(token);
                     CredentialsOffer credOffer = new CredentialsOffer()
                             .setCredentialIssuer("the-issuer")
-                            .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(new PreAuthorizedCode().setPreAuthorizedCode("the-code")))
+                            .addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode("the-code"))
                             .setCredentialConfigurationIds(List.of("credential-configuration-id"));
 
                     CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
@@ -488,7 +487,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 5. Get an access token for the pre-authorized code
         AccessTokenResponse accessTokenResponse = oauth.oid4vc()
-                .preAuthorizedCodeGrantRequest(credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .preAuthorizedCodeGrantRequest(credentialsOffer.getPreAuthorizedCode())
                 .endpoint(openidConfig.getTokenEndpoint())
                 .send();
 
@@ -1224,8 +1223,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 .send()
                 .getCredentialsOffer();
         assertNotNull("Credential offer should not be null", credentialsOffer);
-        assertNotNull("Pre-authorized grant should be present", credentialsOffer.getGrants());
-        String preAuthorizedCode = credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
+        String preAuthorizedCode = credentialsOffer.getPreAuthorizedCode();
         assertNotNull("Pre-authorized code value should not be null", preAuthorizedCode);
 
         // 3. Second access to the same credential offer URL - should fail with replay protection error
@@ -1349,8 +1347,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 .send()
                 .getCredentialsOffer();
         assertNotNull("Credential offer should not be null", credentialsOffer);
-        assertNotNull("Pre-authorized grant should be present", credentialsOffer.getGrants());
-        String preAuthorizedCode = credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
+        String preAuthorizedCode = credentialsOffer.getPreAuthorizedCode();
         assertNotNull("Pre-authorized code value should not be null", preAuthorizedCode);
 
         // 3. Immediately perform the Token Request (Pre-Authorized Code Grant) using the valid code

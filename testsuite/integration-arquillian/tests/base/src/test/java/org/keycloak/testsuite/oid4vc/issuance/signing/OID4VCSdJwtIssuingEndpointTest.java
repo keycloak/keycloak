@@ -412,7 +412,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 5. Get an access token for the pre-authorized code
         AccessTokenResponse accessTokenResponse = oauth.oid4vc()
-                .preAuthorizedCodeGrantRequest(credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .preAuthorizedCodeGrantRequest(credentialsOffer.getPreAuthorizedCode())
                 .endpoint(openidConfig.getTokenEndpoint())
                 .send();
 
