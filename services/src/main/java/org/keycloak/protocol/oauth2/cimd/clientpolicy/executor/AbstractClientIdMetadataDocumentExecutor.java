@@ -180,9 +180,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         private final ClientMetadataCacheControl clientMetadataCacheControl;
 
         public OIDCClientRepresentationWithCacheControl(OIDCClientRepresentation oidcClientRepresentation,
-                                                        String rawCacheControlHeaderValue, int minCacheTime, int maxCacheTime) {
+                                                        ClientMetadataCacheControl clientMetadataCacheControl) {
             this.oidcClientRepresentation = oidcClientRepresentation;
-            this.clientMetadataCacheControl = new ClientMetadataCacheControl(rawCacheControlHeaderValue, minCacheTime, maxCacheTime);
+            this.clientMetadataCacheControl = clientMetadataCacheControl;
         }
 
         public OIDCClientRepresentation getOidcClientRepresentation() {
@@ -222,18 +222,29 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
                 normalizedCacheControlHeaderValue = null;
             } else {
                 normalizedCacheControlHeaderValue = rawCacheControlHeaderValue.toLowerCase().replaceAll("\\s", "");
-                List<String> sList  = Arrays.asList(normalizedCacheControlHeaderValue.split(",", 0));
-                if (sList.contains("no-cache")) {
-                    noCache = true;
+                String[] directives = normalizedCacheControlHeaderValue.split(",", 0);
+                boolean isMaxAgeExist = false;
+                boolean isSMaxAgeExist = false;
+                String maxAgeRaw = null;
+                String sMaxAgeRaw = null;
+                for (String directive : directives) {
+                    if ("no-cache".equals(directive)) {
+                        noCache = true;
+                    } else if ("no-store".equals(directive)) {
+                        noStore = true;
+                    } else if (directive.startsWith("max-age=")) {
+                        isMaxAgeExist = true;
+                        maxAgeRaw = directive;
+                    } else if (directive.startsWith("s-maxage=")) {
+                        isSMaxAgeExist = true;
+                        sMaxAgeRaw = directive;
+                    }
                 }
-                if (sList.contains("no-store")) {
-                    noStore = true;
+                if (isMaxAgeExist && maxAgeRaw != null) {
+                    maxAgeValue = parseExpiryValue(maxAgeRaw);
                 }
-                if (sList.stream().filter(i->i.startsWith("max-age=")).count() == 1) {
-                    maxAgeValue = deriveExpiryValue("max-age", sList);
-                }
-                if (sList.stream().filter(i->i.startsWith("s-maxage=")).count() == 1) {
-                    sMaxAgeValue = deriveExpiryValue("s-maxage", sList);
+                if (isSMaxAgeExist && sMaxAgeRaw != null) {
+                    sMaxAgeValue = parseExpiryValue(sMaxAgeRaw);
                 }
             }
         }
@@ -279,11 +290,11 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             return minCacheTime > 0 ? Time.currentTime() + minCacheTime : Time.currentTime();
         }
 
-        private int deriveExpiryValue(final String key, List<String> sList) {
-            String[] sAry = sList.stream().filter(i->i.startsWith(key + "=")).findFirst().get().split("=");
+        private int parseExpiryValue(String directive) {
+            String[] parts = directive.split("=", 2);
             try {
-                if (sAry.length == 2) {
-                    int returnValue = Integer.parseInt(sAry[1]);
+                if (parts.length == 2) {
+                    int returnValue = Integer.parseInt(parts[1]);
                     if (returnValue < minCacheTime) {
                         returnValue = minCacheTime;
                     } else if (returnValue > maxCacheTime) {
@@ -528,7 +539,6 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
      */
     protected void validateClientId(final URI clientIdURI) throws ClientPolicyException {
         // The authorization server MAY choose to have its own heuristics and policies around the trust of domain names used as client IDs.
-        return;
     }
 
     // apply the same logic in TrustedHostClientRegistrationPolicy.
@@ -589,7 +599,7 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             // to successfully convert it to Client Representation, intentionally augment it.
             augmentClientOIDC(clientOIDC);
 
-            return new OIDCClientRepresentationWithCacheControl(clientOIDC, cacheControlHeaderValue, providerConfig.getMinCacheTime(), providerConfig.getMaxCacheTime());
+            return new OIDCClientRepresentationWithCacheControl(clientOIDC, clientMetadataCacheControl);
         } catch (IOException e) {
             getLogger().warnv("HTTP connection failure: {0}", e);
             throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, ERR_METADATA_FETCH_FAILED);
