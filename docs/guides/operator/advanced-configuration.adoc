@@ -37,7 +37,7 @@ spec:
     schema: schema
     poolInitialSize: 1
     poolMinSize: 2
-    poolMaxSize: 3
+    poolMaxSize: 30
   http:
     httpEnabled: true
     httpPort: 8180
@@ -59,7 +59,9 @@ spec:
     xaEnabled: false
 ----
 
-For a list of options, see the Keycloak CRD. For details on configuring options, see <@links.server id="all-config"/>.
+WARNING: These values are illustrative; choose values appropriate for your environment and workload.
+
+For a list of options, see the Keycloak CRD, and for guidance on each option and its acceptable values, see <@links.server id="all-config"/>.
 
 ==== Additional options
 

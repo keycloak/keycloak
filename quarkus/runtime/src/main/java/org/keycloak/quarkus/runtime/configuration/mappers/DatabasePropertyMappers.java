@@ -8,11 +8,15 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.keycloak.config.CachingOptions;
+import org.keycloak.config.CachingOptions.Stack;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
+import org.keycloak.quarkus.runtime.cli.Picocli;
+import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.utils.StringUtil;
 
@@ -22,9 +26,11 @@ import io.smallrye.config.ConfigValue;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.config.DatabaseOptions.DB;
+import static org.keycloak.config.DatabaseOptions.DB_POOL_MAX_SIZE;
 import static org.keycloak.config.DatabaseOptions.Datasources.OPTIONS_DATASOURCES;
 import static org.keycloak.config.DatabaseOptions.Datasources.getDatasourceOption;
 import static org.keycloak.config.DatabaseOptions.Datasources.getKeyForDatasource;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers.Datasources.appendDatasourceMappers;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
@@ -32,6 +38,13 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
+
+    /**
+     * Minimum {@code db-pool-max-size} required for {@link Stack#jdbc_ping} and {@link Stack#jdbc_ping_udp}.
+     * Determined experimentally — lower values cause startup failures due to connection pool exhaustion.
+     * Verified by {@code KeycloakDeploymentTest#testDocumentedMinimalPoolMaxSizeWorks}.
+     */
+    private static final int JDBC_PING_MIN_POOL_MAX_SIZE = 4;
 
     @Override
     public List<PropertyMapper<?>> getPropertyMappers() {
@@ -118,6 +131,25 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 DatabaseOptions.DB_POOL_INITIAL_SIZE, mapper -> mapper.mapFrom(DatabaseOptions.DB_POOL_INITIAL_SIZE),
                 DatabaseOptions.DB_POOL_MAX_SIZE, mapper -> mapper.mapFrom(DatabaseOptions.DB_POOL_MAX_SIZE)
         ));
+    }
+
+    @Override
+    public void validateConfig(Picocli picocli) {
+        Configuration.getOptionalIntegerValue(DatabaseOptions.DB_POOL_MAX_SIZE).ifPresent(poolMaxSize -> {
+            if (poolMaxSize < JDBC_PING_MIN_POOL_MAX_SIZE && isJdbcPingStack()) {
+                throw new PropertyException(
+                        "The JDBC_PING cache stack requires '%s' to be at least %d (current: %d). A higher value is recommended."
+                                .formatted(DB_POOL_MAX_SIZE.getKey(), JDBC_PING_MIN_POOL_MAX_SIZE, poolMaxSize));
+            }
+        });
+    }
+
+    private static boolean isJdbcPingStack() {
+        if (!CachingPropertyMappers.cacheSetToInfinispan()) {
+            return false;
+        }
+        String stack = getOptionalKcValue(CachingOptions.CACHE_STACK).orElse(Stack.jdbc_ping.toString());
+        return Stack.jdbc_ping.toString().equals(stack) || Stack.jdbc_ping_udp.toString().equals(stack);
     }
 
     private static final Option<String> DB_URL_PATH = new OptionBuilder<>("db-url-path", String.class)
