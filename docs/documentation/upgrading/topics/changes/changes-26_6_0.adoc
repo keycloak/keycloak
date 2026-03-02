@@ -159,6 +159,14 @@ Authentication failures resulting in an invalid_grant now correctly return an HT
 With the `clusterless` feature enabled and `persistent-user-sessions` disabled, a re-index is required due to schema changes.
 {project_name} triggers the re-index on startup, but this may delay server startup depending on the number of sessions stored, and/or return incorrect results during the re-index process.
 
+=== Automatic database connection properties for the MS SQL Server driver
+
+When running with the MS SQL server, {project_name} needs to ensure consistent and predictable string parameter handling with the database.
+starting with this release, and when using the MS SQL Server JDBC driver, {project_name} sets the sendStringParametersAsUnicode property to false by default.
+This change prevents the driver from automatically sending string parameters as Unicode unless explicitly required,which can reduce overhead and avoid unexpected performane or query-plan issues in some environments.
+
+you can override this behavior by setting your own value for the sendStringParametersAsUnicode property in the database connection URL or configuration, for example by adding `;sendStringParametersAsUnicode=true` to the connection URL.
+
 === New CLI options for transaction timeout configuration
 
 Two new CLI options are now available to control transaction timeout behavior:

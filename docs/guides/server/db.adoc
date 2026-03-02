@@ -252,6 +252,10 @@ CREATE DATABASE keycloak
   COLLATE utf8mb4_unicode_ci;
 ----
 
+=== Configuring Unicode support for a MySQL/MariaDB database
+
+Unicode characters are supported in a MySQL/MariaDB database if the database was created with Unicode support in the VARCHAR and CHAR fields when using the following SQL statement.
+
 |PostgreSQL
 m|UTF8
 a|
@@ -588,3 +592,16 @@ Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.d
 
 </@opts.printRelevantOptions>
 </@tmpl.guide>
+
+=== Unicode support for a Microsoft SQL Server database
+
+Unicode characters are supported only for the special fields for a Microsoft SQL Server database.
+The database requires no special settings.
+
+By default, {project_name} sets the `=== Unicode support for a Microsoft SQL Server databaseStringParametersAsUnicode` JDBC driver property to `false` when using Microsoft SQL Server.
+This significantly improves performance because otherwise Microsoft SQL Server might be unable to use indexes.
+
+If you need to override this setting, set `sendStringParametersAsUnicode` explicitly in the JDBC URL (using `db-url`) or via `db-url-properties`.
+For example:
+
+<@kc.start parameters="--db mssql --db-url-properties=';sendStringParametersAsUnicode=true'"/>
