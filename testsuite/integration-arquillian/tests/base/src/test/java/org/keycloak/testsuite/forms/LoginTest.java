@@ -563,6 +563,27 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
+    public void loginWithForcePasswordChangePolicyWhitelist() {
+        setPasswordPolicy("forceExpiredPasswordChange(1) and forceExpiredPasswordChangeWhitelist(login@test.com)");
+        try {
+            // Setting offset to more than one day would normally force password update,
+            // but the user is whitelisted by email.
+            setTimeOffset(86405);
+
+            loginPage.open();
+            loginPage.login("login-test", getPassword("login-test"));
+
+            Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+
+            setTimeOffset(0);
+            events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        } finally {
+            setPasswordPolicy(null);
+        }
+    }
+
+    @Test
     public void loginWithoutForcePasswordChangePolicy() {
         setPasswordPolicy("forceExpiredPasswordChange(1)");
 

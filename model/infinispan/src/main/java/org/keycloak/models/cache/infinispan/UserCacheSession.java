@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.connections.jpa.support.EntityManagers;
@@ -67,6 +68,7 @@ import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.OnCreateComponent;
@@ -83,8 +85,6 @@ import org.keycloak.userprofile.UserProfileMetadata;
 import org.jboss.logging.Logger;
 
 import static java.util.Optional.ofNullable;
-
-import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -112,6 +112,27 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         this.startupRevision = cache.getCurrentCounter();
         this.datastoreProvider = (StoreManagers) session.getProvider(DatastoreProvider.class);
         session.getTransactionManager().enlistAfterCompletion(getTransaction());
+    }
+
+    private static boolean isReadOnlyOrganizationMember(KeycloakSession session, UserModel delegate) {
+        if (delegate == null) {
+            return false;
+        }
+
+        if (!Profile.isFeatureEnabled(Profile.Feature.ORGANIZATION)) {
+            return false;
+        }
+
+        OrganizationProvider organizationProvider = session.getProvider(OrganizationProvider.class);
+
+        if (organizationProvider == null || organizationProvider.count() == 0) {
+            return false;
+        }
+
+        // check if provider is enabled and user is managed member of a disabled organization OR provider is disabled and user is managed member
+        return organizationProvider.getByMember(delegate)
+                .anyMatch((org) -> (organizationProvider.isEnabled() && org.isManaged(delegate) && !org.isEnabled()) ||
+                        (!organizationProvider.isEnabled() && org.isManaged(delegate)));
     }
 
     @Override

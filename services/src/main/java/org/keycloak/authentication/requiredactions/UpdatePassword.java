@@ -17,6 +17,8 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -60,6 +62,7 @@ import org.jboss.logging.Logger;
 public class UpdatePassword implements RequiredActionProvider, RequiredActionFactory {
 
     private static final Logger logger = Logger.getLogger(UpdatePassword.class);
+    private static final String FORCE_EXPIRED_PASSWORD_CHANGE_WHITELIST_ID = "forceExpiredPasswordChangeWhitelist";
 
     @Override
     public InitiatedActionSupport initiatedActionSupport() {
@@ -74,6 +77,9 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         }
         int daysToExpirePassword = context.getRealm().getPasswordPolicy().getDaysToExpirePassword();
         if (daysToExpirePassword != -1) {
+            if (isUserWhitelistedFromPasswordExpiry(context)) {
+                return;
+            }
             PasswordCredentialProvider passwordProvider = (PasswordCredentialProvider) context.getSession().getProvider(CredentialProvider.class, PasswordCredentialProviderFactory.PROVIDER_ID);
             CredentialModel password = passwordProvider.getPassword(context.getRealm(), context.getUser());
             if (password != null) {
@@ -91,6 +97,32 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
                 }
             }
         }
+    }
+
+    private static boolean isUserWhitelistedFromPasswordExpiry(RequiredActionContext context) {
+        Set<String> whitelist = context.getRealm().getPasswordPolicy().getPolicyConfig(FORCE_EXPIRED_PASSWORD_CHANGE_WHITELIST_ID);
+        if (whitelist == null || whitelist.isEmpty()) {
+            return false;
+        }
+
+        String email = context.getUser().getEmail();
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+
+        if (whitelist.contains(normalizedEmail)) {
+            return true;
+        }
+
+        int atIdx = normalizedEmail.lastIndexOf('@');
+        if (atIdx <= 0 || atIdx == normalizedEmail.length() - 1) {
+            return false;
+        }
+
+        String domain = normalizedEmail.substring(atIdx); // includes '@'
+        return whitelist.contains(domain);
     }
 
     @Override
