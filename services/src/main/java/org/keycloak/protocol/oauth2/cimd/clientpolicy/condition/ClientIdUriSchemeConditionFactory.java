@@ -44,10 +44,9 @@ public class ClientIdUriSchemeConditionFactory extends AbstractClientPolicyCondi
                 "If some domains are filled, The condition evaluates to true " +
                         "if the host part of client_id parameter in an authorization request matches one of the filled domains. " +
                         "Otherwise, the condition evaluates to false " +
-                        "The domains are checked by using regex. " +
+                        "The domains are checked by using wildcard pattern matching (e.g. '*.example.org'). " +
                         "If the domains not filled, the condition evaluate to false regardless of the client_id parameter value. " +
-                        "For example, use pattern like this '(.*)\\.example\\.org' if you want to accept the parameter / property whose domain is 'example.org'." +
-                        "Don't forget to use escaping of special characters like dots as otherwise dot is interpreted as any character in regex!",
+                        "For example, use pattern like '*.example.org' if you want to accept the parameter / property whose domain is 'example.org' or its subdomains.",
                 ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
                 null);
         configProperties.add(property);
