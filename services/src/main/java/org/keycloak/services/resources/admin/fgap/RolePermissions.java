@@ -347,9 +347,9 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         if (canView(container)) {
             return true;
         } else if (container instanceof RealmModel) {
-            return root.realm().canViewRealm() || root.hasOneAdminRole(AdminRoles.ALL_QUERY_ROLES);
+            return root.realm().canViewRealm();
         } else {
-            return root.clients().canList((ClientModel)container);
+            return root.clients().canView((ClientModel)container);
         }
     }
 
