@@ -315,7 +315,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         try {
@@ -373,7 +373,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
@@ -497,7 +497,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         assertNotNull("Access token should be present", theToken);
 
         // Extract credential_identifier from authorization_details in token response
-        List<OID4VCAuthorizationDetail> authDetailsResponse = accessTokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = accessTokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
@@ -640,7 +640,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         String cNonce = getCNonce();
@@ -948,7 +948,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
@@ -995,7 +995,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
@@ -1081,7 +1081,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
