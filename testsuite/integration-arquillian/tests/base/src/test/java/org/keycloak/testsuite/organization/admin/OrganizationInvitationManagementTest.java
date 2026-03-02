@@ -314,7 +314,7 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         sendInvitation("test_ln@test-org.com", "FirstName", "50%_Last");
         sendInvitation("test_ln2@test-org.com", "FirstName", "50a_Last");
 
-        invitations = organization.invitations().list(null, null, null, "50%_", null, null, null);
+        invitations = organization.invitations().list(null, null, null, null, "50%_", null, null);
         assertThat(invitations, hasSize(1));
         assertThat(invitations.get(0).getLastName(), equalTo("50%_Last"));
     }
