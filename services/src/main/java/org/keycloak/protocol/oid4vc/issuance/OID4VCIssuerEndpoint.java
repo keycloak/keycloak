@@ -1613,7 +1613,7 @@ public class OID4VCIssuerEndpoint {
         VerifiableCredential vc = new VerifiableCredential()
                 .setIssuanceDate(normalizedIssuance)
                 .setExpirationDate(normalizedExpiration)
-                .setType(List.of(credentialConfig.getScope()));
+                .setType(credentialScopeModel.getSupportedCredentialTypes());
 
         Map<String, Object> subjectClaims = new HashMap<>();
         protocolMappers.forEach(mapper -> mapper.setClaim(subjectClaims, authResult.session()));
