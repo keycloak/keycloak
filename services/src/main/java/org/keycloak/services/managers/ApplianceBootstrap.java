@@ -53,11 +53,7 @@ public class ApplianceBootstrap {
     }
 
     public boolean isNewInstall() {
-        if (session.realms().getRealmByName(Config.getAdminRealm()) != null) {
-            return false;
-        } else {
-            return true;
-        }
+        return session.realms().getRealmByName(Config.getAdminRealm()) == null;
     }
 
     public boolean isNoMasterUser() {
@@ -66,7 +62,7 @@ public class ApplianceBootstrap {
         return session.users().getUsersCount(realm, true) == 0;
     }
 
-    public boolean createMasterRealm() {
+    public void createMasterRealm() {
         if (!isNewInstall()) {
             throw new IllegalStateException("Can't create default realm as realms already exists");
         }
@@ -110,8 +106,6 @@ public class ApplianceBootstrap {
             }
         }
         UserProfileProvider.setConfiguration(upConfig);
-
-        return true;
     }
 
     /**
