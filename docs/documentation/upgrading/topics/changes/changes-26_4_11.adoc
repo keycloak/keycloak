@@ -9,6 +9,14 @@ In order to improve security, the access control for managing permission tickets
 only users (or service accounts) granted with the `uma-protection` role can manage permission tickets for a given
 resource server. The only exception is the resource server itself, which can manage its permission tickets without the `uma-protection` role.
 
+=== Stricter access control for fetching user profile configuration and metadata
+
+In order to improve security, the access control for fetching user profile configuration and metadata from a realm has been made stricter,
+and it is no longer possible to fetch this information if the administrator is granted with any administrative role.
+
+Instead, the administrator must have explicit permissions to view or manage users, or by
+having the `view-realm`, or `manage-realm`, or `view-users`, or `manage-users`, or `query-users` roles.
+
 // ------------------------ Notable changes ------------------------ //
 ////
 == Notable changes
