@@ -20,6 +20,8 @@ package org.keycloak.protocol.oidc.grants;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
@@ -46,7 +48,6 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
-import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Strings;
 import org.keycloak.utils.MediaType;
 
@@ -149,12 +150,11 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
         AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, clientModel, userSession);
-        String credentialConfigurationIds = JsonSerialization.valueAsString(credOffer.getCredentialConfigurationIds());
-        clientSession.setNote(OID4VCIssuerEndpoint.CREDENTIAL_CONFIGURATION_IDS_NOTE, credentialConfigurationIds);
         clientSession.setNote(OIDCLoginProtocol.ISSUER, credOffer.getCredentialIssuer());
         clientSession.setNote(VC_ISSUANCE_FLOW, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE);
 
-        ClientSessionContext sessionContext = fromClientSessionAndScopeParameter(clientSession, OAuth2Constants.SCOPE_OPENID, session);
+        String scopeParam = getScopeParamForCredentialOffer(clientModel, credOffer.getCredentialConfigurationIds());
+        ClientSessionContext sessionContext = fromClientSessionAndScopeParameter(clientSession, scopeParam, session);
         sessionContext.setAttribute(Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE);
 
         // set the client as retrieved from the pre-authorized session
@@ -249,6 +249,46 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         event.success();
         return cors.allowAllOrigins().add(Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE));
+    }
+
+    private String getScopeParamForCredentialOffer(ClientModel clientModel, List<String> credentialConfigurationIds) {
+        if (credentialConfigurationIds == null || credentialConfigurationIds.isEmpty()) {
+            String errorMessage = "No credential_configuration_ids found in credential offer";
+            event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                    errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        List<String> credentialScopes = credentialConfigurationIds.stream()
+                .map(credentialConfigurationId -> {
+                    ClientScopeModel clientScope = OID4VCUtil.getClientScopeByCredentialConfigId(session, realm, credentialConfigurationId);
+                    if (clientScope == null) {
+                        String errorMessage = "Client scope was not found for credential configuration ID: " + credentialConfigurationId;
+                        event.detail(Details.CREDENTIAL_TYPE, credentialConfigurationId);
+                        event.detail(REASON, errorMessage).error(UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
+                        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                                errorMessage, Response.Status.BAD_REQUEST);
+                    }
+
+                    boolean scopeAssignedToClient = clientModel.getClientScopes(true).containsKey(clientScope.getName())
+                            || clientModel.getClientScopes(false).containsKey(clientScope.getName());
+                    if (!scopeAssignedToClient) {
+                        String errorMessage = "Client scope '" + clientScope.getName()
+                                + "' for credential configuration ID '" + credentialConfigurationId
+                                + "' is not assigned to client '" + clientModel.getClientId() + "'";
+                        event.detail(Details.CREDENTIAL_TYPE, credentialConfigurationId);
+                        event.detail(REASON, errorMessage).error(Errors.INVALID_CLIENT);
+                        throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                                errorMessage, Response.Status.BAD_REQUEST);
+                    }
+                    return clientScope.getName();
+                })
+                .distinct()
+                .toList();
+
+        return Stream.concat(Stream.of(OAuth2Constants.SCOPE_OPENID), credentialScopes.stream())
+                .distinct()
+                .collect(Collectors.joining(" "));
     }
 
     @Override
