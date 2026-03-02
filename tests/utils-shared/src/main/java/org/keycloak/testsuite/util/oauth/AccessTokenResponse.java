@@ -130,7 +130,7 @@ public class AccessTokenResponse extends AbstractHttpResponse {
      *
      * @return a list of authorization details, or an empty list if none are present.
      */
-    public List<OID4VCAuthorizationDetail> getOid4vcAuthorizationDetails() {
+    public List<OID4VCAuthorizationDetail> getOID4VCAuthorizationDetails() {
         return getAuthorizationDetails(OID4VCAuthorizationDetail.class);
     }
 
