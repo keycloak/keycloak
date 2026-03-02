@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import org.jboss.logging.Logger;
@@ -34,6 +38,7 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.HashProvider;
 import org.keycloak.crypto.SignatureProvider;
@@ -44,12 +49,14 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.migration.migrators.MigrationUtils;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -101,8 +108,6 @@ import org.keycloak.tracing.TracingAttributes;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.util.TokenUtil;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -296,6 +301,12 @@ public class TokenManager {
                                             String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, String scopeParameter) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
 
+        if (realm.isRevokeRefreshToken()) {
+            // If refresh tokens are revoked, we need to serialize all requests to avoid wrong conclusions.
+            // This needs to be called before we load the user session from the database or the cache
+            createTemporaryExclusiveLockForTokenRefreshOperation(session, refreshToken);
+        }
+
         event.session(refreshToken.getSessionState())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, refreshToken.getType());
@@ -363,6 +374,32 @@ public class TokenManager {
         storeRefreshTimingInformation(event, refreshToken, validation.newToken);
 
         return responseBuilder;
+    }
+
+    private void createTemporaryExclusiveLockForTokenRefreshOperation(KeycloakSession session, RefreshToken refreshToken) {
+        String lockId = "refreshLock:" + refreshToken.getSessionId() + ":" + getReuseIdKey(refreshToken);
+        Retry.executeWithBackoff((int iteration) -> {
+            // This assumes that 60 seconds is the maximum time this operation will take
+            if (!session.singleUseObjects().putIfAbsent(lockId, 60)) {
+                throw new RuntimeException("Unable to acquire serialization lock for token refresh");
+            }
+
+            // Trigger the session provider, to ensure that it enlists first for enlistAfterCompletion
+            session.sessions();
+
+            KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    KeycloakModelUtils.runJobInTransaction(factory, s -> s.singleUseObjects().remove(lockId));
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    KeycloakModelUtils.runJobInTransaction(factory, s -> s.singleUseObjects().remove(lockId));
+                }
+            });
+        }, Duration.of(10, ChronoUnit.SECONDS), 10);
     }
 
     private Function<String, String> transformScopes(KeycloakSession session, Set<String> requestedScopes) {
