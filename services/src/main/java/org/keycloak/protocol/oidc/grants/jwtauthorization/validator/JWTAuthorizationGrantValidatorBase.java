@@ -17,7 +17,7 @@
  *
  */
 
-package org.keycloak.protocol.oidc.grants;
+package org.keycloak.protocol.oidc.grants.jwtauthorization.validator;
 
 import java.util.Set;
 
@@ -28,7 +28,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
+import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidator;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
@@ -39,13 +39,31 @@ import org.keycloak.representations.JsonWebToken;
  *
  * @author rmartinc
  */
-public class JWTAuthorizationGrantValidator extends AbstractBaseJWTValidator implements JWTAuthorizationGrantValidationContext {
+public class JWTAuthorizationGrantValidatorBase extends AbstractBaseJWTValidator implements JWTAuthorizationGrantValidator {
 
-    private final String scope;
+    protected String scope;
     private Set<String> restrictedScopes;
-    private boolean audienceAlreadyValidated;
+    protected boolean audienceAlreadyValidated;
 
-    public static JWTAuthorizationGrantValidator createValidator(KeycloakSession session, ClientModel client, String assertion, String scope) {
+    public JWTAuthorizationGrantValidatorBase(KeycloakSession session) {
+        super(session, null);
+        this.audienceAlreadyValidated = false;
+    }
+
+    public void setScopeParam(String scope) {
+        this.scope = scope;
+    }
+
+    public JWTAuthorizationGrantValidatorBase(KeycloakSession session, ClientAssertionState clientAssertionState) {
+        super(session, clientAssertionState);
+        this.audienceAlreadyValidated = false;
+    }
+
+    public void setClientAssertionState(ClientAssertionState clientAssertionState) {
+        this.clientAssertionState = clientAssertionState;
+    }
+
+    public static JWTAuthorizationGrantValidatorBase createValidator(KeycloakSession session, ClientModel client, String assertion, String scope) {
         if (assertion == null) {
             throw new RuntimeException("Missing parameter:" + OAuth2Constants.ASSERTION);
         }
@@ -54,13 +72,13 @@ public class JWTAuthorizationGrantValidator extends AbstractBaseJWTValidator imp
             JsonWebToken jwt = jws.readJsonContent(JsonWebToken.class);
             ClientAssertionState clientAssertionState = new ClientAssertionState(OAuth2Constants.JWT_AUTHORIZATION_GRANT, assertion, jws, jwt);
             clientAssertionState.setClient(client);
-            return new JWTAuthorizationGrantValidator(session, scope, clientAssertionState);
+            return new JWTAuthorizationGrantValidatorBase(session, scope, clientAssertionState);
         } catch (JWSInputException e) {
             throw new RuntimeException("The provided assertion is not a valid JWT");
         }
     }
 
-    private JWTAuthorizationGrantValidator(KeycloakSession session, String scope, ClientAssertionState clientAssertionState) {
+    private JWTAuthorizationGrantValidatorBase(KeycloakSession session, String scope, ClientAssertionState clientAssertionState) {
         super(session, clientAssertionState);
         this.scope = scope;
         this.audienceAlreadyValidated = false;
@@ -127,5 +145,9 @@ public class JWTAuthorizationGrantValidator extends AbstractBaseJWTValidator imp
     @Override
     protected void failureCallback(String errorDescription) {
         throw new RuntimeException(errorDescription);
+    }
+
+    @Override
+    public void close() {
     }
 }

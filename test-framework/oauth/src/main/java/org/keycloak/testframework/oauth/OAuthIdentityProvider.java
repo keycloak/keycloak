@@ -7,6 +7,7 @@ import java.security.KeyPair;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.crypto.Algorithm;
@@ -58,6 +59,10 @@ public class OAuthIdentityProvider {
 
     public String encodeToken(JsonWebToken token, OAuthIdentityProviderKeys keys) {
         return new JWSBuilder().type("JWT").jsonContent(token).sign(new ECDSASignatureSignerContext(keys.getKeyWrapper()));
+    }
+
+    public String encodeIDJAG(JsonWebToken token) {
+        return new JWSBuilder().type(OAuth2Constants.IDENTITY_ASSERTION_JWT_HEADER_TYPE).jsonContent(token).sign(new ECDSASignatureSignerContext(keys.getKeyWrapper()));
     }
 
     public OAuthIdentityProviderKeys createKeys() {
