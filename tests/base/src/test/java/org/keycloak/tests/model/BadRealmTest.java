@@ -8,7 +8,10 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.annotations.TestOnServer;
 import org.keycloak.utils.ReservedCharValidator;
 
-import static org.junit.jupiter.api.Assertions.fail;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KeycloakIntegrationTest
 public class BadRealmTest {
@@ -23,18 +26,25 @@ public class BadRealmTest {
     @TestOnServer
     public void testBadRealmName(KeycloakSession session) {
         RealmManager manager = new RealmManager(session);
-        try {
-            manager.createRealm(id, name + script);
-            fail();
-        } catch (ReservedCharValidator.ReservedCharException ex) {}
+        assertThrows(ReservedCharValidator.ReservedCharException.class, () ->
+            manager.createRealm(id, name + script)
+        );
+    }
+
+    @TestOnServer
+    public void testBaseRealmWithAnsiControlCharacter(KeycloakSession session) {
+        RealmManager manager = new RealmManager(session);
+        ReservedCharValidator.ReservedCharException ex = assertThrows(ReservedCharValidator.ReservedCharException.class, () ->
+                manager.createRealm(id, name + "\u001B")
+        );
+        MatcherAssert.assertThat(ex.getMessage(), Matchers.containsString("0x1b"));
     }
 
     @TestOnServer
     public void testBadRealmId(KeycloakSession session) {
         RealmManager manager = new RealmManager(session);
-        try {
-            manager.createRealm(id + script, name);
-            fail();
-        } catch (ReservedCharValidator.ReservedCharException ex) {}
+        assertThrows(ReservedCharValidator.ReservedCharException.class, () ->
+            manager.createRealm(id + script, name)
+        );
     }
 }
