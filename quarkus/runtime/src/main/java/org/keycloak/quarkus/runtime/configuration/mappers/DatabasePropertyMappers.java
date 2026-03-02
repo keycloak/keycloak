@@ -31,6 +31,7 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
+    public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
     @Override
@@ -57,6 +58,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(DatabaseOptions.DB_POSTGRESQL_TARGET_SERVER_TYPE)
                         .to(PG_TARGET_SERVER_TYPE)
                         .isEnabled(() -> isPostgresqlTargetServerTypeEnabled())
+                        .build(),
+                fromOption(DatabaseOptions.DB_MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
+                        .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
+                        .isEnabled(() -> isMssqlSendStringParametersAsUnicode())
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")
@@ -144,6 +149,36 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return dbUrl == null || !dbUrl.contains("targetServerType");
     }
 
+    public static boolean isMssqlSendStringParametersAsUnicode() {
+        String db = Configuration.getConfigValue(DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != Database.Vendor.MSSQL) {
+            return false;
+        }
+
+        String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
+        String propertyUnicode = Configuration.getConfigValue("quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode").getValue();
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
+        String dbUrlProperties = Configuration.getKcConfigValue(DatabaseOptions.DB_URL_PROPERTIES.getKey()).getValue();
+
+        log.debugf("Determining whether to set 'sendStringParametersAsUnicode' for MSSQL based on db '%s', driver '%s', url '%s'",
+                db, dbDriver, dbUrl);
+
+        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
+                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
+            // Custom JDBC-Driver, for example, AWS JDBC Wrapper.
+            return false;
+        }
+
+        // sendStringParametersAsUnicode already set by user in db-url or db-url-properties, ignore
+        if (dbUrl != null && dbUrl.contains("sendStringParametersAsUnicode")) {
+            return false;
+        }
+        if (dbUrlProperties != null && dbUrlProperties.contains("sendStringParametersAsUnicode")) {
+            return false;
+        }
+        return true;
+    }
     /**
      * Starting with H2 version 2.x, marking "VALUE" as a non-keyword is necessary as some columns are named "VALUE" in the Keycloak schema.
      * <p />
