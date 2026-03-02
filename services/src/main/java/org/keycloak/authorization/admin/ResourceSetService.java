@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -164,19 +165,23 @@ public class ResourceSetService {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
         requireManage();
         resource.setId(id);
-        StoreFactory storeFactory = this.authorization.getStoreFactory();
-        ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource model = resourceStore.findById(resourceServer, resource.getId());
-
-        if (model == null) {
-            return Response.status(Status.NOT_FOUND).build();
-        }
-
+        getResource(id);
         toModel(resource, resourceServer, authorization);
 
         audit(resource, OperationType.UPDATE);
 
         return Response.noContent().build();
+    }
+
+    private Resource getResource(String id) {
+        ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
+        Resource model = resourceStore.findById(resourceServer, id);
+
+        if (model == null || !model.getResourceServer().equals(resourceServer)) {
+            throw new NotFoundException();
+        }
+
+        return model;
     }
 
     @Path("{resource-id}")
@@ -188,15 +193,10 @@ public class ResourceSetService {
     public Response delete(@PathParam("resource-id") String id) {
         AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, resourceServer.getId());
         requireManage();
-        StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource resource = storeFactory.getResourceStore().findById(resourceServer, id);
-
-        if (resource == null) {
-            return Response.status(Status.NOT_FOUND).build();
-        }
-
+        Resource resource = getResource(id);
         //to be able to access all lazy loaded fields it's needed to create representation before it's deleted
         ResourceRepresentation resourceRep = toRepresentation(resource, resourceServer, authorization);
+        StoreFactory storeFactory = authorization.getStoreFactory();
 
         storeFactory.getResourceStore().delete(id);
 
@@ -222,14 +222,7 @@ public class ResourceSetService {
 
     public Response findById(String id, Function<Resource, ? extends ResourceRepresentation> toRepresentation) {
         requireView();
-        StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(resourceServer, id);
-
-        if (model == null) {
-            return Response.status(Status.NOT_FOUND).build();
-        }
-
-        return Response.ok(toRepresentation.apply(model)).build();
+        return Response.ok(toRepresentation.apply(getResource(id))).build();
     }
 
     @Path("{resource-id}/scopes")
