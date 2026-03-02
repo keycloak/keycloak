@@ -229,6 +229,17 @@ Database - additional datasources:
 --db-username-<datasource> <username>
                      Used for named <datasource>. The username of the database user.
 
+Transaction:
+
+--transaction-default-timeout <timeout>
+                     The default transaction timeout. May be an ISO 8601 duration value, an integer
+                       number of seconds, or an integer followed by one of [ms, h, m, s, d].
+                       Default: 5m.
+--transaction-migration-timeout <timeout>
+                     The transaction timeout for database migration transaction. May be an ISO 8601
+                       duration value, an integer number of seconds, or an integer followed by one
+                       of [ms, h, m, s, d]. Default: 30m.
+
 Hostname v2:
 
 --hostname <hostname|URL>

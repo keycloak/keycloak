@@ -519,7 +519,7 @@
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <!-- Need to explicitly enable utf8 as it is not the default settings in the mariadb docker image -->
-                <docker.database.cmd>--character-set-server=utf8 --collation-server=utf8_unicode_ci</docker.database.cmd>
+                <docker.database.cmd>--character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)Ready for start up.*ready [^\n]{0,30}connections</docker.database.wait-for-log-regex>
             </properties>
         </profile>
@@ -529,7 +529,7 @@
                 <docker.database.image>${mssql.container}</docker.database.image>
                 <docker.database.port>1433</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
-                <docker.database.postStart>/opt/mssql-tools18/bin/sqlcmd -e -U sa -P ${keycloak.connectionsJpa.password} -No -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database};\ ALTER\ DATABASE\ ${keycloak.connectionsJpa.database}\ SET\ READ_COMMITTED_SNAPSHOT\ ON</docker.database.postStart>
+                <docker.database.postStart>/opt/mssql-tools18/bin/sqlcmd -e -U sa -P ${keycloak.connectionsJpa.password} -No -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}\ COLLATE\ Latin1_General_100_CI_AS_SC_UTF8;\ ALTER\ DATABASE\ ${keycloak.connectionsJpa.database}\ SET\ READ_COMMITTED_SNAPSHOT\ ON</docker.database.postStart>
                 <docker.database.cmd>/bin/sh -c /opt/mssql/bin/sqlservr</docker.database.cmd>
                 <docker.database.wait-for-log-regex>Recovery is complete. This is an informational message only. No user action is required.</docker.database.wait-for-log-regex>
                 <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>

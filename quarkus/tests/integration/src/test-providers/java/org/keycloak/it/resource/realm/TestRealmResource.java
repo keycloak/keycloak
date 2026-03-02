@@ -17,13 +17,19 @@
 
 package org.keycloak.it.resource.realm;
 
+import java.io.IOException;
+import java.util.Map;
+
+import com.arjuna.ats.arjuna.coordinator.TxControl;
 import org.infinispan.Cache;
 import org.infinispan.commons.configuration.io.ConfigurationWriter;
 import org.infinispan.commons.io.StringBuilderWriter;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 
 import jakarta.ws.rs.GET;
@@ -32,6 +38,8 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -90,6 +98,21 @@ public class TestRealmResource implements RealmResourceProvider {
             new ParserRegistry().serialize(writer, cacheName, cache.getCacheConfiguration());
         }
         return Response.ok(out.toString(), MediaType.APPLICATION_JSON).build();
+    }
+
+    @Path("transaction/timeouts")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response transactionTimeouts() throws IOException {
+        var jpaConnectionProvider = (QuarkusJpaConnectionProviderFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(JpaConnectionProvider.class);
+        var rsp = JsonSerialization.writeValueAsString(
+                Map.of(
+                        "default", TxControl.getDefaultTimeout(),
+                        "migration", jpaConnectionProvider.getMigrationTransactionTimeout()
+                )
+        );
+        return Response.ok(rsp, MediaType.APPLICATION_JSON_TYPE).build();
     }
 
     @Override

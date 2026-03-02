@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.config.ServiceProviderConfig;
 import org.keycloak.scim.resource.resourcetype.ResourceType;
@@ -24,7 +25,6 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
 
     @Override
     public void close() {
-
     }
 
     @Override
@@ -48,7 +48,7 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
     }
 
     @Override
-    public Stream<ResourceType> getAll() {
+    public Stream<ResourceType> getAll(SearchRequest searchRequest) {
         return session.getKeycloakSessionFactory().getProviderFactoriesStream(ScimResourceTypeProvider.class)
                 .map(ScimResourceTypeProviderFactory.class::cast)
                 .map(this::toRepresentation)

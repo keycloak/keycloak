@@ -25,6 +25,16 @@ Configuring + defers validation to the client's standard 'Valid redirect URIs'. 
 
 Administrators must ensure that all configured URIs for the fields listed above use https. Clients attempting to update or register with http in these fields will fail validation when using the 'secure-client-uris' executor.
 
+=== New CLI option overrides Quarkus transaction timeout property
+
+A new CLI option `transaction-default-timeout` has been introduced to configure the default transaction timeout in {project_name}.
+This new option will override any value set in the `quarkus.transaction-manager.default-transaction-timeout` Quarkus property.
+
+While using Quarkus properties directly is not the supported way to configure {project_name}, some users may have used `quarkus.transaction-manager.default-transaction-timeout` to customize the transaction timeout.
+If you are using this Quarkus property, the new `transaction-default-timeout` CLI option will take precedence and override your configuration when upgrading to this version.
+
+To maintain your desired transaction timeout configuration, migrate to using the `transaction-default-timeout` CLI option and remove the `quarkus.transaction-manager.default-transaction-timeout` property from your configuration.
+
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -149,6 +159,29 @@ Authentication failures resulting in an invalid_grant now correctly return an HT
 With the `clusterless` feature enabled and `persistent-user-sessions` disabled, a re-index is required due to schema changes.
 {project_name} triggers the re-index on startup, but this may delay server startup depending on the number of sessions stored, and/or return incorrect results during the re-index process.
 
+=== New CLI options for transaction timeout configuration
+
+Two new CLI options are now available to control transaction timeout behavior:
+
+* `transaction-default-timeout`: Controls the transaction timeout for regular transactions.
+The default value is 5 minutes, which is the same value used by the current {project_name} version.
+
+* `transaction-migration-timeout`: Controls the timeout for transactions responsible for migrating the database schema to a new version.
+The default value is 30 minutes, as schema migrations may take a while to complete for large tables.
+
+=== Database character encoding checks during startup
+
+{project_name} will log a warning if the database is not configured to use UTF-8 encoding.
+This check applies to all supported databases.
+
+For details on configuring UTF-8 encoding for your database, see the https://www.keycloak.org/server/db[Configuring the database] guide.
+
+As part of this change, the database configuration documentation has been updated:
+
+* For MySQL and MariaDB, the documentation now recommends using `utf8mb4` as the character set.
+The previously documented `utf8mb3` (or `utf8`) character set has been removed from the documentation due to its limitations in storing certain Unicode characters.
+* Previously recommended JDBC driver settings for Oracle, MySQL, and MariaDB have been removed from the documentation, as current versions of these databases use appropriate default values.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
@@ -173,6 +206,12 @@ The feature link:{securing_apps_token_exchange_link}#_legacy-token-exchange[Lega
 The methods `getUserSessionsStream(RealmModel realm, ClientModel client)`, `getUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults)`, and `getOfflineUserSessionsStream(RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults)` are deprecated for removal.
 They are replaced with read-only alternatives to reduce memory consumption.
 See the `UserSessionProvider` API changes section in notable changes for further information.
+
+=== Non-UTF-8 database character encoding deprecated
+
+Running {project_name} on a database that is not using UTF-8 as a charset is now deprecated.
+
+In the current version {project_name} will log a warning if the database is not configured to use UTF-8 encoding. Future versions might refuse to work with database that is not configured to use UTF-8 encoding.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
