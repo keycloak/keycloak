@@ -3,10 +3,6 @@ packages:
   - libs/*
   - themes-vendor
 
-onlyBuiltDependencies:
-  - '@swc/core'
-  - esbuild
-
 ignoredOptionalDependencies:
   - '@types/c3'
   - bootstrap-datepicker
@@ -15,8 +11,8 @@ ignoredOptionalDependencies:
   - bootstrap-slider
   - bootstrap-switch
   - bootstrap-touchspin
-  - 'c3'
-  - 'd3'
+  - c3
+  - d3
   - datatables.net
   - datatables.net-colreorder
   - datatables.net-colreorder-bs
@@ -30,3 +26,14 @@ ignoredOptionalDependencies:
   - moment-timezone
   - patternfly-bootstrap-combobox
   - patternfly-bootstrap-treeview
+
+onlyBuiltDependencies:
+  - '@swc/core'
+  - esbuild
+
+overrides:
+  '@remix-run/router@<=1.23.1': '>=1.23.2'
+  jquery@>=1.0.3 <3.5.0: '>=3.5.0'
+  jquery@>=1.2.0 <3.5.0: '>=3.5.0'
+  lodash@>=4.0.0 <=4.17.22: '>=4.17.23'
+  mdast-util-to-hast@>=13.0.0 <13.2.1: '>=13.2.1'
