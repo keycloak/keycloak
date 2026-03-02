@@ -155,13 +155,6 @@ public class OID4VCIssuerEndpoint {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpoint.class);
 
-    /**
-     * Session note key for storing credential configuration IDs from credential offer.
-     * This allows the authorization details processor to easily retrieve the configuration IDs
-     * without having to search through all session notes or parse the full credential offer.
-     */
-    public static final String CREDENTIAL_CONFIGURATION_IDS_NOTE = "CREDENTIAL_CONFIGURATION_IDS";
-
     private Cors cors;
 
     /**
@@ -566,13 +559,6 @@ public class OID4VCIssuerEndpoint {
 
         LOGGER.debugf("Stored credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
                 credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
-
-        // Store the credential configuration Ids in a predictable location for token processing
-        // This allows the authorization details processor to easily retrieve the configuration Ids
-        // without having to search through all session notes or parse the full credential offer
-        String credentialConfigIdsJson = JsonSerialization.valueAsString(credOffer.getCredentialConfigurationIds());
-        clientSession.setNote(CREDENTIAL_CONFIGURATION_IDS_NOTE, credentialConfigIdsJson);
-        LOGGER.debugf("Stored credential configuration IDs for token processing: %s", credentialConfigIdsJson);
 
         // Add event details
         eventBuilder.detail(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(preAuthorized))
