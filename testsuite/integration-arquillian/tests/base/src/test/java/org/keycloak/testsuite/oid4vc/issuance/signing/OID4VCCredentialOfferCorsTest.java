@@ -34,6 +34,7 @@ import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStat
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -357,7 +358,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
                 .session((String) null)
                 // Storage prunes expired single-use entries before lookup; lookup failure yields INVALID_REQUEST
                 // The error message indicates the offer was not found (pruned due to expiration) or already consumed
-                .error(Errors.INVALID_REQUEST)
+                .error(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue())
                 .detail(Details.REASON, Matchers.anyOf(
                         Matchers.containsString("not found"),
                         Matchers.containsString("already consumed")))

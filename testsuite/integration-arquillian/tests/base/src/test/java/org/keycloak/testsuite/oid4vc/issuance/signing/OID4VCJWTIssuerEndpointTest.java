@@ -431,7 +431,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 Assert.fail("Expected BadRequestException due to missing credential identifier or configuration id");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST, error.getError());
+                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), error.getError());
             }
         });
     }
@@ -615,8 +615,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 assertEquals(400, response.getStatus());
                 String errorJson = response.readEntity(String.class);
                 assertNotNull("Error response should not be null", errorJson);
-                assertTrue("Error response should mention INVALID_CREDENTIAL_REQUEST or scope",
-                        errorJson.contains("INVALID_CREDENTIAL_REQUEST") || errorJson.contains("scope"));
+                assertTrue("Error response should mention invalid_credential_request or scope",
+                        errorJson.contains(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue()) || errorJson.contains("scope"));
             }
         };
 
@@ -897,7 +897,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 Assert.fail("Expected BadRequestException due to unknown credential identifier");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER, error.getError());
+                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER.getValue(), error.getError());
             }
         });
     }
@@ -926,7 +926,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 Assert.fail("Expected BadRequestException due to unknown credential configuration");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST, error.getError());
+                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), error.getError());
             }
         });
     }
@@ -971,7 +971,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 Assert.fail("Expected BadRequestException due to missing credential builder for format");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, error.getError());
+                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue(), error.getError());
             }
         });
     }
@@ -1044,7 +1044,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 int statusCode = e.getResponse().getStatus();
                 assertEquals("Expected HTTP 400 Bad Request", 400, statusCode);
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST, error.getError());
+                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), error.getError());
                 assertEquals("Both 'proof' and 'proofs' must not be present at the same time",
                         error.getErrorDescription());
             }
@@ -1237,7 +1237,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         assertEquals("Second access to credential offer should fail with 400 Bad Request",
                 Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
-                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(),
                 response.getError());
         assertTrue("Error description should mention that offer is not found or already consumed",
                 response.getErrorDescription().contains("not found") || response.getErrorDescription().contains("already consumed"));
@@ -1303,7 +1303,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         assertEquals("First offer should fail on second access (replay protection)",
                 Response.Status.BAD_REQUEST.getStatusCode(), response1.getStatusCode());
         assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
-                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(),
                 response1.getError());
 
         // 6. Verify that accessing second offer again also fails (replay protection per-nonce)
@@ -1315,7 +1315,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         assertEquals("Second offer should fail on second access (replay protection)",
                 Response.Status.BAD_REQUEST.getStatusCode(), response2.getStatusCode());
         assertEquals("Error type should be INVALID_CREDENTIAL_OFFER_REQUEST",
-                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.name(),
+                ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(),
                 response2.getError());
     }
 

@@ -39,6 +39,7 @@ import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -179,7 +180,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         String errorDescription = credentialResponse.getErrorDescription();
 
         assertEquals("Credential request should fail with unknown credential configuration when OID4VCI scope is missing or authorization_details missing from the token",
-            "UNKNOWN_CREDENTIAL_CONFIGURATION", error);
+            ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue(), error);
         assertEquals("No authorization_details found in token", errorDescription);
     }
 
@@ -594,8 +595,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
         assertTrue("Error response should indicate authorization_details processing error",
-                "invalid_request".equals(errorResponse.getError()) ||
-                "unknown_credential_configuration".equals(errorResponse.getError()) ||
+                ErrorType.INVALID_CREDENTIAL_REQUEST.getValue().equals(errorResponse.getError()) ||
+                ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue().equals(errorResponse.getError()) ||
                 (errorResponse.getErrorDescription() != null && errorResponse.getErrorDescription().contains("authorization_details")));
     }
 
@@ -625,8 +626,9 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getStatusCode());
-        assertTrue("Error response should indicate invalid request",
-                "invalid_request".equals(errorResponse.getError()) ||
+        assertTrue("Error response should indicate invalid_request or invalid_grant",
+                ErrorType.INVALID_REQUEST.getValue().equals(errorResponse.getError()) ||
+                ErrorType.INVALID_GRANT.getValue().equals(errorResponse.getError()) ||
                 (errorResponse.getErrorDescription() != null && errorResponse.getErrorDescription().contains("redirect_uri")));
     }
 
@@ -765,7 +767,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         assertTrue("Should return 400 or 401 for missing client_id",
                 statusCode == HttpStatus.SC_BAD_REQUEST || statusCode == HttpStatus.SC_UNAUTHORIZED);
         assertTrue("Error should be invalid_request or invalid_client",
-                "invalid_request".equals(errorResponse.getError()) || "invalid_client".equals(errorResponse.getError()));
+                ErrorType.INVALID_REQUEST.getValue().equals(errorResponse.getError()) || "invalid_client".equals(errorResponse.getError()));
     }
 
     /**
@@ -847,7 +849,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
-        assertEquals("INVALID_CREDENTIAL_REQUEST", credentialResponse.getError());
+        assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credentialResponse.getError());
 
         // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
         expectCredentialRequestError().assertEvent();
@@ -876,10 +878,10 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
-        assertEquals("UNKNOWN_CREDENTIAL_IDENTIFIER", credentialResponse.getError());
+        assertEquals(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER.getValue(), credentialResponse.getError());
 
         // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
-        expectCredentialRequestError().assertEvent();
+        expectCredentialRequestError(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER.getValue()).assertEvent();
     }
 
     /**
@@ -905,7 +907,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
-        assertEquals("INVALID_CREDENTIAL_REQUEST", credentialResponse.getError());
+        assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credentialResponse.getError());
 
         // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
         expectCredentialRequestError().assertEvent();
@@ -1001,11 +1003,9 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Request the actual credential using the identifier
         CredentialRequest credRequest = credentialRequestSupplier.apply(credentialConfigurationId, credentialIdentifier);
 
-        Oid4vcCredentialRequest request = oauth.oid4vc()
+        return oauth.oid4vc()
                 .credentialRequest(credRequest)
                 .bearerToken(tokenResponse.getAccessToken());
-
-        return request;
     }
 
     private void assertSuccessfulCredentialResponse(Oid4vcCredentialResponse credentialResponse) throws Exception {
@@ -1031,14 +1031,14 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
     private void assertErrorCredentialResponse(Oid4vcCredentialResponse credentialResponse) throws Exception {
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
-        String error = credentialResponse.getError();
-        assertEquals("Credential issuance failed: No elements selected after processing claims path pointer. The requested claims are not available in the user profile.", error);
+        assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credentialResponse.getError());
+        assertEquals("Credential issuance failed: No elements selected after processing claims path pointer. The requested claims are not available in the user profile.", credentialResponse.getErrorDescription());
     }
 
     private void assertErrorCredentialResponse_mandatoryClaimsMissing(Oid4vcCredentialResponse credentialResponse) throws Exception {
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
-        String error = credentialResponse.getError();
-        assertEquals("Credential issuance failed: No elements selected after processing claims path pointer. The requested claims are not available in the user profile.", error);
+        assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credentialResponse.getError());
+        assertEquals("Credential issuance failed: No elements selected after processing claims path pointer. The requested claims are not available in the user profile.", credentialResponse.getErrorDescription());
     }
 
     /**
@@ -1113,12 +1113,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
      *
      * @return the event expectation
      */
-    protected AssertEvents.ExpectedEvent expectCredentialRequestError() {
+    protected AssertEvents.ExpectedEvent expectCredentialRequestError(String errorCode) {
         return events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
                 .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())
-                .error(Errors.INVALID_REQUEST);
+                .error(errorCode);
+    }
+
+    protected AssertEvents.ExpectedEvent expectCredentialRequestError() {
+        return expectCredentialRequestError(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
     }
 
     /**
@@ -1127,12 +1131,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
      *
      * @return the event expectation
      */
-    protected AssertEvents.ExpectedEvent expectCredentialRequestErrorWithoutAuth() {
+    protected AssertEvents.ExpectedEvent expectCredentialRequestErrorWithoutAuth(String errorCode) {
         return events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
                 .client((String) null)
                 .user((String) null)
                 .session((String) null)
-                .error(Errors.INVALID_REQUEST);
+                .error(errorCode);
+    }
+
+    protected AssertEvents.ExpectedEvent expectCredentialRequestErrorWithoutAuth() {
+        return expectCredentialRequestErrorWithoutAuth(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
     }
 
     /**

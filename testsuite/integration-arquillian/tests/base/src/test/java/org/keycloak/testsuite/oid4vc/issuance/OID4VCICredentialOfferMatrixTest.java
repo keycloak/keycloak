@@ -31,6 +31,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
@@ -53,7 +54,6 @@ import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.SCOPE_OPENID;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
-import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 
 import static org.junit.Assert.assertEquals;
@@ -173,9 +173,9 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
         try {
             runCredentialOfferTest(new TestContext(true, appUsername));
-            fail("Expected " + INVALID_CREDENTIAL_OFFER_REQUEST.name());
+            fail("Expected " + ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue());
         } catch (RuntimeException ex) {
-            List.of(INVALID_CREDENTIAL_OFFER_REQUEST.name(), "User '" + appUsername + "' disabled")
+            List.of(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), "User '" + appUsername + "' disabled")
                     .forEach(it -> assertTrue(ex.getMessage() + " does not contain " + it, ex.getMessage().contains(it)));
         } finally {
             // Re-enable user
