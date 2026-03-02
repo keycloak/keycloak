@@ -540,6 +540,26 @@ Logging:
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default. Available only when File log
                        handler is activated.
+--log-file-rotation-enabled <true|false>
+                     Enables log file rotation. Default: true. Available only when File log handler
+                       is activated.
+--log-file-rotation-file-suffix <suffix>
+                     Set the log file handler rotation file suffix. When used, the file will be
+                       rotated based on its suffix. Example: `.yyyy-MM-dd` to rotate daily. Note:
+                       If the suffix ends with `.zip` or `.gz`, the rotation file will also be
+                       compressed. Available only when File log handler is activated and log file
+                       rotation is enabled.
+--log-file-rotation-max-backup-index <index>
+                     The maximum number of backup log files to keep. Default: 5. Available only
+                       when File log handler is activated and log file rotation is enabled.
+--log-file-rotation-max-file-size <size>
+                     The maximum log file size, after which a rotation is executed. Supports size
+                       suffixes (e.g. 10M, 1G). Default: 10M. Available only when File log handler
+                       is activated and log file rotation is enabled.
+--log-file-rotation-rotate-on-boot <true|false>
+                     Indicates whether to rotate log files on server start. Default: true.
+                       Available only when File log handler is activated and log file rotation is
+                       enabled.
 --log-level <category:level>
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to

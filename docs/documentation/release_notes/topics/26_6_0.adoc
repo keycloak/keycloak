@@ -95,3 +95,18 @@ You can now use the `spec.http.serviceName`, `spec.http.serviceHttpsPort`, and `
 configure these independently.
 
 For more details, see the https://www.keycloak.org/operator/advanced-configuration[Advanced configuration] guide.
+
+= Configurable log file rotation
+
+It is now possible to configure log file rotation when using {project_name}'s built-in file logging handler.
+This includes a simple option to fully disable log rotation, which is useful when using an external log rotation solution such as `logrotate`.
+
+To disable log file rotation:
+
+[source,bash]
+----
+bin/kc.sh start --log="console,file" --log-file-rotation-enabled=false
+----
+
+For more information, see the https://www.keycloak.org/server/logging#_file_logging[File logging] guide.
+>>>>>>> d34d9c5050 (Update approved help texts and add release note for log file rotation options)
