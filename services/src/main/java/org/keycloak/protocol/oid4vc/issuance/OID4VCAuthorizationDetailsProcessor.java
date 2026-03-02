@@ -44,18 +44,12 @@ import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
-import org.keycloak.util.AuthorizationDetailsParser;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
 
-import static org.keycloak.OID4VCConstants.CREDENTIAL_CONFIGURATION_ID;
-import static org.keycloak.OID4VCConstants.CREDENTIAL_IDENTIFIERS;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.models.Constants.AUTHORIZATION_DETAILS_RESPONSE;
-import static org.keycloak.protocol.oid4vc.model.ClaimsDescription.MANDATORY;
-import static org.keycloak.protocol.oid4vc.model.ClaimsDescription.PATH;
-import static org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail.CLAIMS;
 
 public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetailsProcessor<OID4VCAuthorizationDetail> {
     private static final Logger logger = Logger.getLogger(OID4VCAuthorizationDetailsProcessor.class);
@@ -405,47 +399,6 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
     @Override
     public void close() {
         // No cleanup needed
-    }
-
-
-    public static class OID4VCAuthorizationDetailsParser implements AuthorizationDetailsParser {
-
-        @Override
-        public <T extends AuthorizationDetailsJSONRepresentation> T asSubtype(AuthorizationDetailsJSONRepresentation authzDetail, Class<T> clazz) {
-            if (OID4VCAuthorizationDetail.class.equals(clazz)) {
-                if (authzDetail instanceof OID4VCAuthorizationDetail) {
-                    return clazz.cast(authzDetail);
-                } else {
-                    OID4VCAuthorizationDetail detail = new OID4VCAuthorizationDetail();
-                    fillFields(authzDetail, detail);
-                    return clazz.cast(detail);
-                }
-            } else {
-                throw new IllegalArgumentException("Authorization details '" + authzDetail + "' is unsupported to be parsed to '" + clazz + "'.");
-            }
-        }
-
-        private void fillFields(AuthorizationDetailsJSONRepresentation inDetail, OID4VCAuthorizationDetail outDetail) {
-            outDetail.setType(inDetail.getType());
-            outDetail.setLocations(inDetail.getLocations());
-            outDetail.setCredentialConfigurationId((String) inDetail.getCustomData().get(CREDENTIAL_CONFIGURATION_ID));
-            outDetail.setCredentialIdentifiers((List<String>) inDetail.getCustomData().get(CREDENTIAL_IDENTIFIERS));
-            outDetail.setClaims(parseClaims((List<Map>) inDetail.getCustomData().get(CLAIMS)));
-        }
-
-        private static List<ClaimsDescription> parseClaims(List<Map> genericClaims) {
-            if (genericClaims == null) {
-                return null;
-            }
-
-            return genericClaims.stream()
-                    .map(claim -> {
-                        List<Object> path = (List<Object>) claim.get(PATH);
-                        Boolean mandatory = (Boolean) claim.get(MANDATORY);
-                        return new ClaimsDescription(path, mandatory);
-                    })
-                    .toList();
-        }
     }
 
 }
