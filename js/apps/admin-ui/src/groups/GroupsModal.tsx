@@ -110,15 +110,13 @@ export const GroupsModal = ({
 
   const duplicateGroup = async (
     sourceGroup: GroupRepresentation,
+    newName?: string,
     parentId?: string,
-    isSubGroup: boolean = false,
   ) => {
     try {
       const newGroup: GroupRepresentation = {
         ...sourceGroup,
-        name: isSubGroup
-          ? sourceGroup.name
-          : t("copyOf", { name: sourceGroup.name }),
+        name: newName ?? sourceGroup.name!,
         ...(parentId ? {} : { attributes: duplicateGroupDetails?.attributes }),
       };
 
@@ -133,13 +131,23 @@ export const GroupsModal = ({
       });
 
       for (const member of members) {
-        await adminClient.users.addToGroup({
-          id: member.id!,
-          groupId: createdGroup.id,
-        });
+        if (!groups.isOrgGroups()) {
+          await adminClient.users.addToGroup({
+            id: member.id!,
+            groupId: createdGroup.id,
+          });
+        } else {
+          await groups.addMemberToOrgGroup({
+            groupId: createdGroup.id,
+            userId: member.id!,
+          });
+        }
       }
 
-      if (isFeatureEnabled(Feature.AdminFineGrainedAuthz)) {
+      if (
+        !groups.isOrgGroups() &&
+        isFeatureEnabled(Feature.AdminFineGrainedAuthz)
+      ) {
         const permissions = await groups.listPermissions({
           id: sourceGroup.id!,
         });
@@ -149,43 +157,42 @@ export const GroupsModal = ({
         }
       }
 
-      const realmRoles = await groups.listRealmRoleMappings({
-        id: sourceGroup.id!,
-      });
+      if (!groups.isOrgGroups()) {
+        const realmRoles = await groups.listRealmRoleMappings({
+          id: sourceGroup.id!,
+        });
 
-      const realmRolesPayload: RoleMappingPayload[] = realmRoles.map(
-        (role) => ({ id: role.id!, name: role.name! }),
-      );
-
-      const clientRoleMappings = await fetchClientRoleMappings(sourceGroup.id!);
-
-      const clientRolesPayload: RoleMappingPayload[] =
-        clientRoleMappings?.flatMap((clientRoleMapping) =>
-          clientRoleMapping.roles.map((role) => ({
-            id: role.id!,
-            name: role.name!,
-            clientUniqueId: clientRoleMapping.clientId,
-          })),
+        const realmRolesPayload: RoleMappingPayload[] = realmRoles.map(
+          (role) => ({ id: role.id!, name: role.name! }),
         );
 
-      const rolesToAssign: RoleMappingPayload[] = [
-        ...realmRolesPayload,
-        ...clientRolesPayload,
-      ];
+        const clientRoleMappings = await fetchClientRoleMappings(
+          sourceGroup.id!,
+        );
 
-      await assignRoles(rolesToAssign, createdGroup.id);
+        const clientRolesPayload: RoleMappingPayload[] =
+          clientRoleMappings?.flatMap((clientRoleMapping) =>
+            clientRoleMapping.roles.map((role) => ({
+              id: role.id!,
+              name: role.name!,
+              clientUniqueId: clientRoleMapping.clientId,
+            })),
+          );
+
+        const rolesToAssign: RoleMappingPayload[] = [
+          ...realmRolesPayload,
+          ...clientRolesPayload,
+        ];
+
+        await assignRoles(rolesToAssign, createdGroup.id);
+      }
 
       const subGroups = await groups.listSubGroups({
         parentId: sourceGroup.id!,
       });
 
       for (const childGroup of subGroups) {
-        const childAttributes = childGroup.attributes;
-        await duplicateGroup(
-          { ...childGroup, attributes: childAttributes },
-          createdGroup.id,
-          true,
-        );
+        await duplicateGroup(childGroup, undefined, createdGroup.id);
       }
 
       return createdGroup;
@@ -231,7 +238,7 @@ export const GroupsModal = ({
 
     try {
       if (duplicateId && duplicateGroupDetails) {
-        await duplicateGroup(duplicateGroupDetails);
+        await duplicateGroup(duplicateGroupDetails, group.name);
       } else if (!id) {
         await groups.create(group);
       } else if (rename) {

@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -244,7 +245,9 @@ public class OrganizationGroupResource {
             } else {
                 // CREATE new subgroup
                 child = organizationProvider.createGroup(organization, groupName, group);
-                builder.status(201);
+                URI uri = session.getContext().getUri().getAbsolutePathBuilder()
+                        .path(child.getId()).build();
+                builder.status(201).location(uri);
                 rep.setId(child.getId());
                 adminEvent.operation(OperationType.CREATE);
             }
