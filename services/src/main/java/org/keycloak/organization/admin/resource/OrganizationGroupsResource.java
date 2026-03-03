@@ -52,6 +52,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -186,6 +187,7 @@ public class OrganizationGroupsResource {
                                                  @QueryParam("first") Integer first,
                                                  @QueryParam("max") Integer max,
                                                  @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
+                                                 @QueryParam("populateHierarchy") @DefaultValue("false") boolean populateHierarchy,
                                                  @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
         Stream<GroupModel> groups;
         if (Objects.nonNull(searchQuery)) {
@@ -196,6 +198,12 @@ public class OrganizationGroupsResource {
         } else {
             groups = organizationProvider.getTopLevelGroups(organization, first, max);
         }
+
+        // builds hierarchy maily for admin UI
+        if (populateHierarchy) {
+            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, groups, !briefRepresentation, subGroupsCount);
+        }
+
         return groups.map(group -> {
             GroupRepresentation rep = briefRepresentation ?
                     ModelToRepresentation.groupToBriefRepresentation(group) :
