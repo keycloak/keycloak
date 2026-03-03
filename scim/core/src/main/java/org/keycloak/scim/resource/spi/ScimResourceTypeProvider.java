@@ -87,8 +87,6 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      * Retrieves all resources of this type. This method is invoked when a client requests a list of resources,
      * and should return a stream of all resources of this type.
      *
-     * TODO: this method should support pagination, filtering, and sorting in the future, but for now it returns all resources.
-     *
      * @return a stream of all resources of this type
      */
     Stream<R> getAll(SearchRequest searchRequest);
