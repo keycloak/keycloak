@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="${locale}">
+<html lang="${locale}" dir="${localeDir}">
   <head>
     <meta charset="utf-8">
     <link rel="icon" type="${properties.favIconType!'image/svg+xml'}" href="${resourceUrl}${properties.favIcon!'/favicon.svg'}">
@@ -121,14 +121,6 @@
         <link rel="modulepreload" href="${resourceUrl}/${import}">
       </#list>
     </#if>
-    <script type="module">
-      try {
-        const direction = new Intl.Locale(${locale}).getTextInfo().direction;
-        document.documentElement.setAttribute("dir", direction);
-      } catch (e) {
-        document.documentElement.setAttribute("dir", "ltr");
-      }
-    </script>
   </head>
   <body data-page-id="account">
     <div id="app">
