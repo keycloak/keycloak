@@ -39,6 +39,16 @@ public class ResourceIndicatorsTest {
     }
 
     @Test
+    public void testValidTargetByUrl() {
+        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").param(OAuth2Constants.RESOURCE, "https://theservice").send();
+        Assertions.assertTrue(tokenResponse.isSuccess());
+
+        AccessToken accessToken = oauth.parseToken(tokenResponse.getAccessToken(), AccessToken.class);
+        String[] audience = accessToken.getAudience();
+        Assertions.assertArrayEquals(new String[] { "https://theservice" }, audience);
+    }
+
+    @Test
     public void testInvalidTarget() {
         AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").param(OAuth2Constants.RESOURCE, "urn:client:somethingelse").send();
         Assertions.assertFalse(tokenResponse.isSuccess());
@@ -49,7 +59,7 @@ public class ResourceIndicatorsTest {
 
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.addClient("theservice");
+            realm.addClient("theservice").attribute("resource_url", "https://theservice");
             realm.clientRoles("theservice", "myrole");
 
             realm.addUser("user").firstName("user").lastName("user").password("pass").email("the@email.localhost").clientRoles("theservice", "myrole");
