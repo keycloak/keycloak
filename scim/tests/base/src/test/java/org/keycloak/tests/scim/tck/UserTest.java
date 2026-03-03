@@ -195,7 +195,7 @@ public class UserTest extends AbstractScimTest {
         configuration.addOrReplaceAttribute(new UPAttribute("manager", Map.of(
                 ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.value")));
         configuration.addOrReplaceAttribute(new UPAttribute("managerName", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.dispayName")));
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.displayName")));
         realm.admin().users().userProfile().update(configuration);
 
         User expected = createUser();

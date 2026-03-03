@@ -1,8 +1,10 @@
 package org.keycloak.tests.scim.tck;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.models.UserModel;
@@ -13,16 +15,20 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.scim.client.ResourceFilter;
 import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.response.ListResponse;
-import org.keycloak.scim.resource.common.Email;
-import org.keycloak.scim.resource.common.Name;
 import org.keycloak.scim.resource.group.Group;
+import org.keycloak.scim.resource.user.EnterpriseUser;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA_ATTRIBUTE;
+import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -37,6 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
 public class FilterTest extends AbstractScimTest {
+
+    private List<String> idsToRemove = new ArrayList<>();
 
     @BeforeEach
     public void onBefore() {
@@ -53,24 +61,22 @@ public class FilterTest extends AbstractScimTest {
             iterator.remove();
         }
         realm.admin().users().userProfile().update(upConfig);
+        idsToRemove.clear();
+    }
+
+    @AfterEach
+    public void onAfter() {
+        idsToRemove.forEach(id -> realm.admin().users().delete(id).close());
     }
 
     @Test
     public void testEqualFilter() {
-        User john = new User();
-        john.setUserName("john_" + KeycloakModelUtils.generateId());
-        john = client.users().create(john);
+        User bob = createUser("bob");
+        createUser("alice");
 
-        User jane = new User();
-        jane.setUserName("jane_" + KeycloakModelUtils.generateId());
-        jane = client.users().create(jane);
-
-        String filter = ResourceFilter.filter().eq("userName", john.getUserName()).build();
+        String filter = ResourceFilter.filter().eq("userName", bob.getUserName()).build();
         ListResponse<User> response = client.users().getAll(filter);
-
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), is(1));
-        assertThat(response.getResources().get(0).getUserName(), is(john.getUserName()));
+        assertSingleResult(response, bob.getUserName());
 
         // create a couple of groups to test group filtering as well
         Group groupA = new Group();
@@ -92,30 +98,21 @@ public class FilterTest extends AbstractScimTest {
 
     @Test
     public void testNotEqualFilter() {
-        User user1 = new User();
-        user1.setUserName("testne1_" + KeycloakModelUtils.generateId());
-        user1 = client.users().create(user1);
-        final String user1Name = user1.getUserName();
+        User bob = createUser("bob");
+        User alice = createUser("alice");
 
-        User user2 = new User();
-        user2.setUserName("testne2_" + KeycloakModelUtils.generateId());
-        user2 = client.users().create(user2);
-        final String user2Name = user2.getUserName();
-
-        String filter = ResourceFilter.filter().ne("userName", user1Name).build();
+        String filter = ResourceFilter.filter().ne("userName", bob.getUserName()).build();
         ListResponse<User> response = client.users().getAll(filter);
 
         assertThat(response, is(not(nullValue())));
         assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().noneMatch(u -> u.getUserName().equals(user1Name)), is(true));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(user2Name)), is(true));
+        assertThat(response.getResources().stream().noneMatch(u -> u.getUserName().equals(bob.getUserName())), is(true));
+        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(alice.getUserName())), is(true));
     }
 
     @Test
     public void testGreaterThanFilters() {
-        User user = new User();
-        user.setUserName("tests-gt-or-ge-user");
-        user = client.users().create(user);
+        User user = createUser("bob");
 
         // fetch the user representation to get the start date
         UserRepresentation userRep = realm.admin().users().get(user.getId()).toRepresentation();
@@ -147,9 +144,7 @@ public class FilterTest extends AbstractScimTest {
 
     @Test
     public void testLessThanFilters() {
-        User user = new User();
-        user.setUserName("tests-lt-or-le-user");
-        user = client.users().create(user);
+        User user = createUser("bob");
         final String expectedUsername = user.getUserName();
 
         // fetch the user representation to get the start date
@@ -186,128 +181,89 @@ public class FilterTest extends AbstractScimTest {
 
     @Test
     public void testStartsWithFilter() {
-        User user = new User();
-        user.setUserName("testswuser_" + KeycloakModelUtils.generateId());
-        user = client.users().create(user);
+        User user = createUser("bob");
+        createUser("alice_user");
         final String expectedUsername = user.getUserName();
 
-        String filter = ResourceFilter.filter().sw("userName", "testswuser_").build();
+        String filter = ResourceFilter.filter().sw("userName", "bob").build();
         ListResponse<User> response = client.users().getAll(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(expectedUsername)), is(true));
+        assertSingleResult(response, user.getUserName());
     }
 
     @Test
     public void testContainsFilter() {
-        User user = new User();
-        user.setUserName("test_contains_xyz_" + KeycloakModelUtils.generateId());
-        user = client.users().create(user);
+        User user = createUser("bob-the-builder");
+        createUser("alice-not-builder");
         final String expectedUsername = user.getUserName();
 
-        String filter = ResourceFilter.filter().co("userName", "contains_xyz").build();
+        String filter = ResourceFilter.filter().co("userName", "the").build();
         ListResponse<User> response = client.users().getAll(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(expectedUsername)), is(true));
+        assertSingleResult(response, expectedUsername);
     }
 
     @Test
     public void testEndsWithFilter() {
-        String suffix = "_endstest_" + KeycloakModelUtils.generateId();
-        User user = new User();
-        user.setUserName("user" + suffix);
-        user = client.users().create(user);
+        User user = createUser("bob-the-builder");
+        createUser("alice-the-tester");
         final String expectedUsername = user.getUserName();
 
-        String filter = ResourceFilter.filter().ew("userName", suffix).build();
+        String filter = ResourceFilter.filter().ew("userName", "builder").build();
         ListResponse<User> response = client.users().getAll(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(expectedUsername)), is(true));
+        assertSingleResult(response, expectedUsername);
     }
 
     @Test
     public void testPresentFilter() {
-        User user = new User();
-        user.setUserName("test_pr_" + KeycloakModelUtils.generateId());
-        user = client.users().create(user);
+        User user = createUser("bob", "bob@keycloak.org");
+        createUser("alice");
         final String expectedUsername = user.getUserName();
 
-        String filter = ResourceFilter.filter().pr("userName").build();
+        String filter = ResourceFilter.filter().pr("emails.value").build();
         ListResponse<User> response = client.users().getAll(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(expectedUsername)), is(true));
+        assertSingleResult(response, expectedUsername);
     }
 
     @Test
     public void testBooleanFilter() {
-        User activeUser = new User();
-        activeUser.setUserName("activetrue");
-        activeUser.setActive(true);
-        activeUser = client.users().create(activeUser);
-
-        User inactiveUser = new User();
-        inactiveUser.setUserName("activefalse");
-        inactiveUser.setActive(false);
-        inactiveUser = client.users().create(inactiveUser);
+        User bob = createUser("bob", true);
+        User alice = createUser("alice", false);
 
         String filter = ResourceFilter.filter().eq("active", "true").build();
         ListResponse<User> response = client.users().getAll(filter);
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getResources().stream().allMatch(User::getActive), is(true));
+        assertSingleResult(response, bob.getUserName());
+        assertThat(response.getResources().get(0).getActive(), is(true));
 
         filter = ResourceFilter.filter().eq("active", "false").build();
         response = client.users().getAll(filter);
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getResources().stream().noneMatch(User::getActive), is(true));
-
-        // using a non-boolean value in a boolean expression should not be allowed
-        ScimClientException ce = assertThrows(ScimClientException.class,
-                () -> client.users().getAll(ResourceFilter.filter().eq("active", "abcde").build()));
-        assertThat(ce.getError(), is(not(nullValue())));
-        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+        assertSingleResult(response, alice.getUserName());
+        assertThat(response.getResources().get(0).getActive(), is(false));
     }
 
     @Test
     public void testLogicalAndFilter() {
-        User user = new User();
-        user.setUserName("testuser_and_" + KeycloakModelUtils.generateId());
-        user.setActive(true);
-        user = client.users().create(user);
+        User user = createUser("bob", true);
 
         String filter = ResourceFilter.filter()
             .eq("userName", user.getUserName())
             .and()
-            .eq("active", "true")
+            .ne("active", "false")
             .build();
         ListResponse<User> response = client.users().getAll(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), is(1));
-        assertThat(response.getResources().get(0).getUserName(), is(user.getUserName()));
+        assertSingleResult(response, user.getUserName());
     }
 
     @Test
     public void testLogicalOrFilter() {
-        User user1 = new User();
-        user1.setUserName("testor1_" + KeycloakModelUtils.generateId());
-        user1 = client.users().create(user1);
+        User user1 = createUser("bob");
         final String user1Name = user1.getUserName();
-
-        User user2 = new User();
-        user2.setUserName("testor2_" + KeycloakModelUtils.generateId());
-        user2 = client.users().create(user2);
+        User user2 = createUser("alice");
         final String user2Name = user2.getUserName();
-
-        User user3 = new User();
-        user3.setUserName("testor3_" + KeycloakModelUtils.generateId());
-        user3 = client.users().create(user3);
+        User user3 = createUser("jane");
         final String user3Name = user3.getUserName();
 
         String filter = ResourceFilter.filter()
@@ -326,43 +282,29 @@ public class FilterTest extends AbstractScimTest {
 
     @Test
     public void testLogicalNotFilter() {
-        User user = new User();
-        user.setUserName("testnot_" + KeycloakModelUtils.generateId());
-        user = client.users().create(user);
-        final String userName = user.getUserName();
+        User bob = createUser("bob");
+        User alice = createUser("alice");
 
         String filter = ResourceFilter.filter()
             .not()
             .lparen()
-            .eq("userName", userName)
+            .eq("userName", bob.getUserName())
             .rparen()
             .build();
         ListResponse<User> response = client.users().getAll(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getResources().stream().noneMatch(u -> u.getUserName().equals(userName)), is(true));
+        assertSingleResult(response, alice.getUserName());
     }
 
     @Test
     public void testComplexAndOrCombination() {
-        String prefix = "complex_" + KeycloakModelUtils.generateId() + "_";
+        String prefix = "prefix-";
 
-        User user1 = new User();
-        user1.setUserName(prefix + "active");
-        user1.setActive(true);
-        user1 = client.users().create(user1);
+        User user1 = createUser(prefix + "bob", true);
         final String user1Name = user1.getUserName();
-
-        User user2 = new User();
-        user2.setUserName(prefix + "inactive");
-        user2.setActive(false);
-        user2 = client.users().create(user2);
+        User user2 = createUser(prefix + "alice", false);
         final String user2Name = user2.getUserName();
-
-        User user3 = new User();
-        user3.setUserName("other_" + KeycloakModelUtils.generateId());
-        user3.setActive(true);
-        user3 = client.users().create(user3);
+        createUser("other-jane", true);
 
         String filter = ResourceFilter.filter()
             .lparen()
@@ -387,17 +329,10 @@ public class FilterTest extends AbstractScimTest {
 
     @Test
     public void testNotWithAndCombination() {
-        String prefix = "notand_" + KeycloakModelUtils.generateId() + "_";
+        String prefix = "prefix-";
 
-        User user1 = new User();
-        user1.setUserName(prefix + "user1");
-        user1.setActive(true);
-        user1 = client.users().create(user1);
-
-        User user2 = new User();
-        user2.setUserName(prefix + "user2");
-        user2.setActive(false);
-        user2 = client.users().create(user2);
+        createUser(prefix + "bob");
+        User alice = createUser(prefix + "alice", false);
 
         String filter = ResourceFilter.filter()
             .sw("userName", prefix)
@@ -409,22 +344,16 @@ public class FilterTest extends AbstractScimTest {
             .build();
         ListResponse<User> response = client.users().getAll(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), is(1));
-        assertThat(response.getResources().get(0).getUserName(), is(user2.getUserName()));
+        assertSingleResult(response, alice.getUserName());
     }
 
     @Test
     public void testMultipleAndConditions() {
         String uniqueId = KeycloakModelUtils.generateId();
-        User user = new User();
-        user.setUserName("multiand_" + uniqueId);
-        user.setActive(true);
-        user = client.users().create(user);
-        final String userName = user.getUserName();
+        User bob = createUser("bob-" + uniqueId, true);
 
         String filter = ResourceFilter.filter()
-            .sw("userName", "multiand_")
+            .sw("userName", "bob-")
             .and()
             .co("userName", uniqueId.substring(0, 8))
             .and()
@@ -432,32 +361,19 @@ public class FilterTest extends AbstractScimTest {
             .build();
         ListResponse<User> response = client.users().getAll(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(userName)), is(true));
+        assertSingleResult(response, bob.getUserName());
     }
 
     @Test
     public void testNestedParentheses() {
-        String prefix1 = "nested1_" + KeycloakModelUtils.generateId() + "_";
-        String prefix2 = "nested2_" + KeycloakModelUtils.generateId() + "_";
+        String prefix1 = "prefix1-";
+        String prefix2 = "prefix2-";
 
-        User user1 = new User();
-        user1.setUserName(prefix1 + "active");
-        user1.setActive(true);
-        user1 = client.users().create(user1);
+        User user1 = createUser(prefix1 + "bob", true);
         final String user1Name = user1.getUserName();
-
-        User user2 = new User();
-        user2.setUserName(prefix2 + "active");
-        user2.setActive(true);
-        user2 = client.users().create(user2);
+        User user2 = createUser(prefix2 + "alice", true);
         final String user2Name = user2.getUserName();
-
-        User user3 = new User();
-        user3.setUserName(prefix1 + "inactive");
-        user3.setActive(false);
-        user3 = client.users().create(user3);
+        createUser(prefix1 + "other-jane", false);
 
         String filter = ResourceFilter.filter()
             .lparen()
@@ -476,84 +392,86 @@ public class FilterTest extends AbstractScimTest {
         assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(user2Name)), is(true));
     }
 
+    @Test
+    public void testInvalidFilters() {
+        createUser("bob");
+
+        // using a non-boolean value in a boolean expression should not be allowed
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll(ResourceFilter.filter().eq("active", "abcde").build()));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+
+        // using an invalid operator should not be allowed
+        ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll("userName invalid \"invalid\""));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+
+        // using a filter with mismatched parentheses should not be allowed
+        ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll(ResourceFilter.filter().lparen().eq("userName", "invalid").build()));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+
+        // using a filter with an operator that is not valid for the type should not be allowed (e.g. greater-than on a boolean attribute)
+        // or starts-with on a date attribute
+        ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll(ResourceFilter.filter().gt("active", "invalid").build()));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+
+        ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll(ResourceFilter.filter().sw("meta.created", "2026-10").build()));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
+    }
+
     // Tests with rich user objects
 
     @Test
     public void testFilterByGivenName() {
-        User user = new User();
-        user.setUserName("nametest_" + KeycloakModelUtils.generateId());
-        Name name = new Name();
-        name.setGivenName("Alice");
-        name.setFamilyName("Smith");
-        user.setName(name);
-        user = client.users().create(user);
-        final String userName = user.getUserName();
+        User bob = createUser("bob", "Robert", "Johnson", "bob@keycloak.org", true);
+        createUser("alice", "Alice", "Smith", "alice@keycloak.org", true);
 
-        String filter = ResourceFilter.filter().eq("name.givenName", "Alice").build();
+        String filter = ResourceFilter.filter().eq("name.givenName", "Robert").build();
         ListResponse<User> response = client.users().getAll(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(userName)), is(true));
+        assertSingleResult(response, bob.getUserName());
     }
 
     @Test
     public void testFilterByFamilyName() {
-        User user = new User();
-        user.setUserName("familytest_" + KeycloakModelUtils.generateId());
-        Name name = new Name();
-        name.setGivenName("Bob");
-        name.setFamilyName("Johnson");
-        user.setName(name);
-        user = client.users().create(user);
-        final String userName = user.getUserName();
+        User bob = createUser("bob", "Robert", "Johnson", "bob@keycloak.org", true);
+        createUser("alice", "Alice", "Smith", "alice@keycloak.org", true);
 
         String filter = ResourceFilter.filter().eq("name.familyName", "Johnson").build();
         ListResponse<User> response = client.users().getAll(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(userName)), is(true));
+        assertSingleResult(response, bob.getUserName());
     }
 
     @Test
     public void testFilterByEmail() {
-        String emailValue = "test." + KeycloakModelUtils.generateId() + "@example.com";
-        User user = new User();
-        user.setUserName("emailtest_" + KeycloakModelUtils.generateId());
-        Email email = new Email();
-        email.setValue(emailValue);
-        email.setPrimary(true);
-        user.setEmails(List.of(email));
-        user = client.users().create(user);
-        final String userName = user.getUserName();
+        User bob = createUser("bob", "Robert", "Johnson", "bob@keycloak.org", true);
+        User alice = createUser("alice", "Alice", "Smith", "alice@keycloak.org", true);
 
-        String filter = ResourceFilter.filter().eq("emails", emailValue).build();
+        String filter = ResourceFilter.filter().eq("emails", "bob@keycloak.org").build();
         ListResponse<User> response = client.users().getAll(filter);
+        assertSingleResult(response, bob.getUserName());
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(userName)), is(true));
-
-        filter = ResourceFilter.filter().eq("emails.value", emailValue).build();
+        filter = ResourceFilter.filter().eq("emails.value", "alice@keycloak.org").build();
         response = client.users().getAll(filter);
+        assertSingleResult(response, alice.getUserName());
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(userName)), is(true));
+        filter = ResourceFilter.filter().co("emails", "keycloak").build();
+        response = client.users().getAll(filter);
+        assertThat(response.getTotalResults(), is(2));
     }
 
     @Test
     public void testFilterByUnknownAttribute() {
-        String emailValue = "test@example.com";
-        User user = new User();
-        user.setUserName("testuser");
-        Email email = new Email();
-        email.setValue(emailValue);
-        email.setPrimary(true);
-        user.setEmails(List.of(email));
-        user = client.users().create(user);
-        final String userName = user.getUserName();
+        final String userName = createUser("bob").getUserName();
 
         // using a filter with an unknown attribute should not match any users if combined with 'and' since the unknown attribute condition cannot be satisfied
         String filter = ResourceFilter.filter().eq("userName", userName).and().pr("unkonwn").build();
@@ -578,123 +496,134 @@ public class FilterTest extends AbstractScimTest {
 
     @Test
     public void testComplexFilterWithNames() {
-        String uniqueId = KeycloakModelUtils.generateId();
 
-        User alice = new User();
-        alice.setUserName("alice_" + uniqueId);
-        Name aliceName = new Name();
-        aliceName.setGivenName("Alice");
-        aliceName.setFamilyName("Anderson");
-        alice.setName(aliceName);
-        alice.setActive(true);
-        alice = client.users().create(alice);
-        final String aliceName1 = alice.getUserName();
+        User bob = createUser("bob", "Robert", "Anderson", "bob@keycloak.org", false);
+        User alice = createUser("alice", "Alice", "Anderson", "alice@keycloak.org", true);
 
-        User bob = new User();
-        bob.setUserName("bob_" + uniqueId);
-        Name bobName = new Name();
-        bobName.setGivenName("Bob");
-        bobName.setFamilyName("Anderson");
-        bob.setName(bobName);
-        bob.setActive(false);
-        bob = client.users().create(bob);
-
-        // Filter: name.familyName eq "Anderson" AND active eq true
-        // Should match Alice but not Bob
+        // filter: name.familyName eq "Anderson" AND active eq true  - should match alice but not bob
         String filter = ResourceFilter.filter()
-            .eq("name.familyName", "Anderson")
-            .and()
-            .eq("active", "true")
-            .build();
+                .eq("name.familyName", "Anderson")
+                .and()
+                .eq("active", "true")
+                .build();
         ListResponse<User> response = client.users().getAll(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(aliceName1)), is(true));
+        assertSingleResult(response, alice.getUserName());
     }
 
     // Tests for POST /.search endpoint
 
     @Test
     public void testPostSearchEndpointEq() {
-        User user = new User();
-        user.setUserName("postsearch_" + KeycloakModelUtils.generateId());
-        user = client.users().create(user);
+        User user = createUser("bob");
         final String userName = user.getUserName();
 
         // Use search() which calls POST /.search
         String filter = ResourceFilter.filter().eq("userName", userName).build();
         ListResponse<User> response = client.users().search(filter);
 
-        assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), is(1));
-        assertThat(response.getResources().get(0).getUserName(), is(userName));
+        assertSingleResult(response, userName);
     }
 
     @Test
     public void testPostSearchEndpointComplex() {
-        String prefix = "postcomplex_" + KeycloakModelUtils.generateId() + "_";
 
-        User user1 = new User();
-        user1.setUserName(prefix + "user1");
-        Name name1 = new Name();
-        name1.setGivenName("Charlie");
-        name1.setFamilyName("Davis");
-        user1.setName(name1);
-        user1.setActive(true);
-        user1 = client.users().create(user1);
-        final String user1Name = user1.getUserName();
+        User bob = createUser("user-bob", "Robert", "Johnson", "bob@keycloak.org", true);
+        User alice = createUser("user-alice", "Alice", "Smith", "alice@keycloak.org", false);
 
-        User user2 = new User();
-        user2.setUserName(prefix + "user2");
-        Name name2 = new Name();
-        name2.setGivenName("David");
-        name2.setFamilyName("Davis");
-        user2.setName(name2);
-        user2.setActive(false);
-        user2 = client.users().create(user2);
-        final String user2Name = user2.getUserName();
-
-        // Complex filter: (userName sw prefix AND active eq true) OR (name.givenName eq "David")
+        // Complex filter: (userName sw prefix AND active eq true) OR (name.givenName eq "Alice")
         // Should match both users
         String filter = ResourceFilter.filter()
             .lparen()
-            .sw("userName", prefix)
+            .sw("userName", "user-")
             .and()
             .eq("active", "true")
             .rparen()
             .or()
             .lparen()
-            .eq("name.givenName", "David")
+            .eq("name.givenName", "Alice")
             .rparen()
             .build();
         ListResponse<User> response = client.users().search(filter);
 
         assertThat(response, is(not(nullValue())));
         assertThat(response.getTotalResults(), is(2));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(user1Name)), is(true));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(user2Name)), is(true));
+        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(bob.getUserName())), is(true));
+        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(alice.getUserName())), is(true));
     }
 
     @Test
     public void testPostSearchWithEmailFilter() {
-        String emailValue = "postemailtest." + KeycloakModelUtils.generateId() + "@example.com";
-        User user = new User();
-        user.setUserName("postemailuser_" + KeycloakModelUtils.generateId());
-        Email email = new Email();
-        email.setValue(emailValue);
-        email.setPrimary(true);
-        user.setEmails(List.of(email));
-        user = client.users().create(user);
-        final String userName = user.getUserName();
+
+        createUser("user-bob", "Robert", "Johnson", "bob@keycloak.org", true);
+        User alice = createUser("user-alice", "Alice", "Smith", "alice@keycloak-corp.org", true);
 
         // Test POST search with email contains filter
-        String filter = ResourceFilter.filter().co("emails", "postemailtest").build();
+        String filter = ResourceFilter.filter().co("emails", "corp").build();
         ListResponse<User> response = client.users().search(filter);
 
+        assertSingleResult(response, alice.getUserName());
+    }
+
+    // Tests for enterprise user searches
+
+    @Test
+    public void testSearchEnterpriseUsers() {
+        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
+
+        // update user profile configuration
+        configuration.addOrReplaceAttribute(new UPAttribute("department", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".department")));
+        configuration.addOrReplaceAttribute(new UPAttribute("division", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".division")));
+        configuration.addOrReplaceAttribute(new UPAttribute("costCenter", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".costCenter")));
+        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
+        configuration.addOrReplaceAttribute(new UPAttribute("organization", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".organization")));
+        configuration.addOrReplaceAttribute(new UPAttribute("manager", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.value")));
+        configuration.addOrReplaceAttribute(new UPAttribute("managerName", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.displayName")));
+        realm.admin().users().userProfile().update(configuration);
+
+        User user1 = createEnterpriseUser("user1", "Engineering", "E1234", "Bruce Wayne");
+        User user2 = createEnterpriseUser("user2", "QE", "E7763", "Lucius Fox");
+
+        // now search by the various enterprise user attributes to verify that the filtering works for them
+        String filter = ResourceFilter.filter().eq(ENTERPRISE_USER_SCHEMA + ":department", "QE").build();
+        ListResponse<User> response = client.users().getAll(filter);
         assertThat(response, is(not(nullValue())));
-        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
-        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(userName)), is(true));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getResources().get(0).getUserName(), is(user2.getUserName()));
+
+        // search by cost center using starts-with filter
+        filter = ResourceFilter.filter().sw(ENTERPRISE_USER_SCHEMA + ":costCenter", "AMER").build();
+        response = client.users().getAll(filter);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(2));
+        assertThat(response.getResources().stream().map(User::getUserName).toList(), containsInAnyOrder(user1.getUserName(), user2.getUserName()));
+
+        // search by organization using contains filter
+        filter = ResourceFilter.filter().co(ENTERPRISE_USER_SCHEMA + ":organization", "ganiza").build();
+        response = client.users().getAll(filter);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(2));
+        assertThat(response.getResources().stream().map(User::getUserName).toList(), containsInAnyOrder(user1.getUserName(), user2.getUserName()));
+
+        // search by manager's display name using ends-with filter
+        filter = ResourceFilter.filter().ew(ENTERPRISE_USER_SCHEMA + ":manager.displayName", "Technical Manager").build();
+        response = client.users().getAll(filter);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(2));
+        assertThat(response.getResources().stream().map(User::getUserName).toList(), containsInAnyOrder(user1.getUserName(), user2.getUserName()));
+
+        // search by manager's name
+        filter = ResourceFilter.filter().eq(ENTERPRISE_USER_SCHEMA + ":manager", "Bruce Wayne").build();
+        response = client.users().getAll(filter);
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getResources().get(0).getUserName(), is(user1.getUserName()));
     }
 
     private void assertNoResults(ListResponse<User> response) {
@@ -707,5 +636,54 @@ public class FilterTest extends AbstractScimTest {
         assertThat(response.getTotalResults(), is(1));
         assertThat(response.getResources().get(0).getUserName(), is(expectedUsername));
 
+    }
+
+    public User createUser(String username) {
+        return this.createUser(username, null);
+    }
+
+    public User createUser(String username, String email) {
+        return this.createUser(username, null, null, email, true);
+    }
+
+    public User createUser(String username, boolean active) {
+        return this.createUser(username, null, null, null, active);
+    }
+
+    private User createUser(String username, String givenName, String familyName, String email, boolean active) {
+        User user = new User();
+        user.setUserName(username);
+        user.setEmail(email);
+        user.setActive(active);
+        user.setFirstName(givenName);
+        user.setLastName(familyName);
+        user = client.users().create(user);
+        idsToRemove.add(user.getId());
+        return user;
+    }
+
+    private User createEnterpriseUser(String username, String department, String employeeNumber, String managerName) {
+        User user = new User();
+        user.setUserName(username);
+        user.setEmail(username + "@keycloak.org");
+        user.setActive(true);
+
+        EnterpriseUser enterpriseUser = new EnterpriseUser();
+        enterpriseUser.setDepartment(department);
+        enterpriseUser.setEmployeeNumber(employeeNumber);
+        user.setEnterpriseUser(enterpriseUser);
+        enterpriseUser.setCostCenter("AMER-4015");
+        enterpriseUser.setDivision("Open Source");
+        enterpriseUser.setOrganization("Organization");
+        user.setEnterpriseUser(enterpriseUser);
+
+        EnterpriseUser.Manager manager = new EnterpriseUser.Manager();
+        manager.setValue(managerName);
+        manager.setDisplayName(managerName + ", Technical Manager");
+        enterpriseUser.setManager(manager);
+
+        user = client.users().create(user);
+        idsToRemove.add(user.getId());
+        return user;
     }
 }

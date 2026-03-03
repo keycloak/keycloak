@@ -2,8 +2,8 @@ package org.keycloak.scim.model.filter;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
@@ -12,8 +12,8 @@ import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.common.util.TriFunction;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
