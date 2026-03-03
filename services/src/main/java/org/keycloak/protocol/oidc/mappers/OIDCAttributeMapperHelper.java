@@ -183,6 +183,9 @@ public class OIDCAttributeMapperHelper {
 
         String type = mappingModel.getConfig().get(JSON_TYPE);
         Object converted = convertToType(type, attributeValue);
+        if (converted == null && isNumericType(type) && attributeValue instanceof String) {
+            return null;
+        }
         return converted != null ? converted : attributeValue;
     }
 
@@ -212,6 +215,7 @@ public class OIDCAttributeMapperHelper {
             case "long":
                 Long longObject = getLong(attributeValue);
                 if (longObject != null) return longObject;
+                if (attributeValue instanceof String) return null;
                 if (attributeValue instanceof List) {
                     return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getLong);
                 }
@@ -219,6 +223,7 @@ public class OIDCAttributeMapperHelper {
             case "int":
                 Integer intObject = getInteger(attributeValue);
                 if (intObject != null) return intObject;
+                if (attributeValue instanceof String) return null;
                 if (attributeValue instanceof List) {
                     return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getInteger);
                 }
@@ -235,6 +240,10 @@ public class OIDCAttributeMapperHelper {
         }
     }
 
+    private static boolean isNumericType(String type) {
+        return "long".equals(type) || "int".equals(type);
+    }
+
     private static String getString(Object attributeValue) {
         return attributeValue.toString();
     }
@@ -242,13 +251,25 @@ public class OIDCAttributeMapperHelper {
 
     private static Long getLong(Object attributeValue) {
         if (attributeValue instanceof Long) return (Long) attributeValue;
-        if (attributeValue instanceof String) return Long.valueOf((String) attributeValue);
+        if (attributeValue instanceof String) {
+            try {
+                return Long.valueOf((String) attributeValue);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
         return null;
     }
 
     private static Integer getInteger(Object attributeValue) {
         if (attributeValue instanceof Integer) return (Integer) attributeValue;
-        if (attributeValue instanceof String) return Integer.valueOf((String) attributeValue);
+        if (attributeValue instanceof String) {
+            try {
+                return Integer.valueOf((String) attributeValue);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
         return null;
     }
 
