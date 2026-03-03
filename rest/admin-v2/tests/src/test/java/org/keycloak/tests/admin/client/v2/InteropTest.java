@@ -27,6 +27,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
+import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -68,6 +69,10 @@ public class InteropTest extends AbstractClientApiV2Test {
     @InjectRealm
     ManagedRealm managedRealm;
 
+    @Override
+    public String getRealmName() {
+        return managedRealm.getName();
+    }
 
     /**
      * Test: Create a client using v1 API, then assert/read using v2 API.
@@ -239,7 +244,180 @@ public class InteropTest extends AbstractClientApiV2Test {
         } finally {
             realm.clients().get(clientUuid).remove();
         }
-}
+    }
+
+    /**
+     * Test: Create a SAML client using v1 API, then assert/read using v2 API.
+     */
+    @Test
+    public void createSamlWithV1AssertWithV2() throws Exception {
+        RealmResource realm = managedRealm.admin();
+
+        ClientRepresentation v1Client = new ClientRepresentation();
+        v1Client.setClientId("v1-saml-client");
+        v1Client.setName("V1 SAML Client");
+        v1Client.setDescription("SAML client created via v1 API");
+        v1Client.setEnabled(true);
+        v1Client.setProtocol("saml");
+        v1Client.setBaseUrl("http://localhost:8000/saml");
+        v1Client.setRedirectUris(Arrays.asList("http://localhost:8000/saml/*"));
+        v1Client.setFrontchannelLogout(true);
+        v1Client.setAttributes(java.util.Map.of(
+            "saml_name_id_format", "username",
+            "saml.force.name.id.format", "true",
+            "saml.authnstatement", "true",
+            "saml.server.signature", "true",
+            "saml.assertion.signature", "false",
+            "saml.client.signature", "false",
+            "saml.force.post.binding", "true",
+            "saml.signature.algorithm", "RSA_SHA256"
+        ));
+
+        Response response = realm.clients().create(v1Client);
+        String clientUuid = ApiUtil.getCreatedId(response);
+        response.close();
+
+        ClientRepresentation createdV1Client = realm.clients().get(clientUuid).toRepresentation();
+
+        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/v1-saml-client");
+        setAuthHeader(getRequest, adminClient);
+
+        try (var httpResponse = httpClient.execute(getRequest)) {
+            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
+            SAMLClientRepresentation v2Client = mapper.createParser(httpResponse.getEntity().getContent())
+                    .readValueAs(SAMLClientRepresentation.class);
+
+            ClientRepresentationComparator.ComparisonResult result =
+                ClientRepresentationComparator.compare(createdV1Client, v2Client);
+
+            assertTrue(result.allMatch(), "V1 and V2 SAML representations should match:\n" + result);
+        } finally {
+            realm.clients().get(clientUuid).remove();
+        }
+    }
+
+    /**
+     * Test: Create a SAML client using v2 API, then assert/read using v1 API.
+     */
+    @Test
+    public void createSamlWithV2AssertWithV1() throws Exception {
+        RealmResource realm = managedRealm.admin();
+
+        SAMLClientRepresentation v2Client = new SAMLClientRepresentation();
+        v2Client.setClientId("v2-saml-client");
+        v2Client.setDisplayName("V2 SAML Client");
+        v2Client.setDescription("SAML client created via v2 API");
+        v2Client.setEnabled(true);
+        v2Client.setAppUrl("http://localhost:9000/saml");
+        v2Client.setRedirectUris(Set.of("http://localhost:9000/saml/*"));
+        v2Client.setFrontChannelLogout(true);
+        v2Client.setNameIdFormat("email");
+        v2Client.setForceNameIdFormat(true);
+        v2Client.setIncludeAuthnStatement(true);
+        v2Client.setSignDocuments(true);
+        v2Client.setSignAssertions(true);
+        v2Client.setClientSignatureRequired(false);
+        v2Client.setForcePostBinding(true);
+        v2Client.setSignatureAlgorithm("RSA_SHA256");
+
+        HttpPost createRequest = new HttpPost(getClientsApiUrl());
+        setAuthHeader(createRequest, adminClient);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(v2Client)));
+
+        try (var httpResponse = httpClient.execute(createRequest)) {
+            assertThat(httpResponse.getStatusLine().getStatusCode(), is(201));
+        }
+
+        ClientRepresentation v1Client = realm.clients().findByClientId("v2-saml-client").get(0);
+        String clientUuid = v1Client.getId();
+        ClientRepresentation fullV1Client = realm.clients().get(clientUuid).toRepresentation();
+
+        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/v2-saml-client");
+        setAuthHeader(getRequest, adminClient);
+
+        try (var httpResponse = httpClient.execute(getRequest)) {
+            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
+            SAMLClientRepresentation fetchedV2Client = mapper.createParser(httpResponse.getEntity().getContent())
+                    .readValueAs(SAMLClientRepresentation.class);
+
+            ClientRepresentationComparator.ComparisonResult result =
+                ClientRepresentationComparator.compare(fullV1Client, fetchedV2Client);
+
+            assertTrue(result.allMatch(), "V1 and V2 SAML representations should match:\n" + result);
+        } finally {
+            realm.clients().get(clientUuid).remove();
+        }
+    }
+
+    /**
+     * Test: Create a SAML client using v1 API, update it using v2 API, then assert using v1 API.
+     */
+    @Test
+    public void updateSamlWithV2AssertWithV1() throws Exception {
+        RealmResource realm = managedRealm.admin();
+
+        ClientRepresentation v1Client = new ClientRepresentation();
+        v1Client.setClientId("update-saml-client");
+        v1Client.setName("Original SAML Name");
+        v1Client.setDescription("Original SAML description");
+        v1Client.setEnabled(true);
+        v1Client.setProtocol("saml");
+        v1Client.setRedirectUris(Arrays.asList("http://localhost:7000/saml/*"));
+        v1Client.setAttributes(java.util.Map.of(
+            "saml.server.signature", "false",
+            "saml.force.post.binding", "false"
+        ));
+
+        Response response = realm.clients().create(v1Client);
+        String clientUuid = ApiUtil.getCreatedId(response);
+        response.close();
+
+        SAMLClientRepresentation v2Update = new SAMLClientRepresentation();
+        v2Update.setClientId("update-saml-client");
+        v2Update.setDisplayName("Updated SAML Name via V2");
+        v2Update.setDescription("Updated SAML description via V2 API");
+        v2Update.setEnabled(true);
+        v2Update.setAppUrl("http://localhost:7000/saml");
+        v2Update.setRedirectUris(Set.of("http://localhost:7000/saml/*", "http://localhost:7001/saml/*"));
+        v2Update.setFrontChannelLogout(true);
+        v2Update.setSignDocuments(true);
+        v2Update.setSignAssertions(true);
+        v2Update.setForcePostBinding(true);
+        v2Update.setSignatureAlgorithm("RSA_SHA512");
+
+        HttpPut updateRequest = new HttpPut(getClientsApiUrl() + "/update-saml-client");
+        setAuthHeader(updateRequest, adminClient);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        updateRequest.setEntity(new StringEntity(mapper.writeValueAsString(v2Update)));
+
+        try (var httpResponse = httpClient.execute(updateRequest)) {
+            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
+        }
+
+        ClientRepresentation updatedV1Client = realm.clients().get(clientUuid).toRepresentation();
+
+        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/update-saml-client");
+        setAuthHeader(getRequest, adminClient);
+
+        try (var httpResponse = httpClient.execute(getRequest)) {
+            assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
+            SAMLClientRepresentation fetchedV2Client = mapper.createParser(httpResponse.getEntity().getContent())
+                    .readValueAs(SAMLClientRepresentation.class);
+
+            ClientRepresentationComparator.ComparisonResult result =
+                ClientRepresentationComparator.compare(updatedV1Client, fetchedV2Client);
+
+            assertTrue(result.allMatch(), "V1 and V2 SAML representations should match after update:\n" + result);
+
+            assertThat(updatedV1Client.getName(), is("Updated SAML Name via V2"));
+            assertThat(updatedV1Client.getDescription(), is("Updated SAML description via V2 API"));
+            assertThat(updatedV1Client.getAttributes().get("saml.server.signature"), is("true"));
+            assertThat(updatedV1Client.getAttributes().get("saml.signature.algorithm"), is("RSA_SHA512"));
+        } finally {
+            realm.clients().get(clientUuid).remove();
+        }
+    }
 
     public static class ServerConfig implements KeycloakServerConfig {
         @Override
