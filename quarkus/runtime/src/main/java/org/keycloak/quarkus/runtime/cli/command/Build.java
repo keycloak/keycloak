@@ -22,6 +22,7 @@ import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.LaunchMode;
@@ -104,7 +105,7 @@ public final class Build extends AbstractCommand {
             if (Start.NAME.equals(cmd) || Build.NAME.equals(cmd)) {
                 executionError(spec.commandLine(), Messages.devProfileNotAllowedError(cmd));
             }
-        } else if (Configuration.getConfigValue(DB).getConfigSourceOrdinal() == 0) {
+        } else if (Configuration.getConfigValue(DB).getConfigSourceOrdinal() == PropertyMapper.DEFAULT_VALUE_ORDINAL) {
             picocli.warn("Usage of the default value for the db option in the production profile is deprecated. Please explicitly set the db instead.");
         }
     }
