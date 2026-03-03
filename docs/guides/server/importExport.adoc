@@ -8,19 +8,26 @@
 
 In this {section}, you are going to understand the different approaches for importing and exporting realms using JSON files.
 
+[NOTE]
+====
+The import / export process is not suitable for use as a backup and restore mechanism.
+Consistency of an export is not guaranteed unless all {project_name} nodes are stopped prior to running the export and exported data does not include admin events, offline sessions, or revoked tokens.
+====
+
 == Import / Export Commands
+
+The `import` and `export` commands are server launches that perform the import or export, then exit before bringing up the full server.
 
 [NOTE]
 ====
-Exporting and importing into single files can produce large files which may run the export / import process out of memory. If your database contains more than 50,000 users, export to a directory and not a single file.
-The default count of users per file is fifty, but you may use a much larger value if desired.
+The `import` and `export` commands are not designed to be run from the same machine as a running server instance, which may result in port or other conflicts.
 
-The `import` and `export` commands are essentially server launches that exit before bringing up the full server. They are not currently designed to be run from the same machine as a running server instance, which may result in port or other conflicts.
+It is recommended that all {project_name} nodes are stopped prior to using the `kc.[sh|bat] export` command.
+This ensures that the results will have no consistency issues with user or realm modifications during the export.
 
-It is recommended that all {project_name} nodes are stopped prior to using the `kc.[sh|bat] export` command. This ensures that the results will have no consistency issues with user or realm modifications during the export.
-
-It is required that all {project_name} nodes are stopped prior to performing an `kc.[sh|bat] import` command with the override option. 
-The command does not attach to the cache cluster, so overwriting a realm will lead to inconsistent caches in the cluster, which then would show and use inconsistent or outdated information. Instead of overwriting a realm with the import command, consider using the Admin API to delete realms that need to be overwritten prior to running the import.
+It is required that all {project_name} nodes are stopped prior to using the `kc.[sh|bat] import` command with the override option. 
+The command does not attach to the cache cluster, so overwriting a realm will lead to inconsistent caches in the cluster, which then would show and use inconsistent or outdated information.
+Instead of overwriting a realm with the import command, consider using the Admin API to delete realms that need to be overwritten prior to running the import.
 ====
 
 === Providing options for database connection parameters
@@ -74,6 +81,12 @@ To export a realm to a file, you can use the `--file <file>` option.
 
 When exporting realms to a file, the server is going to use the same file to store the configuration for all the realms being exported.
 
+[NOTE]
+====
+Exporting and importing into single files can produce large files which may run the export / import process out of memory.
+If your database contains more than 50,000 users, export to a directory and not a single file.
+====
+
 === Exporting a specific realm
 
 If you do not specify a specific realm to export, all realms are exported. To export a single realm, you can use the `--realm` option as follows:
@@ -125,7 +138,7 @@ You are able to use placeholders to resolve values from environment variables fo
 
 In the example above, the value set to the `MY_REALM_NAME` environment variable is going to be used to set the `realm` property.
 
-NOTE: there are currently no restrictions on what environment variables may be referenced. When environment variables are used to convey sensitive information, take care to ensure placeholders references do not inappropriately expose sensitive environment variable values.
+NOTE: There are currently no restrictions on what environment variables may be referenced. When environment variables are used to convey sensitive information, take care to ensure placeholders references do not inappropriately expose sensitive environment variable values.
 
 == Importing a Realm during Startup
 
