@@ -280,7 +280,7 @@ To avoid potential mismatches:
 By relying on the database default, {project_name} respects your intent and allows you to maintain control over your database configuration throughout its lifecycle.
 ====
 
-==== Configuring Unicode support for a Microsoft SQL Server database
+=== Configuring Unicode support for a Microsoft SQL Server database
 
 Unicode characters are supported only for the special fields for a Microsoft SQL Server database.
 The database requires no special settings.
