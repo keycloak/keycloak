@@ -832,6 +832,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         groupEntity.setRealm(realm.getId());
         groupEntity.setParentId(toParent == null? GroupEntity.TOP_PARENT_ID : toParent.getId());
         groupEntity.setType(type == null ? Type.REALM.intValue() : type.intValue());
+        long now = System.currentTimeMillis();
+        groupEntity.setCreatedTimestamp(now);
+        groupEntity.setLastModifiedTimestamp(now);
         em.persist(groupEntity);
         em.flush();
 

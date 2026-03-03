@@ -85,6 +85,17 @@ public interface UserModel extends RoleMapperModel, Model {
 
     void setCreatedTimestamp(Long timestamp);
 
+    /**
+     * Get timestamp of last user modification. May be null for users that have not been modified
+     * since this feature was introduced.
+     */
+    default Long getLastModifiedTimestamp() {
+        return null;
+    }
+
+    default void setLastModifiedTimestamp(Long timestamp) {
+    }
+
     boolean isEnabled();
 
     void setEnabled(boolean enabled);

@@ -125,6 +125,11 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .immutable()
                 .modelAttributeResolver(this::createModelAttributeResolver)
                 .build());
+        attributes.addAll(Attribute.<UserModel, User>simple("meta.lastModified")
+                .primary()
+                .timestamp()
+                .modelAttributeResolver(attribute -> "lastModifiedTimestamp")
+                .build());
         attributes.addAll(Attribute.<UserModel, User>complex("groups", GroupMembership.class)
                 .modelAttributeResolver(Attribute::getName)
                 .multivalued()
@@ -196,5 +201,18 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .build());
 
         return attributes.stream().collect(Collectors.toMap(Attribute::getName, Function.identity()));
+    }
+
+    @Override
+    public void populate(User resource, UserModel model) {
+        super.populate(resource, model);
+        Long createdTimestamp = model.getCreatedTimestamp();
+        if (createdTimestamp != null) {
+            resource.setCreatedTimestamp(createdTimestamp);
+        }
+        Long lastModified = model.getLastModifiedTimestamp();
+        if (lastModified != null) {
+            resource.setLastModifiedTimestamp(lastModified);
+        }
     }
 }

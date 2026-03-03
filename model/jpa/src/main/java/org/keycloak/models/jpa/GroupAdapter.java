@@ -106,6 +106,26 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     }
 
     @Override
+    public Long getCreatedTimestamp() {
+        return group.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        group.setCreatedTimestamp(timestamp);
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        return group.getLastModifiedTimestamp();
+    }
+
+    @Override
+    public void setLastModifiedTimestamp(Long timestamp) {
+        group.setLastModifiedTimestamp(timestamp);
+    }
+
+    @Override
     public GroupModel getParent() {
         String parentId = this.getParentId();
         return parentId == null? null : realm.getGroupById(parentId);

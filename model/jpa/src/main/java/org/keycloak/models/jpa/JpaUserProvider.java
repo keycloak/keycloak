@@ -114,7 +114,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         UserEntity entity = new UserEntity();
         entity.setId(id);
-        entity.setCreatedTimestamp(System.currentTimeMillis());
+        long now = System.currentTimeMillis();
+        entity.setCreatedTimestamp(now);
+        entity.setLastModifiedTimestamp(now);
         entity.setUsername(username.toLowerCase());
         entity.setRealmId(realm.getId());
         em.persist(entity);
