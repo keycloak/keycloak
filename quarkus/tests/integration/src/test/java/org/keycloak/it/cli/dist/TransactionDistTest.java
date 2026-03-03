@@ -42,30 +42,30 @@ public class TransactionDistTest {
     void testZeroTransactionTimeout(KeycloakDistribution dist) {
         var result = dist.run("start-dev", "--transaction-default-timeout=0s");
         result.assertError("Invalid duration '0s' for option 'transaction-default-timeout. Duration must be positive.");
-        result = dist.run("start-dev", "--transaction-migration-timeout=0s");
-        result.assertError("Invalid duration '0s' for option 'transaction-migration-timeout. Duration must be positive.");
+        result = dist.run("start-dev", "--transaction-setup-timeout=0s");
+        result.assertError("Invalid duration '0s' for option 'transaction-setup-timeout. Duration must be positive.");
     }
 
     @Test
     void testNegativeTransactionTimeout(KeycloakDistribution dist) {
         var result = dist.run("start-dev", "--transaction-default-timeout=-1s");
         result.assertError("Invalid duration '-1s' for option 'transaction-default-timeout. Duration must be positive.");
-        result = dist.run("start-dev", "--transaction-migration-timeout=-2s");
-        result.assertError("Invalid duration '-2s' for option 'transaction-migration-timeout. Duration must be positive.");
+        result = dist.run("start-dev", "--transaction-setup-timeout=-2s");
+        result.assertError("Invalid duration '-2s' for option 'transaction-setup-timeout. Duration must be positive.");
     }
 
     @Test
     void testNonNumberTransactionTimeout(KeycloakDistribution dist) {
         var result = dist.run("start-dev", "--transaction-default-timeout=abc");
         result.assertError("Invalid duration format 'abc' for option 'transaction-default-timeout'. May be an ISO 8601 duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d].");
-        result = dist.run("start-dev", "--transaction-migration-timeout=def");
-        result.assertError("Invalid duration format 'def' for option 'transaction-migration-timeout'. May be an ISO 8601 duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d].");
+        result = dist.run("start-dev", "--transaction-setup-timeout=def");
+        result.assertError("Invalid duration format 'def' for option 'transaction-setup-timeout'. May be an ISO 8601 duration value, an integer number of seconds, or an integer followed by one of [ms, h, m, s, d].");
     }
 
     @Test
     @TestProvider(TestRealmResourceTestProvider.class)
     void testValidTransactionTimeout(KeycloakDistribution dist) throws IOException {
-        var result = dist.run("start-dev", "--transaction-default-timeout=123s", "--transaction-migration-timeout=456s");
+        var result = dist.run("start-dev", "--transaction-default-timeout=123s", "--transaction-setup-timeout=456s");
         result.assertStartedDevMode();
         assertTimeouts();
     }
@@ -79,9 +79,10 @@ public class TransactionDistTest {
                 .prettyPrint();
         var timeout = JsonSerialization.readValue(rsp, new TypeReference<Map<String, Integer>>() {
         });
-        assertThat(timeout.size(), Matchers.is(2));
+        assertThat(timeout.size(), Matchers.is(3));
         assertThat(timeout.get("default"), Matchers.is(123));
         assertThat(timeout.get("migration"), Matchers.is(456));
+        assertThat(timeout.get("db-lock"), Matchers.is(456));
     }
 
 }

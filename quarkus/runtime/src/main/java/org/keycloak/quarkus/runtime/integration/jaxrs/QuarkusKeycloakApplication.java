@@ -21,6 +21,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.ws.rs.ApplicationPath;
 
 import org.keycloak.config.BootstrapAdminOptions;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.Environment;
@@ -28,6 +29,7 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
@@ -100,6 +102,11 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid admin expiration value provided. An integer is expected.", e);
         }
+    }
+
+    @Override
+    protected int getTransactionTimeout(KeycloakSessionFactory sessionFactory) {
+        return ((QuarkusJpaConnectionProviderFactory) sessionFactory.getProviderFactory(JpaConnectionProvider.class)).getMigrationTransactionTimeout();
     }
 
     private String getOption(String option, String envVar) {

@@ -171,12 +171,6 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                 .type("string")
                 .helpText("Path for where to write manual database initialization/migration file.")
                 .add()
-                .property()
-                .name(MIGRATION_TRANSACTION_TIMEOUT_KEY)
-                .type("string")
-                .helpText("The transaction timeout for database migration transaction")
-                .defaultValue(MIGRATION_TRANSACTION_TIMEOUT)
-                .add()
                 .build();
     }
 
