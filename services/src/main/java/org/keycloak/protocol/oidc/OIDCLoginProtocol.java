@@ -146,6 +146,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
     // https://datatracker.ietf.org/doc/html/rfc9449#section-12.3
     public static final String DPOP_JKT = "dpop_jkt";
 
+    // https://datatracker.ietf.org/doc/html/rfc8707
+    public static final String RESOURCE_PARAM = "resource";
+
     private static final Logger logger = Logger.getLogger(OIDCLoginProtocol.class);
 
     protected KeycloakSession session;
