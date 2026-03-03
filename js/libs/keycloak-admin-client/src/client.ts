@@ -142,9 +142,9 @@ export class KeycloakAdminClient {
     this.#accessTokenDecoded = decodeToken(token);
   }
 
-  public setRefreshToken(token: string) {
+  public setRefreshToken(token?: string) {
     this.refreshToken = token;
-    this.#refreshTokenDecoded = decodeToken(token);
+    this.#refreshTokenDecoded = token ? decodeToken(token) : undefined;
   }
 
   public async getAccessToken() {
@@ -170,6 +170,7 @@ export class KeycloakAdminClient {
       throw new Error("Cannot refresh token: refresh token has expired");
     }
 
+    const previousRefreshToken = this.refreshToken;
     const { accessToken, refreshToken } = await getToken(
       this.#getTokenSettings({
         grantType: "refresh_token",
@@ -180,7 +181,7 @@ export class KeycloakAdminClient {
     );
 
     this.setAccessToken(accessToken);
-    this.setRefreshToken(refreshToken);
+    this.setRefreshToken(refreshToken ?? previousRefreshToken);
   }
 
   public isTokenExpired(): boolean {
