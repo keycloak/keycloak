@@ -193,11 +193,27 @@ public class JpaUserFederatedStorageProvider implements
         if (results.isEmpty()) {
             return null;
         } else if (results.size() > 1) {
-            throw new IllegalStateException("More results found for identityProvider=" + link.getIdentityProvider() +
-                    ", userId=" + link.getUserId() + ", results=" + results);
+            return resolveMultipleBrokerLinks(realm, link, results);
         } else {
             return results.get(0);
         }
+    }
+
+    private String resolveMultipleBrokerLinks(RealmModel realm, FederatedIdentityModel link, List<String> results) {
+        String validUserId = null;
+        for (String userId : results) {
+            UserModel user = session.users().getUserById(realm, userId);
+            if (user != null) {
+                if (validUserId != null) {
+                    throw new IllegalStateException("More results found for identityProvider=" + link.getIdentityProvider() +
+                            ", userId=" + link.getUserId() + ", results=" + results);
+                }
+                validUserId = userId;
+            } else {
+                removeFederatedIdentity(realm, userId, link.getIdentityProvider());
+            }
+        }
+        return validUserId;
     }
 
     @Override
