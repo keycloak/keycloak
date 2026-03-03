@@ -121,6 +121,14 @@
         <link rel="modulepreload" href="${resourceUrl}/${import}">
       </#list>
     </#if>
+    <script type="module">
+      try {
+        const direction = new Intl.Locale(${locale}).getTextInfo().direction;
+        document.documentElement.setAttribute("dir", direction);
+      } catch (e) {
+        document.documentElement.setAttribute("dir", "ltr");
+      }
+    </script>
   </head>
   <body data-page-id="account">
     <div id="app">
