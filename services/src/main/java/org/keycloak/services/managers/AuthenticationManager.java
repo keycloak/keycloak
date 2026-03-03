@@ -1547,7 +1547,13 @@ public class AuthenticationManager {
             String kid = verifier.getHeader().getKeyId();
             String algorithm = verifier.getHeader().getAlgorithm().name();
 
-            SignatureVerifierContext signatureVerifier = session.getProvider(SignatureProvider.class, algorithm).verifier(kid);
+            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
+            if (signatureProvider == null) {
+                logger.debugf("Invalid algorithm '%s' in the access token", algorithm);
+                return null;
+            }
+
+            SignatureVerifierContext signatureVerifier = signatureProvider.verifier(kid);
             verifier.verifierContext(signatureVerifier);
 
             AccessToken token = verifier.verify().getToken();
