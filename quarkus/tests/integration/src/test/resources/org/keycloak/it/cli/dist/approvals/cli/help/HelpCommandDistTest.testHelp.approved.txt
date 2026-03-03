@@ -40,6 +40,8 @@ Commands:
                             metadata.
     metadata              Stores the metadata necessary to determine if a
                             configuration is compatible.
+  help                    Get more help about specific components
+    features              Information about features
 
 Examples:
 
