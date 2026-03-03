@@ -6,8 +6,9 @@ import {
   Chip,
   ChipGroup,
   FormGroup,
+  TextInput,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -17,6 +18,7 @@ import {
   useGroupResource,
   GroupResourceContext,
 } from "../../context/group-resource/GroupResourceContext";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { GroupPickerDialog } from "../group/GroupPickerDialog";
 import type { ComponentProps } from "./components";
 
@@ -31,9 +33,32 @@ export const GroupComponent = ({
   const [open, setOpen] = useState(false);
   const [openOrgGroups, setOpenOrgGroups] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>();
-  const { control } = useFormContext();
+  const { control, getValues, setValue, watch } = useFormContext();
   const { adminClient } = useAdminClient();
+  const serverInfo = useServerInfo();
   const hasLinkedOrganization = useGroupResource().isOrgGroups();
+  const groupTypeFieldName = convertToName("groupType");
+
+  // Get group type enum values from server
+  const groupTypes = serverInfo.enums?.["type"] || [];
+  const GROUP_TYPE_REALM =
+    groupTypes.find((t: string) => t === "REALM") || "REALM";
+  const GROUP_TYPE_ORG =
+    groupTypes.find((t: string) => t === "ORGANIZATION") || "ORGANIZATION";
+
+  // Watch the groupType field value from the form
+  const groupTypeValue = watch(groupTypeFieldName);
+
+  // Set default groupType on mount if needed
+  useEffect(() => {
+    const groupValue = getValues(convertToName(name!));
+    const existingGroupType = getValues(groupTypeFieldName);
+
+    if (!existingGroupType && hasLinkedOrganization && groupValue) {
+      // No groupType in loaded data, but there's a group - default to REALM
+      setValue(groupTypeFieldName, GROUP_TYPE_REALM);
+    }
+  }, []); // Run only once on mount
 
   return (
     <Controller
@@ -52,6 +77,7 @@ export const GroupComponent = ({
                 }}
                 onConfirm={(groups) => {
                   field.onChange(groups?.[0].path);
+                  setValue(groupTypeFieldName, GROUP_TYPE_REALM);
                   setGroups(groups);
                   setOpen(false);
                 }}
@@ -69,6 +95,7 @@ export const GroupComponent = ({
               }}
               onConfirm={(groups) => {
                 field.onChange(groups?.[0].path);
+                setValue(groupTypeFieldName, GROUP_TYPE_ORG);
                 setGroups(groups);
                 setOpenOrgGroups(false);
               }}
@@ -89,7 +116,12 @@ export const GroupComponent = ({
               <ActionListItem>
                 <ChipGroup>
                   {field.value && (
-                    <Chip onClick={() => field.onChange(undefined)}>
+                    <Chip
+                      onClick={() => {
+                        field.onChange(undefined);
+                        setValue(groupTypeFieldName, undefined);
+                      }}
+                    >
                       {field.value}
                     </Chip>
                   )}
@@ -119,6 +151,25 @@ export const GroupComponent = ({
               )}
             </ActionList>
           </FormGroup>
+          {field.value &&
+            (hasLinkedOrganization || groupTypeValue === GROUP_TYPE_ORG) && (
+              <FormGroup
+                label={t("groupType")}
+                fieldId="groupType"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("groupTypeHelp")}
+                    fieldLabelId="groupType"
+                  />
+                }
+              >
+                <TextInput
+                  id="groupType"
+                  value={groupTypeValue || GROUP_TYPE_REALM}
+                  readOnly
+                />
+              </FormGroup>
+            )}
         </>
       )}
     />
