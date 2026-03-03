@@ -147,19 +147,24 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
 
         if (logger.isEnabled(level)) {
             StringBuilder sb = new StringBuilder();
+            var authDetails = adminEvent.getAuthDetails();
 
             sb.append("operationType=");
             sanitize(sb, adminEvent.getOperationType().toString());
             sb.append(", realmId=");
-            sanitize(sb, adminEvent.getAuthDetails().getRealmId());
+            sanitize(sb, adminEvent.getRealmId());
             sb.append(", realmName=");
-            sanitize(sb, adminEvent.getAuthDetails().getRealmName());
+            sanitize(sb, adminEvent.getRealmName());
+            sb.append(", authRealmId=");
+            sanitize(sb, authDetails.getRealmId());
+            sb.append(", authRealmName=");
+            sanitize(sb, authDetails.getRealmName());
             sb.append(", clientId=");
-            sanitize(sb, adminEvent.getAuthDetails().getClientId());
+            sanitize(sb, authDetails.getClientId());
             sb.append(", userId=");
-            sanitize(sb, adminEvent.getAuthDetails().getUserId());
+            sanitize(sb, authDetails.getUserId());
             sb.append(", ipAddress=");
-            sanitize(sb, adminEvent.getAuthDetails().getIpAddress());
+            sanitize(sb, authDetails.getIpAddress());
             sb.append(", resourceType=");
             sanitize(sb, adminEvent.getResourceTypeAsString());
             sb.append(", resourcePath=");
