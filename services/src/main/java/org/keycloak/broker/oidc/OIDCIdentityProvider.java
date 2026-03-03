@@ -477,16 +477,17 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             if (!getConfig().isDisableNonce()) {
                 identity.getContextData().put(BROKER_NONCE_PARAM, idToken.getOtherClaims().get(OIDCLoginProtocol.NONCE_PARAM));
             }
-
+            if (tokenResponse.getExpiresIn() > 0) {
+                long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
+                tokenResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
+                response = JsonSerialization.writeValueAsString(tokenResponse);
+            }
             if (Booleans.isTrue(getConfig().isStoreToken())) {
-                if (tokenResponse.getExpiresIn() > 0) {
-                    long accessTokenExpiration = Time.currentTime() + tokenResponse.getExpiresIn();
-                    tokenResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
-                    response = JsonSerialization.writeValueAsString(tokenResponse);
-                }
                 identity.setToken(response);
             }
-
+            else {
+                identity.getContextData().put(FEDERATED_TOKEN_RESPONSE, response);
+            }
             return identity;
         } catch (IdentityBrokerException e) {
             throw e;
@@ -795,6 +796,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         authSession.setUserSessionNote(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
         authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, tokenResponse.getToken());
         authSession.setUserSessionNote(FEDERATED_ID_TOKEN, tokenResponse.getIdToken());
+
+        String federatedTokenResponse = (String) context.getContextData().get(FEDERATED_TOKEN_RESPONSE);
+        if (federatedTokenResponse != null) authSession.setUserSessionNote(FEDERATED_TOKEN_RESPONSE, federatedTokenResponse);
     }
 
     @Override
