@@ -116,7 +116,7 @@ public class ClientRepresentationComparator {
         if (attrs == null) return;
 
         compare("attr[saml_name_id_format]→nameIdFormat", attrs.get("saml_name_id_format"), saml.getNameIdFormat());
-        compareSamlBoolean("saml.force.name.id.format", "forceNameIdFormat", saml.getForceNameIdFormat());
+        compareSamlBoolean("saml_force_name_id_format", "forceNameIdFormat", saml.getForceNameIdFormat());
         compareSamlBoolean("saml.authnstatement", "includeAuthnStatement", saml.getIncludeAuthnStatement());
         compareSamlBoolean("saml.server.signature", "signDocuments", saml.getSignDocuments());
         compareSamlBoolean("saml.assertion.signature", "signAssertions", saml.getSignAssertions());
