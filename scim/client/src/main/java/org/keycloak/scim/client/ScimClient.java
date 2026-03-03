@@ -138,6 +138,11 @@ public final class ScimClient implements AutoCloseable {
                 .header(HttpHeaders.CONTENT_TYPE, APPLICATION_SCIM_JSON);
     }
 
+    SimpleHttpRequest doPatch(Class<? extends ResourceTypeRepresentation> resourceType, String id) {
+        return beforeRequest(http.doPatch(baseUrl + getResourceTypePath(resourceType) + "/" + id))
+                .header(HttpHeaders.CONTENT_TYPE, APPLICATION_SCIM_JSON);
+    }
+
     <T> T execute(SimpleHttpRequest request, Class<T> responseType) {
         try (SimpleHttpResponse response = execute(request)) {
             if (responseType == null) {

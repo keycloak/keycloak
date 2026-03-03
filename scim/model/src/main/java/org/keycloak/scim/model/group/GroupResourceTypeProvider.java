@@ -27,10 +27,8 @@ import org.keycloak.models.jpa.GroupAdapter;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
-import org.keycloak.scim.model.filter.AttributeInfo;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
 import org.keycloak.scim.protocol.request.SearchRequest;
-import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
 import org.keycloak.utils.StringUtil;
@@ -85,15 +83,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             Root<GroupEntity> root = query.from(GroupEntity.class);
 
             // Create filter predicate using the same query and root that will be used for execution
-            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(scimAttrPath -> {
-                // first split the attribute path into schema and attribute name. If no schema is specified, use the core user schema by default
-                String[] splitAttrPath = splitScimAttribute(scimAttrPath);
-
-                if (Scim.GROUP_CORE_SCHEMA.equals(splitAttrPath[0]) && "displayName".equalsIgnoreCase(splitAttrPath[1])) {;
-                    return new AttributeInfo("name", true, null);
-                }
-                return null;
-            }, cb, query, root);
+            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, query, root);
             Predicate filterPredicate = evaluator.visit(filterContext).predicate();
 
             // Apply realm restriction

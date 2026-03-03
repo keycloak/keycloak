@@ -2,7 +2,6 @@ package org.keycloak.scim.model.user;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -21,13 +20,10 @@ import org.keycloak.models.jpa.UserAdapter;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
-import org.keycloak.scim.model.filter.AttributeInfo;
-import org.keycloak.scim.model.filter.AttributeNameResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
 import org.keycloak.scim.resource.user.User;
-import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
@@ -36,8 +32,6 @@ import org.keycloak.userprofile.ValidationException.Error;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA;
-import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA_ATTRIBUTE;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<UserModel, User> {
@@ -105,7 +99,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             Root<UserEntity> root = query.from(UserEntity.class);
 
             // Create filter predicate using the same query and root that will be used for execution
-            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(new UserAttributeNameResolver(session, this), cb, query, root);
+            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, query, root);
             Predicate filterPredicate = evaluator.visit(filterContext).predicate();
 
             // Apply realm restriction
@@ -152,42 +146,4 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
 
         return exception;
     }
-
-    private static class UserAttributeNameResolver implements AttributeNameResolver {
-
-        private KeycloakSession session;
-        private UserResourceTypeProvider provider;
-
-        public UserAttributeNameResolver(KeycloakSession session, UserResourceTypeProvider provider) {
-            this.session = session;
-            this.provider = provider;
-        }
-
-        @Override
-        public AttributeInfo resolve(String scimAttrPath) {
-
-            // first split the attribute path into schema and attribute name. If no schema is specified, use the core user schema by default
-            String[] splitAttrPath = provider.splitScimAttribute(scimAttrPath);
-
-            // iterate through user profile attributes, finding one whose scim.schema.attribute annotation matches the given scimAttrPath
-            Attributes attributes = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of()).getAttributes();
-            Set<String> allAttrNames = attributes.toMap().keySet();
-            for (String attrName : allAttrNames) {
-                var annotations = attributes.getMetadata(attrName).getAnnotations();
-                if (annotations != null) {
-                    String scimAttr = (String) annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
-                    String scimAttrSchema = (String) annotations.get(ANNOTATION_SCIM_SCHEMA);
-                    if (splitAttrPath[0].equals(scimAttrSchema) && splitAttrPath[1].equals(scimAttr)) {
-                        // we found the attribute with the matching SCIM attribute path and schema, so return it
-                        boolean primary = Boolean.parseBoolean((String) annotations.get("primary"));
-                        String attrType = (String) annotations.get("type");
-                        return new AttributeInfo(attrName, primary, attrType);
-                    }
-                }
-            }
-            // haven't found the attribute in the user profile, so return null to indicate that this is an unknown attribute.
-            return null;
-        }
-    }
-
 }

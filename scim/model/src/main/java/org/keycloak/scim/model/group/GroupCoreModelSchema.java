@@ -1,25 +1,20 @@
 package org.keycloak.scim.model.group;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.keycloak.models.GroupModel;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.schema.AbstractModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
-import org.keycloak.scim.resource.schema.attribute.AttributeMapper;
 
 public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, Group> {
 
-    private static final List<Attribute<GroupModel, Group>> ATTRIBUTE_MAPPERS = new ArrayList<>();
-
-    static {
-        ATTRIBUTE_MAPPERS.add(new Attribute<>("displayName", new AttributeMapper<>(GroupModel::setName, Group::setDisplayName)));
-    }
-
     public GroupCoreModelSchema() {
-        super(Group.SCHEMA, ATTRIBUTE_MAPPERS);
+        super(Group.SCHEMA);
     }
 
     @Override
@@ -41,15 +36,24 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     }
 
     @Override
-    protected String getAttributeSchema(GroupModel model, String name) {
-        return "urn:ietf:params:scim:schemas:core:2.0:Group";
-    }
-
-    @Override
     protected String getAttributeSchemaName(GroupModel model, String name) {
         if (name.equals("name")) {
             return "displayName";
         }
         return null;
+    }
+
+    @Override
+    protected Map<String, Attribute<GroupModel, Group>> doGetAttributes() {
+        return new ArrayList<>((Attribute.<GroupModel, Group>simple("displayName")
+                    .primary()
+                    .modelAttributeResolver((session, attribute) -> {
+                        if (attribute.getName().equals("displayName")) {
+                            return "name";
+                        }
+                        return null;
+                    })
+                    .withSetters(GroupModel::setName)
+                    .build())).stream().collect(Collectors.toMap(Attribute::getName, Function.identity()));
     }
 }
