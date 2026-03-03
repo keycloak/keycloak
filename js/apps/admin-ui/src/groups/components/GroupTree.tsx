@@ -240,6 +240,7 @@ export const GroupTree = ({
             max: `${max + 1}`,
             exact: `${exact}`,
             global: `${search !== ""}`,
+            ...(isOrgGroups ? { subGroupsCount: "true" } : {}),
           },
           search === "" ? null : { search },
         ),
