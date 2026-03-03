@@ -189,6 +189,7 @@ export const GroupTree = ({
   const [first, setFirst] = useState(0);
   const prefFirst = useRef(0);
   const prefMax = useRef(20);
+  const prefSearch = useRef("");
   const [count, setCount] = useState(0);
   const [exact, setExact] = useState(false);
   const [activeItem, setActiveItem] = useState<ExtendedTreeViewDataItem>();
@@ -283,7 +284,12 @@ export const GroupTree = ({
           ];
         }
       }
-      if (search || prefFirst.current !== first || prefMax.current !== max) {
+      if (
+        search ||
+        prefSearch.current !== search ||
+        prefFirst.current !== first ||
+        prefMax.current !== max
+      ) {
         setData(groups.map((g) => mapGroup(g, refresh)));
       } else {
         setData(
@@ -297,6 +303,7 @@ export const GroupTree = ({
       setCount(countGroups(groups));
       prefFirst.current = first;
       prefMax.current = max;
+      prefSearch.current = search;
     },
     [key, first, firstSub, max, search, exact, activeItem],
   );
