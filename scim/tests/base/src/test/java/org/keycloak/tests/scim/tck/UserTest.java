@@ -283,6 +283,28 @@ public class UserTest extends AbstractScimTest {
         User actual = client.users().update(expected);
         assertEquals(1, actual.getSchemas().size());
         assertRootAttributes(actual, expected);
+
+        User another = client.users().create(createUser());
+        assertNotNull(another.getId());
+
+        try {
+            client.users().update(another.getId(), expected);
+            fail("should fail because of invalid identifier");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("Invalid reference to resource", error.getDetail());
+        }
+
+        try {
+            client.users().update(null, expected);
+            fail("should fail because identifier not provided");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(404, error.getStatusInt());
+        }
     }
 
     @Test
