@@ -745,7 +745,8 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             }
 
             // Add federated identity link here
-            if (!(federatedUser instanceof LightweightUserAdapter)) {
+            String skipFederatedIdentityLink = authSession.getAuthNote(AbstractIdpAuthenticator.SKIP_FEDERATED_IDENTITY_LINK);
+            if (!(federatedUser instanceof LightweightUserAdapter) && !Boolean.parseBoolean(skipFederatedIdentityLink)) {
                 checkOverrideLink(authSession, federatedUser, providerAlias);
 
                 FederatedIdentityModel federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(), context.getId(),
