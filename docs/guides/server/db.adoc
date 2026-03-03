@@ -4,9 +4,7 @@
 <#import "/templates/links.adoc" as links>
 <#import "/templates/profile.adoc" as profile>
 
-<@tmpl.guide
-    title="Configuring the database"
-    summary="Configure a relational database for {project_name} to store user, client, and realm data.">
+<@tmpl.guide title="Configuring the database" summary="Configure a relational database for {project_name} to store user, client, and realm data.">
 
 This {section} explains how to configure the {project_name} server to store data in a relational database.
 
@@ -252,10 +250,6 @@ CREATE DATABASE keycloak
   COLLATE utf8mb4_unicode_ci;
 ----
 
-=== Configuring Unicode support for a MySQL/MariaDB database
-
-Unicode characters are supported in a MySQL/MariaDB database if the database was created with Unicode support in the VARCHAR and CHAR fields when using the following SQL statement.
-
 |PostgreSQL
 m|UTF8
 a|
@@ -285,6 +279,19 @@ To avoid potential mismatches:
 
 By relying on the database default, {project_name} respects your intent and allows you to maintain control over your database configuration throughout its lifecycle.
 ====
+
+==== Configuring Unicode support for a Microsoft SQL Server database
+
+Unicode characters are supported only for the special fields for a Microsoft SQL Server database.
+The database requires no special settings.
+
+By default, {project_name} sets the `sendStringParametersAsUnicode` JDBC driver property to `false` when using Microsoft SQL Server.
+This can improve performance and query plan efficiency, as Microsoft SQL Server may be unable to use indexes when string parameters are sent as Unicode.
+
+If you need to override this setting, set `sendStringParametersAsUnicode` explicitly in the JDBC URL (using `db-url`) or via `db-url-properties`.
+For example:
+
+<@kc.start parameters="--db mssql --db-url-properties=';sendStringParametersAsUnicode=true'"/>
 
 == Preparing for PostgreSQL
 
@@ -592,16 +599,3 @@ Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.d
 
 </@opts.printRelevantOptions>
 </@tmpl.guide>
-
-=== Unicode support for a Microsoft SQL Server database
-
-Unicode characters are supported only for the special fields for a Microsoft SQL Server database.
-The database requires no special settings.
-
-By default, {project_name} sets the `=== Unicode support for a Microsoft SQL Server databaseStringParametersAsUnicode` JDBC driver property to `false` when using Microsoft SQL Server.
-This significantly improves performance because otherwise Microsoft SQL Server might be unable to use indexes.
-
-If you need to override this setting, set `sendStringParametersAsUnicode` explicitly in the JDBC URL (using `db-url`) or via `db-url-properties`.
-For example:
-
-<@kc.start parameters="--db mssql --db-url-properties=';sendStringParametersAsUnicode=true'"/>

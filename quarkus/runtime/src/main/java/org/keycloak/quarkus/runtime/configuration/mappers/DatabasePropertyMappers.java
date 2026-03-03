@@ -148,18 +148,16 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         // targetServerType already set to same or different value in db-url, ignore
         return dbUrl == null || !dbUrl.contains("targetServerType");
     }
-
+    
     public static boolean isMssqlSendStringParametersAsUnicode() {
         String db = Configuration.getConfigValue(DB).getValue();
         Database.Vendor vendor = Database.getVendor(db).orElse(null);
         if (vendor != Database.Vendor.MSSQL) {
             return false;
         }
-
         String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
-        String propertyUnicode = Configuration.getConfigValue("quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode").getValue();
-        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValue();
-        String dbUrlProperties = Configuration.getKcConfigValue(DatabaseOptions.DB_URL_PROPERTIES.getKey()).getValue();
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValueOrDefault("");
+        String dbUrlProperties = Configuration.getKcConfigValue(DatabaseOptions.DB_URL_PROPERTIES.getKey()).getValueOrDefault("");
 
         log.debugf("Determining whether to set 'sendStringParametersAsUnicode' for MSSQL based on db '%s', driver '%s', url '%s'",
                 db, dbDriver, dbUrl);
@@ -171,13 +169,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         }
 
         // sendStringParametersAsUnicode already set by user in db-url or db-url-properties, ignore
-        if (dbUrl != null && dbUrl.contains("sendStringParametersAsUnicode")) {
-            return false;
-        }
-        if (dbUrlProperties != null && dbUrlProperties.contains("sendStringParametersAsUnicode")) {
-            return false;
-        }
-        return true;
+        return !dbUrl.contains("sendStringParametersAsUnicode") &&
+                !dbUrlProperties.contains("sendStringParametersAsUnicode");
     }
     /**
      * Starting with H2 version 2.x, marking "VALUE" as a non-keyword is necessary as some columns are named "VALUE" in the Keycloak schema.
