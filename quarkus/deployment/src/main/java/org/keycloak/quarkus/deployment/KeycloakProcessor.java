@@ -95,6 +95,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
+import org.keycloak.quarkus.runtime.jdbc.PostgresqlFailoverDetection;
 import org.keycloak.quarkus.runtime.logging.ClearMappedDiagnosticContextFilter;
 import org.keycloak.quarkus.runtime.services.health.KeycloakClusterReadyHealthCheck;
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
@@ -866,6 +867,18 @@ class KeycloakProcessor {
             // disables the filter
             ClassInfo disabledBean = index.getIndex()
                     .getClassByName(DotName.createSimple(ClearMappedDiagnosticContextFilter.class.getName()));
+            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
+        }
+    }
+
+    @BuildStep
+    void disablePostgresqlSwitchoverDetection(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
+        String db = Configuration.getConfigValue(DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != Database.Vendor.POSTGRES) {
+            // disables the inspector
+            ClassInfo disabledBean = index.getIndex()
+                    .getClassByName(DotName.createSimple(PostgresqlFailoverDetection.class.getName()));
             removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
         }
     }
