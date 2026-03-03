@@ -164,6 +164,10 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
         R resource = parseResourceTypePayload(is);
 
+        if (!existing.getId().equals(resource.getId())) {
+            return badRequest("Invalid reference to resource");
+        }
+
         return onPersist(resource, Status.OK,
                 (rScimResourceTypeProvider, r) -> resourceTypeProvider.update(r));
     }
@@ -239,6 +243,10 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     }
 
     private R getResource(String id) {
+        if (id == null) {
+            return null;
+        }
+
         try {
             return resourceTypeProvider.get(id);
         } catch (ForbiddenException fe) {

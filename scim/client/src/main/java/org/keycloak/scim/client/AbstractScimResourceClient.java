@@ -28,8 +28,12 @@ public abstract class AbstractScimResourceClient<R extends ResourceTypeRepresent
     }
 
     public R update(R resource) {
+        return update(resource.getId(), resource);
+    }
+
+    public R update(String id, R resource) {
         requireNonNull(resource, "SCIM resource must not be null");
-        return client.execute(client.doPut(resourceTypeClass, resource.getId())
+        return client.execute(client.doPut(resourceTypeClass, id)
                 .json(resource), resourceTypeClass);
     }
 
