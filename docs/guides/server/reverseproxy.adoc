@@ -284,7 +284,7 @@ Otherwise, the provider will discard the request.
 === Configuring the Traefik provider
 
 The Traefik provider handles certificates forwarded by Traefik's link:https://doc.traefik.io/traefik/middlewares/http/passtlsclientcert/[PassTLSClientCert middleware] with `pem: true`.
-Traefik sends the client certificate and any intermediate CA certificates as URL-encoded PEM blocks in a single `X-Forwarded-Tls-Client-Cert` header, separated by commas.
+Traefik sends the client certificate and any intermediate CA certificates as optionally URL-encoded PEM blocks in a single `X-Forwarded-Tls-Client-Cert` header, separated by commas.
 The `traefik` provider automatically URL-decodes and parses all certificates from this header.
 
 If you stick to the default header name used by Traefik, you do not need to configure any additional options after selecting the `traefik` provider.
