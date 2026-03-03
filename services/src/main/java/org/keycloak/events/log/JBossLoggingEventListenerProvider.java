@@ -151,8 +151,12 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             sb.append("operationType=");
             sanitize(sb, adminEvent.getOperationType().toString());
             sb.append(", realmId=");
-            sanitize(sb, adminEvent.getAuthDetails().getRealmId());
+            sanitize(sb, adminEvent.getRealmId());
             sb.append(", realmName=");
+            sanitize(sb, adminEvent.getRealmName());
+            sb.append(", authRealmId=");
+            sanitize(sb, adminEvent.getAuthDetails().getRealmId());
+            sb.append(", authRealmName=");
             sanitize(sb, adminEvent.getAuthDetails().getRealmName());
             sb.append(", clientId=");
             sanitize(sb, adminEvent.getAuthDetails().getClientId());
