@@ -35,6 +35,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.protocol.oidc.token.TokenInterceptorException;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.Urls;
@@ -134,11 +135,17 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
 
         ClientSessionContext clientSessionCtx = processor.attachSession();
         clientSessionCtx.setAttribute(Constants.GRANT_TYPE, context.getGrantType());
+        clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, formParams.getFirst(OAuth2Constants.RESOURCE));
         UserSessionModel userSession = processor.getUserSession();
         updateUserSessionFromClientAuth(userSession);
 
-        TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
-            .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
+        TokenManager.AccessTokenResponseBuilder responseBuilder;
+        try {
+            responseBuilder = tokenManager
+                    .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
+        } catch (TokenInterceptorException e) {
+            throw new CorsErrorResponseException(cors, e.getError(), e.getDescription(), Response.Status.BAD_REQUEST);
+        }
         boolean useRefreshToken = clientConfig.isUseRefreshToken();
         if (useRefreshToken) {
             responseBuilder.generateRefreshToken();

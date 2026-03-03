@@ -79,6 +79,7 @@ public abstract class AuthzEndpointRequestParser {
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.REDIRECT_URI_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.STATE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.SCOPE_PARAM);
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.RESOURCE);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.PROMPT_PARAM);
         KNOWN_REQ_PARAMS.add(AdapterConstants.KC_IDP_HINT);
