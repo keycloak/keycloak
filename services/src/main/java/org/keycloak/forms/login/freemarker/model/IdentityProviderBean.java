@@ -32,6 +32,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.authentication.authenticators.browser.util.HiddenBrokerContext;
 import org.keycloak.common.Profile;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -73,13 +74,28 @@ public class IdentityProviderBean {
         if (this.providers == null) {
             String existingIDP = this.getExistingIDP(session, context);
             Set<String> federatedIdentities = this.getLinkedBrokerAliases(session, realm, context);
+            List<IdentityProvider> defaultProviders;
             if (federatedIdentities != null) {
-                this.providers = getFederatedIdentityProviders(federatedIdentities, existingIDP);
+                defaultProviders = getFederatedIdentityProviders(federatedIdentities, existingIDP);
             } else {
-                this.providers = searchForIdentityProviders(existingIDP);
+                defaultProviders = searchForIdentityProviders(existingIDP);
             }
+            this.providers = filterHiddenProviders(defaultProviders);
         }
         return this.providers;
+    }
+
+    protected List<IdentityProvider> filterHiddenProviders(List<IdentityProvider> defaultProviders) {
+        AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
+        if (authenticationSession == null) return defaultProviders;
+
+        HiddenBrokerContext hiddenBrokerContext = HiddenBrokerContext.readFromAuthenticationSession(authenticationSession);
+        if (hiddenBrokerContext == null) return defaultProviders;
+
+        return defaultProviders
+                .stream()
+                .filter(p -> !hiddenBrokerContext.getHiddenBrokers().contains(p.alias))
+                .toList();
     }
 
     public KeycloakSession getSession() {

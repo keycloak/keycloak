@@ -63,6 +63,8 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     // Flag is true if user was already set in the authContext before this authenticator was triggered. In this case we skip clearing of the user after unsuccessful password authentication
     public static final String USER_SET_BEFORE_USERNAME_PASSWORD_AUTH = "USER_SET_BEFORE_USERNAME_PASSWORD_AUTH";
 
+    // What broker's should be hidden on login page
+    public static final String HIDDEN_BROKERS = "HIDDEN_BROKERS";
     @Override
     public void action(AuthenticationFlowContext context) {
 
