@@ -52,6 +52,8 @@ Only confidential clients can request a JWT authorization grant. In order to all
 .Client configuration for JWT Authorization Grant
 image::jwt-authorization-grant-client-config.png[Client configuration for JWT Authorization Grant]
 
+NOTE: In the **Advanced** tab, section **OpenID Connect Compatibility Modes**, the configuration option **Custom audience mapping** allows to configure specific custom valid audiences for individual Identity Providers. The map key is the Identity Provider alias, and the value is the custom audience that will be accepted for that provider. Note this behavior is not covered by the standard and can have major security implications.
+
 The Identity Provider (both types commented in the introduction) needs to also be configured to establish the relationship that will validate the assertion. In **Identity providers** -> select your OIDC or JWT provider -> **Settings** tab -> **Authorization Grant Settings** section.
 
 . Enable the option **JWT Authorization Grant** switch.
@@ -157,12 +159,8 @@ The enforcer can be used for any request that uses an assertion parameter. Curre
 * Executor **jwt-claim-enforcer**. This executor allows to configure extra requirements for claims in the JWT assertion token. For example, if we want the assertion to contain an `iat` claim or a custom claim with a specific value. The configuration allows us to set any claim name and any claim value (using a java regex). If the claim in the JWT assertion does not match the regex, the request does not proceed and an error is returned.
 +
 As the previous executor, for the moment this enforcer can be used for JWT Authorization Grant and the Standard Token exchange.
-* Executor **jwt-authorization-grant-audience**. The executor allows to configure different and exclusive valid audiences for the assertion. The JWT Authorization Grant processing ensures, by specification, that the audience of the assertion is the {project_name} issuer or token endpoint URL. You can also use the Client ID as valid audience (option **Allows Client ID as audience for assertions**) for the OpenID Connect identity providers. Using this executor, you can configure one or more valid audiences instead of the default ones for the requests processed by the client policy.
-+
-WARNING: The **jwt-authorization-grant-audience** executor changes the validation of the assertion audience out of the standard compliance. This behavior can have major security implications.
 
-
-=== JWT Authorization Grant for Google Identity Provider
+== JWT Authorization Grant for Google Identity Provider
 
 Google Identity Provider supports the JWT Authorization Grant, allowing the use of a Google ID Token as an assertion.
 According to RFC 7523, the assertion MUST be a JWT. Since Google issues JWTs only for ID Tokens (and not for access tokens), only the ID Token can be used for this authorization grant.
@@ -197,19 +195,10 @@ In a scenario where a mobile application already supports login with Google with
 
 In this case, the Google ID token cannot be used with the JWT Authorization Grant because the `aud` claim in the ID Token does not match the client id configured in the Google Identity Provider.
 
-To address this issue, you can use link:{adminguide_link}#_client_policies[Client Policies] with the `jwt-authorization-grant-audience` executor to explicitly set the Google ID Token audience as the trusted audience, replacing the default audience validation configured for the Identity Provider.
+To address this issue, you can use the **Custom audience mapping** configuration option commented in the client configuration section. For example, if the Identity Provider alias is `google`, the previous audience can be configured as valid with the following mapping.
 
-**Example setup:**
-
-Assume you have an OIDC client named `foo`, which is a mobile application receiving a Google ID token with the audience `my-mobile-app.apps.googleusercontent.com`, and you have an already configured Google Identity Provider with a different client-id.
-
-Follow these steps to configure the validation of the audience:
-
-. **Create a Client Policy Profile:** Create a profile and add the `jwt-authorization-grant-audience` executor. Configure the allowed audience in the executor to `my-mobile-app.apps.googleusercontent.com`.
-. **Create a Client Policy:** Create a policy that uses this profile. For the condition, you can use the **client-role** condition and specify a role, for example, `foo-role`.
-. **Configure the Client:** Navigate to the client `foo` settings. Open the **Roles** tab and create a new role named `foo-role`. This role acts effectively as a "marker" to ensure the client policy is triggered. You should create this same role in any other client that requires this specific audience validation.
-. **Validate:** When you send the JWT authorization grant request with your Google ID token from client `foo`, the request will now be accepted, provided that `my-mobile-app.apps.googleusercontent.com` is present as a valid audience in the token.
-
+.Custom audience mapping for the google provider
+image::jwt-authorization-grant-google-custom-audiences.png[Custom audience mapping for the google provider]
 
 </@tmpl.guide>
 
