@@ -89,7 +89,7 @@ For details, navigate to link:{server_guide_base_link}/reverseproxy#_enabling_cl
 
 = Java 25 support
 
-{project_name} now supports running with JRE 25. OpenJDK 25 is also now used in the official container images.
+{project_name} now supports running with JRE 25.
 
 = Configurable Kubernetes Service name and port in the Keycloak Operator
 
