@@ -25,7 +25,11 @@ import java.util.StringTokenizer;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.http.HttpRequest;
 
+import org.jboss.logging.Logger;
+
 public class EnvoyProxySslClientCertificateLookup implements X509ClientCertificateLookup {
+
+    private static final Logger logger = Logger.getLogger(EnvoyProxySslClientCertificateLookup.class);
 
     protected final static String XFCC_HEADER = "x-forwarded-client-cert";
     protected final static String XFCC_HEADER_CERT_KEY = "Cert";
@@ -56,6 +60,11 @@ public class EnvoyProxySslClientCertificateLookup implements X509ClientCertifica
      */
     @Override
     public X509Certificate[] getCertificateChain(HttpRequest httpRequest) throws GeneralSecurityException {
+        if (!httpRequest.isProxyTrusted()) {
+            logger.warnv("HTTP header \"{0}\" is not trusted", XFCC_HEADER);
+            return null;
+        }
+
         String xfcc = httpRequest.getHttpHeaders().getRequestHeaders().getFirst(XFCC_HEADER);
         if (xfcc == null) {
             return null;
