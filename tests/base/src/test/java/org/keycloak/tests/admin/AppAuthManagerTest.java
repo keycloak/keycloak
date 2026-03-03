@@ -4,8 +4,10 @@ import java.io.IOException;
 
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -78,15 +80,29 @@ public class AppAuthManagerTest {
         test("Bearer\t", false);
     }
 
+    @Test
+    public void testNoneFailure() throws IOException {
+        AccessTokenResponse response = accessToken(oAuthClient, Constants.ADMIN_CLI_CLIENT_ID, "secret", "test-admin", "password");
+        Assertions.assertNotNull(response.getAccessToken());
+        AccessToken token = oAuthClient.parseToken(response.getAccessToken(), AccessToken.class);
+        String noneToken = new JWSBuilder().type("JWT").jsonContent(token).none();
+        send("Bearer ", noneToken, response.getRefreshToken(), false);
+    }
+
     private void test(String authPrefix, boolean success) throws IOException {
         AccessTokenResponse response = accessToken(oAuthClient, Constants.ADMIN_CLI_CLIENT_ID, "secret", "test-admin", "password");
         Assertions.assertNotNull(response.getAccessToken());
-        try (CloseableHttpResponse res = getHttpJsonResponse(whoAmiUrl(), authPrefix, response.getAccessToken())) {
+        send(authPrefix, response.getAccessToken(), response.getRefreshToken(), success);
+    }
+
+    private void send(String authPrefix, String accessToken, String refreshToken, boolean success) throws IOException {
+        try (CloseableHttpResponse res = getHttpJsonResponse(whoAmiUrl(), authPrefix, accessToken)) {
             Assertions.assertEquals(
                     success ? Response.Status.OK.getStatusCode() : Response.Status.UNAUTHORIZED.getStatusCode(),
                     res.getStatusLine().getStatusCode());
+        } finally {
+            oAuthClient.doLogout(refreshToken);
         }
-        oAuthClient.doLogout(response.getRefreshToken());
     }
 
     private AccessTokenResponse accessToken(OAuthClient oAuth, String clientId, String clientSecret, String username, String password) {
