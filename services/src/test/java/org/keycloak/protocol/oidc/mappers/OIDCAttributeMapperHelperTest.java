@@ -16,12 +16,18 @@
  */
 package org.keycloak.protocol.oidc.mappers;
 
+import java.util.Collections;
+import java.util.HashMap;
+
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.utils.JsonUtils;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  *
@@ -43,5 +49,39 @@ public class OIDCAttributeMapperHelperTest {
         assertThat(JsonUtils.splitClaimPath("c.a\\\\\\.b"), Matchers.contains("c", "a\\.b"));
         assertThat(JsonUtils.splitClaimPath("c\\\\\\.b.a\\\\\\.b"), Matchers.contains("c\\.b", "a\\.b"));
         assertThat(JsonUtils.splitClaimPath("c\\h\\.b.a\\\\\\.b"), Matchers.contains("ch.b", "a\\.b"));
+    }
+
+    @Test
+    public void testMapAttributeValueLongEmptyStringCollectionReturnsNull() {
+        ProtocolMapperModel mappingModel = numericTypeMappingModel("long");
+
+        Object mapped = OIDCAttributeMapperHelper.mapAttributeValue(mappingModel, Collections.singletonList(""));
+
+        assertNull(mapped);
+    }
+
+    @Test
+    public void testMapAttributeValueLongInvalidStringReturnsNull() {
+        ProtocolMapperModel mappingModel = numericTypeMappingModel("long");
+
+        Object mapped = OIDCAttributeMapperHelper.mapAttributeValue(mappingModel, "invalid-number");
+
+        assertNull(mapped);
+    }
+
+    @Test
+    public void testMapAttributeValueLongValidStringReturnsLong() {
+        ProtocolMapperModel mappingModel = numericTypeMappingModel("long");
+
+        Object mapped = OIDCAttributeMapperHelper.mapAttributeValue(mappingModel, "123");
+
+        assertEquals(123L, mapped);
+    }
+
+    private static ProtocolMapperModel numericTypeMappingModel(String jsonType) {
+        ProtocolMapperModel model = new ProtocolMapperModel();
+        model.setConfig(new HashMap<>());
+        model.getConfig().put(OIDCAttributeMapperHelper.JSON_TYPE, jsonType);
+        return model;
     }
 }
