@@ -17,6 +17,8 @@
 
 package org.keycloak.tests.broker;
 
+import java.util.Optional;
+
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -46,9 +48,12 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -80,6 +85,20 @@ public class IdentityProviderStoreTokenTest {
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
 
+    @AfterEach
+    public void logout() {
+        Optional<UserRepresentation> userResult = realm.admin().users().search("testuser", true).stream().findFirst();
+        if (userResult.isPresent()) {
+            AccountHelper.logout(realm.admin(), "testuser");
+            realm.admin().users().delete(userResult.get().getId()).close();
+        }
+
+        userResult = externalRealm.admin().users().search("testuser", true).stream().findFirst();
+        if (userResult.isPresent()) {
+            AccountHelper.logout(externalRealm.admin(), "testuser");
+        }
+    }
+
     @Test
     public void testOIDCIdentityProviderStoreTokenManualRoleGrant() {
         realm.updateIdentityProvider(IDP_ALIAS, idp-> {
@@ -98,7 +117,7 @@ public class IdentityProviderStoreTokenTest {
         AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
         Assertions.assertEquals(403, externalTokens.getStatusCode());
 
-        oauth.logoutRequest().idTokenHint(internalTokens.getIdToken()).send();
+        AccountHelper.logout(realm.admin(), "testuser");
 
         //grant the role to the user and repeat the login
         runOnServer.run(session -> {
@@ -111,6 +130,8 @@ public class IdentityProviderStoreTokenTest {
 
         oauth.openLoginForm();
         loginPage.clickSocial(IDP_ALIAS);
+        loginPage.fillLogin("testuser", "password");
+        loginPage.submit();
 
         internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertTrue(internalTokens.isSuccess());
@@ -118,14 +139,9 @@ public class IdentityProviderStoreTokenTest {
         externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
         Assertions.assertEquals(200, externalTokens.getStatusCode());
 
-        //refresh with the external token
-        externalTokens = oauthExternal.doRefreshTokenRequest(externalTokens.getRefreshToken());
-        Assertions.assertEquals(200, externalTokens.getStatusCode());
-
-        oauth.logoutRequest().idTokenHint(internalTokens.getIdToken()).send();
-        oauthExternal.logoutRequest().idTokenHint(externalTokens.getIdToken()).send();
-        UserRepresentation testUser = realm.admin().users().search("testuser").get(0);
-        realm.admin().users().delete(testUser.getId()).close();
+        UserInfoResponse userInfoResponse = oauthExternal.userInfoRequest(externalTokens.getAccessToken()).send();
+        Assertions.assertEquals(200, userInfoResponse.getStatusCode());
+        Assertions.assertNotNull(userInfoResponse.getUserInfo().getPreferredUsername());
     }
 
     @Test
@@ -142,14 +158,8 @@ public class IdentityProviderStoreTokenTest {
         Assertions.assertEquals(200, externalTokens.getStatusCode());
 
         //use the stored token to refresh for a refresh token request
-        AccessTokenResponse refreshTokenResponse = oauthExternal.refreshRequest(externalTokens.getRefreshToken()).send();
-        Assertions.assertEquals(200, refreshTokenResponse.getStatusCode());
-
-        //logout and remove user
-        oauth.logoutRequest().idTokenHint(refreshTokenResponse.getIdToken()).send();
-        oauthExternal.logoutRequest().idTokenHint(refreshTokenResponse.getIdToken()).send();
-        UserRepresentation testUser = realm.admin().users().search("testuser").get(0);
-        realm.admin().users().delete(testUser.getId()).close();
+        UserInfoResponse userInfoResponse = oauthExternal.userInfoRequest(externalTokens.getAccessToken()).send();
+        Assertions.assertEquals(200, userInfoResponse.getStatusCode());
     }
 
     @Test
@@ -174,15 +184,15 @@ public class IdentityProviderStoreTokenTest {
 
         timeOffSet.set(externalTokens.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
 
-        internalTokens = oauth
-                .doRefreshTokenRequest(internalTokens.getRefreshToken());
+        internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
         Assertions.assertEquals(200, internalTokens.getStatusCode());
         org.keycloak.testsuite.util.oauth.AccessTokenResponse externalTokens2 = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
         Assertions.assertEquals(200, externalTokens2.getStatusCode());
 
         // Check that we now have a different access and refresh token
         Assertions.assertNotEquals(externalTokens.getAccessToken(), externalTokens2.getAccessToken());
-        Assertions.assertNotEquals(externalTokens.getRefreshToken(), externalTokens2.getRefreshToken());
+        Assertions.assertNull(externalTokens.getRefreshToken());
+        Assertions.assertNull(externalTokens2.getRefreshToken());
 
         String newTokenFromDatabase = runOnServer.fetch(session -> {
             RealmModel realm = session.realms().getRealmByName(realmName);
@@ -192,12 +202,6 @@ public class IdentityProviderStoreTokenTest {
 
         // Ensure that the new token has been persisted
         Assertions.assertNotEquals(newTokenFromDatabase, oldTokenFromDatabase);
-
-        //logout and remove created user
-        oauth.logoutRequest().idTokenHint(internalTokens.getIdToken()).send();
-        oauthExternal.logoutRequest().idTokenHint(externalTokens.getIdToken()).send();
-        UserRepresentation testUser = realm.admin().users().search("testuser").get(0);
-        realm.admin().users().delete(testUser.getId()).close();
     }
 
     @Test
@@ -223,18 +227,99 @@ public class IdentityProviderStoreTokenTest {
         internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
         Assertions.assertEquals(200, internalTokens.getStatusCode());
         AccessTokenResponse error = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
-        Assertions.assertEquals(502, error.getStatusCode());
-        Assertions.assertEquals("Unable to refresh token", error.getError());
+        Assertions.assertEquals(400, error.getStatusCode());
 
-        oauth.logoutRequest().idTokenHint(internalTokens.getIdToken()).send();
-        oauthExternal.logoutRequest().idTokenHint(externalTokens.getIdToken()).send();
-
-        UserRepresentation testUser = realm.admin().users().search("testuser").get(0);
-        realm.admin().users().delete(testUser.getId()).close();
+        logout();
 
         //restore secret manually, clientSecret cannot be cleaned up automatically
         idp.getConfig().put("clientSecret", "test-secret");
         resource.update(idp);
+    }
+
+    @Test
+    public void testStoreTokenDisabled() {
+        realm.updateIdentityProvider(IDP_ALIAS, idp -> {
+            idp.setStoreToken(false);
+        });
+
+        oauth.openLoginForm();
+        loginPage.clickSocial(IDP_ALIAS);
+        loginPage.fillLogin("testuser", "password");
+        loginPage.submit();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertEquals(200, externalTokens.getStatusCode());
+
+        String realmName = realm.getName();
+        String oldTokenFromDatabase = runOnServer.fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(realm, user, IDP_ALIAS).getToken();
+        }, String.class);
+
+        //Ensure that the token is null in the db
+        Assertions.assertNull(oldTokenFromDatabase);
+
+        timeOffSet.set(externalTokens.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
+
+        internalTokens = oauth
+                .doRefreshTokenRequest(internalTokens.getRefreshToken());
+        Assertions.assertEquals(200, internalTokens.getStatusCode());
+        org.keycloak.testsuite.util.oauth.AccessTokenResponse externalTokens2 = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertEquals(200, externalTokens2.getStatusCode());
+
+        // Check that we now have a different access and refresh token
+        Assertions.assertNotEquals(externalTokens.getAccessToken(), externalTokens2.getAccessToken());
+        Assertions.assertNull(externalTokens.getRefreshToken());
+        Assertions.assertNull(externalTokens2.getRefreshToken());
+
+        String newTokenFromDatabase = runOnServer.fetch(session -> {
+            RealmModel realm = session.realms().getRealmByName(realmName);
+            UserModel user = session.users().getUserByUsername(realm, "testuser");
+            return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(realm, user, IDP_ALIAS).getToken();
+        }, String.class);
+
+        // Ensure that the new token is null in the db
+        Assertions.assertNull(newTokenFromDatabase);
+    }
+
+    @Test
+    public void testIdpDisabled() {
+        oauth.openLoginForm();
+        loginPage.clickSocial(IDP_ALIAS);
+        loginPage.fillLogin("testuser", "password");
+        loginPage.submit();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        realm.updateIdentityProvider(IDP_ALIAS, idp -> {
+            idp.setEnabled(false);
+        });
+
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertEquals(400, externalTokens.getStatusCode());
+    }
+
+    @Test
+    public void testUserDisabled() {
+        oauth.openLoginForm();
+        loginPage.clickSocial(IDP_ALIAS);
+        loginPage.fillLogin("testuser", "password");
+        loginPage.submit();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        realm.updateUser("testuser", user -> {
+            user.setEnabled(false);
+        });
+
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertEquals(400, externalTokens.getStatusCode());
     }
 
     public static class ExternalRealmConfig implements RealmConfig {

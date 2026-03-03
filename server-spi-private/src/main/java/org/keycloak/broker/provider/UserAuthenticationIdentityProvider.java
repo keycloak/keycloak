@@ -90,9 +90,10 @@ public interface UserAuthenticationIdentityProvider<C extends IdentityProviderMo
      * specific user.</p>
      *
      * @param identity
+     * @param userSession
      * @return
      */
-    Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity);
+    Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user);
 
     void backchannelLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm);
 

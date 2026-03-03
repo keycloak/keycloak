@@ -70,6 +70,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -273,7 +274,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     }
 
     @Override
-    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
         return Response.ok(identity.getToken()).type(MediaType.TEXT_PLAIN_TYPE).build();
     }
 
