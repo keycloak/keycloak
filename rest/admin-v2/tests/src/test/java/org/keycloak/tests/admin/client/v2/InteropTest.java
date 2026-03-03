@@ -58,7 +58,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest(config = InteropTest.ServerConfig.class)
 public class InteropTest extends AbstractClientApiV2Test {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
 
     @InjectHttpClient
     CloseableHttpClient httpClient;
