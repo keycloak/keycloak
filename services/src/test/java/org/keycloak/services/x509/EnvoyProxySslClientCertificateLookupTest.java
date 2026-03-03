@@ -16,11 +16,11 @@
  */
 package org.keycloak.services.x509;
 
+import java.security.cert.X509Certificate;
+
 import org.keycloak.http.HttpRequest;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.services.resteasy.HttpRequestImpl;
-
-import java.security.cert.X509Certificate;
 
 import org.jboss.resteasy.mock.MockHttpRequest;
 import org.junit.Assert;
