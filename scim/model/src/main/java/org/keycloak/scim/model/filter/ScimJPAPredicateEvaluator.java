@@ -5,7 +5,6 @@ import java.util.List;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Root;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParserBaseVisitor;
 
@@ -20,9 +19,9 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
     private final ScimJPAPredicateProvider predicateProvider;
 
     @SuppressWarnings("unchecked,rawtypes")
-    public ScimJPAPredicateEvaluator(KeycloakSession session, List schemas, CriteriaBuilder cb, Root<?> root) {
+    public ScimJPAPredicateEvaluator(List schemas, CriteriaBuilder cb, Root<?> root) {
         this.cb = cb;
-        this.predicateProvider = new ScimJPAPredicateProvider(session, schemas, cb, root);
+        this.predicateProvider = new ScimJPAPredicateProvider(schemas, cb, root);
     }
 
     @Override
