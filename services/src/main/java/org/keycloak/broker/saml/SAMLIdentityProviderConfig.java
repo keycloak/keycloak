@@ -64,6 +64,10 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String AUTHN_CONTEXT_DECL_REFS = "authnContextDeclRefs";
     public static final String SIGN_SP_METADATA = "signSpMetadata";
     public static final String ALLOW_CREATE = "allowCreate";
+    /**
+     * When enabled, users created via this SAML identity provider will not be marked as read-only in Keycloak.
+     */
+    public static final String CREATED_USERS_EDITABLE = "createdUsersEditable";
     public static final String ATTRIBUTE_CONSUMING_SERVICE_INDEX = "attributeConsumingServiceIndex";
     public static final String ATTRIBUTE_CONSUMING_SERVICE_NAME = "attributeConsumingServiceName";
     public static final String USE_METADATA_DESCRIPTOR_URL = "useMetadataDescriptorUrl";
@@ -383,6 +387,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setAllowCreated(boolean allowCreate) {
         getConfig().put(ALLOW_CREATE, String.valueOf(allowCreate));
+    }
+
+    public boolean isCreatedUsersEditable() {
+        return Boolean.parseBoolean(getConfig().get(CREATED_USERS_EDITABLE));
+    }
+
+    public void setCreatedUsersEditable(boolean createdUsersEditable) {
+        getConfig().put(CREATED_USERS_EDITABLE, String.valueOf(createdUsersEditable));
     }
 
     public Integer getAttributeConsumingServiceIndex() {

@@ -29,6 +29,11 @@ public interface OrganizationModel {
     String ORGANIZATION_ATTRIBUTE = "kc.org";
     String ORGANIZATION_NAME_ATTRIBUTE = "kc.org.name";
     String ORGANIZATION_DOMAIN_ATTRIBUTE = "kc.org.domain";
+    /**
+     * When set to {@code true} on a {@link UserModel}, Keycloak will not treat the user as read-only due to organization
+     * management state.
+     */
+    String ORGANIZATION_MANAGED_MEMBER_EDITABLE_ATTRIBUTE = "kc.org.managed.member.editable";
     String ALIAS = "alias";
     String HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN = "kc.org.broker.login.hide-when-org-unknown";
 
