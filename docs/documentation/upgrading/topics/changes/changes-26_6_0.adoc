@@ -247,9 +247,9 @@ In the current version {project_name} will log a warning if the database is not 
 
 === `Keycloak` and `KeycloakRealmImport` CRDs v2beta1 version
 
-The operator CRDs for the `Keycloak` and `KeycloakRealmImport` resources now include a v2beta1 version.
-The v2alpha1 version for these resources is deprecated. There are currently no differences in the schema between the two versions,
-so you will just need to update the relevant apiVersion references.
+The operator CRDs for the `Keycloak` and `KeycloakRealmImport` resources now include a `v2beta1` version.
+The `v2alpha1` version for these resources is deprecated. There are currently no differences in the schema between the two versions,
+so you will just need to update the relevant `apiVersion` references.
 
 // ------------------------ Removed features ------------------------ //
 == Removed features
