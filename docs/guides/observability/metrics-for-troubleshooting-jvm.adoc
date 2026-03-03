@@ -54,7 +54,7 @@ m| jvm_gc_overhead
 
 |===
 
-=== CPU Usage in Kubernetes
+=== CPU usage
 
 |===
 |Metric |Description
@@ -62,6 +62,13 @@ m| jvm_gc_overhead
 m| container_cpu_usage_seconds_total
 
 | Cumulative CPU time consumed by the container in core-seconds.
+
+m| process_cpu_usage
+| The recent CPU usage of the {project_name} JVM process as a ratio between `0` and `1`.
+`1` means the process is fully using one CPU core.
+
+m| system_cpu_usage
+| The recent CPU usage of the whole system as a ratio between `0` and `1`.
 
 |===
 
