@@ -2,6 +2,7 @@ package org.keycloak.tests.scim.tck;
 
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
@@ -48,6 +49,22 @@ public class GroupTest extends AbstractScimTest {
         expected = client.groups().get(expected.getId());
         expected.setDisplayName("Updated " + expected.getDisplayName());
         client.groups().update(expected);
+        Group actual = client.groups().get(expected.getId());
+        assertEquals(expected.getDisplayName(), actual.getDisplayName());
+    }
+
+    @Test
+    public void testPatch() {
+        Group expected = new Group();
+        expected.setDisplayName(KeycloakModelUtils.generateId());
+        expected = client.groups().create(expected);
+        assertNotNull(expected);
+
+        expected = client.groups().get(expected.getId());
+        expected.setDisplayName("Updated " + expected.getDisplayName());
+        client.groups().patch(expected.getId(), PatchRequest.create()
+                .replace("displayName", expected.getDisplayName())
+                .build());
         Group actual = client.groups().get(expected.getId());
         assertEquals(expected.getDisplayName(), actual.getDisplayName());
     }

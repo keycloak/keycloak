@@ -1,9 +1,7 @@
 package org.keycloak.scim.model.user;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import org.keycloak.models.KeycloakSession;
@@ -17,14 +15,15 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 
+import static java.util.Optional.ofNullable;
+
 public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserModel ,User> {
 
-    public static final String ANNOTATION_SCIM_SCHEMA = "scim.schema";
-    public static final String ANNOTATION_SCIM_SCHEMA_ATTRIBUTE = "scim.schema.attribute";
+    public static final String ANNOTATION_SCIM_SCHEMA_ATTRIBUTE = "kc.scim.schema.attribute";
     private final KeycloakSession session;
 
-    public AbstractUserModelSchema(KeycloakSession session, String name, List<Attribute<UserModel, User>> attributeMappers) {
-        super(name, attributeMappers);
+    public AbstractUserModelSchema(KeycloakSession session, String name) {
+        super(name);
         this.session = session;
     }
 
@@ -33,17 +32,6 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
         Set<String> names = new HashSet<>(getAttributes(model).nameSet());
         names.add(UserModel.ENABLED);
         return names;
-    }
-
-    @Override
-    protected String getAttributeSchema(UserModel model, String name) {
-        Object schema = getAttributeAnnotations(model, name).get(ANNOTATION_SCIM_SCHEMA);
-
-        if (schema == null) {
-            return null;
-        }
-
-        return String.valueOf(schema);
     }
 
     @Override
@@ -72,11 +60,33 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
             return Map.of();
         }
 
-        return Optional.ofNullable(metadata.getAnnotations()).orElse(Map.of());
+        return ofNullable(metadata.getAnnotations()).orElse(Map.of());
     }
 
     private Attributes getAttributes(UserModel model) {
         UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, model);
         return profile.getAttributes();
+    }
+
+    protected String createModelAttributeResolver(KeycloakSession session, Attribute<UserModel, User> attribute) {
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
+        UserProfile profile = provider.create(UserProfileContext.SCIM, Map.of());
+        Attributes attributes = profile.getAttributes();
+
+        for (String name : attributes.nameSet()) {
+            Map<String, Object> annotations = attributes.getAnnotations(name);
+
+            if (annotations == null) {
+                continue;
+            }
+
+            Object scimName = annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
+
+            if (attribute.getName().equals(scimName) || ofNullable(attribute.getAlias()).orElse("").equals(scimName)) {
+                return name;
+            }
+        }
+
+        return null;
     }
 }

@@ -31,9 +31,14 @@ public class TransactionPropertyMappers implements PropertyMapperGrouping {
                         .validator(value -> validateDuration(TransactionOptions.TRANSACTION_DEFAULT_TIMEOUT, value))
                         .paramLabel("timeout")
                         .build(),
-                fromOption(TransactionOptions.TRANSACTION_MIGRATION_TIMEOUT)
+                fromOption(TransactionOptions.TRANSACTION_SETUP_TIMEOUT)
                         .to("kc.spi-connections-jpa--quarkus--migration-transaction-timeout")
-                        .validator(value -> validateDuration(TransactionOptions.TRANSACTION_MIGRATION_TIMEOUT, value))
+                        .validator(value -> validateDuration(TransactionOptions.TRANSACTION_SETUP_TIMEOUT, value))
+                        .paramLabel("timeout")
+                        .build(),
+                fromOption(TransactionOptions.DB_LOCK_TIMEOUT)
+                        .mapFrom(TransactionOptions.TRANSACTION_SETUP_TIMEOUT)
+                        .to("kc.spi-dblock--jpa--lock-wait-timeout")
                         .paramLabel("timeout")
                         .build()
         );

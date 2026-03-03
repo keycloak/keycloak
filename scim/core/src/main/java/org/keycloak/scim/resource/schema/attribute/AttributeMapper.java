@@ -31,15 +31,15 @@ public class AttributeMapper<M extends Model, R extends ResourceTypeRepresentati
         this.representationSetter = representationSetter;
     }
 
-    public AttributeMapper(BiConsumer<M, String> modelSetter, BiConsumer<R, String> representationSetter) {
-        this((model, name, value) -> modelSetter.accept(model, value), representationSetter);
-    }
-
     public void setValue(R representation, String value) {
-        representationSetter.accept(representation, value);
+        if (representationSetter != null) {
+            representationSetter.accept(representation, value);
+        }
     }
 
     public void setValue(M model, String name, String value) {
-        modelSetter.accept(model, name, value);
+        if (modelSetter != null) {
+            modelSetter.accept(model, name, value);
+        }
     }
 }

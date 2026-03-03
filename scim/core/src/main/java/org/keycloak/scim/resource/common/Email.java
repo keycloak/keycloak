@@ -6,12 +6,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class Email extends MultiValuedAttribute {
 
     public Email() {
+        setType("work");
+        setPrimary(true);
     }
 
     public Email(String email) {
         setValue(email);
         setPrimary(true);
-        setType("other");
+        setType("work");
     }
 
     public Email(String value, String type, Boolean primary) {

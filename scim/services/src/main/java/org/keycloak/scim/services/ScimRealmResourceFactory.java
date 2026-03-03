@@ -20,7 +20,7 @@ public class ScimRealmResourceFactory implements RealmResourceProviderFactory, E
     public RealmResourceProvider create(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
 
-        if (realm.isScimEnabled()) {
+        if (realm.isScimApiEnabled()) {
             return new RealmResourceProvider() {
 
                 @Override

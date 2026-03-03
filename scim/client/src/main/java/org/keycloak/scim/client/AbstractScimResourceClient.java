@@ -2,6 +2,7 @@ package org.keycloak.scim.client;
 
 
 import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
@@ -53,6 +54,11 @@ public abstract class AbstractScimResourceClient<R extends ResourceTypeRepresent
 
             throw scime;
         }
+    }
+
+    public void patch(String id, PatchRequest request) {
+        requireNonNull(request, "request must not be null");
+        client.execute(client.doPatch(resourceTypeClass, id).json(request));
     }
 
     @SuppressWarnings("unchecked")

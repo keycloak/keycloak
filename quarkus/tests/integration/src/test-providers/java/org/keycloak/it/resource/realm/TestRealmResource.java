@@ -28,7 +28,9 @@ import org.infinispan.configuration.parsing.ParserRegistry;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.updater.liquibase.lock.LiquibaseDBLockProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 
@@ -106,10 +108,12 @@ public class TestRealmResource implements RealmResourceProvider {
     public Response transactionTimeouts() throws IOException {
         var jpaConnectionProvider = (QuarkusJpaConnectionProviderFactory) session.getKeycloakSessionFactory()
                 .getProviderFactory(JpaConnectionProvider.class);
+        var dbLockProvider = (LiquibaseDBLockProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(DBLockProvider.class);
         var rsp = JsonSerialization.writeValueAsString(
                 Map.of(
                         "default", TxControl.getDefaultTimeout(),
-                        "migration", jpaConnectionProvider.getMigrationTransactionTimeout()
+                        "migration", jpaConnectionProvider.getMigrationTransactionTimeout(),
+                        "db-lock", dbLockProvider.getLockWaitTimeoutMillis()
                 )
         );
         return Response.ok(rsp, MediaType.APPLICATION_JSON_TYPE).build();

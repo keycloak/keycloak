@@ -19,6 +19,7 @@ package org.keycloak.broker.oidc;
 import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.RealmModel;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
@@ -181,8 +182,11 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig imp
                 throw new IllegalArgumentException(String.format("The 'Validating public key' is required when '%s' enabled and 'Use JWKS URL' disabled", optionText));
             }
         }
-        if (isJWTAuthorizationGrantEnabled() || isSupportsClientAssertions()) {
-            validateIssuer(realm);
+        if (isJWTAuthorizationGrantEnabled()) {
+            validateIssuer(realm, IdentityProviderType.JWT_AUTHORIZATION_GRANT);
+        }
+        if (isSupportsClientAssertions()) {
+            validateIssuer(realm, IdentityProviderType.CLIENT_ASSERTION);
         }
     }
 }

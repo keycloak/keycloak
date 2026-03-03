@@ -1527,12 +1527,12 @@ public class SamlProtocolTest {
         }
 
         @Override
-        public void setScimEnabled(boolean enabled) {
+        public void setScimApiEnabled(boolean enabled) {
             // noop
         }
 
         @Override
-        public boolean isScimEnabled() {
+        public boolean isScimApiEnabled() {
             return false;
         }
 

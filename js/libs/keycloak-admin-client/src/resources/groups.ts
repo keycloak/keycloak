@@ -1,4 +1,5 @@
 import type { KeycloakAdminClient } from "../client.js";
+import type { PaginationQuery, SearchQuery } from "./users.js";
 import type GroupRepresentation from "../defs/groupRepresentation.js";
 import type { ManagementPermissionReference } from "../defs/managementPermissionReference.js";
 import type MappingsRepresentation from "../defs/mappingsRepresentation.js";
@@ -224,6 +225,16 @@ export class Groups extends Resource<{ realm?: string }> {
     urlParamKeys: ["id", "clientUniqueId"],
   });
 
+  public listOrgGroups = this.makeRequest<
+    { id: string; briefRepresentation?: boolean } & PaginationQuery &
+      SearchQuery,
+    GroupRepresentation[]
+  >({
+    method: "GET",
+    path: "/../members/{id}/groups",
+    urlParamKeys: ["id"],
+  });
+
   public addClientRoleMappings = this.makeRequest<
     { id: string; clientUniqueId: string; roles: RoleMappingPayload[] },
     void
@@ -284,6 +295,34 @@ export class Groups extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
   });
 
+  public addMemberToOrgGroup = this.makeRequest<
+    { groupId: string; userId: string },
+    void
+  >({
+    method: "PUT",
+    path: "/{groupId}/members/{userId}",
+    urlParamKeys: ["groupId", "userId"],
+  });
+
+  public removeMemberFromOrgGroup = this.makeRequest<
+    { groupId: string; userId: string },
+    void
+  >({
+    method: "DELETE",
+    path: "/{groupId}/members/{userId}",
+    urlParamKeys: ["groupId", "userId"],
+  });
+
+  #orgId?: string;
+
+  public getOrgId(): string | undefined {
+    return this.#orgId;
+  }
+
+  public isOrgGroups(): boolean {
+    return !!this.#orgId;
+  }
+
   constructor(client: KeycloakAdminClient, orgId?: string) {
     super(client, {
       path: `/admin/realms/{realm}/${orgId ? "organizations/{orgId}/" : ""}groups`,
@@ -293,5 +332,6 @@ export class Groups extends Resource<{ realm?: string }> {
       }),
       getBaseUrl: () => client.baseUrl,
     });
+    this.#orgId = orgId;
   }
 }

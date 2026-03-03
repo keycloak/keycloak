@@ -6,6 +6,8 @@ import org.keycloak.models.Model;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 /**
  * <p>An interface that represents a schema for a resource type.
  *
@@ -53,4 +55,42 @@ public interface ModelSchema<M extends Model, R extends ResourceTypeRepresentati
      * @throws SchemaValidationException if the representation is not valid against the schema
      */
     void validate(R representation) throws SchemaValidationException;
+
+    /**
+     * Performs a PATCH {@code add} operation on the given {@code model} for the attribute defined by the given {@code path} and the given {@code value}.
+     *
+     * @param model the model to perform the operation on
+     * @param path the path of the attribute to perform the operation on. It can be null if the operation is performed on the whole resource.
+     * @param value the value
+     */
+    default void add(M model, String path, JsonNode value) {
+        throw new UnsupportedOperationException("Add operation is not supported for this schema");
+    }
+
+    /**
+     * Performs a PATCH {@code replace} operation on the given {@code model} for the attribute defined by the given {@code path} and the given {@code value}.
+     *
+     * @param model the model to perform the operation on
+     * @param path the path of the attribute to perform the operation on. It can be null if the operation is performed on the whole resource.
+     * @param value the value
+     */
+    default void replace(M model, String path, JsonNode value) {
+        throw new UnsupportedOperationException("Add operation is not supported for this schema");
+    }
+
+    /**
+     * Performs a PATCH {@code remove} operation on the given {@code model} for the attribute defined by the given {@code path}.
+     *
+     * @param model the model to perform the operation on
+     * @param path the path of the attribute to perform the operation on
+     */
+    default void remove(M model, String path) {
+        throw new UnsupportedOperationException("Add operation is not supported for this schema");
+    }
+
+    default boolean isCore() {
+        return true;
+    }
+
+    Attribute<M, R> resolveAttribute(String name);
 }

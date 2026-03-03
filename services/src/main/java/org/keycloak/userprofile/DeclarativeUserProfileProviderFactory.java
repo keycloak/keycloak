@@ -104,6 +104,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     private static final String[] DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp" };
     private static final Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
     private static final Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
+    private static final String ANNOTATION_SCIM_SCHEMA_ATTRIBUTE = "kc.scim.schema.attribute";
 
     private static volatile UPConfig PARSED_DEFAULT_RAW_CONFIG;
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry = new HashMap<>();
@@ -278,36 +279,21 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         String coreSchema = "urn:ietf:params:scim:schemas:core:2.0:User";
 
         metadata.getAttribute(UserModel.USERNAME).get(0)
-                .addAnnotations(Map.of("scim.schema", coreSchema,
-                    "scim.schema.attribute", "userName",
-                        "primary", "true"));
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "userName"));
         metadata.getAttribute(UserModel.EMAIL).get(0)
-                .addAnnotations(Map.of("scim.schema", coreSchema,
-                    "scim.schema.attribute", "emails[0].value",
-                        "primary", "true"));
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "emails"));
         metadata.addAttribute(UserModel.FIRST_NAME, -1, AttributeMetadata.ALWAYS_TRUE, AttributeMetadata.ALWAYS_TRUE)
-                .addAnnotations(Map.of("scim.schema", coreSchema,
-                    "scim.schema.attribute", "name.givenName",
-                        "primary", "true"));
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.givenName"));
         metadata.addAttribute(UserModel.LAST_NAME, -1, AttributeMetadata.ALWAYS_TRUE, AttributeMetadata.ALWAYS_TRUE)
-                .addAnnotations(Map.of("scim.schema", coreSchema,
-                    "scim.schema.attribute", "name.familyName",
-                        "primary", "true"));
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.familyName"));
         metadata.addAttribute(UserModel.ENABLED, -1, AttributeMetadata.ALWAYS_TRUE, AttributeMetadata.ALWAYS_TRUE)
-                .addAnnotations(Map.of("scim.schema", coreSchema,
-                    "scim.schema.attribute", "active",
-                        "primary", "true",
-                        "type", "boolean"));
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "active"));
         metadata.addAttribute(UserModel.CREATED_TIMESTAMP, -1, AttributeMetadata.ALWAYS_FALSE, AttributeMetadata.ALWAYS_TRUE)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE)
-                .addAnnotations(Map.of("scim.schema", coreSchema,
-                        "scim.schema.attribute", "meta.created",
-                        "primary", "true",
-                        "type", "timestamp"));
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "meta.created"));
         metadata.addAttribute(UserModel.LOCALE, -1, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled, DeclarativeUserProfileProviderFactory::isInternationalizationEnabled)
                 .setRequired(AttributeMetadata.ALWAYS_FALSE)
-                .addAnnotations(Map.of("scim.schema", coreSchema,
-                "scim.schema.attribute", "locale"))
+                .addAnnotations(Map.of(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "locale"))
                 .setSelector(c -> {
                     RealmModel realm = c.getSession().getContext().getRealm();
                     return realm.isInternationalizationEnabled();

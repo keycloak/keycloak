@@ -447,8 +447,15 @@ public class FilterTest extends AbstractScimTest {
         user = client.users().create(user);
         final String userName = user.getUserName();
 
-        String filter = ResourceFilter.filter().eq("emails[0].value", emailValue).build();
+        String filter = ResourceFilter.filter().eq("emails", emailValue).build();
         ListResponse<User> response = client.users().getAll(filter);
+
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
+        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(userName)), is(true));
+
+        filter = ResourceFilter.filter().eq("emails.value", emailValue).build();
+        response = client.users().getAll(filter);
 
         assertThat(response, is(not(nullValue())));
         assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
@@ -601,7 +608,7 @@ public class FilterTest extends AbstractScimTest {
         final String userName = user.getUserName();
 
         // Test POST search with email contains filter
-        String filter = ResourceFilter.filter().co("emails[0].value", "postemailtest").build();
+        String filter = ResourceFilter.filter().co("emails", "postemailtest").build();
         ListResponse<User> response = client.users().search(filter);
 
         assertThat(response, is(not(nullValue())));

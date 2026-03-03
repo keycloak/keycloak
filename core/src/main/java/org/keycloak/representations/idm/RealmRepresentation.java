@@ -240,7 +240,7 @@ public class RealmRepresentation {
     @Deprecated
     protected List<ClientTemplateRepresentation> clientTemplates;
 
-    private Boolean scimEnabled;
+    private Boolean scimApiEnabled;
 
     public String getId() {
         return id;
@@ -1503,12 +1503,12 @@ public class RealmRepresentation {
         organizations.add(org);
     }
 
-    public void setScimEnabled(Boolean scimEnabled) {
-        this.scimEnabled = scimEnabled;
+    public void setScimApiEnabled(Boolean scimApiEnabled) {
+        this.scimApiEnabled = scimApiEnabled;
     }
 
-    public Boolean isScimEnabled() {
-        return scimEnabled;
+    public Boolean isScimApiEnabled() {
+        return scimApiEnabled;
     }
 
     public enum BruteForceStrategy {

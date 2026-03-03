@@ -125,9 +125,9 @@ public interface RealmModel extends RoleContainerModel {
 
     void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled);
 
-    void setScimEnabled(boolean enabled);
+    void setScimApiEnabled(boolean enabled);
 
-    boolean isScimEnabled();
+    boolean isScimApiEnabled();
 
     void setAttribute(String name, String value);
     default void setAttribute(String name, Boolean value) {

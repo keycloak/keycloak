@@ -35,6 +35,11 @@ If you are using this Quarkus property, the new `transaction-default-timeout` CL
 
 To maintain your desired transaction timeout configuration, migrate to using the `transaction-default-timeout` CLI option and remove the `quarkus.transaction-manager.default-transaction-timeout` property from your configuration.
 
+=== The Identity Provider issuer should be unique for the JWT authorization grant and client assertions
+
+The JWT authorization grant and the client assertion authentication use the `issuer` claim passed in the assertion to locate the Identity Provider defined in {project_name}, and that provider validates the claims and signature in the assertion. Since this version, the `issuer` configuration option should be unique to only identify one provider. The grant operation or the assertion client authentication fail if more providers are returned for a single issuer. In the same way, the Identity Providers, when configured to allow the JWT authorization grant or client assertions, are validated to have a unique issuer defined in its configuration. Any update or add operation will fail if the issuer collides with another provider.
+
+If you have identity providers defined with the same issuer and tested the JWT authorization grants or client assertions features, please update the providers accordingly before the upgrade. You can update the issuer or disable the provider to avoid the duplicates.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -166,8 +171,10 @@ Two new CLI options are now available to control transaction timeout behavior:
 * `transaction-default-timeout`: Controls the transaction timeout for regular transactions.
 The default value is 5 minutes, which is the same value used by the current {project_name} version.
 
-* `transaction-migration-timeout`: Controls the timeout for transactions responsible for migrating the database schema to a new version.
-The default value is 30 minutes, as schema migrations may take a while to complete for large tables.
+* `transaction-setup-timeout`: Controls the timeout for transactions used by database schema migration, import, and export commands.
+The default value is 30 minutes, as these operations may take a while to complete for large datasets.
+
+The provider configuration `spi-dblock--jpa--lock-wait-timeout` option has been replaced with the CLI option `transaction-setup-timeout`.
 
 === Database character encoding checks during startup
 
