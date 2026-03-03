@@ -99,7 +99,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             Root<UserEntity> root = query.from(UserEntity.class);
 
             // Create filter predicate using the same query and root that will be used for execution
-            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, query, root);
+            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, root);
             Predicate filterPredicate = evaluator.visit(filterContext).predicate();
 
             // Apply realm restriction

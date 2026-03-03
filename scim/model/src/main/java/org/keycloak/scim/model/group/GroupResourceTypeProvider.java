@@ -83,7 +83,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             Root<GroupEntity> root = query.from(GroupEntity.class);
 
             // Create filter predicate using the same query and root that will be used for execution
-            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, query, root);
+            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, root);
             Predicate filterPredicate = evaluator.visit(filterContext).predicate();
 
             // Apply realm restriction
