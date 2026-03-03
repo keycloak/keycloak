@@ -1,5 +1,6 @@
 package org.keycloak.scim.resource.user;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -304,5 +305,20 @@ public class User extends ResourceTypeRepresentation {
             schemas.add(ENTERPRISE_USER_SCHEMA);
         }
         return schemas;
+    }
+
+    public void addGroup(String id) {
+        GroupMembership membership = new GroupMembership();
+
+        membership.setValue(id);
+
+        addGroup(membership);
+    }
+
+    public void addGroup(GroupMembership membership) {
+        if (groups == null) {
+            groups = new ArrayList<>();
+        }
+        groups.add(membership);
     }
 }

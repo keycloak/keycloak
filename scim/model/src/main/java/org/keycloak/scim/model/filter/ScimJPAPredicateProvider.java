@@ -27,7 +27,6 @@ import org.keycloak.utils.KeycloakSessionUtil;
  */
 public class ScimJPAPredicateProvider {
 
-    private final KeycloakSession session;
     private final List<ModelSchema<?, ?>> schemas;
     private final CriteriaBuilder cb;
     private final Root<?> root;
@@ -48,8 +47,7 @@ public class ScimJPAPredicateProvider {
     // cache joins to avoid creating duplicate joins for the same filter
     private Join<?, ?> attributeJoin;
 
-    public ScimJPAPredicateProvider(KeycloakSession session, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, Root<?> root) {
-        this.session = session;
+    public ScimJPAPredicateProvider(List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, Root<?> root) {
         this.schemas = schemas;
         this.cb = cb;
         this.root = root;
@@ -69,7 +67,7 @@ public class ScimJPAPredicateProvider {
             return JPAFilterResult.unsupported(cb.disjunction());
         }
         KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
-        String modelAttributeName = attrInfo.getModelAttributeName(session);
+        String modelAttributeName = attrInfo.getModelAttributeName();
         if (attrInfo.isPrimary()) {
             // direct field: check not null
             return JPAFilterResult.valid(cb.isNotNull(root.get(modelAttributeName)));
@@ -139,7 +137,7 @@ public class ScimJPAPredicateProvider {
     private Predicate getAttributePredicate(Attribute<?,?> attrInfo, String operation, Object value) {
         Expression<?> path;
         Predicate basePredicate = null;
-        String modelAttributeName = attrInfo.getModelAttributeName(session);
+        String modelAttributeName = attrInfo.getModelAttributeName();
 
         if (attrInfo.isPrimary()) {
             path = root.get(modelAttributeName);
@@ -263,13 +261,13 @@ public class ScimJPAPredicateProvider {
         Attribute<?, ?> metadata = null;
 
         for (ModelSchema<?, ?> schema : schemas) {
-            metadata = schema.resolveAttribute(path);
+            metadata = schema.getAttributeByPath(path);
             if (metadata != null    ) {
                 break;
             }
         }
         if (metadata != null) {
-            String modelAttributeName = metadata.getModelAttributeName(session);
+            String modelAttributeName = metadata.getModelAttributeName();
             if (modelAttributeName != null) {
                 return metadata;
             }
