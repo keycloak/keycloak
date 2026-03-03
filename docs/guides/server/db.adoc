@@ -573,7 +573,7 @@ quarkus.datasource.user-store.jdbc.transactions=xa
 WARNING: Use Quarkus properties **without quotation** for the datasource name, as properties with the quoted datasource name clash with the new datasource options mapping.
 Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.datasource."user-store".db-kind=h2` to prevent any issues.
 
-<@opts.printRelevantOptions includedOptions="db db-* transaction-xa-enabled transaction-default-timeout transaction-migration-timeout" excludedOptions="db-*-<datasource>">
+<@opts.printRelevantOptions includedOptions="db db-* transaction-xa-enabled transaction-default-timeout transaction-setup-timeout" excludedOptions="db-*-<datasource>">
 
 === Additional datasources options
 <@opts.includeOptions includedOptions="*-<datasource>"/>
