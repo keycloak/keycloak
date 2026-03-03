@@ -384,14 +384,6 @@ However, on MS SQL Server, the database isolation level needs to be modified by 
 ALTER DATABASE <your-database-name> SET READ_COMMITTED_SNAPSHOT ON;
 ----
 
-== Changing database locking timeout in a cluster configuration
-
-Because cluster nodes can boot concurrently, they take extra time for database actions. For example, a booting server instance may perform some database migration, importing, or first time initializations. A database lock prevents start actions from conflicting with each other when cluster nodes boot up concurrently.
-
-The maximum timeout for this lock is 900 seconds. If a node waits on this lock for more than the timeout, the boot fails. The need to change the default value is unlikely, but you can change it by entering this command:
-
-<@kc.start parameters="--spi-dblock--jpa--lock-wait-timeout 900"/>
-
 == Using Database Vendors with XA transaction support
 {project_name} uses non-XA transactions and the appropriate database drivers by default.
 
@@ -419,13 +411,13 @@ To configure a different timeout, for example 10 minutes:
 +
 <@kc.start parameters="--transaction-default-timeout=10m"/>
 
-`transaction-migration-timeout`::
-Controls the timeout for transactions responsible for migrating the database schema to a new version.
-The default value is 30 minutes, as schema migrations may take a while to complete for large tables.
+`transaction-setup-timeout`::
+Controls the timeout for transactions used by database schema migration, import, and export commands.
+The default value is 30 minutes, as these operations may take a while to complete for large datasets.
 +
 To configure a different timeout, for example 1 hour:
 +
-<@kc.start parameters="--transaction-migration-timeout=1h"/>
+<@kc.start parameters="--transaction-setup-timeout=1h"/>
 
 Both options accept values as an ISO 8601 duration, an integer number of seconds, or an integer followed by one of `ms` (milliseconds), `s` (seconds), `m` (minutes), `h` (hours), or `d` (days).
 These options can be configured via CLI, environment variables, or the `conf/keycloak.conf` configuration file.

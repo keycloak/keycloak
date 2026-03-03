@@ -171,8 +171,8 @@ Two new CLI options are now available to control transaction timeout behavior:
 * `transaction-default-timeout`: Controls the transaction timeout for regular transactions.
 The default value is 5 minutes, which is the same value used by the current {project_name} version.
 
-* `transaction-migration-timeout`: Controls the timeout for transactions responsible for migrating the database schema to a new version.
-The default value is 30 minutes, as schema migrations may take a while to complete for large tables.
+* `transaction-setup-timeout`: Controls the timeout for transactions used by database schema migration, import, and export commands.
+The default value is 30 minutes, as these operations may take a while to complete for large datasets.
 
 === Database character encoding checks during startup
 

@@ -28,16 +28,16 @@ public class TransactionOptions {
             .defaultValue("5m")
             .build();
 
-    public static final Option<String> TRANSACTION_MIGRATION_TIMEOUT = new OptionBuilder<>("transaction-migration-timeout", String.class)
+    public static final Option<String> TRANSACTION_SETUP_TIMEOUT = new OptionBuilder<>("transaction-setup-timeout", String.class)
             .category(OptionCategory.TRANSACTION)
-            .description("The transaction timeout for database migration transaction. " + OptionsUtil.DURATION_DESCRIPTION)
+            .description("The transaction timeout for database migration/import/export transactions. " + OptionsUtil.DURATION_DESCRIPTION)
             .buildTime(false)
             .defaultValue(MIGRATION_TRANSACTION_TIMEOUT)
             .build();
 
     public static final Option<String> DB_LOCK_TIMEOUT = new OptionBuilder<>("transaction-db-lock-timeout", String.class)
             .category(OptionCategory.TRANSACTION)
-            .description("Hidden option to map transaction-migration-timeout to db lock timeout.")
+            .description("Hidden option to map transaction-setup-timeout to db lock timeout.")
             .buildTime(false)
             .hidden()
             .build();
