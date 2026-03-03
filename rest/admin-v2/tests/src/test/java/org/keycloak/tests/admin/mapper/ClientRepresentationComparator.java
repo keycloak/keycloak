@@ -65,7 +65,6 @@ public class ClientRepresentationComparator {
             compareSAMLFields(saml);
         }
 
-        recordV1OnlyFields();
         return result;
     }
 
@@ -77,6 +76,7 @@ public class ClientRepresentationComparator {
         compare("baseUrl→appUrl", v1.getBaseUrl(), v2.getAppUrl());
         compare("protocol", v1.getProtocol(), v2.getProtocol());
         compareAsSet("redirectUris", v1.getRedirectUris(), v2.getRedirectUris());
+        compareAsSet("roles", Set.of(v1.getDefaultRoles() == null ? new String[0] : v1.getDefaultRoles()), v2.getRoles());
     }
 
     private void compareOIDCFields(OIDCClientRepresentation oidc) {
@@ -97,12 +97,22 @@ public class ClientRepresentationComparator {
     }
 
     private void compareAuth(OIDCClientRepresentation oidc) {
-        String expectedMethod = Boolean.TRUE.equals(v1.isPublicClient()) ? "none"
-                : v1.getClientAuthenticatorType() != null ? v1.getClientAuthenticatorType()
-                : v1.getSecret() != null ? "client-secret" : null;
-
+        String expectedMethod = determineExpectedAuthMethod();
         compare("clientAuthenticatorType→auth.method", expectedMethod, getAuthField(oidc, OIDCClientRepresentation.Auth::getMethod));
         compare("secret→auth.secret", v1.getSecret(), getAuthField(oidc, OIDCClientRepresentation.Auth::getSecret));
+    }
+
+    private String determineExpectedAuthMethod() {
+        if (Boolean.TRUE.equals(v1.isPublicClient())) {
+            return "none";
+        }
+        if (v1.getClientAuthenticatorType() != null) {
+            return v1.getClientAuthenticatorType();
+        }
+        if (v1.getSecret() != null) {
+            return "client-secret";
+        }
+        return null;
     }
 
     private <T> T getAuthField(OIDCClientRepresentation oidc, Function<OIDCClientRepresentation.Auth, T> getter) {
@@ -132,31 +142,6 @@ public class ClientRepresentationComparator {
         String attrValue = v1.getAttributes() != null ? v1.getAttributes().get(attrName) : null;
         Boolean v1Value = attrValue != null ? Boolean.parseBoolean(attrValue) : null;
         compare("attr[" + attrName + "]→" + v2FieldName, v1Value, v2Value);
-    }
-
-    private void recordV1OnlyFields() {
-        result.addV1OnlyField("id", v1.getId());
-        result.addV1OnlyField("type", v1.getType());
-        result.addV1OnlyField("rootUrl", v1.getRootUrl());
-        result.addV1OnlyField("adminUrl", v1.getAdminUrl());
-        result.addV1OnlyField("surrogateAuthRequired", v1.isSurrogateAuthRequired());
-        result.addV1OnlyField("alwaysDisplayInConsole", v1.isAlwaysDisplayInConsole());
-        result.addV1OnlyField("registrationAccessToken", v1.getRegistrationAccessToken());
-        result.addV1OnlyField("notBefore", v1.getNotBefore());
-        result.addV1OnlyField("bearerOnly", v1.isBearerOnly());
-        result.addV1OnlyField("consentRequired", v1.isConsentRequired());
-        result.addV1OnlyField("authorizationServicesEnabled", v1.getAuthorizationServicesEnabled());
-        result.addV1OnlyField("publicClient", v1.isPublicClient());
-        result.addV1OnlyField("fullScopeAllowed", v1.isFullScopeAllowed());
-        result.addV1OnlyField("nodeReRegistrationTimeout", v1.getNodeReRegistrationTimeout());
-        result.addV1OnlyField("registeredNodes", v1.getRegisteredNodes());
-        result.addV1OnlyField("protocolMappers", v1.getProtocolMappers());
-        result.addV1OnlyField("defaultClientScopes", v1.getDefaultClientScopes());
-        result.addV1OnlyField("optionalClientScopes", v1.getOptionalClientScopes());
-        result.addV1OnlyField("authorizationSettings", v1.getAuthorizationSettings());
-        result.addV1OnlyField("access", v1.getAccess());
-        result.addV1OnlyField("origin", v1.getOrigin());
-        result.addV1OnlyField("authenticationFlowBindingOverrides", v1.getAuthenticationFlowBindingOverrides());
     }
 
     private void compare(String fieldName, Object v1Value, Object v2Value) {
@@ -195,7 +180,6 @@ public class ClientRepresentationComparator {
     public static class ComparisonResult {
         private final List<String> mismatches = new ArrayList<>();
         private final List<String> matches = new ArrayList<>();
-        private final List<String> v1OnlyFields = new ArrayList<>();
         private final List<String> v2OnlyFields = new ArrayList<>();
 
         public void addMismatch(String fieldName, Object v1Value, Object v2Value) {
@@ -204,12 +188,6 @@ public class ClientRepresentationComparator {
 
         public void addMatch(String fieldName, Object value) {
             matches.add(String.format("%s: '%s'", fieldName, value));
-        }
-
-        public void addV1OnlyField(String fieldName, Object value) {
-            if (value != null) {
-                v1OnlyFields.add(String.format("%s: '%s'", fieldName, value));
-            }
         }
 
         public void addV2OnlyField(String fieldName, Object value) {
@@ -224,7 +202,6 @@ public class ClientRepresentationComparator {
 
         public List<String> getMismatches() { return mismatches; }
         public List<String> getMatches() { return matches; }
-        public List<String> getV1OnlyFields() { return v1OnlyFields; }
         public List<String> getV2OnlyFields() { return v2OnlyFields; }
 
         @Override
@@ -232,7 +209,6 @@ public class ClientRepresentationComparator {
             StringBuilder sb = new StringBuilder();
             appendSection(sb, "MISMATCHES", mismatches);
             appendSection(sb, "MATCHES", matches);
-            appendSection(sb, "V1-ONLY FIELDS (not mapped to v2)", v1OnlyFields);
             appendSection(sb, "V2-ONLY FIELDS (not mapped from v1)", v2OnlyFields);
             return sb.toString();
         }

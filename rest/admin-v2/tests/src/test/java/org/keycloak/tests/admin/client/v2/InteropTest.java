@@ -31,15 +31,12 @@ import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.admin.mapper.ClientRepresentationComparator;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -66,20 +63,12 @@ public class InteropTest extends AbstractClientApiV2Test {
     @InjectAdminClient
     Keycloak adminClient;
 
-    @InjectRealm
-    ManagedRealm managedRealm;
-
-    @Override
-    public String getRealmName() {
-        return managedRealm.getName();
-    }
-
     /**
      * Test: Create a client using v1 API, then assert/read using v2 API.
      */
     @Test
     public void createWithV1AssertWithV2() throws Exception {
-        RealmResource realm = managedRealm.admin();
+        RealmResource realm = adminClient.realm("master");
 
         ClientRepresentation v1Client = new ClientRepresentation();
         v1Client.setClientId("v1-created-client");
@@ -125,7 +114,7 @@ public class InteropTest extends AbstractClientApiV2Test {
      */
     @Test
     public void createWithV2AssertWithV1() throws Exception {
-        RealmResource realm = managedRealm.admin();
+        RealmResource realm = adminClient.realm("master");
 
         OIDCClientRepresentation v2Client = new OIDCClientRepresentation();
         v2Client.setClientId("v2-created-client");
@@ -180,7 +169,7 @@ public class InteropTest extends AbstractClientApiV2Test {
      */
     @Test
     public void updateWithV2AssertWithV1() throws Exception {
-        RealmResource realm = managedRealm.admin();
+        RealmResource realm = adminClient.realm("master");
 
         ClientRepresentation v1Client = new ClientRepresentation();
         v1Client.setClientId("update-test-client");
@@ -251,7 +240,7 @@ public class InteropTest extends AbstractClientApiV2Test {
      */
     @Test
     public void createSamlWithV1AssertWithV2() throws Exception {
-        RealmResource realm = managedRealm.admin();
+        RealmResource realm = adminClient.realm("master");
 
         ClientRepresentation v1Client = new ClientRepresentation();
         v1Client.setClientId("v1-saml-client");
@@ -301,7 +290,7 @@ public class InteropTest extends AbstractClientApiV2Test {
      */
     @Test
     public void createSamlWithV2AssertWithV1() throws Exception {
-        RealmResource realm = managedRealm.admin();
+        RealmResource realm = adminClient.realm("master");
 
         SAMLClientRepresentation v2Client = new SAMLClientRepresentation();
         v2Client.setClientId("v2-saml-client");
@@ -355,7 +344,7 @@ public class InteropTest extends AbstractClientApiV2Test {
      */
     @Test
     public void updateSamlWithV2AssertWithV1() throws Exception {
-        RealmResource realm = managedRealm.admin();
+        RealmResource realm = adminClient.realm("master");
 
         ClientRepresentation v1Client = new ClientRepresentation();
         v1Client.setClientId("update-saml-client");
