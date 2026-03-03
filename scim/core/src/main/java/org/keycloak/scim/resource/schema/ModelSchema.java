@@ -68,29 +68,46 @@ public interface ModelSchema<M extends Model, R extends ResourceTypeRepresentati
     }
 
     /**
-     * Performs a PATCH {@code replace} operation on the given {@code model} for the attribute defined by the given {@code path} and the given {@code value}.
+     * Performs a PATCH {@code remove} operation on the given {@code model} for the attribute defined by the given {@code path}.
      *
+     * @param resource the resource to perform the operation on
      * @param model the model to perform the operation on
-     * @param path the path of the attribute to perform the operation on. It can be null if the operation is performed on the whole resource.
-     * @param value the value
+     * @param path the path of the attribute to perform the operation on
      */
-    default void replace(M model, String path, JsonNode value) {
+    default void remove(R resource, M model, String path) {
         throw new UnsupportedOperationException("Add operation is not supported for this schema");
     }
 
     /**
-     * Performs a PATCH {@code remove} operation on the given {@code model} for the attribute defined by the given {@code path}.
+     * Performs a PATCH {@code replace} operation on the given {@code model} for the attribute defined by the given {@code path}.
      *
+     * @param resource the resource to perform the operation on
      * @param model the model to perform the operation on
      * @param path the path of the attribute to perform the operation on
      */
-    default void remove(M model, String path) {
-        throw new UnsupportedOperationException("Add operation is not supported for this schema");
+    default void replace(R resource, M model, String path, JsonNode value) {
+        if (path != null) {
+            remove(resource, model, path);
+        }
+        add(model, path, value);
     }
 
+    /**
+     * Returns {@code true} if this schema is a core schema.
+     *
+     * @return {@code true} if this schema is a core schema, {@code false} otherwise
+     */
     default boolean isCore() {
         return true;
     }
 
-    Attribute<M, R> resolveAttribute(String name);
+    /**
+     * Returns an {@link Attribute} defined by this schema for the given {@code path}.
+     * The path can be {@code null} if the attribute is the whole resource.
+     * It can also be a dot-separated path to a sub-attribute, e.g. "name.familyName".
+     *
+     * @param path the path
+     * @return the attribute for the given path, or {@code null} if no attribute is defined for the given path
+     */
+    Attribute<M, R> getAttributeByPath(String path);
 }
