@@ -103,7 +103,7 @@ public class OIDCClientRegistrationProvider extends AbstractClientRegistrationPr
 
             URI uri = getRegistrationClientUri(clientModel);
             clientOIDC = DescriptionConverter.toExternalResponse(session, client, uri);
-            clientOIDC.setClientIdIssuedAt(Time.currentTime());
+            clientOIDC.setClientIdIssuedAt((long) Time.currentTime());
             return cors().add(Response.created(uri).entity(clientOIDC));
         } catch (ClientRegistrationException cre) {
             ServicesLogger.LOGGER.clientRegistrationException(cre.getMessage());
