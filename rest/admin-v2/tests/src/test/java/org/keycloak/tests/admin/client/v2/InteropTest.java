@@ -68,10 +68,6 @@ public class InteropTest extends AbstractClientApiV2Test {
     @InjectRealm
     ManagedRealm managedRealm;
 
-    @Override
-    public String getRealmName() {
-        return managedRealm.getName();
-    }
 
     /**
      * Test: Create a client using v1 API, then assert/read using v2 API.
