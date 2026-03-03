@@ -1,1 +1,1 @@
-${project.build-name} - Version ${project.version}
+${project.build-name} - Version ${project.version.override}
