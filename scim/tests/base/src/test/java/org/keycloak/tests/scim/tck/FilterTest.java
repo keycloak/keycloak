@@ -44,7 +44,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
 public class FilterTest extends AbstractScimTest {
 
-    private final List<String> idsToRemove = new ArrayList<>();
+    private final List<String> userIdsToRemove = new ArrayList<>();
+    private final List<String> groupIdsToRemove = new ArrayList<>();
 
     @BeforeEach
     public void onBefore() {
@@ -61,12 +62,13 @@ public class FilterTest extends AbstractScimTest {
             iterator.remove();
         }
         realm.admin().users().userProfile().update(upConfig);
-        idsToRemove.clear();
+        userIdsToRemove.clear();
     }
 
     @AfterEach
     public void onAfter() {
-        idsToRemove.forEach(id -> realm.admin().users().delete(id).close());
+        userIdsToRemove.forEach(id -> realm.admin().users().delete(id).close());
+        groupIdsToRemove.forEach(id -> realm.admin().groups().group(id).remove());
     }
 
     @Test
@@ -658,7 +660,7 @@ public class FilterTest extends AbstractScimTest {
         user.setFirstName(givenName);
         user.setLastName(familyName);
         user = client.users().create(user);
-        idsToRemove.add(user.getId());
+        userIdsToRemove.add(user.getId());
         return user;
     }
 
@@ -683,7 +685,100 @@ public class FilterTest extends AbstractScimTest {
         enterpriseUser.setManager(manager);
 
         user = client.users().create(user);
-        idsToRemove.add(user.getId());
+        userIdsToRemove.add(user.getId());
         return user;
+    }
+
+    @Test
+    public void testFilterByMetaTimestamps() {
+        Instant before = Instant.now();
+
+        User user = createUser("bob");
+        final String userName = user.getUserName();
+
+        Instant after = Instant.now();
+
+        // filter by meta.created gt <before> — should include the user
+        String filter = ResourceFilter.filter()
+            .gt("meta.created", before.toString())
+            .and()
+            .eq("userName", userName)
+            .build();
+        ListResponse<User> response = client.users().getAll(filter);
+
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getResources().get(0).getUserName(), is(userName));
+
+        // filter by meta.lastModified lt <after> — should include the user
+        filter = ResourceFilter.filter()
+            .lt("meta.lastModified", after.toString())
+            .and()
+            .eq("userName", userName)
+            .build();
+        response = client.users().getAll(filter);
+
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getResources().get(0).getUserName(), is(userName));
+
+        // filter by meta.created gt <after> — should NOT include the user
+        filter = ResourceFilter.filter()
+            .gt("meta.created", after.toString())
+            .and()
+            .eq("userName", userName)
+            .build();
+        response = client.users().getAll(filter);
+
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(0));
+    }
+
+    @Test
+    public void testFilterGroupsByMetaTimestamps() {
+        Instant before = Instant.now();
+
+        Group group = new Group();
+        group.setDisplayName("groupA");
+        group = client.groups().create(group);
+        groupIdsToRemove.add(group.getId());
+        final String displayName = group.getDisplayName();
+
+        Instant after = Instant.now();
+
+        // filter by meta.created gt <before> — should include the group
+        String filter = ResourceFilter.filter()
+            .gt("meta.created", before.toString())
+            .and()
+            .eq("displayName", displayName)
+            .build();
+        ListResponse<Group> response = client.groups().getAll(filter);
+
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getResources().get(0).getDisplayName(), is(displayName));
+
+        // filter by meta.lastModified lt <after> — should include the group
+        filter = ResourceFilter.filter()
+            .lt("meta.lastModified", after.toString())
+            .and()
+            .eq("displayName", displayName)
+            .build();
+        response = client.groups().getAll(filter);
+
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getResources().get(0).getDisplayName(), is(displayName));
+
+        // filter by meta.created gt <after> — should NOT include the group
+        filter = ResourceFilter.filter()
+            .gt("meta.created", after.toString())
+            .and()
+            .eq("displayName", displayName)
+            .build();
+        response = client.groups().getAll(filter);
+
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(0));
     }
 }
