@@ -1,5 +1,6 @@
 package org.keycloak.scim.model.user;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -89,30 +90,34 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         Integer maxResults = searchRequest.getCount();
 
         if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // Parse filter into AST
+            // parse filter into AST
             ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
 
-            // Execute JPA query with filter
+            // execute JPA query with filter
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<UserEntity> query = cb.createQuery(UserEntity.class);
             Root<UserEntity> root = query.from(UserEntity.class);
+            List<Predicate> predicates = new ArrayList<>();
 
-            // Create filter predicate using the same query and root that will be used for execution
+            // create filter predicate using the same query and root that will be used for execution
             ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, root);
-            Predicate filterPredicate = evaluator.visit(filterContext).predicate();
+            predicates.add(evaluator.visit(filterContext).predicate());
 
-            // Apply realm restriction
-            Predicate realmPredicate = cb.equal(root.get("realmId"), realm.getId());
+            // apply service account restriction
+            predicates.add(root.get("serviceAccountClientLink").isNull());
 
-            // Combine with filter predicate
-            query.where(cb.and(realmPredicate, filterPredicate));
+            // apply realm restriction
+            predicates.add(cb.equal(root.get("realmId"), realm.getId()));
 
-            // Execute query and convert to UserModel stream
+            // apply distinct and order by username to ensure consistency with no-filter case
+            query.where(predicates).distinct(true).orderBy(cb.asc(root.get("username")));
+
+            // execute query and convert to UserModel stream
             return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
                     .map(entity -> new UserAdapter(session, realm, em, entity)));
         } else {
-            return session.users().searchForUserStream(realm, Map.of(), firstResult, maxResults);
+            return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), firstResult, maxResults);
         }
     }
 

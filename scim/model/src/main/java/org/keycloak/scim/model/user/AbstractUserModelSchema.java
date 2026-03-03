@@ -80,9 +80,12 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
                 continue;
             }
 
-            Object scimName = annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
+            String scimName = (String) annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
+            if (scimName != null && scimName.startsWith(this.getName()) && !isCore()) {
+                 scimName = scimName.replace(this.getName() + ".", this.getName() + ":");
+            }
 
-            if (attribute.getName().equals(scimName) || ofNullable(attribute.getAlias()).orElse("").equals(scimName)) {
+            if (getPaths(attribute).contains(scimName)) {
                 return name;
             }
         }

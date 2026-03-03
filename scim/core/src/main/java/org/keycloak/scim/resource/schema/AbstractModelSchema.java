@@ -253,17 +253,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         if (attribute == null) {
             for (Entry<String, Attribute<M, R>> entry : getAttributes().entrySet()) {
                 Attribute<M, R> attr = entry.getValue();
-                List<String> paths = new ArrayList<>();
-
-                String parent = attr.getParentName();
-
-                if (parent != null) {
-                    paths.add(getName() + entry.getKey().replace(parent + ".", ":"));
-                }
-
-                if (attr.getAlias() != null) {
-                    paths.add(getName() + ":" + attr.getAlias());
-                }
+                List<String> paths = getPaths(attr);
 
                 if (paths.contains(path)) {
                     return Map.of(attr, resolveAttributeValue(attr.getName(), valueJson));
@@ -371,5 +361,26 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         }
 
         return attributes.keySet().iterator().next();
+    }
+
+    public List<String> getPaths(Attribute<M, R> attr) {
+        List<String> paths = new ArrayList<>();
+
+        String parent = attr.getParentName();
+
+        if (parent != null && !isCore()) {
+            paths.add(getName() + attr.getName().replace(parent + ".", ":"));
+        }
+
+        if (attr.getAlias() != null) {
+            if(!isCore()) {
+                paths.add(getName() + ":" + attr.getAlias());
+            }
+            paths.add(attr.getParentName());
+        }
+
+        paths.add(attr.getName());
+
+        return paths;
     }
 }
