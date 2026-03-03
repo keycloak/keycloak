@@ -354,7 +354,6 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("jdbc:mariadb://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("mariadb", config.getConfigValue("quarkus.datasource.db-kind").getValue());
     }
-
     @Test
     public void testDatabaseProperties() {
         System.setProperty("kc.db-url-properties", ";;test=test;test1=test1");
@@ -406,6 +405,34 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?targetServerType=any");
         config = createConfig();
         assertFalse(DatabasePropertyMappers.isPostgresqlTargetServerTypeEnabled());
+
+        // MSSQL: sendStringParametersAsUnicode should be set to false by default
+        ConfigArgsConfigSource.setCliArgs("--db=mssql");
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isMssqlSendStringParametersAsUnicode());
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false)
+                .anyMatch(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE::equals));
+        assertEquals("false", config.getConfigValue(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE).getValue());
+
+        // sendStringParametersAsUnicode already present in db-url-properties -> disabled
+        ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-url-properties=;sendStringParametersAsUnicode=true");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isMssqlSendStringParametersAsUnicode());
+
+        // custom JDBC driver -> disabled
+        ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-driver=com.custom.CustomSQLServerDriver");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isMssqlSendStringParametersAsUnicode());
+
+        // sendStringParametersAsUnicode already present in db-url -> disabled
+        ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-url=jdbc:sqlserver://localhost:1433;databaseName=keycloak;sendStringParametersAsUnicode=false");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isMssqlSendStringParametersAsUnicode());
+
+        // other db vendor -> disabled (already covered implicitly but good to be explicit)
+        ConfigArgsConfigSource.setCliArgs("--db=postgres");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isMssqlSendStringParametersAsUnicode());
     }
 
     // KEYCLOAK-15632

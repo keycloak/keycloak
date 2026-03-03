@@ -172,13 +172,22 @@ A similar change was done for the `UserSessionPersisterProvider`.
 
 The official container images for server and the Operator now use OpenJDK 25 instead of previously used OpenJDK 21.
 
-== Updated HTTP status code for invalid_grant errors in the Resource Owner Password Credentials Grant
+=== Updated HTTP status code for invalid_grant errors in the Resource Owner Password Credentials Grant
 
 Authentication failures resulting in an invalid_grant now correctly return an HTTP 400 status code instead of 401 for the Resource Owner Password Credentials and UMA Permission grants. This change was done to properly follow the OAuth 2.0 Authorization Framework specification.
+
 === Re-indexing required for external Infinispan Server
 
 With the `clusterless` feature enabled and `persistent-user-sessions` disabled, a re-index is required due to schema changes.
 {project_name} triggers the re-index on startup, but this may delay server startup depending on the number of sessions stored, and/or return incorrect results during the re-index process.
+
+=== Automatic database connection properties for the MS SQL Server driver
+
+When running with the MS SQL server, {project_name} needs to ensure consistent and predictable string parameter handling with the database.
+Starting with this release, and when using the MS SQL Server JDBC driver, {project_name} sets the `sendStringParametersAsUnicode` property to `false` by default.
+This change prevents the driver from automatically sending string parameters as Unicode unless explicitly required, which can reduce overhead and avoid unexpected performance or query-plan issues in some environments.
+
+You can override this behavior by setting your own value for the `sendStringParametersAsUnicode` property in the database connection URL or configuration, for example by adding `;sendStringParametersAsUnicode=true` to the connection URL.
 
 === New CLI options for transaction timeout configuration
 
@@ -242,4 +251,3 @@ In the current version {project_name} will log a warning if the database is not 
 The following features have been removed from this release.
 
 === <TODO>
-
