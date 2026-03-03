@@ -1,14 +1,17 @@
 package org.keycloak.tests.scim.tck;
 
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.scim.client.ResourceFilter;
+import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.common.Email;
 import org.keycloak.scim.resource.common.Name;
@@ -25,6 +28,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Comprehensive integration tests for SCIM filter functionality covering all operators and complex combinations.
@@ -52,7 +56,7 @@ public class FilterTest extends AbstractScimTest {
     }
 
     @Test
-    public void testEqualityFilter() {
+    public void testEqualFilter() {
         User john = new User();
         john.setUserName("john_" + KeycloakModelUtils.generateId());
         john = client.users().create(john);
@@ -105,6 +109,79 @@ public class FilterTest extends AbstractScimTest {
         assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
         assertThat(response.getResources().stream().noneMatch(u -> u.getUserName().equals(user1Name)), is(true));
         assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(user2Name)), is(true));
+    }
+
+    @Test
+    public void testGreaterThanFilters() {
+        User user = new User();
+        user.setUserName("tests-gt-or-ge-user");
+        user = client.users().create(user);
+
+        // fetch the user representation to get the start date
+        UserRepresentation userRep = realm.admin().users().get(user.getId()).toRepresentation();
+        long createdDate = userRep.getCreatedTimestamp();
+        String createdDateStr = Instant.ofEpochMilli(createdDate).toString();
+
+        // filtering with greater-than on the user's createdTimestamp should return no user
+        String filter = ResourceFilter.filter().gt("meta.created", createdDateStr).build();
+        ListResponse<User> response = client.users().getAll(filter);
+        assertNoResults(response);
+
+        // filtering with greater-than-or-equal on the user's createdTimestamp should get the new user
+        filter = ResourceFilter.filter().ge("meta.created", createdDateStr).build();
+        response = client.users().getAll(filter);
+        assertSingleResult(response, user.getUserName());
+
+        // filtering with greater-than on the user's (createdTimestamp - 1) should now get the new user
+        createdDateStr = Instant.ofEpochMilli(createdDate - 1).toString();
+        filter = ResourceFilter.filter().gt("meta.created", createdDateStr).build();
+        response = client.users().getAll(filter);
+        assertSingleResult(response, user.getUserName());
+
+        // fetching with greater-than-or-equal on the user's (createdTimestamp + 1) should yield no results
+        createdDateStr = Instant.ofEpochMilli(createdDate + 1).toString();
+        filter = ResourceFilter.filter().ge("meta.created", createdDateStr).build();
+        response = client.users().getAll(filter);
+        assertNoResults(response);
+    }
+
+    @Test
+    public void testLessThanFilters() {
+        User user = new User();
+        user.setUserName("tests-lt-or-le-user");
+        user = client.users().create(user);
+        final String expectedUsername = user.getUserName();
+
+        // fetch the user representation to get the start date
+        UserRepresentation userRep = realm.admin().users().get(user.getId()).toRepresentation();
+        long createdDate = userRep.getCreatedTimestamp();
+        String createdDateStr = Instant.ofEpochMilli(createdDate).toString();
+
+        // filtering with less-than on the user's createdTimestamp should not return the new user
+        String filter = ResourceFilter.filter().lt("meta.created", createdDateStr).build();
+        ListResponse<User> response = client.users().getAll(filter);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getResources().stream().noneMatch(u -> u.getUserName().equals(expectedUsername)), is(true));
+
+        // filtering with less-than-or-equal on the user's createdTimestamp should get the new user
+        filter = ResourceFilter.filter().le("meta.created", createdDateStr).build();
+        response = client.users().getAll(filter);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(expectedUsername)), is(true));
+
+        // filtering with less-than on the user's (createdTimestamp + 1) should now get the new user
+        createdDateStr = Instant.ofEpochMilli(createdDate + 1).toString();
+        filter = ResourceFilter.filter().lt("meta.created", createdDateStr).build();
+        response = client.users().getAll(filter);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(expectedUsername)), is(true));
+
+        // fetching with less-than-or-equal on the user's (createdTimestamp - 1) should not get the new user
+        createdDateStr = Instant.ofEpochMilli(createdDate - 1).toString();
+        filter = ResourceFilter.filter().le("meta.created", createdDateStr).build();
+        response = client.users().getAll(filter);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getResources().stream().noneMatch(u -> u.getUserName().equals(expectedUsername)), is(true));
     }
 
     @Test
@@ -171,26 +248,30 @@ public class FilterTest extends AbstractScimTest {
     @Test
     public void testBooleanFilter() {
         User activeUser = new User();
-        activeUser.setUserName("activetrue_" + KeycloakModelUtils.generateId());
+        activeUser.setUserName("activetrue");
         activeUser.setActive(true);
         activeUser = client.users().create(activeUser);
 
         User inactiveUser = new User();
-        inactiveUser.setUserName("activefalse_" + KeycloakModelUtils.generateId());
+        inactiveUser.setUserName("activefalse");
         inactiveUser.setActive(false);
         inactiveUser = client.users().create(inactiveUser);
 
         String filter = ResourceFilter.filter().eq("active", "true").build();
         ListResponse<User> response = client.users().getAll(filter);
-
         assertThat(response, is(not(nullValue())));
         assertThat(response.getResources().stream().allMatch(User::getActive), is(true));
 
         filter = ResourceFilter.filter().eq("active", "false").build();
         response = client.users().getAll(filter);
-
         assertThat(response, is(not(nullValue())));
         assertThat(response.getResources().stream().noneMatch(User::getActive), is(true));
+
+        // using a non-boolean value in a boolean expression should not be allowed
+        ScimClientException ce = assertThrows(ScimClientException.class,
+                () -> client.users().getAll(ResourceFilter.filter().eq("active", "abcde").build()));
+        assertThat(ce.getError(), is(not(nullValue())));
+        assertThat(ce.getError().getScimType(), is("invalidFilter"));
     }
 
     @Test
@@ -244,7 +325,7 @@ public class FilterTest extends AbstractScimTest {
     }
 
     @Test
-    public void testNotOperator() {
+    public void testLogicalNotFilter() {
         User user = new User();
         user.setUserName("testnot_" + KeycloakModelUtils.generateId());
         user = client.users().create(user);
@@ -614,5 +695,17 @@ public class FilterTest extends AbstractScimTest {
         assertThat(response, is(not(nullValue())));
         assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
         assertThat(response.getResources().stream().anyMatch(u -> u.getUserName().equals(userName)), is(true));
+    }
+
+    private void assertNoResults(ListResponse<User> response) {
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(0));
+    }
+
+    private void assertSingleResult(ListResponse<User> response, String expectedUsername) {
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(1));
+        assertThat(response.getResources().get(0).getUserName(), is(expectedUsername));
+
     }
 }

@@ -41,21 +41,33 @@ public class ResourceFilter {
     }
 
     public ResourceFilter gt(String property, Object value) {
+        if (value instanceof String) {
+            value = quote((String) value);
+        }
         append(property + " gt " + value);
         return this;
     }
 
     public ResourceFilter ge(String property, Object value) {
+        if (value instanceof String) {
+            value = quote((String) value);
+        }
         append(property + " ge " + value);
         return this;
     }
 
     public ResourceFilter lt(String property, Object value) {
+        if (value instanceof String) {
+            value = quote((String) value);
+        }
         append(property + " lt " + value);
         return this;
     }
 
     public ResourceFilter le(String property, Object value) {
+        if (value instanceof String) {
+            value = quote((String) value);
+        }
         append(property + " le " + value);
         return this;
     }
