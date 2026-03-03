@@ -290,27 +290,28 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
 
     /**
-     * Generate authorization_details from the credential offer when authorization_details parameter is not present in the token request.
-     * This method generates authorization_details based on the credential scopes from current request context.
+     * Generate authorization_details when authorization_details parameter is not present in the token request.
+     * This method derives authorization_details from credential scopes in current request context.
      *
+     * @param userSession      the current user session
      * @param clientSessionCtx the client session context from current token request
      * @return the authorization details response if generation was successful, null otherwise
      */
-    private List<OID4VCAuthorizationDetail> generateAuthorizationDetailsFromCredentialOffer(ClientSessionContext clientSessionCtx) {
-        logger.debug("Processing authorization_details from credential offer");
+    private List<OID4VCAuthorizationDetail> generateAuthorizationDetailsFromCredentialOffer(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        logger.debug("Processing authorization_details from current request scopes");
 
         // Get supported credentials
         Map<String, SupportedCredentialConfiguration> supportedCredentials = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
         if (supportedCredentials == null || supportedCredentials.isEmpty()) {
-            logger.debug("No supported credentials found, cannot generate authorization_details from credential offer");
+            logger.debug("No supported credentials found, cannot generate authorization_details from current request scopes");
             return null;
         }
 
-        // Extract credential_configuration_ids from the current request client scopes
-        List<String> credentialConfigurationIds = extractCredentialConfigurationIds(clientSessionCtx);
+        // Derive credential_configuration_ids from the current request client scopes
+        List<String> credentialConfigurationIds = deriveCredentialConfigurationIds(clientSessionCtx);
 
         if (credentialConfigurationIds == null || credentialConfigurationIds.isEmpty()) {
-            logger.debug("No credential_configuration_ids found in credential offer, cannot generate authorization_details");
+            logger.debug("No credential_configuration_ids found in current request scopes, cannot generate authorization_details");
             return null;
         }
 
@@ -334,6 +335,9 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             authDetail.setCredentialIdentifiers(List.of(credentialIdentifier));
 
             authorizationDetailsList.add(authDetail);
+
+            // Ensure generated credential_identifier can be resolved during credential request.
+            createOfferStateForAuthorizationCodeFlow(userSession, clientSessionCtx, authDetail);
         }
 
         if (authorizationDetailsList.isEmpty()) {
@@ -345,9 +349,9 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
     }
 
     /**
-     * Extract credential_configuration_ids from client scopes in current request context.
+     * Derive credential_configuration_ids from client scopes in current request context.
      */
-    private List<String> extractCredentialConfigurationIds(ClientSessionContext clientSessionCtx) {
+    private List<String> deriveCredentialConfigurationIds(ClientSessionContext clientSessionCtx) {
         List<String> configIds = clientSessionCtx.getClientScopesStream()
                 .filter(clientScope -> OID4VCLoginProtocolFactory.PROTOCOL_ID.equals(clientScope.getProtocol()))
                 .map(clientScope -> clientScope.getAttribute(CredentialScopeModel.VC_CONFIGURATION_ID))
@@ -359,13 +363,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
     @Override
     public List<OID4VCAuthorizationDetail> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-        // Fallback generation is only intended for pre-authorized code flow.
-        // Other grant types should not get synthetic credential identifiers.
-        String vcIssuanceFlow = clientSessionCtx.getClientSession().getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
-        if (!PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE.equals(vcIssuanceFlow)) {
-            return null;
-        }
-        return generateAuthorizationDetailsFromCredentialOffer(clientSessionCtx);
+        return generateAuthorizationDetailsFromCredentialOffer(userSession, clientSessionCtx);
     }
 
     @Override
