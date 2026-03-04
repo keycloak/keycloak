@@ -20,8 +20,11 @@ export const PreviewWindow = ({ cssVars }: PreviewWindowProps) => (
     <style>{`
       .preview {
         ${Object.entries(cssVars)
+          .filter(([key]) => key !== "borderRadius")
           .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
           .join("\n")}
+        ${cssVars["borderRadius"] ? `--pf-v5-global--BorderRadius--sm: ${cssVars["borderRadius"]};` : ""}
+        ${cssVars["borderRadius"] ? `--pf-v5-global--BorderRadius--lg: ${cssVars["borderRadius"]};` : ""}
       }
     `}</style>
     <Page className="preview" header={<Header />}>

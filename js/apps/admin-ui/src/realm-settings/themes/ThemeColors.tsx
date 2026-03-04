@@ -193,7 +193,7 @@ export const ThemeColors = ({
         {mediaQuery.matches && theme === "light" && (
           <Alert variant="info" isInline title={t("themePreviewInfo")} />
         )}
-        <Flex className="pf-v5-u-pt-lg">
+        <Flex className="pf-v5-u-pt-lg" flexWrap={{ default: "nowrap" }}>
           <FlexItem>
             <FormAccess isHorizontal role="manage-realm">
               <FormProvider {...form}>
@@ -234,6 +234,12 @@ export const ThemeColors = ({
                   placeholder="63px"
                   defaultValue="63px"
                 />
+                <TextControl
+                  name={"borderRadius"}
+                  label={t("borderRadius")}
+                  placeholder="4px"
+                  defaultValue="4px"
+                />
                 <FormGroup label={t("backgroundImage")}>
                   <ImageUpload
                     name="bgimage"
@@ -251,7 +257,10 @@ export const ThemeColors = ({
               </FormProvider>
             </FormAccess>
           </FlexItem>
-          <FlexItem grow={{ default: "grow" }} style={{ zIndex: 0 }}>
+          <FlexItem
+            grow={{ default: "grow" }}
+            style={{ zIndex: 0, minWidth: 0 }}
+          >
             <Tabs
               activeKey={previewTab}
               isBox
@@ -263,11 +272,17 @@ export const ThemeColors = ({
                     ...(style?.[theme] || {}),
                     logoWidth: style?.["logoWidth"],
                     logoHeight: style?.["logoHeight"],
+                    borderRadius: style?.["borderRadius"],
                   }}
                 />
               </Tab>
               <Tab title={t("adminConsolePreview")} eventKey={1}>
-                <PreviewWindow cssVars={style?.[theme] || {}} />
+                <PreviewWindow
+                  cssVars={{
+                    ...(style?.[theme] || {}),
+                    borderRadius: style?.["borderRadius"],
+                  }}
+                />
               </Tab>
             </Tabs>
           </FlexItem>
