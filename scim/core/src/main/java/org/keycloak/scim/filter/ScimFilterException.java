@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.config;
+package org.keycloak.scim.filter;
 
-import java.util.Optional;
+import org.keycloak.models.ModelValidationException;
 
-import org.keycloak.Config;
+/**
+ * Exception thrown when an SCIM filter expression is invalid or cannot be processed.
+ *
+ * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
+ */
+public class ScimFilterException extends ModelValidationException {
 
-public interface ConfigProviderFactory {
-
-    Optional<Config.ConfigProvider> create();
-
+    public ScimFilterException(String message) {
+        super(message);
+    }
 }

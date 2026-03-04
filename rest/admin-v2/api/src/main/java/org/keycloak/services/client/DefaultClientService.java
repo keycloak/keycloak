@@ -221,7 +221,9 @@ public class DefaultClientService implements ClientService {
         if (clientResource == null) {
             throw new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND);
         }
+        var client = clientResource.getClient();
         clientResource.deleteClient();
+        fireAdminEvent(OperationType.DELETE, BaseClientRepresentation.createMinimalRepresentation(client.getClientId(), client.getProtocol()));
     }
 
     /**

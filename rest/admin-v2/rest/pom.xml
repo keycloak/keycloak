@@ -17,6 +17,8 @@
         <maven.compiler.target>17</maven.compiler.target>
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Use OpenAPI 4.x compatible plugin version -->
+        <smallrye.openapi.generator.plugin.version>4.2.4</smallrye.openapi.generator.plugin.version>
     </properties>
 
     <dependencies>
@@ -40,5 +42,86 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-services</artifactId>
         </dependency>
+        <!-- used by OAS Filter during OpenAPI spec generation -->
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.smallrye</groupId>
+                <artifactId>smallrye-open-api-maven-plugin</artifactId>
+                <configuration>
+                    <scanPackages>org.keycloak.representations.admin.v2,org.keycloak.admin.api</scanPackages>
+                    <filter>org.keycloak.admin.internal.openapi.OASModelFilter</filter>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                    <outputFileTypeFilter>ALL</outputFileTypeFilter>
+                    <infoTitle>Keycloak API</infoTitle>
+                    <infoVersion>${project.version}</infoVersion>
+                    <systemPropertyVariables>
+                        <mp.openapi.extensions.smallrye.auto-inheritance>PARENT_ONLY</mp.openapi.extensions.smallrye.auto-inheritance>
+                        <mp.openapi.extensions.smallrye.operationIdStrategy>METHOD</mp.openapi.extensions.smallrye.operationIdStrategy>
+                        <mp.openapi.extensions.smallrye.duplicateOperationIdBehavior>FAIL</mp.openapi.extensions.smallrye.duplicateOperationIdBehavior>
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>generate-schema</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-openapi-to-jar</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <!-- include generated openapi documents in JAR, so that Quarkus server can see and serve them -->
+                            <outputDirectory>${project.build.directory}/classes/META-INF</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>openapi.json</include>
+                                        <include>openapi.yaml</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-openapi-to-js-client</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${maven.multiModuleProjectDirectory}/js/libs/keycloak-admin-client</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>openapi.yaml</include>
+                                    </includes>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

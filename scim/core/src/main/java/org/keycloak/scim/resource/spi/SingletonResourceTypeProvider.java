@@ -3,6 +3,7 @@ package org.keycloak.scim.resource.spi;
 import java.util.stream.Stream;
 
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 
 /**
@@ -36,7 +37,7 @@ public interface SingletonResourceTypeProvider<R extends ResourceTypeRepresentat
     }
 
     @Override
-    default Stream<R> getAll() {
+    default Stream<R> getAll(SearchRequest searchRequest) {
         return Stream.of(getSingleton());
     }
 

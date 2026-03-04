@@ -31,6 +31,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
@@ -53,7 +54,6 @@ import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.SCOPE_OPENID;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
-import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
 
 import static org.junit.Assert.assertEquals;
@@ -173,9 +173,9 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
         try {
             runCredentialOfferTest(new TestContext(true, appUsername));
-            fail("Expected " + INVALID_CREDENTIAL_OFFER_REQUEST.name());
+            fail("Expected " + ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue());
         } catch (RuntimeException ex) {
-            List.of(INVALID_CREDENTIAL_OFFER_REQUEST.name(), "User '" + appUsername + "' disabled")
+            List.of(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), "User '" + appUsername + "' disabled")
                     .forEach(it -> assertTrue(ex.getMessage() + " does not contain " + it, ex.getMessage().contains(it)));
         } finally {
             // Re-enable user
@@ -240,7 +240,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
                 AccessTokenResponse accessToken = getPreAuthorizedAccessTokenResponse(credOffer);
                 assertTrue(accessToken.getErrorDescription(), accessToken.isSuccess());
 
-                List<OID4VCAuthorizationDetail> authDetailsResponse = accessToken.getOid4vcAuthorizationDetails();
+                List<OID4VCAuthorizationDetail> authDetailsResponse = accessToken.getOID4VCAuthorizationDetails();
                 if (authDetailsResponse == null || authDetailsResponse.isEmpty()) {
                     throw new IllegalStateException("No authorization_details in token response");
                 }
@@ -308,7 +308,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
 
     private List<OID4VCAuthorizationDetail> extractAuthorizationDetails(AccessTokenResponse tokenResponse) {
         // First check if already populated in token response
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
             return authDetailsResponse;
         }
@@ -432,7 +432,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
     private void verifyCredentialResponse(TestContext ctx, CredentialResponse credResponse) throws Exception {
 
         String issuer = ctx.issuerMetadata.getCredentialIssuer();
-        String scope = ctx.credentialConfiguration.getScope();
+        List<String> expectedTypes = ctx.credentialConfiguration.getCredentialDefinition().getType();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull("The first credential in the array should not be null", credentialObj);
 
@@ -442,7 +442,7 @@ public class OID4VCICredentialOfferMatrixTest extends OID4VCIssuerEndpointTest {
         assertEquals(issuer, jsonWebToken.getIssuer());
         Object vc = jsonWebToken.getOtherClaims().get("vc");
         VerifiableCredential credential = JsonSerialization.mapper.convertValue(vc, VerifiableCredential.class);
-        assertEquals(List.of(scope), credential.getType());
+        assertEquals(expectedTypes, credential.getType());
         assertEquals(URI.create(issuer), credential.getIssuer());
         assertEquals(expUsername + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
     }

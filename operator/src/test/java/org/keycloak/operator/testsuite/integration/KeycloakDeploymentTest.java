@@ -116,6 +116,22 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()).isNull());
     }
 
+    /**
+     * Currently, when using the JDBC_PING cache stack, we need at least 4 DB connecdtions to avoid dead lock.
+     * This value is documented as the minimal acceptable value.
+     *
+     * @see <a href="https://github.com/keycloak/keycloak/issues/46673">Issue #46673</a>
+     */
+    @Test
+    public void testDocumentedMinimalPoolMaxSizeWorks() {
+        var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().getDatabaseSpec().setPoolMaxSize(4);
+        deployKeycloak(k8sclient, kc, true);
+
+        assertThat(k8sclient.apps().statefulSets().inNamespace(namespace)
+                .withName(kc.getMetadata().getName()).get().getStatus().getReadyReplicas()).isEqualTo(1);
+    }
+
     @Test
     public void testKeycloakDeploymentBeforeSecret() {
         // CR

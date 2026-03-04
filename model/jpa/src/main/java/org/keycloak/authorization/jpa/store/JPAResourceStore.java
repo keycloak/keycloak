@@ -95,7 +95,11 @@ public class JPAResourceStore implements ResourceStore {
         }
 
         ResourceEntity entity = entityManager.find(ResourceEntity.class, id);
-        if (entity == null) return null;
+
+        if (entity == null || (resourceServer != null && !resourceServer.getId().equals(entity.getResourceServer()))) {
+            return null;
+        }
+
         return new ResourceAdapter(entity, entityManager, provider.getStoreFactory());
     }
 

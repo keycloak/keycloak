@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin.identityprovider;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
@@ -50,8 +51,8 @@ public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
         // Kubernetes idp - Kubernetes idp: not allowed
         testCreateIdentityProviderDuplicateNotAllowed(KubernetesIdentityProviderFactory.PROVIDER_ID, KubernetesIdentityProviderFactory.PROVIDER_ID, issuer);
 
-        // JWTAuthorizationGrant idp - Kubernetes idp: not allowed
-        testCreateIdentityProviderDuplicateNotAllowed(JWTAuthorizationGrantIdentityProviderFactory.PROVIDER_ID, KubernetesIdentityProviderFactory.PROVIDER_ID, issuer);
+        // JWTAuthorizationGrant idp - Kubernetes idp: allowed as they are different type (jwt vs client assertion)
+        testCreateIdentityProviderDuplicateAllowed(JWTAuthorizationGrantIdentityProviderFactory.PROVIDER_ID, KubernetesIdentityProviderFactory.PROVIDER_ID, issuer);
 
         // JWTAuthorizationGrant idp - OIDC idp: allowed
         testCreateIdentityProviderDuplicateAllowed(JWTAuthorizationGrantIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID, issuer, false, false);
@@ -59,7 +60,7 @@ public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
         // JWTAuthorizationGrant idp - OIDC idp: not allowed
         testCreateIdentityProviderDuplicateNotAllowed(JWTAuthorizationGrantIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID, issuer, true, false);
 
-        // Kubernetes idp - OIDC idp: not allowed
+        // Kubernetes idp - OIDC idp client assertions: not allowed
         testCreateIdentityProviderDuplicateNotAllowed(KubernetesIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID, issuer, false, true);
 
         // OIDC idp - OIDC idp: allowed
@@ -79,8 +80,62 @@ public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
         testCreateIdentityProviderDuplicateNotAllowed(GoogleIdentityProviderFactory.PROVIDER_ID, GoogleIdentityProviderFactory.PROVIDER_ID, null, true, false);
     }
 
+    @Test
+    public void testCreateUpdateDuplicateIdentityProviderDisabled() {
+        String issuer = "http://localhost:8080";
+
+        // test two OIDC adapters not allowed, both with jwt and no assertions
+        testCreateIdentityProviderDuplicateAllowedNoCleanUp(OIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID,
+                issuer, true, false, false);
+
+        // disable the first idp1
+        IdentityProviderResource idp1 = managedRealm.admin().identityProviders().get("idp1");
+        IdentityProviderRepresentation idp1Rep = idp1.toRepresentation();
+        idp1Rep.setEnabled(false);
+        idp1.update(idp1Rep);
+
+        // now the idp2 could be updated to the same issuer
+        IdentityProviderResource idp2 = managedRealm.admin().identityProviders().get("idp2");
+        IdentityProviderRepresentation idp2Rep = idp2.toRepresentation();
+        idp2Rep.getConfig().put("issuer", issuer);
+        idp2.update(idp2Rep);
+
+        // idp1 cannot be enabled now
+        idp1Rep.setEnabled(true);
+        final IdentityProviderRepresentation idp = idp1Rep;
+        BadRequestException e = Assertions.assertThrows(BadRequestException.class, () -> idp1.update(idp));
+        assertEquals("Issuer URL already used for IDP 'idp2', Issuer must be unique if the idp supports JWT Authorization Grant or Federated Client Authentication",
+                e.getResponse().readEntity(ErrorRepresentation.class).getErrorMessage());
+
+        // disable now idp2
+        idp2Rep = idp2.toRepresentation();
+        idp2Rep.setEnabled(false);
+        idp2.update(idp2Rep);
+
+        // enable idp1
+        idp1Rep = idp1.toRepresentation();
+        idp1Rep.setEnabled(true);
+        idp1.update(idp1Rep);
+
+        // make both enabled one with jwt and the other with client assertions
+        idp1Rep = idp1.toRepresentation();
+        idp1Rep.setEnabled(true);
+        idp1Rep.getConfig().put("jwtAuthorizationGrantEnabled", Boolean.FALSE.toString());
+        idp1Rep.getConfig().put("supportsClientAssertions", Boolean.TRUE.toString());
+        idp1.update(idp1Rep);
+        idp2Rep = idp2.toRepresentation();
+        idp2Rep.setEnabled(true);
+        idp1Rep.getConfig().put("jwtAuthorizationGrantEnabled", Boolean.TRUE.toString());
+        idp1Rep.getConfig().put("supportsClientAssertions", Boolean.FALSE.toString());
+        idp2.update(idp2Rep);
+    }
+
     public void testCreateIdentityProviderDuplicateNotAllowed(String providerId1, String providerId2, String issuer) {
         testCreateIdentityProviderDuplicateAllowed(providerId1, providerId2, issuer, false, false, false);
+    }
+
+    public void testCreateIdentityProviderDuplicateAllowed(String providerId1, String providerId2, String issuer) {
+        testCreateIdentityProviderDuplicateAllowed(providerId1, providerId2, issuer, false, false, true);
     }
 
     public void testCreateIdentityProviderDuplicateNotAllowed(String providerId1, String providerId2, String issuer, boolean JWTAuthorizationGrantEnabled, boolean federatedAuthenticationEnabled) {
@@ -92,6 +147,11 @@ public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
     }
 
     public void testCreateIdentityProviderDuplicateAllowed(String providerId1, String providerId2, String issuer, boolean JWTAuthorizationGrantEnabled, boolean federatedAuthenticationEnabled, boolean allowDuplicate) {
+        testCreateIdentityProviderDuplicateAllowedNoCleanUp(providerId1, providerId2, issuer, JWTAuthorizationGrantEnabled, federatedAuthenticationEnabled, allowDuplicate);
+        managedRealm.runCleanup();
+    }
+
+    public void testCreateIdentityProviderDuplicateAllowedNoCleanUp(String providerId1, String providerId2, String issuer, boolean JWTAuthorizationGrantEnabled, boolean federatedAuthenticationEnabled, boolean allowDuplicate) {
         String idp1 = "idp1";
         String idp2 = "idp2";
         IdentityProviderRepresentation identityProvider1 = createRep(idp1, providerId1, issuer, JWTAuthorizationGrantEnabled, federatedAuthenticationEnabled);
@@ -135,8 +195,6 @@ public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
                 }
             }
         }
-
-        managedRealm.runCleanup();
     }
 
     public IdentityProviderRepresentation createRep(String alias, String providerId, String issuer, boolean JWTAuthorizationGrantEnabled, boolean federatedAuthenticationEnabled) {

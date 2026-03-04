@@ -1192,12 +1192,12 @@ public class RealmModelDelegate implements RealmModel {
     }
 
     @Override
-    public void setScimEnabled(boolean enabled) {
-        delegate.setScimEnabled(enabled);
+    public void setScimApiEnabled(boolean enabled) {
+        delegate.setScimApiEnabled(enabled);
     }
 
     @Override
-    public boolean isScimEnabled() {
-        return delegate.isScimEnabled();
+    public boolean isScimApiEnabled() {
+        return delegate.isScimApiEnabled();
     }
 }

@@ -1,8 +1,10 @@
 package org.keycloak.tests.client.authentication.external;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
@@ -10,9 +12,14 @@ import org.junit.jupiter.api.Test;
 
 public abstract class AbstractBaseClientAuthTest extends AbstractClientAuthTest {
 
-    public AbstractBaseClientAuthTest(String expectedTokenIssuer, String internalClientId, String externalClientId) {
+    protected final String idpAlias;
+
+    public AbstractBaseClientAuthTest(String expectedTokenIssuer, String internalClientId, String externalClientId, String idpAlias) {
         super(expectedTokenIssuer, internalClientId, externalClientId);
+        this.idpAlias = idpAlias;
     }
+
+    protected abstract ManagedRealm getRealm();
 
     @Test
     public void testValidToken() {
@@ -93,6 +100,52 @@ public abstract class AbstractBaseClientAuthTest extends AbstractClientAuthTest 
         AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(jws, "urn:ietf:params:oauth:client-assertion-type:invalid").send();
         assertFailure(response);
         assertFailure(null, expectedTokenIssuer, externalClientId, jwt.getId(), "client_not_found", events.poll());
+    }
+
+
+    @Test
+    public void testClientAssertionMaxExpiration() {
+
+        // Set max expiration for client assertions to 60 seconds
+        getRealm().updateIdentityProvider(idpAlias, rep -> {
+            rep.getConfig().put(IdentityProviderModel.FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION, "60");
+        });
+
+        // Token issued just now with exp within the limit should succeed
+        JsonWebToken jwt = createDefaultToken();
+        jwt.iat((long) Time.currentTime());
+        jwt.exp((long) (Time.currentTime() + 30));
+        assertSuccess(internalClientId, doClientGrant(jwt));
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+
+        // Token issued too far in the past should fail (iat + maxExp < currentTime)
+        jwt = createDefaultToken();
+        jwt.iat((long) (Time.currentTime() - 120));
+        jwt.exp((long) (Time.currentTime() + 30));
+        assertFailure("Token was issued too far in the past to be used now", doClientGrant(jwt));
+        assertFailure(internalClientId, expectedTokenIssuer, externalClientId, jwt.getId(), events.poll());
+    }
+
+    @Test
+    public void testClientAssertionMaxExpirationWithoutIat() {
+        // Set max expiration for client assertions to 60 seconds
+        getRealm().updateIdentityProvider(idpAlias, rep -> {
+            rep.getConfig().put(IdentityProviderModel.FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION, "60");
+        });
+
+        // Token without iat and exp too far in the future should fail
+        JsonWebToken jwt = createDefaultToken();
+        jwt.iat(null);
+        jwt.exp((long) (Time.currentTime() + 120));
+        assertFailure("Token expiration is too far in the future and iat claim not present in token", doClientGrant(jwt));
+        assertFailure(internalClientId, expectedTokenIssuer, externalClientId, jwt.getId(), events.poll());
+
+        // Token without iat but exp within the limit should succeed
+        jwt = createDefaultToken();
+        jwt.iat(null);
+        jwt.exp((long) (Time.currentTime() + 30));
+        assertSuccess(internalClientId, doClientGrant(jwt));
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
     }
 
 }

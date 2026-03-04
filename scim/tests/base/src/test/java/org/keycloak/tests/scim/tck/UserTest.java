@@ -16,6 +16,7 @@ import org.keycloak.representations.userprofile.config.UPAttributeRequired;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.scim.client.ScimClient;
 import org.keycloak.scim.client.ScimClientException;
+import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.resource.common.Email;
 import org.keycloak.scim.resource.common.Name;
@@ -32,7 +33,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA;
 import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA_ATTRIBUTE;
 import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
 import static org.keycloak.scim.resource.Scim.USER_RESOURCE_TYPE;
@@ -82,7 +82,7 @@ public class UserTest extends AbstractScimTest {
     public void testCreateWithSingleEmail() {
         User expected = new User();
         expected.setUserName(KeycloakModelUtils.generateId());
-        expected.setEmail(expected.getEmail() + "@keycloak.org");
+        expected.setEmail(expected.getUserName() + "@keycloak.org");
         User actual = client.users().create(expected);
 
         actual = client.users().get(actual.getId());
@@ -183,26 +183,19 @@ public class UserTest extends AbstractScimTest {
         UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
 
         configuration.addOrReplaceAttribute(new UPAttribute("department", Map.of(
-                ANNOTATION_SCIM_SCHEMA, ENTERPRISE_USER_SCHEMA,
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "department")));
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".department")));
         configuration.addOrReplaceAttribute(new UPAttribute("division", Map.of(
-                ANNOTATION_SCIM_SCHEMA, ENTERPRISE_USER_SCHEMA,
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "division")));
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".division")));
         configuration.addOrReplaceAttribute(new UPAttribute("costCenter", Map.of(
-                ANNOTATION_SCIM_SCHEMA, ENTERPRISE_USER_SCHEMA,
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "costCenter")));
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".costCenter")));
         configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
-                ANNOTATION_SCIM_SCHEMA, ENTERPRISE_USER_SCHEMA,
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "employeeNumber")));
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
         configuration.addOrReplaceAttribute(new UPAttribute("organization", Map.of(
-                ANNOTATION_SCIM_SCHEMA, ENTERPRISE_USER_SCHEMA,
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "organization")));
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".organization")));
         configuration.addOrReplaceAttribute(new UPAttribute("manager", Map.of(
-                ANNOTATION_SCIM_SCHEMA, ENTERPRISE_USER_SCHEMA,
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "manager.value")));
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.value")));
         configuration.addOrReplaceAttribute(new UPAttribute("managerName", Map.of(
-                ANNOTATION_SCIM_SCHEMA, ENTERPRISE_USER_SCHEMA,
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "manager.dispayName")));
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.dispayName")));
         realm.admin().users().userProfile().update(configuration);
 
         User expected = createUser();
@@ -222,8 +215,8 @@ public class UserTest extends AbstractScimTest {
         assertEquals(2, actual.getSchemas().size());
         assertRootAttributes(actual, expected);
         assertNotNull(actual.getEnterpriseUser());
-        assertEquals(enterpriseUser.getDepartment(), actual.getEnterpriseUser().getDepartment());
         assertEquals(enterpriseUser.getDivision(), actual.getEnterpriseUser().getDivision());
+        assertEquals(enterpriseUser.getDepartment(), actual.getEnterpriseUser().getDepartment());
         assertEquals(enterpriseUser.getCostCenter(), actual.getEnterpriseUser().getCostCenter());
         assertEquals(enterpriseUser.getOrganization(), actual.getEnterpriseUser().getOrganization());
         assertEquals(enterpriseUser.getEmployeeNumber(), actual.getEnterpriseUser().getEmployeeNumber());
@@ -290,6 +283,28 @@ public class UserTest extends AbstractScimTest {
         User actual = client.users().update(expected);
         assertEquals(1, actual.getSchemas().size());
         assertRootAttributes(actual, expected);
+
+        User another = client.users().create(createUser());
+        assertNotNull(another.getId());
+
+        try {
+            client.users().update(another.getId(), expected);
+            fail("should fail because of invalid identifier");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertEquals("Invalid reference to resource", error.getDetail());
+        }
+
+        try {
+            client.users().update(null, expected);
+            fail("should fail because identifier not provided");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(404, error.getStatusInt());
+        }
     }
 
     @Test
@@ -350,6 +365,334 @@ public class UserTest extends AbstractScimTest {
         }
     }
 
+    @Test
+    public void testPatchAdd() {
+        User expected = client.users().create(createUser());
+        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
+        configuration.addOrReplaceAttribute(new UPAttribute("middleName", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.middleName")));
+        configuration.addOrReplaceAttribute(new UPAttribute("honorificPrefix", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificPrefix")));
+        configuration.addOrReplaceAttribute(new UPAttribute("honorificSuffix", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificSuffix")));
+        realm.admin().users().userProfile().update(configuration);
+
+        // patch multiple attributes in a single request
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("name", "{\"givenName\": \"PatchedGivenName\"}")
+                .add("name.middleName", "MiddleName")
+                .add("name.honorificPrefix", "HonorificPrefix")
+                .add("name.honorificSuffix", "HonorificSuffix")
+                .add("active", "false")
+                .build());
+        User actual = client.users().get(expected.getId());
+        expected.setFirstName("PatchedGivenName");
+        expected.getName().setMiddleName("MiddleName");
+        expected.getName().setHonorificPrefix("HonorificPrefix");
+        expected.getName().setHonorificSuffix("HonorificSuffix");
+        expected.setActive(false);
+        assertRootAttributes(actual, expected);
+
+        // patch a specific attribute by providing its path and the value as a JSON object
+        // this is needed to patch complex attributes like "emails" which is a multi-valued attribute with sub-attributes
+        // for now, we're only mapping the "value" from a complex attribute as the value to be patched
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("emails", "{\"value\": \"" + expected.getEmail().replace("keycloak.org", "patched.org") + "\", \"type\": \"work\", \"primary\": true}")
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setEmail(expected.getEmail().replace("keycloak.org", "patched.org"));
+        assertRootAttributes(actual, expected);
+
+        // patch a specific attribute by providing its path and the value as a JSON array
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("emails", "[{\"value\": \"" + expected.getEmail().replace("patched.org", "patched2.org") + "\", \"type\": \"work\", \"primary\": true}]")
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setEmail(expected.getEmail().replace("patched.org", "patched2.org"));
+        assertRootAttributes(actual, expected);
+
+        // patch a complex attribute by providing only the value as a JSON object without a path.
+        // in this case, the path is derived from the structure of the JSON object.
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("{\"emails\": [{\"value\": \"" + expected.getEmail().replace("patched2.org", "patched3.org") + "\", \"type\": \"work\", \"primary\": true}]}")
+                .add("{\"name\": {\"givenName\": \"PatchedGivenName2\"}}")
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setEmail(expected.getEmail().replace("patched2.org", "patched3.org"));
+        expected.setFirstName("PatchedGivenName2");
+        assertRootAttributes(actual, expected);
+
+        // patch multiple attributes by providing only the value as a JSON object without a path.
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("{\"emails\": [{\"value\": \"" + expected.getEmail().replace("patched3.org", "patched4.org") + "\", \"type\": \"work\", \"primary\": true}], \"name\": {\"givenName\": \"PatchedGivenName3\"}, \"active\": false}")
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setEmail(expected.getEmail().replace("patched3.org", "patched4.org"));
+        expected.setFirstName("PatchedGivenName3");
+        expected.setActive(false);
+        assertRootAttributes(actual, expected);
+
+        // patch a multivalued attribute by using the value subattribute in the path
+        expected.setEmail(expected.getEmail().replace("patched4.org", "patched5.org"));
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("emails.value", expected.getEmail())
+                .build());
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
+        // patch a multivalued attribute using a filter in the path, path filtering is not yet supported
+        expected.setEmail(expected.getEmail().replace("patched5.org", "patched6.org"));
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("emails[type eq \"work\"].value", expected.getEmail())
+                .build());
+        actual = client.users().get(expected.getId());
+        assertRootAttributes(actual, expected);
+
+        // patch a multivalued attribute using a filter in the path and the primary subattribute, which is not supported yet
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("emails[type eq \"work\"].primary", "false")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertTrue(actual.getEmails().get(0).getPrimary());
+        assertRootAttributes(actual, expected);
+
+        // patch a simple attribute by providing only the value as a JSON object without a path.
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("{\"active\": true}")
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setActive(true);
+        assertRootAttributes(actual, expected);
+
+        // patch an attribute from an extension schema
+        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
+        realm.admin().users().userProfile().update(configuration);
+        assertNull(actual.getEnterpriseUser());
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add(ENTERPRISE_USER_SCHEMA + ":" + "employeeNumber", "1234")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        expected.setEnterpriseUser(new EnterpriseUser());
+        expected.getEnterpriseUser().setEmployeeNumber("1234");
+        assertEquals("1234", actual.getEnterpriseUser().getEmployeeNumber());
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add(ENTERPRISE_USER_SCHEMA, "{\"employeeNumber\": \"4321\"}")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        expected.setEnterpriseUser(new EnterpriseUser());
+        expected.getEnterpriseUser().setEmployeeNumber("4321");
+        assertEquals("4321", actual.getEnterpriseUser().getEmployeeNumber());
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("{\"" + ENTERPRISE_USER_SCHEMA + "\":{\"employeeNumber\": \"1234\"}}")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        assertEquals("1234", actual.getEnterpriseUser().getEmployeeNumber());
+
+        // patch attributes from the core schema and an extension schema in a single request by providing the values as a JSON object without a path.
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("{\"name.givenName\": \"Amanda\", \"" + ENTERPRISE_USER_SCHEMA + ":employeeNumber\": \"321\"}}")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        assertEquals("321", actual.getEnterpriseUser().getEmployeeNumber());
+        assertEquals("Amanda", actual.getFirstName());
+
+        configuration.addOrReplaceAttribute(new UPAttribute("managerId", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.value")));
+        realm.admin().users().userProfile().update(configuration);
+        // patch a sub attribute of a complex attribute using a direct path
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("{\"name.givenName\": \"Alice\", \"" + ENTERPRISE_USER_SCHEMA + ":manager\": \"321\"}}")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        assertNotNull(actual.getEnterpriseUser().getManager());
+        assertEquals("321", actual.getEnterpriseUser().getManager().getValue());
+        assertEquals("Alice", actual.getFirstName());
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("{\"name.givenName\": \"Amanda\", \"" + ENTERPRISE_USER_SCHEMA + "\": {\"manager\": {\"value\": \"567\"}}}")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        assertNotNull(actual.getEnterpriseUser().getManager());
+        assertEquals("567", actual.getEnterpriseUser().getManager().getValue());
+        assertEquals("Amanda", actual.getFirstName());
+    }
+
+    @Test
+    public void testPatchReplace() {
+        User expected = client.users().create(createUser());
+        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
+        configuration.addOrReplaceAttribute(new UPAttribute("middleName", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.middleName")));
+        configuration.addOrReplaceAttribute(new UPAttribute("honorificPrefix", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificPrefix")));
+        configuration.addOrReplaceAttribute(new UPAttribute("honorificSuffix", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificSuffix")));
+        realm.admin().users().userProfile().update(configuration);
+
+        // patch multiple attributes in a single request
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("name", "{\"givenName\": \"PatchedGivenName\"}")
+                .replace("name.middleName", "MiddleName")
+                .replace("name.honorificPrefix", "HonorificPrefix")
+                .replace("name.honorificSuffix", "HonorificSuffix")
+                .replace("active", "false")
+                .build());
+        User actual = client.users().get(expected.getId());
+        expected.setFirstName("PatchedGivenName");
+        expected.getName().setMiddleName("MiddleName");
+        expected.getName().setHonorificPrefix("HonorificPrefix");
+        expected.getName().setHonorificSuffix("HonorificSuffix");
+        expected.setActive(false);
+        assertRootAttributes(actual, expected);
+
+        // patch a specific attribute by providing its path and the value as a JSON object
+        // this is needed to patch complex attributes like "emails" which is a multi-valued attribute with sub-attributes
+        // for now, we're only mapping the "value" from a complex attribute as the value to be patched
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("emails", "{\"value\": \"" + expected.getEmail().replace("keycloak.org", "patched.org") + "\", \"type\": \"work\", \"primary\": true}")
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setEmail(expected.getEmail().replace("keycloak.org", "patched.org"));
+        assertRootAttributes(actual, expected);
+
+        // patch a specific attribute by providing its path and the value as a JSON array
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("emails", "[{\"value\": \"" + expected.getEmail().replace("patched.org", "patched2.org") + "\", \"type\": \"work\", \"primary\": true}]")
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setEmail(expected.getEmail().replace("patched.org", "patched2.org"));
+        assertRootAttributes(actual, expected);
+
+        // patch a complex attribute by providing only the value as a JSON object without a path.
+        // in this case, the path is derived from the structure of the JSON object.
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("{\"emails\": [{\"value\": \"" + expected.getEmail().replace("patched2.org", "patched3.org") + "\", \"type\": \"work\", \"primary\": true}]}")
+                .replace("{\"name\": {\"givenName\": \"PatchedGivenName2\"}}")
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setEmail(expected.getEmail().replace("patched2.org", "patched3.org"));
+        expected.setFirstName("PatchedGivenName2");
+        assertRootAttributes(actual, expected);
+
+        // patch a simple attribute by providing only the value as a JSON object without a path.
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("{\"active\": true}")
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setActive(true);
+        assertRootAttributes(actual, expected);
+
+        // patch multiple attributes by providing only the value as a JSON object without a path.
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("{\"emails\": [{\"value\": \"" + expected.getEmail().replace("patched3.org", "patched4.org") + "\", \"type\": \"work\", \"primary\": true}], \"name\": {\"givenName\": \"PatchedGivenName3\"}, \"active\": false}")
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setEmail(expected.getEmail().replace("patched3.org", "patched4.org"));
+        expected.setFirstName("PatchedGivenName3");
+        expected.setActive(false);
+        assertRootAttributes(actual, expected);
+
+        // patch an attribute from an extension schema
+        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
+        realm.admin().users().userProfile().update(configuration);
+        assertNull(actual.getEnterpriseUser());
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace(ENTERPRISE_USER_SCHEMA + ":" + "employeeNumber", "1234")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        expected.setEnterpriseUser(new EnterpriseUser());
+        expected.getEnterpriseUser().setEmployeeNumber("1234");
+        assertEquals("1234", actual.getEnterpriseUser().getEmployeeNumber());
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace(ENTERPRISE_USER_SCHEMA, "{\"employeeNumber\": \"4321\"}")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        expected.setEnterpriseUser(new EnterpriseUser());
+        expected.getEnterpriseUser().setEmployeeNumber("4321");
+        assertEquals("4321", actual.getEnterpriseUser().getEmployeeNumber());
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("{\"" + ENTERPRISE_USER_SCHEMA + "\":{\"employeeNumber\": \"1234\"}}")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        expected.setEnterpriseUser(new EnterpriseUser());
+        expected.getEnterpriseUser().setEmployeeNumber("1234");
+        assertEquals("1234", actual.getEnterpriseUser().getEmployeeNumber());
+    }
+
+    @Test
+    public void testPatchRemove() {
+        User expected = client.users().create(createUser());
+        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
+        configuration.addOrReplaceAttribute(new UPAttribute("middleName", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.middleName")));
+        configuration.addOrReplaceAttribute(new UPAttribute("honorificPrefix", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificPrefix")));
+        configuration.addOrReplaceAttribute(new UPAttribute("honorificSuffix", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificSuffix")));
+        realm.admin().users().userProfile().update(configuration);
+
+        // patch multiple attributes in a single request
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("name", "{\"givenName\": \"PatchedGivenName\"}")
+                .add("name.middleName", "MiddleName")
+                .add("name.honorificPrefix", "HonorificPrefix")
+                .add("name.honorificSuffix", "HonorificSuffix")
+                .build());
+        User actual = client.users().get(expected.getId());
+        expected.setFirstName("PatchedGivenName");
+        expected.getName().setMiddleName("MiddleName");
+        expected.getName().setHonorificPrefix("HonorificPrefix");
+        expected.getName().setHonorificSuffix("HonorificSuffix");
+        expected.setActive(true);
+        assertRootAttributes(actual, expected);
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .remove("name.honorificPrefix")
+                .remove("name.honorificSuffix")
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.getName().setHonorificPrefix(null);
+        expected.getName().setHonorificSuffix(null);
+        assertRootAttributes(actual, expected);
+
+        assertNull(actual.getEnterpriseUser());
+        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
+        configuration.addOrReplaceAttribute(new UPAttribute("costCenter", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".costCenter")));
+        realm.admin().users().userProfile().update(configuration);
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add(ENTERPRISE_USER_SCHEMA + ":" + "employeeNumber", "1234")
+                .add(ENTERPRISE_USER_SCHEMA + ":" + "costCenter", "5678")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        assertEquals("1234", actual.getEnterpriseUser().getEmployeeNumber());
+        assertEquals("5678", actual.getEnterpriseUser().getCostCenter());
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .remove(ENTERPRISE_USER_SCHEMA + ":" + "employeeNumber")
+                .build());
+        actual = client.users().get(expected.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        assertNull(actual.getEnterpriseUser().getEmployeeNumber());
+        assertEquals("5678", actual.getEnterpriseUser().getCostCenter());
+    }
+
     private void assertRootAttributes(User actual, User expected) {
         assertNotNull(actual);
         assertTrue(actual.hasSchema(getCoreSchema(expected.getClass())));
@@ -364,13 +707,10 @@ public class UserTest extends AbstractScimTest {
             assertEquals(expected.getActive(), actual.getActive());
         }
 
-        if (expected.getEmail() != null) {
-            assertNotNull(actual.getEmails());
-            assertEquals(expected.getEmails().size(), actual.getEmails().size());
-
+        if (expected.getEmails() != null) {
             for (Email email : expected.getEmails()) {
                 Email actualEmail = actual.getEmails().stream()
-                        .filter((e) -> email.getValue().equals(e.getValue()))
+                        .filter((e) -> email.getValue() != null && email.getValue().equals(e.getValue()))
                         .findFirst()
                         .orElse(null);
                 assertNotNull(actualEmail);
@@ -384,11 +724,10 @@ public class UserTest extends AbstractScimTest {
         if (name != null) {
             assertEquals(name.getFamilyName(), actual.getName().getFamilyName());
             assertEquals(name.getGivenName(), actual.getName().getGivenName());
-//            TODO: support for middleName, formatted, honorificPrefix, honorificSuffix
-//            assertEquals(name.getMiddleName(), actual.getName().getMiddleName());
+            assertEquals(name.getMiddleName(), actual.getName().getMiddleName());
 //            assertEquals(name.getFormatted(), actual.getName().getFormatted());
-//            assertEquals(name.getHonorificPrefix(), actual.getName().getHonorificPrefix());
-//            assertEquals(name.getHonorificSuffix(), actual.getName().getHonorificSuffix());
+            assertEquals(name.getHonorificPrefix(), actual.getName().getHonorificPrefix());
+            assertEquals(name.getHonorificSuffix(), actual.getName().getHonorificSuffix());
         }
 
 //        assertEquals(expected.getNickName(), actual.getNickName());
@@ -404,11 +743,7 @@ public class UserTest extends AbstractScimTest {
 
         Name name = new Name();
         name.setGivenName(user.getUserName() + "_Given");
-        name.setMiddleName(user.getUserName() + "_Middle");
         name.setFamilyName(user.getUserName() + "_Family");
-        name.setFormatted(name.getGivenName() + " " + name.getMiddleName() + " " + name.getFamilyName());
-        name.setHonorificPrefix("Mr.");
-        name.setHonorificSuffix("Jr.");
         user.setName(name);
 
         user.setNickName("mynickname");

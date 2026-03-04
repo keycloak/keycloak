@@ -121,6 +121,12 @@ public class DatabaseOptions {
             .hidden()
             .build();
 
+    public static final Option<String> DB_MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = new OptionBuilder<>("db-mssql-send-string-parameter-as-unicode", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("false")
+            .hidden()
+            .build();
+
     public static final class Datasources {
         /**
          * Options that have their sibling for a named datasource

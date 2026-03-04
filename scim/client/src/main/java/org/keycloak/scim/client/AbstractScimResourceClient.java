@@ -2,6 +2,7 @@ package org.keycloak.scim.client;
 
 
 import org.keycloak.http.simple.SimpleHttpRequest;
+import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
@@ -13,7 +14,7 @@ import static java.util.Objects.requireNonNull;
 
 public abstract class AbstractScimResourceClient<R extends ResourceTypeRepresentation> implements AutoCloseable {
 
-    private final ScimClient client;
+    protected final ScimClient client;
     private final Class<R> resourceTypeClass;
 
     public AbstractScimResourceClient(ScimClient client, Class<R> resourceType) {
@@ -27,8 +28,12 @@ public abstract class AbstractScimResourceClient<R extends ResourceTypeRepresent
     }
 
     public R update(R resource) {
+        return update(resource.getId(), resource);
+    }
+
+    public R update(String id, R resource) {
         requireNonNull(resource, "SCIM resource must not be null");
-        return client.execute(client.doPut(resourceTypeClass, resource.getId())
+        return client.execute(client.doPut(resourceTypeClass, id)
                 .json(resource), resourceTypeClass);
     }
 
@@ -55,6 +60,12 @@ public abstract class AbstractScimResourceClient<R extends ResourceTypeRepresent
         }
     }
 
+    public void patch(String id, PatchRequest request) {
+        requireNonNull(request, "request must not be null");
+        client.execute(client.doPatch(resourceTypeClass, id).json(request));
+    }
+
+    @SuppressWarnings("unchecked")
     protected ListResponse<R> doFilter(ResourceFilter filter) {
         SimpleHttpRequest request = doGet("");
         String query = filter.build();

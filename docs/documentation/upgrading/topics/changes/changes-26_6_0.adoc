@@ -25,6 +25,37 @@ Configuring + defers validation to the client's standard 'Valid redirect URIs'. 
 
 Administrators must ensure that all configured URIs for the fields listed above use https. Clients attempting to update or register with http in these fields will fail validation when using the 'secure-client-uris' executor.
 
+=== New CLI option overrides Quarkus transaction timeout property
+
+A new CLI option `transaction-default-timeout` has been introduced to configure the default transaction timeout in {project_name}.
+This new option will override any value set in the `quarkus.transaction-manager.default-transaction-timeout` Quarkus property.
+
+While using Quarkus properties directly is not the supported way to configure {project_name}, some users may have used `quarkus.transaction-manager.default-transaction-timeout` to customize the transaction timeout.
+If you are using this Quarkus property, the new `transaction-default-timeout` CLI option will take precedence and override your configuration when upgrading to this version.
+
+To maintain your desired transaction timeout configuration, migrate to using the `transaction-default-timeout` CLI option and remove the `quarkus.transaction-manager.default-transaction-timeout` property from your configuration.
+
+=== The Identity Provider issuer should be unique for the JWT authorization grant and client assertions
+
+The JWT authorization grant and the client assertion authentication use the `issuer` claim passed in the assertion to locate the Identity Provider defined in {project_name}, and that provider validates the claims and signature in the assertion. Since this version, the `issuer` configuration option should be unique to only identify one provider. The grant operation or the assertion client authentication fail if more providers are returned for a single issuer. In the same way, the Identity Providers, when configured to allow the JWT authorization grant or client assertions, are validated to have a unique issuer defined in its configuration. Any update or add operation will fail if the issuer collides with another provider.
+
+If you have identity providers defined with the same issuer and tested the JWT authorization grants or client assertions features, please update the providers accordingly before the upgrade. You can update the issuer or disable the provider to avoid the duplicates.
+
+=== Stricter access control for fetching user profile configuration and metadata
+
+In order to improve security, the access control for fetching user profile configuration and metadata from a realm has been made stricter,
+and it is no longer possible to fetch this information if the administrator is granted with any administrative role.
+
+Instead, the administrator must have explicit permissions to view or manage users, or by
+having the `view-realm`, or `manage-realm`, or `view-users`, or `manage-users`, or `query-users` roles.
+
+=== Stricter access control for listing realm and client roles
+
+In order to improve security, the access control for listing realm and client roles has been made stricter, and granting
+only the `query-*` role to an administrator is no longer sufficient to list roles.
+
+Instead, the administrator must have explicit permissions to view or manage the realm or client for which they want to list roles, or by
+having the `view-realm` or `manage-realm` role for realm roles, or `view-clients` or `manage-clients` role for client roles.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -175,13 +206,47 @@ A similar change was done for the `UserSessionPersisterProvider`.
 
 The official container images for server and the Operator now use OpenJDK 25 instead of previously used OpenJDK 21.
 
-== Updated HTTP status code for invalid_grant errors in the Resource Owner Password Credentials Grant
+=== Updated HTTP status code for invalid_grant errors in the Resource Owner Password Credentials Grant
 
 Authentication failures resulting in an invalid_grant now correctly return an HTTP 400 status code instead of 401 for the Resource Owner Password Credentials and UMA Permission grants. This change was done to properly follow the OAuth 2.0 Authorization Framework specification.
+
 === Re-indexing required for external Infinispan Server
 
 With the `clusterless` feature enabled and `persistent-user-sessions` disabled, a re-index is required due to schema changes.
 {project_name} triggers the re-index on startup, but this may delay server startup depending on the number of sessions stored, and/or return incorrect results during the re-index process.
+
+=== Automatic database connection properties for the MS SQL Server driver
+
+When running with the MS SQL server, {project_name} needs to ensure consistent and predictable string parameter handling with the database.
+Starting with this release, and when using the MS SQL Server JDBC driver, {project_name} sets the `sendStringParametersAsUnicode` property to `false` by default.
+This change prevents the driver from automatically sending string parameters as Unicode unless explicitly required, which can reduce overhead and avoid unexpected performance or query-plan issues in some environments.
+
+You can override this behavior by setting your own value for the `sendStringParametersAsUnicode` property in the database connection URL or configuration, for example by adding `;sendStringParametersAsUnicode=true` to the connection URL.
+
+=== New CLI options for transaction timeout configuration
+
+Two new CLI options are now available to control transaction timeout behavior:
+
+* `transaction-default-timeout`: Controls the transaction timeout for regular transactions.
+The default value is 5 minutes, which is the same value used by the current {project_name} version.
+
+* `transaction-setup-timeout`: Controls the timeout for transactions used by database schema migration, import, and export commands.
+The default value is 30 minutes, as these operations may take a while to complete for large datasets.
+
+The provider configuration `spi-dblock--jpa--lock-wait-timeout` option has been replaced with the CLI option `transaction-setup-timeout`.
+
+=== Database character encoding checks during startup
+
+{project_name} will log a warning if the database is not configured to use UTF-8 encoding.
+This check applies to all supported databases.
+
+For details on configuring UTF-8 encoding for your database, see the https://www.keycloak.org/server/db[Configuring the database] guide.
+
+As part of this change, the database configuration documentation has been updated:
+
+* For MySQL and MariaDB, the documentation now recommends using `utf8mb4` as the character set.
+The previously documented `utf8mb3` (or `utf8`) character set has been removed from the documentation due to its limitations in storing certain Unicode characters.
+* Previously recommended JDBC driver settings for Oracle, MySQL, and MariaDB have been removed from the documentation, as current versions of these databases use appropriate default values.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
@@ -208,10 +273,15 @@ The methods `getUserSessionsStream(RealmModel realm, ClientModel client)`, `getU
 They are replaced with read-only alternatives to reduce memory consumption.
 See the `UserSessionProvider` API changes section in notable changes for further information.
 
+=== Non-UTF-8 database character encoding deprecated
+
+Running {project_name} on a database that is not using UTF-8 as a charset is now deprecated.
+
+In the current version {project_name} will log a warning if the database is not configured to use UTF-8 encoding. Future versions might refuse to work with database that is not configured to use UTF-8 encoding.
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 
 The following features have been removed from this release.
 
 === <TODO>
-

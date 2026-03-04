@@ -35,7 +35,7 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
     OAuthIdentityProvider identityProvider;
 
     public BaseClientAuthTest() {
-        super(TOKEN_ISSUER, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID);
+        super(TOKEN_ISSUER, INTERNAL_CLIENT_ID, EXTERNAL_CLIENT_ID, IDP_ALIAS);
     }
 
     @Test
@@ -171,4 +171,8 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
         }
     }
 
+    @Override
+    public ManagedRealm getRealm() {
+        return realm;
+    }
 }

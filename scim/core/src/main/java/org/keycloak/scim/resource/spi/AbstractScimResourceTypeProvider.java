@@ -9,9 +9,16 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.scim.protocol.ForbiddenException;
+import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
+import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.ModelSchema;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
+import static org.keycloak.utils.StringUtil.isBlank;
 
 public abstract class AbstractScimResourceTypeProvider<M extends Model, R extends ResourceTypeRepresentation> implements ScimResourceTypeProvider<R> {
 
@@ -83,8 +90,8 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     }
 
     @Override
-    public Stream<R> getAll() {
-        return getModels().map(m -> {
+    public Stream<R> getAll(SearchRequest searchRequest) {
+        return getModels(searchRequest).map(m -> {
             if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm())) {
                 return get(m.getId());
             }
@@ -109,8 +116,44 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     }
 
     @Override
+    public void patch(R existing, List<PatchOperation> operations) {
+        Objects.requireNonNull(existing, "existing cannot be null");
+        Objects.requireNonNull(operations, "operations cannot be null");
+        M model = getModel(existing.getId());
+        KeycloakContext context = session.getContext();
+
+        if (!context.hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+            throw new ForbiddenException();
+        }
+
+        for (PatchOperation operation : operations) {
+            String op = operation.getOp();
+
+            if (isBlank(op)) {
+                throw new ModelValidationException("Missing operation for patch operation");
+            }
+
+            String path = operation.getPath();
+            JsonNode value = operation.getValue();
+
+            for (ModelSchema<M, R> schema : schemas) {
+                switch (op.toLowerCase()) {
+                    case "add" -> schema.add(model, path, value);
+                    case "replace" -> schema.replace(model, path, value);
+                    case "remove" -> schema.remove(model, path);
+                    default -> throw new RuntimeException("Unsupported patch operation " + op);
+                }
+            }
+        }
+    }
+
+    @Override
     public String getSchema() {
         return schema.getName();
+    }
+
+    public List<ModelSchema<M, R>> getSchemas() {
+        return schemas;
     }
 
     @Override
@@ -124,7 +167,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     protected abstract boolean onDelete(String id);
 
-    protected abstract Stream<M> getModels();
+    protected abstract Stream<M> getModels(SearchRequest searchRequest);
 
     protected abstract M getModel(String id);
 
@@ -138,9 +181,22 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
         }
     }
 
+    protected String[] splitScimAttribute(String scimAttrPath) {
+        // first split the attribute path into schema and attribute name. If no schema is specified, use the core user schema by default
+        String schemaName;
+        int lastColon = scimAttrPath.lastIndexOf(':');
+        if (lastColon > 0 && (scimAttrPath.contains("://") || scimAttrPath.startsWith("urn:"))) {
+            schemaName = scimAttrPath.substring(0, lastColon);
+            scimAttrPath = scimAttrPath.substring(lastColon + 1);
+        } else {
+            schemaName = this.schema.getName();
+        }
+        return new String[] {schemaName, scimAttrPath};
+    }
+
     private R createResourceTypeInstance() {
         try {
-            return (R) getResourceType().getDeclaredConstructor().newInstance();
+            return getResourceType().getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             throw new RuntimeException("Could not create instance of resource type " + getResourceType(), e);
         }

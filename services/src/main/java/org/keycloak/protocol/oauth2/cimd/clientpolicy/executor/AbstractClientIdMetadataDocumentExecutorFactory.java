@@ -89,10 +89,9 @@ public abstract class AbstractClientIdMetadataDocumentExecutorFactory
                 "If some domains are filled, the executor only accepts the following URL-formatted parameters whose host part matches one of the filled domains: " +
                         "Authorization request parameters: client_id, redirect_uri, " +
                         "Client metadata properties: client_id, redirect_uris, jwks_uri, logo_uri, policy_uri, tos_uri, client_uri. " +
-                        "The domains are checked by using regex. " +
+                        "The domains are checked by using wildcard pattern matching (e.g. '*.example.org'). " +
                         "If the domains not filled, the executor denies all such the parameters and properties. " +
-                        "For example, use pattern like this '(.*)\\.example\\.org' if you want to accept the parameter / property whose domain is 'example.org'." +
-                        "Don't forget to use escaping of special characters like dots as otherwise dot is interpreted as any character in regex!",
+                        "For example, use pattern like '*.example.org' if you want to accept the parameter / property whose domain is 'example.org' or its subdomains.",
                 ProviderConfigProperty.MULTIVALUED_STRING_TYPE,
                 null);
         configProperties.add(property);

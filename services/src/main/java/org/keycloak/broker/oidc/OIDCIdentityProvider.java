@@ -72,6 +72,7 @@ import org.keycloak.keys.loader.OIDCIdentityProviderPublicKeyLoader;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -126,6 +127,15 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
         return new OIDCEndpoint(callback, realm, event, this);
+    }
+
+    @Override
+    public boolean isType(KeycloakSession session, IdentityProviderType type) {
+        return switch(type) {
+            case JWT_AUTHORIZATION_GRANT -> getConfig().isJWTAuthorizationGrantEnabled();
+            case CLIENT_ASSERTION -> getConfig().isSupportsClientAssertions();
+            default -> super.isType(session, type);
+        };
     }
 
     /**
@@ -1074,6 +1084,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         if (!config.isSupportsClientAssertions()) {
             throw new RuntimeException("Issuer does not support client assertions");
+        }
+
+        if (config.getFederatedClientAssertionMaxExpiration() != 0) {
+            validator.setMaximumExpirationTime(config.getFederatedClientAssertionMaxExpiration());
         }
 
         return validator.validate();

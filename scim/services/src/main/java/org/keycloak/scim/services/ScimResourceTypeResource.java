@@ -14,11 +14,13 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -28,7 +30,10 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.protocol.ForbiddenException;
+import org.keycloak.scim.protocol.request.PatchRequest;
+import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
@@ -83,8 +88,36 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
     @GET
     @Produces(APPLICATION_SCIM_JSON)
-    public Response getAll() {
-        Stream<R> stream = resourceTypeProvider.getAll().peek((r ->  setMetadata(r, r.getCreatedTimestamp())));
+    public Response getAll(@QueryParam("filter") String filterExpression,
+                           @QueryParam("attributes") String attributes,
+                           @QueryParam("excludedAttributes") String excludedAttributes,
+                           @QueryParam("sortBy") String sortBy,
+                           @QueryParam("sortOrder") String sortOrder,
+                           @QueryParam("startIndex") Integer startIndex,
+                           @QueryParam("count") Integer count) {
+        // Delegate to common search logic
+        return search(SearchRequest.builder().withFilter(filterExpression)
+                        .withAttributes(attributes != null ? List.of(attributes.split(",")) : null)
+                        .withExcludedAttributes(excludedAttributes != null ? List.of(excludedAttributes.split(",")) : null)
+                        .withSortBy(sortBy)
+                        .withSortOrder(sortOrder)
+                        .withStartIndex(startIndex)
+                        .withCount(count).build());
+    }
+
+    @Path(".search")
+    @POST
+    @Consumes({APPLICATION_SCIM_JSON, MediaType.APPLICATION_JSON})
+    @Produces(APPLICATION_SCIM_JSON)
+    public Response search(SearchRequest searchRequest) {
+
+        Stream<R> stream;
+        try {
+            stream = resourceTypeProvider.getAll(searchRequest)
+                    .peek(r -> setMetadata(r, r.getCreatedTimestamp()));
+        } catch (ScimFilterException e) {
+            return badRequest(e.getMessage(), "invalidFilter");
+        }
 
         if (resourceTypeProvider instanceof SingletonResourceTypeProvider<R>) {
             return Response.ok().entity(stream
@@ -94,12 +127,8 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         }
 
         List<R> resources = stream.toList();
-
         ListResponse<R> response = new ListResponse<>();
-
         response.setResources(resources);
-
-        // TODO: need to implement pagination and filtering, for now we just return all resources and set totalResults accordingly
         response.setTotalResults(response.getResources().size());
 
         return Response.ok().entity(response).build();
@@ -135,10 +164,32 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
         R resource = parseResourceTypePayload(is);
 
+        if (!existing.getId().equals(resource.getId())) {
+            return badRequest("Invalid reference to resource");
+        }
+
         return onPersist(resource, Status.OK,
                 (rScimResourceTypeProvider, r) -> resourceTypeProvider.update(r));
     }
 
+    @Path("{id}")
+    @PATCH
+    @Consumes({APPLICATION_SCIM_JSON, MediaType.APPLICATION_JSON})
+    @Produces(APPLICATION_SCIM_JSON)
+    public Response patch(@PathParam("id") String id, PatchRequest request) {
+        R existing = getResource(id);
+
+        if (existing == null) {
+            return resourceNotFound(id);
+        }
+
+        return onPersist(existing, Status.OK, (rScimResourceTypeProvider, r) -> {
+            resourceTypeProvider.patch(existing, request.getOperations());
+            return getResource(id);
+        });
+    }
+
+    @SuppressWarnings("unchecked")
     private R parseResourceTypePayload(InputStream is) {
         try {
             return  (R) JsonSerialization.readValue(is, resourceTypeClazz);
@@ -176,7 +227,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
             setMetadata(resource, Time.currentTimeMillis());
 
-            return Response.status(status).entity(resource).build();
+            return Response.status(status).entity(r).build();
         } catch (ModelValidationException mve) {
             String language = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT_LANGUAGE);
             Properties messages = getMessageBundle(language);
@@ -192,6 +243,10 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     }
 
     private R getResource(String id) {
+        if (id == null) {
+            return null;
+        }
+
         try {
             return resourceTypeProvider.get(id);
         } catch (ForbiddenException fe) {
@@ -205,6 +260,12 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
     private Response badRequest(String message) {
         return errorResponse(Status.BAD_REQUEST, message);
+    }
+
+    private Response badRequest(String message, String scimType) {
+        ErrorResponse error = new ErrorResponse(message, Status.BAD_REQUEST.getStatusCode());
+        error.setScimType(scimType);
+        return Response.status(Status.BAD_REQUEST).entity(error).build();
     }
 
     private Response errorResponse(Status status, String message) {

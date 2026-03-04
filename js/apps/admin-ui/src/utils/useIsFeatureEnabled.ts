@@ -21,6 +21,7 @@ export enum Feature {
   ClientAuthFederated = "CLIENT_AUTH_FEDERATED",
   Workflows = "WORKFLOWS",
   StepUpAuthenticationSaml = "STEP_UP_AUTHENTICATION_SAML",
+  ScimApi = "SCIM_API",
 }
 
 export default function useIsFeatureEnabled() {

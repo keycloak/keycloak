@@ -26,6 +26,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -56,9 +57,11 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.events.admin.v2.AdminEventV2Builder.API_VERSION_DETAIL_KEY;
 import static org.keycloak.events.admin.v2.AdminEventV2Builder.API_VERSION_V2;
 
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -182,6 +185,55 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
             assertUpdateEventFired("Patched description");
         } finally {
             deleteTestClient();
+        }
+    }
+
+    @Test
+    public void deleteClientFiresV2Event() throws Exception {
+        createTestClient();
+        try {
+            masterRealm.admin().clearAdminEvents();
+
+            HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + TEST_CLIENT_ID);
+            setAuthHeader(deleteRequest);
+
+            try (var response = client.execute(deleteRequest)) {
+                assertEquals(204, response.getStatusLine().getStatusCode());
+            }
+
+            // Verify v2 DELETE event was fired
+            List<AdminEventRepresentation> events = masterRealm.admin().getAdminEvents();
+
+            // Find the v2 event
+            AdminEventRepresentation v2Event = events.stream()
+                    .filter(e -> e.getDetails() != null && API_VERSION_V2.equals(e.getDetails().get(API_VERSION_DETAIL_KEY)))
+                    .findFirst()
+                    .orElse(null);
+
+            assertThat("V2 event should be present for delete with apiVersion=v2 detail", v2Event, notNullValue());
+            assertThat("V2 event should have DELETE operation", v2Event.getOperationType(), is(OperationType.DELETE.toString()));
+            assertThat("V2 event should have resource path relative to API v2", v2Event.getResourcePath(), is("clients/v2/%s".formatted(TEST_CLIENT_ID)));
+
+            // Verify the representation contains only clientId and protocol
+            var representation = v2Event.getRepresentation();
+            assertThat("V2 event should have representation", representation, notNullValue());
+
+            // Unmarshall the representation to BaseClientRepresentation
+            var clientRep = mapper.readValue(representation, BaseClientRepresentation.class);
+            assertThat("Client representation should have clientId", clientRep.getClientId(), is(TEST_CLIENT_ID));
+            assertThat("Client representation should have protocol", clientRep.getProtocol(), is("openid-connect"));
+            assertThat("Client representation should not have description", clientRep.getDescription(),is(nullValue()));
+            assertThat("Client representation should not have enabled field", clientRep.getEnabled(), is(nullValue()));
+
+            try (var response = client.execute(deleteRequest)) {
+                assertEquals(404, response.getStatusLine().getStatusCode());
+            }
+        } finally {
+            HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + TEST_CLIENT_ID);
+            setAuthHeader(deleteRequest);
+            try (var response = client.execute(deleteRequest)) {
+                assertThat(response.getStatusLine().getStatusCode(), anyOf(is(204), is(404)));
+            }
         }
     }
 

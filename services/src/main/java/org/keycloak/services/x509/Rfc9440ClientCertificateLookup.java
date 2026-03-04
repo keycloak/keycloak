@@ -117,9 +117,9 @@ public class Rfc9440ClientCertificateLookup implements X509ClientCertificateLook
      * Extract the certificate chain from the {@link #sslCertChainHttpHeader} header.
      *
      * @param httpRequest The request containing the headers.
-     * @return A list of extracted certificates in the order of occurrence in the header.
+     * @return A list of extracted certificates in the order of occurrence in the header, limited to {@link #certificateChainLength} entries.
      * @throws RfcViolationException thrown if the header values do not comply with the relevant RFCs.
-     * @throws GeneralSecurityException thrown if the length of the chain is bigger than the configured maximum length (see {@link #certificateChainLength}).
+     * @throws GeneralSecurityException thrown if the certificates cannot be parsed.
      */
     protected List<X509Certificate> getClientCertificateChainFromHeader(HttpRequest httpRequest) throws RfcViolationException, GeneralSecurityException {
         List<String> chainHeaderValues = httpRequest.getHttpHeaders().getRequestHeader(sslCertChainHttpHeader);
@@ -136,12 +136,10 @@ public class Rfc9440ClientCertificateLookup implements X509ClientCertificateLook
             encodedCerts.addAll(Arrays.asList(listEntries));
         }
 
-        // the chain might be bigger than the configured limit
+        // the chain might be bigger than the configured limit - truncate to the configured limit
         if (encodedCerts.size() > certificateChainLength) {
-            throw new GeneralSecurityException(
-                    "The amount of certificates in the chain header " + encodedCerts.size() +
-                    " is bigger than the configured limit of " + certificateChainLength + "."
-            );
+            log.debugf("The amount of certificates in the chain header %d is bigger than the configured limit of %d. Truncating.", encodedCerts.size(), certificateChainLength);
+            encodedCerts = encodedCerts.subList(0, certificateChainLength);
         }
 
         // list entries are byte sequences encoded according to sec. 2.1 of RFC 9440
