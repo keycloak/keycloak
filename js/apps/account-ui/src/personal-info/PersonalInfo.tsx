@@ -31,12 +31,12 @@ import {
 } from "../api/representations";
 import { Page } from "../components/page/Page";
 import type { Environment } from "../environment";
-import { TFuncKey, i18n } from "../i18n";
+import { TFuncKey } from "../i18n";
 import { useAccountAlerts } from "../utils/useAccountAlerts";
 import { usePromise } from "../utils/usePromise";
 
 export const PersonalInfo = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const context = useEnvironment<Environment>();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
