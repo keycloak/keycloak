@@ -93,7 +93,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testRequestTestCredential() {
         String scopeName = sdJwtTypeCredentialClientScope.getName();
-        String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
@@ -121,7 +121,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     public void testRequestTestCredentialWithKeybinding() {
         String cNonce = getCNonce();
         String scopeName = sdJwtTypeCredentialClientScope.getName();
-        String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
@@ -154,7 +154,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     public void testRequestTestCredentialWithInvalidKeybinding() throws Throwable {
         String cNonce = getCNonce();
         String scopeName = sdJwtTypeCredentialClientScope.getName();
-        String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
@@ -191,7 +191,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     public void testProofOfPossessionWithMissingAudience() throws Throwable {
         try {
             String scopeName = sdJwtTypeCredentialClientScope.getName();
-            String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+            String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
             CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
             OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
             authDetail.setType(OPENID_CREDENTIAL);
@@ -236,7 +236,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     public void testProofOfPossessionWithIllegalSourceEndpoint() throws Throwable {
         try {
             String scopeName = sdJwtTypeCredentialClientScope.getName();
-            String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+            String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
             CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
             OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
             authDetail.setType(OPENID_CREDENTIAL);
@@ -280,7 +280,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     public void testProofOfPossessionWithExpiredState() throws Throwable {
         try {
             String scopeName = sdJwtTypeCredentialClientScope.getName();
-            String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+            String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
             CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
             OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
             authDetail.setType(OPENID_CREDENTIAL);
@@ -374,7 +374,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         String token = getBearerToken(oauth, client, clientScope.getName());
 
         // 1. Retrieving the credential-offer-uri
-        final String credentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        final String credentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialOfferURI credOfferUri = oauth.oid4vc()
                 .credentialOfferUriRequest(credentialConfigurationId)
                 .preAuthorized(true)
@@ -455,7 +455,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
     public void testGetSdJwtConfigFromMetadata() {
         final String scopeName = sdJwtTypeCredentialClientScope.getName();
         final String credentialConfigurationId = sdJwtTypeCredentialClientScope.getAttributes()
-                .get(CredentialScopeModel.CONFIGURATION_ID);
+                .get(CredentialScopeModel.VC_CONFIGURATION_ID);
         final String verifiableCredentialType = sdJwtTypeCredentialClientScope.getAttributes()
                 .get(CredentialScopeModel.VCT);
         String expectedIssuer = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/realms/" + TEST_REALM_NAME;
@@ -626,7 +626,7 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         RealmModel realmModel = session.getContext().getRealm();
         ClientScopeModel credentialScope = session.clientScopes()
                 .addClientScope(realmModel, jwtTypeCredentialScopeName);
-        credentialScope.setAttribute(CredentialScopeModel.CREDENTIAL_IDENTIFIER,
+        credentialScope.setAttribute(CredentialScopeModel.VC_IDENTIFIER,
                 jwtTypeCredentialScopeName);
         credentialScope.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
         return credentialScope;
