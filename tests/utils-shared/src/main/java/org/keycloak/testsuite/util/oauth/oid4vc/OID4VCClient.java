@@ -45,12 +45,12 @@ public class OID4VCClient {
         return new Oid4vcCredentialRequest(client, credRequest);
     }
 
-    public PreAuthorizedCodeGrantRequest preAuthorizedCodeGrantRequest(String preAuthorizedCode) {
-        return new PreAuthorizedCodeGrantRequest(client, preAuthorizedCode);
+    public PreAuthorizedCodeGrantRequest preAuthorizedCodeGrantRequest(String preAuthCode) {
+        return new PreAuthorizedCodeGrantRequest(client, preAuthCode);
     }
 
-    public AccessTokenResponse doPreAuthorizedCodeGrantRequest(String preAuthorizedCode) {
-        return preAuthorizedCodeGrantRequest(preAuthorizedCode).send();
+    public AccessTokenResponse doPreAuthorizedCodeGrantRequest(String preAuthCode) {
+        return preAuthorizedCodeGrantRequest(preAuthCode).send();
     }
 
     public Oid4vcNonceRequest nonceRequest() {

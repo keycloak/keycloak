@@ -22,7 +22,6 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 import org.keycloak.common.Profile;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeSpi;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.feature.AbstractFeatureStateTest;
