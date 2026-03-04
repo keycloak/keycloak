@@ -129,20 +129,4 @@ public abstract class BaseClientRepresentation extends BaseRepresentation {
     public int hashCode() {
         return Objects.hash(clientId, displayName, description, enabled, appUrl, redirectUris, roles, additionalFields);
     }
-
-    /**
-     * Minimal client representation used for simple identification of client
-     * <p>
-     * Useful to provide as representation in certain Admin events
-     */
-    public static BaseClientRepresentation createMinimalRepresentation(String clientId, String protocol) {
-        var minimalRepresentation = new BaseClientRepresentation() {
-            @Override
-            public String getProtocol() {
-                return protocol;
-            }
-        };
-        minimalRepresentation.setClientId(clientId);
-        return minimalRepresentation;
-    }
 }
