@@ -42,6 +42,11 @@ public interface SingletonResourceTypeProvider<R extends ResourceTypeRepresentat
     }
 
     @Override
+    default Long count(SearchRequest searchRequest) {
+        return 1L;
+    }
+
+    @Override
     default boolean delete(String id) {
         throw unsupportedOperation();
     }

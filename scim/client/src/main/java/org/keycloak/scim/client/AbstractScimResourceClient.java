@@ -3,6 +3,7 @@ package org.keycloak.scim.client;
 
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.scim.protocol.request.PatchRequest;
+import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
@@ -79,6 +80,26 @@ public abstract class AbstractScimResourceClient<R extends ResourceTypeRepresent
 
     protected SimpleHttpRequest doGet(String path) {
         return client.doGet(resourceTypeClass, path);
+    }
+
+    /**
+     * Search for resources using the POST /.search endpoint.
+     * This is useful for complex filters that may exceed URL length limits.
+     *
+     * @param filterExpression SCIM filter expression (e.g., "userName eq \"john\"")
+     * @param startIndex      optional index of the first result to return (for pagination)
+     *                        if null, the server will use its default value (usually 1)
+     * @param count           optional maximum number of results to return (for pagination)
+     *                        if null, the server will use its default value
+     * @return list response containing matching resources
+     */
+    @SuppressWarnings("unchecked")
+    public ListResponse<R> doPost(String filterExpression, Integer startIndex, Integer count) {
+        SearchRequest searchRequest = SearchRequest.builder()
+                .withFilter(filterExpression)
+                .withStartIndex(startIndex)
+                .withCount(count).build();
+        return client.execute(client.doPost(resourceTypeClass, "/.search").json(searchRequest), ListResponse.class);
     }
 
     @Override

@@ -73,6 +73,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         RealmModel realm = session.getContext().getRealm();
         Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
         Integer maxResults = searchRequest.getCount();
+        maxResults = maxResults != null ? Math.min(maxResults, DEFAULT_MAX_RESULTS) : DEFAULT_MAX_RESULTS;
 
         if (StringUtil.isNotBlank(searchRequest.getFilter())) {
             // parse filter into AST
@@ -83,16 +84,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<GroupEntity> query = cb.createQuery(GroupEntity.class);
             Root<GroupEntity> root = query.from(GroupEntity.class);
-            List<Predicate> predicates = new ArrayList<>();
-
-            // create filter predicate using the same query and root that will be used for execution
-            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, root);
-            predicates.add(evaluator.visit(filterContext).predicate());
-
-            // apply realm restriction and group type restrictions
-            predicates.add(cb.equal(root.get("realm"), realm.getId()));
-            predicates.add(cb.equal(root.get("type"), GroupModel.Type.REALM.intValue()));
-            predicates.add(cb.equal(root.get("parentId"), GroupEntity.TOP_PARENT_ID));
+            List<Predicate> predicates = getGroupPredicates(filterContext, cb, root);
 
             // apply distinct and order by name to ensure consistency with no-filter case
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("name")));
@@ -102,6 +94,27 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
                     .map(entity -> new GroupAdapter(session, realm, em, entity)));
         } else {
             return session.groups().getTopLevelGroupsStream(realm, firstResult, maxResults);
+        }
+    }
+
+    @Override
+    public Long count(SearchRequest searchRequest) {
+        RealmModel realm = session.getContext().getRealm();
+        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
+            // parse filter into AST
+            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+
+            // execute JPA query with filter
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Long> query = cb.createQuery(Long.class);
+            Root<GroupEntity> root = query.from(GroupEntity.class);
+
+            List<Predicate> predicates = this.getGroupPredicates(filterContext, cb, root);
+            query.select(cb.countDistinct(root)).where(predicates);
+            return em.createQuery(query).getSingleResult();
+        } else {
+            return session.groups().getGroupsCount(realm, true);
         }
     }
 
@@ -118,6 +131,19 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
 
     @Override
     public void close() {
+    }
 
+    private List<Predicate> getGroupPredicates(ScimFilterParser.FilterContext filterContext, CriteriaBuilder cb, Root<GroupEntity> root) {
+        List<Predicate> predicates = new ArrayList<>();
+
+        // create filter predicate using the same query and root that will be used for execution
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, root);
+        predicates.add(evaluator.visit(filterContext).predicate());
+
+        // apply realm restriction and group type restrictions
+        predicates.add(cb.equal(root.get("realm"), session.getContext().getRealm().getId()));
+        predicates.add(cb.equal(root.get("type"), GroupModel.Type.REALM.intValue()));
+        predicates.add(cb.equal(root.get("parentId"), GroupEntity.TOP_PARENT_ID));
+        return predicates;
     }
 }
