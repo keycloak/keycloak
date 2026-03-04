@@ -556,6 +556,43 @@ spec:
       annotation2: annotation-value2
 ----
 
+=== Configuring the Kubernetes Service name and port
+
+By default, the operator creates a Kubernetes Service named `<cr-name>-service` (for example, `example-kc-service`) whose port numbers match the container ports.
+
+You can override the Service name and expose different port numbers on the Service while the Pods continue to listen on their original ports.
+This is useful when you want a cleaner URL (for example, `https://keycloak.mynamespace.svc` instead of `https://keycloak-service.mynamespace.svc:8443`), or when migrating from an existing deployment where the Service name must remain stable.
+
+.Custom Service name and port
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  http:
+    httpsPort: 8443          # port the pod listens on (default: 8443)
+    serviceHttpsPort: 443    # port exposed on the Service (default: same as httpsPort)
+    serviceName: keycloak    # overrides the default "example-kc-service"
+----
+
+The resulting Service will be:
+
+[source,yaml]
+----
+metadata:
+  name: keycloak
+spec:
+  ports:
+  - name: https
+    port: 443
+    targetPort: 8443
+----
+
+All three fields are optional. Omitting them preserves the existing behavior exactly.
+Similarly, `serviceHttpPort` can be used to override the port for the HTTP endpoint.
+
 === ServiceMonitor
 A `ServiceMonitor` resource is used to define how a service's metrics are discovered and scraped by Prometheus.
 The {project_name} Operator automatically generates a `ServiceMonitor` resource for your deployment. In order for the
