@@ -20,12 +20,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.keycloak.models.ModelException;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.util.JsonSerialization;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class RepresentationToModelTest {
 
