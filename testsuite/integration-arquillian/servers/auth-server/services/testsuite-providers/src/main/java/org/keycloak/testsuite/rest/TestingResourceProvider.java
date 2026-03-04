@@ -1126,7 +1126,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @GET
     @Path("/pre-authorized-code")
     @NoCache
-    public String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration) {
+    public String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expireAt) {
         RealmModel realm = getRealmByName(realmName);
         UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
 
@@ -1138,13 +1138,14 @@ public class TestingResourceProvider implements RealmResourceProvider {
                 .setCredentialConfigurationIds(List.of(credConfigId))
                 .addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
 
-        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-        authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialConfigurationId(credConfigId);
-
-        String userId = userSession.getUser().getId();
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, userId, expiration);
-        offerState.setAuthorizationDetails(authDetail);
+        String targetUserId = userSession.getUser().getId();
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, targetUserId, expireAt, credOfferId -> {
+            OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+            authDetail.setType(OPENID_CREDENTIAL);
+            authDetail.setCredentialConfigurationId(credConfigId);
+            authDetail.setCredentialsOfferId(credOfferId);
+            return List.of(authDetail);
+        });
 
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
         offerStorage.putOfferState(session, offerState);
