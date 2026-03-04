@@ -13,6 +13,8 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
+import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -398,6 +400,15 @@ public class RealmConfigBuilder {
 
     public RealmConfigBuilder scimEnabled(boolean enabled) {
         rep.setScimApiEnabled(enabled);
+        return this;
+    }
+
+    public RealmConfigBuilder addOrganization(String alias, String domain) {
+        OrganizationRepresentation org = new OrganizationRepresentation();
+        org.setAlias(alias);
+        org.addDomain(new OrganizationDomainRepresentation(domain));
+        org.setEnabled(true);
+        rep.addOrganization(org);
         return this;
     }
 

@@ -21,6 +21,7 @@ import org.keycloak.testframework.https.CertificatesSupplier;
 import org.keycloak.testframework.https.ManagedCertificates;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.realm.ClientSupplier;
+import org.keycloak.testframework.realm.OrganizationSupplier;
 import org.keycloak.testframework.realm.RealmSupplier;
 import org.keycloak.testframework.realm.UserSupplier;
 import org.keycloak.testframework.server.DistributionKeycloakServerSupplier;
@@ -53,7 +54,8 @@ public class CoreTestFrameworkExtension implements TestFrameworkExtension {
                 new HttpServerSupplier(),
                 new SimpleHttpSupplier(),
                 new CertificatesSupplier(),
-                new CryptoHelperSupplier()
+                new CryptoHelperSupplier(),
+                new OrganizationSupplier()
         );
     }
 

@@ -7,17 +7,15 @@ import java.util.Map;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 
 import org.keycloak.common.util.TriFunction;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * Creates JPA predicates for SCIM filter operators. Handles both direct root entity fields and custom attributes stored
@@ -29,7 +27,7 @@ public class ScimJPAPredicateProvider {
 
     private final List<ModelSchema<?, ?>> schemas;
     private final CriteriaBuilder cb;
-    private final Root<?> root;
+    private final From<?, ?> root;
 
     @SuppressWarnings("rawtypes,unchecked")
     private final Map<String, TriFunction<CriteriaBuilder, Expression, Object, Predicate>> operatorMap = Map.of(
@@ -47,7 +45,7 @@ public class ScimJPAPredicateProvider {
     // cache joins to avoid creating duplicate joins for the same filter
     private Join<?, ?> attributeJoin;
 
-    public ScimJPAPredicateProvider(List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, Root<?> root) {
+    public ScimJPAPredicateProvider(List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, From<?, ?> root) {
         this.schemas = schemas;
         this.cb = cb;
         this.root = root;
@@ -66,7 +64,6 @@ public class ScimJPAPredicateProvider {
         if (attrInfo == null) {
             return JPAFilterResult.unsupported(cb.disjunction());
         }
-        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
         String modelAttributeName = attrInfo.getModelAttributeName();
         if (attrInfo.isPrimary()) {
             // direct field: check not null

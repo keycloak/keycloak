@@ -3,7 +3,7 @@ package org.keycloak.scim.model.filter;
 import java.util.List;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.From;
 
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParserBaseVisitor;
@@ -19,7 +19,7 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
     private final ScimJPAPredicateProvider predicateProvider;
 
     @SuppressWarnings("unchecked,rawtypes")
-    public ScimJPAPredicateEvaluator(List schemas, CriteriaBuilder cb, Root<?> root) {
+    public ScimJPAPredicateEvaluator(List schemas, CriteriaBuilder cb, From<?, ?> root) {
         this.cb = cb;
         this.predicateProvider = new ScimJPAPredicateProvider(schemas, cb, root);
     }

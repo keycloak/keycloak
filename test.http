@@ -1,0 +1,274 @@
+@realm = scim
+
+### Get Token using client credentials
+POST http://localhost:8180/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = client_credentials &
+client_id = scim-client &
+client_secret = EURlr3C5fSXLIatJTB9b78TixEJeovEv
+
+> {% client.global.set("auth_token", response.body['access_token']); %}
+
+### Get Token using client credentials for gatling client
+POST http://localhost:8180/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = client_credentials &
+client_id = gatling &
+client_secret = FE39AxvOjIC9ZYWb8WUlRSoIyFCHtLwB
+
+> {% client.global.set("auth_token", response.body['access_token']); %}
+
+### Get Token using password grant
+POST http://localhost:8180/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type = password &
+client_id = myclient &
+client_secret = FZ19TbfqbBe6YQYLiXrtLlyDfWP4Arq3 &
+username=admin &
+password=admin &
+scope=openid profile
+
+> {% client.global.set("auth_token", response.body['access_token']); %}
+
+### Get permissions
+POST http://localhost:8180/realms/{{realm}}/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+Authorization: Bearer {{auth_token}}
+
+grant_type = urn:ietf:params:oauth:grant-type:uma-ticket &
+audience = test-client &
+permission_resource_format = uri &
+permission_resource_matching_uri = true &
+permission = /resource#write
+
+> {% client.global.set("auth_token", response.body['access_token']); %}
+
+### User Info
+GET http://localhost:8180/realms/{{realm}}/protocol/openid-connect/userinfo
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Simple GET
+GET http://localhost:8080/protected/premium
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+
+### List users
+GET http://localhost:8180/admin/realms/{{realm}}/users?first=0&max=100
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### List sub-groups
+GET http://localhost:8180/admin/realms/{{realm}}/groups/0e0c78ab-8942-41d3-a45f-85b443f0049e/children?max=-1
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Create group
+POST http://localhost:8180/admin/realms/quickstart/groups
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "name": "test"
+}
+
+> {% client.global.set("group_id", response.headers['Location'].substring(response.headers['Location'].lastIndexOf('/'))); %}
+
+### Grant role to group
+POST http://localhost:8180/admin/realms/{{realm}}/groups/71dc47eb-70db-47f2-9b15-f5b60265c625/role-mappings/clients/7a40ff87-68e2-411f-a46e-d14b731e2f6e
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+[{
+  "id": "ead6f33e-1430-435d-9bc6-c6726242e4a7",
+  "name": "impersonation",
+  "description":"${role_impersonation}"
+}]
+
+### Grant role to user
+POST http://localhost:8280/admin/realms/tmp/users/f65f1728-6ba6-46eb-87ec-9b4b3bb0cd65/role-mappings/clients/3ec83d8e-0033-459c-9bdc-821da292a254
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+[{
+  "id": "30b93114-a0ec-4234-b99b-f70fc94500bf",
+  "name": "manage-clients"
+}]
+
+### Create realm
+POST http://localhost:8280/admin/realms
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "realm": "tmp",
+  "enabled": true
+}
+
+### Create user
+POST http://localhost:8280/admin/realms/tmp/users
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "username": "tempuser",
+  "enabled": true,
+  "credentials": [{
+    "type": "password",
+    "value": "password",
+    "temporary": false
+  }]
+}
+
+### SCIM Create User
+POST http://localhost:8180/realms/scim/scim/v2/Users
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "active": true,
+  "displayName": "PZLBHGLITQGD",
+  "emails": [
+    {
+      "type": "work",
+      "value": "melvina.pacocha@binseffertz.uk",
+      "primary": true
+    }
+  ],
+  "locale": "DMSSRKNBDALJ",
+  "name": {
+    "givenName": "Rose",
+    "familyName": "Eldon",
+    "formatted": "Alba",
+    "middleName": "Kevon",
+    "honorificPrefix": "Danielle"
+  },
+  "nickName": "SBDFUEMMYTFL",
+  "preferredLanguage": "sn-ZW",
+  "profileUrl": "CDNLBJQBBFHY",
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:User",
+    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+  ],
+  "timezone": "America/Argentina/Catamarca",
+  "title": "ZPYUBMPZEXRQ",
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+    "employeeNumber": "PEELRFTGWASU",
+    "department": "ANTGVHHNKMRT",
+    "costCenter": "LSDRHJGHWMEA",
+    "organization": "SIJUFIMMJEMQ",
+    "division": "UVCKTGCASDQF",
+    "manager": {
+      "value": "TPYLYPLIPGCG"
+    }
+  },
+  "userName": "charlene_raynor@carrollwillms.ca",
+  "userType": "HXSIKQCCNYHQ"
+}
+
+### SCIM Patch User
+PATCH http://localhost:8180/realms/scim/scim/v2/Users/c0093fc6-ff58-4fc1-b21f-e1a3a079ad92
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "Operations": [
+    {
+      "op": "replace",
+      "path": "emails[type eq \"work\"].value",
+      "value": "eduardo@aufderhar.info"
+    },
+    {
+      "op": "replace",
+      "path": "emails[type eq \"work\"].primary",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "value": {
+        "active": true,
+        "displayName": "TJDKQZWRZLMY",
+        "title": "XSKHHDCYQTET",
+        "preferredLanguage": "gl-ES",
+        "name.givenName": "Amanda",
+        "name.familyName": "Amina",
+        "name.formatted": "Camille",
+        "name.middleName": "Marianna",
+        "name.honorificPrefix": "Hermina",
+        "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber": "1ZYXMRCFHHPLX",
+        "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department": "GOPYEHUILMXN",
+        "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:costCenter": "SPDPBUTMJQJW",
+        "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:organization": "KVJDIZIXYDRR",
+        "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:division": "UYIBLQWEVUOF",
+        "userType": "TIKZYDLAGUYB",
+        "nickName": "GAIECAHHZPBF",
+        "locale": "SHNEIRJLMHGS",
+        "timezone": "America/Eirunepe",
+        "profileUrl": "HCDCICUAOUWZ"
+      }
+    }
+  ],
+  "schemas": [
+    "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+  ]
+}
+
+### SCIM GET User
+GET http://localhost:8180/realms/scim/scim/organizations/keycloak/v2/Users
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### SCIM GET Organization Members
+GET http://localhost:8180/realms/scim/scim/organizations/keycloak/v2/Users
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### SCIM Create User
+POST http://localhost:8180/realms/scim/scim/organizations/keycloak/v2/Users
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "active": true,
+  "displayName": "PZLBHGLITQGD",
+  "emails": [
+    {
+      "type": "work",
+      "value": "melvina.pacocha@binseffertz.uk",
+      "primary": true
+    }
+  ],
+  "locale": "DMSSRKNBDALJ",
+  "name": {
+    "givenName": "Rose",
+    "familyName": "Eldon",
+    "formatted": "Alba",
+    "middleName": "Kevon",
+    "honorificPrefix": "Danielle"
+  },
+  "nickName": "SBDFUEMMYTFL",
+  "preferredLanguage": "sn-ZW",
+  "profileUrl": "CDNLBJQBBFHY",
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:User",
+    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+  ],
+  "timezone": "America/Argentina/Catamarca",
+  "title": "ZPYUBMPZEXRQ",
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+    "employeeNumber": "PEELRFTGWASU",
+    "department": "ANTGVHHNKMRT",
+    "costCenter": "LSDRHJGHWMEA",
+    "organization": "SIJUFIMMJEMQ",
+    "division": "UVCKTGCASDQF",
+    "manager": {
+      "value": "TPYLYPLIPGCG"
+    }
+  },
+  "userName": "charlene_raynor@carrollwillms.ca",
+  "userType": "HXSIKQCCNYHQ"
+}

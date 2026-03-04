@@ -8,8 +8,8 @@ import java.util.stream.Stream;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
@@ -101,7 +101,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<UserEntity> query = cb.createQuery(UserEntity.class);
-            Root<UserEntity> root = query.from(UserEntity.class);
+            From root = doGetRootPath(cb, query);
 
             List<Predicate> predicates = getUserPredicates(filterContext, cb, query, root);
 
@@ -112,8 +112,12 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
                     .map(entity -> new UserAdapter(session, realm, em, entity)));
         } else {
-            return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), firstResult, maxResults);
+            return doGetAll(realm, firstResult, maxResults);
         }
+    }
+
+    protected Stream<UserModel> doGetAll(RealmModel realm, Integer firstResult, Integer maxResults) {
+        return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), firstResult, maxResults);
     }
 
     @Override
@@ -127,14 +131,22 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Long> query = cb.createQuery(Long.class);
-            Root<UserEntity> root = query.from(UserEntity.class);
+            From<?, ?> root = doGetRootPath(cb, query);
 
             List<Predicate> predicates = this.getUserPredicates(filterContext, cb, query, root);
             query.select(cb.countDistinct(root)).where(predicates);
             return em.createQuery(query).getSingleResult();
         } else {
-            return (long) session.users().getUsersCount(realm, false);
+            return doCountAll(realm);
         }
+    }
+
+    protected long doCountAll(RealmModel realm) {
+        return session.users().getUsersCount(realm, false);
+    }
+
+    protected From doGetRootPath(CriteriaBuilder cb, CriteriaQuery<?> query) {
+        return query.from(UserEntity.class);
     }
 
     @Override
@@ -168,7 +180,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         return exception;
     }
 
-    private List<Predicate> getUserPredicates(FilterContext filterContext, CriteriaBuilder cb, CriteriaQuery<?> query, Root<UserEntity> root) {
+    protected List<Predicate> getUserPredicates(FilterContext filterContext, CriteriaBuilder cb, CriteriaQuery<?> query, From<?, ?> root) {
         List<Predicate> predicates = new ArrayList<>();
 
         // create filter predicate using the same query and root that will be used for execution
