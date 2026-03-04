@@ -26,26 +26,21 @@ public class ReflectionUtils {
         List<Method> methods = new LinkedList<>();
         List<Class<?>> hierarchy = new LinkedList<>();
 
-        // Build class hierarchy bottom-up, inserting at head so superclass comes first
         Class<?> current = clazz;
         while (current != null && !current.equals(Object.class)) {
-            hierarchy.add(0, current);
+            hierarchy.add(current);
             current = current.getSuperclass();
         }
 
-        // Collect methods top-down (superclass first), skipping overridden methods
         for (Class<?> c : hierarchy) {
             for (Method m : c.getDeclaredMethods()) {
                 if (m.getAnnotation(annotationClass) == null) {
                     continue;
                 }
 
-                // Remove any superclass method that this method overrides
-                methods.removeIf(existing ->
-                        existing.getName().equals(m.getName())
-                                && Arrays.equals(existing.getParameterTypes(), m.getParameterTypes()));
-
-                methods.add(m);
+                if (methods.stream().noneMatch(e -> e.getName().equals(m.getName()) && Arrays.equals(e.getParameterTypes(), m.getParameterTypes()))) {
+                    methods.add(0, m);
+                }
             }
         }
 
