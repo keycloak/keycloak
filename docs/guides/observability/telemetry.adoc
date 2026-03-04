@@ -83,6 +83,37 @@ spec:
 
 These fields should reflect a 1:1 association with `telemetry-*` server options.
 
+=== Enable all OpenTelemetry components
+To enable OpenTelemetry metrics, logs, and traces, you can configure the Keycloak CR as follows:
+
+WARNING: OpenTelemetry Logs and Metrics are preview/experimental features.
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  features:
+    enabled:
+      - opentelemetry-logs
+      - opentelemetry-metrics
+  telemetry:
+    endpoint: http://my-telemetry:4317
+    serviceName: my-best-keycloak-telemetry
+    protocol: grpc
+  tracing:
+    enabled: true
+  additionalOptions:
+    - name: telemetry-logs-enabled
+      value: "true"
+    - name: telemetry-metrics-enabled
+      value: "true"
+    - name: metrics-enabled
+      value: "true"
+----
+
 == Traces
 
 See the https://www.keycloak.org/observability/tracing[Root cause analysis with tracing guide].
