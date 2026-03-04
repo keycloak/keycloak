@@ -17,7 +17,7 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TruststoreBuilder;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.TruststoreBuilder;
 import org.keycloak.operator.testsuite.unit.WatchedResourcesTest;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
