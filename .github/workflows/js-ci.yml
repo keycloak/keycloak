@@ -285,7 +285,12 @@ jobs:
         run: |
           tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
           keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --http-port 8180 --features transient-users,oid4vc-vci,declarative-ui,quick-theme,spiffe,kubernetes-service-accounts,workflows,client-auth-federated,jwt-authorization-grant,client-admin-api:v2 &> ~/server.log &
-          curl --connect-timeout 5 --max-time 10 --retry 10 --retry-all-errors --retry-delay 10 --retry-max-time 120 -s -o /dev/null http://127.0.0.1:8180
+          echo "Waiting for Keycloak to become ready on port 8180..."
+          if ! curl --connect-timeout 5 --max-time 10 --retry 24 --retry-all-errors --retry-delay 5 --retry-max-time 180 -fsS -o /dev/null http://127.0.0.1:8180/realms/master/.well-known/openid-configuration; then
+            echo "Keycloak did not become ready in time. Last 200 lines of server log:"
+            tail -n 200 ~/server.log || true
+            exit 1
+          fi
         env:
           KC_BOOTSTRAP_ADMIN_USERNAME: admin
           KC_BOOTSTRAP_ADMIN_PASSWORD: admin
@@ -295,6 +300,13 @@ jobs:
       - name: Run tests
         run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} run test
         working-directory: js
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: keycloak-admin-client-server-log
+          path: ~/server.log
 
   check:
     name: Status Check - Keycloak JavaScript CI
