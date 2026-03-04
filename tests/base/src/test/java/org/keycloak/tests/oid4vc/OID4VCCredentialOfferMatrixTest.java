@@ -167,7 +167,7 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
         // Create Pre-Authorized CredentialOffer
         //
         CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, null, false);
-        String preAuthCode = credOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
+        String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken
         //
@@ -196,7 +196,7 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
         // Create Pre-Authorized CredentialOffer
         //
         CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.holder, true);
-        String preAuthCode = credOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
+        String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken
         //
@@ -226,7 +226,7 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
         // Create Pre-Authorized CredentialOffer
         //
         CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.holder, true);
-        String preAuthCode = credOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
+        String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Test missing TxCode
         {

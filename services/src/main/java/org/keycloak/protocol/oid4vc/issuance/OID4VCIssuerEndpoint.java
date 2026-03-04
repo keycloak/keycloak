@@ -103,8 +103,7 @@ import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.OfferResponseType;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -536,8 +535,7 @@ public class OID4VCIssuerEndpoint {
 
         if (preAuthorized) {
             String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
-            credOffer.setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(
-                    new PreAuthorizedCode().setPreAuthorizedCode(code)));
+            credOffer.addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
         }
 
         // Create the CredentialOfferState
@@ -704,7 +702,7 @@ public class OID4VCIssuerEndpoint {
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
         String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
 
-        if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
+        if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE)) {
             // Use getAuthResult() instead of bearerTokenAuthenticator.authenticate() directly
             // This ensures we benefit from the cachedAuthResult caching that prevents DPoP proof reuse
             AccessToken accessToken = getAuthResult().token();

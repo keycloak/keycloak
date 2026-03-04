@@ -49,6 +49,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
@@ -408,11 +409,11 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 .getOidcConfiguration();
 
         assertNotNull("A token endpoint should be included.", openidConfig.getTokenEndpoint());
-        assertTrue("The pre-authorized code should be supported.", openidConfig.getGrantTypesSupported().contains(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
+        assertTrue("The pre-authorized code should be supported.", openidConfig.getGrantTypesSupported().contains(PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE));
 
         // 5. Get an access token for the pre-authorized code
         AccessTokenResponse accessTokenResponse = oauth.oid4vc()
-                .preAuthorizedCodeGrantRequest(credentialsOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode())
+                .preAuthorizedCodeGrantRequest(credentialsOffer.getPreAuthorizedCode())
                 .endpoint(openidConfig.getTokenEndpoint())
                 .send();
 
