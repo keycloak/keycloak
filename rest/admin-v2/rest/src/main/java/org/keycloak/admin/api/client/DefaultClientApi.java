@@ -58,10 +58,7 @@ public class DefaultClientApi implements ClientApi {
     @PUT
     @Override
     public Response createOrUpdateClient(BaseClientRepresentation client) {
-        if (!Objects.equals(clientId, client.getClientId())) {
-            throw new WebApplicationException("clientId in payload does not match the clientId in the path", Response.Status.BAD_REQUEST);
-        }
-        var result = clientService.createOrUpdate(realm, client, true);
+        var result = clientService.createOrUpdateClient(realm, clientId, client);
         return Response.status(result.created() ? Response.Status.CREATED : Response.Status.OK).entity(result.representation()).build();
     }
 
