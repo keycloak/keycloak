@@ -31,6 +31,7 @@ import java.util.Map;
 import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.AbstractLocationConfigSourceLoader;
+import io.smallrye.config.EnvConfigSource;
 import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.config.common.utils.ConfigSourceUtil;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -43,7 +44,7 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
  */
 public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSourceLoader {
 
-    public static final int PROPERTIES_FILE_ORDINAL = 475;
+    public static final int PROPERTIES_FILE_ORDINAL = EnvConfigSource.ORDINAL - 1;
 
     private static final String KEYCLOAK_CONFIG_FILE_ENV = "KC_CONFIG_FILE";
     private static final String KEYCLOAK_CONF_FILE = "keycloak.conf";

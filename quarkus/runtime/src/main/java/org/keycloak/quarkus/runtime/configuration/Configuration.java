@@ -51,8 +51,7 @@ public final class Configuration {
     }
 
     public static boolean isUserModifiable(ConfigValue configValue) {
-        // This could check as low as SysPropConfigSource DEFAULT_ORDINAL, which is 400
-        // for now we won't validate these as it's not expected for the user to specify options via system properties
+        // for now we won't validate these as it's not expected for the user to specify options from a source below our properties
         return configValue.getConfigSourceName() != null && configValue.getConfigSourceOrdinal() >= KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL;
     }
 

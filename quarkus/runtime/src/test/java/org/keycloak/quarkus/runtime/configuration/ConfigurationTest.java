@@ -249,6 +249,13 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testQuarkusEnvPropertyUserModifiable() {
+        putEnvVar("QUARKUS_KEY", "7777");
+        createConfig();
+        assertTrue(Configuration.isUserModifiable(Configuration.getConfigValue("quarkus.key")));
+    }
+
+    @Test
     public void testPropertyMapping() {
         ConfigArgsConfigSource.setCliArgs("--db=mariadb", "--db-url=jdbc:mariadb://localhost/keycloak");
         SmallRyeConfig config = createConfig();
