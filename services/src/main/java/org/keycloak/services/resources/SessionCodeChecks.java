@@ -261,7 +261,7 @@ public class SessionCodeChecks {
             event.error(Errors.CLIENT_NOT_FOUND);
             session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
             response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.UNKNOWN_LOGIN_REQUESTER);
-            clientCode.removeExpiredClientSession();
+            removeAuthenticationSession(authSession);
             return false;
         }
 
@@ -272,7 +272,7 @@ public class SessionCodeChecks {
             event.error(Errors.CLIENT_DISABLED);
             session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
             response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
-            clientCode.removeExpiredClientSession();
+            removeAuthenticationSession(authSession);
             return false;
         }
 
@@ -511,6 +511,13 @@ public class SessionCodeChecks {
 
     protected EventBuilder getEvent() {
         return event;
+    }
+
+    private void removeAuthenticationSession(AuthenticationSessionModel authSession) {
+        ClientSessionCode<AuthenticationSessionModel> codeToRemove = clientCode != null
+                ? clientCode
+                : new ClientSessionCode<>(session, realm, authSession);
+        codeToRemove.removeExpiredClientSession();
     }
 
     protected boolean checkClientDisabled(ClientModel client) {
