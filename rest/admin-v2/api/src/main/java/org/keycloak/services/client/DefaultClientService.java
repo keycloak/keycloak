@@ -26,6 +26,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
+import org.keycloak.representations.admin.v2.validation.UpdateClientDefault;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.PatchType;
@@ -39,6 +40,7 @@ import org.keycloak.services.util.ObjectMapperResolver;
 import org.keycloak.validation.ValidationUtil;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
+import org.keycloak.validation.jakarta.ValidationContextData;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -126,7 +128,13 @@ public class DefaultClientService implements ClientService {
             if (!allowUpdate) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
-            model = mapper.toModel(client, clientResource.viewClientModel());
+            ClientModel existingModel = clientResource.viewClientModel();
+
+            // Validate with update context before applying changes
+            var updateContext = ValidationContextData.forUpdate(session, realm, existingModel);
+            validator.validate(client, updateContext, UpdateClientDefault.class);
+
+            model = mapper.toModel(client, existingModel);
             var rep = ModelToRepresentation.toRepresentation(model, session);
 
             try (var response = clientResource.update(rep)) {
@@ -135,7 +143,10 @@ public class DefaultClientService implements ClientService {
             }
         } else {
             created = true;
-            validator.validate(client, CreateClientDefault.class); // TODO improve it to avoid second validation when we know it is create and not update
+
+            // Validate with create context before creating the client
+            var createContext = ValidationContextData.forCreate(session, realm);
+            validator.validate(client, createContext, CreateClientDefault.class);
 
             // First, create a basic v1 representation to persist the client in the database.
             // We can't use mapper.toModel(client) directly for creation because the "detached model"
@@ -149,6 +160,7 @@ public class DefaultClientService implements ClientService {
 
             mapper.toModel(client, model);
 
+            // TODO: Migrate validations from ValidationUtil.validateClient to Jakarta validators
             // Validate the fully populated model (createClientModel only validates the basic model)
             ValidationUtil.validateClient(session, model, true, r -> {
                 session.getTransactionManager().setRollbackOnly();
