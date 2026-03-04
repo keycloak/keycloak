@@ -671,7 +671,7 @@ export class Clients extends Resource<{ realm?: string }> {
 
   public findOnePolicyWithType = this.makeRequest<
     { id: string; type: string; policyId: string },
-    void
+    PolicyRepresentation
   >({
     method: "GET",
     path: "/{id}/authz/resource-server/policy/{type}/{policyId}",
@@ -679,9 +679,19 @@ export class Clients extends Resource<{ realm?: string }> {
     catchNotFound: true,
   });
 
+  public findRolePolicy = this.makeRequest<
+    { id: string; policyId: string },
+    PolicyRepresentation
+  >({
+    method: "GET",
+    path: "/{id}/authz/resource-server/policy/role/{policyId}",
+    urlParamKeys: ["id", "policyId"],
+    catchNotFound: true,
+  });
+
   public findOnePolicy = this.makeRequest<
     { id: string; policyId: string },
-    void
+    PolicyRepresentation
   >({
     method: "GET",
     path: "/{id}/authz/resource-server/policy/{policyId}",

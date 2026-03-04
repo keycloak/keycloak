@@ -279,6 +279,23 @@ Demo code: https://github.com/keycloak/keycloak/blob/main/js/libs/keycloak-admin
 - Get available client-level roles that can be mapped to the user (`GET /{realm}/users/{id}/role-mappings/clients/{client}/available`)
 - Get effective client-level role mappings This will recurse all composite roles to get the result. (`GET /{realm}/users/{id}/role-mappings/clients/{client}/composite`)
 
+### Client authorization services
+
+Demo code: https://github.com/keycloak/keycloak/blob/main/js/libs/keycloak-admin-client/test/clients.spec.ts
+
+- Get role policy by ID (`GET /{realm}/clients/{id}/authz/resource-server/policy/role/{policyId}`)
+  via `clients.findRolePolicy(...)`
+- Get policy by type and ID (`GET /{realm}/clients/{id}/authz/resource-server/policy/{type}/{policyId}`)
+  via `clients.findOnePolicyWithType(...)`
+- List authorization scopes (`GET /{realm}/clients/{id}/authz/resource-server/scope`)
+  via `clients.listAllScopes(...)`
+- Create authorization scope (`POST /{realm}/clients/{id}/authz/resource-server/scope`)
+  via `clients.createAuthorizationScope(...)`
+- Update authorization scope (`PUT /{realm}/clients/{id}/authz/resource-server/scope/{scopeId}`)
+  via `clients.updateAuthorizationScope(...)`
+- Delete authorization scope (`DELETE /{realm}/clients/{id}/authz/resource-server/scope/{scopeId}`)
+  via `clients.delAuthorizationScope(...)`
+
 ### [Client Attribute Certificate](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_client_attribute_certificate_resource)
 
 - Get key info (`GET /{realm}/clients/{id}/certificates/{attr}`)
