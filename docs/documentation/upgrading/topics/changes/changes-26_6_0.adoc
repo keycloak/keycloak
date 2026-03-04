@@ -151,6 +151,40 @@ It does not affect any explicitly configured clock skew for example in identity 
 
 All the `base` themes are now tagged as **abstract**, and they are not listed in the admin console to be selected (**Realm Settings** -> **Themes** tab). They were always intended to be only extended but not used directly. If you use one of them, it will continue working (or not working) in the same way but cannot be selected using the admin console anymore. Please select one of the available default themes or create your own one.
 
+=== Truststore initialization moved to the server
+
+Keycloak now automatically discovers and trusts cluster certificate authorities when running on Kubernetes or OpenShift, without relying on the Operator to preconfigure the truststore. Specifically, if present in the container filesystem, the following files are added to the system truststore at runtime:
+
+* `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` (Kubernetes service account CA)
+* `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt` (OpenShift service CA)
+
+This behavior is enabled by default and can be controlled with the server option:
+
+* `--truststore-kubernetes-enabled=true|false` (default: `true`)
+
+No changes are required for most deployments. If you previously relied on the Operator to manage these truststore entries, the server now performs the same function directly. 
+
+WARNING: when `https-client-auth` is set to `required` or `request` without an explicit `https-trust-store-file`, mTLS client certificate validation falls back to the system truststore. With `truststore-kubernetes-enabled=true`, this means certificates signed by the Kubernetes cluster CA will be accepted as valid client certificates. If this is not desired, either set `https-trust-store-file` explicitly or disable `truststore-kubernetes-enabled`.
+
+For details, see the server guide section "Cluster CA certificates (Kubernetes and OpenShift)" in the Truststore guide.
+
+If you are deploying {project_name} by using the {project_name} Operator and your deployment relies on trusting the Kubernetes CA, upgrade custom Keycloak images first. This ensures that the Kubernetes CAs remain trusted for the entire duration of the upgrade.
+
+If you cannot upgrade the custom image first nor are able to simultaneously upgrade the operator with the custom images, it is recommended to explicitly configure the truststore path in the Keycloak Custom Resource prior to changing the Operator version. This ensures that Pods using older custom images continue to trust the cluster CA during the upgrade procedure:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak
+spec:
+  automountServiceAccountToken: true
+  additionalOptions:
+    - name: truststore-paths
+      value: "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt,/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+----
+
 === New database indexes on the `OFFLINE_CLIENT_SESSION` table
 
 The `OFFLINE_CLIENT_SESSION` table now contains two additional indexes `IDX_OFFLINE_CSS_BY_CLIENT_AND_REALM` and `IDX_OFFLINE_CSS_BY_USER_SESSION_AND_OFFLINE` to improve performance.
