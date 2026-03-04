@@ -1,0 +1,12 @@
+services:
+  keycloak:
+    image: ${KEYCLOAK_TEST_IMAGE:-quay.io/keycloak/keycloak:latest}
+    command:
+      - start-dev
+      - --http-port=8180
+      - --features=transient-users,oid4vc-vci,declarative-ui,quick-theme,spiffe,kubernetes-service-accounts,workflows,client-auth-federated,jwt-authorization-grant,client-admin-api:v2
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8180:8180"

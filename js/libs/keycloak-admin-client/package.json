@@ -18,6 +18,9 @@
     "build": "wireit",
     "lint": "wireit",
     "test": "wireit",
+    "test:container:up": "bash test/start-test-keycloak.sh",
+    "test:container:down": "bash test/stop-test-keycloak.sh",
+    "test:container": "bash test/run-tests-with-container.sh",
     "generate:openapi": "wireit",
     "postinstall": "pnpm generate:openapi",
     "prepublishOnly": "pnpm build"

@@ -129,6 +129,25 @@ Then start the tests with:
 pnpm test
 ```
 
+### Run tests with a preconfigured container
+
+If you prefer not to manually start and configure Keycloak, you can use the bundled Docker Compose setup:
+
+```bash
+pnpm run test:container
+```
+
+This command starts a preconfigured Keycloak container, waits for readiness on `127.0.0.1:8180`, runs the admin-client test suite, and then tears the container down.
+It requires Docker with the Compose plugin (`docker compose`).
+
+You can also run the steps manually:
+
+```bash
+pnpm run test:container:up
+pnpm test
+pnpm run test:container:down
+```
+
 ## Supported APIs
 
 ### [Realm admin](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_realms_admin_resource)
