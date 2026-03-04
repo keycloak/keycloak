@@ -10,6 +10,8 @@
 
 package org.keycloak.scim.model.group;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -73,26 +75,29 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         Integer maxResults = searchRequest.getCount();
 
         if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // Parse filter into AST
+            // parse filter into AST
             ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
 
-            // Execute JPA query with filter
+            // execute JPA query with filter
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<GroupEntity> query = cb.createQuery(GroupEntity.class);
             Root<GroupEntity> root = query.from(GroupEntity.class);
+            List<Predicate> predicates = new ArrayList<>();
 
-            // Create filter predicate using the same query and root that will be used for execution
+            // create filter predicate using the same query and root that will be used for execution
             ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, root);
-            Predicate filterPredicate = evaluator.visit(filterContext).predicate();
+            predicates.add(evaluator.visit(filterContext).predicate());
 
-            // Apply realm restriction
-            Predicate realmPredicate = cb.equal(root.get("realm"), realm.getId());
+            // apply realm restriction and group type restrictions
+            predicates.add(cb.equal(root.get("realm"), realm.getId()));
+            predicates.add(cb.equal(root.get("type"), GroupModel.Type.REALM.intValue()));
+            predicates.add(cb.equal(root.get("parentId"), GroupEntity.TOP_PARENT_ID));
 
-            // Combine with filter predicate
-            query.where(cb.and(realmPredicate, filterPredicate));
+            // apply distinct and order by name to ensure consistency with no-filter case
+            query.where(predicates).distinct(true).orderBy(cb.asc(root.get("name")));
 
-            // Execute query and convert to UserModel stream
+            // execute query and convert to UserModel stream
             return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
                     .map(entity -> new GroupAdapter(session, realm, em, entity)));
         } else {
