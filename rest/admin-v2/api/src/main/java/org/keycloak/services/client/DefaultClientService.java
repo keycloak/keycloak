@@ -127,6 +127,8 @@ public class DefaultClientService implements ClientService {
     private enum CreateOrUpdateStrategy {
         ONLY_CREATE,
         PUT,
+        // PATCH is currently separated from PUT only due to validation running before full preparation/defaulting.
+        // Once we validate the fully prepared resource, PUT and PATCH should share the same validation logic.
         PATCH
     }
 
