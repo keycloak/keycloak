@@ -65,7 +65,7 @@ public class OID4VCTimeNormalizationSdJwtTest extends OID4VCIssuerEndpointTest {
         });
 
         String scopeName = sdJwtTypeCredentialClientScope.getName();
-        String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credConfigId = sdJwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
