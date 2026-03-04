@@ -28,6 +28,7 @@ import org.hibernate.validator.constraints.URL;
 public abstract class BaseClientRepresentation extends BaseRepresentation {
     public static final String DISCRIMINATOR_FIELD = "protocol";
 
+    @Schema(required = true)
     @NotBlank(groups = CreateClient.class)
     @JsonPropertyDescription("ID uniquely identifying this client")
     protected String clientId;
@@ -109,6 +110,7 @@ public abstract class BaseClientRepresentation extends BaseRepresentation {
         this.roles = roles;
     }
 
+    @Schema(required = true)
     public abstract String getProtocol();
 
     void setProtocol(String protocol) {

@@ -110,6 +110,7 @@ async function main() {
  */
 function postProcessGeneratedCode() {
   const adminClientPath = resolve(OUTPUT_PATH, "adminClient.ts");
+  const modelsPath = resolve(OUTPUT_PATH, "models/index.ts");
 
   if (!existsSync(adminClientPath)) {
     console.log("⚠️ adminClient.ts not found, skipping post-processing");
@@ -171,6 +172,40 @@ import { TextParseNodeFactory, TextSerializationWriterFactory } from "@microsoft
     writeFileSync(adminClientPath, content);
   } else {
     console.log("   ℹ️ No fixes needed");
+  }
+
+  // Work around Kiota optionality for discriminator-based models.
+  // We currently need clientId and protocol as required fields in TS.
+  if (existsSync(modelsPath)) {
+    let modelsContent = readFileSync(modelsPath, "utf-8");
+    let modelsModified = false;
+
+    const requiredFieldsByInterface: Record<string, string[]> = {
+      BaseClientRepresentation: ["clientId", "protocol"],
+    };
+
+    for (const [interfaceName, requiredFields] of Object.entries(
+      requiredFieldsByInterface,
+    )) {
+      for (const fieldName of requiredFields) {
+        const requiredFieldRegex = new RegExp(
+          `(export interface ${interfaceName}[^\\{]*\\{[\\s\\S]*?\\n\\s*${fieldName})\\?:`,
+        );
+        if (requiredFieldRegex.test(modelsContent)) {
+          modelsContent = modelsContent.replace(requiredFieldRegex, "$1:");
+          modelsModified = true;
+        }
+      }
+    }
+
+    if (modelsModified) {
+      writeFileSync(modelsPath, modelsContent);
+      console.log("   ✅ Enforced required fields in generated models");
+    } else {
+      console.log("   ℹ️ No model required-field fixes needed");
+    }
+  } else {
+    console.log("   ⚠️ models/index.ts not found, skipping required-field fix");
   }
 }
 
