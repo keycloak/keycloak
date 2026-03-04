@@ -1317,17 +1317,19 @@ describe("Clients", () => {
       expect(result).to.be.ok;
     });
 
-    it.skip("Enable fine grained permissions", async () => {
-      const permission = await kcAdminClient.clients.updateFineGrainPermission(
+    it("Enable fine grained permissions", async () => {
+      await kcAdminClient.clients.updateFineGrainPermission(
         { id: currentClient.id! },
         { enabled: true },
       );
-      expect(permission).to.include({
-        enabled: true,
+
+      const permission = await kcAdminClient.clients.listFineGrainPermissions({
+        id: currentClient.id!,
       });
+      expect(permission.enabled).to.be.true;
     });
 
-    it.skip("List fine grained permissions for this client", async () => {
+    it("List fine grained permissions for this client", async () => {
       const permissions = (await kcAdminClient.clients.listFineGrainPermissions(
         { id: currentClient.id! },
       ))!;
