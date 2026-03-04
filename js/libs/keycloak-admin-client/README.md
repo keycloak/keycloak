@@ -129,6 +129,11 @@ Then start the tests with:
 pnpm test
 ```
 
+## Deprecation warnings
+
+The client emits a `console.warn` message when Keycloak marks an admin endpoint as deprecated through standard HTTP headers (`Deprecation`, `Warning`, `Sunset`, and deprecation `Link` metadata).
+
+Warnings are logged once per endpoint path to avoid noisy output.
 ## Supported APIs
 
 ### [Realm admin](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_realms_admin_resource)
