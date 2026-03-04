@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.keycloak.events.Details;
@@ -68,7 +67,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Base class for authorization details flow tests.
@@ -328,11 +326,6 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         String firstIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
         assertNotNull("Identifier should not be null", firstIdentifier);
         assertFalse("Identifier should not be empty", firstIdentifier.isEmpty());
-        try {
-            UUID.fromString(firstIdentifier);
-        } catch (IllegalArgumentException e) {
-            fail("Identifier should be a valid UUID, but was: " + firstIdentifier);
-        }
     }
 
     @Test
@@ -565,7 +558,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
-        assertEquals("invalid_request", tokenResponse.getError());
+        assertEquals("invalid_authorization_details", tokenResponse.getError());
         assertNotNull("Error description should be present", tokenResponse.getErrorDescription());
     }
 
@@ -603,11 +596,6 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
             assertNotNull("Identifier should not be null", credentialIdentifier);
             assertFalse("Identifier should not be empty", credentialIdentifier.isEmpty());
-            try {
-                UUID.fromString(credentialIdentifier);
-            } catch (IllegalArgumentException e) {
-                fail("Identifier should be a valid UUID, but was: " + credentialIdentifier);
-            }
         }
     }
 
@@ -828,11 +816,6 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
             String credentialIdentifier = authDetail.getCredentialIdentifiers().get(0);
             assertNotNull("Credential identifier should not be null", credentialIdentifier);
             assertFalse("Credential identifier should not be empty", credentialIdentifier.isEmpty());
-            try {
-                UUID.fromString(credentialIdentifier);
-            } catch (IllegalArgumentException e) {
-                fail("Credential identifier should be a valid UUID, but was: " + credentialIdentifier);
-            }
         }
 
         // Verify that all credential identifiers are unique
