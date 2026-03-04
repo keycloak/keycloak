@@ -69,6 +69,7 @@ import org.junit.Test;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -567,8 +568,15 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         assertEquals("Token exchange should succeed without authorization_details (it's optional)",
                 HttpStatus.SC_OK, tokenResponse.getStatusCode());
         assertNotNull("Access token should be present", tokenResponse.getAccessToken());
-        assertNull("Response should not contain authorization_details when not provided in request",
-                tokenResponse.getAuthorizationDetails());
+
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
+        assertNotNull("authorization_details should be derived from requested OID4VC scope", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        assertEquals("credential_configuration_id should match requested scope",
+                getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID),
+                authDetailsResponse.get(0).getCredentialConfigurationId());
+        assertNotNull("credential_identifiers should be present", authDetailsResponse.get(0).getCredentialIdentifiers());
+        assertFalse("credential_identifiers should not be empty", authDetailsResponse.get(0).getCredentialIdentifiers().isEmpty());
     }
 
     /**

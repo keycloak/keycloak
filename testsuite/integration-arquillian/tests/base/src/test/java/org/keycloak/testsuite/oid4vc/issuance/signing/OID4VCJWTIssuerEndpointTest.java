@@ -582,8 +582,8 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     /**
-     * The accessToken references the scope "test-credential" but we ask for the credential "VerifiableCredential"
-     * in the CredentialRequest
+     * When the token contains authorization_details, the credential_identifier from that token determines
+     * which credential is issued.
      */
     @Test
     public void testCredentialIssuanceWithScopeUnmatched() {
@@ -599,11 +599,22 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             try (Response response = credentialTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
                     .post(Entity.json(credentialRequest))) {
-                assertEquals(400, response.getStatus());
-                String errorJson = response.readEntity(String.class);
-                assertNotNull("Error response should not be null", errorJson);
-                assertTrue("Error response should mention invalid_credential_request or scope",
-                        errorJson.contains(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue()) || errorJson.contains("scope"));
+                assertEquals(200, response.getStatus());
+                CredentialResponse credentialResponse = JsonSerialization.readValue(response.readEntity(String.class),
+                        CredentialResponse.class);
+
+                JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredentials().get(0).getCredential(),
+                        JsonWebToken.class).getToken();
+                assertEquals(TEST_DID.toString(), jsonWebToken.getIssuer());
+
+                VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims()
+                                .get("vc"),
+                        VerifiableCredential.class);
+                assertEquals(List.of(jwtTypeCredentialClientScope.getName()), credential.getType());
+                assertEquals(TEST_DID, credential.getIssuer());
+                assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
+            } catch (VerificationException | IOException e) {
+                throw new RuntimeException(e);
             }
         };
 
