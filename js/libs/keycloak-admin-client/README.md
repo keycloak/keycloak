@@ -102,6 +102,38 @@ await kcAdminClient.auth(credentials);
 setInterval(() => kcAdminClient.auth(credentials), 58 * 1000); // 58 seconds
 ```
 
+### Error handling
+
+All admin client requests throw a `NetworkError` when the HTTP response is not successful.
+You can inspect the HTTP status and parsed response body from the error:
+the error message is derived from `error` or `errorMessage` fields when present.
+
+```js
+import KcAdminClient, { NetworkError } from '@keycloak/keycloak-admin-client';
+
+const kcAdminClient = new KcAdminClient();
+
+try {
+  await kcAdminClient.users.findOne({ id: 'some-user-id' });
+} catch (error) {
+  if (error instanceof NetworkError) {
+    console.error('status', error.response.status);
+    console.error('response data', error.responseData);
+  } else {
+    throw error;
+  }
+}
+```
+
+To return `null` on `404 Not Found` instead of throwing, pass `catchNotFound` in request options:
+
+```js
+const user = await kcAdminClient.users.findOne(
+  { id: 'missing-user-id' },
+  { catchNotFound: true },
+);
+```
+
 ## Building and running the tests
 
 To build the source do a build:
