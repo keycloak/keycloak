@@ -17,8 +17,6 @@
 
 package org.keycloak.services.x509;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.util.stream.Stream;
@@ -51,42 +49,33 @@ public class TraefikProxySslClientCertificateLookup implements X509ClientCertifi
 
     private static final Logger log = Logger.getLogger(TraefikProxySslClientCertificateLookup.class);
 
-    protected final String sslClientCertHttpHeader;
-    private final boolean certIsUrlEncoded;
     protected int certificateChainLength;
 
-    public TraefikProxySslClientCertificateLookup(String sslClientCertHttpHeader, boolean certIsUrlEncoded, int certificateChainLength) {
-        this.sslClientCertHttpHeader = sslClientCertHttpHeader;
-        this.certIsUrlEncoded = certIsUrlEncoded;
+    public TraefikProxySslClientCertificateLookup(int certificateChainLength) {
         this.certificateChainLength = certificateChainLength;
     }
 
     @Override
     public X509Certificate[] getCertificateChain(HttpRequest httpRequest) throws GeneralSecurityException {
         if (!httpRequest.isProxyTrusted()) {
-            log.warnf("HTTP header \"%s\" is not trusted", sslClientCertHttpHeader);
+            log.warnf("HTTP header \"%s\" is not trusted", TraefikProxySslClientCertificateLookupFactory.HTTP_HEADER_CLIENT_CERT);
             return null;
         }
 
-        String headerValue = httpRequest.getHttpHeaders().getRequestHeaders().getFirst(sslClientCertHttpHeader);
+        String headerValue = httpRequest.getHttpHeaders().getRequestHeaders().getFirst(TraefikProxySslClientCertificateLookupFactory.HTTP_HEADER_CLIENT_CERT);
 
         if (headerValue == null || headerValue.isBlank()) {
-            log.warnf("HTTP header \"%s\" is empty", sslClientCertHttpHeader);
+            log.warnf("HTTP header \"%s\" is empty", TraefikProxySslClientCertificateLookupFactory.HTTP_HEADER_CLIENT_CERT);
             return new X509Certificate[0];
-        }
-
-        // Traefik may URL-encode - see https://github.com/traefik/traefik/issues/9669
-        if (certIsUrlEncoded) {
-            headerValue = URLDecoder.decode(headerValue, StandardCharsets.UTF_8);
         }
 
         try {
             X509Certificate[] certs = Stream.of(headerValue.split(",")).map(PemUtils::decodeCertificate)
                     .limit(certificateChainLength + 1).toArray(X509Certificate[]::new);
             if (certs.length == 0) {
-                log.warnf("HTTP header \"%s\" does not contain any valid X.509 certificates", sslClientCertHttpHeader);
+                log.warnf("HTTP header \"%s\" does not contain any valid X.509 certificates", TraefikProxySslClientCertificateLookupFactory.HTTP_HEADER_CLIENT_CERT);
             } else {
-                log.debugf("Found %d X.509 certificate(s) in \"%s\" HTTP header", certs.length, sslClientCertHttpHeader);
+                log.debugf("Found %d X.509 certificate(s) in \"%s\" HTTP header", certs.length, TraefikProxySslClientCertificateLookupFactory.HTTP_HEADER_CLIENT_CERT);
             }
             return certs;
         } catch (PemException e) {

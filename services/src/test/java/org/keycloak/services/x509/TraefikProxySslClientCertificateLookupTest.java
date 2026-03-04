@@ -39,7 +39,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import static org.keycloak.services.x509.TraefikProxySslClientCertificateLookupFactory.HTTP_HEADER_CLIENT_CERT_DEFAULT;
+import static org.keycloak.services.x509.TraefikProxySslClientCertificateLookupFactory.HTTP_HEADER_CLIENT_CERT;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -95,7 +95,7 @@ public class TraefikProxySslClientCertificateLookupTest {
     @Test
     public void testRequestFromUntrustedProxyIsDiscarded() throws GeneralSecurityException {
         TraefikProxySslClientCertificateLookup lookup = createLookup();
-        HttpRequest httpRequest = createHttpRequest(headers -> headers.add(HTTP_HEADER_CLIENT_CERT_DEFAULT, singleCertHeaderValue), false);
+        HttpRequest httpRequest = createHttpRequest(headers -> headers.add(HTTP_HEADER_CLIENT_CERT, singleCertHeaderValue), false);
 
         X509Certificate[] actualChain = lookup.getCertificateChain(httpRequest);
 
@@ -105,7 +105,7 @@ public class TraefikProxySslClientCertificateLookupTest {
     @Test
     public void testSingleCertInHeader() throws GeneralSecurityException {
         TraefikProxySslClientCertificateLookup lookup = createLookup();
-        HttpRequest httpRequest = createHttpRequest(headers -> headers.add(HTTP_HEADER_CLIENT_CERT_DEFAULT, singleCertHeaderValue));
+        HttpRequest httpRequest = createHttpRequest(headers -> headers.add(HTTP_HEADER_CLIENT_CERT, singleCertHeaderValue));
 
         X509Certificate[] actualChain = lookup.getCertificateChain(httpRequest);
 
@@ -116,14 +116,14 @@ public class TraefikProxySslClientCertificateLookupTest {
     @Test
     public void testMultipleCertsInHeader() throws GeneralSecurityException {
         TraefikProxySslClientCertificateLookup lookup = createLookup();
-        HttpRequest httpRequest = createHttpRequest(headers -> headers.add(HTTP_HEADER_CLIENT_CERT_DEFAULT, multiCertHeaderValue));
+        HttpRequest httpRequest = createHttpRequest(headers -> headers.add(HTTP_HEADER_CLIENT_CERT, multiCertHeaderValue));
 
         X509Certificate[] actualChain = lookup.getCertificateChain(httpRequest);
 
         assertThat(actualChain, is(not(nullValue())));
         assertThat(actualChain, is(arrayWithSize(2)));
 
-        TraefikProxySslClientCertificateLookup noChainLookup = new TraefikProxySslClientCertificateLookup(HTTP_HEADER_CLIENT_CERT_DEFAULT, false, 0);
+        TraefikProxySslClientCertificateLookup noChainLookup = new TraefikProxySslClientCertificateLookup(0);
         actualChain = noChainLookup.getCertificateChain(httpRequest);
 
         assertThat(actualChain, is(not(nullValue())));
@@ -144,7 +144,7 @@ public class TraefikProxySslClientCertificateLookupTest {
     }
 
     private static TraefikProxySslClientCertificateLookup createLookup() {
-        return new TraefikProxySslClientCertificateLookup(HTTP_HEADER_CLIENT_CERT_DEFAULT, false, 1);
+        return new TraefikProxySslClientCertificateLookup(1);
     }
 
     private static HttpRequest createHttpRequest(Consumer<MultivaluedMap<String, String>> configurer) {
