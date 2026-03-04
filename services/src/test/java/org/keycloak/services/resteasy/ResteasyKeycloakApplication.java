@@ -46,10 +46,6 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     protected Set<Class<?>> classes = new HashSet<>();
 
     public ResteasyKeycloakApplication() {
-        Profile.configure(
-                new PropertiesProfileConfigResolver(System.getProperties()),
-                new PropertiesFileProfileConfigResolver()
-        );
         classes.add(RealmsResource.class);
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
             classes.add(AdminRoot.class);
@@ -108,6 +104,10 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     protected void initAndStart() {
         Config.init(new JsonConfigProviderFactory().create()
                 .orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
+        Profile.configure(
+                new PropertiesProfileConfigResolver(System.getProperties()),
+                new PropertiesFileProfileConfigResolver()
+        );
         startup();
     }
 
