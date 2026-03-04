@@ -257,11 +257,13 @@ public class RealmUpdateTest extends AbstractRealmTest {
 
         assertThat(adminClient.realm(realmName).components().query(null, UserProfileProvider.class.getName()), empty());
 
-        rep.setDisplayName("displayName");
+        String displayName = "displayName";
+        rep.setDisplayName(displayName);
         adminClient.realm(realmName).update(rep);
 
         // this used to return non-empty collection
         assertThat(adminClient.realm(realmName).components().query(null, UserProfileProvider.class.getName()), empty());
+        assertEquals(displayName, adminClient.realm(realmName).toRepresentation().getDisplayName());
 
         adminClient.realms().realm(realmName).remove();
     }
