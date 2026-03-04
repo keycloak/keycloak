@@ -395,14 +395,42 @@ export class Realms extends Resource {
     headers: { "content-type": "text/plain" },
   });
 
-  public deleteRealmLocalizationTexts = this.makeRequest<
-    { realm: string; selectedLocale: string; key?: string },
+  private deleteRealmLocalizationTextByKey = this.makeRequest<
+    { realm: string; selectedLocale: string; key: string },
     void
   >({
     method: "DELETE",
     path: "/{realm}/localization/{selectedLocale}/{key}",
     urlParamKeys: ["realm", "selectedLocale", "key"],
   });
+
+  private deleteRealmLocalizationByLocale = this.makeRequest<
+    { realm: string; selectedLocale: string },
+    void
+  >({
+    method: "DELETE",
+    path: "/{realm}/localization/{selectedLocale}",
+    urlParamKeys: ["realm", "selectedLocale"],
+  });
+
+  public deleteRealmLocalizationTexts = (payload: {
+    realm: string;
+    selectedLocale: string;
+    key?: string;
+  }) => {
+    if (typeof payload.key === "string" && payload.key.length > 0) {
+      return this.deleteRealmLocalizationTextByKey({
+        realm: payload.realm,
+        selectedLocale: payload.selectedLocale,
+        key: payload.key,
+      });
+    }
+
+    return this.deleteRealmLocalizationByLocale({
+      realm: payload.realm,
+      selectedLocale: payload.selectedLocale,
+    });
+  };
 
   constructor(client: KeycloakAdminClient) {
     super(client, {
