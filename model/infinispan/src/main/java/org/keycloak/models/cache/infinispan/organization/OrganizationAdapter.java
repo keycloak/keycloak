@@ -193,4 +193,8 @@ public class OrganizationAdapter implements OrganizationModel {
     public int hashCode() {
         return getId().hashCode();
     }
+
+    CachedOrganization getCached() {
+        return cached;
+    }
 }

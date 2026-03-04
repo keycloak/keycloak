@@ -471,6 +471,117 @@ public class OrganizationTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testDomainWithWildcardSubdomains() {
+        // Create organization with a domain that has wildcard subdomain matching enabled
+        OrganizationRepresentation org = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(org.getId());
+        
+        // Add a domain with wildcard subdomain matching using *.domain pattern
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.example.com");
+        wildcardDomain.setVerified(true);
+        org.addDomain(wildcardDomain);
+        
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        // Verify the wildcard domain was saved correctly
+        OrganizationRepresentation updated = organization.toRepresentation();
+        assertEquals(2, updated.getDomains().size());
+        
+        OrganizationDomainRepresentation savedDomain = updated.getDomain("*.example.com");
+        assertNotNull(savedDomain);
+        assertTrue(savedDomain.isVerified());
+        
+        // Verify that the original domain without wildcard remains unchanged
+        OrganizationDomainRepresentation defaultDomain = updated.getDomain("neworg.org");
+        assertNotNull(defaultDomain);
+        
+        // Test changing to exact match (removing wildcard prefix)
+        org.getDomains().remove(wildcardDomain);
+        OrganizationDomainRepresentation exactDomain = new OrganizationDomainRepresentation();
+        exactDomain.setName("example.com");
+        exactDomain.setVerified(true);
+        org.addDomain(exactDomain);
+        
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        updated = organization.toRepresentation();
+        assertNotNull(updated.getDomain("example.com"));
+        assertNull(updated.getDomain("*.example.com"));
+        
+        // Re-add wildcard domain
+        org.getDomains().remove(exactDomain);
+        org.addDomain(wildcardDomain);
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        updated = organization.toRepresentation();
+        savedDomain = updated.getDomain("*.example.com");
+        assertNotNull(savedDomain);
+
+        // Test conflict: another org cannot add a subdomain when wildcard exists
+        OrganizationRepresentation fooOrg = createOrganization("foo-org");
+        OrganizationDomainRepresentation conflictingDomain = new OrganizationDomainRepresentation();
+        conflictingDomain.setName("sub.example.com");
+        fooOrg.addDomain(conflictingDomain);
+
+        try (Response response = testRealm().organizations().get(fooOrg.getId()).update(fooOrg)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        }
+
+    }
+
+    @Test
+    public void testDomainWithExclusionPatterns() {
+        // Create organization with wildcard domain and exclusion patterns
+        OrganizationRepresentation org = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(org.getId());
+        
+        // Add wildcard domain
+        OrganizationDomainRepresentation wildcardDomain = new OrganizationDomainRepresentation();
+        wildcardDomain.setName("*.example.com");
+        wildcardDomain.setVerified(true);
+        org.addDomain(wildcardDomain);
+        
+        // Add exclusion pattern
+        OrganizationDomainRepresentation exclusionDomain = new OrganizationDomainRepresentation();
+        exclusionDomain.setName("-.admin.example.com");
+        exclusionDomain.setVerified(true);
+        org.addDomain(exclusionDomain);
+        
+        try (Response response = organization.update(org)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        
+        // Verify both domains were saved
+        OrganizationRepresentation updated = organization.toRepresentation();
+        assertEquals(3, updated.getDomains().size()); // neworg.org, *.example.com, -.admin.example.com
+        
+        assertNotNull(updated.getDomain("*.example.com"));
+        assertNotNull(updated.getDomain("-.admin.example.com"));
+        
+        // Test that exclusion pattern cannot exist without corresponding wildcard
+        OrganizationRepresentation org2 = createOrganization("org2");
+        OrganizationResource organization2 = testRealm().organizations().get(org2.getId());
+        
+        OrganizationDomainRepresentation orphanExclusion = new OrganizationDomainRepresentation();
+        orphanExclusion.setName("-.orphan.other.com");
+        orphanExclusion.setVerified(true);
+        org2.addDomain(orphanExclusion);
+        
+        try (Response response = organization2.update(org2)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            assertTrue(error.getErrorMessage().contains("requires a matching wildcard domain"));
+        }
+    }
+
+    @Test
     public void testWithoutDomains() {
         // test create organization without any domains
         OrganizationRepresentation orgWithoutDomains = new OrganizationRepresentation();

@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.jpa;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -183,10 +184,14 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
                 .map(this::validateDomain)
                 .collect(Collectors.toMap(OrganizationDomainModel::getName, Function.identity()));
 
+        // Validate that exclusion patterns have corresponding wildcards
+        validateExclusionsHaveWildcards(modelMap.keySet());
+
         for (OrganizationDomainEntity domainEntity : new HashSet<>(this.entity.getDomains())) {
-            // update the existing domain (for now, only the verified flag can be changed).
+            // update the existing domain (verified flag can be changed).
             if (modelMap.containsKey(domainEntity.getName())) {
-                domainEntity.setVerified(modelMap.get(domainEntity.getName()).isVerified());
+                OrganizationDomainModel model = modelMap.get(domainEntity.getName());
+                domainEntity.setVerified(model.isVerified());
                 modelMap.remove(domainEntity.getName());
             } else {
                 // remove domain that is not found in the new set.
@@ -275,16 +280,98 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
      */
     private OrganizationDomainModel validateDomain(OrganizationDomainModel domainModel) {
         String domainName = domainModel.getName();
-
-        // we rely on the same validation util used by the EmailValidator to ensure the domain part is consistently validated.
-        if (StringUtil.isBlank(domainName) || !EmailValidationUtil.isValidEmail("nouser@" + domainName)) {
+        
+        if (StringUtil.isBlank(domainName)) {
+            throw new ModelValidationException("Domain name cannot be empty");
+        }
+        
+        String baseDomain = domainName;
+        boolean isWildcard = false;
+        boolean isExclusion = false;
+        
+        // Handle wildcard pattern (*.domain)
+        if (domainName.startsWith("*.")) {
+            if (domainName.length() <= 2) {
+                throw new ModelValidationException("Wildcard domain must specify a base domain: " + domainName);
+            }
+            baseDomain = domainName.substring(2);
+            isWildcard = true;
+            
+            // Check for invalid double wildcards
+            if (baseDomain.contains("*")) {
+                throw new ModelValidationException("Multiple wildcards are not allowed: " + domainName);
+            }
+        }
+        // Handle exclusion pattern (-.domain)
+        else if (domainName.startsWith("-.")) {
+            if (domainName.length() <= 2) {
+                throw new ModelValidationException("Exclusion domain must specify a base domain: " + domainName);
+            }
+            baseDomain = domainName.substring(2);
+            isExclusion = true;
+            
+            // Check for invalid double exclusions
+            if (baseDomain.contains("-")) {
+                throw new ModelValidationException("Multiple exclusion prefixes are not allowed: " + domainName);
+            }
+        }
+        
+        // Validate the base domain format
+        if (!EmailValidationUtil.isValidEmail("user@" + baseDomain)) {
             throw new ModelValidationException("The specified domain is invalid: " + domainName);
         }
-        OrganizationModel orgModel = provider.getByDomainName(domainName);
-        if (orgModel != null && !Objects.equals(getId(), orgModel.getId())) {
-            throw new ModelValidationException("Domain " + domainName + " is already linked to another organization in realm " + realm.getName());
+        
+        // Check for conflicts with other organizations (only for non-exclusion domains)
+        if (!isExclusion) {
+            OrganizationModel orgModel = provider.getByDomainName(baseDomain);
+            if (orgModel != null && !Objects.equals(getId(), orgModel.getId())) {
+                throw new ModelValidationException("Domain " + domainName + " is already linked to organization " + orgModel.getName() + " in realm " + realm.getName());
+            }
         }
+        
         return domainModel;
+    }
+    
+    /**
+     * Validates that all exclusion domains have a corresponding wildcard domain.
+     * Exclusions (-.subdomain.domain) require a matching wildcard (*.domain or *.parent.domain).
+     */
+    private void validateExclusionsHaveWildcards(Set<String> domainNames) {
+        List<String> exclusions = domainNames.stream()
+                .filter(name -> name.startsWith("-."))
+                .collect(Collectors.toList());
+        
+        List<String> wildcards = domainNames.stream()
+                .filter(name -> name.startsWith("*."))
+                .map(name -> name.substring(2)) // Strip *.
+                .collect(Collectors.toList());
+        
+        for (String exclusion : exclusions) {
+            String excludedDomain = exclusion.substring(2); // Strip -.
+            
+            // Check if this exclusion matches any wildcard
+            boolean hasMatchingWildcard = wildcards.stream()
+                    .anyMatch(wildcard -> 
+                        excludedDomain.equals(wildcard) || excludedDomain.endsWith("." + wildcard)
+                    );
+            
+            if (!hasMatchingWildcard) {
+                throw new ModelValidationException("Exclusion " + exclusion + " requires a matching wildcard domain (e.g., *." + extractBaseDomain(excludedDomain) + ")");
+            }
+        }
+    }
+    
+    /**
+     * Extract base domain from a subdomain. For example:
+     * admin.example.com -> example.com
+     * hr.dept.example.com -> dept.example.com or example.com (returns closest parent)
+     */
+    private String extractBaseDomain(String domain) {
+        int firstDot = domain.indexOf('.');
+        if (firstDot > 0 && firstDot < domain.length() - 1) {
+            return domain.substring(firstDot + 1);
+        }
+        return domain;
     }
 
     private GroupModel getGroup() {

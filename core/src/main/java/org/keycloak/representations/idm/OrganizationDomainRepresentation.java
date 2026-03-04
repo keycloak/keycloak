@@ -19,6 +19,13 @@ package org.keycloak.representations.idm;
 
 /**
  * Representation implementation of an organization internet domain.
+ * 
+ * <p>Supports pattern-based domain matching:
+ * <ul>
+ *   <li><code>example.com</code> - exact match only</li>
+ *   <li><code>*.example.com</code> - matches example.com and all subdomains</li>
+ *   <li><code>-.admin.example.com</code> - exclusion pattern (add as separate domain)</li>
+ * </ul>
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */

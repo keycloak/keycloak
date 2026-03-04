@@ -1753,6 +1753,7 @@ public class RepresentationToModel {
     }
 
     public static OrganizationDomainModel toModel(OrganizationDomainRepresentation domainRepresentation) {
-        return new OrganizationDomainModel(domainRepresentation.getName(), domainRepresentation.isVerified());
+        return new OrganizationDomainModel(domainRepresentation.getName(), 
+                domainRepresentation.isVerified());
     }
 }
