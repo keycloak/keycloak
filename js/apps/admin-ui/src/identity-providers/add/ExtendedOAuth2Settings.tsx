@@ -22,11 +22,11 @@ export const ExtendedOAuth2Settings = () => {
           name="config.prompt"
           label={t("prompt")}
           options={[
-            { key: t("prompts.unspecified"), value: "" },
-            { key: t("prompts.none"), value: "none" },
-            { key: t("prompts.consent"), value: "consent" },
-            { key: t("prompts.login"), value: "login" },
-            { key: t("prompts.select_account"), value: "select_account" },
+            { key: "", value: t("prompts.unspecified") },
+            { key: "none", value: t("prompts.none") },
+            { key: "consent", value: t("prompts.consent") },
+            { key: "login", value: t("prompts.login") },
+            { key: "select_account", value: t("prompts.select_account") },
           ]}
           controller={{ defaultValue: "" }}
         />
