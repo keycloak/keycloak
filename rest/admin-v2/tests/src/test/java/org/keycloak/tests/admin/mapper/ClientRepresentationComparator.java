@@ -31,6 +31,17 @@ import org.keycloak.representations.admin.v2.OIDCClientRepresentation.Flow;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ASSERTION_SIGNATURE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_AUTHNSTATEMENT;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_CANONICALIZATION_METHOD_ATTRIBUTE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_FORCE_POST_BINDING;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SERVER_SIGNATURE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SIGNING_CERTIFICATE_ATTRIBUTE;
+
 /**
  * Utility class for comparing v1 ClientRepresentation against v2 client representations.
  */
@@ -125,17 +136,17 @@ public class ClientRepresentationComparator {
         Map<String, String> attrs = v1.getAttributes();
         if (attrs == null) return;
 
-        compare("attr[saml_name_id_format]→nameIdFormat", attrs.get("saml_name_id_format"), saml.getNameIdFormat());
-        compareSamlBoolean("saml_force_name_id_format", "forceNameIdFormat", saml.getForceNameIdFormat());
-        compareSamlBoolean("saml.authnstatement", "includeAuthnStatement", saml.getIncludeAuthnStatement());
-        compareSamlBoolean("saml.server.signature", "signDocuments", saml.getSignDocuments());
-        compareSamlBoolean("saml.assertion.signature", "signAssertions", saml.getSignAssertions());
-        compareSamlBoolean("saml.client.signature", "clientSignatureRequired", saml.getClientSignatureRequired());
-        compareSamlBoolean("saml.force.post.binding", "forcePostBinding", saml.getForcePostBinding());
-        compareSamlBoolean("saml.allow.ecp.flow", "allowEcpFlow", saml.getAllowEcpFlow());
-        compare("attr[saml.signature.algorithm]→signatureAlgorithm", attrs.get("saml.signature.algorithm"), saml.getSignatureAlgorithm());
-        compare("attr[saml_signature_canonicalization_method]→signatureCanonicalizationMethod", attrs.get("saml_signature_canonicalization_method"), saml.getSignatureCanonicalizationMethod());
-        compare("attr[saml.signing.certificate]→signingCertificate", attrs.get("saml.signing.certificate"), saml.getSigningCertificate());
+        compare("attr[saml_name_id_format]→nameIdFormat", attrs.get(SAML_NAME_ID_FORMAT_ATTRIBUTE), saml.getNameIdFormat());
+        compareSamlBoolean(SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, "forceNameIdFormat", saml.getForceNameIdFormat());
+        compareSamlBoolean(SAML_AUTHNSTATEMENT, "includeAuthnStatement", saml.getIncludeAuthnStatement());
+        compareSamlBoolean(SAML_SERVER_SIGNATURE, "signDocuments", saml.getSignDocuments());
+        compareSamlBoolean(SAML_ASSERTION_SIGNATURE, "signAssertions", saml.getSignAssertions());
+        compareSamlBoolean(SAML_CLIENT_SIGNATURE_ATTRIBUTE, "clientSignatureRequired", saml.getClientSignatureRequired());
+        compareSamlBoolean(SAML_FORCE_POST_BINDING, "forcePostBinding", saml.getForcePostBinding());
+        compareSamlBoolean(SAML_SIGNATURE_ALGORITHM, "allowEcpFlow", saml.getAllowEcpFlow());
+        compare("attr[saml.signature.algorithm]→signatureAlgorithm", attrs.get(SAML_SIGNATURE_ALGORITHM), saml.getSignatureAlgorithm());
+        compare("attr[saml_signature_canonicalization_method]→signatureCanonicalizationMethod", attrs.get(SAML_CANONICALIZATION_METHOD_ATTRIBUTE), saml.getSignatureCanonicalizationMethod());
+        compare("attr[saml.signing.certificate]→signingCertificate", attrs.get(SAML_SIGNING_CERTIFICATE_ATTRIBUTE), saml.getSigningCertificate());
     }
 
     private void compareSamlBoolean(String attrName, String v2FieldName, Boolean v2Value) {

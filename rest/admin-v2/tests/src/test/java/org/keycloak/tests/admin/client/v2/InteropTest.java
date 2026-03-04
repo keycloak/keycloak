@@ -44,6 +44,15 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ASSERTION_SIGNATURE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_AUTHNSTATEMENT;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_FORCE_POST_BINDING;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SERVER_SIGNATURE;
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -252,14 +261,14 @@ public class InteropTest extends AbstractClientApiV2Test {
         v1Client.setRedirectUris(Arrays.asList("http://localhost:8000/saml/*"));
         v1Client.setFrontchannelLogout(true);
         v1Client.setAttributes(java.util.Map.of(
-            "saml_name_id_format", "username",
-            "saml.force.name.id.format", "true",
-            "saml.authnstatement", "true",
-            "saml.server.signature", "true",
-            "saml.assertion.signature", "false",
-            "saml.client.signature", "false",
-            "saml.force.post.binding", "true",
-            "saml.signature.algorithm", "RSA_SHA256"
+            SAML_NAME_ID_FORMAT_ATTRIBUTE, "username",
+            SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, "true",
+            SAML_AUTHNSTATEMENT, "true",
+            SAML_SERVER_SIGNATURE, "true",
+            SAML_ASSERTION_SIGNATURE, "false",
+            SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false",
+            SAML_FORCE_POST_BINDING, "true",
+            SAML_SIGNATURE_ALGORITHM, "RSA_SHA256"
         ));
 
         Response response = realm.clients().create(v1Client);
