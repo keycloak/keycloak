@@ -105,8 +105,8 @@ setInterval(() => kcAdminClient.auth(credentials), 58 * 1000); // 58 seconds
 ### Error handling
 
 All admin client requests throw a `NetworkError` when the HTTP response is not successful.
+The error message is derived from `error` or `errorMessage` fields when present.
 You can inspect the HTTP status and parsed response body from the error:
-the error message is derived from `error` or `errorMessage` fields when present.
 
 ```js
 import KcAdminClient, { NetworkError } from '@keycloak/keycloak-admin-client';
