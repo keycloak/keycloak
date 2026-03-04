@@ -102,6 +102,21 @@ await kcAdminClient.auth(credentials);
 setInterval(() => kcAdminClient.auth(credentials), 58 * 1000); // 58 seconds
 ```
 
+You can also use OAuth2 token exchange:
+
+```js
+await kcAdminClient.auth({
+  grantType: 'urn:ietf:params:oauth:grant-type:token-exchange',
+  clientId: 'admin-cli',
+  clientSecret: 'my-secret',
+  subjectToken: '<existing-access-token>',
+  requestedSubject: 'target-user-id', // optional, for impersonation flows
+  audience: 'target-client-id', // optional
+  // subjectTokenType defaults to:
+  // urn:ietf:params:oauth:token-type:access_token
+});
+```
+
 ## Building and running the tests
 
 To build the source do a build:

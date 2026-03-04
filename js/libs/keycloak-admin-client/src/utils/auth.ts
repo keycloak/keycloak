@@ -5,7 +5,11 @@ import { fetchWithError } from "./fetchWithError.js";
 import { joinPath } from "./joinPath.js";
 import { stringifyQueryParams } from "./stringifyQueryParams.js";
 
-export type GrantTypes = "client_credentials" | "password" | "refresh_token";
+export type GrantTypes =
+  | "client_credentials"
+  | "password"
+  | "refresh_token"
+  | "urn:ietf:params:oauth:grant-type:token-exchange";
 
 export interface Credentials {
   username?: string;
@@ -17,6 +21,15 @@ export interface Credentials {
   offlineToken?: boolean;
   refreshToken?: string;
   scopes?: string[];
+  subjectToken?: string;
+  subjectTokenType?: string;
+  requestedTokenType?: string;
+  requestedSubject?: string;
+  audience?: string | string[];
+  resource?: string | string[];
+  actorToken?: string;
+  actorTokenType?: string;
+  subjectIssuer?: string;
 }
 
 export interface Settings {
@@ -99,6 +112,19 @@ export const getToken = async (settings: Settings): Promise<TokenResponse> => {
           client_secret: credentials.clientSecret,
         }
       : {}),
+    subject_token: credentials.subjectToken,
+    subject_token_type:
+      credentials.subjectTokenType ||
+      (credentials.subjectToken
+        ? "urn:ietf:params:oauth:token-type:access_token"
+        : undefined),
+    requested_token_type: credentials.requestedTokenType,
+    requested_subject: credentials.requestedSubject,
+    audience: credentials.audience,
+    resource: credentials.resource,
+    actor_token: credentials.actorToken,
+    actor_token_type: credentials.actorTokenType,
+    subject_issuer: credentials.subjectIssuer,
   });
 
   const options = settings.requestOptions ?? {};
