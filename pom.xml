@@ -46,8 +46,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.32.0.CR1</quarkus.version>
-        <quarkus.build.version>3.32.0.CR1</quarkus.build.version>
+        <quarkus.version>3.32.1</quarkus.version>
+        <quarkus.build.version>3.32.1</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -61,19 +61,14 @@
         <dist.archive.file>${dist.archive.file.prefix}-${dist.archive.file.version}</dist.archive.file>
         <dist.archive.dir>${dist.archive.dir.prefix}-${dist.archive.dir.version}</dist.archive.dir>
 
-        <!-- core version for app-server-wildfly/eap tests, should match wildfly/eap server -->
-        <tests.wildfly.core.version>21.1.1.Final</tests.wildfly.core.version>
-
         <!-- Upstream WildFly Versions -->
-        <upstream.wildfly.version>29.0.0.Final</upstream.wildfly.version>
-        <upstream.wildfly.build-tools.version>1.2.13.Final</upstream.wildfly.build-tools.version>
-        <upstream.wildfly.core.version>21.1.0.Final</upstream.wildfly.core.version>
+        <upstream.wildfly.version>35.0.1.Final</upstream.wildfly.version>
+        <upstream.wildfly.core.version>27.0.1.Final</upstream.wildfly.core.version>
 
         <!-- Downstream Builds WildFly Versions Override -->
-        <eap8.version>8.0.0.GA-redhat-00007</eap8.version>  <!-- G:A = org.jboss.eap:jboss-eap-parent -->
+        <eap8.version>8.1.0.GA-redhat-00015</eap8.version>  <!-- G:A = org.jboss.eap:jboss-eap-parent -->
         <eap8.wildfly.version>${eap8.version}</eap8.wildfly.version>
-        <eap8.wildfly.core.version>21.1.0.Final</eap8.wildfly.core.version>
-        <eap8.wildfly.build-tools.version>1.2.13.Final</eap8.wildfly.build-tools.version>
+        <eap8.wildfly.core.version>27.1.0.Final-redhat-00010</eap8.wildfly.core.version>
 
         <wildfly.jakarta.adapters>true</wildfly.jakarta.adapters>
 
@@ -120,7 +115,7 @@
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.3.20.Final</undertow.version>
-        <wildfly-elytron.version>2.8.2.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>2.8.3.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <woodstox.version>6.0.3</woodstox.version>
         <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
@@ -160,7 +155,7 @@
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>17.5</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.5.6</aws-jdbc-wrapper.version>
-        <postgresql-jdbc.version>42.7.9</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.7.10</postgresql-jdbc.version>
         <mariadb.version>11.8</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>
         <mariadb-jdbc.version>3.5.7</mariadb-jdbc.version>
@@ -1478,11 +1473,6 @@
                     <version>${liquibase.version}</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.wildfly.build</groupId>
-                    <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
-                    <version>${wildfly.build-tools.version}</version>
-                </plugin>
-                <plugin>
                     <groupId>io.smallrye</groupId>
                     <artifactId>smallrye-open-api-maven-plugin</artifactId>
                     <version>${smallrye.openapi.generator.plugin.version}</version>
@@ -1627,13 +1617,12 @@
                 <ee.maven.groupId>org.jboss.eap</ee.maven.groupId>
                 <ee.maven.version>${eap8.version}</ee.maven.version>
                 <wildfly.version>${eap8.version}</wildfly.version>
-                <wildfly.build-tools.version>${eap8.wildfly.build-tools.version}</wildfly.build-tools.version>
                 <wildfly.core.version>${eap8.wildfly.core.version}</wildfly.core.version>
                 <!-- relative directory for galleon pack with layer spec files -->
                 <saml.adapter.galleon.pack.metadata.dir>non-metadata</saml.adapter.galleon.pack.metadata.dir>
                 <!-- WildFly Galleon Build related properties -->
-                <org.wildfly.galleon-plugins.version>6.4.2.Final</org.wildfly.galleon-plugins.version>
-                <org.jboss.galleon.version>5.1.0.Final</org.jboss.galleon.version>
+                <org.wildfly.galleon-plugins.version>7.3.1.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>6.0.4.Final</org.jboss.galleon.version>
                 <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
         </profile>
@@ -1648,13 +1637,12 @@
                 <ee.maven.groupId>org.wildfly</ee.maven.groupId>
                 <ee.maven.version>${upstream.wildfly.version}</ee.maven.version>
                 <wildfly.version>${upstream.wildfly.version}</wildfly.version>
-                <wildfly.build-tools.version>${upstream.wildfly.build-tools.version}</wildfly.build-tools.version>
                 <wildfly.core.version>${upstream.wildfly.core.version}</wildfly.core.version>
                 <!-- relative directory for galleon pack with layer spec files -->
                 <saml.adapter.galleon.pack.metadata.dir>metadata</saml.adapter.galleon.pack.metadata.dir>
                 <!-- WildFly Galleon Build related properties -->
-                <org.wildfly.galleon-plugins.version>6.5.2.Final</org.wildfly.galleon-plugins.version>
-                <org.jboss.galleon.version>5.2.2.Final</org.jboss.galleon.version>
+                <org.wildfly.galleon-plugins.version>7.3.1.Final</org.wildfly.galleon-plugins.version>
+                <org.jboss.galleon.version>6.0.4.Final</org.jboss.galleon.version>
                 <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
             </properties>
 

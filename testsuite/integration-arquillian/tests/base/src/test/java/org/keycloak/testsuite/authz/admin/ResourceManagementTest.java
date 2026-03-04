@@ -342,6 +342,22 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         assertEquals(0, updated.getScopes().size());
     }
 
+    @Test
+    public void testFindResourceById() {
+        ResourceRepresentation resource = createResourceWithDefaultScopes();
+        resource.setId(null);
+        resource.setName("Another Resource");
+        resource.setOwner((String) null);
+        resource.setScopes(Set.of());
+        ResourceRepresentation anotherResource = doCreateResource(resource, findClientResource("another-resource-server-other").authorization().resources());
+
+        try {
+            getClientResource().authorization().resources().resource(anotherResource.getId()).toRepresentation();
+            fail("Should not find resource from another resource server");
+        } catch (NotFoundException ignore) {
+        }
+    }
+
     private ResourceRepresentation createResourceWithDefaultScopes() {
         ResourceRepresentation resource = createResource();
 
@@ -396,8 +412,10 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
     }
 
     protected ResourceRepresentation doCreateResource(ResourceRepresentation newResource) {
-        ResourcesResource resources = getClientResource().authorization().resources();
+        return doCreateResource(newResource, getClientResource().authorization().resources());
+    }
 
+    private ResourceRepresentation doCreateResource(ResourceRepresentation newResource, ResourcesResource resources) {
         try (Response response = resources.create(newResource)) {
 
             int status = response.getStatus();

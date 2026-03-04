@@ -14,6 +14,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -31,6 +32,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.protocol.ForbiddenException;
+import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
@@ -125,9 +127,13 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         }
 
         List<R> resources = stream.toList();
+        Long totalResults = resourceTypeProvider.count(searchRequest);
+
         ListResponse<R> response = new ListResponse<>();
         response.setResources(resources);
-        response.setTotalResults(response.getResources().size());
+        response.setTotalResults(totalResults.intValue());
+        response.setStartIndex(searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() : 1);
+        response.setItemsPerPage(resources.size());
 
         return Response.ok().entity(response).build();
     }
@@ -162,8 +168,29 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
         R resource = parseResourceTypePayload(is);
 
+        if (!existing.getId().equals(resource.getId())) {
+            return badRequest("Invalid reference to resource");
+        }
+
         return onPersist(resource, Status.OK,
                 (rScimResourceTypeProvider, r) -> resourceTypeProvider.update(r));
+    }
+
+    @Path("{id}")
+    @PATCH
+    @Consumes({APPLICATION_SCIM_JSON, MediaType.APPLICATION_JSON})
+    @Produces(APPLICATION_SCIM_JSON)
+    public Response patch(@PathParam("id") String id, PatchRequest request) {
+        R existing = getResource(id);
+
+        if (existing == null) {
+            return resourceNotFound(id);
+        }
+
+        return onPersist(existing, Status.OK, (rScimResourceTypeProvider, r) -> {
+            resourceTypeProvider.patch(existing, request.getOperations());
+            return getResource(id);
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -204,7 +231,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
             setMetadata(resource, Time.currentTimeMillis());
 
-            return Response.status(status).entity(resource).build();
+            return Response.status(status).entity(r).build();
         } catch (ModelValidationException mve) {
             String language = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT_LANGUAGE);
             Properties messages = getMessageBundle(language);
@@ -220,6 +247,10 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     }
 
     private R getResource(String id) {
+        if (id == null) {
+            return null;
+        }
+
         try {
             return resourceTypeProvider.get(id);
         } catch (ForbiddenException fe) {

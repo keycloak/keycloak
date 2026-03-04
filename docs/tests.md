@@ -186,17 +186,108 @@ content including subject, recipient, and message body.
 LDAP server
 -----------
 
-To start a ApacheDS based LDAP server for testing LDAP sending run:
-    
-    mvn exec:java -Pldap
-    
+The Keycloak testsuite includes a standalone embedded ApacheDS-based LDAP server
+for testing LDAP Federation provider and authentication features.
+
+This allows local development and testing without requiring an external LDAP server.
+
+**Prerequisite:**
+
+- Keycloak server running (see [Keycloak server](#keycloak-server) section above)
+
+---
+
+### Running the LDAP Server
+
+To start the embedded ApacheDS LDAP server for local development and testing:
+
+```
+./mvnw -f testsuite/utils/pom.xml exec:java -Pldap
+```
+
+or run `org.keycloak.testsuite.ldap.LDAPEmbeddedServer` from your favourite IDE!
+
+### Configuring LDAP in Keycloak Admin Console
+
+Once the LDAP server is running, navigate to the Keycloak Admin Console.
+
+1. Select your realm (e.g., `master` or your realm) from the realm dropdown in the top-left corner.
+2. In the left navigation menu, click on **User Federation**.
+3. Click on the **Add LDAP provider**.
+
+### LDAP Server Settings
+
 There are additional system properties you can use to configure (See LDAPEmbeddedServer class for details). Once done, you can create LDAP Federation provider
 in Keycloak admin console with the settings like:
-* Vendor: Other
-* Connection URL: ldap://localhost:10389
-* User DN Suffix: ou=People,dc=keycloak,dc=org
-* Bind DN: uid=admin,ou=system
-* Bind credential: secret
+
+| Field           | Value                          |
+|-----------------|--------------------------------|
+| UI display name | `ldap` or any other value      |
+| Vendor          | `Other`                        |
+| Connection URL  | `ldap://localhost:10389`       |
+| Bind Type       | `simple`                       |
+| Bind DN         | `uid=admin,ou=system`          |
+| Bind credential | `secret`                       |
+| Edit mode       | `WRITABLE`                     |
+| Users DN        | `ou=People,dc=keycloak,dc=org` |
+
+Click **Save** to apply the configuration.
+
+### Testing with Users
+
+The embedded LDAP server is pre-populated with default users from
+[`util/embedded-ldap/src/main/resources/ldap/default-users.ldif`](../util/embedded-ldap/src/main/resources/ldap/default-users.ldif).
+
+The following users are available currently for testing:
+
+| Username  | Password   | Full Name    | Email                  |
+|-----------|------------|--------------|------------------------|
+| `jbrown`  | `password` | James Brown  | `jbrown@keycloak.org`  |
+| `bwilson` | `password` | Bruce Wilson | `bwilson@keycloak.org` |
+
+To log in as one of these users:
+
+1. Navigate to your realm's login page, e.g., `http://localhost:8080/realms/master/account`
+2. Enter the username (e.g., `jbrown`) and password (`password`).
+3. Click **Sign In**.
+4. The user will be federated from LDAP on first login.
+
+To verify the user was synced, go to the Keycloak Admin Console → **Users** and confirm
+the LDAP user appears with the attribute `LDAP_ID` populated.
+
+### Browsing the LDAP Directory with Apache Directory Studio
+
+[Apache Directory Studio](https://directory.apache.org/studio/) is a free GUI tool for
+browsing and managing LDAP directories. It is useful for inspecting the embedded server's
+directory tree during development.
+
+**Steps to connect:**
+
+1. Download and install [Apache Directory Studio](https://directory.apache.org/studio/downloads.html).
+2. Open Apache Directory Studio and go to **File** → **New** → **LDAP Browser** → **LDAP Connection**.
+3. Enter the following connection details:
+
+| Field             | Value                 |
+|-------------------|-----------------------|
+| Connection name   | `Keycloak Local LDAP` |
+| Hostname          | `localhost`           |
+| Port              | `10389`               |
+| Encryption method | `No encryption`       |
+
+4. Click **Next**, then enter the authentication details:
+
+| Field                 | Value                   |
+|-----------------------|-------------------------|
+| Authentication method | `Simple Authentication` |
+| Bind DN               | `uid=admin,ou=system`   |
+| Bind password         | `secret`                |
+
+5. Click **Finish** to save the connection, then double-click it to connect.
+6. In the **LDAP Browser** panel, expand `dc=keycloak,dc=org` → `ou=People` to browse the
+   default users (e.g., `uid=jbrown`, `uid=bwilson`).
+
+In your testing, you can use Apache Directory Studio to inspect the LDAP directory structure, verify user entries, and
+monitor changes as you interact with Keycloak's LDAP Federation provider.
 
 Kerberos server
 ---------------

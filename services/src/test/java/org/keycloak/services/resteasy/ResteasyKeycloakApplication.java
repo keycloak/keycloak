@@ -20,7 +20,9 @@ package org.keycloak.services.resteasy;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -44,6 +46,10 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     protected Set<Class<?>> classes = new HashSet<>();
 
     public ResteasyKeycloakApplication() {
+        Profile.configure(
+                new PropertiesProfileConfigResolver(System.getProperties()),
+                new PropertiesFileProfileConfigResolver()
+        );
         classes.add(RealmsResource.class);
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
             classes.add(AdminRoot.class);
@@ -67,6 +73,16 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
+    protected String getDataDir() {
+        return System.getProperty("project.build.directory");
+    }
+
+    @Override
+    protected void exit(Throwable cause) {
+        throw new RuntimeException(cause);
+    }
+
+    @Override
     public Set<Class<?>> getClasses() {
         return classes;
     }
@@ -86,6 +102,13 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     @Override
     protected void createTemporaryAdmin(KeycloakSession session) {
         // do nothing
+    }
+
+    @Override
+    protected void initAndStart() {
+        Config.init(new JsonConfigProviderFactory().create()
+                .orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
+        startup();
     }
 
 }

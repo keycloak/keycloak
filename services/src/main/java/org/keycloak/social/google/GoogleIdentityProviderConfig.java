@@ -20,6 +20,7 @@ import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantConfig;
 import org.keycloak.broker.oidc.IssuerValidation;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.RealmModel;
 
 /**
@@ -74,7 +75,7 @@ public class GoogleIdentityProviderConfig extends OIDCIdentityProviderConfig imp
            throw new IllegalArgumentException("The issuer url [" + getConfig().get(ISSUER) + "] is invalid");
         }
         if (isJWTAuthorizationGrantEnabled()) {
-            validateIssuer(realm);
+            validateIssuer(realm, IdentityProviderType.JWT_AUTHORIZATION_GRANT);
         }
     }
 }

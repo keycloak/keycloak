@@ -17,16 +17,13 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
-import java.util.List;
-
 import org.keycloak.Config;
-import org.keycloak.common.util.Time;
+import org.keycloak.config.TransactionOptions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.dblock.DBLockProviderFactory;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import io.quarkus.runtime.configuration.DurationConverter;
 import org.jboss.logging.Logger;
 
 /**
@@ -39,14 +36,14 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
 
     private long lockWaitTimeoutMillis;
 
-    protected long getLockWaitTimeoutMillis() {
+    public long getLockWaitTimeoutMillis() {
         return lockWaitTimeoutMillis;
     }
 
     @Override
     public void init(Config.Scope config) {
-        int lockWaitTimeout = config.getInt("lockWaitTimeout", 900);
-        this.lockWaitTimeoutMillis = Time.toMillis(lockWaitTimeout);
+        var lockWaitTimeout = config.get("lockWaitTimeout", TransactionOptions.MIGRATION_TRANSACTION_TIMEOUT);
+        this.lockWaitTimeoutMillis = DurationConverter.parseDuration(lockWaitTimeout).toSeconds();
         logger.debugf("Liquibase lock provider configured with lockWaitTime: %d seconds", lockWaitTimeout);
     }
 
@@ -78,15 +75,5 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
     @Override
     public int order() {
         return PROVIDER_PRIORITY;
-    }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigMetadata() {
-        return ProviderConfigurationBuilder.create()
-                .property()
-                .name("lockWaitTimeout")
-                .type("int")
-                .helpText("The maximum time to wait when waiting to release a database lock.")
-                .add().build();
     }
 }

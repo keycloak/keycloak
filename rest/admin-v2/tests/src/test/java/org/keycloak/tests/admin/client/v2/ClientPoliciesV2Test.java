@@ -514,7 +514,8 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         setupAlwaysAppliedTestPolicy();
         cleanupClient(rep.getClientId());
 
-        assertClientPolicyEventIsEmitted(ClientPolicyEvent.UNREGISTER);
+        // for now, the VIEW is also present, but it is not required for delete
+        assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UNREGISTER);
     }
 
     private void assertClientPolicyEventIsEmitted(ClientPolicyEvent... events) {

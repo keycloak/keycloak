@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime;
 
 import java.io.File;
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -125,20 +126,27 @@ public class KeycloakRecorder {
     }
 
     public void configureTruststore() {
-        String[] truststores = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
-                .map(s -> s.split(",")).orElse(new String[0]);
+        List<String> truststores = new ArrayList<>();
+        Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_PATHS.getKey())
+                .ifPresent(s -> Stream.of(s.split(",")).forEach(truststores::add));
+
+        boolean includeKubernetesCa = Configuration.getOptionalKcValue(TruststoreOptions.TRUSTSTORE_KUBERNETES_CA_ENABLED.getKey())
+                .map(Boolean::parseBoolean).orElse(true);
+        if (includeKubernetesCa) {
+            TruststoreBuilder.includeKubernetesTrustStorePaths(truststores);
+        }
 
         Optional<String> dataDir = Environment.getDataDir();
 
         File truststoresDir = Environment.getHomePath().map(p -> p.resolve("conf").resolve("truststores").toFile()).orElse(null);
 
         if (truststoresDir != null && truststoresDir.exists() && Optional.ofNullable(truststoresDir.list()).map(a -> a.length).orElse(0) > 0) {
-            truststores = Stream.concat(Stream.of(truststoresDir.getAbsolutePath()), Stream.of(truststores)).toArray(String[]::new);
-        } else if (truststores.length == 0) {
+            truststores.add(truststoresDir.getAbsolutePath());
+        } else if (truststores.size() == 0) {
             return; // nothing to configure, we'll just use the system default
         }
 
-        TruststoreBuilder.setSystemTruststore(truststores, true, dataDir.orElseThrow());
+        TruststoreBuilder.setSystemTruststore(truststores.toArray(String[]::new), true, dataDir.orElseThrow());
     }
 
     public void configureLiquibase(Map<String, List<String>> services) {

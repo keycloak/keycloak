@@ -14,6 +14,7 @@ type MemberModalProps = {
   membersQuery: (first?: number, max?: number) => Promise<UserRepresentation[]>;
   onAdd: (users: UserRepresentation[]) => Promise<void>;
   onClose: () => void;
+  orgId?: string;
 };
 
 const UserDetail = (user: UserRepresentation) => {
@@ -34,6 +35,7 @@ export const MemberModal = ({
   membersQuery,
   onAdd,
   onClose,
+  orgId,
 }: MemberModalProps) => {
   const { adminClient } = useAdminClient();
 
@@ -49,8 +51,19 @@ export const MemberModal = ({
       search: search || "",
     };
 
+    const usersQuery = orgId
+      ? async (params: { [name: string]: string | number }) => {
+          return await adminClient.organizations.listMembers({
+            orgId,
+            ...params,
+          });
+        }
+      : async (params: { [name: string]: string | number }) => {
+          return await adminClient.users.find({ ...params });
+        };
+
     try {
-      const users = await adminClient.users.find({ ...params });
+      const users = await usersQuery(params);
       return differenceBy(users, members, "id").slice(0, max);
     } catch (error) {
       addError("noUsersFoundError", error);

@@ -149,66 +149,75 @@ public class JsonUtils {
      */
     public static Object getJsonValue(JsonNode node, String claim) {
         if (node != null) {
-            List<String> fields = splitClaimPath(claim);
-            if (fields.isEmpty() || claim.endsWith(".")) {
+            List<String> paths = splitClaimPath(claim);
+            if (paths.isEmpty() || claim.endsWith(".")) {
                 return null;
             }
 
-            JsonNode currentNode = node;
-            for (String currentFieldName : fields) {
-
-                // if array path, retrieve field name and index
-                String currentNodeName = currentFieldName;
-                int arrayIndex = -1;
-                if (currentFieldName.endsWith("]")) {
-                    int bi = currentFieldName.indexOf("[");
-                    if (bi == -1) {
-                        return null;
-                    }
-                    try {
-                        String is = currentFieldName.substring(bi + 1, currentFieldName.length() - 1).trim();
-                        arrayIndex = Integer.parseInt(is);
-                        if( arrayIndex < 0) throw new ArrayIndexOutOfBoundsException();
-                    } catch (Exception e) {
-                        return null;
-                    }
-                    currentNodeName = currentFieldName.substring(0, bi).trim();
-                }
-
-                currentNode = currentNode.get(currentNodeName);
-
-                if (currentNode != null && arrayIndex > -1 && currentNode.isArray()) {
-                    currentNode = currentNode.get(arrayIndex);
-                }
-
-                if (currentNode == null) {
-                    return null;
-                }
-
-                if (currentNode.isArray()) {
-                    List<String> values = new ArrayList<>();
-                    for (JsonNode childNode : currentNode) {
-                        if (childNode.isTextual()) {
-                            values.add(childNode.textValue());
-                        }
-                    }
-                    if (values.isEmpty()) {
-                        return null;
-                    }
-                    return values ;
-                } else if (currentNode.isNull()) {
-                    return null;
-                } else if (currentNode.isValueNode()) {
-                    String ret = currentNode.asText();
-                    if (ret != null && !ret.trim().isEmpty())
-                        return ret.trim();
-                    else
-                        return null;
-                }
-
-            }
-            return currentNode;
+            return getJsonValue(node, paths);
         }
+
         return null;
+    }
+
+    public static Object getJsonValue(JsonNode node, List<String> paths) {
+        JsonNode currentNode = node;
+        for (String currentFieldName : paths) {
+
+            // if array path, retrieve field name and index
+            String currentNodeName = currentFieldName;
+            int arrayIndex = -1;
+            if (currentFieldName.endsWith("]")) {
+                int bi = currentFieldName.indexOf("[");
+                if (bi == -1) {
+                    return null;
+                }
+                try {
+                    String is = currentFieldName.substring(bi + 1, currentFieldName.length() - 1).trim();
+                    arrayIndex = Integer.parseInt(is);
+                    if( arrayIndex < 0) throw new ArrayIndexOutOfBoundsException();
+                } catch (Exception e) {
+                    return null;
+                }
+                currentNodeName = currentFieldName.substring(0, bi).trim();
+            }
+
+            currentNode = currentNode.get(currentNodeName);
+
+            if (currentNode != null && arrayIndex > -1 && currentNode.isArray()) {
+                currentNode = currentNode.get(arrayIndex);
+            }
+
+            if (currentNode == null) {
+                return null;
+            }
+
+            if (currentNode.isArray()) {
+                List<Object> values = new ArrayList<>();
+                for (JsonNode childNode : currentNode) {
+                    if (childNode.isTextual()) {
+                        values.add(childNode.textValue());
+                    } else if (childNode.isValueNode()) {
+                        values.add(childNode.asText());
+                    } else {
+                        values.add(childNode);
+                    }
+                }
+                if (values.isEmpty()) {
+                    return null;
+                }
+                return values ;
+            } else if (currentNode.isNull()) {
+                return null;
+            } else if (currentNode.isValueNode()) {
+                String ret = currentNode.asText();
+                if (ret != null && !ret.trim().isEmpty())
+                    return ret.trim();
+                else
+                    return null;
+            }
+
+        }
+        return currentNode;
     }
 }

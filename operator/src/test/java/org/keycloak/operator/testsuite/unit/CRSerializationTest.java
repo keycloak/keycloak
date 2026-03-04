@@ -73,6 +73,9 @@ public class CRSerializationTest {
         assertEquals("my-hostname", keycloak.getSpec().getHostnameSpec().getHostname());
         assertEquals("my-image", keycloak.getSpec().getImage());
         assertEquals("my-tls-secret", keycloak.getSpec().getHttpSpec().getTlsSecret());
+        assertEquals(80, keycloak.getSpec().getHttpSpec().getServiceHttpPort());
+        assertEquals(443, keycloak.getSpec().getHttpSpec().getServiceHttpsPort());
+        assertEquals("my-keycloak", keycloak.getSpec().getHttpSpec().getServiceName());
         assertFalse(keycloak.getSpec().getIngressSpec().isIngressEnabled());
         assertEquals("nginx", keycloak.getSpec().getIngressSpec().getIngressClassName());
         assertEquals(CUSTOM_INGRESS_ANNOTATION, keycloak.getSpec().getIngressSpec().getAnnotations());

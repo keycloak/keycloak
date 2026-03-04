@@ -1368,8 +1368,10 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     public static <T extends IdentityProvider<?>> T getIdentityProvider(KeycloakSession session, IdentityProviderModel identityProviderModel, Class<T> type) {
         if (identityProviderModel != null) {
             IdentityProviderFactory<?> providerFactory = getIdentityProviderFactory(session, identityProviderModel);
-            IdentityProvider<?> idp = providerFactory.create(session, identityProviderModel);
-            return type.isInstance(idp) ? type.cast(idp) : null;
+            if (providerFactory != null) {
+                IdentityProvider<?> idp = providerFactory.create(session, identityProviderModel);
+                return type.isInstance(idp) ? type.cast(idp) : null;
+            }
         }
         return null;
     }

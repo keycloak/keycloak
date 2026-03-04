@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="${locale}">
+<html lang="${locale}" dir="${localeDir}">
   <head>
     <meta charset="utf-8">
     <link rel="icon" type="${properties.favIconType!'image/svg+xml'}" href="${resourceUrl}${properties.favIcon!'/favicon.svg'}">

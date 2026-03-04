@@ -131,6 +131,7 @@ export default interface RealmRepresentation {
   users?: UserRepresentation[];
   verifyEmail?: boolean;
   waitIncrementSeconds?: number;
+  scimApiEnabled?: boolean;
 }
 
 export type PartialImportRealmRepresentation = RealmRepresentation & {

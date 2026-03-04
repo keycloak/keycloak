@@ -11,8 +11,8 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import org.keycloak.common.Version;
-import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.theme.Theme;
 
@@ -129,7 +129,7 @@ public class ThemeResourceProviderTest extends AbstractTestRealmKeycloakTest {
         }
 
         testingClient.server().run(session -> {
-            String serverTmpDir = Platform.getPlatform().getTmpDirectory().toString();
+            String serverTmpDir = KeycloakApplication.getTmpDirectory().toString();
             assertTrue(Paths.get(serverTmpDir, "kc-gzip-cache", resourcesVersion, "welcome", "keycloak", "css", "welcome.css.gz").toFile().isFile());
         });
     }

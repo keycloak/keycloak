@@ -57,6 +57,16 @@ public class IdentityProviderBuilder {
         return this;
     }
 
+    public IdentityProviderBuilder storeToken(boolean storeToken) {
+        rep.setStoreToken(storeToken);
+        return this;
+    }
+
+    public IdentityProviderBuilder addReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
+        rep.setAddReadTokenRoleOnCreate(addReadTokenRoleOnCreate);
+        return this;
+    }
+
     public IdentityProviderBuilder setAttribute(String name, String value) {
         config().put(name, value);
         return this;

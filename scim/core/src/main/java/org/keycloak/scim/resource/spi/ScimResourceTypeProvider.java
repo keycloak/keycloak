@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 
@@ -19,6 +20,8 @@ import org.keycloak.scim.resource.ResourceTypeRepresentation;
  * when managing resource type instances.
  */
 public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> extends Provider {
+
+    public static final int DEFAULT_MAX_RESULTS = 100;
 
     /**
      * Returns the name of the resource type managed by this provider.
@@ -86,11 +89,19 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      * Retrieves all resources of this type. This method is invoked when a client requests a list of resources,
      * and should return a stream of all resources of this type.
      *
-     * TODO: this method should support pagination, filtering, and sorting in the future, but for now it returns all resources.
-     *
+     * @param searchRequest the search request containing the filter and other parameters to retrieve the matching resources
      * @return a stream of all resources of this type
      */
     Stream<R> getAll(SearchRequest searchRequest);
+
+    /**
+     * Counts the total number of resources of this type that match the given search request. This method is invoked when
+     * a client requests a list of resources,
+     *
+     * @param searchRequest the search request containing the filter and other parameters to count the matching resources
+     * @return the total number of resources of this type that match the given search request
+     */
+    Long count(SearchRequest searchRequest);
 
     /**
      * Deletes a resource of this type by its identifier. This method is invoked when a client requests the deletion of a specific resource,
@@ -99,4 +110,8 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      * @return true if the resource was successfully deleted, false if the resource was not found or could not be deleted
      */
     boolean delete(String id);
+
+    default void patch(R existing, List<PatchOperation> operations) {
+        throw new UnsupportedOperationException("Add operation is not supported for resource type " + getName());
+    }
 }
