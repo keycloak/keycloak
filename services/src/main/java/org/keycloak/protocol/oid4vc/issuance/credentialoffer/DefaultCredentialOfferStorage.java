@@ -38,12 +38,12 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     /**
      * Calculates the lifespan in seconds from the current time to the expiration timestamp.
      * 
-     * @param expirationTimestamp Absolute expiration timestamp in seconds
+     * @param expireAt Absolute expiration timestamp in seconds
      * @return Lifespan in seconds, or 0 if the entry is already expired
      */
-    private long calculateLifespanSeconds(int expirationTimestamp) {
+    private int calculateLifespanSeconds(int expireAt) {
         int currentTime = Time.currentTime();
-        long lifespan = expirationTimestamp - currentTime;
+        int lifespan = expireAt - currentTime;
         
         // If already expired or about to expire immediately, skip storage
         // This prevents storing entries that won't be usable
@@ -58,7 +58,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     public void putOfferState(KeycloakSession session, CredentialOfferState entry) {
 
         // Skip storing if already expired (following pattern from InfinispanSingleUseObjectProviderFactory)
-        long lifespanSeconds = calculateLifespanSeconds(entry.getExpireAt());
+        int lifespanSeconds = calculateLifespanSeconds(entry.getExpireAt());
         if (lifespanSeconds <= 0) {
             return;
         }
@@ -66,7 +66,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
         String entryJson = JsonSerialization.valueAsString(entry);
 
         // Store with key=offerId
-        session.singleUseObjects().put(entry.getOfferId(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
+        session.singleUseObjects().put(entry.getCredentialsOfferId(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
 
         // Store with key=nonce
         session.singleUseObjects().put(entry.getNonce(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
@@ -106,7 +106,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
 
     @Override
     public void removeOfferState(KeycloakSession session, CredentialOfferState entry) {
-        session.singleUseObjects().remove(entry.getOfferId());
+        session.singleUseObjects().remove(entry.getCredentialsOfferId());
         session.singleUseObjects().remove(entry.getNonce());
         entry.getPreAuthorizedCode().ifPresent(it -> {
             session.singleUseObjects().remove(it);

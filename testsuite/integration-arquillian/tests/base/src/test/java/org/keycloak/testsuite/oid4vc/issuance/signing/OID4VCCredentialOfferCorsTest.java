@@ -332,7 +332,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             // Create offer with expiration time just 1 second in the past
             // This ensures it's still findable in storage but marked as expired
-            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() - 1);
+            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, false, Time.currentTime() - 1, null);
             offerStorage.putOfferState(session, offerState);
             session.getTransactionManager().commit();
             return offerState.getNonce();

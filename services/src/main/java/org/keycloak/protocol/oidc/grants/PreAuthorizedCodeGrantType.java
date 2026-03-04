@@ -123,7 +123,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
 
-        var targetUserId = offerState.getUserId();
+        var targetUserId = offerState.getTargetUserId();
         var targetUserModel = session.users().getUserById(realm, targetUserId);
         if (targetUserModel == null) {
             var errorMessage = "No user with ID: " + targetUserId;
@@ -138,7 +138,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        var targetClientId = offerState.getClientId();
+        var targetClientId = offerState.getTargetClientId();
         ClientModel clientModel = realm.getClientByClientId(targetClientId);
         if (clientModel == null) {
             var errorMessage = "No client model for: " + targetClientId;
@@ -152,7 +152,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
         AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, clientModel, userSession);
-        clientSession.setNote(OID4VCIssuerEndpoint.CREDENTIAL_OFFER_ID_NOTE, offerState.getOfferId());
+        clientSession.setNote(OID4VCIssuerEndpoint.CREDENTIAL_OFFER_ID_NOTE, offerState.getCredentialsOfferId());
         clientSession.setNote(OIDCLoginProtocol.ISSUER, credOffer.getCredentialIssuer());
         clientSession.setNote(VC_ISSUANCE_FLOW, PRE_AUTH_GRANT_TYPE);
 
