@@ -202,7 +202,8 @@ public class OIDCAttributeMapperHelper {
                 if (attributeValue instanceof List) {
                     return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getBoolean);
                 }
-                throw new RuntimeException("cannot map type for token claim");
+                // Return null for unconvertible values instead of throwing exception
+                return null;
             case "String":
                 if (attributeValue instanceof String) return attributeValue;
                 if (attributeValue instanceof List) {
@@ -215,21 +216,24 @@ public class OIDCAttributeMapperHelper {
                 if (attributeValue instanceof List) {
                     return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getLong);
                 }
-                throw new RuntimeException("cannot map type for token claim");
+                // Return null for unconvertible values instead of throwing exception
+                return null;
             case "int":
                 Integer intObject = getInteger(attributeValue);
                 if (intObject != null) return intObject;
                 if (attributeValue instanceof List) {
                     return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getInteger);
                 }
-                throw new RuntimeException("cannot map type for token claim");
+                // Return null for unconvertible values instead of throwing exception
+                return null;
             case "JSON":
                 JsonNode jsonNodeObject = getJsonNode(attributeValue);
                 if (jsonNodeObject != null) return jsonNodeObject;
                 if (attributeValue instanceof List) {
                     return transform((List<?>) attributeValue, OIDCAttributeMapperHelper::getJsonNode);
                 }
-                throw new RuntimeException("cannot map type for token claim");
+                // Return null for unconvertible values instead of throwing exception
+                return null;
             default:
                 return null;
         }
@@ -242,19 +246,49 @@ public class OIDCAttributeMapperHelper {
 
     private static Long getLong(Object attributeValue) {
         if (attributeValue instanceof Long) return (Long) attributeValue;
-        if (attributeValue instanceof String) return Long.valueOf((String) attributeValue);
+        if (attributeValue instanceof String) {
+            String strValue = (String) attributeValue;
+            if (strValue == null || strValue.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                return Long.valueOf(strValue);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
         return null;
     }
 
     private static Integer getInteger(Object attributeValue) {
         if (attributeValue instanceof Integer) return (Integer) attributeValue;
-        if (attributeValue instanceof String) return Integer.valueOf((String) attributeValue);
+        if (attributeValue instanceof String) {
+            String strValue = (String) attributeValue;
+            if (strValue == null || strValue.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                return Integer.valueOf(strValue);
+            } catch (NumberFormatException e) {
+                return null;
+            }
+        }
         return null;
     }
 
     private static Boolean getBoolean(Object attributeValue) {
         if (attributeValue instanceof Boolean) return (Boolean) attributeValue;
-        if (attributeValue instanceof String) return Boolean.valueOf((String) attributeValue);
+        if (attributeValue instanceof String) {
+            String strValue = (String) attributeValue;
+            if (strValue == null || strValue.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                return Boolean.valueOf(strValue);
+            } catch (Exception e) {
+                return null;
+            }
+        }
         return null;
     }
 
