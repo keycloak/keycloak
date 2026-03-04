@@ -335,21 +335,26 @@ describe("Realms", () => {
       currentRealmName = created.realmName;
     });
 
-    it.skip("get users management permissions", async () => {
+    it("get users management permissions", async () => {
       const managementPermissions =
         await kcAdminClient.realms.getUsersManagementPermissions({
           realm: currentRealmName,
         });
       expect(managementPermissions).to.be.ok;
+      expect(managementPermissions.enabled).to.be.a("boolean");
     });
 
-    it.skip("enable users management permissions", async () => {
+    it("enable users management permissions", async () => {
+      await kcAdminClient.realms.updateUsersManagementPermissions({
+        realm: currentRealmName,
+        enabled: true,
+      });
+
       const managementPermissions =
-        await kcAdminClient.realms.updateUsersManagementPermissions({
+        await kcAdminClient.realms.getUsersManagementPermissions({
           realm: currentRealmName,
-          enabled: true,
         });
-      expect(managementPermissions).to.include({ enabled: true });
+      expect(managementPermissions.enabled).to.be.true;
     });
 
     it("get realm keys", async () => {

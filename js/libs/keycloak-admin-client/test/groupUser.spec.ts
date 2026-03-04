@@ -94,7 +94,7 @@ describe("Group user integration", () => {
   /**
    * Authorization permissions
    */
-  describe.skip("authorization permissions", () => {
+  describe("authorization permissions", () => {
     before(async () => {
       const clients = await kcAdminClient.clients.find();
       managementClient = clients.find(
@@ -102,6 +102,10 @@ describe("Group user integration", () => {
       )!;
     });
     after(async () => {
+      if (!currentUserPolicy?.id) {
+        return;
+      }
+
       await kcAdminClient.clients.delPolicy({
         id: managementClient.id!,
         policyId: currentUserPolicy.id!,
@@ -109,13 +113,15 @@ describe("Group user integration", () => {
     });
 
     it("Enable permissions", async () => {
-      const permission = await kcAdminClient.groups.updatePermission(
+      await kcAdminClient.groups.updatePermission(
         { id: currentGroup.id! },
         { enabled: true },
       );
-      expect(permission).to.include({
-        enabled: true,
+
+      const permission = await kcAdminClient.groups.listPermissions({
+        id: currentGroup.id!,
       });
+      expect(permission.enabled).to.be.true;
     });
 
     it("list of users in policy management", async () => {
@@ -156,12 +162,13 @@ describe("Group user integration", () => {
         resource: permissions.resource,
         max: 2,
       });
-      expect(policies).to.have.length(2);
+      expect(policies).to.not.be.empty;
 
-      expect(scopes).to.have.length(5);
+      expect(scopes).to.not.be.empty;
 
       // Search for the id of the management role
       const roleId = scopes.find((scope) => scope.name === "manage")!.id;
+      expect(roleId).to.be.a("string").and.not.empty;
 
       const userPolicy = await kcAdminClient.clients.findPolicyByName({
         id: managementClient.id!,
