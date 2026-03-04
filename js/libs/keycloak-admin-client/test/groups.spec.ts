@@ -81,6 +81,35 @@ describe("Groups", () => {
     });
   });
 
+  it("create group with attributes", async () => {
+    const groupName = faker.internet.username();
+    const attributes = {
+      someAttr1: ["val1"],
+      someAttr2: ["val2"],
+    };
+
+    const createdGroup = await kcAdminClient.groups.create({
+      name: groupName,
+      attributes,
+    });
+    expect(createdGroup.id).to.be.ok;
+
+    try {
+      const group = await kcAdminClient.groups.findOne({
+        id: createdGroup.id!,
+      });
+      expect(group).to.not.be.null;
+      expect(group).to.include({
+        name: groupName,
+      });
+      expect(group!.attributes).to.deep.equal(attributes);
+    } finally {
+      await kcAdminClient.groups.del({
+        id: createdGroup.id!,
+      });
+    }
+  });
+
   it("crete sub-group", async () => {
     const subGroupId = await kcAdminClient.groups.createChildGroup(
       { id: currentGroup.id! },
