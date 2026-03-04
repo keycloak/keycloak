@@ -10,6 +10,7 @@ import type MappingsRepresentation from "../defs/mappingsRepresentation.js";
 import type PolicyEvaluationResponse from "../defs/policyEvaluationResponse.js";
 import type PolicyProviderRepresentation from "../defs/policyProviderRepresentation.js";
 import type PolicyRepresentation from "../defs/policyRepresentation.js";
+import type { TypedPolicyRepresentation } from "../defs/policyRepresentation.js";
 import type ProtocolMapperRepresentation from "../defs/protocolMapperRepresentation.js";
 import type ResourceEvaluation from "../defs/resourceEvaluation.js";
 import type ResourceRepresentation from "../defs/resourceRepresentation.js";
@@ -649,7 +650,7 @@ export class Clients extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
   });
 
-  public updatePolicy = this.makeUpdateRequest<
+  private updatePolicyRequest = this.makeUpdateRequest<
     { id: string; type: string; policyId: string },
     PolicyRepresentation,
     void
@@ -659,7 +660,16 @@ export class Clients extends Resource<{ realm?: string }> {
     urlParamKeys: ["id", "type", "policyId"],
   });
 
-  public createPolicy = this.makeUpdateRequest<
+  public updatePolicy = <TType extends string>(
+    query: { id: string; type: TType; policyId: string },
+    payload: TypedPolicyRepresentation<TType>,
+  ) =>
+    this.updatePolicyRequest(
+      query,
+      payload as PolicyRepresentation,
+    ) as Promise<void>;
+
+  private createPolicyRequest = this.makeUpdateRequest<
     { id: string; type: string },
     PolicyRepresentation,
     PolicyRepresentation
@@ -668,6 +678,15 @@ export class Clients extends Resource<{ realm?: string }> {
     path: "/{id}/authz/resource-server/policy/{type}",
     urlParamKeys: ["id", "type"],
   });
+
+  public createPolicy = <TType extends string>(
+    query: { id: string; type: TType },
+    payload: TypedPolicyRepresentation<TType>,
+  ) =>
+    this.createPolicyRequest(
+      query,
+      payload as PolicyRepresentation,
+    ) as Promise<TypedPolicyRepresentation<TType>>;
 
   public findOnePolicyWithType = this.makeRequest<
     { id: string; type: string; policyId: string },
@@ -713,11 +732,11 @@ export class Clients extends Resource<{ realm?: string }> {
     urlParamKeys: ["id"],
   });
 
-  public async createOrUpdatePolicy(payload: {
+  public async createOrUpdatePolicy<TType extends string>(payload: {
     id: string;
     policyName: string;
-    policy: PolicyRepresentation;
-  }): Promise<PolicyRepresentation> {
+    policy: TypedPolicyRepresentation<TType>;
+  }): Promise<TypedPolicyRepresentation<TType>> {
     const policyFound = await this.findPolicyByName({
       id: payload.id,
       name: payload.policyName,
@@ -734,10 +753,10 @@ export class Clients extends Resource<{ realm?: string }> {
       return this.findPolicyByName({
         id: payload.id,
         name: payload.policyName,
-      });
+      }) as Promise<TypedPolicyRepresentation<TType>>;
     } else {
       return this.createPolicy(
-        { id: payload.id, type: payload.policy.type! },
+        { id: payload.id, type: payload.policy.type! as TType },
         payload.policy,
       );
     }

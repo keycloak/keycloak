@@ -39,3 +39,50 @@ export default interface PolicyRepresentation {
   roles?: PolicyRoleRepresentation[];
   resourceType?: string;
 }
+
+export interface GroupPolicyDefinitionRepresentation {
+  id?: string;
+  path?: string;
+  extendChildren?: boolean;
+}
+
+export interface RolePolicyRepresentation
+  extends Omit<PolicyRepresentation, "type" | "config" | "roles" | "users"> {
+  type?: "role";
+  roles?: PolicyRoleRepresentation[];
+  fetchRoles?: boolean;
+  config?: never;
+}
+
+export interface GroupPolicyRepresentation
+  extends Omit<PolicyRepresentation, "type" | "config" | "roles" | "users"> {
+  type?: "group";
+  groupsClaim?: string;
+  groups?: GroupPolicyDefinitionRepresentation[];
+  config?: never;
+}
+
+export interface UserPolicyRepresentation
+  extends Omit<PolicyRepresentation, "type" | "config" | "roles" | "users"> {
+  type?: "user";
+  users?: string[];
+  config?: never;
+}
+
+export interface JSPolicyRepresentation
+  extends Omit<PolicyRepresentation, "type" | "config" | "roles" | "users"> {
+  type?: "js";
+  code?: string;
+  config?: never;
+}
+
+export type TypedPolicyRepresentation<TType extends string> =
+  TType extends "role"
+    ? RolePolicyRepresentation
+    : TType extends "group"
+      ? GroupPolicyRepresentation
+      : TType extends "user"
+        ? UserPolicyRepresentation
+        : TType extends "js"
+          ? JSPolicyRepresentation
+          : PolicyRepresentation;
