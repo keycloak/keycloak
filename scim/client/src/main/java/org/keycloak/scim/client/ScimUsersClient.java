@@ -1,6 +1,5 @@
 package org.keycloak.scim.client;
 
-import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.user.User;
 
@@ -20,7 +19,7 @@ public class ScimUsersClient extends AbstractScimResourceClient<User> {
      * @return list response containing all users
      */
     public ListResponse<User> getAll() {
-        return doFilter(filter().pr("userName"));
+        return doFilter(filter());
     }
 
     /**
@@ -63,11 +62,7 @@ public class ScimUsersClient extends AbstractScimResourceClient<User> {
      */
     @SuppressWarnings("unchecked")
     public ListResponse<User> search(String filterExpression, Integer startIndex, Integer count) {
-        SearchRequest searchRequest = SearchRequest.builder()
-                .withFilter(filterExpression)
-                .withStartIndex(startIndex)
-                .withCount(count).build();
-        return client.execute(client.doPost(User.class, "/.search").json(searchRequest), ListResponse.class);
+        return doPost(filterExpression, startIndex, count);
     }
 
     @Override

@@ -127,9 +127,13 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         }
 
         List<R> resources = stream.toList();
+        Long totalResults = resourceTypeProvider.count(searchRequest);
+
         ListResponse<R> response = new ListResponse<>();
         response.setResources(resources);
-        response.setTotalResults(response.getResources().size());
+        response.setTotalResults(totalResults.intValue());
+        response.setStartIndex(searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() : 1);
+        response.setItemsPerPage(resources.size());
 
         return Response.ok().entity(response).build();
     }

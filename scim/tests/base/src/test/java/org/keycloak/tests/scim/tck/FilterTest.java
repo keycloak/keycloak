@@ -44,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
 public class FilterTest extends AbstractScimTest {
 
-    private List<String> idsToRemove = new ArrayList<>();
+    private final List<String> idsToRemove = new ArrayList<>();
 
     @BeforeEach
     public void onBefore() {
