@@ -1126,7 +1126,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @GET
     @Path("/pre-authorized-code")
     @NoCache
-    public String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration) {
+    public String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expireAt) {
         RealmModel realm = getRealmByName(realmName);
         UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
 
@@ -1142,10 +1142,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(credConfigId);
 
-        String userId = userSession.getUser().getId();
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, userId, expiration);
-        offerState.setAuthorizationDetails(authDetail);
-
+        String targetUserId = userSession.getUser().getId();
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, targetUserId, expireAt, List.of(authDetail));
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
         offerStorage.putOfferState(session, offerState);
 
