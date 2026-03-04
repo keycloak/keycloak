@@ -11,7 +11,7 @@ import {
   DropdownItem,
   PageSection,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
@@ -46,9 +46,7 @@ export default function AddMapper() {
 
   const { t } = useTranslation();
 
-  const form = useForm<IdPMapperRepresentationWithAttributes>({
-    shouldUnregister: true,
-  });
+  const form = useForm<IdPMapperRepresentationWithAttributes>();
   const { handleSubmit } = form;
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
@@ -164,6 +162,20 @@ export default function AddMapper() {
     convertToFormValues(mapper, form.setValue);
   };
 
+  const updateMapperType = useCallback(
+    (newMapper: IdentityProviderMapperTypeRepresentation) => {
+      // Unregister config fields from the previous mapper type to prevent
+      // stale values from persisting when switching mapper types.
+      if (currentMapper?.properties) {
+        for (const property of currentMapper.properties) {
+          form.unregister(`config.${property.name}` as any);
+        }
+      }
+      setCurrentMapper(newMapper);
+    },
+    [currentMapper, form],
+  );
+
   if (!mapperTypes || !currentMapper) {
     return <KeycloakSpinner />;
   }
@@ -218,7 +230,7 @@ export default function AddMapper() {
                 form={form}
                 id={id}
                 mapperTypes={mapperTypes}
-                updateMapperType={setCurrentMapper}
+                updateMapperType={updateMapperType}
                 mapperType={currentMapper}
               />
               <GroupResourceContext
