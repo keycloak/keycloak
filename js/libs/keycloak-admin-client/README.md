@@ -102,6 +102,25 @@ await kcAdminClient.auth(credentials);
 setInterval(() => kcAdminClient.auth(credentials), 58 * 1000); // 58 seconds
 ```
 
+You can also call the Account REST endpoints (for user-token based self-service flows):
+
+```js
+const userScopedClient = new KcAdminClient({
+  baseUrl: 'http://127.0.0.1:8080',
+  realmName: 'master',
+});
+
+userScopedClient.registerTokenProvider({
+  getAccessToken: async () => userAccessToken, // token of the current user
+});
+
+const account = await userScopedClient.account.getProfile();
+await userScopedClient.account.updateProfile({
+  ...account,
+  firstName: 'Updated',
+});
+```
+
 ## Building and running the tests
 
 To build the source do a build:
@@ -130,6 +149,31 @@ pnpm test
 ```
 
 ## Supported APIs
+
+### [Account REST](https://www.keycloak.org/docs-api/latest/rest-api/index.html#AccountRestService)
+
+Demo code: https://github.com/keycloak/keycloak/blob/main/js/libs/keycloak-admin-client/test/account.spec.ts
+
+- Get account profile (`GET /realms/{realm}/account`)
+- Update account profile (`POST /realms/{realm}/account`)
+- List sessions (`GET /realms/{realm}/account/sessions`)
+- List session devices (`GET /realms/{realm}/account/sessions/devices`)
+- Logout sessions (`DELETE /realms/{realm}/account/sessions`)
+- Logout a specific session (`DELETE /realms/{realm}/account/sessions/{id}`)
+- List credential types (`GET /realms/{realm}/account/credentials`)
+- Remove credential (`DELETE /realms/{realm}/account/credentials/{credentialId}`)
+- Set credential label (`PUT /realms/{realm}/account/credentials/{credentialId}/label`)
+- Get supported locales (`GET /realms/{realm}/account/supportedLocales`)
+- List organizations (`GET /realms/{realm}/account/organizations`)
+- List linked accounts (`GET /realms/{realm}/account/linked-accounts`)
+- Build linked account URI (`GET /realms/{realm}/account/linked-accounts/{providerAlias}`)
+- Remove linked account (`DELETE /realms/{realm}/account/linked-accounts/{providerAlias}`)
+- List groups (`GET /realms/{realm}/account/groups`)
+- List applications (`GET /realms/{realm}/account/applications`)
+- Get application consent (`GET /realms/{realm}/account/applications/{clientId}/consent`)
+- Grant application consent (`POST /realms/{realm}/account/applications/{clientId}/consent`)
+- Update application consent (`PUT /realms/{realm}/account/applications/{clientId}/consent`)
+- Revoke application consent (`DELETE /realms/{realm}/account/applications/{clientId}/consent`)
 
 ### [Realm admin](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_realms_admin_resource)
 

@@ -1,4 +1,5 @@
 import type { RequestArgs } from "./resources/agent.js";
+import { Account } from "./resources/account.js";
 import { AttackDetection } from "./resources/attackDetection.js";
 import { AuthenticationManagement } from "./resources/authenticationManagement.js";
 import { Cache } from "./resources/cache.js";
@@ -44,6 +45,7 @@ const MIN_VALIDITY = 5; // in seconds
 
 export class KeycloakAdminClient {
   // Resources
+  public account: Account;
   public users: Users;
   public userStorageProvider: UserStorageProvider;
   public groups: Groups;
@@ -88,6 +90,7 @@ export class KeycloakAdminClient {
     this.#globalRequestArgOptions = connectionConfig?.requestArgOptions;
 
     // Initialize resources
+    this.account = new Account(this);
     this.users = new Users(this);
     this.userStorageProvider = new UserStorageProvider(this);
     this.groups = new Groups(this);

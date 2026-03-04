@@ -10,6 +10,20 @@ export type { default as OrganizationInvitationRepresentation } from "./defs/org
 export { OrganizationInvitationStatus } from "./defs/organizationInvitationRepresentation.js";
 
 export { Groups } from "./resources/groups.js";
+export { Account } from "./resources/account.js";
+export type {
+  AccountClientRepresentation,
+  AccountConsentRepresentation,
+  AccountConsentScopeRepresentation,
+  AccountCredentialContainerRepresentation,
+  AccountCredentialMetadataRepresentation,
+  AccountDeviceRepresentation,
+  AccountLinkUriRepresentation,
+  AccountLinkedAccountRepresentation,
+  AccountLocalizedMessageRepresentation,
+  AccountOrganizationRepresentation,
+  AccountSessionRepresentation,
+} from "./defs/accountRepresentation.js";
 // V2 API types (Kiota-generated)
 export type {
   OIDCClientRepresentation,
