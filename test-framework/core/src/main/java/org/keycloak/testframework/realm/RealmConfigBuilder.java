@@ -346,6 +346,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder verifiableCredentialsEnabled(boolean enabled) {
+        rep.setVerifiableCredentialsEnabled(enabled);
+        return this;
+    }
+
     public RealmConfigBuilder webAuthnPolicySignatureAlgorithms(List<String> algorithms) {
         rep.setWebAuthnPolicySignatureAlgorithms(algorithms);
         return this;

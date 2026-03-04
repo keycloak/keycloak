@@ -74,6 +74,42 @@ public class OID4VCBasicWallet {
 
     // Composite Actions -----------------------------------------------------------------------------------------------
 
+    public CredentialsOffer createAuthCodeCredentialOffer(OID4VCTestContext ctx, String targetUser) throws Exception {
+
+        // Get Issuer AccessToken
+        //
+        AccessTokenResponse issTokenResponse = getIssuerAccessToken(ctx.issuer);
+
+        // Exclude scope: <credScope>
+        // Require role: credential-offer-create
+        String issToken = validateIssuerAccessToken(issTokenResponse,
+                List.of(), List.of(ctx.credScopeName),
+                List.of(CREDENTIAL_OFFER_CREATE.getName()), List.of());
+
+        // Create Authorized Code CredentialOffer
+        //
+        CredentialOfferURI credOfferUri;
+        try {
+            credOfferUri = createCredentialOffer(ctx, ctx.credConfigId)
+                    .preAuthorized(false)
+                    .targetUser(targetUser)
+                    .bearerToken(issToken)
+                    .send().getCredentialOfferURI();
+        } finally {
+            logout(ctx.issuer);
+        }
+
+        // Fetch the CredentialsOffer
+        //
+        CredentialsOffer credOffer = getCredentialOffer(ctx, credOfferUri)
+                .send().getCredentialsOffer();
+
+        String issuerState = credOffer.getIssuerState();
+        assertNotNull(issuerState, "No IssuerState");
+
+        return credOffer;
+    }
+
     public CredentialsOffer createPreAuthCredentialOffer(OID4VCTestContext ctx, String targetUser) throws Exception {
 
         // Get Issuer AccessToken
@@ -318,6 +354,11 @@ public class OID4VCBasicWallet {
 
         public AuthorizationEndpointRequest codeChallenge(PkceGenerator pkce) {
             loginForm.codeChallenge(pkce);
+            return this;
+        }
+
+        public AuthorizationEndpointRequest issuerState(String issuerState) {
+            loginForm.issuerState(issuerState);
             return this;
         }
 

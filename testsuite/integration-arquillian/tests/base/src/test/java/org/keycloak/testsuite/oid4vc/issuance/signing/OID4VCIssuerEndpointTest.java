@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
@@ -130,6 +131,8 @@ import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
@@ -348,9 +351,9 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             }
         };
         addAttribute.accept(CredentialScopeModel.VC_ISSUER_DID, issuerDid);
-        addAttribute.accept(CredentialScopeModel.VC_CONFIGURATION_ID, credentialConfigurationId);
+        addAttribute.accept(VC_CONFIGURATION_ID, credentialConfigurationId);
         addAttribute.accept(CredentialScopeModel.VC_IDENTIFIER, credentialIdentifier);
-        addAttribute.accept(CredentialScopeModel.VC_FORMAT, format);
+        addAttribute.accept(VC_FORMAT, format);
         addAttribute.accept(CredentialScopeModel.VCT, Optional.ofNullable(vct).orElse(credentialIdentifier));
         if (credentialConfigurationId != null) {
             String vcDisplay;
@@ -554,12 +557,43 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     // 2. Using the code to get access token
     // 3. Get the credential configuration id from issuer metadata at .wellKnown
     // 4. With the access token, get the credential
-    protected void testCredentialIssuanceWithAuthZCodeFlow(ClientScopeRepresentation clientScope,
+    protected void testCredentialIssuanceWithAuthZCodeFlow(ClientScopeRepresentation credScope,
                                                            BiFunction<String, String, String> f,
                                                            Consumer<Map<String, Object>> c) {
-        String testScope = clientScope.getName();
-        String testFormat = clientScope.getAttributes().get(CredentialScopeModel.VC_FORMAT);
-        String testCredentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
+
+        // Use credential_identifier if available, otherwise use configuration_id for error testing
+        String testCredentialConfigurationId = credScope.getAttributes().get(VC_CONFIGURATION_ID);
+        testCredentialIssuanceWithAuthZCodeFlow(credScope, f, c, (credentialIdentifier) -> {
+            CredentialRequest request = new CredentialRequest();
+            if (credentialIdentifier != null) {
+                request.setCredentialIdentifier(credentialIdentifier);
+            } else {
+                request.setCredentialConfigurationId(testCredentialConfigurationId);
+            }
+            return request;
+        });
+    }
+
+    protected void testCredentialIssuanceWithAuthZCodeFlow(ClientScopeRepresentation credScope,
+                                                           BiFunction<String, String, String> f,
+                                                           Consumer<Map<String, Object>> c,
+                                                           Function<String, CredentialRequest> crf) {
+        String testScope = credScope.getName();
+        String testFormat = credScope.getAttributes().get(VC_FORMAT);
+        String testCredentialConfigurationId = credScope.getAttributes().get(VC_CONFIGURATION_ID);
+
+        // Use credential_identifier if available, otherwise use configuration_id for error testing
+        if (crf == null) {
+            crf = (credentialIdentifier) -> {
+                CredentialRequest request = new CredentialRequest();
+                if (credentialIdentifier != null) {
+                    request.setCredentialIdentifier(credentialIdentifier);
+                } else {
+                    request.setCredentialConfigurationId(testCredentialConfigurationId);
+                }
+                return request;
+            };
+        }
 
         try (Client client = AdminClientUtil.createResteasyClient()) {
             String metadataUrl = getRealmMetadataPath(TEST_REALM_NAME);
@@ -604,13 +638,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                     URI credentialUri = credentialUriBuilder.build();
                     WebTarget credentialTarget = clientForCredentialRequest.target(credentialUri);
 
-                    CredentialRequest request = new CredentialRequest();
-                    // Use credential_identifier if available, otherwise use configuration_id for error testing
-                    if (credentialIdentifier != null) {
-                        request.setCredentialIdentifier(credentialIdentifier);
-                    } else {
-                        request.setCredentialConfigurationId(testCredentialConfigurationId);
-                    }
+                    CredentialRequest request = crf.apply(credentialIdentifier);
 
                     assertEquals(testFormat,
                             oid4vciIssuerConfig.getCredentialsSupported()

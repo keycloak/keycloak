@@ -138,6 +138,84 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testAuthCodeOffer_Anonymous() throws Exception {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        // Create Authorization Code CredentialOffer
+        //
+        CredentialsOffer credOffer = wallet.createAuthCodeCredentialOffer(ctx, null);
+        String issuerState = credOffer.getIssuerState();
+        assertNotNull(issuerState, "No IssuerState");
+
+        // Send AuthorizationRequest
+        //
+        AuthorizationEndpointResponse authResponse = wallet
+                .authorizationRequest()
+                .scope(ctx.credScopeName)
+                .issuerState(issuerState)
+                .send(ctx.holder, "password");
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No authCode");
+
+        // Build and send AccessTokenRequest
+        //
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
+        String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
+        assertNotNull(accessToken, "No accessToken");
+
+        String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        assertNotNull(authorizedIdentifier, "No authorized credential identifier");
+
+        // Send the CredentialRequest
+        //
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
+                .credentialIdentifier(authorizedIdentifier)
+                .send().getCredentialResponse();
+
+        verifyCredentialResponse(ctx, ctx.holder, credResponse);
+    }
+
+    @Test
+    public void testAuthCodeOffer_Targeted() throws Exception {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        // Create Authorization Code CredentialOffer
+        //
+        CredentialsOffer credOffer = wallet.createAuthCodeCredentialOffer(ctx, ctx.holder);
+        String issuerState = credOffer.getIssuerState();
+        assertNotNull(issuerState, "No IssuerState");
+
+        // Send AuthorizationRequest
+        //
+        AuthorizationEndpointResponse authResponse = wallet
+                .authorizationRequest()
+                .scope(ctx.credScopeName)
+                .issuerState(issuerState)
+                .send(ctx.holder, "password");
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No authCode");
+
+        // Build and send AccessTokenRequest
+        //
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
+        String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
+        assertNotNull(accessToken, "No accessToken");
+
+        String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        assertNotNull(authorizedIdentifier, "No authorized credential identifier");
+
+        // Send the CredentialRequest
+        //
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
+                .credentialIdentifier(authorizedIdentifier)
+                .send().getCredentialResponse();
+
+        verifyCredentialResponse(ctx, ctx.holder, credResponse);
+    }
+
+    @Test
     public void testPreAuthOffer_DisabledUser() {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);

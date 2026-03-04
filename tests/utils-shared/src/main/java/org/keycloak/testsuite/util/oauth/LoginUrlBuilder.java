@@ -46,6 +46,11 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         return this;
     }
 
+    public LoginUrlBuilder issuerState(String issuerState) {
+        parameter(OAuth2Constants.ISSUER_STATE, issuerState);
+        return this;
+    }
+
     public LoginUrlBuilder nonce(String nonce) {
         parameter(OIDCLoginProtocol.NONCE_PARAM, nonce);
         return this;
