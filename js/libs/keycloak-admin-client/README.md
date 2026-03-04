@@ -102,6 +102,16 @@ await kcAdminClient.auth(credentials);
 setInterval(() => kcAdminClient.auth(credentials), 58 * 1000); // 58 seconds
 ```
 
+If you manage access tokens outside of this client, you can register a custom token provider:
+
+```js
+kcAdminClient.registerTokenProvider({
+  getAccessToken: () => Promise.resolve('some access token'),
+});
+```
+
+`registerTokenProvider` can only be called once per `KcAdminClient` instance.
+
 ## Building and running the tests
 
 To build the source do a build:
