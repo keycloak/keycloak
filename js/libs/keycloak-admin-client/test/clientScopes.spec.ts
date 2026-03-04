@@ -138,11 +138,18 @@ describe("Client Scopes", () => {
     expect(scope).to.be.undefined;
   });
 
-  it.skip("update client scope", async () => {
+  it("update client scope", async () => {
     const { id, description: oldDescription } = currentClientScope;
     const description = "This scope is totally awesome.";
 
-    await kcAdminClient.clientScopes.update({ id: id! }, { description });
+    await kcAdminClient.clientScopes.update(
+      { id: id! },
+      {
+        name: currentClientScope.name,
+        protocol: currentClientScope.protocol,
+        description,
+      },
+    );
     const updatedScope = (await kcAdminClient.clientScopes.findOne({
       id: id!,
     }))!;

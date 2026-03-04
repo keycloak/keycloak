@@ -94,14 +94,21 @@ describe("Users", () => {
     expect(numUsers).to.equal(1);
   });
 
-  it.skip("gets the profile", async () => {
+  it("gets the profile", async () => {
     const profile = await kcAdminClient.users.getProfile();
     expect(profile).to.be.ok;
   });
 
-  it.skip("updates the profile", async () => {
-    const profile = await kcAdminClient.users.updateProfile({});
-    expect(profile).to.be.ok;
+  it("updates the profile", async () => {
+    const currentProfile = await kcAdminClient.users.getProfile();
+    const updatedProfile = await kcAdminClient.users.updateProfile({
+      ...currentProfile,
+      unmanagedAttributePolicy: UnmanagedAttributePolicy.Enabled,
+    });
+    expect(updatedProfile).to.be.ok;
+    expect(updatedProfile.unmanagedAttributePolicy).to.eql(
+      UnmanagedAttributePolicy.Enabled,
+    );
   });
 
   it("find users by custom attributes", async () => {
