@@ -93,6 +93,7 @@ import org.keycloak.storage.ldap.mappers.LDAPOperationDecorator;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapperManager;
 import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
+import org.keycloak.storage.ldap.mappers.membership.group.GroupLDAPStorageMapper;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryMethodsProvider;
@@ -801,7 +802,18 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public void preRemove(RealmModel realm, GroupModel group) {
+        if (editMode != UserStorageProvider.EditMode.WRITABLE) {
+            return;
+        }
 
+        realm.getComponentsStream(model.getId(), LDAPStorageMapper.class.getName())
+                .sorted(ldapMappersComparator.sortAsc())
+                .forEach(mapperModel -> {
+                    LDAPStorageMapper ldapMapper = mapperManager.getMapper(mapperModel);
+                    if (ldapMapper instanceof GroupLDAPStorageMapper groupMapper) {
+                        groupMapper.deleteGroupFromLDAP(realm, group);
+                    }
+                });
     }
 
     public boolean validPassword(RealmModel realm, UserModel user, String password) {
