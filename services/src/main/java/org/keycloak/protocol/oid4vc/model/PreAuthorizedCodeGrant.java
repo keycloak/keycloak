@@ -19,32 +19,45 @@ package org.keycloak.protocol.oid4vc.model;
 
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Represents a pre-authorized grant, as used by the Credential Offer in OID4VCI
+ * Container for the pre-authorized code to be used in a Credential Offer
+ * <p>
  * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-offer}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PreAuthorizedCode {
+public class PreAuthorizedCodeGrant implements CredentialOfferGrant {
 
-    @JsonProperty("pre-authorized_code")
+    public static final String PRE_AUTH_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:pre-authorized_code";
+    public static final String AUTHORIZATION_SERVER_PARAM = "authorization_server";
+    public static final String CODE_REQUEST_PARAM = "pre-authorized_code";
+    public static final String TX_CODE_PARAM = "tx_code";
+
+    @Override
+    @JsonIgnore
+    public String getGrantType() {
+        return PRE_AUTH_GRANT_TYPE;
+    }
+
+    @JsonProperty(CODE_REQUEST_PARAM)
     private String preAuthorizedCode;
 
-    @JsonProperty("tx_code")
+    @JsonProperty(TX_CODE_PARAM)
     private TxCode txCode;
 
-    @JsonProperty("authorization_server")
+    @JsonProperty(AUTHORIZATION_SERVER_PARAM)
     private String authorizationServer;
 
     public String getPreAuthorizedCode() {
         return preAuthorizedCode;
     }
 
-    public PreAuthorizedCode setPreAuthorizedCode(String preAuthorizedCode) {
+    public PreAuthorizedCodeGrant setPreAuthorizedCode(String preAuthorizedCode) {
         this.preAuthorizedCode = preAuthorizedCode;
         return this;
     }
@@ -53,7 +66,7 @@ public class PreAuthorizedCode {
         return txCode;
     }
 
-    public PreAuthorizedCode setTxCode(TxCode txCode) {
+    public PreAuthorizedCodeGrant setTxCode(TxCode txCode) {
         this.txCode = txCode;
         return this;
     }
@@ -62,7 +75,7 @@ public class PreAuthorizedCode {
         return authorizationServer;
     }
 
-    public PreAuthorizedCode setAuthorizationServer(String authorizationServer) {
+    public PreAuthorizedCodeGrant setAuthorizationServer(String authorizationServer) {
         this.authorizationServer = authorizationServer;
         return this;
     }
@@ -70,12 +83,13 @@ public class PreAuthorizedCode {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof PreAuthorizedCode that)) return false;
-        return Objects.equals(getPreAuthorizedCode(), that.getPreAuthorizedCode()) && Objects.equals(getTxCode(), that.getTxCode()) && Objects.equals(getAuthorizationServer(), that.getAuthorizationServer());
+        if (!(o instanceof PreAuthorizedCodeGrant that)) return false;
+        return Objects.equals(preAuthorizedCode, that.preAuthorizedCode)
+                && Objects.equals(txCode, that.txCode) && Objects.equals(authorizationServer, that.authorizationServer);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getPreAuthorizedCode(), getTxCode(), getAuthorizationServer());
+        return Objects.hash(preAuthorizedCode, txCode, authorizationServer);
     }
 }
