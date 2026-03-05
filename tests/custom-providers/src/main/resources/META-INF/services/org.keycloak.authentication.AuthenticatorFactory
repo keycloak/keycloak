@@ -1,1 +1,1 @@
-org.keycloak.testsuite.forms.ClickThroughAuthenticator
+org.keycloak.tests.providers.forms.ClickThroughAuthenticator

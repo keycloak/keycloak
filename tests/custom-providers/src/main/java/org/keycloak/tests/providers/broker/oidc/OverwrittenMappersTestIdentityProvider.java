@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.broker.oidc;
+package org.keycloak.tests.providers.broker.oidc;
 
 import java.util.Arrays;
 import java.util.List;

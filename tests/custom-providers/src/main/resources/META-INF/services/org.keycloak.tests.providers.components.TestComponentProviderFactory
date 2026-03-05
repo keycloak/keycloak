@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.testsuite.components.TestComponentImplProviderFactory
+org.keycloak.tests.providers.components.TestComponentImplProviderFactory

@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.authorization.policy;
+package org.keycloak.tests.providers.authorization.policy;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;

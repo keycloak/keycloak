@@ -1,4 +1,4 @@
-package org.keycloak.testsuite.client.policies;
+package org.keycloak.tests.providers.client.policies;
 
 import java.util.ArrayList;
 import java.util.List;

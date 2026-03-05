@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.forms;
+package org.keycloak.tests.providers.forms;
 
 import java.util.List;
 
