@@ -84,11 +84,11 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         return credentialOfferUri.substring(credentialOfferUri.lastIndexOf("/") + 1);
     }
 
-    public static void verifyVCActionCredentialResponse(CredentialResponse credResponse) {
+    public static void verifyVCActionCredentialResponse(OID4VCTestContext ctx, CredentialResponse credResponse) {
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
         IssuerSignedJWT issuerSignedJWT = SdJwtVP.of(credentialObj.getCredential().toString()).getIssuerSignedJWT();
-        assertEquals(minimalJwtTypeCredentialScopeName, issuerSignedJWT.getPayload().get(CLAIM_NAME_VCT).asText());
+        assertEquals(ctx.getScope(), issuerSignedJWT.getPayload().get(CLAIM_NAME_VCT).asText());
     }
 
     // Test successful scenario with wallet using "authorization code" grant
@@ -185,7 +185,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
                 .details(Details.CREDENTIAL_TYPE, minimalJwtTypeCredentialConfigurationIdName)
                 .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST);
 
-        verifyVCActionCredentialResponse(credResponse);
+        verifyVCActionCredentialResponse(ctx, credResponse);
     }
 
 
