@@ -107,7 +107,6 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.representations.AccessToken;
@@ -116,6 +115,7 @@ import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -142,6 +142,7 @@ import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
+import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -493,6 +494,10 @@ public class OID4VCIssuerEndpoint {
             offerState = offerProvider.createCredentialOffer(session, userSession, grantType,
                     credentialConfigurationIds, targetClientId, targetUser, withTxCode, expireAt);
 
+        } catch (ClientPolicyException ex) {
+            eventBuilder.detail(Details.REASON, ex.getErrorDetail()).error(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), ex.getErrorDetail(), Response.Status.BAD_REQUEST);
         } catch (CredentialOfferException ex) {
             eventBuilder.detail(Details.REASON, ex.getMessage()).error(ex.getErrorType());
             throw new CorsErrorResponseException(cors,
@@ -528,7 +533,7 @@ public class OID4VCIssuerEndpoint {
         }
 
         // Respond with URI + QR-Code as 'application/json'
-        if (responseType == OfferResponseType.URI_AND_QR) {
+        if (responseType == OfferResponseType.URI_QR) {
             byte[] qrBytes = generateQrCode(credOfferURI, width, height);
             String encodedBytes = Base64.getEncoder().encodeToString(qrBytes);
             credOfferURI.setQrCode("data:image/png;base64," + encodedBytes);
@@ -925,11 +930,11 @@ public class OID4VCIssuerEndpoint {
 
         // Find credential client scope by requested/authorized credential_configuration_id
         //
-        CredentialScopeModel authorizedCredentialScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
+        CredentialScopeModel authorizedCredentialScope = findCredentialScopeModelByConfigurationId(
                 realmModel, () -> clientModel.getClientScopes(false).values().stream(), authorizedCredentialConfigurationId);
 
         if (authorizedCredentialScope == null) {
-            var errorMessage = String.format("Cannot find credential scope model for: %s", authorizedCredentialConfigurationId);
+            var errorMessage = String.format("Cannot find credential scope for: %s", authorizedCredentialConfigurationId);
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }

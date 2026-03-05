@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
@@ -27,6 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicyContext;
 import org.keycloak.protocol.oid4vc.issuance.CredentialOfferException;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant;
@@ -34,11 +36,14 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.util.Strings;
 
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
+import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.buildOID4VCAuthorizationDetail;
+import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId;
 
 /**
  * Default implementation of {@link CredentialOfferProvider}.
@@ -56,7 +61,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             String targetClientId,
             String targetUsername,
             Boolean withTxCode,
-            Integer expireAt) {
+            Integer expireAt) throws ClientPolicyException {
 
         // Ensure single credential_configuration_id
         //
@@ -70,21 +75,17 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
                 .map(tu -> validateTargetUser(session, userSession, tu))
                 .map(UserModel::getId).orElse(null);
 
-        // Check whether the credential configurations exist in available client scopes
+        // Generate authorization_details that correspond to the credential_configuration_ids
         //
         RealmModel realmModel = userSession.getRealm();
         List<OID4VCAuthorizationDetail> authDetails = new ArrayList<>();
         for (String credConfigId : credentialConfigurationIds) {
 
-            CredentialScopeModel credScopeModel = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
-                    realmModel, () -> session.clientScopes().getClientScopesStream(realmModel), credConfigId);
-            if (credScopeModel == null) {
-                throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credential scope model for: " + credConfigId);
-            }
+            CredentialScopeModel credScopeModel = Optional.ofNullable(findCredentialScopeModelByConfigurationId(
+                    realmModel, () -> session.clientScopes().getClientScopesStream(realmModel), credConfigId)).
+                    orElseThrow(() -> new CredentialOfferException(Errors.INVALID_REQUEST, "No credential scope for: " + credConfigId));
 
-            // Generate authorization_details that correspond to the credential_configuration_id
-            //
-            authDetails.add(CredentialScopeModelUtils.buildOID4VCAuthorizationDetail(credScopeModel));
+            authDetails.add(buildOID4VCAuthorizationDetail(credScopeModel));
         }
 
         // Create the CredentialsOffer
@@ -102,6 +103,32 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         } else {
             IssuerState issuerState = new IssuerState().setCredentialOfferId(offerState.getCredentialsOfferId());
             credOffer.addGrant(new AuthorizationCodeGrant().setIssuerState(issuerState.encodeToString()));
+        }
+
+        // Check associated credential client policies
+        //
+        for (String credConfigId : credentialConfigurationIds) {
+
+            // Create the ClientPolicyContext
+            //
+            CredentialScopeModel credScope = Optional.ofNullable(findCredentialScopeModelByConfigurationId(
+                    realmModel, () -> session.clientScopes().getClientScopesStream(realmModel), credConfigId))
+                    .orElseThrow(() -> new ClientPolicyException(OAuthErrorException.INVALID_SCOPE, "No client scope"));
+
+            var context = new CredentialClientPolicyContext(ClientPolicyEvent.CREDENTIAL_OFFER_CREATE)
+                    .setCredentialScopeModel(credScope)
+                    .setCredentialOfferState(offerState);
+
+            // Trigger ClientPolicyExecutors
+            //
+            session.clientPolicy().triggerOnEvent(context);
+
+            // Require that the context was processed by the executor
+            //
+            if (!context.wasProcessed()) {
+                throw new ClientPolicyException(Errors.NOT_ALLOWED,
+                        "Credential offer creation rejected for client scope " + credScope.getName());
+            }
         }
 
         return offerState;

@@ -2,15 +2,21 @@ package org.keycloak.tests.oid4vc;
 
 import java.net.URI;
 import java.util.List;
+import java.util.function.BiFunction;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.protocol.oid4vc.clientpolicy.PredicateCredentialClientPolicy;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -24,9 +30,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIAL_OFFER_URI_ATTACHMENT_KEY;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -64,10 +73,19 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
         RealmRepresentation realmRep = testRealm.admin().toRepresentation();
         assertEquals(shouldEnableOid4vci(realmRep), realmRep.isVerifiableCredentialsEnabled());
         assertEquals(shouldEnableOid4vci(client), isOid4vciEnabled(client));
+
+        ClientProfilesRepresentation clientProfiles = testRealm.admin().clientPoliciesProfilesResource().getProfiles(true);
+        assertEquals(1, clientProfiles.getProfiles().size());
+        assertEquals("oid4vci-client-profile", clientProfiles.getProfiles().get(0).getName());
+
+        ClientPoliciesRepresentation clientPolicies = testRealm.admin().clientPoliciesPoliciesResource().getPolicies();
+        assertEquals(2, clientPolicies.getPolicies().size());
+        assertEquals("oid4vci-offer-required", clientPolicies.getPolicies().get(0).getName());
+        assertEquals("oid4vci-offer-preauth-allowed", clientPolicies.getPolicies().get(1).getName());
     }
 
     @Test
-    public void testWithoutOffer_Scope() throws Exception {
+    public void testNoOffer_Scope() throws Exception {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 
@@ -99,7 +117,7 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testWithoutOffer_Scope_AuthDetails() throws Exception {
+    public void testNoOffer_Scope_AuthDetails() throws Exception {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 
@@ -136,6 +154,79 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.holder, credResponse);
+    }
+
+    @Test
+    public void testNoOffer_Scope_NotAllowed() throws Exception {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        PredicateCredentialClientPolicy offerRequiredPolicy = VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
+
+        BiFunction<Boolean, Boolean, Boolean> runner = (policyEnabled, scopeEnabled) -> {
+
+            // Set client policy 'oid4vci-offer-required'
+            //
+            ClientPoliciesPoliciesResource clientPoliciesResource = testRealm.admin().clientPoliciesPoliciesResource();
+            ClientPoliciesRepresentation policies = clientPoliciesResource.getPolicies();
+            ClientPolicyRepresentation clientPolicy = policies.getPolicies().stream()
+                    .filter(cp -> cp.getName().equals(offerRequiredPolicy.getName()))
+                    .findFirst().orElseThrow();
+            Boolean wasPolicyEnabled = clientPolicy.isEnabled();
+            clientPolicy.setEnabled(policyEnabled);
+            clientPoliciesResource.updatePolicies(policies);
+
+            // Set client scope attribute 'vc.policy.offer.required'
+            //
+            Boolean wasScopeEnabled = offerRequiredPolicy.getCurrentValue(ctx.credentialScope);
+            ctx.credentialScope.setAttribute(offerRequiredPolicy.getAttrName(), String.valueOf(scopeEnabled));
+            updateCredentialScope(ctx.credentialScope);
+
+            try {
+                // Send AuthorizationRequest
+                //
+                AuthorizationEndpointResponse authResponse = wallet
+                        .authorizationRequest()
+                        .scope(ctx.credScopeName)
+                        .send(ctx.holder, "password");
+                String authCode = authResponse.getCode();
+                assertNotNull(authCode, "No authCode");
+
+                // Build and send AccessTokenRequest
+                //
+                AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
+
+                if (policyEnabled || scopeEnabled) {
+                    AssertionError error = assertThrows(AssertionError.class,
+                            () -> wallet.validateHolderAccessToken(ctx, tokenResponse));
+                    assertTrue(error.getMessage().contains("Credential request rejected by policy oid4vci-offer-required for client scope jwt-credential"), error.getMessage());
+                    return false;
+                } else {
+                    String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
+                    assertNotNull(accessToken, "No accessToken");
+
+                    String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
+                    assertNotNull(authorizedIdentifier,"No authorized credential identifier");
+
+                    CredentialResponse credentialResponse = wallet.credentialRequest(ctx, accessToken).credentialIdentifier(authorizedIdentifier).send().getCredentialResponse();
+                    assertFalse(credentialResponse.getCredentials().isEmpty(), "Credentials expected");
+                    return true;
+                }
+            } finally {
+                clientPolicy.setEnabled(wasPolicyEnabled);
+                clientPoliciesResource.updatePolicies(policies);
+
+                ctx.credentialScope.setAttribute(offerRequiredPolicy.getAttrName(), String.valueOf(wasScopeEnabled));
+                updateCredentialScope(ctx.credentialScope);
+
+                wallet.logout(ctx.holder);
+            }
+        };
+
+        assertTrue(runner.apply(false, false), "Offer not required");
+        assertFalse(runner.apply(false, true), "Offer required");
+        assertFalse(runner.apply(true, false), "Offer required");
+        assertFalse(runner.apply(true, true), "Offer required");
     }
 
     @Test
@@ -235,6 +326,64 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
             userRep.setEnabled(true);
             userResource.update(userRep);
         }
+    }
+
+    @Test
+    public void testPreAuthOffer_NotAllowed() throws Exception {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        PredicateCredentialClientPolicy preAuthPolicy = VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
+
+        BiFunction<Boolean, Boolean, Boolean> runner = (policyEnabled, scopeEnabled) -> {
+
+            // Set client policy 'oid4vci-offer-preauth-allowed'
+            //
+            ClientPoliciesPoliciesResource clientPoliciesResource = testRealm.admin().clientPoliciesPoliciesResource();
+            ClientPoliciesRepresentation policies = clientPoliciesResource.getPolicies();
+            ClientPolicyRepresentation clientPolicy = policies.getPolicies().stream()
+                    .filter(cp -> cp.getName().equals(preAuthPolicy.getName()))
+                    .findFirst().orElseThrow();
+            Boolean wasPolicyEnabled = clientPolicy.isEnabled();
+            clientPolicy.setEnabled(policyEnabled);
+            clientPoliciesResource.updatePolicies(policies);
+
+            // Set client scope attribute 'vc.policy.offer.preauth.allowed'
+            //
+            Boolean wasScopeEnabled = preAuthPolicy.getCurrentValue(ctx.credentialScope);
+            ctx.credentialScope.setAttribute(preAuthPolicy.getAttrName(), String.valueOf(scopeEnabled));
+            updateCredentialScope(ctx.credentialScope);
+
+            try {
+                if (policyEnabled && scopeEnabled) {
+                    CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.holder, false);
+                    assertNotNull(credOffer.getPreAuthorizedCode(), "Expected pre-auth offer");
+                    return true;
+                } else {
+                    IllegalStateException error = assertThrows(IllegalStateException.class,
+                            () -> wallet.createPreAuthCredentialOffer(ctx, ctx.holder, false));
+                    if (!policyEnabled) {
+                        assertTrue(error.getMessage().contains("Credential offer creation rejected for client scope jwt-credential"), error.getMessage());
+                    } else {
+                        assertTrue(error.getMessage().contains("Pre-Authorized code grant rejected by policy oid4vci-offer-preauth-allowed for client scope jwt-credential"), error.getMessage());
+                    }
+                    return false;
+                }
+            } finally {
+                clientPolicy.setEnabled(wasPolicyEnabled);
+                clientPoliciesResource.updatePolicies(policies);
+
+                ctx.credentialScope.setAttribute(preAuthPolicy.getAttrName(), String.valueOf(wasScopeEnabled));
+                updateCredentialScope(ctx.credentialScope);
+
+                wallet.logout(ctx.holder);
+            }
+        };
+
+        assertFalse(runner.apply(false, false), "Pre-Auth offer denied");
+        assertFalse(runner.apply(false, true), "Pre-Auth offer denied");
+        assertFalse(runner.apply(true, false), "Pre-Auth offer denied");
+        assertTrue(runner.apply(true, true), "Pre-Auth offer allowed");
     }
 
     @Test
