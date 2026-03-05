@@ -35,7 +35,7 @@ import { usePreviewLogo } from "./LogoContext";
 import { usePreviewBackground } from "./BackgroundContext";
 import { darkTheme, lightTheme } from "./PatternflyVars";
 import { PreviewWindow } from "./PreviewWindow";
-import { ThemeRealmRepresentation } from "./ThemesTab";
+import { ThemeRealmRepresentation } from "./QuickTheme";
 import { UploadJar } from "./UploadJar";
 
 type ThemeType = "light" | "dark";
