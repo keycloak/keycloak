@@ -46,6 +46,33 @@ Log level for file log handler can be specified by `--log-file-level` property a
 
 For more information, see <<Specify log level for each handler>>.
 
+== Log file rotation
+
+By default, log file rotation is enabled. The log file is rotated when its size exceeds 10 MB, and up to 5 backup files are kept.
+The log file is also rotated on server start by default.
+
+To disable log file rotation entirely, use the following configuration:
+
+<@kc.start parameters="--log=\"console,file\" --log-file-rotation-enabled=false"/>
+
+=== Configure rotation settings
+
+To change the maximum log file size before rotation:
+
+<@kc.start parameters="--log=\"console,file\" --log-file-rotation-max-file-size=50M"/>
+
+To change the number of backup files to keep:
+
+<@kc.start parameters="--log=\"console,file\" --log-file-rotation-max-backup-index=3"/>
+
+To disable rotation on server start, while keeping size-based rotation:
+
+<@kc.start parameters="--log=\"console,file\" --log-file-rotation-rotate-on-boot=false"/>
+
+To enable time-based rotation (e.g. daily), set a date-time format suffix:
+
+<@kc.start parameters="--log=\"console,file\" --log-file-rotation-file-suffix=.yyyy-MM-dd"/>
+
 <@opts.printRelevantOptions includedOptions="log-file-*" excludedOptions="log-file-async*">
 
 == Asynchronous
