@@ -139,6 +139,10 @@ For more information on how to set up logging, see the https://www.keycloak.org/
 By default, all log levels are exported by {project_name}.
 You can optionally configure the most verbose log level to be exported via the `telemetry-logs-level` option.
 
+The `telemetry-logs-level` option filters which logs are exported to OpenTelemetry, while `log-level` and `log-level-<category>` control which logs {project_name} generates.
+
+The telemetry filter is applied to already-generated logs, so setting `telemetry-logs-level=DEBUG` will not export `DEBUG` logs if `log-level=WARN`.
+
 For example, if you want only to export `WARN` and `ERROR` logs, you can change the log level via the CLI as follows:
 
 <@kc.start parameters="--telemetry-logs-level=WARN"/>
