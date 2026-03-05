@@ -10,13 +10,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderFactory;
 
-public class CredentialClientPolicyExecutorFactory implements ClientPolicyExecutorProviderFactory {
+public class CredentialOfferRequiredExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    public static final String PROVIDER_ID = "oid4vci-policy-executor";
+    public static final String PROVIDER_ID = "oid4vci-offer-required";
 
     @Override
-    public CredentialClientPolicyExecutor create(KeycloakSession session) {
-        return new CredentialClientPolicyExecutor(session);
+    public CredentialOfferRequiredExecutor create(KeycloakSession session) {
+        return new CredentialOfferRequiredExecutor(session);
     }
 
     @Override
@@ -38,7 +38,7 @@ public class CredentialClientPolicyExecutorFactory implements ClientPolicyExecut
 
     @Override
     public String getHelpText() {
-        return "This executor checks client policies related to the credential offer process";
+        return "Enforces that an offer is required in order to fetch a verifiable credential";
     }
 
     @Override
