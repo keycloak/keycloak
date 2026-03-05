@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
+import org.keycloak.models.KeycloakSession;
 
 import liquibase.change.custom.CustomSqlChange;
 import liquibase.database.Database;
@@ -42,6 +44,8 @@ import liquibase.structure.core.Table;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public abstract class CustomKeycloakTask implements CustomSqlChange {
+
+    protected KeycloakSession kcSession;
 
     protected Database database;
     protected JdbcConnection jdbcConnection;
@@ -66,6 +70,10 @@ public abstract class CustomKeycloakTask implements CustomSqlChange {
 
     @Override
     public void setUp() throws SetupException {
+        this.kcSession = ThreadLocalSessionContext.getCurrentSession();
+        if (this.kcSession == null) {
+            throw new SetupException("Thread bound session is null");
+        }
     }
 
     @Override

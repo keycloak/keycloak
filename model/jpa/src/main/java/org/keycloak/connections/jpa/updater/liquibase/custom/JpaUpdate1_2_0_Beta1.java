@@ -27,10 +27,8 @@ import org.keycloak.Config;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClaimMask;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.services.resources.KeycloakApplication;
 
 import liquibase.exception.CustomChangeException;
 import liquibase.exception.DatabaseException;
@@ -54,12 +52,12 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
     protected void generateStatementsImpl() throws CustomChangeException {
         realmTableName = database.correctObjectName("REALM", Table.class);
 
-        try (KeycloakSession session = KeycloakApplication.getSessionFactory().create()) {
+        try {
             convertSocialToIdFedRealms();
             convertSocialToIdFedUsers();
             addAccessCodeLoginTimeout();
             addNewAdminRoles();
-            addDefaultProtocolMappers(session);
+            addDefaultProtocolMappers();
         } catch (Exception e) {
             throw new CustomChangeException(getTaskId() + ": Exception when updating data from previous version", e);
         }
@@ -301,7 +299,7 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
         statements.add(insertCompRole);
     }
 
-    protected void addDefaultProtocolMappers(KeycloakSession kcSession) throws SQLException, DatabaseException {
+    protected void addDefaultProtocolMappers() throws SQLException, DatabaseException {
         String protocolMapperTableName = database.correctObjectName("PROTOCOL_MAPPER", Table.class);
         String protocolMapperCfgTableName = database.correctObjectName("PROTOCOL_MAPPER_CONFIG", Table.class);
 
@@ -320,7 +318,7 @@ public class JpaUpdate1_2_0_Beta1 extends CustomKeycloakTask {
                     Object acmObj = resultSet.getObject("ALLOWED_CLAIMS_MASK");
                     long mask = (acmObj != null) ? ((Number) acmObj).longValue() : ClaimMask.ALL;
 
-                    MigrationProvider migrationProvider = kcSession.getProvider(MigrationProvider.class);
+                    MigrationProvider migrationProvider = this.kcSession.getProvider(MigrationProvider.class);
                     List<ProtocolMapperRepresentation> protocolMappers = migrationProvider.getMappersForClaimMask(mask);
 
                     for (ProtocolMapperRepresentation protocolMapper : protocolMappers) {
