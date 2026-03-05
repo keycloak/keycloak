@@ -98,7 +98,30 @@ public class EnvoyProxySslClientCertificateLookupTest {
 
         // No Cert or Chain value in XFCC header.
         Assert.assertNull(envoyLookup.getCertificateChain(new HttpRequestImpl(
-            MockHttpRequest.create("GET", "http://foo/bar").header("x-forwarded-client-cert", "foobar"))));
+                MockHttpRequest.create("GET", "http://foo/bar").header("x-forwarded-client-cert", "foobar"))));
     }
 
+    @Test(expected = SecurityException.class)
+    public void testCorruptedXfccInvalidCert() throws Exception {
+        envoyLookup.getCertificateChain(new HttpRequestImpl(
+                MockHttpRequest.create("GET", "http://foo/bar").header("x-forwarded-client-cert", "Cert=\"foobar\"")));
+    }
+
+    @Test(expected = SecurityException.class)
+    public void testCorruptedXfccInvalidChain() throws Exception {
+        envoyLookup.getCertificateChain(new HttpRequestImpl(MockHttpRequest.create("GET", "http://foo/bar").header("x-forwarded-client-cert",
+                "Hash=1234;Chain=\"foobar\"")));
+    }
+
+    @Test(expected = SecurityException.class)
+    public void testCorruptedXfccNoEndQuote() throws Exception {
+        envoyLookup.getCertificateChain(new HttpRequestImpl(MockHttpRequest.create("GET", "http://foo/bar").header("x-forwarded-client-cert",
+                "Hash=1234;Cert=\"no end quote")));
+    }
+
+    @Test(expected = SecurityException.class)
+    public void testCorruptedXfccNoStartQuote() throws Exception {
+        envoyLookup.getCertificateChain(new HttpRequestImpl(MockHttpRequest.create("GET", "http://foo/bar").header("x-forwarded-client-cert",
+                "Hash=1234;Cert=no start quote\"")));
+    }
 }

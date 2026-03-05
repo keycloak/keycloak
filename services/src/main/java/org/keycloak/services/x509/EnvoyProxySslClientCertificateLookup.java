@@ -72,23 +72,29 @@ public class EnvoyProxySslClientCertificateLookup implements X509ClientCertifica
 
         X509Certificate[] certs = null;
 
-        StringTokenizer st = new StringTokenizer(xfcc, ";");
-        while (st.hasMoreTokens()) {
-            String token = st.nextToken();
-            int index = token.indexOf("=");
-            if (index != -1) {
-                String key = token.substring(0, index).trim();
-                String value = token.substring(index + 1).trim();
+        try {
+            StringTokenizer st = new StringTokenizer(xfcc, ";");
+            while (st.hasMoreTokens()) {
+                String token = st.nextToken();
+                int index = token.indexOf("=");
+                if (index != -1) {
+                    String key = token.substring(0, index).trim();
+                    String value = token.substring(index + 1).trim();
 
-                if (key.equals(XFCC_HEADER_CHAIN_KEY)) {
-                    // Chain contains the entire chain including the leaf certificate so we can stop processing the header.
-                    certs = PemUtils.decodeCertificates(decodeValue(value));
-                    break;
-                } else if (key.equals(XFCC_HEADER_CERT_KEY)) {
-                    // Cert contains only the leaf certificate. We need to continue processing the header in case Chain is present.
-                    certs = PemUtils.decodeCertificates(decodeValue(value));
+                    if (key.equals(XFCC_HEADER_CHAIN_KEY)) {
+                        // Chain contains the entire chain including the leaf certificate so we can stop processing the header.
+                        certs = PemUtils.decodeCertificates(decodeValue(value));
+                        break;
+                    } else if (key.equals(XFCC_HEADER_CERT_KEY)) {
+                        // Cert contains only the leaf certificate. We need to continue processing the header in case Chain is present.
+                        certs = PemUtils.decodeCertificates(decodeValue(value));
+                    }
                 }
-           }
+            }
+        } catch (Exception e) {
+            logger.warnv("Failed to extract client certificate from x-forwarded-client-cert header: {0}",
+                    e.getMessage());
+            throw new SecurityException("Failed to extract client certificate from x-forwarded-client-cert header", e);
         }
 
         return certs;
