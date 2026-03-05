@@ -109,4 +109,3 @@ bin/kc.sh start --log="console,file" --log-file-rotation-enabled=false
 ----
 
 For more information, see the https://www.keycloak.org/server/logging#_file_logging[File logging] guide.
->>>>>>> d34d9c5050 (Update approved help texts and add release note for log file rotation options)
