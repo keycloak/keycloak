@@ -127,6 +127,12 @@ public class EventBuilder {
 
     public EventBuilder user(UserModel user) {
         event.setUserId(user == null ? null : user.getId());
+        if (user != null && user.getUsername() != null) {
+            // If there is already a set username, prefer that one as it will be the one as entered by the user
+            if (event.getDetails() != null && event.getDetails().get(Details.USERNAME) == null) {
+                detail(Details.USERNAME, user.getUsername()); //capture username in details only if available
+            }
+        }
         return this;
     }
 

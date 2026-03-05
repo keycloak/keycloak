@@ -1104,7 +1104,7 @@ public class LoginActionsService {
         UserModel authenticatedUser = authSession.getAuthenticatedUser();
         if (authenticatedUser != null) {
             event.user(authenticatedUser)
-                    .detail(Details.USERNAME, authenticatedUser.getUsername());
+              .detail(Details.USERNAME, authenticatedUser.getUsername());
         }
 
         String attemptedUsername = authSession.getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);

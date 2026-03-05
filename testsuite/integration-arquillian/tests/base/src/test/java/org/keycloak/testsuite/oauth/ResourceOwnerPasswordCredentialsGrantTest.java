@@ -321,7 +321,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-
         events.expectLogin()
                 .client(clientId)
                 .user(userId)
