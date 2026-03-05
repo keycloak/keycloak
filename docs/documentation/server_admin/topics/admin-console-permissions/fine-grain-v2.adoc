@@ -201,7 +201,7 @@ image:images/create-permission.png[Creating a permission]
 
 When managing a permission you can define the following settings:
 
-* *Name*: A unique name for the permission. The name should also not conflict with any policy name
+* *Name*: A unique name for the permission. The name must not conflict with any policy name
 * *Description*: An optional description to better describe what the permission is about
 * *Authorization scopes*: A set of one or more scopes representing the operations you want to protect for the selected resource type.
 An administrator must have explicit permission assigned for each operation to perform the corresponding action. For example,
