@@ -76,8 +76,9 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         assertEquals("oid4vci-client-profile", clientProfiles.getProfiles().get(0).getName());
 
         ClientPoliciesRepresentation clientPolicies = testRealm.admin().clientPoliciesPoliciesResource().getPolicies();
-        assertEquals(1, clientPolicies.getPolicies().size());
+        assertEquals(2, clientPolicies.getPolicies().size());
         assertEquals("oid4vci-offer-required", clientPolicies.getPolicies().get(0).getName());
+        assertEquals("oid4vci-offer-preauth-allowed", clientPolicies.getPolicies().get(1).getName());
     }
 
     @Test
