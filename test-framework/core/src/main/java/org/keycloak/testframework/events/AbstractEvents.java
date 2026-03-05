@@ -58,6 +58,7 @@ public abstract class AbstractEvents<R> {
                     .stream().filter(e -> !processedEvents.contains(getEventId(e)))
                     .forEach(e -> {
                         Assertions.assertEquals(realm.getId(), getRealmId(e));
+                        Assertions.assertTrue(getTime(e) > 0);
                         processedEvents.add(getEventId(e));
                         this.events.add(e);
                     });
@@ -124,6 +125,8 @@ public abstract class AbstractEvents<R> {
     protected abstract String getEventId(R representation);
 
     protected abstract String getRealmId(R representation);
+
+    protected abstract long getTime(R representation);
 
     protected abstract void clearServerEvents();
 
