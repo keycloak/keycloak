@@ -75,22 +75,14 @@ public enum OrganizationScope {
      */
     SINGLE(StringUtil::isNotBlank,
             (user, scopes, session) -> {
-                OrganizationModel organization = parseScopeParameter(session, scopes)
+                List<OrganizationModel> organizations = parseScopeParameter(session, scopes)
                         .map((String scope) -> parseScopeValue(session, scope))
                         .map(alias -> getProvider(session).getByAlias(alias))
                         .filter(Objects::nonNull)
-                        .findAny()
-                        .orElse(null);
+                        .filter(org -> user == null || org.isMember(user))
+                        .toList();
 
-                if (organization == null) {
-                    return Stream.empty();
-                }
-
-                if (user == null || organization.isMember(user)) {
-                    return Stream.of(organization);
-                }
-
-                return Stream.empty();
+                return organizations.stream();
             },
             (organizations) -> organizations.findAny().isPresent(),
             (session, current, previous) -> {
