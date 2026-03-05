@@ -33,6 +33,11 @@ public class SpiProvidersSwitchingUtils {
             @Override
             public void setDefaultProvider(Container container, String spiName, String providerId, String... config) {
                 System.setProperty(getProviderPropertyName(spiName), providerId);
+                setProviderConfig(container, spiName, providerId, config);
+            }
+
+            @Override
+            public void setProviderConfig(Container container, String spiName, String providerId, String... config) {
                 if (config != null) {
                     String optionName = null;
                     for (String c : config) {
@@ -71,18 +76,29 @@ public class SpiProvidersSwitchingUtils {
             public void setDefaultProvider(Container container, String spiName, String providerId, String... config) {
                 List<String> args = new LinkedList<>();
                 args.add(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(spiName) + "--provider=" + providerId);
+                addConfigArgs(args, spiName, providerId, config);
+                getQuarkusContainer(container).setSpiConfig(spiName, args);
+            }
+
+            @Override
+            public void setProviderConfig(Container container, String spiName, String providerId, String... config) {
+                List<String> args = new LinkedList<>();
+                addConfigArgs(args, spiName, providerId, config);
+                getQuarkusContainer(container).setSpiConfig(spiName, args);
+            }
+
+            private void addConfigArgs(List<String> args, String spiName, String providerId, String... config) {
                 if (config != null) {
                     String optionName = null;
                     for (String c : config) {
                         if (optionName == null) {
                             optionName = c;
                         } else {
-                            args.add(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(spiName) + "--" + providerId + "--" + optionName + "=" + c);
+                            args.add(KEYCLOAKX_ARG_SPI_PREFIX + toDashCase(spiName) + "--" + providerId + "--" + toDashCase(optionName) + "=" + c);
                             optionName = null;
                         }
                     }
                 }
-                getQuarkusContainer(container).setSpiConfig(spiName, args);
             }
 
             @Override
@@ -131,6 +147,8 @@ public class SpiProvidersSwitchingUtils {
 
         public abstract void setDefaultProvider(Container container, String spiName, String providerId, String... config);
 
+        public abstract void setProviderConfig(Container container, String spiName, String providerId, String... config);
+
         public void updateDefaultProvider(Container container, String spiName, String providerId, String... config) {
             setDefaultProvider(container, spiName, providerId, config);
         }
@@ -158,12 +176,15 @@ public class SpiProvidersSwitchingUtils {
         String spi = annotation.spi();
         Container container = authServerInfo.getArquillianContainer();
 
-        log.infof("Setting default provider for %s to %s", spi, annotation.providerId());
-
-        if (annotation.onlyUpdateDefault()) {
+        if (annotation.onlyOverrideConfig()) {
+            log.infof("Setting provider config for %s provider %s", spi, annotation.providerId());
+            spiSwitcher.setProviderConfig(container, spi, annotation.providerId(), annotation.config());
+        } else if (annotation.onlyUpdateDefault()) {
+            log.infof("Setting default provider for %s to %s", spi, annotation.providerId());
             spiSwitcher.getCurrentDefaultProvider(container, spi, annotation).ifPresent(v -> originalSettingsBackup.put(spi, v));
             spiSwitcher.updateDefaultProvider(container, spi, annotation.providerId(), annotation.config());
         } else {
+            log.infof("Setting default provider for %s to %s", spi, annotation.providerId());
             spiSwitcher.setDefaultProvider(container, spi, annotation.providerId(), annotation.config());
         }
     }
@@ -174,7 +195,10 @@ public class SpiProvidersSwitchingUtils {
         String spi = annotation.spi();
         Container container = authServerInfo.getArquillianContainer();
 
-        if (annotation.onlyUpdateDefault()) {
+        if (annotation.onlyOverrideConfig()) {
+            log.infof("Removing provider config for %s", spi);
+            spiSwitcher.removeProviderConfig(container, spi);
+        } else if (annotation.onlyUpdateDefault()) {
             String originalValue = originalSettingsBackup.get(spi);
 
             log.infof("Resetting default provider for %s to %s", spi,

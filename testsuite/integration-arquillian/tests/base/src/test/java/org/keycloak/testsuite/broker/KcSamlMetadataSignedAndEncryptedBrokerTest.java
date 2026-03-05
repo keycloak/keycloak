@@ -39,6 +39,7 @@ import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
@@ -57,6 +58,7 @@ import org.w3c.dom.Document;
  *
  * @author rmartinc
  */
+@SetDefaultProvider(spi = "login-protocol", providerId = "saml", onlyOverrideConfig = true, config = {"allow-private-metadata-urls", "true"})
 public class KcSamlMetadataSignedAndEncryptedBrokerTest extends AbstractKcSamlMetadataBrokerTest {
 
     @Rule

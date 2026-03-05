@@ -41,4 +41,15 @@ public @interface SetDefaultProvider {
      * @return The config options and values
      */
     String[] config() default {};
+
+    /**
+     * <p>When set to {@code true}, only the provider configuration specified in {@link #config()} is applied,
+     * without changing the default provider for the SPI.
+     *
+     * <p>This is useful when you need to configure a specific provider (e.g., setting a property on the
+     * {@code saml} login-protocol provider) without changing which provider is the default for the SPI.
+     *
+     * @return {@code true} to only apply configuration without changing the default provider
+     */
+    boolean onlyOverrideConfig() default false;
 }

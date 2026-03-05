@@ -16,8 +16,10 @@
  */
 package org.keycloak.protocol.saml;
 
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.LoginProtocol;
 
 import org.jboss.logging.Logger;
 
@@ -46,6 +48,11 @@ public class SamlMetadataPublicKeyLoader extends SamlAbstractMetadataPublicKeyLo
     @Override
     protected String getKeys() throws Exception {
         logger.debugf("loading keys from metadata endpoint %s", metadataUrl);
+        SamlProtocolFactory factory = (SamlProtocolFactory) session.getKeycloakSessionFactory()
+                .getProviderFactory(LoginProtocol.class, SamlProtocol.LOGIN_PROTOCOL);
+        if (!factory.isAllowPrivateMetadataUrls()) {
+            UriUtils.checkUrlIsNotPrivateAddress(metadataUrl, "metadataDescriptorUrl");
+        }
         return session.getProvider(HttpClientProvider.class).getString(metadataUrl);
     }
 }
