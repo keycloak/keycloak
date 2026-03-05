@@ -86,8 +86,8 @@ public class PermissionTicketService {
         Resource resource = rstore.findById(resourceServer, representation.getResource());
         if (resource == null ) throw new ErrorResponseException("invalid_resource_id", "Resource set with id [" + representation.getResource() + "] does not exists in this server.", Response.Status.BAD_REQUEST);
         
-        if (!resource.getOwner().equals(this.identity.getId()))
-            throw new ErrorResponseException("not_authorised", "permissions for [" + representation.getResource() + "] can be only created by the owner", Response.Status.FORBIDDEN);
+        if (!identity.isResourceServer() && !resource.getOwner().equals(this.identity.getId()))
+            throw new ErrorResponseException("not_authorised", "permissions for [" + representation.getResource() + "] can be only created by the owner or by the resource server itself", Response.Status.FORBIDDEN);
         if (!resource.isOwnerManagedAccess())
             throw new ErrorResponseException("invalid_permission", "permission can only be created for resources with user-managed access enabled", Response.Status.BAD_REQUEST);
         
