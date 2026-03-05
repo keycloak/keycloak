@@ -1,9 +1,6 @@
 package org.keycloak.admin.api.client;
 
-import java.util.Objects;
-
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -19,13 +16,11 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
 import org.keycloak.services.client.ClientService;
-import org.keycloak.services.client.DefaultClientService;
-import org.keycloak.services.resources.admin.ClientResource;
+import org.keycloak.services.client.ClientServiceHelper;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
 import com.fasterxml.jackson.databind.JsonNode;
-
 
 public class DefaultClientApi implements ClientApi {
     private final KeycloakSession session;
@@ -34,14 +29,15 @@ public class DefaultClientApi implements ClientApi {
     private final ClientService clientService;
 
     public DefaultClientApi(@Nonnull KeycloakSession session,
+                            @Nonnull RealmModel realm,
                             @Nonnull String clientId,
                             @Nonnull AdminPermissionEvaluator permissions,
-                            @Nonnull RealmAdminResource realmAdminResource,
-                            @Nullable ClientResource clientResource) {
+                            // remove v1 resource once we are not attached to API v1
+                            @Nonnull RealmAdminResource realmAdminResource) {
         this.session = session;
         this.clientId = clientId;
-        this.clientService = new DefaultClientService(session, permissions, realmAdminResource, clientResource);
-        this.realm = Objects.requireNonNull(session.getContext().getRealm());
+        this.realm = realm;
+        this.clientService = ClientServiceHelper.getClientService(session, realm, permissions, realmAdminResource);
     }
 
     @GET

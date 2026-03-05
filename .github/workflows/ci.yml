@@ -1196,6 +1196,10 @@ jobs:
       - build
       - conditional
     timeout-minutes: 20
+    strategy:
+      matrix:
+        service-type: [ new-service, v1-service ]
+      fail-fast: false
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -1204,7 +1208,12 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run tests
-        run: ./mvnw verify -pl rest/admin-v2/tests/pom.xml
+        run: |
+          declare -A PARAMS
+          PARAMS["new-service"]="-Dkc.admin-v2.client-service.legacy.enabled=false"
+          PARAMS["v1-service"]=""
+          
+          ./mvnw verify -pl rest/admin-v2/tests/pom.xml ${PARAMS["${{ matrix.service-type }}"]}
 
   mixed-cluster-compatibility-tests:
     name: Cluster Compatibility Tests
