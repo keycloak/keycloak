@@ -98,7 +98,7 @@ public class DefaultClientService implements ClientService {
         // TODO: is the access map on the representation needed
         avoidClientIdPhishing();
         return Optional.ofNullable(clientResource).map(ClientResource::viewClientModel)
-                .map(model -> session.getProvider(ClientModelMapper.class, model.getProtocol()).fromModel(model));
+                .map(model -> getMapper(model.getProtocol()).fromModel(model));
     }
 
     @Override
@@ -107,7 +107,7 @@ public class DefaultClientService implements ClientService {
         // TODO: is the access map on the representation needed
         return clientsResource.getClientModels(null, true, false, null, null, null)
                 .filter(model -> model.getProtocol() != null) // Skip clients with null protocol
-                .map(model -> session.getProvider(ClientModelMapper.class, model.getProtocol()).fromModel(model))
+                .map(model -> getMapper(model.getProtocol()).fromModel(model))
                 .filter(java.util.Objects::nonNull);
     }
 
@@ -137,11 +137,7 @@ public class DefaultClientService implements ClientService {
 
         boolean created = false;
         ClientModel model;
-        ClientModelMapper mapper = session.getProvider(ClientModelMapper.class, client.getProtocol());
-
-        if (mapper == null) {
-            throw new ServiceException("Mapper not found, unsupported client protocol: " + client.getProtocol(), Response.Status.BAD_REQUEST);
-        }
+        ClientModelMapper mapper = getMapper(client.getProtocol());
 
         if (clientResource != null) {
             if (strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
@@ -242,9 +238,12 @@ public class DefaultClientService implements ClientService {
         if (clientResource == null) {
             throw new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND);
         }
-        var client = clientResource.getClient();
+        var client = Optional.of(clientResource.viewClientModel())
+                .map(c -> getMapper(c.getProtocol()).fromModel(c))
+                .orElseThrow(() -> new ServiceException("Cannot map client model", Response.Status.BAD_REQUEST));
+
         clientResource.deleteClient();
-        fireAdminEvent(OperationType.DELETE, BaseClientRepresentation.createMinimalRepresentation(client.getClientId(), client.getProtocol()));
+        fireAdminEvent(OperationType.DELETE, client);
     }
 
     /**
@@ -343,5 +342,10 @@ public class DefaultClientService implements ClientService {
         if (!rep.getAdditionalFields().isEmpty()) {
             throw new ServiceException("Payload contains unknown fields: " + rep.getAdditionalFields().keySet(), Response.Status.BAD_REQUEST);
         }
+    }
+
+    protected ClientModelMapper getMapper(String protocol) {
+        return Optional.ofNullable(session.getProvider(ClientModelMapper.class, protocol))
+                .orElseThrow(() -> new ServiceException("Mapper not found, unsupported client protocol: " + protocol, Response.Status.BAD_REQUEST));
     }
 }
