@@ -57,6 +57,16 @@ only the `query-*` role to an administrator is no longer sufficient to list role
 Instead, the administrator must have explicit permissions to view or manage the realm or client for which they want to list roles, or by
 having the `view-realm` or `manage-realm` role for realm roles, or `view-clients` or `manage-clients` role for client roles.
 
+=== Consistent filtering of organization members based on the semantics from the User API
+
+Until now, the filtering of organization members in the Organization API was not consistent with the semantics of the User API.
+
+In this version, the filtering of organization members is now consistent with the User API semantics, which means that
+the `search` parameter filters based on the username, first name, last name, and email of the organization members
+will respect wildcards and make filtering on these attributes more flexible with the possibility to match values that
+begin with, ends with, or has a value in between. This change improves the usability of the Organization API
+and makes it more intuitive for users to find organization members based on their attributes.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -162,7 +172,7 @@ This behavior is enabled by default and can be controlled with the server option
 
 * `--truststore-kubernetes-enabled=true|false` (default: `true`)
 
-No changes are required for most deployments. If you previously relied on the Operator to manage these truststore entries, the server now performs the same function directly. 
+No changes are required for most deployments. If you previously relied on the Operator to manage these truststore entries, the server now performs the same function directly.
 
 WARNING: when `https-client-auth` is set to `required` or `request` without an explicit `https-trust-store-file`, mTLS client certificate validation falls back to the system truststore. With `truststore-kubernetes-enabled=true`, this means certificates signed by the Kubernetes cluster CA will be accepted as valid client certificates. If this is not desired, either set `https-trust-store-file` explicitly or disable `truststore-kubernetes-enabled`.
 

@@ -414,7 +414,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(existing, is(empty()));
 
         // partial search - partial e-mail should match all users.
-        existing = organization.members().search("neworg", false, null, null);
+        existing = organization.members().search("*neworg*", false, null, null);
         assertThat(existing, hasSize(5));
         for (int i = 0; i < 5; i++) { // returned entries should also be ordered.
             assertThat(expected.get(i).getId(), is(equalTo(expected.get(i).getId())));
@@ -426,7 +426,7 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
 
         // partial search using 'th' search string - should match 'Katherine' by name, 'Jack' by username/e-mail
         // and 'Martha' either by username or first name.
-        existing = organization.members().search("th", false, null, null);
+        existing = organization.members().search("*th*", false, null, null);
         assertThat(existing, hasSize(3));
         assertThat(existing.get(0).getUsername(), is(equalTo("batwoman@neworg.org")));
         assertThat(existing.get(0).getFirstName(), is(equalTo("Katherine")));
@@ -617,7 +617,10 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertThat(organization.members().count("Harvey", null, null, null, null, null, null, true, null), is(1L));
         assertThat(organization.members().count("Wayne", null, null, null, null, null, null, true, null), is(2L));
         assertThat(organization.members().count("Gordon", null, null, null, null, null, null, true, null), is(0L));
-        assertThat(organization.members().count("neworg", null, null, null, null, null, null, false, null), is(5L));
+        assertThat(organization.members().count("neworg", null, null, null, null, null, null, false, null), is(0L));
+        assertThat(organization.members().count("*neworg*", null, null, null, null, null, null, false, null), is(5L));
+        assertThat(organization.members().count("*NewOrg*", null, null, null, null, null, null, false, null), is(5L));
+        assertThat(organization.members().count("*NewOrg*", null, null, null, null, null, null, true, null), is(0L));
         assertThat(organization.members().count("way", null, null, null, null, null, null, false, null), is(2L));
         assertThat(organization.members().count("Neworg", null, null, null, null, null, null, true, null), is(0L));
         assertThat(organization.members().count("waY", null, null, null, null, null, null, true, null), is(0L));

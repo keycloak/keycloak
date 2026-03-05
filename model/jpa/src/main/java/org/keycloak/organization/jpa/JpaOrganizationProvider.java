@@ -21,9 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -51,11 +49,11 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.jpa.JpaUserUtils;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
-import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -70,9 +68,6 @@ import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE;
-import static org.keycloak.models.UserModel.EMAIL;
-import static org.keycloak.models.UserModel.FIRST_NAME;
-import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.organization.utils.Organizations.isReadOnlyOrganizationMember;
@@ -392,7 +387,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         From<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
         Map<String, String> customLongValueSearchAttributes = new HashMap<>();
 
-        predicates.addAll(createPredicates(filters, exact, builder, userJoin, groupMembership, customLongValueSearchAttributes));
+        predicates.addAll(createPredicates(session, filters, exact, builder, queryBuilder, userJoin, groupMembership, customLongValueSearchAttributes));
         queryBuilder.where(predicates.toArray(new Predicate[0]));
         queryBuilder.orderBy(builder.asc(userJoin.get(USERNAME)));
 
@@ -415,84 +410,19 @@ public class JpaOrganizationProvider implements OrganizationProvider {
                 });
     }
 
-    private List<Predicate> createPredicates(Map<String, String> filters, Boolean exact, CriteriaBuilder builder, From<UserGroupMembershipEntity, UserEntity> root, Root<UserGroupMembershipEntity> groupMembership, Map<String, String> customLongValueSearchAttributes) {
+    private List<Predicate> createPredicates(KeycloakSession session, Map<String, String> filters, Boolean exact, CriteriaBuilder builder, CriteriaQuery query, From<UserGroupMembershipEntity, UserEntity> root, Root<UserGroupMembershipEntity> groupMembership, Map<String, String> customLongValueSearchAttributes) {
         List<Predicate> predicates = new ArrayList<>();
-        boolean exactValue = Optional.ofNullable(exact).orElse(false);
+        String membershipType = filters.get(MembershipType.NAME);
 
-        for (Entry<String, String> filter : Optional.ofNullable(filters).orElse(Map.of()).entrySet()) {
-            String value = filter.getValue();
-            String key = filter.getKey();
-
-            switch (key) {
-                case UserModel.SEARCH:
-                    predicates.add(builder
-                            .or(getSearchOptionPredicateArray(value, exactValue, builder, root)));
-                    break;
-                case MembershipType.NAME:
-                    predicates.add(builder
-                            .equal(groupMembership.get(MembershipType.NAME), value.toUpperCase()));
-                    break;
-                case UserModel.ENABLED:
-                    predicates.add(builder.equal(root.get(key), Boolean.valueOf(value)));
-                    break;
-                case UserModel.USERNAME:
-                case UserModel.EMAIL:
-                case UserModel.FIRST_NAME:
-                case UserModel.LAST_NAME:
-                    if (exactValue) {
-                        predicates.add(builder.equal(builder.lower(root.get(key)), value.toLowerCase()));
-                    } else {
-                        predicates.add(builder.like(builder.lower(root.get(key)), "%" + value.toLowerCase() + "%"));
-                    }
-                    break;
-                default:
-                    // Handle custom attributes
-                    // All unknown attributes will be assumed as custom attributes
-                    Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
-
-                    if (value.length() > 255) {
-                        if (customLongValueSearchAttributes != null) {
-                            customLongValueSearchAttributes.put(key, value);
-                        }
-                        predicates.add(builder.and(
-                                builder.equal(attributesJoin.get("name"), key),
-                                builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(value))));
-                    } else {
-                        if (exactValue) {
-                            predicates.add(builder.and(
-                                    builder.equal(attributesJoin.get("name"), key),
-                                    builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
-                        } else {
-                            predicates.add(builder.and(
-                                    builder.equal(attributesJoin.get("name"), key),
-                                    builder.like(builder.lower(attributesJoin.get("value")), "%" + value.toLowerCase() + "%")));
-                        }
-                    }
-            }
+        if (membershipType != null) {
+            predicates.add(builder.equal(groupMembership.get(MembershipType.NAME), membershipType.toUpperCase()));
+            filters = new HashMap<>(filters);
+            filters.remove(MembershipType.NAME);
         }
+
+        predicates.addAll(JpaUserUtils.createPredicates(session, builder, query, filters, root, exact, customLongValueSearchAttributes));
 
         return predicates;
-    }
-
-    private Predicate[] getSearchOptionPredicateArray(String value, boolean exact, CriteriaBuilder builder, From<?, UserEntity> from) {
-        value = value.toLowerCase();
-
-        List<Predicate> orPredicates = new ArrayList<>();
-
-        if (exact) {
-            orPredicates.add(builder.equal(from.get(USERNAME), value));
-            orPredicates.add(builder.equal(from.get(EMAIL), value));
-            orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
-            orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
-        } else {
-            value = "%" + value + "%";
-            orPredicates.add(builder.like(from.get(USERNAME), value));
-            orPredicates.add(builder.like(from.get(EMAIL), value));
-            orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value));
-            orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value));
-        }
-
-        return orPredicates.toArray(Predicate[]::new);
     }
 
     @Override
@@ -508,7 +438,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
         List<Predicate> predicates = new ArrayList<>();
         predicates.add(builder.equal(groupMembership.get("groupId"), getOrganizationGroup(organization).getId()));
-        predicates.addAll(createPredicates(filters, exact, builder, userJoin, groupMembership, null));
+        predicates.addAll(createPredicates(session, filters, exact, builder, queryBuilder, userJoin, groupMembership, null));
         queryBuilder.select(builder.count(userJoin)).where(predicates.toArray(new Predicate[0]));
 
         return em.createQuery(queryBuilder).getSingleResult();
