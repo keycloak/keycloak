@@ -21,6 +21,7 @@ import java.util.function.Predicate;
 
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.storage.UserStorageProvider;
 
 import liquibase.exception.CustomChangeException;
@@ -32,7 +33,7 @@ public class MigrateUserFedToComponent extends AbstractUserFedToComponent {
 
     @Override
     protected void generateStatementsImpl() {
-        kcSession.getKeycloakSessionFactory().getProviderFactoriesStream(UserStorageProvider.class)
+        KeycloakApplication.getSessionFactory().getProviderFactoriesStream(UserStorageProvider.class)
                 .map(ProviderFactory::getId)
                 .filter(Predicate.isEqual(LDAPConstants.LDAP_PROVIDER).negate())
                 .forEach(this::convertFedProviderToComponent);

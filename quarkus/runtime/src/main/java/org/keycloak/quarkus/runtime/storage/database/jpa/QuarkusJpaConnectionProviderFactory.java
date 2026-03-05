@@ -50,7 +50,6 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 import io.quarkus.arc.Arc;
 import io.quarkus.runtime.configuration.DurationConverter;
@@ -118,8 +117,6 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             logErrorSettingMigrationTransactionTimeout(e);
         }
         try (Connection connection = getConnection(); KeycloakSession session = factory.create()) {
-            // there is no thread bound session for postInit, and create does not associate with the thread
-            KeycloakSessionUtil.setKeycloakSession(session);
             try {
                 try (Statement statement = connection.createStatement()) {
                     try (ResultSet rs = statement.executeQuery(String.format(SQL_GET_LATEST_VERSION, getSchema(schema)))) {
@@ -137,8 +134,6 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             schemaChanged = createOrUpdateSchema(schema, version, connection, session);
         } catch (SQLException cause) {
             throw new RuntimeException("Failed to update database.", cause);
-        } finally {
-            KeycloakSessionUtil.setKeycloakSession(null);
         }
 
         if (schemaChanged || Environment.isNonServerMode()) {
