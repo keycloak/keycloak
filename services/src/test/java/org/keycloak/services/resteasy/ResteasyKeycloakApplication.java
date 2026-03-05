@@ -24,8 +24,10 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.MultiSiteUtils;
+import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.services.error.KeycloakMismatchedInputExceptionHandler;
@@ -46,10 +48,6 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     protected Set<Class<?>> classes = new HashSet<>();
 
     public ResteasyKeycloakApplication() {
-        Profile.configure(
-                new PropertiesProfileConfigResolver(System.getProperties()),
-                new PropertiesFileProfileConfigResolver()
-        );
         classes.add(RealmsResource.class);
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_API)) {
             classes.add(AdminRoot.class);
@@ -108,7 +106,17 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     protected void initAndStart() {
         Config.init(new JsonConfigProviderFactory().create()
                 .orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
+        Profile.configure(
+                new PropertiesProfileConfigResolver(System.getProperties()),
+                new PropertiesFileProfileConfigResolver()
+        );
         startup();
+    }
+
+    @Override
+    protected ExportImportManager bootstrap(KeycloakSession session) {
+        // created a nested transaction as this triggers DefaultJpaConnectionProviderFactory.lazyInit
+        return KeycloakModelUtils.runJobInTransactionWithResult(getSessionFactory(), super::bootstrap);
     }
 
 }
