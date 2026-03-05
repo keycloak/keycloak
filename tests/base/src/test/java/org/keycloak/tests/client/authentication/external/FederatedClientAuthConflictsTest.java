@@ -6,6 +6,7 @@ import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthe
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.EventType;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -13,6 +14,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -65,7 +67,8 @@ public class FederatedClientAuthConflictsTest {
         // Should fail as there are two IdPs with the same issuer URL
         AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
         Assertions.assertTrue(response.isSuccess());
-        Assertions.assertEquals("myclient", events.poll().getClientId());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient");
 
         IdentityProviderRepresentation idp2 = createIdp("idp2", "http://127.0.0.1:8500", false);
 
@@ -89,7 +92,8 @@ public class FederatedClientAuthConflictsTest {
         events.clear();
         response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
         Assertions.assertTrue(response.isSuccess());
-        Assertions.assertEquals("myclient", events.poll().getClientId());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient");
     }
 
     @Test
@@ -102,11 +106,13 @@ public class FederatedClientAuthConflictsTest {
 
         AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500/one")).send();
         Assertions.assertTrue(response.isSuccess());
-        Assertions.assertEquals("myclient1", events.poll().getClientId());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient1");
 
         response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500/two")).send();
         Assertions.assertTrue(response.isSuccess());
-        Assertions.assertEquals("myclient2", events.poll().getClientId());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient2");
     }
 
     private String createDefaultToken(String externalClientId, String issuer) {
