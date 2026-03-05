@@ -108,6 +108,7 @@ When using other config sources, the category name must be specified "as is", fo
 
 <@kc.start parameters="--log-level=\"INFO,org.hibernate:debug\" --log-level-org.keycloak=trace"/>
 
+[[specify-log-level-each-handler]]
 === Specify log level for each handler
 
 The `log-level` property specifies the global root log level and levels for selected categories.
