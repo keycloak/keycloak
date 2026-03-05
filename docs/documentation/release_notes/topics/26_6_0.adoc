@@ -108,4 +108,4 @@ To disable log file rotation:
 bin/kc.sh start --log="console,file" --log-file-rotation-enabled=false
 ----
 
-For more information, see the https://www.keycloak.org/server/logging#_file_logging[File logging] guide.
+For more information, see the https://www.keycloak.org/server/logging/file[File logging] guide.
