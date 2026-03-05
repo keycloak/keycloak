@@ -25,36 +25,24 @@ import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies
 import static org.keycloak.services.clientpolicy.ClientPolicyEvent.AUTHORIZATION_REQUEST;
 
 /**
- * This client policy executor can be reference in a client profile definition like this,
- * which we currently don't add to the defaults client profile definitions.
- *
- *     {
- *       "name": "oid4vci-client-profile",
- *       "description": "Client profile, which enforces various policies on oid4vci clients.",
- *       "executors": [
- *         {
- *           "executor": "oid4vci-policy-executor",
- *           "configuration": {}
- *         }
- *       ]
- *     }
+ * Checks whether a credential offer is available.
  */
-public class CredentialClientPolicyExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
+public class CredentialOfferRequiredExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
 
     protected final KeycloakSession session;
 
-    public CredentialClientPolicyExecutor(KeycloakSession session) {
+    public CredentialOfferRequiredExecutor(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
     public String getProviderId() {
-        return CredentialClientPolicyExecutorFactory.PROVIDER_ID;
+        return CredentialOfferRequiredExecutorFactory.PROVIDER_ID;
     }
 
     @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
-        if (AUTHORIZATION_REQUEST.equals(context.getEvent())) {
+        if (context.getEvent() == AUTHORIZATION_REQUEST) {
             AuthorizationRequestContext authRequestContext = (AuthorizationRequestContext) context;
             checkCredentialPolicies(authRequestContext);
         }
