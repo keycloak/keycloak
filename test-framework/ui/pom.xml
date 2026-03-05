@@ -65,5 +65,11 @@
             <artifactId>htmlunit3-driver</artifactId>
             <version>${selenium.html.unit.version}</version>
         </dependency>
+            <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>

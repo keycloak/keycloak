@@ -50,5 +50,11 @@
             <groupId>org.keycloak.tests</groupId>
             <artifactId>keycloak-tests-utils-shared</artifactId>
         </dependency>
+            <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>
