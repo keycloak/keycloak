@@ -29,6 +29,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicyContext;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.Claim;
@@ -41,6 +42,8 @@ import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 
 import org.jboss.logging.Logger;
 
@@ -233,6 +236,10 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         OID4VCAuthorizationDetail responseAuthDetail = CredentialScopeModelUtils.buildOID4VCAuthorizationDetail(credScope, null);
         responseAuthDetail.setClaims(requestAuthDetail.getClaims());
 
+        // Check Credential Client Policies
+        //
+        checkClientPolicies(credScope, offerState);
+
         return responseAuthDetail;
     }
 
@@ -264,6 +271,10 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
                 //
                 OID4VCAuthorizationDetail authDetail = CredentialScopeModelUtils.buildOID4VCAuthorizationDetail(credScope, null);
                 authorizationDetails.add(authDetail);
+
+                // Check Credential Client Policies
+                //
+                checkClientPolicies(credScope, offerState);
             }
         }
 
@@ -322,5 +333,18 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         }
 
         return offerState;
+    }
+
+    private void checkClientPolicies(CredentialScopeModel credScope, CredentialOfferState offerState) throws InvalidAuthorizationDetailsException {
+
+        var context = new CredentialClientPolicyContext(ClientPolicyEvent.AUTHORIZATION_REQUEST)
+                .setCredentialScopeModel(credScope)
+                .setCredentialOfferState(offerState);
+
+        try {
+            session.clientPolicy().triggerOnEvent(context);
+        } catch (ClientPolicyException ex) {
+            throw new InvalidAuthorizationDetailsException(ex.getErrorDetail());
+        }
     }
 }
