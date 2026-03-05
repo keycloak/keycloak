@@ -3,6 +3,7 @@ package org.keycloak.services.client;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -111,7 +112,27 @@ public class DefaultClientService implements ClientService {
     }
 
     @Override
-    public CreateOrUpdateResult createOrUpdate(RealmModel realm, BaseClientRepresentation client, boolean allowUpdate) throws ServiceException {
+    public BaseClientRepresentation createClient(RealmModel realm, BaseClientRepresentation client) throws ServiceException {
+        return createOrUpdate(client, CreateOrUpdateStrategy.ONLY_CREATE).representation();
+    }
+
+    @Override
+    public CreateOrUpdateResult createOrUpdateClient(RealmModel realm, String clientId, BaseClientRepresentation client) throws ServiceException {
+        if (!Objects.equals(clientId, client.getClientId())) {
+            throw new ServiceException("Field 'clientId' in payload does not match the provided 'clientId'", Response.Status.BAD_REQUEST);
+        }
+        return createOrUpdate(client, CreateOrUpdateStrategy.PUT);
+    }
+
+    private enum CreateOrUpdateStrategy {
+        ONLY_CREATE,
+        PUT,
+        // PATCH is currently separated from PUT only due to validation running before full preparation/defaulting.
+        // Once we validate the fully prepared resource, PUT and PATCH should share the same validation logic.
+        PATCH
+    }
+
+    private CreateOrUpdateResult createOrUpdate(BaseClientRepresentation client, CreateOrUpdateStrategy strategy) throws ServiceException {
         validateUnknownFields(client);
 
         boolean created = false;
@@ -123,7 +144,7 @@ public class DefaultClientService implements ClientService {
         }
 
         if (clientResource != null) {
-            if (!allowUpdate) {
+            if (strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
             model = mapper.toModel(client, clientResource.viewClientModel());
@@ -135,7 +156,7 @@ public class DefaultClientService implements ClientService {
             }
         } else {
             created = true;
-            validator.validate(client, CreateClientDefault.class); // TODO improve it to avoid second validation when we know it is create and not update
+            validator.validate(client, CreateClientDefault.class);
 
             // First, create a basic v1 representation to persist the client in the database.
             // We can't use mapper.toModel(client) directly for creation because the "detached model"
@@ -206,7 +227,7 @@ public class DefaultClientService implements ClientService {
             default -> throw new ServiceException("Invalid patch type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
         }
 
-        return createOrUpdate(realm, updated, true).representation();
+        return createOrUpdate(updated, CreateOrUpdateStrategy.PATCH).representation();
     }
 
     @Override
