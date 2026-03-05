@@ -184,6 +184,6 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
 
     @Override
     public EventType getEventType() {
-        return EventType.LOGIN;
+        return EventType.JWT_AUTHORIZATION_GRANT;
     }
 }

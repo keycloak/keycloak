@@ -175,7 +175,7 @@ public class BaseAbstractJWTAuthorizationGrantTest {
         Assertions.assertEquals(expectedClientId, accessToken.getIssuedFor());
         Assertions.assertEquals(user.getUsername(), accessToken.getPreferredUsername());
         EventAssertion.assertSuccess(events.poll())
-                .type(EventType.LOGIN)
+                .type(EventType.JWT_AUTHORIZATION_GRANT)
                 .clientId(expectedClientId)
                 .sessionId(null)
                 .userId(user.getId())
@@ -196,7 +196,7 @@ public class BaseAbstractJWTAuthorizationGrantTest {
         Assertions.assertEquals(expectedError, response.getError());
         Assertions.assertEquals(expectedErrorDescription, response.getErrorDescription());
         return EventAssertion.assertError(event)
-                .type(EventType.LOGIN_ERROR)
+                .type(EventType.JWT_AUTHORIZATION_GRANT_ERROR)
                 .sessionId(null)
                 .error(OAuthErrorException.INVALID_REQUEST)
                 .details(Details.GRANT_TYPE, OAuth2Constants.JWT_AUTHORIZATION_GRANT)
@@ -208,7 +208,7 @@ public class BaseAbstractJWTAuthorizationGrantTest {
         Assertions.assertEquals(expectedError, response.getError());
         Assertions.assertEquals(expectedErrorDescription, response.getErrorDescription());
         return EventAssertion.assertError(event)
-                .type(EventType.LOGIN_ERROR)
+                .type(EventType.JWT_AUTHORIZATION_GRANT_ERROR)
                 .sessionId(null)
                 .userId(user.getId())
                 .error(expectedError)
