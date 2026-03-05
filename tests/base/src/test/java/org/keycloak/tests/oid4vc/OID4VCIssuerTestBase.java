@@ -105,6 +105,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIR
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
 import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
 
 /**
@@ -501,6 +502,7 @@ public abstract class OID4VCIssuerTestBase {
             //
             ClientProfileRepresentation profile = createClientPolicyProfile();
             realm.clientPolicy(createClientPolicyOfferRequired(profile));
+            realm.clientPolicy(createClientPolicyOfferPreAuthAllowed(profile));
             realm.clientProfile(profile);
 
             return realm;
@@ -526,6 +528,29 @@ public abstract class OID4VCIssuerTestBase {
             policy.setName(VC_POLICY_CREDENTIAL_OFFER_REQUIRED.getName());
             policy.setDescription("Client policy to determine whether a credential offers is required");
             policy.setEnabled(false);
+
+            ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
+            condition.setConditionProviderId("client-attributes");
+            ObjectNode config = JsonNodeFactory.instance.objectNode();
+            config.put("attributes", JsonSerialization.valueAsString(List.of(Map.of(
+                    "key", OID4VCI_ENABLED_ATTRIBUTE_KEY,
+                    "value", String.valueOf(true)
+            ))));
+            condition.setConfiguration(config);
+
+            policy.setConditions(List.of(condition));
+            policy.setProfiles(List.of(profile.getName()));
+
+            LOGGER.infof(JsonSerialization.valueAsString(policy));
+            return policy;
+        }
+
+        private ClientPolicyRepresentation createClientPolicyOfferPreAuthAllowed(ClientProfileRepresentation profile) {
+
+            ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+            policy.setName(VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED.getName());
+            policy.setDescription("Client policy to determine whether 'pre-authorized_code' grant credential offers can be issued");
+            policy.setEnabled(true);
 
             ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
             condition.setConditionProviderId("client-attributes");
