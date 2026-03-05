@@ -58,4 +58,6 @@ public enum ClientPolicyEvent {
 
     SAML_AUTHN_REQUEST,
     SAML_LOGOUT_REQUEST,
+
+    CREDENTIAL_OFFER_CREATE
 }

@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
@@ -88,6 +89,9 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
@@ -111,6 +115,8 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.validators.PatternValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
@@ -130,8 +136,11 @@ import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
+import static org.keycloak.protocol.oid4vc.policy.CredentialPolicies.VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
@@ -245,6 +254,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         );
         testRealm.setClientScopes(clientScopes);
 
+        // Set client policies
+        ClientPoliciesRepresentation clientPolicies = new ClientPoliciesRepresentation();
+        clientPolicies.setPolicies(List.of(createClientPolicy()));
+        testRealm.setParsedClientPolicies(clientPolicies);
+
         // Enable oid4vci in test clients
         for (String cid : List.of(clientId)) {
 
@@ -281,6 +295,23 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         sdJwtTypeCredentialClientScope = requireExistingClientScope(sdJwtTypeCredentialScopeName);
         jwtTypeCredentialClientScope = requireExistingClientScope(jwtTypeCredentialScopeName);
         minimalJwtTypeCredentialClientScope = requireExistingClientScope(minimalJwtTypeCredentialScopeName);
+    }
+
+    private ClientPolicyRepresentation createClientPolicy() {
+        ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+        policy.setName(VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED.getName());
+        policy.setDescription("Client policy to determine whether 'pre-authorized_code' grant credential offers are allowed");
+        policy.setEnabled(true);
+
+        ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
+        condition.setConditionProviderId("client-attributes");
+
+        ObjectNode config = JsonNodeFactory.instance.objectNode();
+        config.put("attributes", "[{\"key\":\"vc.policy.offer.pre-auth.allowed\",\"value\":\"true\"}]");
+        condition.setConfiguration(config);
+
+        policy.setConditions(List.of(condition));
+        return policy;
     }
 
     protected static OAuth2CodeEntry prepareSessionCode(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator, String note) {
@@ -341,16 +372,16 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         clientScope.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
         Map<String, String> attributes =
                 new HashMap<>(Map.of(ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE, "true",
-                        CredentialScopeModel.EXPIRY_IN_SECONDS, "15"));
+                        CredentialScopeModel.VC_EXPIRY_IN_SECONDS, "15"));
         BiConsumer<String, String> addAttribute = (attributeName, value) -> {
             if (value != null) {
                 attributes.put(attributeName, value);
             }
         };
-        addAttribute.accept(CredentialScopeModel.ISSUER_DID, issuerDid);
-        addAttribute.accept(CredentialScopeModel.CONFIGURATION_ID, credentialConfigurationId);
-        addAttribute.accept(CredentialScopeModel.CREDENTIAL_IDENTIFIER, credentialIdentifier);
-        addAttribute.accept(CredentialScopeModel.FORMAT, format);
+        addAttribute.accept(CredentialScopeModel.VC_ISSUER_DID, issuerDid);
+        addAttribute.accept(VC_CONFIGURATION_ID, credentialConfigurationId);
+        addAttribute.accept(CredentialScopeModel.VC_IDENTIFIER, credentialIdentifier);
+        addAttribute.accept(VC_FORMAT, format);
         addAttribute.accept(CredentialScopeModel.VCT, Optional.ofNullable(vct).orElse(credentialIdentifier));
         if (credentialConfigurationId != null) {
             String vcDisplay;
@@ -365,11 +396,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             addAttribute.accept(CredentialScopeModel.VC_DISPLAY, vcDisplay);
         }
         if (acceptedKeyAttestationValues != null) {
-            attributes.put(CredentialScopeModel.KEY_ATTESTATION_REQUIRED, "true");
+            attributes.put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED, "true");
             if (!acceptedKeyAttestationValues.isEmpty()) {
-                attributes.put(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_KEY_STORAGE,
+                attributes.put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE,
                         String.join(",", acceptedKeyAttestationValues));
-                attributes.put(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_USER_AUTH,
+                attributes.put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_USER_AUTH,
                         String.join(",", acceptedKeyAttestationValues));
             }
         }
@@ -554,12 +585,43 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     // 2. Using the code to get access token
     // 3. Get the credential configuration id from issuer metadata at .wellKnown
     // 4. With the access token, get the credential
-    protected void testCredentialIssuanceWithAuthZCodeFlow(ClientScopeRepresentation clientScope,
+    protected void testCredentialIssuanceWithAuthZCodeFlow(ClientScopeRepresentation credScope,
                                                            BiFunction<String, String, String> f,
                                                            Consumer<Map<String, Object>> c) {
-        String testScope = clientScope.getName();
-        String testFormat = clientScope.getAttributes().get(CredentialScopeModel.FORMAT);
-        String testCredentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // Use credential_identifier if available, otherwise use configuration_id for error testing
+        String testCredentialConfigurationId = credScope.getAttributes().get(VC_CONFIGURATION_ID);
+        testCredentialIssuanceWithAuthZCodeFlow(credScope, f, c, (credentialIdentifier) -> {
+            CredentialRequest request = new CredentialRequest();
+            if (credentialIdentifier != null) {
+                request.setCredentialIdentifier(credentialIdentifier);
+            } else {
+                request.setCredentialConfigurationId(testCredentialConfigurationId);
+            }
+            return request;
+        });
+    }
+
+    protected void testCredentialIssuanceWithAuthZCodeFlow(ClientScopeRepresentation credScope,
+                                                           BiFunction<String, String, String> f,
+                                                           Consumer<Map<String, Object>> c,
+                                                           Function<String, CredentialRequest> crf) {
+        String testScope = credScope.getName();
+        String testFormat = credScope.getAttributes().get(VC_FORMAT);
+        String testCredentialConfigurationId = credScope.getAttributes().get(VC_CONFIGURATION_ID);
+
+        // Use credential_identifier if available, otherwise use configuration_id for error testing
+        if (crf == null) {
+            crf = (credentialIdentifier) -> {
+                CredentialRequest request = new CredentialRequest();
+                if (credentialIdentifier != null) {
+                    request.setCredentialIdentifier(credentialIdentifier);
+                } else {
+                    request.setCredentialConfigurationId(testCredentialConfigurationId);
+                }
+                return request;
+            };
+        }
 
         try (Client client = AdminClientUtil.createResteasyClient()) {
             String metadataUrl = getRealmMetadataPath(TEST_REALM_NAME);
@@ -604,13 +666,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                     URI credentialUri = credentialUriBuilder.build();
                     WebTarget credentialTarget = clientForCredentialRequest.target(credentialUri);
 
-                    CredentialRequest request = new CredentialRequest();
-                    // Use credential_identifier if available, otherwise use configuration_id for error testing
-                    if (credentialIdentifier != null) {
-                        request.setCredentialIdentifier(credentialIdentifier);
-                    } else {
-                        request.setCredentialConfigurationId(testCredentialConfigurationId);
-                    }
+                    CredentialRequest request = crf.apply(credentialIdentifier);
 
                     assertEquals(testFormat,
                             oid4vciIssuerConfig.getCredentialsSupported()

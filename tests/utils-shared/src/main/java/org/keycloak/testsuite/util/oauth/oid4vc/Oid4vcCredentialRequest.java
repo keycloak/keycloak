@@ -14,9 +14,9 @@ import org.apache.http.entity.StringEntity;
 
 public class Oid4vcCredentialRequest extends AbstractHttpPostRequest<Oid4vcCredentialRequest, Oid4vcCredentialResponse> {
 
-    private final CredentialRequest credRequest;
+    protected final CredentialRequest credRequest;
 
-    Oid4vcCredentialRequest(AbstractOAuthClient<?> client, CredentialRequest credRequest) {
+    public Oid4vcCredentialRequest(AbstractOAuthClient<?> client, CredentialRequest credRequest) {
         super(client);
         this.credRequest = credRequest;
     }
@@ -34,6 +34,10 @@ public class Oid4vcCredentialRequest extends AbstractHttpPostRequest<Oid4vcCrede
     public Oid4vcCredentialRequest proofs(Proofs proofs) {
         credRequest.setProofs(proofs);
         return this;
+    }
+
+    public CredentialRequest getCredentialRequest() {
+        return credRequest;
     }
 
     @Override

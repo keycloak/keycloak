@@ -17,17 +17,24 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import java.beans.Transient;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import static org.keycloak.OID4VCConstants.WELL_KNOWN_OPENID_CREDENTIAL_ISSUER;
+import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
+import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 /**
  * Represents a CredentialsOffer according to the OID4VCI Spec
@@ -45,8 +52,9 @@ public class CredentialsOffer {
     @JsonProperty("credential_configuration_ids")
     private List<String> credentialConfigurationIds;
 
-    // current implementation only supports pre-authorized codes.
-    private PreAuthorizedGrant grants;
+    @JsonProperty("grants")
+    @JsonDeserialize(using = CredentialOfferGrantsDeserializer.class)
+    private Map<String, CredentialOfferGrant> grants = new HashMap<>();
 
     public String getCredentialIssuer() {
         return credentialIssuer;
@@ -57,7 +65,7 @@ public class CredentialsOffer {
         return this;
     }
 
-    @Transient
+    @JsonIgnore
     public String getIssuerMetadataUrl() {
         var metadataUrl = KeycloakUriBuilder
                 .fromUri(credentialIssuer)
@@ -83,24 +91,55 @@ public class CredentialsOffer {
         return this;
     }
 
-    public PreAuthorizedGrant getGrants() {
-        return grants;
+    public CredentialOfferGrant getGrant(String grantType) {
+        return grants.get(grantType);
     }
 
-    public CredentialsOffer setGrants(PreAuthorizedGrant grants) {
-        this.grants = grants;
+    public CredentialsOffer addGrant(CredentialOfferGrant grant) {
+        grants.put(grant.getGrantType(), grant);
         return this;
+    }
+
+    @JsonIgnore
+    public AuthorizationCodeGrant getAuthorizationCodeGrant() {
+        return (AuthorizationCodeGrant) grants.get(AUTH_CODE_GRANT_TYPE);
+    }
+
+    @JsonIgnore
+    public String getIssuerState() {
+        return Optional.ofNullable(getAuthorizationCodeGrant())
+                .map(AuthorizationCodeGrant::getIssuerState)
+                .orElse(null);
+    }
+
+    @JsonIgnore
+    public PreAuthorizedCodeGrant getPreAuthorizedGrant() {
+        return (PreAuthorizedCodeGrant) grants.get(PRE_AUTH_GRANT_TYPE);
+    }
+
+    @JsonIgnore
+    public String getPreAuthorizedCode() {
+        return Optional.ofNullable(getPreAuthorizedGrant())
+                .map(PreAuthorizedCodeGrant::getPreAuthorizedCode)
+                .orElse(null);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof CredentialsOffer that)) return false;
-        return Objects.equals(getCredentialIssuer(), that.getCredentialIssuer()) && Objects.equals(getCredentialConfigurationIds(), that.getCredentialConfigurationIds()) && Objects.equals(getGrants(), that.getGrants());
+        boolean match = Objects.equals(credentialIssuer, that.credentialIssuer);
+        match &= Objects.equals(credentialConfigurationIds, that.credentialConfigurationIds);
+        match &= Objects.equals(grants, that.grants);
+        return match;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getCredentialIssuer(), getCredentialConfigurationIds(), getGrants());
+        return Objects.hash(credentialIssuer, credentialConfigurationIds, grants);
+    }
+
+    public String toString() {
+        return JsonSerialization.valueAsString(this);
     }
 }
