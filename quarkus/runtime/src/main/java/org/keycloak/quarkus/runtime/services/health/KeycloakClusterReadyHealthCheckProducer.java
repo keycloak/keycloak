@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.services.health;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Inject;
 
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
@@ -30,11 +31,13 @@ import org.eclipse.microprofile.health.Readiness;
 @ApplicationScoped
 public class KeycloakClusterReadyHealthCheckProducer {
 
+    @Inject
+    QuarkusKeycloakSessionFactory sessionFactory;
+
     @Produces
     @Readiness
     @Dependent
     public AsyncHealthCheck createHealthCheck() {
-        var sessionFactory = QuarkusKeycloakSessionFactory.getInstance();
         InfinispanConnectionProviderFactory factory = (InfinispanConnectionProviderFactory) sessionFactory.getProviderFactory(InfinispanConnectionProvider.class);
         if (factory.isClusterHealthSupported()) {
             return new KeycloakClusterReadyHealthCheck();

@@ -94,9 +94,6 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     private void updateSynch(Connection connection, File file, String defaultSchema) {
         logger.debug("Starting database update");
 
-        // Need ThreadLocal as liquibase doesn't seem to have API to inject custom objects into tasks
-        ThreadLocalSessionContext.setCurrentSession(session);
-
         Writer exportWriter = null;
         try {
             // Run update with keycloak master changelog first
@@ -121,7 +118,6 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             logger.error("Error has occurred while updating the database", e);
             throw new RuntimeException("Failed to update database", e);
         } finally {
-            ThreadLocalSessionContext.removeCurrentSession();
             if (exportWriter != null) {
                 try {
                     exportWriter.close();
@@ -235,7 +231,6 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
     protected Status validateSynch(final Connection connection, final String defaultSchema) {
 
         logger.debug("Validating if database is updated");
-        ThreadLocalSessionContext.setCurrentSession(session);
 
         try {
             // Validate with keycloak master changelog first
@@ -261,8 +256,6 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
             }
         } catch (LiquibaseException e) {
             throw new RuntimeException("Failed to validate database", e);
-        } finally {
-            ThreadLocalSessionContext.removeCurrentSession();
         }
 
         return Status.VALID;

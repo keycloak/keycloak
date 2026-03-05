@@ -19,7 +19,7 @@ package org.keycloak.quarkus.runtime.transaction;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.services.resources.KeycloakApplication;
 
 /**
  * <p>A {@link TransactionalSessionHandler} is responsible for managing transaction sessions and its lifecycle. Its subtypes
@@ -34,7 +34,7 @@ public interface TransactionalSessionHandler {
      * @return a keycloak session
      */
     default KeycloakSession create() {
-        KeycloakSessionFactory sessionFactory = QuarkusKeycloakSessionFactory.getInstance();
+        KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
         return sessionFactory.create();
     }
 

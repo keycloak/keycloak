@@ -19,6 +19,8 @@ package org.keycloak.quarkus.runtime.services.health;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jakarta.inject.Inject;
+
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.infinispan.util.InfinispanUtils;
@@ -35,13 +37,15 @@ public class KeycloakClusterReadyHealthCheck implements AsyncHealthCheck {
 
     private final AtomicReference<Instant> failingSince = new AtomicReference<>();
 
+    @Inject
+    QuarkusKeycloakSessionFactory sessionFactory;
+
     @Override
     public Uni<HealthCheckResponse> call() {
         var builder = HealthCheckResponse.named("Keycloak cluster health check").up();
         if (InfinispanUtils.isRemoteInfinispan()) {
             return Uni.createFrom().item(builder.build());
         }
-        var sessionFactory = QuarkusKeycloakSessionFactory.getInstance();
         InfinispanConnectionProviderFactory factory = (InfinispanConnectionProviderFactory) sessionFactory.getProviderFactory(InfinispanConnectionProvider.class);
         if (factory.isClusterHealthy()) {
             failingSince.set(null);

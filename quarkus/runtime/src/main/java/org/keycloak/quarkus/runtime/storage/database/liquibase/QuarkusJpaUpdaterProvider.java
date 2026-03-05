@@ -31,7 +31,6 @@ import java.util.Set;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseConstants;
-import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
 import org.keycloak.connections.jpa.updater.liquibase.conn.KeycloakLiquibase;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.conn.MySQLCustomChangeLogHistoryService;
@@ -91,9 +90,6 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
     private void update(Connection connection, File file, String defaultSchema) {
         logger.debug("Starting database update");
 
-        // Need ThreadLocal as liquibase doesn't seem to have API to inject custom objects into tasks
-        ThreadLocalSessionContext.setCurrentSession(session);
-
         Writer exportWriter = null;
         try {
             if (needVerifyMasterChangelog()) {
@@ -119,7 +115,6 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
         } catch (LiquibaseException | IOException e) {
             throw new RuntimeException("Failed to update database", e);
         } finally {
-            ThreadLocalSessionContext.removeCurrentSession();
             if (exportWriter != null) {
                 try {
                     exportWriter.close();
@@ -230,7 +225,6 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
     @Override
     public Status validate(Connection connection, String defaultSchema) {
         logger.debug("Validating if database is updated");
-        ThreadLocalSessionContext.setCurrentSession(session);
 
         try {
             if (needVerifyMasterChangelog()) {
@@ -258,8 +252,6 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
             }
         } catch (LiquibaseException e) {
             throw new RuntimeException("Failed to validate database", e);
-        } finally {
-            ThreadLocalSessionContext.removeCurrentSession();
         }
 
         return Status.VALID;
