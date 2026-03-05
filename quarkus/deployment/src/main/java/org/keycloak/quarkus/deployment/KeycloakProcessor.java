@@ -712,6 +712,7 @@ class KeycloakProcessor {
         }
 
         return SyntheticBeanBuildItem.configure(QuarkusKeycloakSessionFactory.class).scope(Singleton.class)
+                .unremovable()
                 .runtimeValue(recorder.createSessionFactory(factories, defaultProviders, preConfiguredProviders,
                         loadThemesFromClassPath())).done();
     }

@@ -40,7 +40,7 @@ public class KeycloakClusterReadyHealthCheckProducer {
     public AsyncHealthCheck createHealthCheck() {
         InfinispanConnectionProviderFactory factory = (InfinispanConnectionProviderFactory) sessionFactory.getProviderFactory(InfinispanConnectionProvider.class);
         if (factory.isClusterHealthSupported()) {
-            return new KeycloakClusterReadyHealthCheck();
+            return new KeycloakClusterReadyHealthCheck(factory);
         } else {
             return null;
         }
