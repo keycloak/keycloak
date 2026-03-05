@@ -204,7 +204,10 @@
         "https://localhost:8543/auth/realms/test/app/auth/*"
       ],
       "adminUrl": "http://localhost:8180/auth/realms/master/app/admin",
-      "secret": "password"
+      "secret": "password",
+      "attributes": {
+        "vc.policy.offer.preauth.allowed": "true"
+      }
     },
     {
       "clientId": "root-url-client",
@@ -666,7 +669,6 @@
       "name": "sample-realm-group"
     }
   ],
-
 
   "clientScopeMappings": {
     "test-app": [

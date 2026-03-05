@@ -31,6 +31,9 @@ import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCIssuedAtTimeClaimMapper;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
+import org.keycloak.protocol.oid4vc.policy.CredentialPolicy;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -53,6 +56,8 @@ import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.util.AuthorizationDetailsParser;
 import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -60,10 +65,11 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.protocol.oid4vc.policy.CredentialPolicies.VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
 
 /**
  * Abstract base class for OID4VCI Testing
- *
+ * <p>
  * [TODO] Can the server runtime mode be configures by the testcase?
  * Server-side debugging: KC_TEST_SERVER=embedded
  */
@@ -153,11 +159,16 @@ public abstract class OID4VCIssuerTestBase {
         //
         ClientsResource clientsResource = realmResource.clients();
         for (String cid : List.of(clientId)) {
-            ClientRepresentation client = clientsResource.findByClientId(cid).get(0);
-            ClientResource clientResource = clientsResource.get(client.getId());
+            ClientRepresentation client = getClientRepresentation(cid);
+            ClientResource clientResource = getClientResource(client);
 
             // Enable OID4VCI
             setOid4vciEnabled(client, shouldEnableOid4vci(client));
+
+            // Set ClientPolicy attributes
+            for (CredentialPolicy<?> cp : List.of(VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED)) {
+                setClientAttribute(client, cp.getAttrKey(), String.valueOf(cp.getExpectedValue()));
+            }
             clientResource.update(client);
 
             // Assign optional client scopes
@@ -192,8 +203,22 @@ public abstract class OID4VCIssuerTestBase {
     }
 
     void setOid4vciEnabled(ClientRepresentation client, boolean enable) {
+        setClientAttribute(client, OID4VCI_ENABLED_ATTRIBUTE_KEY, String.valueOf(enable));
+    }
+
+    ClientRepresentation getClientRepresentation(String clientId) {
+        ClientsResource clientsResource = testRealm.admin().clients();
+        return clientsResource.findByClientId(clientId).get(0);
+    }
+
+    ClientResource getClientResource(ClientRepresentation client) {
+        ClientsResource clientsResource = testRealm.admin().clients();
+        return clientsResource.get(client.getId());
+    }
+
+    void setClientAttribute(ClientRepresentation client, String key, String value) {
         Map<String, String> attributes = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
-        attributes.put(OID4VCI_ENABLED_ATTRIBUTE_KEY, String.valueOf(enable));
+        attributes.put(key, value);
         client.setAttributes(attributes);
     }
 
@@ -402,7 +427,29 @@ public abstract class OID4VCIssuerTestBase {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name(TEST_REALM_NAME);
+
+            // Add ClientPolicyRepresentations
+            //
+            realm.clientPolicy(createClientPolicyRepresentation());
+
             return realm;
+        }
+
+        private ClientPolicyRepresentation createClientPolicyRepresentation() {
+            ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+            policy.setName(VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED.getName());
+            policy.setDescription("Client policy to determine whether 'pre-authorized_code' grant credential offers are allowed");
+            policy.setEnabled(true);
+
+            ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
+            condition.setConditionProviderId("client-attributes");
+
+            ObjectNode config = JsonNodeFactory.instance.objectNode();
+            config.put("attributes", "[{\"key\":\"vc.policy.offer.pre-auth.allowed\",\"value\":\"true\"}]");
+            condition.setConfiguration(config);
+
+            policy.setConditions(List.of(condition));
+            return policy;
         }
     }
 }

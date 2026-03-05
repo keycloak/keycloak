@@ -18,6 +18,7 @@ package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.keycloak.common.util.SecretGenerator;
@@ -34,11 +35,16 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
+import org.keycloak.protocol.oid4vc.policy.PredicateCredentialPolicy;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.util.Strings;
 
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
+import static org.keycloak.protocol.oid4vc.policy.CredentialPolicies.VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
 
 /**
  * Default implementation of {@link CredentialOfferProvider}.
@@ -56,7 +62,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             String targetClientId,
             String targetUsername,
             Boolean withTxCode,
-            Integer expireAt) {
+            Integer expireAt) throws ClientPolicyException {
 
         // Ensure single credential_configuration_id
         //
@@ -80,6 +86,29 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
                     realmModel, () -> session.clientScopes().getClientScopesStream(realmModel), credConfigId);
             if (credScopeModel == null) {
                 throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credential scope model for: " + credConfigId);
+            }
+
+            if (PRE_AUTH_GRANT_TYPE.equals(grantType)) {
+                PredicateCredentialPolicy preAuthPolicy = VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
+                String preAuthPolicyName = preAuthPolicy.getName();
+
+                // Require existence of 'oid4vci-offer-preauth-allowed' ClientPolicy
+                //
+                ClientPolicyManager policyManager = session.clientPolicy();
+                ClientPolicyRepresentation preAuthClientPolicy = policyManager.getClientPolicies(realmModel, true).getPolicies().stream()
+                        .filter(cp -> cp.getName().equals(preAuthPolicyName))
+                        .findFirst().orElse(null);
+                if (preAuthClientPolicy == null) {
+                    throw new CredentialOfferException(Errors.NOT_ALLOWED, "Client policy not defined: " + preAuthPolicyName);
+                }
+
+                // Validate policy 'vc.policy.offer.pre-auth.allowed'
+                //
+                Map<String, String> clientAttributes = session.getContext().getClient().getAttributes();
+                boolean preAuthAllowed = Boolean.parseBoolean(clientAttributes.get(preAuthPolicy.getAttrKey()));
+                if (!preAuthAllowed) {
+                    throw new CredentialOfferException(Errors.NOT_ALLOWED, "Pre-Authorized code grant not allowed by policy: " + preAuthPolicyName);
+                }
             }
 
             // Generate authorization_details that correspond to the credential_configuration_id

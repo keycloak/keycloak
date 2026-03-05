@@ -116,6 +116,7 @@ import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -493,6 +494,10 @@ public class OID4VCIssuerEndpoint {
             offerState = offerProvider.createCredentialOffer(session, userSession, grantType,
                     credentialConfigurationIds, targetClientId, targetUser, withTxCode, expireAt);
 
+        } catch (ClientPolicyException ex) {
+            eventBuilder.detail(Details.REASON, ex.getMessage()).error(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), ex.getMessage(), Response.Status.BAD_REQUEST);
         } catch (CredentialOfferException ex) {
             eventBuilder.detail(Details.REASON, ex.getMessage()).error(ex.getErrorType());
             throw new CorsErrorResponseException(cors,

@@ -4,12 +4,14 @@ import java.net.URI;
 import java.util.List;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
+import org.keycloak.protocol.oid4vc.policy.PredicateCredentialPolicy;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -24,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.protocol.oid4vc.policy.CredentialPolicies.VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIAL_OFFER_URI_ATTACHMENT_KEY;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -234,6 +237,29 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
         } finally {
             userRep.setEnabled(true);
             userResource.update(userRep);
+        }
+    }
+
+    @Test
+    public void testPreAuthOffer_NotAllowed() throws Exception {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        PredicateCredentialPolicy preAuthPolicy = VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
+
+        // Disable client policy
+        ClientResource clientResource = getClientResource(client);
+        String preAuthAllowed = client.getAttributes().get(preAuthPolicy.getAttrKey());
+        setClientAttribute(client, preAuthPolicy.getAttrKey(), String.valueOf(false));
+        clientResource.update(client);
+
+        try {
+            IllegalStateException error = assertThrows(IllegalStateException.class,
+                    () -> wallet.createPreAuthCredentialOffer(ctx, ctx.holder, false));
+            assertTrue(error.getMessage().contains("Pre-Authorized code grant not allowed by policy"), error.getMessage());
+        } finally {
+            setClientAttribute(client, preAuthPolicy.getAttrKey(), preAuthAllowed);
+            clientResource.update(client);
         }
     }
 

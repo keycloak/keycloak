@@ -89,6 +89,9 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
@@ -112,6 +115,8 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.validators.PatternValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
@@ -135,6 +140,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
+import static org.keycloak.protocol.oid4vc.policy.CredentialPolicies.VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
 import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
@@ -248,6 +254,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         );
         testRealm.setClientScopes(clientScopes);
 
+        // Set client policies
+        ClientPoliciesRepresentation clientPolicies = new ClientPoliciesRepresentation();
+        clientPolicies.setPolicies(List.of(createClientPolicy()));
+        testRealm.setParsedClientPolicies(clientPolicies);
+
         // Enable oid4vci in test clients
         for (String cid : List.of(clientId)) {
 
@@ -284,6 +295,23 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         sdJwtTypeCredentialClientScope = requireExistingClientScope(sdJwtTypeCredentialScopeName);
         jwtTypeCredentialClientScope = requireExistingClientScope(jwtTypeCredentialScopeName);
         minimalJwtTypeCredentialClientScope = requireExistingClientScope(minimalJwtTypeCredentialScopeName);
+    }
+
+    private ClientPolicyRepresentation createClientPolicy() {
+        ClientPolicyRepresentation policy = new ClientPolicyRepresentation();
+        policy.setName(VC_POLICY_CREDENTIAL_OFFER_PREAUTH_ALLOWED.getName());
+        policy.setDescription("Client policy to determine whether 'pre-authorized_code' grant credential offers are allowed");
+        policy.setEnabled(true);
+
+        ClientPolicyConditionRepresentation condition = new ClientPolicyConditionRepresentation();
+        condition.setConditionProviderId("client-attributes");
+
+        ObjectNode config = JsonNodeFactory.instance.objectNode();
+        config.put("attributes", "[{\"key\":\"vc.policy.offer.pre-auth.allowed\",\"value\":\"true\"}]");
+        condition.setConfiguration(config);
+
+        policy.setConditions(List.of(condition));
+        return policy;
     }
 
     protected static OAuth2CodeEntry prepareSessionCode(KeycloakSession session, AppAuthManager.BearerTokenAuthenticator authenticator, String note) {
