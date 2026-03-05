@@ -57,6 +57,12 @@ only the `query-*` role to an administrator is no longer sufficient to list role
 Instead, the administrator must have explicit permissions to view or manage the realm or client for which they want to list roles, or by
 having the `view-realm` or `manage-realm` role for realm roles, or `view-clients` or `manage-clients` role for client roles.
 
+=== Stricter access control for managing permission tickets
+
+In order to improve security, the access control for managing permission tickets has been made stricter where
+only users (or service accounts) granted with the `uma-protection` role can manage permission tickets for a given
+resource server. The only exception is the resource server itself, which can manage its permission tickets without the `uma-protection` role.
+
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
@@ -162,7 +168,7 @@ This behavior is enabled by default and can be controlled with the server option
 
 * `--truststore-kubernetes-enabled=true|false` (default: `true`)
 
-No changes are required for most deployments. If you previously relied on the Operator to manage these truststore entries, the server now performs the same function directly. 
+No changes are required for most deployments. If you previously relied on the Operator to manage these truststore entries, the server now performs the same function directly.
 
 WARNING: when `https-client-auth` is set to `required` or `request` without an explicit `https-trust-store-file`, mTLS client certificate validation falls back to the system truststore. With `truststore-kubernetes-enabled=true`, this means certificates signed by the Kubernetes cluster CA will be accepted as valid client certificates. If this is not desired, either set `https-trust-store-file` explicitly or disable `truststore-kubernetes-enabled`.
 
