@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.actions;
+package org.keycloak.tests.providers.actions;
 
 import java.util.List;
 import java.util.Map;

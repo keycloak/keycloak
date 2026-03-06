@@ -15,12 +15,30 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.components;
+package org.keycloak.tests.providers.components;
 
-import org.keycloak.component.ComponentFactory;
+import java.util.List;
+import java.util.Map;
+
+import org.keycloak.provider.Provider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public interface TestComponentProviderFactory<T extends TestComponentProvider> extends ComponentFactory<T, TestComponentProvider> {
+public interface TestComponentProvider extends Provider {
+
+    DetailsRepresentation getDetails();
+
+    class DetailsRepresentation {
+        Map<String, List<String>> config;
+
+        public Map<String, List<String>> getConfig() {
+            return config;
+        }
+
+        public void setConfig(Map<String, List<String>> config) {
+            this.config = config;
+        }
+    }
+
 }

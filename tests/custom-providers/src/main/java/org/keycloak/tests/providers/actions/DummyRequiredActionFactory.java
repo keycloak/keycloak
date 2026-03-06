@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.actions;
+package org.keycloak.tests.providers.actions;
 
 import org.keycloak.Config;
 import org.keycloak.authentication.RequiredActionContext;

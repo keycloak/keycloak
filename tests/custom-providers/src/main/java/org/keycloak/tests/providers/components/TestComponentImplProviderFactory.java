@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.components;
+package org.keycloak.tests.providers.components;
 
 import java.util.List;
 

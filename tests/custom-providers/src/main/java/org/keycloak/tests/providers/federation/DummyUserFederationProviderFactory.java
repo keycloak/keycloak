@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.federation;
+package org.keycloak.tests.providers.federation;
 
 import java.util.Date;
 import java.util.HashMap;

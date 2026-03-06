@@ -1,1 +1,1 @@
-org.keycloak.testsuite.authorization.policy.GrantPolicyProvider
+org.keycloak.tests.providers.authorization.policy.GrantPolicyProvider
