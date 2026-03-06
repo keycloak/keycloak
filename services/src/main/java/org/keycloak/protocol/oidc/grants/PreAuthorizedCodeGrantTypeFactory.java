@@ -23,16 +23,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
+
 /**
  * Factory for Pre-Authorized Code Grant
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
 public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory, EnvironmentDependentProviderFactory {
-
-    public static final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:pre-authorized_code";
-    public static final String CODE_REQUEST_PARAM = "pre-authorized_code";
-    public static final String TX_CODE_PARAM = "tx_code";
 
     @Override
     public OAuth2GrantType create(KeycloakSession session) {
@@ -53,7 +51,7 @@ public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory
 
     @Override
     public String getId() {
-        return GRANT_TYPE;
+        return PRE_AUTH_GRANT_TYPE;
     }
 
     @Override
