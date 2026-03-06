@@ -117,6 +117,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
 
+import static org.keycloak.OAuth2Constants.SCOPE_PHONE;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
@@ -144,6 +145,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -572,7 +574,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, TEST_CLIENT)) {
             ClientRepresentation clientRep = cau.getResource().toRepresentation();
-            Assert.assertNotNull(clientRep);
+            assertNotNull(clientRep);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
             cau.update();
             checkMtlsFlow();
@@ -605,7 +607,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
         try (ClientAttributeUpdater cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, TEST_CLIENT)) {
             ClientRepresentation clientRep = cau.getResource().toRepresentation();
-            Assert.assertNotNull(clientRep);
+            assertNotNull(clientRep);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
             cau.update();
             // Check login.
@@ -964,6 +966,57 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
         assertEquals("resource owner password credentials grant is prohibited.", response.getErrorDescription());
 
+    }
+
+    @Test
+    public void testRejectResourceOwnerCredentialsGrantExecutorWithClientScopeCondition() throws Exception {
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setDirectAccessGrantsEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+        });
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Purofairu desu")
+                        .addExecutor(RejectResourceOwnerPasswordCredentialsGrantExecutorFactory.PROVIDER_ID,
+                                createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig(Boolean.TRUE))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
+                        .addCondition(ClientScopesConditionFactory.PROVIDER_ID,
+                                createClientScopesConditionConfig(ClientScopesConditionFactory.ANY, Arrays.asList(SCOPE_PHONE)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.client(clientId, clientSecret);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+        assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getAccessToken());
+        assertNull(response.getError());
+
+        // Request with "scope=phone" should not be permitted
+        String origScope = oauth.config().getScope();
+        try {
+            oauth.scope(SCOPE_PHONE);
+            response = oauth.doPasswordGrantRequest(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+            assertEquals(400, response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_GRANT, response.getError());
+            assertEquals("resource owner password credentials grant is prohibited.", response.getErrorDescription());
+        } finally {
+            oauth.scope(origScope);
+        }
     }
 
     @Test

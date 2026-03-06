@@ -40,6 +40,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.JWTAuthorizationGrantContext;
+import org.keycloak.services.clientpolicy.context.ResourceOwnerPasswordCredentialsContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenResponseContext;
 import org.keycloak.services.clientpolicy.context.TokenExchangeRequestContext;
@@ -123,6 +124,9 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
                 return ClientPolicyVote.NO;
             case JWT_AUTHORIZATION_GRANT:
                 if (isScopeMatched(((JWTAuthorizationGrantContext) context).getAuthorizationGrantContext())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST:
+                if (isScopeMatched(((ResourceOwnerPasswordCredentialsContext) context).getScope(), session.getContext().getClient())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:
                 return ClientPolicyVote.ABSTAIN;
