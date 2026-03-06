@@ -25,6 +25,7 @@ import {
   assertEmptyTable,
   assertNoResults,
   assertRowExists,
+  assertTableRowsLength,
   clickRowKebabItem,
   clickTableRowItem,
   searchItem,
@@ -176,6 +177,31 @@ test.describe.serial("Realm roles test", () => {
     const itemName = "non-existent-associated-role";
     await searchItem(page, searchPlaceHolder, itemName);
     await assertNoResults(page);
+  });
+
+  test("Should filter assigned client roles by the matching role only", async ({
+    page,
+  }) => {
+    const itemId = prefix + uuid();
+    await adminClient.createRealmRole({ name: itemId, realm: realmName });
+
+    await searchItem(page, searchPlaceHolder, itemId);
+    await clickTableRowItem(page, itemId);
+    await goToAssociatedRolesTab(page);
+
+    await pickRoleType(page, "client");
+    await pickRole(page, "manage-account", true);
+    await confirmModalAssign(page);
+    await assertNotificationMessage(page, "Associated roles have been added");
+
+    await pickRoleType(page, "client");
+    await pickRole(page, "manage-consent", true);
+    await confirmModalAssign(page);
+    await assertNotificationMessage(page, "Associated roles have been added");
+
+    await searchItem(page, "Search by name", "manage-account");
+    await assertTableRowsLength(page, "Role list", 1);
+    await assertRowExists(page, "manage-account");
   });
 
   test("Should hide inherited roles test", async ({ page }) => {
