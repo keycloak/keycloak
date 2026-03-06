@@ -65,6 +65,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             List<String> credentialConfigurationIds,
             String targetClientId,
             String targetUsername,
+            Boolean withTxCode,
             Integer expireAt) {
 
         // Checks whether `--feature=oid4vc_vci_preauth_code` is enabled
@@ -103,7 +104,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
         // Create the CredentialOfferState
         //
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, credOffersId -> {
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, withTxCode, credOffersId -> {
             List<OID4VCAuthorizationDetail> authDetails = new ArrayList<>();
             for (String credConfigId : credentialConfigurationIds) {
                 CredentialScopeModel credScope = findCredentialScopeModelByConfigurationId(

@@ -81,7 +81,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         });
 
         String preAuthCode = credOffer.getPreAuthorizedCode();
-        assertNotNull(preAuthCode, "preAuthCode");
+        assertNotNull(preAuthCode, "No preAuthCode");
 
         // Disable the client
         ClientRepresentation clientRep = testRealm.admin().clients().get(ctx.getClient().getId()).toRepresentation();
@@ -116,6 +116,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         });
 
         String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "No preAuthCode");
 
         // Redeem Pre-Authorized Code for AccessToken
         //
@@ -147,23 +148,27 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
             req.targetUser(ctx.getHolder());
             req.preAuthorized(true);
+            req.txCode(true);
         });
-
-        String preAuthCode = credOffer.getPreAuthorizedCode();
-        assertNotNull(preAuthCode, "preAuthCode");
 
         CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
         assertNotNull(offerURI, "No CredentialOfferURI");
+
+        String txCode = offerURI.getTxCode();
+        assertNotNull(txCode, "No txCode");
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "No preAuthCode");
 
         // Fetch credential offer again
         // https://github.com/keycloak/keycloak/issues/48014
         credOffer = wallet.credentialsOfferRequest(ctx, offerURI).send().getCredentialsOffer();
         preAuthCode = credOffer.getPreAuthorizedCode();
-        assertNotNull(preAuthCode, "preAuthCode");
+        assertNotNull(preAuthCode, "No preAuthCode");
 
         // Redeem Pre-Authorized Code for AccessToken
         //
-        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode, txCode).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
@@ -185,6 +190,51 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         CredentialOfferResponse res = wallet.credentialsOfferRequest(ctx, offerURI).send();
         assertEquals("invalid_credential_offer_request", res.getError());
         assertEquals("Credential offer not found or already consumed", res.getErrorDescription());
+    }
+
+    @Test
+    public void testPreAuthOffer_Targeted_Invalid_TxCode() throws Exception {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        // Create Pre-Authorized CredentialOffer
+        //
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+            req.txCode(true);
+        });
+
+        CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+        assertNotNull(offerURI, "No CredentialOfferURI");
+
+        String txCode = offerURI.getTxCode();
+        assertNotNull(txCode, "No txCode");
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "No preAuthCode");
+
+        // Test missing TxCode
+        {
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+            assertFalse(tokenResponse.isSuccess());
+            assertEquals("invalid_grant", tokenResponse.getError());
+            assertEquals("Missing TxCode", tokenResponse.getErrorDescription());
+        }
+
+        // Test wrong TxCode
+        {
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode, "wrong-code").send();
+            assertFalse(tokenResponse.isSuccess());
+            assertEquals("invalid_grant", tokenResponse.getError());
+            assertEquals("Invalid TxCode", tokenResponse.getErrorDescription());
+        }
+
+        // Test correct TxCode
+        {
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode, txCode).send();
+            assertTrue(tokenResponse.isSuccess());
+            assertNotNull(tokenResponse.getAccessToken(), "No accessToken");
+        }
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
