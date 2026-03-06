@@ -26,9 +26,10 @@ public class BrowserTabUtils {
 
     BrowserTabUtils(ManagedWebDriver managedDriver) {
         this.managedDriver = managedDriver;
+        driverValidation();
     }
 
-    void init() {
+    private void driverValidation() {
         this.driver = managedDriver.driver();
 
         if (driver instanceof JavascriptExecutor) {
