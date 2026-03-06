@@ -233,6 +233,10 @@ public class DescriptionConverter {
             configWrapper.setTosUri(clientOIDC.getTosUri());
         }
 
+        if (clientOIDC.getSectorIdentifierUri() != null) {
+            configWrapper.setSectorIdentifierUri(clientOIDC.getSectorIdentifierUri());
+        }
+
         if (clientOIDC.getPostLogoutRedirectUris() != null) {
             configWrapper.setPostLogoutRedirectUris(clientOIDC.getPostLogoutRedirectUris());
         }
