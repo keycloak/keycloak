@@ -30,7 +30,7 @@ public enum OfferResponseType {
 
     QR("qr"),
     URI("uri"),
-    URI_AND_QR("uri+qr");
+    URI_QR("uri_qr");
 
     private final String value;
 
@@ -50,8 +50,8 @@ public enum OfferResponseType {
                         return QR;
                     } else if (v.equals(URI.getValue())) {
                         return URI;
-                    } else if (v.equals(URI_AND_QR.getValue())) {
-                        return URI_AND_QR;
+                    } else if (v.equals(URI_QR.getValue())) {
+                        return URI_QR;
                     } else return null;
                 })
                 .orElseThrow(() -> new IllegalArgumentException(String.format("%s is not a supported OfferUriType.", value)));

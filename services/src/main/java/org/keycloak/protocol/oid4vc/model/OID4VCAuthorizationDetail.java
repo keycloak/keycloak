@@ -32,7 +32,7 @@ import static org.keycloak.OID4VCConstants.CREDENTIAL_IDENTIFIERS;
  *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
-public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresentation {
+public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresentation implements Cloneable {
 
     public static final String CLAIMS = "claims";
 
@@ -80,6 +80,12 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
     @Override
     public String toString() {
         return JsonSerialization.valueAsString(this);
+    }
+
+    @Override
+    public OID4VCAuthorizationDetail clone() {
+        String encoded = JsonSerialization.valueAsString(this);
+        return JsonSerialization.valueFromString(encoded, OID4VCAuthorizationDetail.class);
     }
 
     @Override

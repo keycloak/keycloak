@@ -527,7 +527,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
     private void compareMetadataToClientScope(CredentialIssuer credentialIssuer, ClientScopeRepresentation clientScope) {
         String credentialConfigurationId = Optional.ofNullable(clientScope.getAttributes()
-                        .get(CredentialScopeModel.CONFIGURATION_ID))
+                        .get(CredentialScopeModel.VC_CONFIGURATION_ID))
                 .orElse(clientScope.getName());
         SupportedCredentialConfiguration supportedConfig = credentialIssuer.getCredentialsSupported()
                 .get(credentialConfigurationId);
@@ -535,7 +535,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                 supportedConfig);
         assertEquals(credentialConfigurationId, supportedConfig.getId());
 
-        String expectedFormat = Optional.ofNullable(clientScope.getAttributes().get(CredentialScopeModel.FORMAT))
+        String expectedFormat = Optional.ofNullable(clientScope.getAttributes().get(CredentialScopeModel.VC_FORMAT))
                 .orElse(SD_JWT_VC);
         assertEquals(expectedFormat, supportedConfig.getFormat());
 
@@ -559,7 +559,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
             assertNotNull(supportedConfig.getCredentialDefinition());
             assertNotNull(supportedConfig.getCredentialDefinition().getType());
             List<String> credentialDefinitionTypes = Optional.ofNullable(clientScope.getAttributes()
-                            .get(CredentialScopeModel.TYPES))
+                            .get(CredentialScopeModel.VC_SUPPORTED_TYPES))
                     .map(s -> s.split(","))
                     .map(Arrays::asList)
                     .orElseGet(() -> List.of(clientScope.getName()));
@@ -569,7 +569,7 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
             MatcherAssert.assertThat(supportedConfig.getCredentialDefinition().getContext(),
                     Matchers.containsInAnyOrder(credentialDefinitionTypes.toArray()));
             List<String> credentialDefinitionContexts = Optional.ofNullable(clientScope.getAttributes()
-                            .get(CredentialScopeModel.CONTEXTS))
+                            .get(CredentialScopeModel.VC_CONTEXTS))
                     .map(s -> s.split(","))
                     .map(Arrays::asList)
                     .orElseGet(() -> List.of(clientScope.getName()));
@@ -589,16 +589,16 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         List<String> expectedProofSigningAlgs = getAllAsymmetricAlgorithms();
 
         KeyAttestationsRequired expectedKeyAttestationsRequired;
-        if (Boolean.parseBoolean(clientScope.getAttributes().get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED))) {
+        if (Boolean.parseBoolean(clientScope.getAttributes().get(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED))) {
             expectedKeyAttestationsRequired = new KeyAttestationsRequired();
             expectedKeyAttestationsRequired.setKeyStorage(
                     Optional.ofNullable(clientScope.getAttributes()
-                                    .get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_KEY_STORAGE))
+                                    .get(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE))
                             .map(s -> Arrays.asList(s.split(",")))
                             .orElse(null));
             expectedKeyAttestationsRequired.setUserAuthentication(
                     Optional.ofNullable(clientScope.getAttributes()
-                                    .get(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_USER_AUTH))
+                                    .get(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_USER_AUTH))
                             .map(s -> Arrays.asList(s.split(",")))
                             .orElse(null));
         } else {
