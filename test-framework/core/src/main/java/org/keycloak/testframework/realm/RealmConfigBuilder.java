@@ -397,7 +397,7 @@ public class RealmConfigBuilder {
     }
 
     public RealmConfigBuilder scimEnabled(boolean enabled) {
-        rep.setScimEnabled(enabled);
+        rep.setScimApiEnabled(enabled);
         return this;
     }
 

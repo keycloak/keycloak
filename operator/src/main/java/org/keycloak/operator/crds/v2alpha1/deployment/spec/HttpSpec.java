@@ -47,6 +47,15 @@ public class HttpSpec {
     @JsonPropertyDescription("The used HTTPS port.")
     private Integer httpsPort = Constants.KEYCLOAK_HTTPS_PORT;
 
+    @JsonPropertyDescription("The HTTP port exposed on the Kubernetes Service. When set, the Service will use this port while the pod still listens on httpPort.")
+    private Integer serviceHttpPort;
+
+    @JsonPropertyDescription("The HTTPS port exposed on the Kubernetes Service. When set, the Service will use this port while the pod still listens on httpsPort.")
+    private Integer serviceHttpsPort;
+
+    @JsonPropertyDescription("The name of the Kubernetes Service. When not set, the name defaults to the Keycloak CR name with a \"-service\" suffix.")
+    private String serviceName;
+
     @JsonPropertyDescription("Annotations to be appended to the Service object")
     Map<String, String> annotations;
 
@@ -86,6 +95,30 @@ public class HttpSpec {
     }
 
 
+    public Integer getServiceHttpPort() {
+        return serviceHttpPort;
+    }
+
+    public void setServiceHttpPort(Integer serviceHttpPort) {
+        this.serviceHttpPort = serviceHttpPort;
+    }
+
+    public Integer getServiceHttpsPort() {
+        return serviceHttpsPort;
+    }
+
+    public void setServiceHttpsPort(Integer serviceHttpsPort) {
+        this.serviceHttpsPort = serviceHttpsPort;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
+
     public static int httpPort(Keycloak keycloak) {
         return httpSpec(keycloak)
                 .map(HttpSpec::getHttpPort)
@@ -95,6 +128,18 @@ public class HttpSpec {
     public static int httpsPort(Keycloak keycloak) {
         return httpSpec(keycloak)
                 .map(HttpSpec::getHttpsPort)
+                .orElse(Constants.KEYCLOAK_HTTPS_PORT);
+    }
+
+    public static int serviceHttpPort(Keycloak keycloak) {
+        return httpSpec(keycloak)
+                .map(s -> s.getServiceHttpPort() != null ? s.getServiceHttpPort() : s.getHttpPort())
+                .orElse(Constants.KEYCLOAK_HTTP_PORT);
+    }
+
+    public static int serviceHttpsPort(Keycloak keycloak) {
+        return httpSpec(keycloak)
+                .map(s -> s.getServiceHttpsPort() != null ? s.getServiceHttpsPort() : s.getHttpsPort())
                 .orElse(Constants.KEYCLOAK_HTTPS_PORT);
     }
 

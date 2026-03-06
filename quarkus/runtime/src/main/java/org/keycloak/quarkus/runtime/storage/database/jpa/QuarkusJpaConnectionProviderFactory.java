@@ -26,6 +26,7 @@ import java.sql.Statement;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.persistence.EntityManager;
@@ -103,6 +104,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
 
         checkMySQLWaitTimeout();
         checkMSSQLIsolationLevel();
+        checkUtf8Encoding();
 
         String id = null;
         String version = null;
@@ -168,12 +170,6 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                 .name("migrationExport")
                 .type("string")
                 .helpText("Path for where to write manual database initialization/migration file.")
-                .add()
-                .property()
-                .name(MIGRATION_TRANSACTION_TIMEOUT_KEY)
-                .type("string")
-                .helpText("The transaction timeout for database migration transaction")
-                .defaultValue(MIGRATION_TRANSACTION_TIMEOUT)
                 .add()
                 .build();
     }
@@ -385,5 +381,57 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
 
     private static void logErrorSettingMigrationTransactionTimeout(Exception e) {
         logger.debug("Unable to set the transaction timeout for migration task. Using the default timeout.", e);
+    }
+
+    private void checkUtf8Encoding() {
+        String db = Configuration.getConfigValue(DatabaseOptions.DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElseThrow();
+        switch (vendor) {
+            case TIDB, MARIADB, MYSQL -> checkMySQLUtf8(vendor);
+            case POSTGRES -> checkPostgresEncoding();
+            case MSSQL -> checkMSSQLEncoding();
+            case ORACLE -> checkOracleEncoding();
+            //H2 do we care?
+        }
+    }
+
+    private void checkOracleEncoding() {
+        checkEncoding(Database.Vendor.ORACLE, "AL32UTF8"::equals, "'AL32UTF8' encoding", "SELECT value FROM nls_database_parameters WHERE parameter = 'NLS_CHARACTERSET'");
+    }
+
+    private void checkMSSQLEncoding() {
+        checkEncoding(Database.Vendor.MSSQL, s -> s.endsWith("_UTF8"), "any UTF-8 collation (ending with `_UTF8`)", "SELECT DATABASEPROPERTYEX(DB_NAME(), 'Collation') AS DatabaseCollation");
+    }
+
+    private void checkPostgresEncoding() {
+        checkEncoding(Database.Vendor.POSTGRES, "UTF8"::equals, "'UFT8' encoding", "SELECT pg_encoding_to_char(encoding) FROM pg_database WHERE datname = current_database()");
+    }
+
+    private void checkMySQLUtf8(Database.Vendor vendor) {
+        checkEncoding(vendor, "utf8mb4"::equals, "'utf8mb4' encoding", "SELECT default_character_set_name FROM information_schema.SCHEMATA WHERE schema_name = DATABASE()");
+    }
+
+    /**
+     * Check if the database is running against a database with a valid UTF-8 character encoding.
+     * <p>
+     * Non-UTF-8-character encodings have been deprecated in 26.6.
+     */
+    private void checkEncoding(Database.Vendor vendor, Predicate<String> isValid, String recommendation, String query) {
+        try (var connection = getConnection();
+             var statement = connection.createStatement();
+             var rs = statement.executeQuery(query)) {
+            rs.next();
+            var encoding = rs.getString(1);
+            if (isValid.test(encoding)) {
+                return;
+            }
+            logInvalidEncoding(vendor, encoding, recommendation);
+        } catch (SQLException e) {
+            logger.warnf(e, "Unable to validate %s encoding due to database exception", vendor);
+        }
+    }
+
+    private static void logInvalidEncoding(Database.Vendor vendor, String encoding, String recommendedEncoding) {
+        logger.warnf("Invalid %s charset encoding '%s'. It is recommended to use %s", vendor, encoding, recommendedEncoding);
     }
 }

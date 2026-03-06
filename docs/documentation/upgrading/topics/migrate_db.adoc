@@ -20,11 +20,11 @@ Migration is not supported with the default H2 based `dev-file` database type.
 The migration time of the database schema and its contents can vary depending on hardware, release and the amount of data.
 By default {project_name} sets a migration timeout of 30 minutes.
 
-To change the migration timeout, use the option `transaction-migration-timeout` to configure a longer value if your environment requires this.
+To change the migration timeout, use the option `transaction-setup-timeout` to configure a longer value if your environment requires this.
 
 [source,bash]
 ----
-kc.[sh|bat] start --transaction-migration-timeout=60m
+kc.[sh|bat] start --transaction-setup-timeout=60m
 ----
 
 === Automatic relational database migration

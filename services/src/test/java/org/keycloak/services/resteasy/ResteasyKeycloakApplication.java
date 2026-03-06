@@ -20,10 +20,14 @@ package org.keycloak.services.resteasy;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.MultiSiteUtils;
+import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.services.error.KeycloakMismatchedInputExceptionHandler;
@@ -67,6 +71,16 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
+    protected String getDataDir() {
+        return System.getProperty("project.build.directory");
+    }
+
+    @Override
+    protected void exit(Throwable cause) {
+        throw new RuntimeException(cause);
+    }
+
+    @Override
     public Set<Class<?>> getClasses() {
         return classes;
     }
@@ -86,6 +100,23 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     @Override
     protected void createTemporaryAdmin(KeycloakSession session) {
         // do nothing
+    }
+
+    @Override
+    protected void initAndStart() {
+        Config.init(new JsonConfigProviderFactory().create()
+                .orElseThrow(() -> new RuntimeException("Failed to load Keycloak configuration")));
+        Profile.configure(
+                new PropertiesProfileConfigResolver(System.getProperties()),
+                new PropertiesFileProfileConfigResolver()
+        );
+        startup();
+    }
+
+    @Override
+    protected ExportImportManager bootstrap(KeycloakSession session) {
+        // created a nested transaction as this triggers DefaultJpaConnectionProviderFactory.lazyInit
+        return KeycloakModelUtils.runJobInTransactionWithResult(getSessionFactory(), super::bootstrap);
     }
 
 }

@@ -1,11 +1,11 @@
 import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
+  ActionList,
+  ActionListItem,
   Button,
   Chip,
   ChipGroup,
   FormGroup,
-  InputGroup,
-  InputGroupItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
@@ -13,7 +13,10 @@ import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
-import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
+import {
+  useGroupResource,
+  GroupResourceContext,
+} from "../../context/group-resource/GroupResourceContext";
 import { GroupPickerDialog } from "../group/GroupPickerDialog";
 import type { ComponentProps } from "./components";
 
@@ -26,9 +29,11 @@ export const GroupComponent = ({
 }: ComponentProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [openOrgGroups, setOpenOrgGroups] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>();
   const { control } = useFormContext();
   const { adminClient } = useAdminClient();
+  const hasLinkedOrganization = useGroupResource().isOrgGroups();
 
   return (
     <Controller
@@ -55,6 +60,22 @@ export const GroupComponent = ({
               />
             </GroupResourceContext>
           )}
+          {openOrgGroups && (
+            <GroupPickerDialog
+              type="selectOne"
+              text={{
+                title: "selectOrgGroup",
+                ok: "select",
+              }}
+              onConfirm={(groups) => {
+                field.onChange(groups?.[0].path);
+                setGroups(groups);
+                setOpenOrgGroups(false);
+              }}
+              onClose={() => setOpenOrgGroups(false)}
+              filterGroups={groups}
+            />
+          )}
 
           <FormGroup
             label={t(label!)}
@@ -64,8 +85,8 @@ export const GroupComponent = ({
             fieldId={name!}
             isRequired={required}
           >
-            <InputGroup>
-              <InputGroupItem>
+            <ActionList>
+              <ActionListItem>
                 <ChipGroup>
                   {field.value && (
                     <Chip onClick={() => field.onChange(undefined)}>
@@ -73,18 +94,30 @@ export const GroupComponent = ({
                     </Chip>
                   )}
                 </ChipGroup>
-              </InputGroupItem>
-              <InputGroupItem>
+              </ActionListItem>
+              <ActionListItem>
                 <Button
                   id="kc-join-groups-button"
-                  onClick={() => setOpen(!open)}
+                  onClick={() => setOpen(true)}
                   variant="secondary"
                   data-testid="join-groups-button"
                 >
                   {t("selectGroup")}
                 </Button>
-              </InputGroupItem>
-            </InputGroup>
+              </ActionListItem>
+              {hasLinkedOrganization && (
+                <ActionListItem>
+                  <Button
+                    id="kc-join-org-groups-button"
+                    onClick={() => setOpenOrgGroups(true)}
+                    variant="secondary"
+                    data-testid="join-org-groups-button"
+                  >
+                    {t("selectOrgGroup")}
+                  </Button>
+                </ActionListItem>
+              )}
+            </ActionList>
           </FormGroup>
         </>
       )}

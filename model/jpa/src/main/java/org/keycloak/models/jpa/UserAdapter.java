@@ -142,7 +142,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         }
         // Remove all existing
         if (value == null) {
-            user.getAttributes().removeIf(a -> a.getName().equals(name));
+            removeAttribute(name);
         } else {
             Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
             Set<String> newEntries = Set.of(value);

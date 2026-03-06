@@ -48,9 +48,14 @@ public class TruststoreBuilder {
     public static final String DUMMY_PASSWORD = "keycloakchangeit"; // fips length compliant dummy password
     static final String PKCS12 = "PKCS12";
 
+    private static final String KUBERNETES_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
+    private static final String SERVICE_CA_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt";
+
     private static final Logger LOGGER = Logger.getLogger(TruststoreBuilder.class);
 
-    public static void setSystemTruststore(String[] truststores, boolean trustStoreIncludeDefault, String dataDir) {
+    public static void setSystemTruststore(String[] truststores,
+                                           boolean trustStoreIncludeDefault,
+                                           String dataDir) {
         KeyStore truststore = createMergedTruststore(truststores, trustStoreIncludeDefault);
 
         // save with a dummy password just in case some logic that uses the system properties needs to have one
@@ -60,6 +65,35 @@ public class TruststoreBuilder {
         System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_KEY, file.getAbsolutePath());
         System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_TYPE_KEY, PKCS12);
         System.setProperty(TruststoreBuilder.SYSTEM_TRUSTSTORE_PASSWORD_KEY, DUMMY_PASSWORD);
+    }
+
+    /**
+     * Include the Kubernetes and/or OpenShift service CA truststore paths if enabled and the files exist.
+     * Uses the default well-known Kubernetes service account paths.
+     *
+     * @param trustStores the existing truststore paths
+     */
+    public static void includeKubernetesTrustStorePaths(List<String> trustStores) {
+        includeKubernetesTrustStorePaths(trustStores, KUBERNETES_CA_PATH, SERVICE_CA_PATH);
+    }
+
+    /**
+     * Include the Kubernetes and/or OpenShift service CA truststore paths if enabled and the files exist.
+     *
+     * @param trustStores the existing truststore paths
+     * @param kubernetesCaPath path to the Kubernetes service account CA certificate
+     * @param serviceCaPath path to the OpenShift service CA certificate
+     */
+    public static void includeKubernetesTrustStorePaths(List<String> trustStores, String kubernetesCaPath, String serviceCaPath) {
+        File kubernetesCA = new File(kubernetesCaPath);
+        if (kubernetesCA.exists() && kubernetesCA.isFile()) {
+            trustStores.add(kubernetesCaPath);
+        }
+
+        File serviceCA = new File(serviceCaPath);
+        if (serviceCA.exists() && serviceCA.isFile()) {
+            trustStores.add(serviceCaPath);
+        }
     }
 
     static File saveTruststore(KeyStore truststore, String dataDir, char[] password) {
@@ -91,7 +125,7 @@ public class TruststoreBuilder {
         List<String> discoveredFiles = new ArrayList<>();
         mergeFiles(truststores, truststore, true, discoveredFiles);
         if (!discoveredFiles.isEmpty()) {
-            LOGGER.infof("Found the following truststore files under directories specified in the truststore paths %s",
+            LOGGER.infof("Found the following truststore files in the truststore paths %s",
                     discoveredFiles);
         }
         return truststore;
@@ -106,10 +140,8 @@ public class TruststoreBuilder {
                 var format = KeystoreUtil.getKeystoreFormat(file).orElse(null);
                 if (format == KeystoreFormat.PKCS12) {
                     mergeTrustStore(truststore, file, loadStore(file, PKCS12, null));
-                    if (!topLevel) {
-                        discoveredFiles.add(f.getAbsolutePath());
-                    }
-                } else if (mergePemFile(truststore, file, topLevel) && !topLevel) {
+                    discoveredFiles.add(f.getAbsolutePath());
+                } else if (mergePemFile(truststore, file, topLevel)) {
                     discoveredFiles.add(f.getAbsolutePath());
                 }
             }
@@ -125,7 +157,6 @@ public class TruststoreBuilder {
             throw new RuntimeException("Failed to initialize truststore: cannot create a PKCS12 keystore", e);
         }
     }
-
 
     /**
      * Include the default truststore, if it can be found.

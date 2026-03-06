@@ -15,7 +15,6 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
-import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
 import org.keycloak.services.client.ClientService;
 import org.keycloak.services.client.DefaultClientService;
 import org.keycloak.services.resources.admin.ClientsResource;
@@ -57,9 +56,8 @@ public class DefaultClientsApi implements ClientsApi {
     @POST
     @Override
     public Response createClient(@Valid BaseClientRepresentation client) {
-        validator.validate(client, CreateClientDefault.class);
         return Response.status(Response.Status.CREATED)
-                .entity(clientService.createOrUpdate(realm, client, false).representation())
+                .entity(clientService.createClient(realm, client))
                 .build();
     }
 

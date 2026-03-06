@@ -460,7 +460,7 @@
             <properties>
                 <app.server>wildfly</app.server> <!--in case the profile is called directly-->
                 <app.server.skip.unpack>false</app.server.skip.unpack>
-                <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
+                <wildfly.core.version>${upstream.wildfly.core.version}</wildfly.core.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -473,14 +473,7 @@
                 <dependency>
                     <groupId>org.wildfly.core</groupId>
                     <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
                     <version>${wildfly.core.version}</version>
-                </dependency>
-                <!-- FIXME: Override in order to prevent NoClassDefFoundError: org/jboss/threads/AsyncFuture in ClientContainerController -->
-                <dependency>
-                    <groupId>org.jboss.threads</groupId>
-                    <artifactId>jboss-threads</artifactId>
-                    <version>2.4.0.Final</version>
                 </dependency>
             </dependencies>
             <build>
@@ -504,7 +497,7 @@
                 <app.server>eap8</app.server>
                 <app.server.skip.unpack>false</app.server.skip.unpack>
                 <app.server.artifactId>integration-arquillian-servers-app-server-jboss-galleon</app.server.artifactId>
-                <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
+                <wildfly.core.version>${eap8.wildfly.core.version}</wildfly.core.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -517,14 +510,7 @@
                 <dependency>
                     <groupId>org.wildfly.core</groupId>
                     <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
                     <version>${wildfly.core.version}</version>
-                </dependency>
-                <!-- FIXME: Override in order to prevent NoClassDefFoundError: org/jboss/threads/AsyncFuture in ClientContainerController -->
-                <dependency>
-                    <groupId>org.jboss.threads</groupId>
-                    <artifactId>jboss-threads</artifactId>
-                    <version>2.4.0.Final</version>
                 </dependency>
             </dependencies>
             <build>

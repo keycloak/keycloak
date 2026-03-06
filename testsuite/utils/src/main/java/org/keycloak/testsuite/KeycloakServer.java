@@ -53,7 +53,6 @@ import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.platform.Platform;
 import org.keycloak.protocol.ProtocolMapperSpi;
 import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
 import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
@@ -323,7 +322,7 @@ public class KeycloakServer {
 
         // we generate a dynamic jboss.server.data.dir and remove it at the end.
         try {
-          File tempKeycloakFolder = Platform.getPlatform().getTmpDirectory();
+          String tempKeycloakFolder = KeycloakApplication.getTmpDirectory();
           File tmpDataDir = new File(tempKeycloakFolder, "/data");
 
           if (tmpDataDir.mkdirs()) {

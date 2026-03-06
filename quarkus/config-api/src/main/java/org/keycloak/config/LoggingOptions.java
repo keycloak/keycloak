@@ -220,6 +220,38 @@ public class LoggingOptions {
             .description("The queue length to use before flushing writing when logging to file log.")
             .build();
 
+    // File rotation
+    public static final Option<Boolean> LOG_FILE_ROTATION_ENABLED = new OptionBuilder<>("log-file-rotation-enabled", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(true)
+            .description("Enables log file rotation.")
+            .build();
+
+    public static final Option<String> LOG_FILE_ROTATION_MAX_FILE_SIZE = new OptionBuilder<>("log-file-rotation-max-file-size", String.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue("10M")
+            .description("The maximum log file size, after which a rotation is executed. Supports size suffixes (e.g. 10M, 1G).")
+            .build();
+
+    public static final Option<Integer> LOG_FILE_ROTATION_MAX_BACKUP_INDEX = new OptionBuilder<>("log-file-rotation-max-backup-index", Integer.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(5)
+            .description("The maximum number of backup log files to keep.")
+            .build();
+
+    public static final Option<String> LOG_FILE_ROTATION_FILE_SUFFIX = new OptionBuilder<>("log-file-rotation-file-suffix", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("Set the log file handler rotation file suffix. When used, the file will be rotated based on its suffix. "
+                    + "Example: `.yyyy-MM-dd` to rotate daily. "
+                    + "Note: If the suffix ends with `.zip` or `.gz`, the rotation file will also be compressed.")
+            .build();
+
+    public static final Option<Boolean> LOG_FILE_ROTATION_ROTATE_ON_BOOT = new OptionBuilder<>("log-file-rotation-rotate-on-boot", Boolean.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue(true)
+            .description("Indicates whether to rotate log files on server start.")
+            .build();
+
     // Syslog
     public static final Option<Boolean> LOG_SYSLOG_ENABLED = new OptionBuilder<>("log-syslog-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)

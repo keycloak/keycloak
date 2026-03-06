@@ -71,40 +71,6 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertMessage("Keycloak is the best");
     }
 
-    @Test
-    @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "start", "--http-enabled=true", "--hostname-strict=false"})
-    @DisabledOnOs(value = { OS.WINDOWS })
-    @Order(3)
-    void testIgnoreQuarkusSystemPropertiesAtStart(CLIResult cliResult) {
-        cliResult.assertMessage("Keycloak is the best");
-    }
-
-    @Test
-    @Launch({"-Dquarkus.log.handler.console.\\\"console-2\\\".enable=false", "start", "--http-enabled=true", "--hostname-strict=false"})
-    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "Different handling of quotes within arguments on Windows")
-    @Order(3)
-    void testIgnoreQuarkusSystemPropertiesAtStartWin(CLIResult cliResult) {
-        cliResult.assertMessage("Keycloak is the best");
-    }
-
-    @Test
-    @Launch({"-Dquarkus.log.handler.console.\"console-2\".enable=false", "build"})
-    @DisabledOnOs(value = { OS.WINDOWS })
-    @Order(4)
-    void testIgnoreQuarkusSystemPropertyAtBuild(CLIResult cliResult) {
-        cliResult.assertMessage("Keycloak is the best");
-        cliResult.assertBuild();
-    }
-
-    @Test
-    @Launch({"-Dquarkus.log.handler.console.\\\"console-2\\\".enable=false", "build"})
-    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "Different handling of quotes within arguments on Windows")
-    @Order(4)
-    void testIgnoreQuarkusSystemPropertyAtBuildWin(CLIResult cliResult) {
-        cliResult.assertMessage("Keycloak is the best");
-        cliResult.assertBuild();
-    }
-
     @DryRun
     @Test
     @BeforeStartDistribution(UpdateConsoleHandlerFromKeycloakConf.class)

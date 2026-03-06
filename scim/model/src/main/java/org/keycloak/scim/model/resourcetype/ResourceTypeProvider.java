@@ -55,6 +55,11 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
                 .filter(Objects::nonNull);
     }
 
+    @Override
+    public Long count(SearchRequest searchRequest) {
+        return getAll(searchRequest).count();
+    }
+
     private ResourceType toRepresentation(ScimResourceTypeProviderFactory<? extends ScimResourceTypeProvider<? extends ResourceTypeRepresentation>> factory) {
         ScimResourceTypeProvider<? extends ResourceTypeRepresentation> provider = factory.create(session);
 

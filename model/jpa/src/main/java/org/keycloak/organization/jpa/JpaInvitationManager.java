@@ -92,6 +92,7 @@ record JpaInvitationManager(KeycloakSession session, EntityManager em) implement
         }
 
         query.where(predicates.toArray(new Predicate[0]));
+        query.orderBy(builder.asc(root.get("id")));
 
         TypedQuery<OrganizationInvitationEntity> typedQuery = em.createQuery(query);
 

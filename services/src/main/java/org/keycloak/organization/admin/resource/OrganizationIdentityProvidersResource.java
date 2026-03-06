@@ -185,7 +185,7 @@ public class OrganizationIdentityProvidersResource {
         getIdentityProvider(alias);
 
         OrganizationGroupsResource groupsResource = new OrganizationGroupsResource(session, organization, adminEvent);
-        return groupsResource.getGroups(search, searchQuery, exact, first, max, briefRepresentation, subGroupsCount);
+        return groupsResource.getGroups(search, searchQuery, exact, first, max, briefRepresentation, false, subGroupsCount);
     }
 
     @Path("{alias}")

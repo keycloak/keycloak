@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -11,7 +12,7 @@ import org.keycloak.provider.Provider;
 
 public interface AlternativeLookupProvider extends Provider {
 
-    IdentityProviderModel lookupIdentityProviderFromIssuer(KeycloakSession session, String issuerUrl);
+    IdentityProviderModel lookupIdentityProviderFromIssuer(KeycloakSession session, IdentityProviderType type, String issuerUrl);
 
     ClientModel lookupClientFromClientAttributes(KeycloakSession session, Map<String, String> attributes);
 

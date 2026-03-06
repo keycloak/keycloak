@@ -54,7 +54,7 @@ public class OID4VCAuthorizationDetailsProcessorTest {
 
     @BeforeClass
     public static void beforeClass() {
-        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsProcessor.OID4VCAuthorizationDetailsParser());
+        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsParser());
     }
 
     /**

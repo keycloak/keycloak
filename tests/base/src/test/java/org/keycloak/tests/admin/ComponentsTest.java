@@ -53,8 +53,8 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.testsuite.components.TestComponentProvider;
-import org.keycloak.testsuite.components.TestComponentProviderFactory;
+import org.keycloak.tests.providers.components.TestComponentProvider;
+import org.keycloak.tests.providers.components.TestComponentProviderFactory;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;

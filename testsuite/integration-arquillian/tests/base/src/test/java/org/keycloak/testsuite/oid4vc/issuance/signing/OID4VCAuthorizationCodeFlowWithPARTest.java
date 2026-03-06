@@ -152,7 +152,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
         // Step 4: Verify authorization_details is present in token response
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals("Should have exactly one authorization detail", 1, authDetailsResponse.size());
 
@@ -284,10 +284,16 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
                 .send();
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
-        // Step 4: Verify NO authorization_details in token response (since none was in PAR request)
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
-        assertTrue("authorization_details should NOT be present in the response when not used in PAR request",
-                authDetailsResponse == null || authDetailsResponse.isEmpty());
+        // Step 4: Verify authorization_details are derived from requested OID4VC scope
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the token response", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        OID4VCAuthorizationDetail firstAuthorizationDetail = authDetailsResponse.get(0);
+        assertEquals("credential_configuration_id should match requested scope",
+                getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID),
+                firstAuthorizationDetail.getCredentialConfigurationId());
+        assertNotNull("credential_identifiers should be present", firstAuthorizationDetail.getCredentialIdentifiers());
+        assertFalse("credential_identifiers should not be empty", firstAuthorizationDetail.getCredentialIdentifiers().isEmpty());
     }
 
     /**

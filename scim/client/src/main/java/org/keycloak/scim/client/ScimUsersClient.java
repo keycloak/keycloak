@@ -1,8 +1,5 @@
 package org.keycloak.scim.client;
 
-import java.util.List;
-
-import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.user.User;
 
@@ -22,7 +19,7 @@ public class ScimUsersClient extends AbstractScimResourceClient<User> {
      * @return list response containing all users
      */
     public ListResponse<User> getAll() {
-        return doFilter(filter().pr("userName"));
+        return doFilter(filter());
     }
 
     /**
@@ -65,30 +62,7 @@ public class ScimUsersClient extends AbstractScimResourceClient<User> {
      */
     @SuppressWarnings("unchecked")
     public ListResponse<User> search(String filterExpression, Integer startIndex, Integer count) {
-        requireNonNull(filterExpression, "filterExpression must not be null");
-        SearchRequest searchRequest = SearchRequest.builder()
-                .withFilter(filterExpression)
-                .withStartIndex(startIndex)
-                .withCount(count).build();
-        return client.execute(client.doPost(User.class, "/.search").json(searchRequest), ListResponse.class);
-    }
-
-
-    public User getByUsername(String userName) {
-        requireNonNull(userName, "userName must not be null");
-
-        ListResponse<User> r = doFilter(filter().eq("userName", userName));
-        List<User> resources = r.getResources();
-
-        if (resources.isEmpty()) {
-            return null;
-        }
-
-        if (resources.size() > 1) {
-            throw new IllegalStateException("More than one user with username " + userName + " found");
-        }
-
-        return resources.get(0);
+        return doPost(filterExpression, startIndex, count);
     }
 
     @Override

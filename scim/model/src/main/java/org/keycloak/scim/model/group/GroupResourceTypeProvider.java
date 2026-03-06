@@ -10,6 +10,8 @@
 
 package org.keycloak.scim.model.group;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -27,10 +29,8 @@ import org.keycloak.models.jpa.GroupAdapter;
 import org.keycloak.models.jpa.entities.GroupEntity;
 import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
-import org.keycloak.scim.model.filter.AttributeInfo;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
 import org.keycloak.scim.protocol.request.SearchRequest;
-import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
 import org.keycloak.utils.StringUtil;
@@ -73,40 +73,48 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         RealmModel realm = session.getContext().getRealm();
         Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
         Integer maxResults = searchRequest.getCount();
+        maxResults = maxResults != null ? Math.min(maxResults, DEFAULT_MAX_RESULTS) : DEFAULT_MAX_RESULTS;
 
         if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // Parse filter into AST
+            // parse filter into AST
             ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
 
-            // Execute JPA query with filter
+            // execute JPA query with filter
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<GroupEntity> query = cb.createQuery(GroupEntity.class);
             Root<GroupEntity> root = query.from(GroupEntity.class);
+            List<Predicate> predicates = getGroupPredicates(filterContext, cb, query, root);
 
-            // Create filter predicate using the same query and root that will be used for execution
-            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(scimAttrPath -> {
-                // first split the attribute path into schema and attribute name. If no schema is specified, use the core user schema by default
-                String[] splitAttrPath = splitScimAttribute(scimAttrPath);
+            // apply distinct and order by name to ensure consistency with no-filter case
+            query.where(predicates).distinct(true).orderBy(cb.asc(root.get("name")));
 
-                if (Scim.GROUP_CORE_SCHEMA.equals(splitAttrPath[0]) && "displayName".equalsIgnoreCase(splitAttrPath[1])) {;
-                    return new AttributeInfo("name", true, null);
-                }
-                return null;
-            }, cb, query, root);
-            Predicate filterPredicate = evaluator.visit(filterContext).predicate();
-
-            // Apply realm restriction
-            Predicate realmPredicate = cb.equal(root.get("realm"), realm.getId());
-
-            // Combine with filter predicate
-            query.where(cb.and(realmPredicate, filterPredicate));
-
-            // Execute query and convert to UserModel stream
+            // execute query and convert to UserModel stream
             return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
                     .map(entity -> new GroupAdapter(session, realm, em, entity)));
         } else {
             return session.groups().getTopLevelGroupsStream(realm, firstResult, maxResults);
+        }
+    }
+
+    @Override
+    public Long count(SearchRequest searchRequest) {
+        RealmModel realm = session.getContext().getRealm();
+        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
+            // parse filter into AST
+            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+
+            // execute JPA query with filter
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Long> query = cb.createQuery(Long.class);
+            Root<GroupEntity> root = query.from(GroupEntity.class);
+
+            List<Predicate> predicates = this.getGroupPredicates(filterContext, cb, query, root);
+            query.select(cb.countDistinct(root)).where(predicates);
+            return em.createQuery(query).getSingleResult();
+        } else {
+            return session.groups().getGroupsCount(realm, true);
         }
     }
 
@@ -123,6 +131,24 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
 
     @Override
     public void close() {
+    }
 
+    private List<Predicate> getGroupPredicates(ScimFilterParser.FilterContext filterContext, CriteriaBuilder cb, CriteriaQuery<?> query, Root<GroupEntity> root) {
+        List<Predicate> predicates = new ArrayList<>();
+
+        // create filter predicate using the same query and root that will be used for execution
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(getSchemas(), cb, root);
+        predicates.add(evaluator.visit(filterContext).predicate());
+
+        // apply realm restriction and group type restrictions
+        RealmModel realm = session.getContext().getRealm();
+
+        predicates.add(cb.equal(root.get("realm"), realm.getId()));
+        predicates.add(cb.equal(root.get("type"), GroupModel.Type.REALM.intValue()));
+        predicates.add(cb.equal(root.get("parentId"), GroupEntity.TOP_PARENT_ID));
+
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, realm, cb, query, root));
+
+        return predicates;
     }
 }

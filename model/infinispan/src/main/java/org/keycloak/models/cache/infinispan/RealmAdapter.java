@@ -1919,15 +1919,15 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public boolean isScimEnabled() {
-        if (isUpdated()) return featureAwareIsEnabled(Feature.SCIM_API, updated.isScimEnabled());
-        return featureAwareIsEnabled(Feature.SCIM_API, cached.isScimEnabled());
+    public boolean isScimApiEnabled() {
+        if (isUpdated()) return featureAwareIsEnabled(Feature.SCIM_API, updated.isScimApiEnabled());
+        return featureAwareIsEnabled(Feature.SCIM_API, cached.isScimApiEnabled());
     }
 
     @Override
-    public void setScimEnabled(boolean enabled) {
+    public void setScimApiEnabled(boolean enabled) {
         getDelegateForUpdate();
-        updated.setScimEnabled(enabled);
+        updated.setScimApiEnabled(enabled);
     }
 
     private boolean featureAwareIsEnabled(Profile.Feature feature, boolean isEnabled) {

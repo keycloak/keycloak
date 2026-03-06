@@ -24,16 +24,18 @@ public class IdentityProviderTypeUtil {
     private IdentityProviderTypeUtil() {
     }
 
+    public static List<IdentityProviderType> listTypesFromProvider(KeycloakSession session, IdentityProvider provider) {
+        return listTypesFromClass(provider.getClass());
+    }
+
     public static List<IdentityProviderType> listTypesFromFactory(KeycloakSession session, String factoryId) {
         KeycloakSessionFactory sf = session.getKeycloakSessionFactory();
         ProviderFactory<?> factory = sf.getProviderFactory(IdentityProvider.class, factoryId);
         if (factory == null) {
             return List.of();
         }
-        Class<?> providerType = getType(factory);
-        return Arrays.stream(IdentityProviderType.values())
-                .filter(t -> !t.equals(IdentityProviderType.ANY) && toTypeClass(t).isAssignableFrom(providerType))
-                .collect(Collectors.toList());
+        Class<? extends IdentityProvider> providerType = getType(factory);
+        return listTypesFromClass(providerType);
     }
 
     public static List<String> listFactoriesByCapability(KeycloakSession session, IdentityProviderCapability capability) {
@@ -43,6 +45,12 @@ public class IdentityProviderTypeUtil {
 
     public static List<String> listFactoriesByType(KeycloakSession session, IdentityProviderType type) {
         return listFactoriesByTypes(session, Set.of(type));
+    }
+
+    private static List<IdentityProviderType> listTypesFromClass(Class<? extends IdentityProvider> providerType) {
+        return Arrays.stream(IdentityProviderType.values())
+                .filter(t -> !t.equals(IdentityProviderType.ANY) && toTypeClass(t).isAssignableFrom(providerType))
+                .collect(Collectors.toList());
     }
 
     private static List<String> listFactoriesByTypes(KeycloakSession session, Set<IdentityProviderType> types) {
@@ -60,9 +68,9 @@ public class IdentityProviderTypeUtil {
                 .toList();
     }
 
-    private static Class<?> getType(ProviderFactory<?> f) {
+    private static Class<? extends IdentityProvider> getType(ProviderFactory<?> f) {
         try {
-            return f.getClass().getMethod("create", KeycloakSession.class, IdentityProviderModel.class).getReturnType();
+            return (Class<? extends IdentityProvider>) f.getClass().getMethod("create", KeycloakSession.class, IdentityProviderModel.class).getReturnType();
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }

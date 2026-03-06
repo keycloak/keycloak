@@ -1,8 +1,11 @@
+import type IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import type { IdentityProviderMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperTypeRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import { TextControl, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
+  FormGroup,
+  TextInput,
   ActionGroup,
   AlertVariant,
   Button,
@@ -31,6 +34,7 @@ import {
 } from "../routes/EditMapper";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import { AddMapperForm } from "./AddMapperForm";
+import { GroupResourceContext } from "../../context/group-resource/GroupResourceContext";
 
 export type IdPMapperRepresentationWithAttributes =
   IdentityProviderMapperRepresentation & AttributeForm;
@@ -62,6 +66,8 @@ export default function AddMapper() {
 
   const [currentMapper, setCurrentMapper] =
     useState<IdentityProviderMapperTypeRepresentation>();
+
+  const [idp, setIdp] = useState<IdentityProviderRepresentation>();
 
   const save = async (idpMapper: IdentityProviderMapperRepresentation) => {
     const mapper = convertFormValuesToObject(idpMapper);
@@ -137,8 +143,9 @@ export default function AddMapper() {
       Promise.all([
         id ? adminClient.identityProviders.findOneMapper({ alias, id }) : null,
         adminClient.identityProviders.findMapperTypes({ alias }),
+        adminClient.identityProviders.findOne({ alias }),
       ]),
-    ([mapper, mapperTypes]) => {
+    ([mapper, mapperTypes, idp]) => {
       const mappers = localeSort(Object.values(mapperTypes), mapByKey("name"));
       if (mapper) {
         setCurrentMapper(
@@ -150,6 +157,7 @@ export default function AddMapper() {
       }
 
       setMapperTypes(mappers);
+      setIdp(idp);
     },
     [id],
   );
@@ -197,14 +205,18 @@ export default function AddMapper() {
       >
         <FormProvider {...form}>
           {id && (
-            <TextControl
-              name="id"
-              label={t("id")}
-              readOnly
-              rules={{
-                required: t("required"),
-              }}
-            />
+            <>
+              <FormGroup label={t("id")} fieldId="id">
+                <TextInput name="id" readOnly value={id} />
+              </FormGroup>
+              <FormGroup label={t("name")} fieldId="name">
+                <TextInput
+                  name="name"
+                  readOnly
+                  value={form.getValues("name")}
+                />
+              </FormGroup>
+            </>
           )}
           {currentMapper.properties && (
             <>
@@ -215,8 +227,15 @@ export default function AddMapper() {
                 updateMapperType={setCurrentMapper}
                 mapperType={currentMapper}
               />
-
-              <DynamicComponents properties={currentMapper.properties!} />
+              <GroupResourceContext
+                value={
+                  idp?.organizationId
+                    ? adminClient.organizations.groups(idp?.organizationId)
+                    : adminClient.groups
+                }
+              >
+                <DynamicComponents properties={currentMapper.properties!} />
+              </GroupResourceContext>
             </>
           )}
         </FormProvider>

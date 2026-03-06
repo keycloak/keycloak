@@ -80,6 +80,9 @@ spec:
     httpEnabled: true
     httpPort: 123
     httpsPort: 456
+    serviceHttpPort: 80
+    serviceHttpsPort: 443
+    serviceName: my-keycloak
     tlsSecret: my-tls-secret
   hostname:
     hostname: my-hostname

@@ -1,8 +1,8 @@
 package org.keycloak.scim.model.user;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
@@ -12,22 +12,22 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.UserAdapter;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
-import org.keycloak.scim.model.filter.AttributeInfo;
-import org.keycloak.scim.model.filter.AttributeNameResolver;
+import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
 import org.keycloak.scim.resource.user.User;
-import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
@@ -36,8 +36,6 @@ import org.keycloak.userprofile.ValidationException.Error;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
-import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA;
-import static org.keycloak.scim.model.user.AbstractUserModelSchema.ANNOTATION_SCIM_SCHEMA_ATTRIBUTE;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<UserModel, User> {
@@ -93,32 +91,49 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         RealmModel realm = session.getContext().getRealm();
         Integer firstResult = searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() - 1 : null;
         Integer maxResults = searchRequest.getCount();
+        maxResults = maxResults != null ? Math.min(maxResults, DEFAULT_MAX_RESULTS) : DEFAULT_MAX_RESULTS;
 
         if (StringUtil.isNotBlank(searchRequest.getFilter())) {
-            // Parse filter into AST
+            // parse filter into AST
             ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
 
-            // Execute JPA query with filter
+            // execute JPA query with filter
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<UserEntity> query = cb.createQuery(UserEntity.class);
             Root<UserEntity> root = query.from(UserEntity.class);
 
-            // Create filter predicate using the same query and root that will be used for execution
-            ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(new UserAttributeNameResolver(session, this), cb, query, root);
-            Predicate filterPredicate = evaluator.visit(filterContext).predicate();
+            List<Predicate> predicates = getUserPredicates(filterContext, cb, query, root);
 
-            // Apply realm restriction
-            Predicate realmPredicate = cb.equal(root.get("realmId"), realm.getId());
+            // apply distinct and order by username to ensure consistency with no-filter case
+            query.where(predicates).distinct(true).orderBy(cb.asc(root.get("username")));
 
-            // Combine with filter predicate
-            query.where(cb.and(realmPredicate, filterPredicate));
-
-            // Execute query and convert to UserModel stream
+            // execute query and convert to UserModel stream
             return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
                     .map(entity -> new UserAdapter(session, realm, em, entity)));
         } else {
-            return session.users().searchForUserStream(realm, Map.of(), firstResult, maxResults);
+            return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), firstResult, maxResults);
+        }
+    }
+
+    @Override
+    public Long count(SearchRequest searchRequest) {
+        RealmModel realm = session.getContext().getRealm();
+        if (StringUtil.isNotBlank(searchRequest.getFilter())) {
+            // parse filter into AST
+            ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(searchRequest.getFilter());
+
+            // execute JPA count query with filter
+            EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Long> query = cb.createQuery(Long.class);
+            Root<UserEntity> root = query.from(UserEntity.class);
+
+            List<Predicate> predicates = this.getUserPredicates(filterContext, cb, query, root);
+            query.select(cb.countDistinct(root)).where(predicates);
+            return em.createQuery(query).getSingleResult();
+        } else {
+            return (long) session.users().getUsersCount(realm, false);
         }
     }
 
@@ -153,41 +168,23 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         return exception;
     }
 
-    private static class UserAttributeNameResolver implements AttributeNameResolver {
+    private List<Predicate> getUserPredicates(FilterContext filterContext, CriteriaBuilder cb, CriteriaQuery<?> query, Root<UserEntity> root) {
+        List<Predicate> predicates = new ArrayList<>();
 
-        private KeycloakSession session;
-        private UserResourceTypeProvider provider;
+        // create filter predicate using the same query and root that will be used for execution
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(getSchemas(), cb, root);
+        predicates.add(evaluator.visit(filterContext).predicate());
 
-        public UserAttributeNameResolver(KeycloakSession session, UserResourceTypeProvider provider) {
-            this.session = session;
-            this.provider = provider;
-        }
+        // apply service account restriction
+        predicates.add(root.get("serviceAccountClientLink").isNull());
 
-        @Override
-        public AttributeInfo resolve(String scimAttrPath) {
+        // apply realm restriction
+        RealmModel realm = session.getContext().getRealm();
+        predicates.add(cb.equal(root.get("realmId"), realm.getId()));
 
-            // first split the attribute path into schema and attribute name. If no schema is specified, use the core user schema by default
-            String[] splitAttrPath = provider.splitScimAttribute(scimAttrPath);
+        UserProvider userProvider = session.getProvider(UserProvider.class, "jpa");
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, (PartialEvaluationStorageProvider) userProvider, realm, cb, query, root));
 
-            // iterate through user profile attributes, finding one whose scim.schema.attribute annotation matches the given scimAttrPath
-            Attributes attributes = session.getProvider(UserProfileProvider.class).create(UserProfileContext.SCIM, Map.of()).getAttributes();
-            Set<String> allAttrNames = attributes.toMap().keySet();
-            for (String attrName : allAttrNames) {
-                var annotations = attributes.getMetadata(attrName).getAnnotations();
-                if (annotations != null) {
-                    String scimAttr = (String) annotations.get(ANNOTATION_SCIM_SCHEMA_ATTRIBUTE);
-                    String scimAttrSchema = (String) annotations.get(ANNOTATION_SCIM_SCHEMA);
-                    if (splitAttrPath[0].equals(scimAttrSchema) && splitAttrPath[1].equals(scimAttr)) {
-                        // we found the attribute with the matching SCIM attribute path and schema, so return it
-                        boolean primary = Boolean.parseBoolean((String) annotations.get("primary"));
-                        String attrType = (String) annotations.get("type");
-                        return new AttributeInfo(attrName, primary, attrType);
-                    }
-                }
-            }
-            // haven't found the attribute in the user profile, so return null to indicate that this is an unknown attribute.
-            return null;
-        }
+        return predicates;
     }
-
 }
