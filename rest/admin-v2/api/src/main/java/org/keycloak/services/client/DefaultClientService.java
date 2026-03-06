@@ -27,6 +27,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
+import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.PatchType;
@@ -48,6 +49,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
+
+import static org.keycloak.representations.admin.v2.validation.ClientSecretNotBlankValidator.isClientSecret;
 
 /**
  * Legacy implementation of ClientService for Admin API v2 that uses Admin API v1 under hood.
@@ -121,6 +124,10 @@ public class DefaultClientService implements ClientService {
     private CreateOrUpdateResult createOrUpdate(RealmModel realm, String clientId, BaseClientRepresentation client, CreateOrUpdateStrategy strategy) throws ServiceException {
         validateUnknownFields(client);
 
+        if (strategy == CreateOrUpdateStrategy.PUT) {
+            validator.validate(client, PutClient.class);
+        }
+
         boolean created = false;
         ClientModel model;
         ClientModelMapper mapper = getMapper(client.getProtocol());
@@ -147,9 +154,26 @@ public class DefaultClientService implements ClientService {
             basicRep.setClientId(client.getClientId());
             basicRep.setProtocol(client.getProtocol());
 
+            // TODO: we should avoid 'instanceOf' once we stop using the v1 representation
+            if (client instanceof OIDCClientRepresentation oidcClient) {
+                var auth = oidcClient.getAuth();
+                if (auth != null && isClientSecret(auth.getMethod())) {
+                    // this makes sure that client secret is generated for "create" methods if necessary
+                    basicRep.setPublicClient(false);
+                    basicRep.setClientAuthenticatorType(auth.getMethod());
+                    basicRep.setSecret(auth.getSecret());
+                }
+            }
+
             // Create the client in the database
             model = clientsResource.createClientModel(basicRep);
             clientResource = clientsResource.getClient(model.getId());
+
+            // TODO: we should avoid 'instanceOf' once we stop using the v1 representation
+            if (model.getSecret() != null && client instanceof OIDCClientRepresentation oidcClient) {
+                // set generated secret
+                oidcClient.getAuth().setSecret(model.getSecret());
+            }
 
             mapper.toModel(client, model);
 
