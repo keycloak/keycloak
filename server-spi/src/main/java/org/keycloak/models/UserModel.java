@@ -47,6 +47,8 @@ public interface UserModel extends RoleMapperModel, Model {
     String GROUPS = "keycloak.session.realm.users.query.groups";
     String SEARCH = "keycloak.session.realm.users.query.search";
     String EXACT = "keycloak.session.realm.users.query.exact";
+    String CREATED_AFTER = "keycloak.session.realm.users.query.created_after";
+    String CREATED_BEFORE = "keycloak.session.realm.users.query.created_before";
     String DISABLED_REASON = "disabledReason";
     //attribute name used to mark a temporary admin user/service account as temporary
     String IS_TEMP_ADMIN_ATTR_NAME = "is_temporary_admin";
