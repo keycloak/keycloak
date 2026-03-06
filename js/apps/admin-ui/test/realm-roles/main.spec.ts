@@ -201,7 +201,7 @@ test.describe.serial("Realm roles test", () => {
 
     await searchItem(page, "Search by name", "manage-account");
     await assertTableRowsLength(page, "Role list", 1);
-    await assertRowExists(page, "manage-account");
+    await assertRowExists(page, "account manage-account");
   });
 
   test("Should hide inherited roles test", async ({ page }) => {

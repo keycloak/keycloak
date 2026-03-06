@@ -41,7 +41,8 @@ export type Row = {
 };
 
 type ClientRoleMapping = {
-  client: string;
+  client?: string;
+  clientId?: string;
   id?: string;
   mappings: RoleRepresentation[];
 };
@@ -146,9 +147,9 @@ export const RoleMapping = ({
     const realmRolesMapping =
       roles.realmMappings?.map((role) => ({ role })) || [];
     const clientMapping = Object.values(roles.clientMappings || {}).flatMap(
-      ({ client, id, mappings }: ClientRoleMapping) =>
+      ({ client, clientId, id, mappings }: ClientRoleMapping) =>
         mappings.map((role) => ({
-          client: { clientId: client, id },
+          client: { clientId: client ?? clientId, id },
           role,
         })),
     );
