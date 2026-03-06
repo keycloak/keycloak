@@ -78,7 +78,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test for the scenarios related to refresh-token and involving userSession and clientSession timeouts (idle-timeout, max session timeout etc).
  */
 @KeycloakIntegrationTest
-public class RefreshTokenTimeoutsTests {
+public class RefreshTokenTimeoutsTest {
 
     @InjectOAuthClient
     OAuthClient oauth;
@@ -201,7 +201,6 @@ public class RefreshTokenTimeoutsTests {
         return userSession.getLastAccess() / 1000;
     }
 
-    // TODO:mposolda remove InfinispanTestUtils class
     private void setTestingInfinispanTimeService() {
         infinispanTimeService.setTestingInfinispanTimeService();
     }

@@ -8,7 +8,7 @@ import org.keycloak.tests.admin.client.SessionTest;
 import org.keycloak.tests.admin.concurrency.ConcurrentLoginTest;
 import org.keycloak.tests.model.UserSessionProviderOfflineTest;
 import org.keycloak.tests.model.UserSessionProviderTest;
-import org.keycloak.tests.oauth.RefreshTokenTimeoutsTests;
+import org.keycloak.tests.oauth.RefreshTokenTimeoutsTest;
 
 import org.junit.platform.suite.api.AfterSuite;
 import org.junit.platform.suite.api.BeforeSuite;
@@ -19,7 +19,7 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({
         SessionTest.class,
         ConcurrentLoginTest.class,
-        RefreshTokenTimeoutsTests.class,
+        RefreshTokenTimeoutsTest.class,
         UserSessionProviderTest.class,
         UserSessionProviderOfflineTest.class,
 })

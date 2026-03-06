@@ -20,11 +20,11 @@ public class ManagedWebDriver extends ManagedTestResource {
     private PageUtils pageUtils = new PageUtils(this);
     private NavigateUtils  navigateUtils = new NavigateUtils(this);
     private WaitUtils waitUtils = new WaitUtils(this);
-    private BrowserTabUtils tabUtils = new BrowserTabUtils(this);
+    private final BrowserTabUtils tabUtils;
 
     public ManagedWebDriver(WebDriver driver) {
         this.driver = driver;
-        this.tabUtils.init();
+        this.tabUtils = new BrowserTabUtils(this);
     }
 
     public WebDriver driver() {

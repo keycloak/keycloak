@@ -100,7 +100,7 @@ import org.openqa.selenium.Cookie;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 import static org.keycloak.events.Errors.INVALID_REQUEST;
-import static org.keycloak.tests.oauth.RefreshTokenTimeoutsTests.isPersistentSessionsFeatureEnabled;
+import static org.keycloak.tests.oauth.RefreshTokenTimeoutsTest.isPersistentSessionsFeatureEnabled;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
