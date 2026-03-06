@@ -207,7 +207,11 @@ public abstract class AbstractUserProfileBean {
         public Map<String, Object> getHtml5DataAnnotations() {
             Map<String, Object> groupAnnotations = Optional.ofNullable(getGroup()).map(AttributeGroup::getAnnotations).orElse(Map.of());
             Map<String, Object> annotations = Stream.concat(getAnnotations().entrySet().stream(), groupAnnotations.entrySet().stream())
-                    .filter((entry) -> entry.getKey().startsWith("kc")).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+                    .filter((entry) -> entry.getKey().startsWith("kc"))
+                    .filter((entry) -> isValidHtmlDataAttributeName(entry.getKey()))
+                    .collect(Collectors.toMap(
+                            Entry::getKey,
+                            entry -> sanitizeAnnotationValue(String.valueOf(entry.getValue()))));
 
             if (isMultivalued()) {
                 annotations = new HashMap<>(annotations);
@@ -215,6 +219,31 @@ public abstract class AbstractUserProfileBean {
             }
 
             return annotations;
+        }
+
+        /**
+         * Validates that an annotation key is safe to use as an HTML data attribute name.
+         * Only allows alphanumeric characters, hyphens, underscores, and dots after
+         * the required "kc" prefix. This prevents attribute injection where a key like
+         * "kcFoo onfocus=alert(1)" would break out of the data- attribute.
+         */
+        private static boolean isValidHtmlDataAttributeName(String key) {
+            return key.matches("^[a-zA-Z0-9_.\\-]+$");
+        }
+
+        /**
+         * Sanitizes annotation values to prevent HTML attribute injection.
+         * Escapes characters that could break out of an HTML attribute value.
+         */
+        private static String sanitizeAnnotationValue(String value) {
+            if (value == null) {
+                return "";
+            }
+            return value.replace("&", "&amp;")
+                        .replace("\"", "&quot;")
+                        .replace("'", "&#39;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;");
         }
       
         /**
@@ -272,7 +301,11 @@ public abstract class AbstractUserProfileBean {
 
         public Map<String, Object> getHtml5DataAnnotations() {
             return getAnnotations().entrySet().stream()
-                    .filter((entry) -> entry.getKey().startsWith("kc")).collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+                    .filter((entry) -> entry.getKey().startsWith("kc"))
+                    .filter((entry) -> entry.getKey().matches("^[a-zA-Z0-9_.\\-]+$"))
+                    .collect(Collectors.toMap(
+                            Entry::getKey,
+                            entry -> Attribute.sanitizeAnnotationValue(String.valueOf(entry.getValue()))));
         }
 
         @Override
