@@ -358,6 +358,19 @@ export class Users extends Resource<{ realm?: string }> {
   });
 
   /**
+   * create a new credential for the user
+   */
+  public createCredential = this.makeRequest<
+    { id: string; credential: CredentialRepresentation },
+    void
+  >({
+    method: "POST",
+    path: "/{id}/credentials",
+    urlParamKeys: ["id"],
+    payloadKey: "credential",
+  });
+
+  /**
    * delete user credentials
    */
   public deleteCredential = this.makeRequest<
@@ -367,6 +380,20 @@ export class Users extends Resource<{ realm?: string }> {
     method: "DELETE",
     path: "/{id}/credentials/{credentialId}",
     urlParamKeys: ["id", "credentialId"],
+  });
+
+  /**
+   * update an existing credential for the user
+   */
+  public updateCredential = this.makeUpdateRequest<
+    { id: string; credentialId: string },
+    CredentialRepresentation,
+    void
+  >({
+    method: "PUT",
+    path: "/{id}/credentials/{credentialId}",
+    urlParamKeys: ["id", "credentialId"],
+    payloadKey: "credential",
   });
 
   /**
