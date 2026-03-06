@@ -362,10 +362,8 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
     }
 
     private void deleteClient(String clientId) throws Exception {
-        HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + clientId);
-        setAuthHeader(deleteRequest);
-        try (var response = client.execute(deleteRequest)) {
-            assertEquals(204, response.getStatusLine().getStatusCode());
+        try (var response = adminClient.clients("master").delete(clientId)) {
+            assertEquals(204, response.getStatus());
         }
     }
 

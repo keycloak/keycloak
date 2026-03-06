@@ -39,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-v2-rest</artifactId>
+            <artifactId>keycloak-admin-client-tests</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak.tests</groupId>

@@ -1,7 +1,10 @@
 package org.keycloak.admin.client.wrapper;
 
+import java.util.List;
+
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
+
 import org.keycloak.admin.api.AdminRootV2;
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.admin.client.Keycloak;
@@ -9,8 +12,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.spi.ResteasyClientProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
-
-import java.util.List;
 
 public class Clients {
 
