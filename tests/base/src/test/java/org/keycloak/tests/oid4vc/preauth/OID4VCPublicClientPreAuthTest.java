@@ -63,11 +63,13 @@ public class OID4VCPublicClientPreAuthTest extends OID4VCIssuerTestBase {
             req.targetUser(ctx.getHolder());
             req.preAuthorized(true);
         });
+
         String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
 
         // Redeem Pre-Authorized Code for AccessToken
         //
-        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode, null).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);

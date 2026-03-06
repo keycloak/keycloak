@@ -82,6 +82,7 @@ public interface CredentialOfferProvider extends Provider {
             List<String> credentialConfigurationIds,
             String targetClientId,
             String targetUserId,
+            Boolean withTxCode,
             Integer expireAt
     ) throws ClientPolicyException;
 

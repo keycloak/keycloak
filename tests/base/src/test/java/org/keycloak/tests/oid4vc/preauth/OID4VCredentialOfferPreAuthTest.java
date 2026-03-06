@@ -86,17 +86,18 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         });
 
         String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
 
         // Redeem Pre-Authorized Code for AccessToken
         //
-        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode, null).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
-        assertNotNull(accessToken, "No accessToken");
+        assertNotNull(accessToken,"No accessToken");
 
         String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier, "No authorized credential identifier");
+        assertNotNull(authorizedIdentifier,"No authorized credential identifier");
 
         // Send the CredentialRequest
         //
@@ -133,7 +134,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         // Redeem Pre-Authorized Code for AccessToken
         //
-        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode, null).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
@@ -218,6 +219,36 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         assertFalse(runner.apply(false, true), "Pre-Auth offer denied");
         assertFalse(runner.apply(true, false), "Pre-Auth offer denied");
         assertTrue(runner.apply(true, true), "Pre-Auth offer allowed");
+    }
+
+    @Test
+    public void testPreAuthOffer_Targeted_Invalid_TxCode() throws Exception {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        // Create Pre-Authorized CredentialOffer
+        //
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+            req.txCode(true);
+        });
+
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        // Test missing TxCode
+        {
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode, null).send();
+            AssertionError error = assertThrows(AssertionError.class, () -> wallet.validateHolderAccessToken(ctx, tokenResponse));
+            assertTrue(error.getMessage().contains("Missing TxCode"), error.getMessage());
+        }
+
+        // Test wrong TxCode
+        {
+            AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode, "wrong-code").send();
+            AssertionError error = assertThrows(AssertionError.class, () -> wallet.validateHolderAccessToken(ctx, tokenResponse));
+            assertTrue(error.getMessage().contains("Invalid TxCode"), error.getMessage());
+        }
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
