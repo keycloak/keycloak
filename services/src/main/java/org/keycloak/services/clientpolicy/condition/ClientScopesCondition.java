@@ -39,6 +39,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
+import org.keycloak.services.clientpolicy.context.ResourceOwnerPasswordCredentialsContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenResponseContext;
 import org.keycloak.services.clientpolicy.context.TokenExchangeRequestContext;
@@ -117,6 +118,9 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
                 return ClientPolicyVote.NO;
             case TOKEN_EXCHANGE_REQUEST:
                 if (isScopeMatched(((TokenExchangeRequestContext) context).getTokenExchangeContext())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST:
+                if (isScopeMatched(((ResourceOwnerPasswordCredentialsContext) context).getScope(), session.getContext().getClient())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:
                 return ClientPolicyVote.ABSTAIN;
