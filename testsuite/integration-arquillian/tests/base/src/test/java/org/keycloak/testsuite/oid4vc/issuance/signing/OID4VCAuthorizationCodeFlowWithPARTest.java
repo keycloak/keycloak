@@ -106,7 +106,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
         // Step 1: Create PAR request with authorization_details
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
         // Create authorization details with claims
         ClaimsDescription claim = new ClaimsDescription();
@@ -290,7 +290,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         OID4VCAuthorizationDetail firstAuthorizationDetail = authDetailsResponse.get(0);
         assertEquals("credential_configuration_id should match requested scope",
-                getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID),
+                getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID),
                 firstAuthorizationDetail.getCredentialConfigurationId());
         assertNotNull("credential_identifiers should be present", firstAuthorizationDetail.getCredentialIdentifiers());
         assertFalse("credential_identifiers should not be empty", firstAuthorizationDetail.getCredentialIdentifiers().isEmpty());

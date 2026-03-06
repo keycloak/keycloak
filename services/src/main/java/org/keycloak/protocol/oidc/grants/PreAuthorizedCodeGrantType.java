@@ -42,6 +42,7 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.utils.OID4VCUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -80,12 +81,12 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
-        String preAuthCode = formParams.getFirst(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM);
-        String txCode = formParams.getFirst(PreAuthorizedCodeGrantTypeFactory.TX_CODE_PARAM);
+        String preAuthCode = formParams.getFirst(PreAuthorizedCodeGrant.CODE_REQUEST_PARAM);
+        String txCode = formParams.getFirst(PreAuthorizedCodeGrant.TX_CODE_PARAM);
 
         if (preAuthCode == null) {
             // See: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-token-request
-            String errorMessage = "Missing parameter: " + PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM;
+            String errorMessage = "Missing parameter: " + PreAuthorizedCodeGrant.CODE_REQUEST_PARAM;
             event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
                     errorMessage, Response.Status.BAD_REQUEST);
@@ -153,7 +154,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, clientModel, userSession);
         clientSession.setNote(OIDCLoginProtocol.ISSUER, credOffer.getCredentialIssuer());
-        clientSession.setNote(VC_ISSUANCE_FLOW, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE);
+        clientSession.setNote(VC_ISSUANCE_FLOW, PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE);
 
         List<ClientScopeModel> credentialScopes = resolveCredentialScopesForCredentialOffer(credOffer.getCredentialConfigurationIds());
         Set<ClientScopeModel> requestedScopes = TokenManager.getRequestedClientScopes(session, OAuth2Constants.SCOPE_OPENID, clientModel, targetUserModel)
@@ -161,7 +162,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         requestedScopes.addAll(credentialScopes);
 
         ClientSessionContext sessionContext = fromClientSessionAndClientScopes(clientSession, requestedScopes, null, session);
-        sessionContext.setAttribute(Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE);
+        sessionContext.setAttribute(Constants.GRANT_TYPE, PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE);
 
         // set the client as retrieved from the pre-authorized session
         session.getContext().setClient(clientModel);

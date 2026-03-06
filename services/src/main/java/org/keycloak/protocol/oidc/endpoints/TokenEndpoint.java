@@ -43,11 +43,11 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.saml.JaxrsSAML2BindingBuilder;
 import org.keycloak.protocol.saml.SamlClient;
@@ -132,7 +132,7 @@ public class TokenEndpoint {
 
         if (!grantType.equals(OAuth2Constants.UMA_GRANT_TYPE)
                 // pre-authorized grants are not necessarily used by known clients.
-                && !grantType.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
+                && !grantType.equals(PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE)) {
             checkClient();
             checkParameterDuplicated();
         }

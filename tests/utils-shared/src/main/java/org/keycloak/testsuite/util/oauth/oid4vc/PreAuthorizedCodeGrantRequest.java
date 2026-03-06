@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.testsuite.util.oauth.AbstractHttpPostRequest;
 import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -16,20 +16,14 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 public class PreAuthorizedCodeGrantRequest extends AbstractHttpPostRequest<PreAuthorizedCodeGrantRequest, AccessTokenResponse> {
 
     private final String preAuthCode;
-    private String txCode;
 
-    PreAuthorizedCodeGrantRequest(AbstractOAuthClient<?> client, String preAuthorizedCode) {
+    public PreAuthorizedCodeGrantRequest(AbstractOAuthClient<?> client, String preAuthorizedCode) {
         super(client);
         this.preAuthCode = preAuthorizedCode;
     }
 
     public PreAuthorizedCodeGrantRequest authorizationDetails(List<OID4VCAuthorizationDetail> authDetails) {
         parameter(OAuth2Constants.AUTHORIZATION_DETAILS, JsonSerialization.valueAsString(authDetails));
-        return this;
-    }
-
-    public PreAuthorizedCodeGrantRequest txCode(String txCode) {
-        this.txCode = txCode;
         return this;
     }
 
@@ -40,9 +34,8 @@ public class PreAuthorizedCodeGrantRequest extends AbstractHttpPostRequest<PreAu
 
     @Override
     protected void initRequest() {
-        parameter(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE);
-        parameter(PreAuthorizedCodeGrantTypeFactory.CODE_REQUEST_PARAM, preAuthCode);
-        parameter(PreAuthorizedCodeGrantTypeFactory.TX_CODE_PARAM, txCode);
+        parameter(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE);
+        parameter(PreAuthorizedCodeGrant.CODE_REQUEST_PARAM, preAuthCode);
     }
 
     @Override
