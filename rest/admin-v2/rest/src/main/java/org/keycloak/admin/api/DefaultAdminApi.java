@@ -7,6 +7,7 @@ import jakarta.ws.rs.PathParam;
 import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.admin.api.client.DefaultClientsApi;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.resources.admin.RealmAdminResource;
@@ -16,6 +17,7 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 
 public class DefaultAdminApi implements AdminApi {
     private final KeycloakSession session;
+    private final RealmModel realm;
     private final AdminPermissionEvaluator permissions;
 
     // v1 resources
@@ -25,6 +27,8 @@ public class DefaultAdminApi implements AdminApi {
         this.session = session;
         var authInfo = AdminRoot.authenticateRealmAdminRequest(session);
         this.permissions = AdminPermissions.evaluator(session, authInfo.getRealm(), authInfo);
+        this.realm = session.realms().getRealmByName(realmName);
+        // remove v1 resource once we are not attached to API v1
         this.realmAdminResource = new RealmsAdminResource(session, authInfo, new TokenManager()).getRealmAdmin(realmName);
     }
 
@@ -32,7 +36,7 @@ public class DefaultAdminApi implements AdminApi {
     @Override
     public ClientsApi clients(@PathParam("version") String version) {
         return switch (version) {
-            case "v2" -> new DefaultClientsApi(session, permissions, realmAdminResource);
+            case "v2" -> new DefaultClientsApi(session, realm, permissions, realmAdminResource);
             default -> throw new NotFoundException();
         };
     }
