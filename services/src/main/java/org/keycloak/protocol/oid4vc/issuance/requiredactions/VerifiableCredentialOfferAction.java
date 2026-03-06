@@ -177,7 +177,7 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         String clientId = actionConfig.getClientId();
         CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
         CredentialOfferState offerState = offerProvider.createCredentialOffer(user, grantType,
-                List.of(credentialConfigurationId), clientId, user.getUsername(), expiresAt);
+                List.of(credentialConfigurationId), clientId, user.getUsername(), false, expiresAt);
 
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
         offerStorage.putOfferState(offerState);

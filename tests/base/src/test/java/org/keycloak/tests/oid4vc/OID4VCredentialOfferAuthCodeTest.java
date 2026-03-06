@@ -74,7 +74,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
         // Fetch Credential by Offer
         //
-        CredentialResponse credResponse = wallet.fetchCredentialByOffer(ctx, credOffer)
+        CredentialResponse credResponse = wallet.fetchCredentialByOffer(ctx, credOffer, null)
                 .getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
