@@ -111,7 +111,7 @@ public class PreAuthorizedCodeGrantTypeTest {
     }
 
     private CredentialOfferState createOfferState(int lifespan) {
-        return new CredentialOfferState(new CredentialsOffer(), null, null, Time.currentTimeSeconds() + lifespan, null);
+        return new CredentialOfferState(new CredentialsOffer(), null, null, Time.currentTimeSeconds() + lifespan, null, null);
     }
 
     private RealmModel realmWithCredentialOfferLifespan(String lifespan) {

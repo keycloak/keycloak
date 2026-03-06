@@ -16,12 +16,12 @@ public class CredentialOfferProviderTest {
     public void shouldDelegateLongExpirationToIntegerSpiImplementation() {
         AtomicReference<Integer> delegatedExpiration = new AtomicReference<>();
         CredentialOfferProvider provider = (user, grantType, credentialConfigurationIds, targetClientId, targetUserId,
-                                            expireAt) -> {
+                                            withTxCode, expireAt) -> {
             delegatedExpiration.set(expireAt);
             return null;
         };
 
-        provider.createCredentialOffer(null, null, null, null, null, 123L);
+        provider.createCredentialOffer(null, null, null, null, null, null, 123L);
 
         assertEquals(Integer.valueOf(123), delegatedExpiration.get());
     }
@@ -29,11 +29,11 @@ public class CredentialOfferProviderTest {
     @Test
     public void shouldRejectLongExpirationOutsideIntegerSpiRange() {
         CredentialOfferProvider provider = (user, grantType, credentialConfigurationIds, targetClientId, targetUserId,
-                                            expireAt) -> null;
+                                            withTxCode, expireAt) -> null;
         long expireAt = (long) Integer.MAX_VALUE + 1;
 
         CredentialOfferException exception = assertThrows(CredentialOfferException.class,
-                () -> provider.createCredentialOffer(null, null, null, null, null, expireAt));
+                () -> provider.createCredentialOffer(null, null, null, null, null, null, expireAt));
 
         assertEquals(Errors.INVALID_REQUEST, exception.getErrorType());
         assertEquals("Credential offer expiration is outside the integer range supported by this provider: " + expireAt,
