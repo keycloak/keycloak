@@ -459,8 +459,10 @@ public final class JGroupsConfigurator {
                 return;
             }
             checkPropertyAlreadySet(userConfig, property);
-            if (altProperty != null)
+            if (altProperty != null) {
                 checkPropertyAlreadySet(userConfig, altProperty);
+                System.setProperty(altProperty, userConfig);
+            }
             System.setProperty(property, userConfig);
         }
 
