@@ -227,6 +227,11 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
+    public long getMembersCount(OrganizationModel organization, Boolean exact, Map<String, String> filters) {
+        return getDelegate().getMembersCount(organization, exact, filters);
+    }
+
+    @Override
     public UserModel getMemberById(OrganizationModel organization, String id) {
         if (userCache == null) {
             return getDelegate().getMemberById(organization, id);

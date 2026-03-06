@@ -35,7 +35,6 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -64,7 +63,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.entities.CredentialEntity;
 import org.keycloak.models.jpa.entities.FederatedIdentityEntity;
-import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserConsentClientScopeEntity;
 import org.keycloak.models.jpa.entities.UserConsentEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
@@ -77,6 +75,8 @@ import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.jpa.JpaHashUtils;
 import org.keycloak.utils.StringUtil;
 
+import static org.keycloak.models.jpa.JpaUserUtils.addSearchPredicates;
+import static org.keycloak.models.jpa.JpaUserUtils.createPredicates;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.storage.jpa.JpaHashUtils.predicateForFilteringUsersByAttributes;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -88,13 +88,6 @@ import static org.keycloak.utils.StreamsUtil.closing;
  */
 @SuppressWarnings("JpaQueryApiInspection")
 public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUserPartialEvaluationProvider {
-
-    private static final String EMAIL = "email";
-    private static final String EMAIL_VERIFIED = "emailVerified";
-    private static final String USERNAME = "username";
-    private static final String FIRST_NAME = "firstName";
-    private static final String LAST_NAME = "lastName";
-    private static final char ESCAPE_BACKSLASH = '\\';
 
     private final KeycloakSession session;
     protected final EntityManager em;
@@ -625,7 +618,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
-        addSearchPredicates(search, builder, root, predicates);
+        addSearchPredicates(search, false, builder, root, predicates);
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
 
         return em.createQuery(countQuery(queryBuilder, builder, root, predicates)).getSingleResult().intValue();
@@ -646,7 +639,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(userJoin.get("realmId"), realm.getId()));
-        addSearchPredicates(search, builder, userJoin, predicates);
+        addSearchPredicates(search, false, builder, userJoin, predicates);
         predicates.add(groupMembership.get("groupId").in(groupIds));
 
         return em.createQuery(countQuery(queryBuilder, builder, userJoin, predicates)).getSingleResult().intValue();
@@ -657,10 +650,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         CriteriaBuilder qb = em.getCriteriaBuilder();
         CriteriaQuery<Long> userQuery = qb.createQuery(Long.class);
         Root<UserEntity> from = userQuery.from(UserEntity.class);
+        boolean exact = Boolean.parseBoolean(params.get(UserModel.EXACT));
+        List<Predicate> restrictions = createPredicates(session, qb, userQuery, params, from, exact, Map.of());
 
-        List<Predicate> restrictions = predicates(params, from, Map.of());
         restrictions.add(qb.equal(from.get("realmId"), realm.getId()));
-        restrictions.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, qb, userQuery, from));
 
         TypedQuery<Long> query = em.createQuery(countQuery(userQuery, qb, from, restrictions));
         Long result = query.getSingleResult();
@@ -680,13 +673,11 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
         Root<UserEntity> root = countQuery.from(UserEntity.class);
         countQuery.select(cb.countDistinct(root));
-
-        List<Predicate> restrictions = predicates(params, root, Map.of());
+        boolean exact = Boolean.parseBoolean(params.get(UserModel.EXACT));
+        List<Predicate> restrictions = createPredicates(session, cb, countQuery, params, root, exact, Map.of());
         restrictions.add(cb.equal(root.get("realmId"), realm.getId()));
 
         session.setAttribute(UserModel.GROUPS, groupIds);
-
-        restrictions.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, cb, countQuery, root));
 
         countQuery.where(restrictions);
         TypedQuery<Long> query = em.createQuery(countQuery);
@@ -800,11 +791,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         Root<UserEntity> root = queryBuilder.from(UserEntity.class);
 
         Map<String, String> customLongValueSearchAttributes = new HashMap<>();
-        List<Predicate> predicates = predicates(attributes, root, customLongValueSearchAttributes);
+        boolean exact = Boolean.parseBoolean(attributes.get(UserModel.EXACT));
+        List<Predicate> predicates = createPredicates(session, builder, queryBuilder, attributes, root, exact, customLongValueSearchAttributes);
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
-
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, this, realm, builder, queryBuilder, root));
 
         queryBuilder.distinct(true).where(predicates).orderBy(builder.asc(root.get(UserModel.USERNAME)));
 
@@ -974,129 +964,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
         }
     }
 
-    private static Predicate getSearchOptionPredicate(String value, CriteriaBuilder builder, From<?, UserEntity> from) {
-        value = value.toLowerCase();
-
-        List<Predicate> orPredicates = new ArrayList<>();
-
-        if (value.length() >= 2 && value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"') {
-            // exact search
-            value = value.substring(1, value.length() - 1);
-
-            orPredicates.add(builder.equal(from.get(USERNAME), value));
-            orPredicates.add(builder.equal(from.get(EMAIL), value));
-            orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
-            orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
-        } else {
-            value = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
-            value = value.replace("*", "%");
-            if (value.isEmpty() || value.charAt(value.length() - 1) != '%') value += "%";
-
-            orPredicates.add(builder.like(from.get(USERNAME), value, ESCAPE_BACKSLASH));
-            orPredicates.add(builder.like(from.get(EMAIL), value, ESCAPE_BACKSLASH));
-            orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value, ESCAPE_BACKSLASH));
-            orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value, ESCAPE_BACKSLASH));
-        }
-
-        return builder.or(orPredicates);
-    }
-
     private UserEntity userInEntityManagerContext(String id) {
         UserEntity user = em.getReference(UserEntity.class, id);
         return em.contains(user) ? user : null;
-    }
-
-    private List<Predicate> predicates(Map<String, String> attributes, Root<UserEntity> root, Map<String, String> customLongValueSearchAttributes) {
-        CriteriaBuilder builder = em.getCriteriaBuilder();
-
-        List<Predicate> predicates = new ArrayList<>();
-        List<Predicate> attributePredicates = new ArrayList<>();
-
-        Join<Object, Object> federatedIdentitiesJoin = null;
-
-        for (Map.Entry<String, String> entry : attributes.entrySet()) {
-            String key = entry.getKey();
-            String value = entry.getValue();
-
-            if (value == null) {
-                continue;
-            }
-
-            switch (key) {
-                case UserModel.SEARCH:
-                    addSearchPredicates(value, builder, root, predicates);
-                    break;
-                case FIRST_NAME:
-                case LAST_NAME:
-                    if (Boolean.parseBoolean(attributes.get(UserModel.EXACT))) {
-                        predicates.add(builder.equal(builder.lower(root.get(key)), value.toLowerCase()));
-                    } else {
-                        predicates.add(builder.like(builder.lower(root.get(key)), "%" + value.toLowerCase() + "%"));
-                    }
-                    break;
-                case USERNAME:
-                case EMAIL:
-                    if (Boolean.parseBoolean(attributes.get(UserModel.EXACT))) {
-                        predicates.add(builder.equal(root.get(key), value.toLowerCase()));
-                    } else {
-                        predicates.add(builder.like(root.get(key), "%" + value.toLowerCase() + "%"));
-                    }
-                    break;
-                case EMAIL_VERIFIED:
-                    predicates.add(builder.equal(root.get(key), Boolean.valueOf(value.toLowerCase())));
-                    break;
-                case UserModel.ENABLED:
-                    predicates.add(builder.equal(root.get(key), Boolean.valueOf(value)));
-                    break;
-                case UserModel.IDP_ALIAS:
-                    if (federatedIdentitiesJoin == null) {
-                        federatedIdentitiesJoin = root.join("federatedIdentities");
-                    }
-                    predicates.add(builder.equal(federatedIdentitiesJoin.get("identityProvider"), value));
-                    break;
-                case UserModel.IDP_USER_ID:
-                    if (federatedIdentitiesJoin == null) {
-                        federatedIdentitiesJoin = root.join("federatedIdentities");
-                    }
-                    predicates.add(builder.equal(federatedIdentitiesJoin.get("userId"), value));
-                    break;
-                case UserModel.EXACT:
-                    break;
-                case UserModel.INCLUDE_SERVICE_ACCOUNT: {
-                    if (!attributes.containsKey(UserModel.INCLUDE_SERVICE_ACCOUNT)
-                            || !Boolean.parseBoolean(attributes.get(UserModel.INCLUDE_SERVICE_ACCOUNT))) {
-                        predicates.add(root.get("serviceAccountClientLink").isNull());
-                    }
-                    break;
-                }
-                default:
-                    // All unknown attributes will be assumed as custom attributes
-                    Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);
-                    if (value.length() > 255) {
-                        customLongValueSearchAttributes.put(key, value);
-                        attributePredicates.add(builder.and(
-                                builder.equal(attributesJoin.get("name"), key),
-                                builder.equal(attributesJoin.get("longValueHashLowerCase"), JpaHashUtils.hashForAttributeValueLowerCase(value))));
-                    } else {
-                        if (Boolean.parseBoolean(attributes.getOrDefault(UserModel.EXACT, Boolean.TRUE.toString()))) {
-                            attributePredicates.add(builder.and(
-                                builder.equal(attributesJoin.get("name"), key),
-                                builder.equal(builder.lower(attributesJoin.get("value")), value.toLowerCase())));
-                        } else {
-                            attributePredicates.add(builder.and(
-                                builder.equal(attributesJoin.get("name"), key),
-                                builder.like(builder.lower(attributesJoin.get("value")), "%" + value.toLowerCase() + "%")));
-                        }
-                    }
-                    break;
-            }
-        }
-
-        if (!attributePredicates.isEmpty()) {
-            predicates.add(builder.and(attributePredicates));
-        }
-
-        return predicates;
     }
 
     @Override
@@ -1107,15 +977,6 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
     @Override
     public EntityManager getEntityManager() {
         return em;
-    }
-
-    private static void addSearchPredicates(String search, CriteriaBuilder builder, From<?, UserEntity> from, List<Predicate> predicates) {
-        if (search == null) {
-            return;
-        }
-        for (String stringToSearch : search.trim().split("\\s+")) {
-            predicates.add(getSearchOptionPredicate(stringToSearch, builder, from));
-        }
     }
 
     private static CriteriaQuery<Long> countQuery(CriteriaQuery<Long> query, CriteriaBuilder builder, From<?, UserEntity> from, List<Predicate> predicates) {
