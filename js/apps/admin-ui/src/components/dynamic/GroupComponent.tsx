@@ -46,11 +46,13 @@ export const GroupComponent = ({
     groupTypes.find((t: string) => t === "ORGANIZATION") || "ORGANIZATION";
 
   const groupType = useWatch({
-    name: "config.groupType",
+    name: groupTypeFieldName,
     control,
     defaultValue: GROUP_TYPE_REALM,
   });
 
+  const shouldRenderOrgField =
+    hasLinkedOrganization || groupType == GROUP_TYPE_ORG;
   return (
     <Controller
       name={convertToName(name!)}
@@ -113,6 +115,14 @@ export const GroupComponent = ({
                         setValue(groupTypeFieldName, undefined);
                       }}
                     >
+                      {shouldRenderOrgField && (
+                        <>
+                          {groupType === GROUP_TYPE_REALM
+                            ? t("realm")
+                            : t("organization")}
+                          :&nbsp;
+                        </>
+                      )}
                       {field.value}
                     </Chip>
                   )}
@@ -128,7 +138,7 @@ export const GroupComponent = ({
                   {t("selectGroup")}
                 </Button>
               </ActionListItem>
-              {(hasLinkedOrganization || groupType === GROUP_TYPE_ORG) && (
+              {shouldRenderOrgField && (
                 <ActionListItem>
                   <Button
                     id="kc-join-org-groups-button"
