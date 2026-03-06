@@ -16,6 +16,7 @@
  */
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -53,12 +54,14 @@ public class CredentialOfferState {
      * @param clientId    The target client_id
      * @param userId      The target user id
      * @param expiresAt    The expiry date of the offer in seconds
+     * @param withTxCode  A flag to indicate whether a tx_code should be generated
      * @param authDetailsProvider A provider function for authorization details, (optionally) one for each credential_configuration_id
      */
     public CredentialOfferState(
             CredentialsOffer credOffer,
             String clientId,
             String userId,
+            boolean withTxCode,
             long expiresAt,
             Function<String, List<OID4VCAuthorizationDetail>> authDetailsProvider
     ) {
@@ -68,6 +71,9 @@ public class CredentialOfferState {
         this.targetUserId = userId;
         this.expiresAt = expiresAt;
         this.nonce = Base64Url.encode(RandomSecret.createRandomSecret(64));
+        if (withTxCode) {
+            this.txCode = generateTxCode();
+        }
         if (authDetailsProvider != null) {
             this.authDetails = authDetailsProvider.apply(credentialsOfferId);
         }
@@ -133,5 +139,15 @@ public class CredentialOfferState {
     // For json serialization
     private void setAuthorizationDetails(List<OID4VCAuthorizationDetail> authDetails) {
         this.authDetails = authDetails;
+    }
+
+    private String generateTxCode() {
+        SecureRandom rnd = new SecureRandom();
+        char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
+        StringBuilder sb = new StringBuilder(6);
+        for (int i = 0; i < 6; i++) {
+            sb.append(alphabet[rnd.nextInt(alphabet.length)]);
+        }
+        return sb.toString();
     }
 }

@@ -55,6 +55,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             List<String> credentialConfigurationIds,
             String targetClientId,
             String targetUsername,
+            Boolean withTxCode,
             Integer expireAt) {
 
         // Ensure at least one credential_configuration_id
@@ -78,7 +79,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         // Create the CredentialOfferState
         //
         RealmModel realmModel = userSession.getRealm();
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, credOffersId -> {
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, withTxCode, expireAt, credOffersId -> {
             List<OID4VCAuthorizationDetail> authDetails = new ArrayList<>();
             for (String credConfigId : credentialConfigurationIds) {
                 CredentialScopeModel credScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(

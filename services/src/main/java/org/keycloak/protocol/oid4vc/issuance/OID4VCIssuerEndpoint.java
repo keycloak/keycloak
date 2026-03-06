@@ -364,7 +364,7 @@ public class OID4VCIssuerEndpoint {
      * Creates a Credential Offer that is bound to a specific user.
      */
     public Response createCredentialOffer(String credConfigId, boolean preAuthorized, String targetUser) {
-        return createCredentialOffer(credConfigId, preAuthorized, targetUser, null, OfferResponseType.URI, 0, 0);
+        return createCredentialOffer(credConfigId, preAuthorized, false, targetUser, null, OfferResponseType.URI, 0, 0);
     }
 
     /**
@@ -422,6 +422,7 @@ public class OID4VCIssuerEndpoint {
      * @param preAuthorized A flag whether the offer should be pre-authorized
      * @param targetUser    The username that the offer is authorized for
      * @param expiresAt      The date/time when the offer expires (in Unix timestamp seconds)
+     * @param withTxCode    A flag whether a tx_code should be generated for a pre-auth offer
      * @param responseType  The response type, which can be 'uri', 'qr' or 'uri+qr'
      * @param width         The width of the QR code image
      * @param height        The height of the QR code image
@@ -432,6 +433,7 @@ public class OID4VCIssuerEndpoint {
     public Response createCredentialOffer(
             @QueryParam("credential_configuration_id") String credentialConfigurationId,
             @QueryParam("pre_authorized") @DefaultValue("true") Boolean preAuthorized,
+            @QueryParam("tx_code") @DefaultValue("false") Boolean withTxCode,
             @QueryParam("target_user") String targetUser,
             @QueryParam("expire") Integer expiresAt,
             @QueryParam("type") @DefaultValue("uri") OfferResponseType responseType,
@@ -489,7 +491,7 @@ public class OID4VCIssuerEndpoint {
 
             CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
             offerState = offerProvider.createCredentialOffer(session, userSession, grantType,
-                    credentialConfigurationIds, targetClientId, targetUser, expiresAt);
+                    credentialConfigurationIds, targetClientId, targetUser, withTxCode, expiresAt);
 
         } catch (CredentialOfferException ex) {
             eventBuilder.detail(Details.REASON, ex.getMessage()).error(ex.getErrorType());
@@ -516,7 +518,8 @@ public class OID4VCIssuerEndpoint {
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
         CredentialOfferURI credOfferURI = new CredentialOfferURI()
                 .setIssuer(credOffer.getCredentialIssuer() + "/protocol/" + OID4VC_PROTOCOL + "/" + CREDENTIAL_OFFER_PATH)
-                .setNonce(offerState.getNonce());
+                .setNonce(offerState.getNonce())
+                .setTxCode(offerState.getTxCode());
 
         // Respond with QR-Code as 'image/png'
         if (responseType == OfferResponseType.QR) {

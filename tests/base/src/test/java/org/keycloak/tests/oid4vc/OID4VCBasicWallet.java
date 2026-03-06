@@ -110,7 +110,7 @@ public class OID4VCBasicWallet {
         return credOffer;
     }
 
-    public CredentialsOffer createPreAuthCredentialOffer(OID4VCTestContext ctx, String targetUser) throws Exception {
+    public CredentialsOffer createPreAuthCredentialOffer(OID4VCTestContext ctx, String targetUser, boolean withTxCode) throws Exception {
 
         // Get Issuer AccessToken
         //
@@ -129,11 +129,17 @@ public class OID4VCBasicWallet {
         try {
             credOfferUri = createCredentialOffer(ctx, ctx.credConfigId)
                     .preAuthorized(true)
+                    .txCode(withTxCode)
                     .targetUser(targetUser)
                     .bearerToken(issToken)
                     .send().getCredentialOfferURI();
         } finally {
             logout(ctx.issuer);
+        }
+
+        if (withTxCode) {
+            String txCode = credOfferUri.getTxCode();
+            assertNotNull(txCode, "No TxCode");
         }
 
         // Fetch the CredentialsOffer
@@ -192,14 +198,14 @@ public class OID4VCBasicWallet {
         return request;
     }
 
-    public PreAuthorizedCodeGrantRequest preAuthAccessTokenRequest(OID4VCTestContext ctx, String preAuthCode) {
+    public PreAuthorizedCodeGrantRequest preAuthAccessTokenRequest(OID4VCTestContext ctx, String preAuthCode, String txCode) {
         PreAuthorizedCodeGrantRequest request = new PreAuthorizedCodeGrantRequest(oauth, preAuthCode) {
             public AccessTokenResponse send() {
                 AccessTokenResponse response = super.send();
                 ctx.putAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY, response);
                 return response;
             }
-        };
+        }.txCode(txCode);
         return request;
     }
 
