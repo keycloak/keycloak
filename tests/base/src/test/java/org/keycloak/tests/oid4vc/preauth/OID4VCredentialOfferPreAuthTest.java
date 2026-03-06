@@ -70,7 +70,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         try {
             IllegalStateException error = assertThrows(IllegalStateException.class,
-                    () -> wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder()));
+                    () -> wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder(), false));
             assertTrue(error.getMessage().contains("User 'alice' disabled"), error.getMessage());
         } finally {
             userRep.setEnabled(true);
@@ -85,12 +85,12 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         // Create Pre-Authorized CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, null);
+        CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, null, false);
         String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken
         //
-        AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode).send();
+        AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode, null).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
@@ -114,12 +114,12 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         // Create Pre-Authorized CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder());
+        CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder(), false);
         String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken
         //
-        AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode).send();
+        AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode, null).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
@@ -166,12 +166,12 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
             try {
                 if (policyEnabled && scopeEnabled) {
-                    CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder());
+                    CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder(), false);
                     assertNotNull(credOffer.getPreAuthorizedCode(), "Expected pre-auth offer");
                     return true;
                 } else {
                     IllegalStateException error = assertThrows(IllegalStateException.class,
-                            () -> wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder()));
+                            () -> wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder(), false));
                     assertTrue(error.getMessage().contains("Pre-Authorized code grant rejected by policy oid4vci-offer-preauth-allowed for scope jwt-credential"), error.getMessage());
                     return false;
                 }
@@ -192,6 +192,30 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         assertFalse(runner.apply(false, true), "Pre-Auth offer denied");
         assertFalse(runner.apply(true, false), "Pre-Auth offer denied");
         assertTrue(runner.apply(true, true), "Pre-Auth offer allowed");
+    }
+
+    @Test
+    public void testPreAuthOffer_Targeted_Invalid_TxCode() throws Exception {
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        // Create Pre-Authorized CredentialOffer
+        //
+        CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder(), true);
+        String preAuthCode = credOffer.getPreAuthorizedCode();
+
+        // Test missing TxCode
+        {
+            AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode, null).send();
+            AssertionError error = assertThrows(AssertionError.class, () -> wallet.validateHolderAccessToken(ctx, tokenResponse));
+            assertTrue(error.getMessage().contains("Missing TxCode"), error.getMessage());
+        }
+
+        // Test wrong TxCode
+        {
+            AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode, "wrong-code").send();
+            AssertionError error = assertThrows(AssertionError.class, () -> wallet.validateHolderAccessToken(ctx, tokenResponse));
+            assertTrue(error.getMessage().contains("Invalid TxCode"), error.getMessage());
+        }
     }
 
     // Private ---------------------------------------------------------------------------------------------------------

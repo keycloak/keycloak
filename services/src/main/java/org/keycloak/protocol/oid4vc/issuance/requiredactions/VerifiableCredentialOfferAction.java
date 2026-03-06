@@ -181,7 +181,7 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         CredentialOfferState offerState;
         try {
             offerState = offerProvider.createCredentialOffer(user, grantType,
-                    List.of(credentialConfigurationId), clientId, user.getUsername(), expiresAt);
+                    List.of(credentialConfigurationId), clientId, user.getUsername(), false, expiresAt);
         } catch (ClientPolicyException ex) {
             throw new CredentialOfferException(ex.getError(), ex.getErrorDetail());
         }

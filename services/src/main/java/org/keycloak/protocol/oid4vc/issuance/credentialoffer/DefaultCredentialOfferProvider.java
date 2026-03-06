@@ -70,6 +70,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             List<String> credentialConfigurationIds,
             String targetClientId,
             String targetUsername,
+            Boolean withTxCode,
             Integer expireAt) throws ClientPolicyException {
 
         // Checks whether `--feature=oid4vc_vci_preauth_code` is enabled
@@ -86,7 +87,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credentialConfigurationIds");
         }
 
-        RealmModel realmModel = this.session.getContext().getRealm();
+        RealmModel realmModel = session.getContext().getRealm();
 
         // Validate the target user
         //
@@ -102,7 +103,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
         // Create the CredentialOfferState
         //
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, credOffersId -> {
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, withTxCode, expireAt, credOffersId -> {
             List<OID4VCAuthorizationDetail> authDetails = new ArrayList<>();
             for (String credConfigId : credentialConfigurationIds) {
                 CredentialScopeModel credScope = findCredentialScopeModelByConfigurationId(
