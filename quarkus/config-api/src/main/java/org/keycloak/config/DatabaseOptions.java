@@ -117,6 +117,7 @@ public class DatabaseOptions {
 
     public static final Option<String> DB_POSTGRESQL_TARGET_SERVER_TYPE = new OptionBuilder<>("db-postgres-target-server-type", String.class)
             .category(OptionCategory.DATABASE)
+            .defaultValue("primary") // cause the propertymapping logic to always advertise this property
             .hidden()
             .build();
 
