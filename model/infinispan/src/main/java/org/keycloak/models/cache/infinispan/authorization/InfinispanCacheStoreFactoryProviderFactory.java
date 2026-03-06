@@ -28,6 +28,7 @@ import org.keycloak.models.cache.authorization.CachedStoreProviderFactory;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 
@@ -37,6 +38,7 @@ import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderF
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(CachedStoreProviderFactory.class)
 public class InfinispanCacheStoreFactoryProviderFactory implements CachedStoreProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanCacheStoreFactoryProviderFactory.class);

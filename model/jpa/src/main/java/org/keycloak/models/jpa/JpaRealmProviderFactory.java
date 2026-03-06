@@ -33,10 +33,13 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(RealmProviderFactory.class)
 public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEventListener {
 
     private Runnable onClose;

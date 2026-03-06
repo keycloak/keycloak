@@ -37,14 +37,18 @@ import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
 import org.keycloak.storage.ldap.mappers.membership.UserRolesRetrieveStrategy;
 import org.keycloak.storage.ldap.mappers.membership.group.GroupMapperConfig;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(LDAPStorageMapperFactory.class)
 public class RoleLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFactory {
 
     public static final String PROVIDER_ID = "role-ldap-mapper";

@@ -27,14 +27,18 @@ import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import com.google.auto.service.AutoService;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(IdentityProviderMapper.class)
 public class ClaimToRoleMapper extends AbstractClaimToRoleMapper {
 
     public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};

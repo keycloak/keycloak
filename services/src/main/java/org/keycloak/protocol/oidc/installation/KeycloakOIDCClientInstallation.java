@@ -44,10 +44,13 @@ import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.keycloak.services.managers.ClientManager;
 import org.keycloak.util.JsonSerialization;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(ClientInstallationProvider.class)
 public class KeycloakOIDCClientInstallation implements ClientInstallationProvider {
 
     @Override

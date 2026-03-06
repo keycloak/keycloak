@@ -20,12 +20,16 @@ package org.keycloak.testsuite.broker.oidc;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
+import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+
+import com.google.auto.service.AutoService;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@AutoService(IdentityProviderFactory.class)
 public class LegacyIdIdentityProviderFactory extends OIDCIdentityProviderFactory {
 
     public static final String PROVIDER_ID = "legacy-id-idp";

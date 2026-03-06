@@ -38,6 +38,9 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(FormActionFactory.class)
 public class RegistrationTermsAndConditions implements FormAction, FormActionFactory, ConfiguredProvider {
 
 	public static final String PROVIDER_ID = "registration-terms-and-conditions";

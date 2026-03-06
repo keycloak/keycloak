@@ -31,6 +31,9 @@ import org.keycloak.provider.ProviderEvent;
 import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.timer.TimerProvider;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(EventListenerProviderFactory.class)
 public class WorkflowsEventListenerFactory implements EventListenerProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String ID = "workflow-event-listener";

@@ -3,11 +3,14 @@ package org.keycloak.protocol.oauth2.cimd.provider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oauth2.cimd.clientpolicy.executor.ClientIdMetadataDocumentExecutor;
 
+import com.google.auto.service.AutoService;
+
 /**
  * The class is the factory class of {@link PersistentClientIdMetadataDocumentProvider}.
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+@AutoService(ClientIdMetadataDocumentProviderFactory.class)
 public class PersistentClientIdMetadataDocumentProviderFactory extends AbstractPersistentClientIdMetadataDocumentProviderFactory {
 
     public static final String PROVIDER_ID = "persistent-cimd";

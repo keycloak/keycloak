@@ -10,6 +10,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserModel;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(RequiredActionFactory.class)
 public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredActionFactory {
 
     @Override

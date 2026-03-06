@@ -31,8 +31,11 @@ import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 
+@AutoService(TestAmphibianProviderFactory.class)
 public class TestAmphibianProviderFactoryImpl implements TestAmphibianProviderFactory {
 
     public static final String PROVIDER_ID = "test";

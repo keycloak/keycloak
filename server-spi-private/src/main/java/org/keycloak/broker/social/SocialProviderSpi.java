@@ -20,9 +20,12 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author Pedro Igor
  */
+@AutoService(Spi.class)
 public class SocialProviderSpi implements Spi {
 
     public static final String SOCIAL_SPI_NAME = "social";

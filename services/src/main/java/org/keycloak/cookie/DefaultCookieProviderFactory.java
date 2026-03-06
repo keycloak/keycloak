@@ -4,6 +4,9 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(CookieProviderFactory.class)
 public class DefaultCookieProviderFactory implements CookieProviderFactory {
 
     @Override

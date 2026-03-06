@@ -21,11 +21,14 @@ import org.keycloak.models.IdentityProviderStorageProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * A JPA based implementation of {@link IdentityProviderStorageProviderFactory}.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
+@AutoService(IdentityProviderStorageProviderFactory.class)
 public class JpaIdentityProviderStorageProviderFactory implements IdentityProviderStorageProviderFactory<JpaIdentityProviderStorageProvider> {
 
     public static final String ID = "jpa";

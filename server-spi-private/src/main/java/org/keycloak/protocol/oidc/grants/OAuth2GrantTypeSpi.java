@@ -21,11 +21,14 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>A {@link Spi} to support pluggable OAuth 2.0 grant types in Token Endpoint.
  *
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a>
  */
+@AutoService(Spi.class)
 public class OAuth2GrantTypeSpi implements Spi {
 
     public static final String SPI_NAME = "oauth2-grant-type";

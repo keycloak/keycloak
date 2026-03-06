@@ -30,9 +30,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(TokenContextEncoderProviderFactory.class)
 public class DefaultTokenContextEncoderProviderFactory implements TokenContextEncoderProviderFactory {
 
     private KeycloakSessionFactory sessionFactory;

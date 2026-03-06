@@ -23,11 +23,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Factory for Pre-Authorized Code Grant
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
+@AutoService(OAuth2GrantTypeFactory.class)
 public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory, EnvironmentDependentProviderFactory {
 
     public static final String GRANT_TYPE = "urn:ietf:params:oauth:grant-type:pre-authorized_code";

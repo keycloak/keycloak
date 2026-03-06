@@ -22,9 +22,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Factory for creating SAMLClientModelMapper instances.
  */
+@AutoService(ClientModelMapperFactory.class)
 public class SAMLClientModelMapperFactory implements ClientModelMapperFactory {
 
     @Override

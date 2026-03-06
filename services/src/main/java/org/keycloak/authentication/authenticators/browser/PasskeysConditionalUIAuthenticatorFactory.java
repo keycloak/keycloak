@@ -20,9 +20,12 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.Config;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -31,6 +34,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
  * when the passkeys feature become supported.
  */
 @Deprecated(since = "26.3", forRemoval = true)
+@AutoService(AuthenticatorFactory.class)
 public class PasskeysConditionalUIAuthenticatorFactory extends WebAuthnPasswordlessAuthenticatorFactory implements EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "passkeys-authenticator";

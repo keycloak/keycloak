@@ -34,6 +34,8 @@ import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 import org.keycloak.spi.infinispan.JGroupsCertificateProviderFactory;
 import org.keycloak.storage.configuration.ServerConfigStorageProvider;
 
+import com.google.auto.service.AutoService;
+
 /**
  * The default implementation for {@link JGroupsCertificateProvider}.
  * <p>
@@ -42,6 +44,7 @@ import org.keycloak.storage.configuration.ServerConfigStorageProvider;
  * @see DatabaseJGroupsCertificateProvider
  * @see FileJGroupsCertificateProvider
  */
+@AutoService(JGroupsCertificateProviderFactory.class)
 public class DefaultJGroupsCertificateProviderFactory implements JGroupsCertificateProviderFactory {
 
     public static final String PROVIDER_ID = "default";

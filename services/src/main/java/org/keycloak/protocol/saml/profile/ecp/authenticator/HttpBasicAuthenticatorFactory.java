@@ -28,9 +28,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(AuthenticatorFactory.class)
 public class HttpBasicAuthenticatorFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "http-basic-authenticator";

@@ -18,6 +18,9 @@ package org.keycloak.crypto;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(SignatureProviderFactory.class)
 public class HS256SignatureProviderFactory implements SignatureProviderFactory {
 
     public static final String ID = Algorithm.HS256;

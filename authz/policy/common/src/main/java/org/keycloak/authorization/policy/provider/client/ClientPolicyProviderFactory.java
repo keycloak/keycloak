@@ -45,6 +45,9 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(PolicyProviderFactory.class)
 public class ClientPolicyProviderFactory implements PolicyProviderFactory<ClientPolicyRepresentation> {
 
     private ClientPolicyProvider provider = new ClientPolicyProvider(this::toRepresentation);

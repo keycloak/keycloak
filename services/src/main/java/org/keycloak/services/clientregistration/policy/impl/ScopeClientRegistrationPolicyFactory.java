@@ -25,10 +25,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientregistration.policy.AbstractClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
+import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(ClientRegistrationPolicyFactory.class)
 public class ScopeClientRegistrationPolicyFactory extends AbstractClientRegistrationPolicyFactory {
 
     public static final String PROVIDER_ID = "scope";

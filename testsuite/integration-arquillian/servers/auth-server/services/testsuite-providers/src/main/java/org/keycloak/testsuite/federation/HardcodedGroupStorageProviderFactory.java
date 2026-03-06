@@ -25,6 +25,9 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.group.GroupStorageProviderFactory;
 import org.keycloak.storage.group.GroupStorageProviderModel;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(GroupStorageProviderFactory.class)
 public class HardcodedGroupStorageProviderFactory implements GroupStorageProviderFactory<HardcodedGroupStorageProvider> {
     @Override
     public HardcodedGroupStorageProvider create(KeycloakSession session, ComponentModel model) {

@@ -56,10 +56,13 @@ import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(ClientDescriptionConverterFactory.class)
 public class EntityDescriptorDescriptionConverter implements ClientDescriptionConverter, ClientDescriptionConverterFactory {
 
     public static final String ID = "saml2-entity-descriptor";

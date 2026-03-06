@@ -44,6 +44,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
@@ -51,6 +52,7 @@ import org.jboss.logging.Logger;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
 import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.DEFAULT_AUTH_SESSIONS_LIMIT;
 
+@AutoService(AuthenticationSessionProviderFactory.class)
 public class RemoteInfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<RemoteInfinispanAuthenticationSessionProvider>, UpdaterFactory<String, RootAuthenticationSessionEntity, RootAuthenticationSessionUpdater>, EnvironmentDependentProviderFactory, RemoteChangeLogTransaction.SharedState<String, RootAuthenticationSessionEntity>, ServerInfoAwareProviderFactory {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());

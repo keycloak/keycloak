@@ -23,12 +23,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.dblock.DBLockProviderFactory;
 
+import com.google.auto.service.AutoService;
 import io.quarkus.runtime.configuration.DurationConverter;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(DBLockProviderFactory.class)
 public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
 
     private static final Logger logger = Logger.getLogger(LiquibaseDBLockProviderFactory.class);

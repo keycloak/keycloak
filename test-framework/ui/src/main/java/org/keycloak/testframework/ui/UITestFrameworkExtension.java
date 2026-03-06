@@ -13,7 +13,10 @@ import org.keycloak.testframework.ui.webdriver.FirefoxWebDriverSupplier;
 import org.keycloak.testframework.ui.webdriver.HtmlUnitWebDriverSupplier;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
+import com.google.auto.service.AutoService;
 
+
+@AutoService(TestFrameworkExtension.class)
 public class UITestFrameworkExtension implements TestFrameworkExtension {
 
     @Override

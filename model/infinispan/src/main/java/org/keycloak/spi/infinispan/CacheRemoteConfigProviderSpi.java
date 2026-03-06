@@ -19,9 +19,12 @@ package org.keycloak.spi.infinispan;
 
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * An SPI to generate the configuration for the Hot Rod client.
  */
+@AutoService(Spi.class)
 public class CacheRemoteConfigProviderSpi implements Spi {
 
     public static final String SPI_NAME = "cacheRemote";

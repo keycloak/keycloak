@@ -24,6 +24,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>Factory that enforces the grant to only use scopes that are already present in
  * the initial assertion. For the moment it can only be used in the Token Exchange
@@ -31,6 +33,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  *
  * @author rmartinc
  */
+@AutoService(ClientPolicyExecutorProviderFactory.class)
 public class DownscopeAssertionGrantEnforcerExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "downscope-assertion-grant-enforcer";

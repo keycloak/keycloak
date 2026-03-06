@@ -37,6 +37,7 @@ import org.keycloak.common.Version;
 import org.keycloak.common.util.Environment;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.database.Database;
+import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModelManager;
@@ -51,6 +52,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
+import com.google.auto.service.AutoService;
 import io.quarkus.arc.Arc;
 import io.quarkus.runtime.configuration.DurationConverter;
 import org.jboss.logging.Logger;
@@ -63,6 +65,7 @@ import static org.keycloak.quarkus.runtime.storage.database.liquibase.QuarkusJpa
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(JpaConnectionProviderFactory.class)
 public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory implements ServerInfoAwareProviderFactory {
 
     public static final String QUERY_PROPERTY_PREFIX = "kc.query.";

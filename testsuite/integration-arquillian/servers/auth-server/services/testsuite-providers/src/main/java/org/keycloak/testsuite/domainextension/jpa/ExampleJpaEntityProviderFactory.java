@@ -23,11 +23,14 @@ import org.keycloak.connections.jpa.entityprovider.JpaEntityProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:erik.mulder@docdatapayments.com">Erik Mulder</a>
  * 
  * Example JpaEntityProviderFactory.
  */
+@AutoService(JpaEntityProviderFactory.class)
 public class ExampleJpaEntityProviderFactory implements JpaEntityProviderFactory {
 
 	protected static final String ID = "example-entity-provider";

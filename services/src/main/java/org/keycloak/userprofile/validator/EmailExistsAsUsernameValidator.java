@@ -30,6 +30,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Validator to check User Profile email duplication conditions if isDuplicateEmailsAllowed is false but
@@ -38,6 +41,7 @@ import org.keycloak.validate.ValidatorConfig;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
+@AutoService(ValidatorFactory.class)
 public class EmailExistsAsUsernameValidator implements SimpleValidator {
 
     public static final String ID = "up-email-exists-as-username";

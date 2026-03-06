@@ -30,9 +30,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.idm.authorization.AggregatePolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(PolicyProviderFactory.class)
 public class AggregatePolicyProviderFactory implements PolicyProviderFactory<AggregatePolicyRepresentation> {
 
     public static final String ID = "aggregate";

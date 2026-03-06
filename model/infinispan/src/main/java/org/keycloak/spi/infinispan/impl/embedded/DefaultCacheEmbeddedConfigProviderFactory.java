@@ -43,6 +43,7 @@ import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderFactory;
 import org.keycloak.spi.infinispan.JGroupsCertificateProvider;
 import org.keycloak.spi.infinispan.impl.Util;
 
+import com.google.auto.service.AutoService;
 import io.micrometer.core.instrument.Metrics;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.cache.StatisticsConfigurationBuilder;
@@ -68,6 +69,7 @@ import static org.keycloak.spi.infinispan.impl.embedded.JGroupsConfigurator.crea
  * They have access to the {@link ConfigurationBuilderHolder}, and they can modify it as needed for their custom
  * providers.
  */
+@AutoService(CacheEmbeddedConfigProviderFactory.class)
 public class DefaultCacheEmbeddedConfigProviderFactory implements CacheEmbeddedConfigProviderFactory {
 
     private static final Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());

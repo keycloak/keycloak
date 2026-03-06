@@ -22,6 +22,7 @@ import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
+import org.keycloak.authentication.actiontoken.ActionTokenHandlerFactory;
 import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
@@ -33,12 +34,15 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.LoginActionsServiceChecks.IsActionRequired;
 import org.keycloak.sessions.CommonClientSessionModel.Action;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.services.resources.LoginActionsService.RESET_CREDENTIALS_PATH;
 
 /**
  *
  * @author hmlnarik
  */
+@AutoService(ActionTokenHandlerFactory.class)
 public class ResetCredentialsActionTokenHandler extends AbstractActionTokenHandler<ResetCredentialsActionToken> {
 
     public ResetCredentialsActionTokenHandler() {

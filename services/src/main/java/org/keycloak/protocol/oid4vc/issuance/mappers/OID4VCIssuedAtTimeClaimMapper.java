@@ -34,6 +34,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +50,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
+@AutoService(ProtocolMapper.class)
 public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-issued-at-time-claim-mapper";

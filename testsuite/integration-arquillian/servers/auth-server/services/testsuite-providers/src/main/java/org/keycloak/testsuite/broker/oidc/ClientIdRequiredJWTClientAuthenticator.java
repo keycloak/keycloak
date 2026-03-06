@@ -25,14 +25,18 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+
+import com.google.auto.service.AutoService;
 
 /**
  * A {@link JWTClientAuthenticator} that requires the optional client_id parameter.
  *
  * @author Justin Tay
  */
+@AutoService(ClientAuthenticatorFactory.class)
 public class ClientIdRequiredJWTClientAuthenticator extends JWTClientAuthenticator {
 
     public static final String PROVIDER_ID = "testsuite-client-id-required";

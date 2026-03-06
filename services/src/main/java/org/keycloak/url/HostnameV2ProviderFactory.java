@@ -29,11 +29,13 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.HostnameProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@AutoService(HostnameProviderFactory.class)
 public class HostnameV2ProviderFactory implements HostnameProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger LOGGER = Logger.getLogger(HostnameV2ProviderFactory.class);

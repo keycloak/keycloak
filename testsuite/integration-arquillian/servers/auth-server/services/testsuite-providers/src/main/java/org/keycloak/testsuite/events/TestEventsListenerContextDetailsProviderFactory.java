@@ -23,6 +23,8 @@ import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>Same events provider factory than <em>TestEventsListenerProviderFactory</em> but
  * the implementation saves realm name and clientId  from the session context as details in
@@ -31,6 +33,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  *
  * @author rmartinc
  */
+@AutoService(EventListenerProviderFactory.class)
 public class TestEventsListenerContextDetailsProviderFactory implements EventListenerProviderFactory {
 
     public static final String PROVIDER_ID = "event-queue-context-details";

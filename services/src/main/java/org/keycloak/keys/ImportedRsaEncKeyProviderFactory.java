@@ -25,9 +25,12 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:f.b.rissi@gmail.com">Filipe Bojikian Rissi</a>
  */
+@AutoService(KeyProviderFactory.class)
 public class ImportedRsaEncKeyProviderFactory extends AbstractImportedRsaKeyProviderFactory {
 
     public static final String ID = "rsa-enc";

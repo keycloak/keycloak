@@ -27,15 +27,19 @@ import java.util.Set;
 
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.AbstractClientAuthenticator;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(ClientAuthenticatorFactory.class)
 public class PassThroughClientAuthenticator extends AbstractClientAuthenticator {
 
     public static final String PROVIDER_ID = "testsuite-client-passthrough";

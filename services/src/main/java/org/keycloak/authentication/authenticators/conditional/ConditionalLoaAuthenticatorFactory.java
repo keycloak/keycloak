@@ -22,6 +22,7 @@ import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowCallbackFactory;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,6 +31,9 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(AuthenticatorFactory.class)
 public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthenticatorFactory, AuthenticationFlowCallbackFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "conditional-level-of-authentication";

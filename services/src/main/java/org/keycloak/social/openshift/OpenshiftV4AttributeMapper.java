@@ -18,10 +18,14 @@
 package org.keycloak.social.openshift;
 
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
+import org.keycloak.broker.provider.IdentityProviderMapper;
+
+import com.google.auto.service.AutoService;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@AutoService(IdentityProviderMapper.class)
 public class OpenshiftV4AttributeMapper extends AbstractJsonUserAttributeMapper {
     public static final String ID = "openshift-v4-user-attribute-mapper";
     private static final String[] cp = new String[] { OpenshiftV4IdentityProviderFactory.PROVIDER_ID };

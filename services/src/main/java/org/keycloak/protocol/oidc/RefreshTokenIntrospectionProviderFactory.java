@@ -19,9 +19,12 @@ package org.keycloak.protocol.oidc;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(TokenIntrospectionProviderFactory.class)
 public class RefreshTokenIntrospectionProviderFactory extends AccessTokenIntrospectionProviderFactory {
 
     private static final String REFRESH_TOKEN_TYPE = "refresh_token";

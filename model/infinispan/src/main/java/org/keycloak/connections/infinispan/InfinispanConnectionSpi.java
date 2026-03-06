@@ -19,9 +19,12 @@ package org.keycloak.connections.infinispan;
 
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(Spi.class)
 public class InfinispanConnectionSpi implements Spi {
 
     public static final String SPI_NAME = "connectionsInfinispan";

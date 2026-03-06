@@ -1,2 +1,0 @@
-org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory
-org.keycloak.testsuite.services.clientpolicy.executor.TestEnhancedPluggableTokenManagerExecutorFactory

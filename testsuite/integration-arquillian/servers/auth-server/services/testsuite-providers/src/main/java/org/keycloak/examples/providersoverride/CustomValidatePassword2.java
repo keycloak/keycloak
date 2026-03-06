@@ -19,13 +19,17 @@
 
 package org.keycloak.examples.providersoverride;
 
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Test for order (This one should be called in favour of ValidatePassword, CustomValidatePassword1, CustomValidatePassword3 as it has highest order)
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(AuthenticatorFactory.class)
 public class CustomValidatePassword2 extends ValidatePassword {
 
     @Override

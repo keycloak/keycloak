@@ -24,11 +24,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ThemeManager;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(ThemeManagerFactory.class)
 public class DefaultThemeManagerFactory implements ThemeManagerFactory {
 
     private static final Logger log = Logger.getLogger(DefaultThemeManagerFactory.class);

@@ -42,6 +42,9 @@ import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 import static java.util.Optional.ofNullable;
 
@@ -49,6 +52,7 @@ import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.organization.utils.Organizations.resolveHomeBroker;
 import static org.keycloak.validate.BuiltinValidators.emailValidator;
 
+@AutoService(ValidatorFactory.class)
 public class OrganizationMemberValidator extends AbstractSimpleValidator implements EnvironmentDependentProviderFactory {
 
     public static final String ID = "organization-member-validator";

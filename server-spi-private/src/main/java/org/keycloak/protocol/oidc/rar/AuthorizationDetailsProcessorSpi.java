@@ -20,6 +20,8 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * SPI for authorization details processors that handle the authorization_details parameter
  * in OAuth2/OIDC authorization and token requests as per RAR (Rich Authorization Requests) specification.
@@ -28,6 +30,7 @@ import org.keycloak.provider.Spi;
  *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
+@AutoService(Spi.class)
 public class AuthorizationDetailsProcessorSpi implements Spi {
 
     @Override

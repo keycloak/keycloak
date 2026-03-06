@@ -32,9 +32,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.TimePolicyRepresentation;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(PolicyProviderFactory.class)
 public class TimePolicyProviderFactory implements PolicyProviderFactory<TimePolicyRepresentation> {
 
     private TimePolicyProvider provider = new TimePolicyProvider();

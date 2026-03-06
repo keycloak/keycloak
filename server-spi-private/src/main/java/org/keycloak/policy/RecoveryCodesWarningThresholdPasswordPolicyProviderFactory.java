@@ -26,12 +26,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  *
  * @deprecated Please use rather the recovery codes required action to configure warning threshold for recovery codes. This password policy may be removed in the future versions.
  */
 @Deprecated
+@AutoService(PasswordPolicyProviderFactory.class)
 public class RecoveryCodesWarningThresholdPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory, PasswordPolicyProvider, EnvironmentDependentProviderFactory {
 
     private KeycloakSession session;

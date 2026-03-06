@@ -5,6 +5,9 @@ import java.util.Set;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(WorkflowStepProviderFactory.class)
 public class GrantRoleStepProviderFactory implements WorkflowStepProviderFactory<GrantRoleStepProvider> {
 
     public static final String ID = "grant-role";

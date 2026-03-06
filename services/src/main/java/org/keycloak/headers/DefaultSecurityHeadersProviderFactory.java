@@ -18,6 +18,9 @@ package org.keycloak.headers;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(SecurityHeadersProviderFactory.class)
 public class DefaultSecurityHeadersProviderFactory implements SecurityHeadersProviderFactory {
 
     @Override

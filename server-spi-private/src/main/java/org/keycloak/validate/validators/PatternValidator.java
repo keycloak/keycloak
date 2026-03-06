@@ -31,11 +31,15 @@ import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Validate String against configured RegEx pattern - accepts plain string and collection of strings, for basic behavior
  * like null/blank values handling and collections support see {@link AbstractStringValidator}.
  */
+@AutoService(ValidatorFactory.class)
 public class PatternValidator extends AbstractStringValidator implements ConfiguredProvider {
 
     public static final String ID = "pattern";

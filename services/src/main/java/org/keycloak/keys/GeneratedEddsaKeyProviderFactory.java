@@ -34,11 +34,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+@AutoService(KeyProviderFactory.class)
 public class GeneratedEddsaKeyProviderFactory extends AbstractEddsaKeyProviderFactory {
 
     private static final Logger logger = Logger.getLogger(GeneratedEddsaKeyProviderFactory.class);

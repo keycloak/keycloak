@@ -51,12 +51,14 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(RequiredActionFactory.class)
 public class UpdatePassword implements RequiredActionProvider, RequiredActionFactory {
 
     private static final Logger logger = Logger.getLogger(UpdatePassword.class);

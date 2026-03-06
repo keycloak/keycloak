@@ -4,11 +4,15 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(AuthenticatorFactory.class)
 public class ConditionalRoleAuthenticatorFactory implements ConditionalAuthenticatorFactory {
     public static final String PROVIDER_ID = "conditional-user-role";
 

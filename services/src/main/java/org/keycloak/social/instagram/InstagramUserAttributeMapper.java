@@ -17,12 +17,16 @@
 package org.keycloak.social.instagram;
 
 import org.keycloak.broker.oidc.mappers.AbstractJsonUserAttributeMapper;
+import org.keycloak.broker.provider.IdentityProviderMapper;
+
+import com.google.auto.service.AutoService;
 
 /**
  * User attribute mapper.
  * 
  * @author Vlastimil Elias (velias at redhat dot com)
  */
+@AutoService(IdentityProviderMapper.class)
 public class InstagramUserAttributeMapper extends AbstractJsonUserAttributeMapper {
 
 	private static final String[] cp = new String[] { InstagramIdentityProviderFactory.PROVIDER_ID };

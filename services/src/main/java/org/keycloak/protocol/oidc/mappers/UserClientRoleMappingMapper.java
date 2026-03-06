@@ -25,17 +25,21 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.utils.RoleResolveUtil;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Allows mapping of user client role mappings to an ID and Access Token claim.
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
+@AutoService(ProtocolMapper.class)
 public class UserClientRoleMappingMapper extends AbstractUserRoleMappingMapper {
 
     public static final String PROVIDER_ID = "oidc-usermodel-client-role-mapper";

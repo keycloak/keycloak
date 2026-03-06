@@ -24,11 +24,13 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
+@AutoService(ScriptingProviderFactory.class)
 public class DefaultScriptingProviderFactory implements ScriptingProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultScriptingProviderFactory.class);

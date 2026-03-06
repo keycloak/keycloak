@@ -18,6 +18,9 @@ package org.keycloak.validate.validators;
 
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Validate input being any kind of {@link Number}. Accepts String also if convertible to {@link Double} by common
@@ -25,6 +28,7 @@ import org.keycloak.validate.ValidatorConfig;
  * 
  * @author Vlastimil Elias <velias@redhat.com>
  */
+@AutoService(ValidatorFactory.class)
 public class DoubleValidator extends AbstractNumberValidator implements ConfiguredProvider {
 
     public static final String ID = "double";

@@ -26,6 +26,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
@@ -33,6 +35,7 @@ import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(UserProviderFactory.class)
 public class JpaUserProviderFactory implements UserProviderFactory {
 
     @Override

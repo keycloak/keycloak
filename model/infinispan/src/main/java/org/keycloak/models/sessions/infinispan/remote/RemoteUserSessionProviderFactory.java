@@ -34,6 +34,7 @@ import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.util.concurrent.BlockingManager;
 
@@ -42,6 +43,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.O
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME;
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.USER_SESSION_CACHE_NAME;
 
+@AutoService(UserSessionProviderFactory.class)
 public class RemoteUserSessionProviderFactory implements UserSessionProviderFactory<RemoteUserSessionProvider>, EnvironmentDependentProviderFactory, ProviderEventListener, ServerInfoAwareProviderFactory {
 
     // Sessions are close to 1KB of data. Fetch 1MB per batch request (can be configured)

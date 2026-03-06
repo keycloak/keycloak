@@ -11,6 +11,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(AuthenticatorFactory.class)
 public class UserSessionLimitsAuthenticatorFactory implements AuthenticatorFactory {
     public static final String USER_REALM_LIMIT = "userRealmLimit";
     public static final String USER_CLIENT_LIMIT = "userClientLimit";

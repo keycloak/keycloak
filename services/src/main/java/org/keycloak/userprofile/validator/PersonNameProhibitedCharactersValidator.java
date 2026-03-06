@@ -26,6 +26,9 @@ import org.keycloak.validate.AbstractStringValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * This validator disallowing bunch of characters we really not to expect in names of persons (fist, middle, last names).
@@ -33,6 +36,7 @@ import org.keycloak.validate.ValidatorConfig;
  * Validates against hardcoded RegEx pattern - accepts plain string and collection of strings, for basic behavior
  * like null/blank values handling and collections support see {@link AbstractStringValidator}.
  */
+@AutoService(ValidatorFactory.class)
 public class PersonNameProhibitedCharactersValidator extends AbstractStringValidator implements ConfiguredProvider {
 
     public static final String ID = "person-name-prohibited-characters";

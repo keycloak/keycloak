@@ -23,10 +23,12 @@ import org.jboss.arquillian.core.spi.Validate;
 import org.jboss.as.arquillian.container.managed.ManagedDeployableContainer;
 import org.jboss.shrinkwrap.descriptor.spi.node.Node;
 import org.keycloak.testsuite.arquillian.container.AppServerContainerProvider;
+import com.google.auto.service.AutoService;
 
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlasta Ramik</a>
  */
+@AutoService(AppServerContainerProvider.class)
 public class WildflyAppServerProvider implements AppServerContainerProvider {
 
     private Node configuration;

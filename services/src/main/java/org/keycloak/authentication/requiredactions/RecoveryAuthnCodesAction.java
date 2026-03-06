@@ -32,8 +32,11 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.validate.ValidationError;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.utils.CredentialHelper.createRecoveryCodesCredential;
 
+@AutoService(RequiredActionFactory.class)
 public class RecoveryAuthnCodesAction implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory, CredentialRegistrator {
 
     private static final String FIELD_GENERATED_RECOVERY_AUTHN_CODES_HIDDEN = "generatedRecoveryAuthnCodes";

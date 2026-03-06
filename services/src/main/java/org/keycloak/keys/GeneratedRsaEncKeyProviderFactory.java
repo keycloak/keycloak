@@ -25,11 +25,13 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+@AutoService(KeyProviderFactory.class)
 public class GeneratedRsaEncKeyProviderFactory extends AbstractGeneratedRsaKeyProviderFactory {
 
     private static final Logger logger = Logger.getLogger(GeneratedRsaEncKeyProviderFactory.class);

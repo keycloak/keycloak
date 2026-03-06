@@ -31,10 +31,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(ClientInstallationProvider.class)
 public class KeycloakOIDCJbossSubsystemClientInstallation implements ClientInstallationProvider {
     @Override
     public Response generateInstallation(KeycloakSession session, RealmModel realm, ClientModel client, URI baseUri) {

@@ -26,6 +26,7 @@ import org.keycloak.adapters.spi.InMemorySessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapper;
 import org.keycloak.adapters.spi.SessionIdMapperUpdater;
 
+import com.google.auto.service.AutoService;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
@@ -33,6 +34,7 @@ import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(HttpServerAuthenticationMechanismFactory.class)
 public class KeycloakHttpServerAuthenticationMechanismFactory implements HttpServerAuthenticationMechanismFactory {
 
     private final SessionIdMapper idMapper = new InMemorySessionIdMapper();

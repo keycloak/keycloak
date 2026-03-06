@@ -24,10 +24,14 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Dummy Options validator for User Profile configuration tests.
  */
+@AutoService(ValidatorFactory.class)
 public class DummyOptionsValidator implements SimpleValidator, ConfiguredProvider {
 
     public static final String ID = "dummyOptions";

@@ -20,9 +20,12 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
+@AutoService(Spi.class)
 public class UserLoginFailureSpi implements Spi {
 
     public static final String NAME = "loginFailure";

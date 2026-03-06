@@ -30,13 +30,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import com.google.auto.service.AutoService;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(ProtocolMapper.class)
 public class GroupMembershipMapper extends AbstractSAMLProtocolMapper implements SAMLAttributeStatementMapper {
     public static final String PROVIDER_ID = "saml-group-membership-mapper";
     public static final String SINGLE_GROUP_ATTRIBUTE = "single";

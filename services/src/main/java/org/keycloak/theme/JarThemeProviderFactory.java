@@ -24,9 +24,12 @@ import java.util.Enumeration;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(ThemeProviderFactory.class)
 public class JarThemeProviderFactory extends ClasspathThemeProviderFactory {
 
     public JarThemeProviderFactory() {

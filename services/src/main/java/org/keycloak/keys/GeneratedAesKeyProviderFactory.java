@@ -27,6 +27,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
@@ -34,6 +35,7 @@ import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(KeyProviderFactory.class)
 public class GeneratedAesKeyProviderFactory extends AbstractGeneratedSecretKeyProviderFactory<AbstractGeneratedSecretKeyProvider> {
 
     private static final Logger logger = Logger.getLogger(GeneratedAesKeyProviderFactory.class);

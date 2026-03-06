@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.CredentialValidator;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.OTPCredentialProvider;
@@ -37,10 +38,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(AuthenticatorFactory.class)
 public class ValidateOTP extends AbstractDirectGrantAuthenticator implements CredentialValidator<OTPCredentialProvider> {
 
     public static final String PROVIDER_ID = "direct-grant-validate-otp";

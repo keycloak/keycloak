@@ -25,6 +25,9 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.role.RoleStorageProviderFactory;
 import org.keycloak.storage.role.RoleStorageProviderModel;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(RoleStorageProviderFactory.class)
 public class HardcodedRoleStorageProviderFactory implements RoleStorageProviderFactory<HardcodedRoleStorageProvider> {
     @Override
     public HardcodedRoleStorageProvider create(KeycloakSession session, ComponentModel model) {

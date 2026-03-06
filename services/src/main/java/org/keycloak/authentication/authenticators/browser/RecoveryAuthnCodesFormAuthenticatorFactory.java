@@ -14,6 +14,9 @@ import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(AuthenticatorFactory.class)
 public class RecoveryAuthnCodesFormAuthenticatorFactory implements AuthenticatorFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "auth-recovery-authn-code-form";

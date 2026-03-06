@@ -34,6 +34,8 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>Specific OIDC LinkedIn provider for <b>Sign In with LinkedIn using OpenID Connect</b>
  * product app. LinkedIn currently has two issues with default OIDC provider
@@ -48,6 +50,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
  *
  * @author rmartinc
  */
+@AutoService(SocialIdentityProviderFactory.class)
 public class LinkedInOIDCIdentityProviderFactory extends AbstractIdentityProviderFactory<LinkedInOIDCIdentityProvider> implements SocialIdentityProviderFactory<LinkedInOIDCIdentityProvider> {
 
     public static final String PROVIDER_ID = "linkedin-openid-connect";

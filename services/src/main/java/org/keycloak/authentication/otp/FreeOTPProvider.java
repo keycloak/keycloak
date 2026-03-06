@@ -3,6 +3,9 @@ package org.keycloak.authentication.otp;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(OTPApplicationProviderFactory.class)
 public class FreeOTPProvider implements OTPApplicationProviderFactory, OTPApplicationProvider {
 
     @Override

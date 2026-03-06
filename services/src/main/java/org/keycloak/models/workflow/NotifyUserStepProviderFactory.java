@@ -22,6 +22,9 @@ import java.util.Set;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(WorkflowStepProviderFactory.class)
 public class NotifyUserStepProviderFactory implements WorkflowStepProviderFactory<NotifyUserStepProvider> {
 
     public static final String ID = "notify-user";

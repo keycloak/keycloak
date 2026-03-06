@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -39,12 +40,15 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.saml.mappers.SamlMetadataDescriptorUpdater;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ATTRIBUTE_FORMAT_BASIC;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(IdentityProviderMapper.class)
 public class AttributeToRoleMapper extends AbstractAttributeToRoleMapper implements SamlMetadataDescriptorUpdater {
 
     public static final String[] COMPATIBLE_PROVIDERS = {SAMLIdentityProviderFactory.PROVIDER_ID};

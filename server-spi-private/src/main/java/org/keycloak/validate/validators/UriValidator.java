@@ -33,11 +33,15 @@ import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * URI validation - accepts {@link URI}, {@link URL} and single String. Null input is valid, use other validators (like
  * {@link NotBlankValidator} or {@link NotEmptyValidator} to force field as required.
  */
+@AutoService(ValidatorFactory.class)
 public class UriValidator extends AbstractSimpleValidator implements ConfiguredProvider {
 
     public static final UriValidator INSTANCE = new UriValidator();

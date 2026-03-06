@@ -24,10 +24,13 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(RequiredActionFactory.class)
 public class DummyRequiredActionFactory implements RequiredActionFactory {
 
     public static final String PROVIDER_ID = "dummy-action";

@@ -17,10 +17,13 @@
 
 package org.keycloak.provider;
 
+import com.google.auto.service.AutoService;
+
 
 /**
  * @author <a href="mailto:bburke@redhat.com">Bill Burke</a>
  */
+@AutoService(Spi.class)
 public class ExceptionConverterSpi implements Spi {
 
     @Override

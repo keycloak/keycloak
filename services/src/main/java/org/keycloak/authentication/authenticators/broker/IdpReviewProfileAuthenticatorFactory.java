@@ -30,9 +30,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(AuthenticatorFactory.class)
 public class IdpReviewProfileAuthenticatorFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "idp-review-profile";

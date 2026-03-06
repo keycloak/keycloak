@@ -33,6 +33,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 
+import com.google.auto.service.AutoService;
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
@@ -61,6 +62,7 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
  * The reason for the used priority is to always execute the interceptor before default Application Config Source interceptors
  */
 @Priority(Priorities.APPLICATION - 10)
+@AutoService(ConfigSourceInterceptor.class)
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     private static final ThreadLocal<Boolean> disable = new ThreadLocal<>();

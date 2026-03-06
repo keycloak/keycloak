@@ -32,11 +32,13 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.AmrUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -44,6 +46,7 @@ import org.jboss.logging.Logger;
  * This protocol mapper sets the 'amr' claim on the OIDC tokens to the reference values configured on the
  * completed authenticators found in the user session notes.
  */
+@AutoService(ProtocolMapper.class)
 public class AmrProtocolMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper {
 
     private static final Logger logger = Logger.getLogger(AmrProtocolMapper.class);

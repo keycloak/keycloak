@@ -28,8 +28,10 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.tracing.TracingProvider;
 import org.keycloak.tracing.TracingProviderFactory;
 
+import com.google.auto.service.AutoService;
 import io.opentelemetry.api.OpenTelemetry;
 
+@AutoService(TracingProviderFactory.class)
 public class OTelTracingProviderFactory implements TracingProviderFactory {
     public static final String PROVIDER_ID = "opentelemetry";
     private static OpenTelemetry OTEL_SINGLETON;

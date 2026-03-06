@@ -23,11 +23,14 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Factory for OAuth 2.0 Resource Owner Password Credentials Grant
  *
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a>
  */
+@AutoService(OAuth2GrantTypeFactory.class)
 public class ResourceOwnerPasswordCredentialsGrantTypeFactory implements OAuth2GrantTypeFactory {
 
     @Override

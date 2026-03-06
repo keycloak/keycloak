@@ -20,12 +20,15 @@ package org.keycloak.services.x509;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
  * @version $Revision: 1 $
  * @since 4/4/2017
  */
 
+@AutoService(X509ClientCertificateLookupFactory.class)
 public class ApacheProxySslClientCertificateLookupFactory extends AbstractClientCertificateFromHttpHeadersLookupFactory {
 
     private final static String PROVIDER = "apache";

@@ -31,10 +31,13 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(AuthenticatorFactory.class)
 public class UsernameFormFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "auth-username-form";

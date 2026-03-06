@@ -24,9 +24,12 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(EmailSenderProviderFactory.class)
 public class DefaultEmailSenderProviderFactory implements EmailSenderProviderFactory {
 
     private final Map<EmailAuthenticator.AuthenticatorType, EmailAuthenticator> emailAuthenticators = new ConcurrentHashMap<>();

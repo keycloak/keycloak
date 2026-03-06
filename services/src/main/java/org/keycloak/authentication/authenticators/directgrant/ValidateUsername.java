@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.events.Details;
@@ -39,12 +40,15 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(AuthenticatorFactory.class)
 public class ValidateUsername extends AbstractDirectGrantAuthenticator {
 
     public static final String PROVIDER_ID = "direct-grant-validate-username";

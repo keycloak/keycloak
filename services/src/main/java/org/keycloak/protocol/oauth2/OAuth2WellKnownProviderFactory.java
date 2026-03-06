@@ -16,6 +16,9 @@
  */package org.keycloak.protocol.oauth2;
 
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
+import org.keycloak.wellknown.WellKnownProviderFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * {@link  OAuth2WellKnownProviderFactory} implementation for the OAuth2 auto discovery
@@ -24,6 +27,7 @@ import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
+@AutoService(WellKnownProviderFactory.class)
 public class OAuth2WellKnownProviderFactory extends OIDCWellKnownProviderFactory {
     public static final String PROVIDER_ID = "oauth-authorization-server";
     @Override

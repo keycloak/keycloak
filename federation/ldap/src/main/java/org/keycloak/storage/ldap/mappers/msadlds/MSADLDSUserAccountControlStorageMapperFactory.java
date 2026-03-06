@@ -29,12 +29,16 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.AbstractLDAPStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.LDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapper;
+
+import com.google.auto.service.AutoService;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:slawomir@dabek.name">Slawomir Dabek</a>
  */
+@AutoService(LDAPStorageMapperFactory.class)
 public class MSADLDSUserAccountControlStorageMapperFactory extends AbstractLDAPStorageMapperFactory {
 
     public static final String PROVIDER_ID = LDAPConstants.MSADLDS_USER_ACCOUNT_CONTROL_MAPPER;

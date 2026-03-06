@@ -15,10 +15,14 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.docker.mapper.AllowAllDockerProtocolMapper;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(LoginProtocolFactory.class)
 public class DockerAuthV2ProtocolFactory extends AbstractLoginProtocolFactory implements EnvironmentDependentProviderFactory {
 
     static Map<String, ProtocolMapperModel> builtins = new HashMap<>();

@@ -20,17 +20,21 @@ package org.keycloak.authentication.authenticators.conditional;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>Conditional factory to know if a sub-flow was executed successfully in the authentication flow.</p>
  *
  * @author rmartinc
  */
+@AutoService(AuthenticatorFactory.class)
 public class ConditionalSubFlowExecutedAuthenticatorFactory implements ConditionalAuthenticatorFactory {
 
     public static final String PROVIDER_ID = "conditional-sub-flow-executed";

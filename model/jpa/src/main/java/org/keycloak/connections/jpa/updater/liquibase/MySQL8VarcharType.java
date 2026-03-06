@@ -17,9 +17,11 @@
 
 package org.keycloak.connections.jpa.updater.liquibase;
 
+import com.google.auto.service.AutoService;
 import liquibase.database.Database;
 import liquibase.database.core.MySQLDatabase;
 import liquibase.datatype.DatabaseDataType;
+import liquibase.datatype.LiquibaseDataType;
 import liquibase.datatype.core.VarcharType;
 import liquibase.exception.DatabaseException;
 
@@ -28,6 +30,7 @@ import liquibase.exception.DatabaseException;
  * 
  * Resolves Limits on Table Column Count and Row Size for MySQL 8
  */
+@AutoService(LiquibaseDataType.class)
 public class MySQL8VarcharType extends VarcharType {
 
     @Override

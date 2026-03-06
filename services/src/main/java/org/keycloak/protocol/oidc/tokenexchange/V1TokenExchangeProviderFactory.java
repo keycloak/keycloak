@@ -26,11 +26,14 @@ import org.keycloak.protocol.oidc.TokenExchangeProvider;
 import org.keycloak.protocol.oidc.TokenExchangeProviderFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * V1 token exchange provider factory. Supports all token exchange types (standard, federated, subject impersonation)
  *
  * @author <a href="mailto:dmitryt@backbase.com">Dmitry Telegin</a>
  */
+@AutoService(TokenExchangeProviderFactory.class)
 public class V1TokenExchangeProviderFactory implements TokenExchangeProviderFactory, EnvironmentDependentProviderFactory {
 
     @Override

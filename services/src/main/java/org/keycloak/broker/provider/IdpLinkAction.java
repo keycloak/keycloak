@@ -50,6 +50,7 @@ import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.services.resources.IdentityBrokerService.LINKING_IDENTITY_PROVIDER;
@@ -57,6 +58,7 @@ import static org.keycloak.services.resources.IdentityBrokerService.LINKING_IDEN
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(RequiredActionFactory.class)
 public class IdpLinkAction implements RequiredActionProvider, RequiredActionFactory {
 
     protected static final Logger logger = Logger.getLogger(IdpLinkAction.class);

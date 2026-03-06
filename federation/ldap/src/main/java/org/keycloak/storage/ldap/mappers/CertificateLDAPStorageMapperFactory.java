@@ -11,6 +11,9 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(LDAPStorageMapperFactory.class)
 public class CertificateLDAPStorageMapperFactory extends UserAttributeLDAPStorageMapperFactory {
 
   public static final String PROVIDER_ID = "certificate-ldap-mapper";

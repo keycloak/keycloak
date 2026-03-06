@@ -22,6 +22,8 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.storage.ImportRealmFromRepresentationEvent;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Provider to listen for {@link ImportRealmFromRepresentationEvent} events.
  * If that is no longer needed after further steps around the legacy storage migration, it can be removed.
@@ -29,6 +31,7 @@ import org.keycloak.storage.ImportRealmFromRepresentationEvent;
  * @author Alexander Schwartz
  */
 @Deprecated
+@AutoService(Spi.class)
 public class RealmManagerSpi implements Spi {
     @Override
     public boolean isInternal() {

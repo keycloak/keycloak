@@ -22,6 +22,7 @@ import java.util.Map;
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
+import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -29,6 +30,9 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(IdentityProviderFactory.class)
 public class OAuth2IdentityProviderFactory extends AbstractIdentityProviderFactory<OAuth2IdentityProvider> {
 
     public static final String PROVIDER_ID = "oauth2";

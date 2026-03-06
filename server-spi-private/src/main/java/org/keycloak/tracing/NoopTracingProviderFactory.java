@@ -22,6 +22,9 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(TracingProviderFactory.class)
 public class NoopTracingProviderFactory implements TracingProviderFactory {
     public static final String PROVIDER_ID = "noop";
     private static TracingProvider SINGLETON;

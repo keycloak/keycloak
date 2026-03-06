@@ -22,6 +22,8 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * The factory and the corresponding providers extract a client certificate
  * and the certificate chain (if any) from the incoming TLS connection.
@@ -33,6 +35,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  * @since 4/4/2017
  */
 
+@AutoService(X509ClientCertificateLookupFactory.class)
 public class DefaultClientCertificateLookupFactory implements X509ClientCertificateLookupFactory {
 
     private final static String PROVIDER = "default";

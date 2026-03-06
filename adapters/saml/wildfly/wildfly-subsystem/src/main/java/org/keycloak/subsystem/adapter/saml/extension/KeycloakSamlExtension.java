@@ -16,6 +16,7 @@
  */
 package org.keycloak.subsystem.adapter.saml.extension;
 
+import com.google.auto.service.AutoService;
 import org.jboss.as.controller.Extension;
 import org.jboss.as.controller.ExtensionContext;
 import org.jboss.as.controller.ModelVersion;
@@ -33,6 +34,7 @@ import static org.jboss.as.controller.descriptions.ModelDescriptionConstants.SUB
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2013 Red Hat Inc.
  */
+@AutoService(Extension.class)
 public class KeycloakSamlExtension implements Extension {
 
     static final String SUBSYSTEM_NAME = "keycloak-saml";

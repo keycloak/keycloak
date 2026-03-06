@@ -4,9 +4,13 @@ import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.compatibility.AbstractCompatibilityMetadataProvider;
+import org.keycloak.compatibility.CompatibilityMetadataProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.spi.infinispan.JGroupsCertificateProviderSpi;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(CompatibilityMetadataProvider.class)
 public class JGroupsCertificatesMetadataProvider extends AbstractCompatibilityMetadataProvider {
 
     public JGroupsCertificatesMetadataProvider() {

@@ -36,12 +36,14 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -49,6 +51,7 @@ import org.jboss.logging.Logger;
  *
  * @author rmartinc
  */
+@AutoService(ProtocolMapper.class)
 public class AuthnContextClassRefMapper extends AbstractSAMLProtocolMapper implements SAMLLoginResponseMapper, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "saml-authn-context-class-ref-mapper";

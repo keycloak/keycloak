@@ -7,6 +7,9 @@ import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(WorkflowStepProviderFactory.class)
 public final class RestartWorkflowStepProviderFactory implements WorkflowStepProviderFactory<RestartWorkflowStepProvider> {
 
     public static final String ID = "restart";

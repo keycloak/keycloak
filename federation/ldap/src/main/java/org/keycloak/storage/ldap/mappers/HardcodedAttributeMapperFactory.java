@@ -28,6 +28,9 @@ import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(LDAPStorageMapperFactory.class)
 public class HardcodedAttributeMapperFactory extends AbstractLDAPStorageMapperFactory {
 
    public static final String PROVIDER_ID = "hardcoded-attribute-mapper";

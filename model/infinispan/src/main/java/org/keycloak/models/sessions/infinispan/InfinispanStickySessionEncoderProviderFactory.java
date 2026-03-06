@@ -33,6 +33,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.Cache;
 import org.infinispan.remoting.transport.Address;
 import org.jboss.logging.Logger;
@@ -43,6 +44,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(StickySessionEncoderProviderFactory.class)
 public class InfinispanStickySessionEncoderProviderFactory implements StickySessionEncoderProviderFactory, EnvironmentDependentProviderFactory, StickySessionEncoderProvider {
 
     private static final Logger log = Logger.getLogger(InfinispanStickySessionEncoderProviderFactory.class);

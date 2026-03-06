@@ -44,6 +44,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
@@ -51,6 +52,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.L
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
+@AutoService(UserLoginFailureProviderFactory.class)
 public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory<InfinispanUserLoginFailureProvider>, EnvironmentDependentProviderFactory, ProviderEventListener {
 
     private static final Logger log = Logger.getLogger(InfinispanUserLoginFailureProviderFactory.class);

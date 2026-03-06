@@ -20,11 +20,14 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * 
  * @author <a href="mailto:gideon.caranzo@thalesgroup.com">Gideon Caranzo</a>
  *
  */
+@AutoService(Spi.class)
 public class SamlAuthenticationPreprocessorSpi implements Spi {
 
     @Override

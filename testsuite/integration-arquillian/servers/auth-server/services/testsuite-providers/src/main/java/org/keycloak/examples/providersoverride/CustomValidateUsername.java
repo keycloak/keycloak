@@ -19,12 +19,16 @@
 
 package org.keycloak.examples.providersoverride;
 
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
+
+import com.google.auto.service.AutoService;
 
 /**
  * This has same providerID like built-in ValidateUsername provider. But it should be called in favour of ValidateUsername even
  * if it doesn't have "order" set. As it is custom provider and it worked this way in previous versions
  *
  */
+@AutoService(AuthenticatorFactory.class)
 public class CustomValidateUsername extends ValidateUsername {
 }

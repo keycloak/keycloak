@@ -39,9 +39,12 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(RealmResourceProviderFactory.class)
 public class TestApplicationResourceProviderFactory implements RealmResourceProviderFactory {
 
     private BlockingQueue<LogoutAction> adminLogoutActions = new LinkedBlockingDeque<>();

@@ -20,6 +20,8 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Factory for {@link DefaultCredentialOfferStorage}.
  * 
@@ -27,6 +29,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  * The storage uses Keycloak's distributed cache infrastructure, making it suitable for
  * clustered and cross-DC deployments.
  */
+@AutoService(CredentialOfferStorageFactory.class)
 public class DefaultCredentialOfferStorageFactory implements CredentialOfferStorageFactory {
 
     private static CredentialOfferStorage INSTANCE;

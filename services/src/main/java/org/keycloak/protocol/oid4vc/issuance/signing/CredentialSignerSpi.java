@@ -20,11 +20,14 @@ package org.keycloak.protocol.oid4vc.issuance.signing;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Spi implementation of the creation of {@link CredentialSigner}
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
+@AutoService(Spi.class)
 public class CredentialSignerSpi implements Spi {
     private static final String NAME = "credentialSigner";
 

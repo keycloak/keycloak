@@ -23,11 +23,14 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Factory for User-Managed Access (UMA) 2.0 Grant for OAuth 2.0 Authorization
  *
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a>
  */
+@AutoService(OAuth2GrantTypeFactory.class)
 public class PermissionGrantTypeFactory implements OAuth2GrantTypeFactory {
 
     @Override

@@ -27,10 +27,13 @@ import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  *
  * @author rmartinc
  */
+@AutoService(ClientPolicyConditionProviderFactory.class)
 public class ClientProtocolConditionFactory implements ClientPolicyConditionProviderFactory {
 
     public static final String PROVIDER_ID = "client-type";

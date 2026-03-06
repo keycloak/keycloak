@@ -28,9 +28,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a>
  */
+@AutoService(CorsFactory.class)
 public class DefaultCorsFactory implements CorsFactory {
 
     private static final String PROVIDER_ID = "default";

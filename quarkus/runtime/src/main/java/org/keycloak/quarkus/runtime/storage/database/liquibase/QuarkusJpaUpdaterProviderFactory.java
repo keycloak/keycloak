@@ -23,9 +23,12 @@ import org.keycloak.connections.jpa.updater.JpaUpdaterProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(JpaUpdaterProviderFactory.class)
 public class QuarkusJpaUpdaterProviderFactory implements JpaUpdaterProviderFactory {
 
     @Override

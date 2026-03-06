@@ -21,9 +21,12 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(Spi.class)
 public class UserSessionSpi implements Spi {
 
     public static final String NAME = "userSessions";

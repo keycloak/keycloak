@@ -36,6 +36,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.organization.protocol.mappers.saml.OrganizationMembershipMapper;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.AuthnContextClassRefMapper;
@@ -51,10 +52,13 @@ import org.keycloak.saml.processing.api.util.DeflateUtil;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.validators.DestinationValidator;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(LoginProtocolFactory.class)
 public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
 
     public static final String SCOPE_ROLE_LIST = "role_list";

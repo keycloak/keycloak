@@ -25,6 +25,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.CredentialValidator;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
@@ -38,12 +39,15 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
 
+import com.google.auto.service.AutoService;
+
 import static java.util.Arrays.asList;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(AuthenticatorFactory.class)
 public class ResetOTP extends AbstractSetRequiredActionAuthenticator implements CredentialValidator<OTPCredentialProvider> {
 
     public static final String PROVIDER_ID = "reset-otp";

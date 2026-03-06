@@ -10,8 +10,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement;
 
+@AutoService(AuthenticatorFactory.class)
 public class DockerAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override

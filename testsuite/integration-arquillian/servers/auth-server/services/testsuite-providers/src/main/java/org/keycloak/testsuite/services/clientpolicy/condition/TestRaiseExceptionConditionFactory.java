@@ -28,9 +28,12 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+@AutoService(ClientPolicyConditionProviderFactory.class)
 public class TestRaiseExceptionConditionFactory implements ClientPolicyConditionProviderFactory {
 
     public static final String PROVIDER_ID = "test-raise-exception";

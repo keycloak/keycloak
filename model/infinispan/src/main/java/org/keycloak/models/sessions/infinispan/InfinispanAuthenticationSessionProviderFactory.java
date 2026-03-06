@@ -52,6 +52,7 @@ import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME;
@@ -59,6 +60,7 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.A
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(AuthenticationSessionProviderFactory.class)
 public class InfinispanAuthenticationSessionProviderFactory implements AuthenticationSessionProviderFactory<InfinispanAuthenticationSessionProvider>, EnvironmentDependentProviderFactory, ProviderEventListener {
 
     private static final Logger log = Logger.getLogger(InfinispanAuthenticationSessionProviderFactory.class);

@@ -26,9 +26,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.RoleProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
+@AutoService(RoleProviderFactory.class)
 public class JpaRoleProviderFactory implements RoleProviderFactory {
 
     @Override

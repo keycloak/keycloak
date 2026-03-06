@@ -28,9 +28,12 @@ import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import com.google.auto.service.AutoService;
 
 import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
 
@@ -38,6 +41,7 @@ import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke, Benjamin Weimer</a>
  * @version $Revision: 1 $
  */
+@AutoService(IdentityProviderMapper.class)
 public class AdvancedClaimToRoleMapper extends AbstractClaimToRoleMapper {
 
     public static final String CLAIM_PROPERTY_NAME = "claims";

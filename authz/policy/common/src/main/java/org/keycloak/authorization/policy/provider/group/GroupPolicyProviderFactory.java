@@ -44,9 +44,12 @@ import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation.
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.util.JsonSerialization;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(PolicyProviderFactory.class)
 public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPolicyRepresentation> {
 
     public static final String ID = "group";

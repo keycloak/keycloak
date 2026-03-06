@@ -32,12 +32,14 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.Cache;
 
 /**
  *
  * @author rmartinc
  */
+@AutoService(CrlStorageProviderFactory.class)
 public class InfinispanCrlStorageProviderFactory implements CrlStorageProviderFactory, InfinispanCrlStorageProvider.SharedData {
 
     public static final String PROVIDER_ID = "infinispan";

@@ -22,13 +22,17 @@ package org.keycloak.testsuite.authentication;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelProvider;
+import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelProviderFactory;
 import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelProvider;
 import org.keycloak.protocol.oidc.grants.ciba.channel.HttpAuthenticationChannelProviderFactory;
 import org.keycloak.testsuite.util.ServerURLs;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(AuthenticationChannelProviderFactory.class)
 public class TestHttpAuthenticationChannelProviderFactory extends HttpAuthenticationChannelProviderFactory {
 
     private static final String TEST_HTTP_AUTH_CHANNEL =

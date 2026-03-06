@@ -2,11 +2,14 @@ package org.keycloak.credential.hash;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Provider factory for SHA512 variant of the PBKDF2 password hash algorithm.
  *
  * @author @author <a href="mailto:abkaplan07@gmail.com">Adam Kaplan</a>
  */
+@AutoService(PasswordHashProviderFactory.class)
 public class Pbkdf2Sha512PasswordHashProviderFactory extends AbstractPbkdf2PasswordHashProviderFactory implements PasswordHashProviderFactory {
 
     public static final String ID = "pbkdf2-sha512";

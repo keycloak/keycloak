@@ -19,9 +19,12 @@ package org.keycloak.storage.configuration;
 
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * The {@link Spi} implementation of {@link ServerConfigStorageProvider}.
  */
+@AutoService(Spi.class)
 public class ServerConfigurationStorageProviderSpi implements Spi {
 
     @Override

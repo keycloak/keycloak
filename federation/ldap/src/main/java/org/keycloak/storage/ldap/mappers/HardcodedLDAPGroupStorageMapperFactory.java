@@ -29,9 +29,12 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:jean-loup.maillet@yesitis.fr">Jean-Loup Maillet</a>
  */
+@AutoService(LDAPStorageMapperFactory.class)
 public class HardcodedLDAPGroupStorageMapperFactory extends AbstractLDAPStorageMapperFactory {
 
     public static final String PROVIDER_ID = "hardcoded-ldap-group-mapper";

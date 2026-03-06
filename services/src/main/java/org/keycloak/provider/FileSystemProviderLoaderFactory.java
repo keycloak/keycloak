@@ -23,11 +23,13 @@ import java.net.URLClassLoader;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(ProviderLoaderFactory.class)
 public class FileSystemProviderLoaderFactory implements ProviderLoaderFactory {
 
     private static final Logger logger = Logger.getLogger(FileSystemProviderLoaderFactory.class);

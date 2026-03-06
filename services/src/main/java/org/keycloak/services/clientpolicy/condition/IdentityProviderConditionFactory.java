@@ -23,12 +23,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>Condition that defines a list of Identity Provider aliases and checks if the
  * alias in the client policy context is (or is not) part of that list.</p>
  *
  * @author rmartinc
  */
+@AutoService(ClientPolicyConditionProviderFactory.class)
 public class IdentityProviderConditionFactory extends AbstractClientPolicyConditionProviderFactory {
 
     public static final String PROVIDER_ID = "identity-provider-alias";

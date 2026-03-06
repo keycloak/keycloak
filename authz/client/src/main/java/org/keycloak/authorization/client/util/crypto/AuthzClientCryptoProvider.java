@@ -51,11 +51,14 @@ import org.keycloak.common.crypto.PemUtilsProvider;
 import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.common.util.KeystoreUtil;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>Simple crypto provider to be used with the authz-client.</p>
  *
  * @author rmartinc
  */
+@AutoService(CryptoProvider.class)
 public class AuthzClientCryptoProvider implements CryptoProvider {
 
     @Override

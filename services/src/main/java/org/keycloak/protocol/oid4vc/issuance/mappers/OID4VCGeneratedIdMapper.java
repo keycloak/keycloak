@@ -30,6 +30,7 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
 import org.apache.commons.collections4.ListUtils;
 
 /**
@@ -37,6 +38,7 @@ import org.apache.commons.collections4.ListUtils;
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
+@AutoService(ProtocolMapper.class)
 public class OID4VCGeneratedIdMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-generated-id-mapper";

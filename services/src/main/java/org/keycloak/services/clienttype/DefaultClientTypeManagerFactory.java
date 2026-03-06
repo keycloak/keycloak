@@ -33,11 +33,13 @@ import org.keycloak.representations.idm.ClientTypeRepresentation;
 import org.keycloak.representations.idm.ClientTypesRepresentation;
 import org.keycloak.util.JsonSerialization;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(ClientTypeManagerFactory.class)
 public class DefaultClientTypeManagerFactory implements ClientTypeManagerFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultClientTypeManagerFactory.class);

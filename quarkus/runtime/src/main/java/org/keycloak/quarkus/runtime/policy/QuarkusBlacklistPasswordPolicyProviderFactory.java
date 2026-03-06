@@ -20,7 +20,10 @@ package org.keycloak.quarkus.runtime.policy;
 import java.io.File;
 
 import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
+import org.keycloak.policy.PasswordPolicyProviderFactory;
 import org.keycloak.quarkus.runtime.Environment;
+
+import com.google.auto.service.AutoService;
 
 /**
  * <p>Quarkus implementation of the BlacklistPasswordPolicyProviderFactory. The
@@ -29,6 +32,7 @@ import org.keycloak.quarkus.runtime.Environment;
  *
  * @author rmartinc
  */
+@AutoService(PasswordPolicyProviderFactory.class)
 public class QuarkusBlacklistPasswordPolicyProviderFactory extends BlacklistPasswordPolicyProviderFactory {
 
     @Override

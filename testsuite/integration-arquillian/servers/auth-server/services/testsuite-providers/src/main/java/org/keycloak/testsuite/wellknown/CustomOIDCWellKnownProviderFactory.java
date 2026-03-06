@@ -23,10 +23,14 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
 import org.keycloak.wellknown.WellKnownProvider;
+import org.keycloak.wellknown.WellKnownProviderFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(WellKnownProviderFactory.class)
 public class CustomOIDCWellKnownProviderFactory extends OIDCWellKnownProviderFactory {
 
     public static final String INCLUDE_CLIENT_SCOPES = "oidc.wellknown.include.client.scopes";

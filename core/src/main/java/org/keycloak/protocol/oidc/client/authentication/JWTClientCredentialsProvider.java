@@ -38,12 +38,15 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Client authentication based on JWT signed by client private key .
  * See <a href="https://tools.ietf.org/html/rfc7519">specs</a> for more details.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(ClientCredentialsProvider.class)
 public class JWTClientCredentialsProvider implements ClientCredentialsProvider {
 
     public static final String PROVIDER_ID = "jwt";

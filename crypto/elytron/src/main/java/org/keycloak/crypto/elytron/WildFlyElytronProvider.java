@@ -51,6 +51,9 @@ import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.crypto.JavaAlgorithm;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(CryptoProvider.class)
 public class WildFlyElytronProvider implements CryptoProvider {
 
     private Map<String, Object> providers = new ConcurrentHashMap<>();

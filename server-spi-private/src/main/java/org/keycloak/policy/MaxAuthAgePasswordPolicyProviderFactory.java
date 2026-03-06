@@ -25,9 +25,12 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Specifies the maximum age of an authentication with which a password may be changed without re-authentication.
  */
+@AutoService(PasswordPolicyProviderFactory.class)
 public class MaxAuthAgePasswordPolicyProviderFactory implements PasswordPolicyProvider, PasswordPolicyProviderFactory {
 
     public static final int DEFAULT_MAX_AUTH_AGE = Constants.KC_ACTION_MAX_AGE;

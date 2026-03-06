@@ -17,6 +17,7 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
+import com.google.auto.service.AutoService;
 import liquibase.database.Database;
 import liquibase.database.core.DB2Database;
 import liquibase.database.core.H2Database;
@@ -26,6 +27,7 @@ import liquibase.database.core.OracleDatabase;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.sql.Sql;
 import liquibase.sql.UnparsedSql;
+import liquibase.sqlgenerator.SqlGenerator;
 import liquibase.sqlgenerator.SqlGeneratorChain;
 import liquibase.sqlgenerator.core.LockDatabaseChangeLogGenerator;
 import liquibase.statement.core.LockDatabaseChangeLogStatement;
@@ -36,6 +38,7 @@ import org.jboss.logging.Logger;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(SqlGenerator.class)
 public class CustomLockDatabaseChangeLogGenerator extends LockDatabaseChangeLogGenerator {
 
     private static final Logger logger = Logger.getLogger(CustomLockDatabaseChangeLogGenerator.class);

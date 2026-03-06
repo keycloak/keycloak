@@ -25,9 +25,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author Vlastimil Elias (velias at redhat dot com)
  */
+@AutoService(SocialIdentityProviderFactory.class)
 public class MicrosoftIdentityProviderFactory extends AbstractIdentityProviderFactory<MicrosoftIdentityProvider> implements SocialIdentityProviderFactory<MicrosoftIdentityProvider> {
 
     public static final String PROVIDER_ID = "microsoft";

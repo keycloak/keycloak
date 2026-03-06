@@ -38,12 +38,14 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(PublicKeyStorageProviderFactory.class)
 public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStorageProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanPublicKeyStorageProviderFactory.class);

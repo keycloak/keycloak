@@ -44,6 +44,7 @@ import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
+import com.google.auto.service.AutoService;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
 import org.infinispan.client.hotrod.RemoteCache;
@@ -59,6 +60,7 @@ import static org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSin
 import static org.keycloak.models.sessions.infinispan.remote.RemoteInfinispanSingleUseObjectProvider.RevokeTokenConsumer;
 import static org.keycloak.storage.datastore.DefaultDatastoreProviderFactory.setupClearExpiredRevokedTokensScheduledTask;
 
+@AutoService(SingleUseObjectProviderFactory.class)
 public class RemoteInfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<RemoteInfinispanSingleUseObjectProvider>, EnvironmentDependentProviderFactory, ProviderEventListener, ServerInfoAwareProviderFactory {
 
     private final static Logger logger = Logger.getLogger(MethodHandles.lookup().lookupClass());

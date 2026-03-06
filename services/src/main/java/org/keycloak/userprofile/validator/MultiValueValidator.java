@@ -35,11 +35,15 @@ import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
 import org.keycloak.validate.validators.ValidatorConfigValidator;
+
+import com.google.auto.service.AutoService;
 
 import static org.keycloak.validate.validators.ValidatorConfigValidator.MESSAGE_CONFIG_INVALID_NUMBER_VALUE;
 import static org.keycloak.validate.validators.ValidatorConfigValidator.MESSAGE_CONFIG_MISSING_VALUE;
 
+@AutoService(ValidatorFactory.class)
 public class MultiValueValidator implements SimpleValidator, ConfiguredProvider {
 
     public static final String ID = "multivalued";

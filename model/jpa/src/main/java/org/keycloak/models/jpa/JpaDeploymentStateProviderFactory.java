@@ -26,9 +26,12 @@ import org.keycloak.models.DeploymentStateProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
+@AutoService(DeploymentStateProviderFactory.class)
 public class JpaDeploymentStateProviderFactory implements DeploymentStateProviderFactory {
 
     @Override

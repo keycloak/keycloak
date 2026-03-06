@@ -23,9 +23,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.oidc.TokenIntrospectionProvider;
 import org.keycloak.protocol.oidc.TokenIntrospectionProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(TokenIntrospectionProviderFactory.class)
 public class RPTIntrospectionProviderFactory implements TokenIntrospectionProviderFactory {
     @Override
     public TokenIntrospectionProvider create(KeycloakSession session) {
