@@ -352,7 +352,10 @@ public class Messages {
     public static final String CONFIRM_ORGANIZATION_MEMBERSHIP_TITLE = "organization.confirm-membership.title";
     public static final String REGISTER_ORGANIZATION_MEMBER = "organization.member.register.title";
 
-   // Client sessions
+    // Impersonation
+    public static final String IMPERSONATE_ERROR = "impersonateError";
+
+    // Client sessions
     public static final String CLIENT_IDLE_REMEMBERME = "clientIdleExceedsRealmRememberMeIdle";
     public static final String CLIENT_IDLE = "clientSessionIdleTimeoutExceedsRealm";
     public static final String CLIENT_MAXLIFE_SPAN = "clientSessionMaxLifespanExceedsRealm";
