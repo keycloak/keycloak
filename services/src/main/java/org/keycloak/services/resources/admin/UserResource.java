@@ -1252,18 +1252,9 @@ public class UserResource {
     public Map<String, List<String>> getUnmanagedAttributes() {
         auth.users().requireView(user);
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-
         UserProfile profile = provider.create(USER_API, user);
-        Map<String, List<String>> managedAttributes = profile.getAttributes().getReadable();
-        Map<String, List<String>> unmanagedAttributes = profile.getAttributes().getUnmanagedAttributes();
-        managedAttributes.entrySet().removeAll(unmanagedAttributes.entrySet());
-        Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
-        attributes.entrySet().removeAll(managedAttributes.entrySet());
 
-        attributes.remove(UserModel.USERNAME);
-        attributes.remove(UserModel.EMAIL);
-
-        return attributes.entrySet().stream()
+        return profile.getAttributes().getUnmanagedAttributes().entrySet().stream()
                 .filter(entry -> ofNullable(entry.getValue()).orElse(emptyList()).stream().anyMatch(StringUtil::isNotBlank))
                 .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
