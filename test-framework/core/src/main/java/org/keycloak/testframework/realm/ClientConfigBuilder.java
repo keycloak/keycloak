@@ -103,6 +103,7 @@ public class ClientConfigBuilder {
     }
 
     public ClientConfigBuilder authorizationServicesEnabled(boolean enabled) {
+        serviceAccountsEnabled(enabled);
         rep.setAuthorizationServicesEnabled(enabled);
         return this;
     }
