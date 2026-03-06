@@ -6,10 +6,9 @@ import {
   Chip,
   ChipGroup,
   FormGroup,
-  TextInput,
 } from "@patternfly/react-core";
-import { useEffect, useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { useState } from "react";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
@@ -33,7 +32,7 @@ export const GroupComponent = ({
   const [open, setOpen] = useState(false);
   const [openOrgGroups, setOpenOrgGroups] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>();
-  const { control, getValues, setValue, watch } = useFormContext();
+  const { control, setValue } = useFormContext();
   const { adminClient } = useAdminClient();
   const serverInfo = useServerInfo();
   const hasLinkedOrganization = useGroupResource().isOrgGroups();
@@ -46,19 +45,11 @@ export const GroupComponent = ({
   const GROUP_TYPE_ORG =
     groupTypes.find((t: string) => t === "ORGANIZATION") || "ORGANIZATION";
 
-  // Watch the groupType field value from the form
-  const groupTypeValue = watch(groupTypeFieldName);
-
-  // Set default groupType on mount if needed
-  useEffect(() => {
-    const groupValue = getValues(convertToName(name!));
-    const existingGroupType = getValues(groupTypeFieldName);
-
-    if (!existingGroupType && hasLinkedOrganization && groupValue) {
-      // No groupType in loaded data, but there's a group - default to REALM
-      setValue(groupTypeFieldName, GROUP_TYPE_REALM);
-    }
-  }, []); // Run only once on mount
+  const groupType = useWatch({
+    name: "config.groupType",
+    control,
+    defaultValue: GROUP_TYPE_REALM,
+  });
 
   return (
     <Controller
@@ -137,7 +128,7 @@ export const GroupComponent = ({
                   {t("selectGroup")}
                 </Button>
               </ActionListItem>
-              {hasLinkedOrganization && (
+              {(hasLinkedOrganization || groupType === GROUP_TYPE_ORG) && (
                 <ActionListItem>
                   <Button
                     id="kc-join-org-groups-button"
@@ -151,25 +142,6 @@ export const GroupComponent = ({
               )}
             </ActionList>
           </FormGroup>
-          {field.value &&
-            (hasLinkedOrganization || groupTypeValue === GROUP_TYPE_ORG) && (
-              <FormGroup
-                label={t("groupType")}
-                fieldId="groupType"
-                labelIcon={
-                  <HelpItem
-                    helpText={t("groupTypeHelp")}
-                    fieldLabelId="groupType"
-                  />
-                }
-              >
-                <TextInput
-                  id="groupType"
-                  value={groupTypeValue || GROUP_TYPE_REALM}
-                  readOnly
-                />
-              </FormGroup>
-            )}
         </>
       )}
     />
