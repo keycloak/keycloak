@@ -69,6 +69,10 @@ public final class ScimClient implements AutoCloseable {
         return new ScimResourceTypesClient(this);
     }
 
+    public ScimSchemasClient schemas() {
+        return new ScimSchemasClient(this);
+    }
+
     @Override
     public void close() {
         // no-op for now
