@@ -8,19 +8,22 @@ import java.util.stream.Stream;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.From;
 import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.UserAdapter;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
+import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
@@ -98,9 +101,9 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<UserEntity> query = cb.createQuery(UserEntity.class);
-            Root<UserEntity> root = query.from(UserEntity.class);
+            From root = doGetRootPath(cb, query);
 
-            List<Predicate> predicates = this.getUserPredicates(filterContext, cb, root);
+            List<Predicate> predicates = getUserPredicates(filterContext, cb, query, root);
 
             // apply distinct and order by username to ensure consistency with no-filter case
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("username")));
@@ -109,8 +112,12 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             return closing(paginateQuery(em.createQuery(query), firstResult, maxResults).getResultStream()
                     .map(entity -> new UserAdapter(session, realm, em, entity)));
         } else {
-            return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), firstResult, maxResults);
+            return doGetAll(realm, firstResult, maxResults);
         }
+    }
+
+    protected Stream<UserModel> doGetAll(RealmModel realm, Integer firstResult, Integer maxResults) {
+        return session.users().searchForUserStream(realm, Map.of(UserModel.INCLUDE_SERVICE_ACCOUNT, "false"), firstResult, maxResults);
     }
 
     @Override
@@ -124,14 +131,22 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Long> query = cb.createQuery(Long.class);
-            Root<UserEntity> root = query.from(UserEntity.class);
+            From<?, ?> root = doGetRootPath(cb, query);
 
-            List<Predicate> predicates = this.getUserPredicates(filterContext, cb, root);
+            List<Predicate> predicates = this.getUserPredicates(filterContext, cb, query, root);
             query.select(cb.countDistinct(root)).where(predicates);
             return em.createQuery(query).getSingleResult();
         } else {
-            return (long) session.users().getUsersCount(realm, false);
+            return doCountAll(realm);
         }
+    }
+
+    protected long doCountAll(RealmModel realm) {
+        return session.users().getUsersCount(realm, false);
+    }
+
+    protected From doGetRootPath(CriteriaBuilder cb, CriteriaQuery<?> query) {
+        return query.from(UserEntity.class);
     }
 
     @Override
@@ -165,18 +180,22 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         return exception;
     }
 
-    private List<Predicate> getUserPredicates(ScimFilterParser.FilterContext filterContext, CriteriaBuilder cb, Root<UserEntity> root) {
+    protected List<Predicate> getUserPredicates(FilterContext filterContext, CriteriaBuilder cb, CriteriaQuery<?> query, From<?, ?> root) {
         List<Predicate> predicates = new ArrayList<>();
 
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, root);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(getSchemas(), cb, root);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply service account restriction
         predicates.add(root.get("serviceAccountClientLink").isNull());
 
         // apply realm restriction
-        predicates.add(cb.equal(root.get("realmId"), session.getContext().getRealm().getId()));
+        RealmModel realm = session.getContext().getRealm();
+        predicates.add(cb.equal(root.get("realmId"), realm.getId()));
+
+        UserProvider userProvider = session.getProvider(UserProvider.class, "jpa");
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, (PartialEvaluationStorageProvider) userProvider, realm, cb, query, root));
 
         return predicates;
     }

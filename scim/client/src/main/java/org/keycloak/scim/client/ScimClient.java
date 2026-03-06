@@ -46,7 +46,11 @@ public final class ScimClient implements AutoCloseable {
     private AuthorizationMethod authorizationMethod;
 
     private ScimClient(HttpClient http) {
-        this.http = SimpleHttp.create(http);
+        this(SimpleHttp.create(http));
+    }
+
+    private ScimClient(SimpleHttp http) {
+        this.http = http;
     }
 
     public static Builder create(HttpClient httpClient) {
@@ -67,6 +71,14 @@ public final class ScimClient implements AutoCloseable {
 
     public ScimResourceTypesClient resourceTypes() {
         return new ScimResourceTypesClient(this);
+    }
+
+    public ScimClient organization(String alias) {
+        String baseUrl = this.baseUrl.replace("/scim/v2/", "/scim/organizations/" + alias + "/v2");
+        ScimClient client = new ScimClient(http);
+        client.setBaseUrl(baseUrl);
+        client.setAuthorizationMethod(authorizationMethod);
+        return client;
     }
 
     @Override

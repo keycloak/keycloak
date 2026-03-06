@@ -1,8 +1,13 @@
 package org.keycloak.utils;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
@@ -178,5 +183,46 @@ public class GroupUtils {
         GroupRepresentation rep = ModelToRepresentation.toRepresentation(groupTree, full);
         rep.setAccess(groupsEvaluator.getAccess(groupTree));
         return rep;
+    }
+
+    public static Set<GroupMembership> getAllMemberships(KeycloakSession session, Collection<GroupModel> groups) {
+        return getAllMemberships(session, groups, true);
+    }
+
+    public static Set<GroupMembership> getAllMemberships(KeycloakSession session, Collection<GroupModel> groups, boolean direct) {
+        Set<GroupMembership> memberships = new HashSet<>();
+
+        for (GroupModel group : groups) {
+            GroupMembership membership = new GroupMembership(group, direct);
+
+            if (!memberships.add(membership)) {
+                continue;
+            }
+
+            if (group.getParentId() != null) {
+                RealmModel realm = session.getContext().getRealm();
+                GroupModel parent = session.groups().getGroupById(realm, group.getParentId());
+
+                if (parent != null) {
+                    memberships.addAll(getAllMemberships(session, List.of(parent), false));
+                }
+            }
+        }
+
+        return memberships;
+    }
+
+    public record GroupMembership(GroupModel group, boolean direct) {
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof GroupMembership that)) return false;
+            return Objects.equals(group, that.group);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(group);
+        }
     }
 }
