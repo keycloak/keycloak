@@ -29,7 +29,7 @@ This is currently OpenJDK {jdk_version_recommended}.
 * **Containers** - Docker, Podman
 * **Kubernetes** - OpenShift 4.18-4.21, corresponding to Kubernetes API 1.31-1.34
 
-NOTE: Other Kubernetes distributions (like AWS, Azure etc.) are supported only in a best-effort manner, i.e. support will be provided for issues that
+NOTE: Other non-OpenShift Kubernetes distributions (like Amazon EKS or Azure Kubernetes Service etc.) are supported only in a best-effort manner, i.e. support will be provided for issues that
 are specific to the supported Kubernetes API or OpenShift versions, but issues that are reproducible only on a particular Kubernetes distribution may not be supported.
 
 NOTE: The supported versions of each respective environment are limited to the versions that are currently supported by the respective vendors. For example, for OpenShift, only the versions that are currently supported by Red Hat are supported by {project_name}.
