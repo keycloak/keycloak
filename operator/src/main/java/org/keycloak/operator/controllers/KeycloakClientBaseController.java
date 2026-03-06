@@ -416,7 +416,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         String protocol = https?HTTPS:"http";
         String address = addressOverride;
 
-        int port = https?HttpSpec.httpsPort(keycloak):HttpSpec.httpPort(keycloak);
+        int port = https?HttpSpec.serviceHttpsPort(keycloak):HttpSpec.serviceHttpPort(keycloak);
 
         if (address == null) {
             // uses the service host - TODO: assumes the operator and the keycloak instance are in the same cluster

@@ -159,6 +159,30 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .to("quarkus.log.file.async.queue-length")
                         .paramLabel("queue-length")
                         .build(),
+                // File rotation
+                fromOption(LoggingOptions.LOG_FILE_ROTATION_ENABLED)
+                        .isEnabled(LoggingPropertyMappers::isFileEnabled, FILE_ENABLED_MSG)
+                        .to("quarkus.log.file.rotation.enabled")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_ROTATION_MAX_FILE_SIZE)
+                        .isEnabled(LoggingPropertyMappers::isFileRotationEnabled, "%s and log file rotation is enabled".formatted(FILE_ENABLED_MSG))
+                        .to("quarkus.log.file.rotation.max-file-size")
+                        .paramLabel("size")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_ROTATION_MAX_BACKUP_INDEX)
+                        .isEnabled(LoggingPropertyMappers::isFileRotationEnabled, "%s and log file rotation is enabled".formatted(FILE_ENABLED_MSG))
+                        .to("quarkus.log.file.rotation.max-backup-index")
+                        .paramLabel("index")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_ROTATION_FILE_SUFFIX)
+                        .isEnabled(LoggingPropertyMappers::isFileRotationEnabled, "%s and log file rotation is enabled".formatted(FILE_ENABLED_MSG))
+                        .to("quarkus.log.file.rotation.file-suffix")
+                        .paramLabel("suffix")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_ROTATION_ROTATE_ON_BOOT)
+                        .isEnabled(LoggingPropertyMappers::isFileRotationEnabled, "%s and log file rotation is enabled".formatted(FILE_ENABLED_MSG))
+                        .to("quarkus.log.file.rotation.rotate-on-boot")
+                        .build(),
                 // Log level
                 fromOption(LoggingOptions.LOG_LEVEL)
                         .to("quarkus.log.level")
@@ -292,6 +316,10 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
 
     public static boolean isFileJsonEnabled() {
         return isFileEnabled() && isTrue("quarkus.log.file.json.enabled");
+    }
+
+    public static boolean isFileRotationEnabled() {
+        return isFileEnabled() && isTrue(LoggingOptions.LOG_FILE_ROTATION_ENABLED);
     }
 
     public static boolean isSyslogEnabled() {

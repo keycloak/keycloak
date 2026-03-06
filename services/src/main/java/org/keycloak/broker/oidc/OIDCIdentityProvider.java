@@ -1104,7 +1104,11 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
 
         BrokeredIdentityContext user = new BrokeredIdentityContext(context.getJWT().getSubject(), getConfig());
-        user.setUsername(context.getJWT().getSubject());
+        String username = (String) context.getJWT().getOtherClaims().get(IDToken.PREFERRED_USERNAME);
+        if (username == null) {
+            username = context.getJWT().getSubject();
+        }
+        user.setUsername(username);
         user.setIdp(this);
         return user;
     }

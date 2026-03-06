@@ -3,6 +3,7 @@ package org.keycloak.services.client;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -97,7 +98,7 @@ public class DefaultClientService implements ClientService {
         // TODO: is the access map on the representation needed
         avoidClientIdPhishing();
         return Optional.ofNullable(clientResource).map(ClientResource::viewClientModel)
-                .map(model -> session.getProvider(ClientModelMapper.class, model.getProtocol()).fromModel(model));
+                .map(model -> getMapper(model.getProtocol()).fromModel(model));
     }
 
     @Override
@@ -106,24 +107,40 @@ public class DefaultClientService implements ClientService {
         // TODO: is the access map on the representation needed
         return clientsResource.getClientModels(null, true, false, null, null, null)
                 .filter(model -> model.getProtocol() != null) // Skip clients with null protocol
-                .map(model -> session.getProvider(ClientModelMapper.class, model.getProtocol()).fromModel(model))
+                .map(model -> getMapper(model.getProtocol()).fromModel(model))
                 .filter(java.util.Objects::nonNull);
     }
 
     @Override
-    public CreateOrUpdateResult createOrUpdate(RealmModel realm, BaseClientRepresentation client, boolean allowUpdate) throws ServiceException {
+    public BaseClientRepresentation createClient(RealmModel realm, BaseClientRepresentation client) throws ServiceException {
+        return createOrUpdate(client, CreateOrUpdateStrategy.ONLY_CREATE).representation();
+    }
+
+    @Override
+    public CreateOrUpdateResult createOrUpdateClient(RealmModel realm, String clientId, BaseClientRepresentation client) throws ServiceException {
+        if (!Objects.equals(clientId, client.getClientId())) {
+            throw new ServiceException("Field 'clientId' in payload does not match the provided 'clientId'", Response.Status.BAD_REQUEST);
+        }
+        return createOrUpdate(client, CreateOrUpdateStrategy.PUT);
+    }
+
+    private enum CreateOrUpdateStrategy {
+        ONLY_CREATE,
+        PUT,
+        // PATCH is currently separated from PUT only due to validation running before full preparation/defaulting.
+        // Once we validate the fully prepared resource, PUT and PATCH should share the same validation logic.
+        PATCH
+    }
+
+    private CreateOrUpdateResult createOrUpdate(BaseClientRepresentation client, CreateOrUpdateStrategy strategy) throws ServiceException {
         validateUnknownFields(client);
 
         boolean created = false;
         ClientModel model;
-        ClientModelMapper mapper = session.getProvider(ClientModelMapper.class, client.getProtocol());
-
-        if (mapper == null) {
-            throw new ServiceException("Mapper not found, unsupported client protocol: " + client.getProtocol(), Response.Status.BAD_REQUEST);
-        }
+        ClientModelMapper mapper = getMapper(client.getProtocol());
 
         if (clientResource != null) {
-            if (!allowUpdate) {
+            if (strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
             model = mapper.toModel(client, clientResource.viewClientModel());
@@ -135,7 +152,7 @@ public class DefaultClientService implements ClientService {
             }
         } else {
             created = true;
-            validator.validate(client, CreateClientDefault.class); // TODO improve it to avoid second validation when we know it is create and not update
+            validator.validate(client, CreateClientDefault.class);
 
             // First, create a basic v1 representation to persist the client in the database.
             // We can't use mapper.toModel(client) directly for creation because the "detached model"
@@ -206,7 +223,7 @@ public class DefaultClientService implements ClientService {
             default -> throw new ServiceException("Invalid patch type", Response.Status.UNSUPPORTED_MEDIA_TYPE);
         }
 
-        return createOrUpdate(realm, updated, true).representation();
+        return createOrUpdate(updated, CreateOrUpdateStrategy.PATCH).representation();
     }
 
     @Override
@@ -221,9 +238,12 @@ public class DefaultClientService implements ClientService {
         if (clientResource == null) {
             throw new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND);
         }
-        var client = clientResource.getClient();
+        var client = Optional.of(clientResource.viewClientModel())
+                .map(c -> getMapper(c.getProtocol()).fromModel(c))
+                .orElseThrow(() -> new ServiceException("Cannot map client model", Response.Status.BAD_REQUEST));
+
         clientResource.deleteClient();
-        fireAdminEvent(OperationType.DELETE, BaseClientRepresentation.createMinimalRepresentation(client.getClientId(), client.getProtocol()));
+        fireAdminEvent(OperationType.DELETE, client);
     }
 
     /**
@@ -322,5 +342,10 @@ public class DefaultClientService implements ClientService {
         if (!rep.getAdditionalFields().isEmpty()) {
             throw new ServiceException("Payload contains unknown fields: " + rep.getAdditionalFields().keySet(), Response.Status.BAD_REQUEST);
         }
+    }
+
+    protected ClientModelMapper getMapper(String protocol) {
+        return Optional.ofNullable(session.getProvider(ClientModelMapper.class, protocol))
+                .orElseThrow(() -> new ServiceException("Mapper not found, unsupported client protocol: " + protocol, Response.Status.BAD_REQUEST));
     }
 }

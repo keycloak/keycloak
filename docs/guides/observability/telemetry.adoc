@@ -83,6 +83,37 @@ spec:
 
 These fields should reflect a 1:1 association with `telemetry-*` server options.
 
+=== Enable all OpenTelemetry components
+To enable OpenTelemetry metrics, logs, and traces, you can configure the Keycloak CR as follows:
+
+WARNING: OpenTelemetry Logs and Metrics are preview/experimental features.
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  features:
+    enabled:
+      - opentelemetry-logs
+      - opentelemetry-metrics
+  telemetry:
+    endpoint: http://my-telemetry:4317
+    serviceName: my-best-keycloak-telemetry
+    protocol: grpc
+  tracing:
+    enabled: true
+  additionalOptions:
+    - name: telemetry-logs-enabled
+      value: "true"
+    - name: telemetry-metrics-enabled
+      value: "true"
+    - name: metrics-enabled
+      value: "true"
+----
+
 == Traces
 
 See the https://www.keycloak.org/observability/tracing[Root cause analysis with tracing guide].
@@ -107,6 +138,10 @@ For more information on how to set up logging, see the https://www.keycloak.org/
 === Log level
 By default, all log levels are exported by {project_name}.
 You can optionally configure the most verbose log level to be exported via the `telemetry-logs-level` option.
+
+The `telemetry-logs-level` option filters which logs are exported to OpenTelemetry, while `log-level` and `log-level-<category>` control which logs {project_name} generates.
+
+The telemetry filter is applied to already-generated logs, so setting `telemetry-logs-level=DEBUG` will not export `DEBUG` logs if `log-level=WARN`.
 
 For example, if you want only to export `WARN` and `ERROR` logs, you can change the log level via the CLI as follows:
 

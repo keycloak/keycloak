@@ -41,9 +41,9 @@ import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.providers.actions.DummyConfigurableRequiredActionFactory;
+import org.keycloak.tests.providers.actions.DummyRequiredActionFactory;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.testsuite.actions.DummyConfigurableRequiredActionFactory;
-import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
