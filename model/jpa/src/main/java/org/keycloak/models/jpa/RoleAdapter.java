@@ -92,7 +92,9 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public boolean isComposite() {
-        return getChildRoles().findAny().isPresent();
+        return StreamsUtil.closing(em.createNamedQuery("getChildRoles", RoleEntity.class)
+                .setMaxResults(1)
+                .setParameter("parentRoleId", getId()).getResultStream()).findAny().isPresent();
     }
 
     @Override
