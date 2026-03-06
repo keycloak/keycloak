@@ -1,5 +1,6 @@
 package org.keycloak.testframework.realm;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +12,7 @@ import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -70,6 +72,11 @@ public class RealmConfigBuilder {
         return UserConfigBuilder.update(user).enabled(true).username(username);
     }
 
+    public UserConfigBuilder addUser(UserRepresentation user) {
+        rep.setUsers(Collections.combine(rep.getUsers(), user));
+        return UserConfigBuilder.update(user);
+    }
+
     public GroupConfigBuilder addGroup(String name) {
         GroupRepresentation group = new GroupRepresentation();
         rep.setGroups(Collections.combine(rep.getGroups(), group));
@@ -77,13 +84,18 @@ public class RealmConfigBuilder {
     }
 
     public RoleConfigBuilder addRole(String name) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(name);
+        return addRole(role);
+    }
+
+    public RoleConfigBuilder addRole(RoleRepresentation roleRepresentation) {
         if (rep.getRoles() == null) {
             rep.setRoles(new RolesRepresentation());
         }
 
-        RoleRepresentation role = new RoleRepresentation();
-        rep.getRoles().setRealm(Collections.combine(rep.getRoles().getRealm(), role));
-        return RoleConfigBuilder.update(role).name(name);
+        rep.getRoles().setRealm(Collections.combine(rep.getRoles().getRealm(), roleRepresentation));
+        return RoleConfigBuilder.update(roleRepresentation).name(roleRepresentation.getName());
     }
 
     public RoleConfigBuilder addClientRole(String clientName, String roleName) {
@@ -444,6 +456,24 @@ public class RealmConfigBuilder {
     public RealmConfigBuilder scimEnabled(boolean enabled) {
         rep.setScimApiEnabled(enabled);
         return this;
+    }
+
+    public void verifiableCredentialsEnabled(Boolean verifiableCredentialsEnabled) {
+        rep.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
+    }
+
+    public void attribute(String key, String value) {
+        if (rep.getAttributes() == null) {
+            rep.setAttributes(new HashMap<>());
+        }
+        rep.getAttributes().put(key, value);
+    }
+
+    public void addClientScope(ClientScopeRepresentation clientScope) {
+        if (rep.getClientScopes() == null) {
+            rep.setClientScopes(new ArrayList<>());
+        }
+        rep.getClientScopes().add(clientScope);
     }
 
     /**
