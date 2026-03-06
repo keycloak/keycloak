@@ -1143,7 +1143,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         authDetail.setCredentialConfigurationId(credConfigId);
 
         String targetUserId = userSession.getUser().getId();
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, targetUserId, expireAt, List.of(authDetail));
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, targetUserId, false, expireAt, List.of(authDetail));
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
         offerStorage.putOfferState(session, offerState);
 

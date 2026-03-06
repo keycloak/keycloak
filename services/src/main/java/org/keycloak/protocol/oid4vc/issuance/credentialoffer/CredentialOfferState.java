@@ -53,6 +53,7 @@ public class CredentialOfferState {
      * @param credOffer   The credential offer
      * @param clientId    The target client_id
      * @param userId      The target user id
+     * @param withTxCode  A flag to indicate whether a tx_code should be generated
      * @param expireAt    The expiry date of the offer in seconds
      * @param authDetails The list of authorization details, (optionally) one for each credential_configuration_id
      */
@@ -60,6 +61,7 @@ public class CredentialOfferState {
             CredentialsOffer credOffer,
             String clientId,
             String userId,
+            boolean withTxCode,
             int expireAt,
             List<OID4VCAuthorizationDetail> authDetails
     ) {
@@ -70,6 +72,10 @@ public class CredentialOfferState {
         this.expireAt = expireAt;
         this.nonce = Base64Url.encode(RandomSecret.createRandomSecret(64));
         this.authDetails = authDetails != null ? Collections.unmodifiableList(authDetails) : List.of();
+
+        if (withTxCode) {
+            this.txCode = generateTxCode();
+        }
     }
 
     @JsonIgnore

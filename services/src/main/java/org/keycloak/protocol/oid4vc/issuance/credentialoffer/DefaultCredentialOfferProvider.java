@@ -55,6 +55,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             List<String> credentialConfigurationIds,
             String targetClientId,
             String targetUsername,
+            Boolean withTxCode,
             Integer expireAt) {
 
         // Ensure single credential_configuration_id
@@ -94,11 +95,10 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
         // Create the CredentialOfferState
         //
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, authDetails);
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, withTxCode, expireAt, authDetails);
         if (PRE_AUTH_GRANT_TYPE.equals(grantType)) {
             String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
             credOffer.addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
-
         } else {
             IssuerState issuerState = new IssuerState().setCredentialOfferId(offerState.getCredentialsOfferId());
             credOffer.addGrant(new AuthorizationCodeGrant().setIssuerState(issuerState.encodeToString()));
