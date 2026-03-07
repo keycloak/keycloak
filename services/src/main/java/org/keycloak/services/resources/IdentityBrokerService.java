@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -45,6 +46,7 @@ import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.OAuthErrorException;
+import org.keycloak.authentication.AuthenticationFlowHierarchyHelper;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
@@ -78,6 +80,7 @@ import org.keycloak.http.HttpRequest;
 import org.keycloak.locale.LocaleSelectorProvider;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
@@ -681,9 +684,23 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             if (shouldMigrateId) {
                 migrateFederatedIdentityId(context, federatedUser);
             }
-            authenticationSession.setAuthenticatedUser(federatedUser);
 
-            return finishOrRedirectToPostBrokerLogin(authenticationSession, context, false);
+            boolean hasMore = hasMoreAuthenticatorsAfterCurrent(authenticationSession);
+            boolean firstBrokerLoginInProgress = authenticationSession.getAuthNote(AbstractIdpAuthenticator.BROKERED_CONTEXT_NOTE) != null;
+
+            if (hasMore && !firstBrokerLoginInProgress) {
+                prepareBrokerTokenStorage(authenticationSession, context);
+
+                SerializedBrokeredIdentityContext ctx = SerializedBrokeredIdentityContext.serialize(context);
+                ctx.saveToAuthenticationSession(authenticationSession, AuthenticationProcessor.BROKER_PENDING_CONTEXT);
+
+                authenticationSession.setAuthNote(AuthenticationProcessor.BROKER_PENDING_USER_ID, federatedUser.getId());
+
+                return returnToBrowserFlow(authenticationSession);
+            } else {
+                authenticationSession.setAuthenticatedUser(federatedUser);
+                return finishOrRedirectToPostBrokerLogin(authenticationSession, context, false);
+            }
         }
     }
 
@@ -800,7 +817,23 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                 updateFederatedIdentity(context, federatedUser);
             }
 
-            return finishOrRedirectToPostBrokerLogin(authSession, context, true);
+            // Prüfe ob weitere Authenticators folgen
+            boolean hasMore = hasMoreAuthenticatorsAfterCurrent(authSession);
+
+            if (hasMore) {
+                // Prepare broker token storage before continuing flow
+                prepareBrokerTokenStorage(authSession, context);
+
+                // Serialisiere Context
+                SerializedBrokeredIdentityContext ctx = SerializedBrokeredIdentityContext.serialize(context);
+                ctx.saveToAuthenticationSession(authSession, AuthenticationProcessor.BROKER_PENDING_CONTEXT);
+                authSession.setAuthNote(AuthenticationProcessor.BROKER_PENDING_USER_ID, federatedUser.getId());
+
+                return returnToBrowserFlow(authSession);
+            } else {
+                authSession.setAuthenticatedUser(federatedUser);
+                return finishOrRedirectToPostBrokerLogin(authSession, context, true);
+            }
         }  catch (Exception e) {
             return redirectToErrorPage(authSession, Response.Status.INTERNAL_SERVER_ERROR, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR, e);
         }
@@ -1451,6 +1484,150 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         if (this.session.getTransactionManager().isActive()) {
             this.session.getTransactionManager().rollback();
         }
+    }
+
+    /**
+     * Checks if there are more authenticators configured in the browser flow after the identity-provider-redirector.
+     * This includes authenticators in the same subflow (for REQUIRED) or in subsequent flows.
+     *
+     * @param authSession The authentication session
+     * @return true if more authenticators follow, false otherwise
+     */
+    private boolean hasMoreAuthenticatorsAfterCurrent(AuthenticationSessionModel authSession) {
+        AuthenticationFlowModel browserFlow = AuthenticationFlowResolver.resolveBrowserFlow(authSession);
+        if (browserFlow == null) {
+            logger.debugf("No browser flow found");
+            return false;
+        }
+
+        AuthenticationExecutionModel idpExecution = findIdpRedirectorExecution(browserFlow);
+        if (idpExecution == null) {
+            logger.debugf("IDP Redirector execution not found in browser flow");
+            return false;
+        }
+
+        authSession.setAuthNote("IDP_EXECUTION_ID", idpExecution.getId());
+
+        // Only check for more executions in the same flow when the IDP redirector is REQUIRED.
+        // When it is ALTERNATIVE (e.g., in the default browser flow or inside a CONDITIONAL subflow),
+        // executions at the same level are alternative paths, not sequential steps.
+        boolean moreInSameFlow = false;
+        if (idpExecution.getRequirement() == AuthenticationExecutionModel.Requirement.REQUIRED) {
+            moreInSameFlow = hasMoreExecutionsInFlow(idpExecution.getParentFlow(), idpExecution.getId());
+        }
+
+        // Always check for more executions after the parent flow in the hierarchy.
+        // This handles cases like CONDITIONAL subflows containing an ALTERNATIVE IDP redirector
+        // followed by REQUIRED authenticators in the parent flow (e.g., OTP after conditional IDP).
+        AuthenticationFlowHierarchyHelper flowHelper = new AuthenticationFlowHierarchyHelper(realmModel);
+        boolean moreAfterParentFlow = flowHelper.hasMoreExecutionsAfterParentFlow(browserFlow, idpExecution.getParentFlow());
+
+        logger.debugf("hasMoreAuthenticators: idpRequirement=%s, moreInSameFlow=%s, moreAfterParentFlow=%s",
+            idpExecution.getRequirement(), moreInSameFlow, moreAfterParentFlow);
+
+        return moreInSameFlow || moreAfterParentFlow;
+    }
+
+    /**
+     * Finds the IDP Redirector Execution recursively in all flows.
+     */
+    private AuthenticationExecutionModel findIdpRedirectorExecution(AuthenticationFlowModel flow) {
+        List<AuthenticationExecutionModel> executions =
+            realmModel.getAuthenticationExecutionsStream(flow.getId()).collect(Collectors.toList());
+
+        for (AuthenticationExecutionModel execution : executions) {
+            if ("identity-provider-redirector".equals(execution.getAuthenticator())) {
+                return execution;
+            }
+            if (execution.isAuthenticatorFlow()) {
+                AuthenticationFlowModel subFlow = realmModel.getAuthenticationFlowById(execution.getFlowId());
+                if (subFlow != null) {
+                    AuthenticationExecutionModel found = findIdpRedirectorExecution(subFlow);
+                    if (found != null) {
+                        return found;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Checks whether there are further non-disabled executions in the same flow after a specific execution.
+     */
+    private boolean hasMoreExecutionsInFlow(String flowId, String afterExecutionId) {
+        List<AuthenticationExecutionModel> executions =
+            realmModel.getAuthenticationExecutionsStream(flowId).collect(Collectors.toList());
+
+        boolean foundExecution = false;
+        for (AuthenticationExecutionModel execution : executions) {
+            if (foundExecution) {
+                if (!execution.isDisabled() &&
+                    (execution.isAuthenticatorFlow() || execution.getAuthenticator() != null)) {
+                    return true;
+                }
+            }
+            if (execution.getId().equals(afterExecutionId)) {
+                foundExecution = true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Creates a redirect response back to the browser flow to continue authentication.
+     *
+     * @param authSession The authentication session
+     * @return Response with 302 redirect to browser flow
+     */
+    private Response returnToBrowserFlow(AuthenticationSessionModel authSession) {
+        // Mark IDP Redirector as SUCCESS so that it is not executed again
+        String idpExecutionId = authSession.getAuthNote("IDP_EXECUTION_ID");
+        if (idpExecutionId != null) {
+            authSession.setExecutionStatus(idpExecutionId, AuthenticationSessionModel.ExecutionStatus.SUCCESS);
+            authSession.removeAuthNote("IDP_EXECUTION_ID");
+            logger.debugf("Marked IDP execution %s as SUCCESS", idpExecutionId);
+        }
+
+        // Reset flow path back to browser authentication path
+        authSession.setAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH, LoginActionsService.AUTHENTICATE_PATH);
+
+        String clientData = AuthenticationProcessor.getClientData(session, authSession);
+
+        URI redirect = LoginActionsService.loginActionsBaseUrl(session.getContext().getUri())
+            .path(LoginActionsService.AUTHENTICATE_PATH)
+            .queryParam(Constants.CLIENT_ID, authSession.getClient().getClientId())
+            .queryParam(Constants.TAB_ID, authSession.getTabId())
+            .queryParam(Constants.CLIENT_DATA, clientData)
+            .build(realmModel.getName());
+
+        return Response.status(302).location(redirect).build();
+    }
+
+    /**
+     * Prepares IDP tokens for later storage by setting broker session IDs early.
+     * The actual token storage happens later via authenticationFinished().
+     * This is called early in the authentication flow to ensure broker session info
+     * is available when browser flow continuation is used.
+     *
+     * @param authSession The authentication session
+     * @param context The brokered identity context containing tokens
+     */
+    private void prepareBrokerTokenStorage(AuthenticationSessionModel authSession,
+                                           BrokeredIdentityContext context) {
+        // Set broker session IDs early so they're available throughout the flow
+        authSession.setAuthNote(AuthenticationProcessor.BROKER_SESSION_ID, context.getBrokerSessionId());
+        authSession.setAuthNote(AuthenticationProcessor.BROKER_USER_ID, context.getBrokerUserId());
+
+        // Set provider info as user session notes (will be transferred to user session later)
+        authSession.setUserSessionNote(Details.IDENTITY_PROVIDER, context.getIdpConfig().getAlias());
+        authSession.setUserSessionNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+
+        // Mark that tokens should be stored after user is set
+        authSession.setAuthNote(AuthenticationProcessor.BROKER_TOKENS_PENDING, "true");
+
+        logger.debugf("Prepared broker token storage for provider '%s' and user '%s'",
+            context.getIdpConfig().getAlias(), context.getUsername());
     }
 
 }
