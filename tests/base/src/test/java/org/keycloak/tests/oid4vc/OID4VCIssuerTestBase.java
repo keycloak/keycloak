@@ -43,6 +43,7 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
@@ -61,11 +62,18 @@ import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 
+/**
+ * Abstract base class for OID4VCI Testing
+ *
+ * [TODO] Can the server runtime mode be configures by the testcase?
+ * Server-side debugging: KC_TEST_SERVER=embedded
+ */
 public abstract class OID4VCIssuerTestBase {
 
     final Logger log = Logger.getLogger(getClass());
 
     static final URI ISSUER_DID = URI.create("did:web:test.org");
+    static final String PUBLIC_CLIENT_ID = "test-app-pub";
     static final String TEST_CREDENTIAL_MAPPERS_FILE = "/oid4vc/test-credential-mappers.json";
 
     static final String jwtTypeCredentialScopeName = "jwt-credential";
@@ -146,7 +154,7 @@ public abstract class OID4VCIssuerTestBase {
         // Update the test clients
         //
         ClientsResource clientsResource = realmResource.clients();
-        for (String cid : List.of(clientId)) {
+        for (String cid : List.of(clientId, PUBLIC_CLIENT_ID)) {
             ClientRepresentation client = clientsResource.findByClientId(cid).get(0);
             ClientResource clientResource = clientsResource.get(client.getId());
 
@@ -396,6 +404,12 @@ public abstract class OID4VCIssuerTestBase {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name(TEST_REALM_NAME);
+            realm.client(ClientConfigBuilder.create()
+                    .clientId(PUBLIC_CLIENT_ID)
+                    .publicClient(true)
+                    .redirectUris("http://127.0.0.1:8500/callback/oauth")
+                    .attribute("pkce.code.challenge.method", "S256")  // require PKCE
+                    .build());
             return realm;
         }
     }

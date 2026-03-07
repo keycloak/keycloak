@@ -36,6 +36,7 @@ import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -92,6 +93,14 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
             // so we can also support clients overriding flows and using challenges (e.g: basic) to authenticate their users
             if (formData.containsKey(OAuth2Constants.CLIENT_ID)) {
                 client_id = formData.getFirst(OAuth2Constants.CLIENT_ID);
+                if (client_id.startsWith("did:") && formData.containsKey(OAuth2Constants.CODE)) {
+                    // Derive the client_id from the auth code
+                    // @see OAuth2CodeParser.persistCode(...)
+                    RealmModel realm = context.getRealm();
+                    String[] code = formData.getFirst(OAuth2Constants.CODE).split("\\.");
+                    ClientModel clientModel = context.getSession().clients().getClientById(realm, code[2]);
+                    client_id = clientModel.getClientId();
+                }
             }
             if (formData.containsKey(OAuth2Constants.CLIENT_SECRET)) {
                 clientSecret = formData.getFirst(OAuth2Constants.CLIENT_SECRET);

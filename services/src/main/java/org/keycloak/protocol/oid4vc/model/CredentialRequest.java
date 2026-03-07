@@ -17,12 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import java.util.Map;
-import java.util.Optional;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -30,7 +25,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 /**
  * Represents a CredentialRequest according to OID4VCI
@@ -130,29 +124,8 @@ public class CredentialRequest {
         return this;
     }
 
-    public Optional<CredentialScopeModel> findCredentialScope(KeycloakSession keycloakSession) {
-        Map<String, String> searchAttributeMap =
-                Optional.ofNullable(credentialConfigurationId)
-                        .map(credentialIdentifier -> {
-                            return Map.of(CredentialScopeModel.VC_CONFIGURATION_ID, credentialConfigurationId);
-                        }).orElseGet(() -> {
-                            return Map.of(CredentialScopeModel.VC_IDENTIFIER, credentialIdentifier);
-                        });
-
-        RealmModel currentRealm = keycloakSession.getContext().getRealm();
-        final boolean useOrExpression = false;
-        return keycloakSession.clientScopes()
-                .getClientScopesByAttributes(currentRealm, searchAttributeMap, useOrExpression)
-                .map(CredentialScopeModel::new)
-                .findAny();
-    }
-
     @Override
     public String toString() {
-        try {
-            return JsonSerialization.mapper.writeValueAsString(this);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        return JsonSerialization.valueAsString(this);
     }
 }
