@@ -54,6 +54,7 @@ import org.junit.jupiter.api.Test;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.IMPERSONATE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.RESET_PASSWORD;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
@@ -353,6 +354,33 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
             // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/b5c95e9f1c58bc500316dd5c0f2d3bb5e197ca99/services/src/main/java/org/keycloak/services/resources/admin/UserResource.java#L1060
             assertThat(ex, instanceOf(NotFoundException.class));
         }
+    }
+
+    @Test
+    public void testManageGroupMembershipDeniedForProtectedGroupMembers() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        UserPolicyRepresentation denyMyAdminPermission = createUserPolicy(Logic.NEGATIVE, realm, client, "Not My Admin User Policy", myadmin.getId());
+        GroupRepresentation vault = createGroup("vault");
+        GroupRepresentation target = createGroup("target");
+        UserRepresentation userBob = createUser("bob");
+
+        realm.admin().users().get(userAlice.getId()).joinGroup(vault.getId());
+
+        createAllPermission(client, usersType, allowMyAdminPermission, Set.of(MANAGE_GROUP_MEMBERSHIP));
+        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP));
+        createPermission(client, vault.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, Set.of(MANAGE_MEMBERSHIP), denyMyAdminPermission);
+
+        realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
+        assertTrue(realm.admin().users().get(userBob.getId()).groups().stream().anyMatch(group -> target.getId().equals(group.getId())));
+
+        try {
+            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup(target.getId());
+            fail("Expected Exception wasn't thrown.");
+        } catch (ForbiddenException expected) {
+        }
+
+        assertFalse(realm.admin().users().get(userAlice.getId()).groups().stream().anyMatch(group -> target.getId().equals(group.getId())));
     }
 
     @Test
