@@ -35,6 +35,9 @@ import org.keycloak.VCFormat;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.jose.jws.JWSHeader;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
@@ -63,6 +66,7 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
@@ -1373,4 +1377,78 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         assertNotNull("Access token should be present", accessTokenResponse.getAccessToken());
         assertFalse("Access token should not be empty", accessTokenResponse.getAccessToken().isEmpty());
     }
+
+    @Test
+    public void testCredentialIssuerSigningDefaultKeyAndAlg() {
+        KeysMetadataRepresentation keyMetadata = testRealm().keys().getKeyMetadata();
+
+        String kid = "";
+        String alg = "";
+        jwtTypeCredentialClientScope.getAttributes().put(CredentialScopeModel.SIGNING_KEY_ID, kid);
+        jwtTypeCredentialClientScope.getAttributes().put(CredentialScopeModel.SIGNING_ALG, alg);
+        testRealm().clientScopes().get(jwtTypeCredentialClientScope.getId()).update(jwtTypeCredentialClientScope);
+        testCredentialIssuanceSigningConfiguration(keyMetadata.getActive().get(Constants.DEFAULT_SIGNATURE_ALGORITHM), Constants.DEFAULT_SIGNATURE_ALGORITHM);
+    }
+
+    @Test
+    public void testCredentialIssuerSigningSpecificAlg() {
+        String kid = "";
+        String alg = Algorithm.ES256;
+        jwtTypeCredentialClientScope.getAttributes().put(CredentialScopeModel.SIGNING_KEY_ID, kid);
+        jwtTypeCredentialClientScope.getAttributes().put(CredentialScopeModel.SIGNING_ALG, alg);
+        testRealm().clientScopes().get(jwtTypeCredentialClientScope.getId()).update(jwtTypeCredentialClientScope);
+        testCredentialIssuanceSigningConfiguration(null, Algorithm.ES256);
+    }
+
+    @Test
+    public void testCredentialIssuerSigningSpecificKey() {
+        KeysMetadataRepresentation keyMetadata = testRealm().keys().getKeyMetadata();
+
+        String kid = keyMetadata.getActive().get(Constants.DEFAULT_SIGNATURE_ALGORITHM);
+        String alg = Constants.DEFAULT_SIGNATURE_ALGORITHM;
+        jwtTypeCredentialClientScope.getAttributes().put(CredentialScopeModel.SIGNING_KEY_ID, kid);
+        jwtTypeCredentialClientScope.getAttributes().put(CredentialScopeModel.SIGNING_ALG, alg);
+        testRealm().clientScopes().get(jwtTypeCredentialClientScope.getId()).update(jwtTypeCredentialClientScope);
+        testCredentialIssuanceSigningConfiguration(keyMetadata.getActive().get(Constants.DEFAULT_SIGNATURE_ALGORITHM), Constants.DEFAULT_SIGNATURE_ALGORITHM);
+    }
+
+    public void testCredentialIssuanceSigningConfiguration(String kid, String alg) {
+        String scopeName = jwtTypeCredentialClientScope.getName();
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(credConfigId);
+        authDetail.setLocations(List.of(credentialIssuer.getCredentialIssuer()));
+
+        testCredentialIssuanceWithAuthZCodeFlow(jwtTypeCredentialClientScope,
+                (testClientId, testScope) -> {
+                    String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+                    return getBearerToken(oauth, authCode, authDetail).getAccessToken();
+                },
+                m -> {
+                    String accessToken = (String) m.get("accessToken");
+                    WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
+                    CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
+
+                    try (Response response = credentialTarget.request()
+                            .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
+                            .post(Entity.json(credentialRequest))) {
+                        assertEquals(200, response.getStatus());
+                        CredentialResponse credentialResponse = JsonSerialization.readValue(response.readEntity(String.class),
+                                CredentialResponse.class);
+                        JWSHeader jwsHeader = TokenVerifier.create((String) credentialResponse.getCredentials().get(0).getCredential(),
+                                JsonWebToken.class).getHeader();
+
+                        if (kid != null) {
+                            Assert.assertEquals(jwsHeader.getKeyId(), kid);
+                        }
+                        Assert.assertEquals(jwsHeader.getRawAlgorithm(), alg);
+
+                    } catch (VerificationException | IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+    }
+
 }
