@@ -63,6 +63,7 @@ public class UserAttributeMapper extends AbstractClaimMapper {
         property1.setLabel("Claim");
         property1.setHelpText("Name of claim to search for in token. You can reference nested claims using a '.', i.e. 'address.locality'. To use dot (.) literally, escape it with backslash (\\.)");
         property1.setType(ProviderConfigProperty.STRING_TYPE);
+        property1.setRequired(true);
         configProperties.add(property1);
         property = new ProviderConfigProperty();
         property.setName(USER_ATTRIBUTE);
