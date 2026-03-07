@@ -31,6 +31,7 @@ import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 
 import org.jboss.logging.Logger;
@@ -46,7 +47,7 @@ public abstract class KeycloakApplication extends Application {
 
     private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
 
-    private static KeycloakSessionFactory sessionFactory;
+    private static DefaultKeycloakSessionFactory sessionFactory;
 
     public KeycloakApplication() {
         try {
@@ -82,6 +83,7 @@ public abstract class KeycloakApplication extends Application {
         Profile.getInstance().logUnsupportedFeatures();
         CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
         KeycloakApplication.sessionFactory = createSessionFactory();
+        KeycloakApplication.sessionFactory.init();
 
         setTransactionTimeout();
         var exportImportManager = KeycloakModelUtils.runJobInTransactionWithResult(sessionFactory, session -> {
@@ -112,6 +114,7 @@ public abstract class KeycloakApplication extends Application {
     protected void shutdown() {
         if (sessionFactory != null) {
             sessionFactory.close();
+            sessionFactory = null;
         }
     }
 
@@ -144,9 +147,9 @@ public abstract class KeycloakApplication extends Application {
 
     protected abstract void initAndStart();
 
-    protected abstract KeycloakSessionFactory createSessionFactory();
+    protected abstract DefaultKeycloakSessionFactory createSessionFactory();
 
-    public static KeycloakSessionFactory getSessionFactory() {
+    public static DefaultKeycloakSessionFactory getSessionFactory() {
         return sessionFactory;
     }
 

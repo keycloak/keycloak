@@ -26,8 +26,8 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
 import org.keycloak.services.error.KeycloakErrorHandler;
 import org.keycloak.services.error.KeycloakMismatchedInputExceptionHandler;
@@ -91,10 +91,8 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
-    protected KeycloakSessionFactory createSessionFactory() {
-        ResteasyKeycloakSessionFactory factory = new ResteasyKeycloakSessionFactory();
-        factory.init();
-        return factory;
+    protected DefaultKeycloakSessionFactory createSessionFactory() {
+        return new ResteasyKeycloakSessionFactory();
     }
 
     @Override

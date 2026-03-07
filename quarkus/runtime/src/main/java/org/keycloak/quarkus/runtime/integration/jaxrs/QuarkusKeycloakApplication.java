@@ -30,11 +30,13 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.utils.StringUtil;
 
+import io.quarkus.arc.Arc;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
@@ -72,10 +74,8 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
-    public KeycloakSessionFactory createSessionFactory() {
-        QuarkusKeycloakSessionFactory instance = QuarkusKeycloakSessionFactory.getInstance();
-        instance.init();
-        return instance;
+    public DefaultKeycloakSessionFactory createSessionFactory() {
+        return Arc.container().instance(QuarkusKeycloakSessionFactory.class).get();
     }
 
     @Override
