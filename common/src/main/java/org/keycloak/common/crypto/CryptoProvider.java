@@ -15,6 +15,12 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.spec.ECParameterSpec;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
@@ -101,15 +107,30 @@ public interface CryptoProvider {
      * @return Keystore types/algorithms supported by this CryptoProvider
      */
     default Stream<KeystoreFormat> getSupportedKeyStoreTypes() {
-        return Stream.of(KeystoreFormat.values())
-                .filter(format -> {
-                    try {
-                        getKeyStore(format);
-                        return true;
-                    } catch (KeyStoreException | NoSuchProviderException ex) {
-                        return false;
-                    }
-                });
+        return SupportedKeyStoreTypesCache.INSTANCE.computeIfAbsent(this.getClass(), clazz ->
+                Arrays.stream(KeystoreFormat.values())
+                        .filter(format -> {
+                            try {
+                                this.getKeyStore(format);
+                                return true;
+                            } catch (KeyStoreException | NoSuchProviderException ex) {
+                                return false;
+                            }
+                        })
+                        .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList))
+        ).stream();
+    }
+
+    /**
+     * Holder for the per-provider-class cache of supported keystore types.
+     * Using a nested class avoids adding a static field directly to the interface
+     * while still providing lazy, thread-safe initialisation.
+     */
+    static class SupportedKeyStoreTypesCache {
+        static final Map<Class<?>, List<KeystoreFormat>> INSTANCE = new ConcurrentHashMap<>();
+
+        private SupportedKeyStoreTypesCache() {
+        }
     }
 
     CertificateFactory getX509CertFactory() throws CertificateException, NoSuchProviderException;
