@@ -13,6 +13,9 @@ import org.hamcrest.TypeSafeMatcher;
  */
 public class EventMatchers {
 
+    private EventMatchers() {
+    }
+
     /**
      * Check if value is a UUID
      * @return
@@ -55,9 +58,6 @@ public class EventMatchers {
                 description.appendText("not an base64 ID with at least 128bits");
             }
         };
-    }
-
-    private EventMatchers() {
     }
 
     private static class UUIDMatcher extends TypeSafeMatcher<String> {
