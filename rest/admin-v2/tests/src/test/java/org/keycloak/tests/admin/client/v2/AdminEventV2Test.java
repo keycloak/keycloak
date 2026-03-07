@@ -64,6 +64,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -362,11 +363,9 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
     }
 
     private void deleteClient(String clientId) throws Exception {
-        HttpDelete deleteRequest = new HttpDelete(getClientsApiUrl() + "/" + clientId);
-        setAuthHeader(deleteRequest);
-        try (var response = client.execute(deleteRequest)) {
-            assertEquals(204, response.getStatusLine().getStatusCode());
-        }
+        //TODO adjust when <code>deleteClient()</code> returns something. Assert on response code
+        adminClient.clients(masterRealm.getName()).v2().client(clientId).deleteClient();
+        assertNull(adminClient.clients(masterRealm.getName()).v2().client(clientId).getClient());
     }
 
     private OIDCClientRepresentation getTestClientRepresentation() {
