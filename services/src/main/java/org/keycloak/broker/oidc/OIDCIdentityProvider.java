@@ -1076,7 +1076,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 ? new FederatedJWTClientValidator(context, v -> verifySignature(v.getJws()), config.getIssuer(),
                         config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse(), config.getClientId())
                 : new FederatedJWTClientValidator(context, v -> verifySignature(v.getJws()), config.getIssuer(),
-                        config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse());
+                        config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse(), getAllowedClientAssertionAudiences(config));
 
         if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_FEDERATED)) {
             return false;

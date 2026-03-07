@@ -6,6 +6,7 @@ import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthe
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -169,6 +170,28 @@ public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
 
             return realm;
         }
+    }
+
+
+    @Test
+    public void testClientAssertionAllowedAudience() {
+        String customAudience = "https://custom-audience.example.test";
+
+        // Set custom audience on the IDP
+        realm.updateIdentityProvider(idpAlias, rep -> {
+            rep.getConfig().put(IdentityProviderModel.FEDERATED_CLIENT_ASSERTION_AUDIENCE, customAudience);
+        });
+
+        // Token with the custom audience should succeed
+        JsonWebToken jwt = createDefaultToken();
+        jwt.audience(customAudience);
+        assertSuccess(internalClientId, doClientGrant(jwt));
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+
+        // Token with the default realm issuer audience should fail
+        jwt = createDefaultToken();
+        assertFailure("Invalid token audience", doClientGrant(jwt));
+        assertFailure(internalClientId, expectedTokenIssuer, externalClientId, jwt.getId(), events.poll());
     }
 
     @Override

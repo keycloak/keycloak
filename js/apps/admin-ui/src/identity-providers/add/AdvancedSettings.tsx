@@ -353,6 +353,16 @@ export const AdvancedSettings = ({
           supportsClientAssertions === "true") ||
           (jwtAuthorizationGrant &&
             jwtAuthorizationGrantEnabled === "true")) && (
+          <TextField
+            field="config.fedClientAssertionAudience"
+            label="fedClientAssertionAudience"
+          />
+        )}
+      {isOIDC &&
+        ((isClientAuthFederatedEnabled &&
+          supportsClientAssertions === "true") ||
+          (jwtAuthorizationGrant &&
+            jwtAuthorizationGrantEnabled === "true")) && (
           <FormGroupField label="fedClientAssertionMaxExp">
             <Controller
               name="config.fedClientAssertionMaxExp"

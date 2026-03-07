@@ -75,6 +75,26 @@ test.describe.serial("OIDC identity provider test", () => {
 
     await assertNotificationMessage(page, "Provider successfully updated");
   });
+
+  test("should set and persist federated client assertion audience", async ({
+    page,
+  }) => {
+    await clickTableRowItem(page, oidcProviderName);
+
+    await switchOn(page, "#supportsClientAssertions");
+
+    const customAudience = "https://my-audience.example.com";
+    await page.getByTestId("fedClientAssertionAudience").fill(customAudience);
+    await clickSaveButton(page);
+    await assertNotificationMessage(page, "Provider successfully updated");
+
+    await goToIdentityProviders(page);
+    await clickTableRowItem(page, oidcProviderName);
+
+    await expect(page.getByTestId("fedClientAssertionAudience")).toHaveValue(
+      customAudience,
+    );
+  });
 });
 
 test.describe.serial("Edit OIDC Provider", () => {

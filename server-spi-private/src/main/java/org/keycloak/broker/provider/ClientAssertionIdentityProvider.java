@@ -7,4 +7,11 @@ public interface ClientAssertionIdentityProvider<C extends IdentityProviderModel
 
     boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception;
 
+    default String[] getAllowedClientAssertionAudiences(C config) {
+        String[] expectedClientAssertionAudiences = null;
+        if (config.getFederatedClientAssertionAudience() != null) {
+            expectedClientAssertionAudiences = new String[]{config.getFederatedClientAssertionAudience()};
+        }
+        return expectedClientAssertionAudiences;
+    }
 }
