@@ -1,14 +1,17 @@
 package org.keycloak.tests.scim.tck;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttribute;
@@ -22,9 +25,11 @@ import org.keycloak.scim.resource.common.Email;
 import org.keycloak.scim.resource.common.Name;
 import org.keycloak.scim.resource.user.EnterpriseUser;
 import org.keycloak.scim.resource.user.EnterpriseUser.Manager;
+import org.keycloak.scim.resource.user.GroupMembership;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.util.ApiUtil;
@@ -601,6 +606,16 @@ public class UserTest extends AbstractScimTest {
         expected.setActive(false);
         assertRootAttributes(actual, expected);
 
+        // patch a multivalued attribute using a filter in the path that does not resolve to any value, no update should be performed
+        String expectedEmail = expected.getEmail();
+        expected.setEmail(expected.getEmail().replace("patched4.org", "patched5.org"));
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("emails[type eq \"work\"].primary", expected.getEmail())
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setEmail(expectedEmail);
+        assertRootAttributes(actual, expected);
+
         // patch an attribute from an extension schema
         configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
                 ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
@@ -691,6 +706,110 @@ public class UserTest extends AbstractScimTest {
         assertNotNull(actual.getEnterpriseUser());
         assertNull(actual.getEnterpriseUser().getEmployeeNumber());
         assertEquals("5678", actual.getEnterpriseUser().getCostCenter());
+    }
+
+    @Test
+    public void testUserMembership() {
+        GroupRepresentation groupA = createGroup("Group A");
+        GroupRepresentation groupA1 = createSubGroup(groupA, "Group A1");
+        GroupRepresentation groupA2 = createSubGroup(groupA, "Group A2");
+        GroupRepresentation groupA21 = createSubGroup(groupA2, "Group A21");
+        GroupRepresentation groupB = createGroup("Group B");
+        GroupRepresentation groupC = createGroup("Group C");
+        GroupRepresentation groupC1 = createSubGroup(groupC, "Group C1");
+
+        User user = createUser();
+
+        user.addGroup(groupA.getId());
+        user.addGroup(groupA1.getId());
+        user.addGroup(groupA2.getId());
+        user.addGroup(groupA21.getId());
+        user.addGroup(groupB.getId());
+        user.addGroup(groupC1.getId());
+
+        User expected = client.users().create(user);
+        User actual = client.users().get(expected.getId());
+
+        List<GroupMembership> groups = actual.getGroups();
+
+        assertNotNull(groups);
+        assertEquals(7, groups.size());
+        assertGroup(groups, groupA, "direct");
+        assertGroup(groups, groupC, "indirect");
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .remove("groups[value eq \"" + groupC1.getId() + "\"]")
+                .build());
+        actual = client.users().get(expected.getId());
+        groups = actual.getGroups();
+        assertNotNull(groups);
+        assertEquals(5, groups.size());
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .remove("groups[value eq \"" + groupA1.getId() + "\"]")
+                .remove("groups[value eq \"" + groupB.getId() + "\"]")
+                .build());
+        actual = client.users().get(expected.getId());
+        groups = actual.getGroups();
+        assertNotNull(groups);
+        assertEquals(3, groups.size());
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("groups", groupC1.getId())
+                .build());
+        actual = client.users().get(expected.getId());
+        groups = actual.getGroups();
+        assertNotNull(groups);
+        assertEquals(5, groups.size());
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("groups", groupA1.getId())
+                .add("groups", groupB.getId())
+                .build());
+        actual = client.users().get(expected.getId());
+        groups = actual.getGroups();
+        assertNotNull(groups);
+        assertEquals(7, groups.size());
+
+        expected = actual;
+        expected.getGroups().clear();
+        expected.addGroup(groupA.getId());
+        client.users().update(expected);
+        actual = client.users().get(expected.getId());
+        groups = actual.getGroups();
+        assertNotNull(groups);
+        assertEquals(1, groups.size());
+    }
+
+    private static void assertGroup(List<GroupMembership> groups, GroupRepresentation group, String type) {
+        assertTrue(groups.stream().anyMatch(membership -> {
+            boolean found = group.getId().equals(membership.getValue()) && group.getName().equals(membership.getDisplay());
+
+            if (found) {
+                return type.equals(membership.getType());
+            }
+
+            return false;
+        }));
+    }
+
+    private GroupRepresentation createGroup(String name) {
+        GroupRepresentation group = GroupConfigBuilder.create().name(name).build();
+        try (Response response = realm.admin().groups().add(group)) {
+            group.setId(ApiUtil.getCreatedId(response));
+        }
+        return group;
+    }
+
+    private GroupRepresentation createSubGroup(GroupRepresentation parent, String name) {
+        GroupResource parentApi = realm.admin().groups().group(parent.getId());
+        GroupRepresentation subGroup = GroupConfigBuilder.create().name(name).build();
+
+        try (Response response = parentApi.subGroup(subGroup)) {
+            subGroup.setId(ApiUtil.getCreatedId(response));
+        }
+
+        return subGroup;
     }
 
     private void assertRootAttributes(User actual, User expected) {

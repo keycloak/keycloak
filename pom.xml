@@ -88,8 +88,8 @@
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <microprofile-metrics-api.version>5.1.2</microprofile-metrics-api.version>
-        <infinispan.version>16.0.5</infinispan.version>
-        <protostream.version>6.0.3</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
+        <infinispan.version>16.0.7</infinispan.version>
+        <protostream.version>6.0.4</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
         <protostream.plugin.version>${protostream.version}</protostream.plugin.version>
 
         <!--JAKARTA-->

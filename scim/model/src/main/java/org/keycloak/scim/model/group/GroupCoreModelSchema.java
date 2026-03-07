@@ -23,7 +23,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     }
 
     @Override
-    protected Set<String> getAttributeNames(GroupModel model) {
+    protected Set<String> getModelAttributeNames() {
         return Set.of("name");
     }
 
@@ -36,7 +36,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     }
 
     @Override
-    protected String getAttributeSchemaName(GroupModel model, String name) {
+    protected String getAttributeSchemaName(String name) {
         if (name.equals("name")) {
             return "displayName";
         }
@@ -47,13 +47,13 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     protected Map<String, Attribute<GroupModel, Group>> doGetAttributes() {
         return new ArrayList<>((Attribute.<GroupModel, Group>simple("displayName")
                     .primary()
-                    .modelAttributeResolver((session, attribute) -> {
+                    .modelAttributeResolver((attribute) -> {
                         if (attribute.getName().equals("displayName")) {
                             return "name";
                         }
                         return null;
                     })
-                    .withSetters(GroupModel::setName)
+                    .withModelSetter(GroupModel::setName)
                     .build())).stream().collect(Collectors.toMap(Attribute::getName, Function.identity()));
     }
 }

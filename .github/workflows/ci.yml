@@ -1188,6 +1188,27 @@ jobs:
       - name: Run tests
         run: ./mvnw package -f tests/pom.xml -Dtest=${{ matrix.suite }}
 
+  scim-integration-tests:
+    name: SCIM IT
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+        # This step is necessary because test/clustering requires building a new Keycloak image built from tar.gz
+        # file that is not part of m2-keycloak.tzts archive
+      - name: Build tar keycloak-quarkus-dist
+        run: ./mvnw package -pl quarkus/server/,quarkus/dist/
+
+      - name: Run tests
+        run: ./mvnw package -f scim/tests/pom.xml
+
   admin-v2-tests:
     name: Admin v2
     if: needs.conditional.outputs.ci-admin-v2 == 'true'
@@ -1196,6 +1217,10 @@ jobs:
       - build
       - conditional
     timeout-minutes: 20
+    strategy:
+      matrix:
+        service-type: [ new-service, v1-service ]
+      fail-fast: false
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
@@ -1204,7 +1229,12 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run tests
-        run: ./mvnw verify -pl rest/admin-v2/tests/pom.xml
+        run: |
+          declare -A PARAMS
+          PARAMS["new-service"]="-Dkc.admin-v2.client-service.legacy.enabled=false"
+          PARAMS["v1-service"]=""
+          
+          ./mvnw verify -pl rest/admin-v2/tests/pom.xml ${PARAMS["${{ matrix.service-type }}"]}
 
   mixed-cluster-compatibility-tests:
     name: Cluster Compatibility Tests
