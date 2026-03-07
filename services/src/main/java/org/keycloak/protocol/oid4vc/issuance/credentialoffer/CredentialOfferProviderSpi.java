@@ -16,22 +16,14 @@
  */
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.Provider;
+import org.keycloak.provider.Spi;
 
-public interface CredentialOfferStorage extends Provider {
-
-    void putOfferState(KeycloakSession session, CredentialOfferState entry);
-
-    CredentialOfferState getOfferStateById(KeycloakSession session, String offerId);
-
-    CredentialOfferState getOfferStateByNonce(KeycloakSession session, String nonce);
-
-    CredentialOfferState getOfferStateByPreAuthCode(KeycloakSession session, String code);
-
-    void removeOfferState(KeycloakSession session, CredentialOfferState entry);
-
-    @Override
-    default void close() {
-    }
+/**
+ * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
+ */
+public class CredentialOfferProviderSpi implements Spi {
+    @Override public String getName() { return "credential-offer-provider"; }
+    @Override public Class<CredentialOfferProvider> getProviderClass() { return CredentialOfferProvider.class; }
+    @Override public Class<CredentialOfferProviderFactory> getProviderFactoryClass() { return CredentialOfferProviderFactory.class; }
+    @Override public boolean isInternal() { return false; }
 }
