@@ -100,6 +100,7 @@ public class RealmRepresentation {
     protected Long quickLoginCheckMilliSeconds;
     protected Integer maxDeltaTimeSeconds;
     protected Integer failureFactor;
+    protected Integer maxSecondaryAuthFailures;
     //--- end brute force settings
 
     @Deprecated
@@ -851,6 +852,14 @@ public class RealmRepresentation {
 
     public void setFailureFactor(Integer failureFactor) {
         this.failureFactor = failureFactor;
+    }
+
+    public Integer getMaxSecondaryAuthFailures() {
+        return maxSecondaryAuthFailures;
+    }
+
+    public void setMaxSecondaryAuthFailures(Integer maxSecondaryAuthFailures) {
+        this.maxSecondaryAuthFailures = maxSecondaryAuthFailures;
     }
 
     public Boolean isEventsEnabled() {

@@ -73,6 +73,7 @@ Enabling an user account resets the `count`.
 .Lockout temporarily
 image:images/brute-force-temporarily.png[]
 
+
 *Temporary Lockout Parameters*
 
 |===
@@ -251,6 +252,11 @@ wait time will never reach the value you have set to `Max wait`.
 ====
 `count` does not increment when a temporarily disabled account commits a login failure.
 ====
+
+==== Secondary Authentication Failures Lockout
+When this lockout mechanism is enabled it is valid for all brute force modes. The mechanism is enabled when non zero value is set for `Maximum Secondary Authentication Failures`. It is disabled by default (`0`).
+
+If the maximum number secondary authentication failures is exceeded the account is permanently locked. This behavior prevents attacks on second factor authenticators such as OTP when attacker already guessed the password. The reasonable value might be set for `100`.
 
 ==== Downside of {project_name} brute force detection
 
