@@ -40,3 +40,4 @@
 :kubernetes: Kubernetes
 :keycloak_benchmark_link: https://www.keycloak.org/keycloak-benchmark/
 :keycloak_benchmark_name: Keycloak Benchmark Project
+:rhbk_supported_configurations_link: https://access.redhat.com/articles/7033107

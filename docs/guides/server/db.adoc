@@ -3,6 +3,7 @@
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
 <#import "/templates/profile.adoc" as profile>
+<#import "templates/databases.adoc" as databases>
 
 <@tmpl.guide title="Configuring the database" summary="Configure a relational database for {project_name} to store user, client, and realm data.">
 
@@ -12,20 +13,7 @@ This {section} explains how to configure the {project_name} server to store data
 
 The server has built-in support for different databases. You can query the available databases by viewing the expected values for the `db` configuration option. The following table lists the supported databases and their tested versions.
 
-[%autowidth]
-|===
-|Database | Option value | Tested Version | Supported Versions
-
-|MariaDB Server | `mariadb` | ${properties["mariadb.version"]} | 11.8 (LTS), 11.4 (LTS), 10.11 (LTS), 10.6 (LTS)
-|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]} | 2022, 2019
-|MySQL | `mysql` | ${properties["mysql.version"]} | 8.4 (LTS), 8.0 (LTS)
-|Oracle Database | `oracle` | ${properties["oracledb.version"]} | 23.x (i.e 23.5+), 19c (19.3+) (*Note:* Oracle RAC is also supported if using the same database engine version, e.g 23.5+, 19.3+)
-|PostgreSQL | `postgres` | ${properties["postgresql.version"]} | 18.x, 17.x, 16.x, 15.x, 14.x
-|EnterpriseDB Advanced | `postgres` | ${properties["edb.version"]} | 18.x, 17.x
-|Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]} | 17.x, 16.x, 15.x
-|Azure SQL Database | `mssql` | latest | latest
-|Azure SQL Managed Instance | `mssql` | latest | latest
-|===
+<@databases.supportedDatabases detailed=true/>
 
 NOTE: It is not a supported configuration if the underlying database specific Hibernate dialect allows the use of a version that differs from those shown.
 
