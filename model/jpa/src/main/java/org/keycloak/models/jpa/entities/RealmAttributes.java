@@ -50,6 +50,7 @@ public interface RealmAttributes {
     String WEBAUTHN_POLICY_ACCEPTABLE_AAGUIDS = "webAuthnPolicyAcceptableAaguids";
     String WEBAUTHN_POLICY_EXTRA_ORIGINS = "webAuthnPolicyExtraOrigins";
     String WEBAUTHN_POLICY_PASSKEYS_ENABLED = "webAuthnPolicyPasskeysEnabled";
+    String WEBAUTHN_POLICY_MEDIATION = "webAuthnPolicyMediation";
 
     String ADMIN_EVENTS_EXPIRATION = "adminEventsExpiration";
 

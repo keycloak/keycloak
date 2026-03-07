@@ -16,70 +16,75 @@ export function signal() {
 }
 
 export async function authenticateByWebAuthn(input) {
-    if (!input.isUserIdentified) {
-        try {
-            const result = await doAuthenticate([], input.challenge, input.userVerification, input.rpId, input.createTimeout, input.errmsg);
-            returnSuccess(result);
-        } catch (error) {
-            returnFailure(error);
-        }
-        return;
-    }
-    checkAllowCredentials(input.challenge, input.userVerification, input.rpId, input.createTimeout, input.errmsg);
-}
-
-async function checkAllowCredentials(challenge, userVerification, rpId, createTimeout, errmsg) {
-    const allowCredentials = [];
-    const authnUse = document.forms['authn_select'].authn_use_chk;
-    if (authnUse !== undefined) {
-        if (authnUse.length === undefined) {
-            allowCredentials.push({
-                id: base64url.parse(authnUse.value, {loose: true}),
-                type: 'public-key',
-            });
-        } else {
-            authnUse.forEach((entry) =>
-                allowCredentials.push({
-                    id: base64url.parse(entry.value, {loose: true}),
-                    type: 'public-key',
-                }));
-        }
-    }
+    const allowCredentials = input.isUserIdentified ? getAllowCredentials() : [];
     try {
-        const result = await doAuthenticate(allowCredentials, challenge, userVerification, rpId, createTimeout, errmsg);
-        returnSuccess(result);
+        const result = await doAuthenticate({ ...input, allowCredentials });
+        if (result) returnSuccess(result);
     } catch (error) {
         returnFailure(error);
     }
 }
 
-function doAuthenticate(allowCredentials, challenge, userVerification, rpId, createTimeout, errmsg) {
+/**
+ * Reads the allowed credentials from the hidden authn_select form.
+ * Exported so that passkeysConditionalAuth.js can use them as well.
+ */
+export function getAllowCredentials() {
+    const allowCredentials = [];
+    const authnUse = document.forms['authn_select']?.authn_use_chk;
+    if (authnUse !== undefined) {
+        if (authnUse.length === undefined) {
+            allowCredentials.push({
+                id: base64url.parse(authnUse.value, { loose: true }),
+                type: 'public-key',
+            });
+        } else {
+            authnUse.forEach((entry) =>
+                allowCredentials.push({
+                    id: base64url.parse(entry.value, { loose: true }),
+                    type: 'public-key',
+                }));
+        }
+    }
+    return allowCredentials;
+}
+
+/**
+ * Core function for navigator.credentials.get().
+ * Exported so that passkeysConditionalAuth.js does not need its own copy.
+ *
+ * input: { challenge, userVerification, rpId, createTimeout, errmsg,
+ *           allowCredentials?: PublicKeyCredentialDescriptor[],
+ *           additionalOptions?: object  ← e.g. { mediation: "conditional" | "optional" | "required" | "silent" } }
+ */
+export function doAuthenticate(input) {
     // Check if WebAuthn is supported by this browser
     if (!window.PublicKeyCredential) {
-        returnFailure(errmsg);
+        returnFailure(input.errmsg);
         return;
     }
 
     const publicKey = {
-        rpId : rpId,
-        challenge: base64url.parse(challenge, { loose: true })
+        rpId: input.rpId,
+        challenge: base64url.parse(input.challenge, { loose: true }),
     };
 
-    if (createTimeout !== 0) {
-        publicKey.timeout = createTimeout * 1000;
+    if (input.createTimeout !== 0) {
+        publicKey.timeout = input.createTimeout * 1000;
     }
 
-    if (allowCredentials.length) {
-        publicKey.allowCredentials = allowCredentials;
+    if (input.allowCredentials !== undefined) {
+        publicKey.allowCredentials = input.allowCredentials;
     }
 
-    if (userVerification !== 'not specified') {
-        publicKey.userVerification = userVerification;
+    if (input.userVerification !== 'not specified') {
+        publicKey.userVerification = input.userVerification;
     }
 
     return navigator.credentials.get({
         publicKey: publicKey,
-        signal: signal()
+        signal: signal(),
+        ...input.additionalOptions,
     });
 }
 

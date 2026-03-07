@@ -464,6 +464,11 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder webAuthnPolicyPasswordlessMediation(String mediation) {
+        rep.setWebAuthnPolicyPasswordlessMediation(mediation);
+        return this;
+    }
+
     public RealmBuilder webAuthnPolicyAcceptableAaguids(List<String> aaguids) {
         rep.setWebAuthnPolicyAcceptableAaguids(aaguids);
         return this;
