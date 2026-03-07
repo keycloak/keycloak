@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2025 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,27 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.keycloak.protocol.oidc.grants;
+package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
-
-import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 /**
- * Factory for Pre-Authorized Code Grant
+ * Factory for {@link DefaultCredentialOfferProvider}.
+ * <p/>
+ * This factory provides the default implementation of a {@link CredentialOfferProvider}.
  *
- * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
  */
-public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory, EnvironmentDependentProviderFactory {
+public class DefaultCredentialOfferProviderFactory implements CredentialOfferProviderFactory {
+
+    private static CredentialOfferProvider INSTANCE;
 
     @Override
-    public OAuth2GrantType create(KeycloakSession session) {
-        return new PreAuthorizedCodeGrantType();
+    public CredentialOfferProvider create(KeycloakSession session) {
+        if (INSTANCE == null) {
+            INSTANCE = new DefaultCredentialOfferProvider();
+        }
+        return INSTANCE;
     }
 
     @Override
@@ -46,22 +48,7 @@ public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory
     }
 
     @Override
-    public void close() {
-    }
-
-    @Override
     public String getId() {
-        return PRE_AUTH_GRANT_TYPE;
+        return "default";
     }
-
-    @Override
-    public String getShortcut() {
-        return "pc";
-    }
-
-    @Override
-    public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
-    }
-
 }

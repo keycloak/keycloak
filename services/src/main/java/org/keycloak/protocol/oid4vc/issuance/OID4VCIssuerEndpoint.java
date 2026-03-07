@@ -52,7 +52,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Details;
@@ -79,6 +78,7 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
@@ -103,14 +103,12 @@ import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.OfferResponseType;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
+import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -140,9 +138,10 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
-import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
+import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
+import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -154,6 +153,11 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_
 public class OID4VCIssuerEndpoint {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpoint.class);
+
+    /**
+     * Session note key for storing a potential credential offer ID
+     */
+    public static final String CREDENTIAL_OFFER_ID_NOTE = "CREDENTIAL_OFFER_ID";
 
     private Cors cors;
 
@@ -414,7 +418,7 @@ public class OID4VCIssuerEndpoint {
      * If the response contains a generated tx_code, which protects a pre-auth offer with a second layer of security,
      * this tx_code must be sent over an alternative communication channel (i.e. not together with the offer itself)
      *
-     * @param credConfigId  A valid credential configuration id
+     * @param credentialConfigurationId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized
      * @param targetUser    The username that the offer is authorized for
      * @param withTxCode    A flag whether a tx_code should be generated for a pre-auth offer
@@ -427,7 +431,7 @@ public class OID4VCIssuerEndpoint {
     @Produces({MediaType.APPLICATION_JSON, RESPONSE_TYPE_IMG_PNG})
     @Path(CREATE_CREDENTIAL_OFFER_PATH)
     public Response createCredentialOffer(
-            @QueryParam("credential_configuration_id") String credConfigId,
+            @QueryParam("credential_configuration_id") String credentialConfigurationId,
             @QueryParam("pre_authorized") @DefaultValue("true") Boolean preAuthorized,
             @QueryParam("tx_code") @DefaultValue("false") Boolean withTxCode,
             @QueryParam("target_user") String targetUser,
@@ -438,7 +442,8 @@ public class OID4VCIssuerEndpoint {
     ) {
         configureCors(true);
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
-        UserModel loginUserModel = clientSession.getUserSession().getUser();
+        UserSessionModel userSession = clientSession.getUserSession();
+        UserModel loginUserModel = userSession.getUser();
         ClientModel clientModel = clientSession.getClient();
         RealmModel realmModel = clientModel.getRealm();
 
@@ -446,8 +451,8 @@ public class OID4VCIssuerEndpoint {
         eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
                 .client(clientModel)
                 .user(loginUserModel)
-                .session(clientSession.getUserSession().getId())
-                .detail(Details.CREDENTIAL_TYPE, credConfigId)
+                .session(userSession.getId())
+                .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
                 .detail(Details.USERNAME, targetUser);
 
         cors.allowedOrigins(session, clientModel);
@@ -456,72 +461,19 @@ public class OID4VCIssuerEndpoint {
 
         // Verify required credConfigId
         //
-        if (Strings.isEmpty(credConfigId)) {
+        if (Strings.isEmpty(credentialConfigurationId)) {
             var errorMessage = "Missing credential configuration id";
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_REQUEST.getValue());
             throw new CorsErrorResponseException(cors,
-                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        // Check whether the credential configuration exists in available client scopes
-        //
-        ClientScopeModel credentialClientScope = session.clientScopes()
-                .getClientScopesByProtocol(realmModel, OID4VC_PROTOCOL)
-                .filter(it -> credConfigId.equals(it.getAttribute(VC_CONFIGURATION_ID)))
-                .findFirst()
-                .orElse(null);
-        if (credentialClientScope == null) {
-            var errorMessage = "Invalid credential configuration id: " + credConfigId;
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_REQUEST.getValue());
-            throw new CorsErrorResponseException(cors,
-                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
-        }
+        LOGGER.debugf("Create a credential offer for %s", credentialConfigurationId);
 
-        LOGGER.debugf("Create a credential offer for %s", credConfigId);
-
-        // If pre-authorized and targetUser is null or empty, it defaults to the user from the current login session
+        // For pre-auth offers, default the targetUser to the login user (self-issued offer)
         //
         if (preAuthorized && Strings.isEmpty(targetUser)) {
             targetUser = loginUserModel.getUsername();
-        }
-
-        UserModel targetUserModel = null;
-        if (targetUser != null) {
-
-            // Verify that the target user exists
-            //
-            targetUserModel = session.users().getUserByUsername(realmModel, targetUser);
-            if (targetUserModel == null) {
-                var errorMessage = "Not found user with username: " + targetUser;
-                eventBuilder.detail(Details.REASON, errorMessage).error(Errors.USER_NOT_FOUND);
-                throw new CorsErrorResponseException(cors,
-                        ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
-            }
-
-            // Verify that the target user is enabled
-            //
-            if (!targetUserModel.isEnabled()) {
-                var errorMessage = "User '" + targetUser + "' disabled";
-                eventBuilder.detail(Details.REASON, errorMessage).error(Errors.USER_DISABLED);
-                throw new CorsErrorResponseException(cors,
-                        ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
-            }
-        }
-
-        // Verify that the issuing user holds the required {@code credential_offer_create} role if `loginUser != targetUser`
-        //
-        //   - Targeted or Anonymous `authorization_code` grant
-        //   - Targeted `pre-authorized_code` grant
-        //
-        if (Strings.isEmpty(targetUser) || !loginUserModel.getUsername().equals(targetUser)) {
-            boolean hasCredentialOfferRole = loginUserModel.getRoleMappingsStream()
-                    .anyMatch(rm -> rm.getName().equals(CREDENTIAL_OFFER_CREATE.getName()));
-            if (!hasCredentialOfferRole) {
-                var errorMessage = "Credential offer creation requires role: " + CREDENTIAL_OFFER_CREATE.getName();
-                eventBuilder.detail(Details.REASON, errorMessage).error(Errors.NOT_ALLOWED);
-                throw new CorsErrorResponseException(cors,
-                        ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.FORBIDDEN);
-            }
         }
 
         if (expireAt == null) {
@@ -530,26 +482,21 @@ public class OID4VCIssuerEndpoint {
 
         // Create the CredentialsOffer
         //
-        CredentialsOffer credOffer = new CredentialsOffer()
-                .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
-                .setCredentialConfigurationIds(List.of(credConfigId));
-
-        if (preAuthorized) {
-            String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
-            credOffer.setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(
-                    new PreAuthorizedCode().setPreAuthorizedCode(code)));
-        }
-
-        // Create the CredentialOfferState
-        //
         String targetClientId = clientModel.getClientId();
-        String targetUserId = Optional.ofNullable(targetUserModel).map(UserModel::getId).orElse(null);
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt);
+        String grantType = preAuthorized ? PRE_AUTH_GRANT_TYPE : AUTH_CODE_GRANT_TYPE;
+        List<String> credentialConfigurationIds = List.of(credentialConfigurationId);
 
-        // Generate the TxCode
-        //
-        if (preAuthorized && withTxCode) {
-            offerState.generateTxCode();
+        CredentialOfferState offerState;
+        try {
+
+            CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
+            offerState = offerProvider.createCredentialOffer(session, userSession, grantType,
+                    credentialConfigurationIds, targetClientId, targetUser, withTxCode, expireAt);
+
+        } catch (CredentialOfferException ex) {
+            eventBuilder.detail(Details.REASON, ex.getMessage()).error(ex.getErrorType());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), ex.getMessage(), Response.Status.BAD_REQUEST);
         }
 
         // Store the CredentialOfferState
@@ -557,8 +504,9 @@ public class OID4VCIssuerEndpoint {
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
         offerStorage.putOfferState(session, offerState);
 
-        LOGGER.debugf("Stored credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
-                credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
+        String targetUserId = offerState.getTargetUserId();
+        LOGGER.debugf("Stored credential offer state: [grant=%s, ids=%s, cid=%s, uid=%s, nonce=%s]",
+                grantType, credentialConfigurationIds, offerState.getTargetClientId(), targetUserId, offerState.getNonce());
 
         // Add event details
         eventBuilder.detail(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(preAuthorized))
@@ -567,11 +515,11 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, targetUserId)
                 .success();
 
-        String redactedTxCode = !Strings.isEmpty(offerState.getTxCode()) ? "******" : null;
+        CredentialsOffer credOffer = offerState.getCredentialsOffer();
         CredentialOfferURI credOfferURI = new CredentialOfferURI()
                 .setIssuer(credOffer.getCredentialIssuer() + "/protocol/" + OID4VC_PROTOCOL + "/" + CREDENTIAL_OFFER_PATH)
                 .setNonce(offerState.getNonce())
-                .setTxCode(redactedTxCode);
+                .setTxCode(offerState.getTxCode());
 
         // Respond with QR-Code as 'image/png'
         if (responseType == OfferResponseType.QR) {
@@ -582,7 +530,7 @@ public class OID4VCIssuerEndpoint {
         // Respond with URI + QR-Code as 'application/json'
         if (responseType == OfferResponseType.URI_AND_QR) {
             byte[] qrBytes = generateQrCode(credOfferURI, width, height);
-            String encodedBytes = Arrays.toString(Base64.getEncoder().encode(qrBytes));
+            String encodedBytes = Base64.getEncoder().encodeToString(qrBytes);
             credOfferURI.setQrCode("data:image/png;base64," + encodedBytes);
             return cors.add(Response.ok().type(MediaType.APPLICATION_JSON).entity(credOfferURI));
         }
@@ -653,7 +601,7 @@ public class OID4VCIssuerEndpoint {
 
         // Retrieve the associated credential offer state
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-        CredentialOfferState offerState = offerStorage.findOfferStateByNonce(session, nonce);
+        CredentialOfferState offerState = offerStorage.getOfferStateByNonce(session, nonce);
         if (offerState == null) {
             var errorMessage = "Credential offer not found or already consumed";
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue());
@@ -664,7 +612,7 @@ public class OID4VCIssuerEndpoint {
         // i.e. an authenticated client/user session is not required nor checked against the offer state
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
         LOGGER.debugf("Found credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
-                credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
+                credOffer.getCredentialConfigurationIds(), offerState.getTargetClientId(), offerState.getTargetUserId(), offerState.getNonce());
 
         if (offerState.isExpired()) {
             var errorMessage = "Credential offer already expired";
@@ -685,11 +633,11 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("Removed credential offer nonce %s for replay protection", nonce);
 
         // Add event details
-        if (offerState.getClientId() != null) {
-            eventBuilder.client(offerState.getClientId());
+        if (offerState.getTargetClientId() != null) {
+            eventBuilder.client(offerState.getTargetClientId());
         }
-        if (offerState.getUserId() != null) {
-            eventBuilder.user(offerState.getUserId());
+        if (offerState.getTargetUserId() != null) {
+            eventBuilder.user(offerState.getTargetUserId());
         }
         if (credOffer.getCredentialConfigurationIds() != null && !credOffer.getCredentialConfigurationIds().isEmpty()) {
             eventBuilder.detail(Details.CREDENTIAL_TYPE, String.join(",", credOffer.getCredentialConfigurationIds()));
@@ -705,7 +653,7 @@ public class OID4VCIssuerEndpoint {
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
         String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
 
-        if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
+        if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PRE_AUTH_GRANT_TYPE)) {
             // Use getAuthResult() instead of bearerTokenAuthenticator.authenticate() directly
             // This ensures we benefit from the cachedAuthResult caching that prevents DPoP proof reuse
             AccessToken accessToken = getAuthResult().token();
@@ -715,7 +663,7 @@ public class OID4VCIssuerEndpoint {
                                 "scope in access token = %s.",
                         requestedCredential.getName(), accessToken.getScope());
                 throw new CorsErrorResponseException(cors,
-                        ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.toString(),
+                        ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue(),
                         "Scope check failure",
                         Response.Status.BAD_REQUEST);
             } else {
@@ -736,8 +684,8 @@ public class OID4VCIssuerEndpoint {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     @Path(CREDENTIAL_PATH)
     public Response requestCredential(String requestPayload) {
-        RealmModel realm = session.getContext().getRealm();
-        EventBuilder eventBuilder = new EventBuilder(realm, session, session.getContext().getConnection());
+        RealmModel realmModel = session.getContext().getRealm();
+        EventBuilder eventBuilder = new EventBuilder(realmModel, session, session.getContext().getConnection());
         eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_REQUEST);
 
         checkIsOid4vciEnabled(eventBuilder);
@@ -756,13 +704,7 @@ public class OID4VCIssuerEndpoint {
         CredentialIssuer issuerMetadata = (CredentialIssuer) new OID4VCIssuerWellKnownProvider(session).getConfig();
 
         // Validate request encryption
-        CredentialRequest credentialRequestVO;
-        try {
-            credentialRequestVO = validateRequestEncryption(requestPayload, issuerMetadata, eventBuilder);
-        } catch (BadRequestException e) {
-            // Event tracking already handled in validateRequestEncryption
-            throw e;
-        }
+        CredentialRequest credentialRequest = validateRequestEncryption(requestPayload, issuerMetadata, eventBuilder);
 
         // Authenticate first to fail fast on auth errors
         AuthenticationManager.AuthResult authResult = getAuthResult();
@@ -777,7 +719,7 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.USERNAME, userModel.getUsername());
 
         // Validate encryption parameters if present
-        CredentialResponseEncryption encryptionParams = credentialRequestVO.getCredentialResponseEncryption();
+        CredentialResponseEncryption encryptionParams = credentialRequest.getCredentialResponseEncryption();
         CredentialResponseEncryptionMetadata encryptionMetadata = OID4VCIssuerWellKnownProvider.getCredentialResponseEncryption(session);
         boolean isEncryptionRequired = Optional.ofNullable(encryptionMetadata)
                 .map(CredentialResponseEncryptionMetadata::getEncryptionRequired)
@@ -829,141 +771,190 @@ public class OID4VCIssuerEndpoint {
             }
         }
 
-        // checkClientEnabled call after authentication
+        // Check that client is enabled - call after authentication
+        //
         checkClientEnabled(eventBuilder);
 
-        // Per OID4VCI specification, credential_identifier is required when authorization_details are present.
-        // Since both pre-authorized and authorization code flows always include credential_identifiers
-        // in authorization_details, we always require credential_identifier in the credential request.
-
-        String credentialIdentifier = credentialRequestVO.getCredentialIdentifier();
-
-        // credential_identifier is required
-        if (credentialIdentifier == null) {
-            String errorMessage = "Missing credential_identifier in credential request. " +
-                    "Per OID4VCI specification, credential_identifier must be used when authorization_details are present.";
-            LOGGER.debugf(errorMessage);
+        // Verify that we have credential_configuration_id or credential_identifier
+        //
+        String requestedCredentialIdentifier = credentialRequest.getCredentialIdentifier();
+        String requestedCredentialConfigurationId = credentialRequest.getCredentialConfigurationId();
+        if (Strings.isEmpty(requestedCredentialIdentifier) && Strings.isEmpty(requestedCredentialConfigurationId)) {
+            String errorMessage = "No credential_configuration_id nor credential_identifier in credential request";
+            LOGGER.debug(errorMessage);
+            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+        }
+        if (!Strings.isEmpty(requestedCredentialIdentifier) && !Strings.isEmpty(requestedCredentialConfigurationId)) {
+            String errorMessage = "Both credential_configuration_id and credential_identifier in credential request";
+            LOGGER.debug(errorMessage);
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
 
-        CredentialScopeModel requestedCredential;
+        // Retrieve the optional credential offer state
+        // In case of credential request by scope, it will not be available
+        //
         CredentialOfferState offerState = null;
-        CredentialOfferStorage offerStorage = null;
-        OID4VCAuthorizationDetail authDetails;
+        CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
 
-        // When the CredentialRequest contains a credential identifier the caller must have gone through the
-        // CredentialOffer process or otherwise have set up a valid CredentialOfferState
+        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
+        String credOfferId = clientSession.getNote(CREDENTIAL_OFFER_ID_NOTE);
+        if (credOfferId != null) {
 
-        AccessToken accessToken = authResult.token();
+            offerState = offerStorage.getOfferStateById(session, credOfferId);
+            if (offerState == null) {
+                var errorMessage = "No credential offer state for: " + credOfferId;
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            }
 
-        // First check if the credential identifier exists
-        // This allows proper error reporting for unknown identifiers
-        offerStorage = session.getProvider(CredentialOfferStorage.class);
-        offerState = offerStorage.findOfferStateByCredentialId(session, credentialIdentifier);
-        if (offerState == null) {
-            var errorMessage = "No credential offer state for credential id: " + credentialIdentifier;
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER.getValue());
-            throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER, errorMessage));
+            // Verify the user login session
+            //
+            if (offerState.getTargetUserId() != null && !offerState.getTargetUserId().equals(userModel.getId())) {
+                var errorMessage = "Unexpected login user: " + userModel.getUsername();
+                LOGGER.errorf(errorMessage + " != %s", offerState.getTargetUserId());
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            }
+
+            // Verify the login client
+            //
+            if (offerState.getTargetClientId() != null && !offerState.getTargetClientId().equals(clientModel.getClientId())) {
+                var errorMessage = "Unexpected login client: " + clientModel.getClientId();
+                LOGGER.errorf(errorMessage + " != %s", offerState.getTargetClientId());
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            }
         }
 
-        // Get the credential_configuration_id from the offer state authorization details
-        authDetails = offerState.getAuthorizationDetails();
-        if (authDetails == null) {
-            var errorMessage = "No authorization_details found in offer state";
+        // Retrieve the authorization_detail from the AccessToken
+        //
+        // Currently we always have one element in authorization_details (also for request by scope)
+        // [TODO] Add support for multiple authorization_details in credential offer, request and token response
+        //
+        // REQUIRED when the authorization_details parameter, is used in either the Authorization Request or Token Request.
+        // OPTIONAL when scope parameter was used to request Credential of a certain Credential Configuration
+        // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-6.2
+        //
+        // When not provided, it is generated in {@link OID4VCAuthorizationDetailsProcessor}
+
+        AccessToken accessToken = authResult.token();
+        List<OID4VCAuthorizationDetail> tokenAuthDetails = getAuthorizationDetailsResponse(accessToken);
+        if (tokenAuthDetails == null || tokenAuthDetails.isEmpty()) {
+            var errorMessage = "No authorization_details in AccessToken";
+            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
+            throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
+        }
+        if (tokenAuthDetails.size() > 1) {
+            var errorMessage = "Multiple authorization_details not supported";
+            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+        }
+
+        OID4VCAuthorizationDetail tokenAuthDetail = tokenAuthDetails.get(0);
+        String authorizedCredentialConfigurationId = tokenAuthDetail.getCredentialConfigurationId();
+        List<String> authorizedCredentialIdentifiers = Optional.ofNullable(tokenAuthDetail.getCredentialIdentifiers()).orElse(List.of());
+
+        // AccessToken authorization_details MUST contain a credential_configuration_id
+        if (authorizedCredentialConfigurationId == null) {
+            var errorMessage = "No credential_configuration_id in AuthorizationDetails";
+            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
 
         // Validate that authorization_details from the token matches the offer state
         // This ensures the correct access token is being used for the credential request
-        OID4VCAuthorizationDetail tokenAuthDetails = getAuthorizationDetailFromToken(accessToken);
-        if (tokenAuthDetails == null) {
-            var errorMessage = "No authorization_details found in token";
-            throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
-        }
-
-        if (!tokenAuthDetails.equals(authDetails)) {
+        if (offerState != null && !List.of(tokenAuthDetail).equals(offerState.getAuthorizationDetails())) {
             var errorMessage = "Authorization details in access token do not match the credential offer state. " +
                     "The access token may not be the one issued for this credential offer.";
             LOGGER.debugf(errorMessage);
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_TOKEN.getValue());
+            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
 
-        // Validate that the credential_identifier in the request matches one in the authorization_details
-        List<String> credentialIdentifiers = authDetails.getCredentialIdentifiers();
-        if (credentialIdentifiers == null || !credentialIdentifiers.contains(credentialIdentifier)) {
-            var errorMessage = "Credential identifier '" + credentialIdentifier + "' not found in authorization_details. " +
-                    "The credential_identifier must match one from the authorization_details in the token.";
-            LOGGER.debugf(errorMessage);
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER.getValue());
-            throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER, errorMessage));
+        // Check request by credential_identifier
+        //
+        if (!Strings.isEmpty(requestedCredentialIdentifier)) {
+
+            // Verify that the requested credential_identifier in the request matches one in the authorization_details
+            //
+            if (!authorizedCredentialIdentifiers.contains(requestedCredentialIdentifier)) {
+                var errorMessage = "Credential identifier '" + requestedCredentialIdentifier + "' not found in authorization_details. " +
+                        "The credential_identifier must match one from the authorization_details in the access token.";
+                LOGGER.debugf(errorMessage);
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER.getValue());
+                throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_IDENTIFIER, errorMessage));
+            }
         }
 
-        String credConfigId = authDetails.getCredentialConfigurationId();
-        if (credConfigId == null) {
-            var errorMessage = "No credential_configuration_id in AuthorizationDetails";
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
-            throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
+        // Check request by credential_configuration_id
+        //
+        if (!Strings.isEmpty(requestedCredentialConfigurationId)) {
+
+            // Verify that the requested credential_configuration_id in the request matches one in the authorization_details
+            //
+            if (!requestedCredentialConfigurationId.equals(authorizedCredentialConfigurationId)) {
+                var errorMessage = "Credential configuration id '" + requestedCredentialConfigurationId + "' not found in authorization_details. " +
+                        "The credential_configuration_id must match the one from the authorization_details in the access token.";
+                LOGGER.debugf(errorMessage);
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
+                throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
+            }
+
+            // Verify that the credential_identifiers in authorization_details are empty,
+            // otherwise the credential must be requested by credential_identifier
+            // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-8.2
+            if (!authorizedCredentialIdentifiers.isEmpty()) {
+                var errorMessage = "Found credential identifiers in authorization_details: " + authorizedCredentialIdentifiers +
+                        ". The credential must be requested by credential_identifier.";
+                LOGGER.debugf(errorMessage);
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            }
         }
 
         // Find the credential configuration in the Issuer's metadata
         //
-        SupportedCredentialConfiguration credConfig = OID4VCIssuerWellKnownProvider.getSupportedCredentials(session).get(credConfigId);
+        SupportedCredentialConfiguration credConfig = getSupportedCredentials(session).get(authorizedCredentialConfigurationId);
         if (credConfig == null) {
-            var errorMessage = "Mapped credential configuration not found: " + credConfigId;
+            var errorMessage = "Mapped credential configuration not found: " + authorizedCredentialConfigurationId;
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
         }
 
-        // Verify the user login session
+        // Find credential client scope by requested/authorized credential_configuration_id
         //
-        if (!userModel.getId().equals(offerState.getUserId())) {
-            var errorMessage = "Unexpected login user: " + userModel.getUsername();
-            LOGGER.errorf(errorMessage + " != %s", offerState.getUserId());
+        CredentialScopeModel authorizedCredentialScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
+                realmModel, () -> clientModel.getClientScopes(false).values().stream(), authorizedCredentialConfigurationId);
+
+        if (authorizedCredentialScope == null) {
+            var errorMessage = String.format("Cannot find credential scope model for: %s", authorizedCredentialConfigurationId);
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
 
-        // Verify the login client
-        //
-        if (offerState.getClientId() != null && !clientModel.getClientId().equals(offerState.getClientId())) {
-            var errorMessage = "Unexpected login client: " + clientModel.getClientId();
-            LOGGER.errorf(errorMessage + " != %s", offerState.getClientId());
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-        }
+        LOGGER.debugf("Successfully mapped credential scope: %s", authorizedCredentialConfigurationId);
+        eventBuilder.detail(Details.CREDENTIAL_TYPE, authorizedCredentialConfigurationId);
 
-        // Find the configured scope in the login client
-        ClientScopeModel clientScope = clientModel.getClientScopes(false).get(credConfig.getScope());
-        if (clientScope == null) {
-            var errorMessage = String.format("Client scope not found: %s", credConfig.getScope());
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
-            throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
-        }
-
-        requestedCredential = new CredentialScopeModel(clientScope);
-        LOGGER.debugf("Successfully mapped credential identifier %s to scope %s", credentialIdentifier, clientScope.getName());
-        eventBuilder.detail(Details.CREDENTIAL_TYPE, credConfigId);
-
-        checkScope(requestedCredential);
+        checkScope(authorizedCredentialScope);
 
         SupportedCredentialConfiguration supportedCredential =
-                OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, requestedCredential);
+                OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, authorizedCredentialScope);
 
         // Get the list of all proofs (handles single proof, multiple proofs, or none)
-        List<String> allProofs = getAllProofs(credentialRequestVO);
+        List<String> allProofs = getAllProofs(credentialRequest);
 
         // Generate credential response
         CredentialResponse responseVO = new CredentialResponse();
 
         if (allProofs.isEmpty()) {
             // Single issuance without proof
-            Object theCredential = getCredential(authResult, supportedCredential, authDetails, credentialRequestVO, eventBuilder);
+            Object theCredential = getCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
             responseVO.addCredential(theCredential);
         } else {
             // Issue credentials for each proof
-            Proofs originalProofs = credentialRequestVO.getProofs();
+            Proofs originalProofs = credentialRequest.getProofs();
             // Determine the proof type from the original proofs
             String proofType = originalProofs != null ? originalProofs.getProofType() : null;
 
@@ -971,11 +962,11 @@ public class OID4VCIssuerEndpoint {
                 Proofs proofForIteration = new Proofs();
                 proofForIteration.setProofByType(proofType, currentProof);
                 // Creating credential with keybinding to the current proof
-                credentialRequestVO.setProofs(proofForIteration);
-                Object theCredential = getCredential(authResult, supportedCredential, authDetails, credentialRequestVO, eventBuilder);
+                credentialRequest.setProofs(proofForIteration);
+                Object theCredential = getCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
                 responseVO.addCredential(theCredential);
             }
-            credentialRequestVO.setProofs(originalProofs);
+            credentialRequest.setProofs(originalProofs);
         }
 
         // Encrypt all responses if encryption parameters are provided, except for error credential responses
@@ -998,17 +989,18 @@ public class OID4VCIssuerEndpoint {
 
         // Clean up offer state after successful credential issuance
         // This prevents memory leaks while ensuring the state remains available during the request
-        offerStorage.removeOfferState(session, offerState);
-        LOGGER.debugf("Removed credential offer state after successful issuance for credential identifier: %s", credentialIdentifier);
+        if (offerState != null) {
+            offerStorage.removeOfferState(session, offerState);
+            LOGGER.debugf("Removed credential offer state after successful issuance");
+        }
 
         return response;
     }
 
-    private OID4VCAuthorizationDetail getAuthorizationDetailFromToken(AccessToken accessToken) {
+    private List<OID4VCAuthorizationDetail> getAuthorizationDetailsResponse(AccessToken accessToken) {
         List<AuthorizationDetailsJSONRepresentation> tokenAuthDetails = accessToken.getAuthorizationDetails();
         AuthorizationDetailsProcessor<OID4VCAuthorizationDetail> oid4vcProcessor = session.getProvider(AuthorizationDetailsProcessor.class, OPENID_CREDENTIAL);
-        List<OID4VCAuthorizationDetail> oid4vcResponses = oid4vcProcessor.getSupportedAuthorizationDetails(tokenAuthDetails);
-        return oid4vcResponses == null || oid4vcResponses.isEmpty() ? null : oid4vcResponses.get(0);
+        return oid4vcProcessor.getSupportedAuthorizationDetails(tokenAuthDetails);
     }
 
     private CredentialRequest validateRequestEncryption(String requestPayload, CredentialIssuer issuerMetadata, EventBuilder eventBuilder) throws BadRequestException {
@@ -1428,7 +1420,7 @@ public class OID4VCIssuerEndpoint {
         if (clientSession == null) {
             throw new CorsErrorResponseException(
                     cors,
-                    ErrorType.INVALID_TOKEN.toString(),
+                    ErrorType.INVALID_TOKEN.getValue(),
                     "Invalid or missing token",
                     Response.Status.BAD_REQUEST);
         }
@@ -1444,7 +1436,7 @@ public class OID4VCIssuerEndpoint {
         if (authResult == null) {
             throw new CorsErrorResponseException(
                     cors,
-                    ErrorType.INVALID_TOKEN.toString(),
+                    ErrorType.INVALID_TOKEN.getValue(),
                     "Invalid or missing token",
                     Response.Status.BAD_REQUEST);
         }
@@ -1469,7 +1461,7 @@ public class OID4VCIssuerEndpoint {
                     LOGGER.debugf("DPoP nonce validation failed: %s", e.getMessage());
                     throw new CorsErrorResponseException(
                             cors,
-                            ErrorType.INVALID_TOKEN.toString(),
+                            ErrorType.INVALID_TOKEN.getValue(),
                             "Invalid or missing token",
                             Response.Status.BAD_REQUEST);
                 }

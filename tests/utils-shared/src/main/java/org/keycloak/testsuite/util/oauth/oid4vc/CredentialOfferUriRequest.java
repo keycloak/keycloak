@@ -20,7 +20,7 @@ public class CredentialOfferUriRequest extends AbstractHttpGetRequest<Credential
     private Integer expireAt;
     private OfferResponseType responseType;
 
-    CredentialOfferUriRequest(AbstractOAuthClient<?> client, String credConfigId) {
+    public CredentialOfferUriRequest(AbstractOAuthClient<?> client, String credConfigId) {
         super(client);
         this.credConfigId = credConfigId;
     }

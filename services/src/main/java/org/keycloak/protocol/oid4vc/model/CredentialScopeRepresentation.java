@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
@@ -52,6 +54,10 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
         setSdJwtNumberOfDecoys(VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT);
         setExpiryInSeconds(VC_EXPIRY_IN_SECONDS_DEFAULT);
         setFormat(VC_FORMAT_DEFAULT);
+    }
+
+    public CredentialScopeRepresentation(ClientScopeModel clientScope) {
+        this(ModelToRepresentation.toRepresentation(clientScope));
     }
 
     public CredentialScopeRepresentation(ClientScopeRepresentation clientScope) {
@@ -273,13 +279,11 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
                 .map(list -> String.join(",")).orElse(null));
     }
 
-    // Private ---------------------------------------------------------------------------------------------------------
-
-    private String getAttribute(String key) {
+    public String getAttribute(String key) {
         return attributes != null ? attributes.get(key) : null;
     }
 
-    private CredentialScopeRepresentation setAttribute(String key, String value) {
+    public CredentialScopeRepresentation setAttribute(String key, String value) {
         if (attributes == null) {
             attributes = new LinkedHashMap<>();
         }
@@ -290,4 +294,6 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
         }
         return this;
     }
+
+    // Private ---------------------------------------------------------------------------------------------------------
 }
