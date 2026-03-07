@@ -142,7 +142,7 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testCredentialIssuanceWithAttestationProof() {
         final String scopeName = jwtTypeCredentialClientScope.getName();
-        String configIdFromScope = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String configIdFromScope = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         final String credConfigId = configIdFromScope != null ? configIdFromScope : scopeName;
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();

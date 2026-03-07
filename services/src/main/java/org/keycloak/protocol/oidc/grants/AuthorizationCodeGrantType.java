@@ -256,7 +256,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         // Case when authorization_details response not generated
-        if ((authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty())) {
+        if (authorizationDetailsResponse == null || authorizationDetailsResponse.isEmpty()) {
             authorizationDetailsResponse = handleMissingAuthorizationDetails(clientSession.getUserSession(), clientSessionCtx);
             if (authorizationDetailsResponse != null && !authorizationDetailsResponse.isEmpty()) {
                 clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetailsResponse);

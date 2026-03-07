@@ -14,24 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
+package org.keycloak.protocol.oid4vc.issuance;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.provider.Provider;
+public class CredentialOfferException extends RuntimeException {
 
-public interface CredentialOfferStorage extends Provider {
+    private final String errorType;
 
-    void putOfferState(KeycloakSession session, CredentialOfferState entry);
+    public CredentialOfferException(String errorType, String message) {
+        this(errorType, message, null);
+    }
 
-    CredentialOfferState getOfferStateById(KeycloakSession session, String offerId);
+    public CredentialOfferException(String errorType, String message, Throwable cause) {
+        super(message, cause);
+        this.errorType = errorType;
 
-    CredentialOfferState getOfferStateByNonce(KeycloakSession session, String nonce);
+    }
 
-    CredentialOfferState getOfferStateByPreAuthCode(KeycloakSession session, String code);
-
-    void removeOfferState(KeycloakSession session, CredentialOfferState entry);
-
-    @Override
-    default void close() {
+    public String getErrorType() {
+        return errorType;
     }
 }
