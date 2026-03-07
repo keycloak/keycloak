@@ -8,7 +8,6 @@ KcOidcBrokerTest
 LDAPUserLoginTest
 LoginTest
 PasswordPolicyTest
-RefreshTokenTest
 RequiredActionUpdateProfileTest
 SSOTest
 SamlClientTest
