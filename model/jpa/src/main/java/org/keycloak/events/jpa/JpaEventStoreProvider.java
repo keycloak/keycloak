@@ -51,6 +51,7 @@ import org.jboss.logging.Logger;
 public class JpaEventStoreProvider implements EventStoreProvider {
 
     private static final Logger logger = Logger.getLogger(JpaEventStoreProvider.class);
+    private static final int EXPIRED_DELETE_MAX_RESULTS = 500;
 
     private final KeycloakSession session;
     private final EntityManager em;
@@ -67,17 +68,24 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void clear() {
-        em.createQuery("delete from EventEntity").executeUpdate();
+        deleteByIdBatches("select event.id from EventEntity event", query -> {
+        }, "delete from EventEntity event where event.id in :eventIds");
     }
 
     @Override
     public void clear(RealmModel realm) {
-        em.createQuery("delete from EventEntity where realmId = :realmId").setParameter("realmId", realm.getId()).executeUpdate();
+        deleteByIdBatches(
+                "select event.id from EventEntity event where event.realmId = :realmId",
+                query -> query.setParameter("realmId", realm.getId()),
+                "delete from EventEntity event where event.id in :eventIds");
     }
 
     @Override
     public void clear(RealmModel realm, long olderThan) {
-        em.createQuery("delete from EventEntity where realmId = :realmId and time < :time").setParameter("realmId", realm.getId()).setParameter("time", olderThan).executeUpdate();
+        deleteByIdBatches(
+                "select event.id from EventEntity event where event.realmId = :realmId and event.time < :time",
+                query -> query.setParameter("realmId", realm.getId()).setParameter("time", olderThan),
+                "delete from EventEntity event where event.id in :eventIds");
     }
 
     @Override
@@ -86,15 +94,16 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         long currentTimeMillis = Time.currentTimeMillis();
 
         // Group realms by expiration times. This will be effective if different realms have same/similar event expiration times, which will probably be the case in most environments
-        List<Long> eventExpirations = em.createQuery("select distinct realm.eventsExpiration from RealmEntity realm where realm.eventsExpiration > 0").getResultList();
+        List<Long> eventExpirations = em.createQuery("select distinct realm.eventsExpiration from RealmEntity realm where realm.eventsExpiration > 0", Long.class).getResultList();
         for (Long expiration : eventExpirations) {
-            List<String> realmIds = em.createQuery("select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration")
+            List<String> realmIds = em.createQuery("select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration", String.class)
                     .setParameter("expiration", expiration)
                     .getResultList();
-            int currentNumDeleted = em.createQuery("delete from EventEntity where realmId in :realmIds and time < :eventTime")
-                    .setParameter("realmIds", realmIds)
-                    .setParameter("eventTime", currentTimeMillis - (expiration * 1000))
-                    .executeUpdate();
+            long eventTime = currentTimeMillis - (expiration * 1000);
+            int currentNumDeleted = deleteByIdBatches(
+                    "select event.id from EventEntity event where event.realmId in :realmIds and event.time < :eventTime",
+                    query -> query.setParameter("realmIds", realmIds).setParameter("eventTime", eventTime),
+                    "delete from EventEntity event where event.id in :eventIds");
             logger.tracef("Deleted %d events for the expiration %d", currentNumDeleted, expiration);
             numDeleted += currentNumDeleted;
         }
@@ -113,17 +122,24 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void clearAdmin() {
-        em.createQuery("delete from AdminEventEntity").executeUpdate();
+        deleteByIdBatches("select event.id from AdminEventEntity event", query -> {
+        }, "delete from AdminEventEntity event where event.id in :eventIds");
     }
 
     @Override
     public void clearAdmin(RealmModel realm) {
-        em.createQuery("delete from AdminEventEntity where realmId = :realmId").setParameter("realmId", realm.getId()).executeUpdate();
+        deleteByIdBatches(
+                "select event.id from AdminEventEntity event where event.realmId = :realmId",
+                query -> query.setParameter("realmId", realm.getId()),
+                "delete from AdminEventEntity event where event.id in :eventIds");
     }
 
     @Override
     public void clearAdmin(RealmModel realm, long olderThan) {
-        em.createQuery("delete from AdminEventEntity where realmId = :realmId and time < :time").setParameter("realmId", realm.getId()).setParameter("time", olderThan).executeUpdate();
+        deleteByIdBatches(
+                "select event.id from AdminEventEntity event where event.realmId = :realmId and event.time < :time",
+                query -> query.setParameter("realmId", realm.getId()).setParameter("time", olderThan),
+                "delete from AdminEventEntity event where event.id in :eventIds");
     }
 
     @Override
@@ -251,12 +267,32 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         long current = Time.currentTimeMillis();
         realms.forEach((key, value) -> {
             List<String> realmIds = value.stream().map(RealmAttributeEntity::getRealm).map(RealmEntity::getId).collect(Collectors.toList());
-            int currentNumDeleted = em.createQuery("delete from AdminEventEntity where realmId in :realmIds and time < :eventTime")
-                    .setParameter("realmIds", realmIds)
-                    .setParameter("eventTime", current - (key * 1000))
-                    .executeUpdate();
+            long eventTime = current - (key * 1000);
+            int currentNumDeleted = deleteByIdBatches(
+                    "select event.id from AdminEventEntity event where event.realmId in :realmIds and event.time < :eventTime",
+                    queryBuilder -> queryBuilder.setParameter("realmIds", realmIds).setParameter("eventTime", eventTime),
+                    "delete from AdminEventEntity event where event.id in :eventIds");
             logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, key);
         });
+    }
+
+    private int deleteByIdBatches(String selectIdsQuery, Consumer<TypedQuery<String>> queryConfigurator, String deleteByIdsQuery) {
+        int deleted = 0;
+        while (true) {
+            TypedQuery<String> selectQuery = em.createQuery(selectIdsQuery, String.class);
+            queryConfigurator.accept(selectQuery);
+            List<String> eventIds = selectQuery
+                    .setMaxResults(EXPIRED_DELETE_MAX_RESULTS)
+                    .getResultList();
+            if (eventIds.isEmpty()) {
+                // No IDs left in this scope. Return how many rows were deleted across previous batches.
+                return deleted;
+            }
+
+            deleted += em.createQuery(deleteByIdsQuery)
+                    .setParameter("eventIds", eventIds)
+                    .executeUpdate();
+        }
     }
 
     private static void setDetails(Consumer<String> setter, Map<String, String> details) {
