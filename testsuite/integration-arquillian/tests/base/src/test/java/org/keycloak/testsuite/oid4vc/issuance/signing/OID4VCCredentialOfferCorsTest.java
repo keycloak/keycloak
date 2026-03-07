@@ -28,15 +28,13 @@ import jakarta.ws.rs.core.HttpHeaders;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
-import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.testsuite.AssertEvents;
@@ -313,7 +311,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
                 .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())
-                .error(Errors.INVALID_REQUEST)
+                .error(ErrorType.INVALID_REQUEST.getValue())
                 .assertEvent();
     }
 
@@ -327,13 +325,13 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         String nonce = testingClient.server(TEST_REALM_NAME).fetchString(session -> {
             CredentialsOffer credOffer = new CredentialsOffer()
                     .setCredentialIssuer(issuerPath)
-                    .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(new PreAuthorizedCode().setPreAuthorizedCode("test-code")))
+                    .addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode("test-code"))
                     .setCredentialConfigurationIds(List.of(jwtTypeCredentialConfigurationIdName));
 
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             // Create offer with expiration time just 1 second in the past
             // This ensures it's still findable in storage but marked as expired
-            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() - 1);
+            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, false, Time.currentTime() - 1, null);
             offerStorage.putOfferState(session, offerState);
             session.getTransactionManager().commit();
             return offerState.getNonce();

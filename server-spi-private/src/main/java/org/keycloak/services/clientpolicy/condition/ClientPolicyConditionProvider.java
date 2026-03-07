@@ -27,9 +27,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyVote;
 /**
  * This condition determines to which client a client policy is adopted.
  * The condition can be evaluated on the events defined in {@link ClientPolicyEvent}.
- * It is sufficient for the implementer of this condition to implement methods in which they are interested
- * and {@link isEvaluatedOnEvent} method.
- * 
+ *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
 public interface ClientPolicyConditionProvider<CONFIG extends ClientPolicyConditionConfigurationRepresentation> extends Provider {
