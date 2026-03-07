@@ -1,18 +1,9 @@
 package org.keycloak.admin.api;
 
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.ext.Provider;
 
-import org.keycloak.common.Profile;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.resources.admin.AdminCorsPreflightService;
 
-import org.eclipse.microprofile.openapi.annotations.Operation;
 
 @Path("admin/api")
 public interface AdminRootV2 {
