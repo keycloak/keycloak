@@ -194,3 +194,17 @@ MDC enables Keycloak to enrich log entries with contextual information such as r
 
 For more details, see the https://www.keycloak.org/server/logging#mdc[Adding context for log messages] guide.
 
+=== Truststore auto-configuration on Kubernetes and OpenShift
+
+Keycloak now automatically includes cluster certificate authorities in the system truststore when running on Kubernetes or OpenShift. If present, the following files are trusted by default:
+
+* `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` (Kubernetes service account CA)
+* `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt` (OpenShift service CA)
+
+You can disable this behavior using the server option:
+
+* `--truststore-kubernetes-enabled=false`
+
+This functionality is now part of the server and does not require the Operator.
+
+Deprecated (Operator): The `automountServiceAccountToken` field in the Keycloak CRD is deprecated and no longer impacts truststore handling. Use the server option above to control whether cluster CAs are trusted.
