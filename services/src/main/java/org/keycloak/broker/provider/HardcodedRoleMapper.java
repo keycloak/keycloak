@@ -32,12 +32,14 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(IdentityProviderMapper.class)
 public class HardcodedRoleMapper extends AbstractIdentityProviderMapper {
     protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 

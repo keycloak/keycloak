@@ -27,6 +27,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
@@ -35,6 +36,7 @@ import io.micrometer.core.instrument.Metrics;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(CredentialProviderFactory.class)
 public class PasswordCredentialProviderFactory implements CredentialProviderFactory<PasswordCredentialProvider> {
     public static final String PROVIDER_ID = "keycloak-password";
     private static final String HASHES_COUNTER_TAGS = "validations-counter-tags";

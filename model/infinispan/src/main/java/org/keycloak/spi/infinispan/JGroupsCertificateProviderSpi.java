@@ -19,9 +19,12 @@ package org.keycloak.spi.infinispan;
 
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * The {@link Spi} implementation for {@link JGroupsCertificateProvider}.
  */
+@AutoService(Spi.class)
 public class JGroupsCertificateProviderSpi implements Spi {
 
     public static final String SPI_NAME = "jgroupsMtls";

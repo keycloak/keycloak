@@ -20,15 +20,19 @@ package org.keycloak.testsuite.federation.sync;
 import java.util.Date;
 
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * <p>Test UserStorageProviderFactory in which sync methods are always ignored.</p>
  *
  * @author rmartinc
  */
+@AutoService(UserStorageProviderFactory.class)
 public class IgnoredDummyUserFederationProviderFactory extends DummyUserFederationProviderFactory {
 
     public static final String IGNORED_PROVIDER_ID = "ignored-dummy";

@@ -18,12 +18,16 @@
 package org.keycloak.authentication.authenticators.broker;
 
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.models.KeycloakSession;
+
+import com.google.auto.service.AutoService;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(AuthenticatorFactory.class)
 public class IdpUsernamePasswordFormFactory extends UsernamePasswordFormFactory {
 
     public static final String PROVIDER_ID = "idp-username-password-form";

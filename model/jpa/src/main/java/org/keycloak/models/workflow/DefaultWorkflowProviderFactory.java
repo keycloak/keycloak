@@ -17,6 +17,9 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(WorkflowProviderFactory.class)
 public class DefaultWorkflowProviderFactory implements WorkflowProviderFactory<DefaultWorkflowProvider>, ProviderEventListener {
 
     static final String ID = "default";

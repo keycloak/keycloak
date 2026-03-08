@@ -21,7 +21,11 @@ import java.util.List;
 
 import org.keycloak.Config;
 import org.keycloak.theme.JarThemeProviderFactory;
+import org.keycloak.theme.ThemeProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ThemeProviderFactory.class)
 public class QuarkusJarThemeProviderFactory extends JarThemeProviderFactory {
 
     public void setThemes(List<ThemesRepresentation> themes) {

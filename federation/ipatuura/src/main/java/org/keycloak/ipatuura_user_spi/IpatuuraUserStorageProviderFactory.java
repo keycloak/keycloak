@@ -33,12 +33,14 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.UserStorageProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:jstephen@redhat.com">Justin Stephenson</a>
  * @version $Revision: 1 $
  */
+@AutoService(UserStorageProviderFactory.class)
 public class IpatuuraUserStorageProviderFactory implements UserStorageProviderFactory<IpatuuraUserStorageProvider>, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(IpatuuraUserStorageProviderFactory.class);

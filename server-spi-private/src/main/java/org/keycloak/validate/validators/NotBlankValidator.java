@@ -22,6 +22,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Validate that value exists and is not empty nor blank. Supports String and collection of Strings as input. For
@@ -31,6 +34,7 @@ import org.keycloak.validate.ValidatorConfig;
  * 
  * @see NotEmptyValidator
  */
+@AutoService(ValidatorFactory.class)
 public class NotBlankValidator implements SimpleValidator {
 
     public static final String ID = "not-blank";

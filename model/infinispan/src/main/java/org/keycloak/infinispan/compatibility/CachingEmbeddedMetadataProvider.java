@@ -7,12 +7,15 @@ import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.compatibility.AbstractCompatibilityMetadataProvider;
+import org.keycloak.compatibility.CompatibilityMetadataProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
 import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.commons.util.Version;
 
+@AutoService(CompatibilityMetadataProvider.class)
 public class CachingEmbeddedMetadataProvider extends AbstractCompatibilityMetadataProvider {
 
     public CachingEmbeddedMetadataProvider() {

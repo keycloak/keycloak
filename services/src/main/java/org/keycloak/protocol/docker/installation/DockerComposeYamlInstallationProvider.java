@@ -22,8 +22,10 @@ import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.docker.DockerAuthV2Protocol;
 import org.keycloak.protocol.docker.installation.compose.DockerComposeZipContent;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
+@AutoService(ClientInstallationProvider.class)
 public class DockerComposeYamlInstallationProvider implements ClientInstallationProvider {
     private static Logger log = Logger.getLogger(DockerComposeYamlInstallationProvider.class);
 

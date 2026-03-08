@@ -25,6 +25,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ClientPolicyExecutorProviderFactory.class)
 public class SecureRedirectUrisEnforcerExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "secure-redirect-uris-enforcer";

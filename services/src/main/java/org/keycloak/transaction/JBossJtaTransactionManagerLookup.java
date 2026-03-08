@@ -24,12 +24,14 @@ import jakarta.transaction.TransactionManager;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(JtaTransactionManagerLookup.class)
 public class JBossJtaTransactionManagerLookup implements JtaTransactionManagerLookup {
     private static final Logger logger = Logger.getLogger(JBossJtaTransactionManagerLookup.class);
     private TransactionManager tm;

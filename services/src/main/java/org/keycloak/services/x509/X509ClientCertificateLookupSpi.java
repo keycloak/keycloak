@@ -22,12 +22,15 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
  * @version $Revision: 1 $
  * @since 3/26/2017
  */
 
+@AutoService(Spi.class)
 public class X509ClientCertificateLookupSpi implements Spi {
 
     @Override

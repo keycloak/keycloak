@@ -18,9 +18,12 @@ import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.scripting.EvaluatableScriptAdapter;
 import org.keycloak.scripting.ScriptingProvider;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(PolicyProviderFactory.class)
 public class JSPolicyProviderFactory implements PolicyProviderFactory<JSPolicyRepresentation>, EnvironmentDependentProviderFactory {
 
     private final JSPolicyProvider provider = new JSPolicyProvider(this::getEvaluatableScript);

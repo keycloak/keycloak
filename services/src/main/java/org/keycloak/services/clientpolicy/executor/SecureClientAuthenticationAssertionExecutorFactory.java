@@ -25,9 +25,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+@AutoService(ClientPolicyExecutorProviderFactory.class)
 public class SecureClientAuthenticationAssertionExecutorFactory implements ClientPolicyExecutorProviderFactory {
     public static final String PROVIDER_ID = "secure-client-authentication-assertion";
 

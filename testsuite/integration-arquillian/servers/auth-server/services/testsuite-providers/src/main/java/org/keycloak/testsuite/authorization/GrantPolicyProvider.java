@@ -12,6 +12,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(PolicyProviderFactory.class)
 public class GrantPolicyProvider implements PolicyProviderFactory<PolicyRepresentation>, PolicyProvider {
 
     @Override

@@ -35,6 +35,8 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 
 /**
@@ -78,6 +80,7 @@ import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
  *   }
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
+@AutoService(ProtocolMapper.class)
 public class OID4VCSubjectIdMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-subject-id-mapper";

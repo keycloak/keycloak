@@ -31,6 +31,8 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 import static java.util.Arrays.asList;
 
 import static org.keycloak.authentication.authenticators.browser.ConditionalOtpFormAuthenticator.DEFAULT_OTP_OUTCOME;
@@ -50,6 +52,7 @@ import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
+@AutoService(AuthenticatorFactory.class)
 public class ConditionalOtpFormAuthenticatorFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "auth-conditional-otp-form";

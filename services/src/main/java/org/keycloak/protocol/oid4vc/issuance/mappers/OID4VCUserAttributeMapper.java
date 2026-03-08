@@ -37,6 +37,7 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.utils.JsonUtils;
 
+import com.google.auto.service.AutoService;
 import org.apache.commons.collections4.ListUtils;
 
 /**
@@ -44,6 +45,7 @@ import org.apache.commons.collections4.ListUtils;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
+@AutoService(ProtocolMapper.class)
 public class OID4VCUserAttributeMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-user-attribute-mapper";

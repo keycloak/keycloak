@@ -30,6 +30,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Validator to check that User Profile username already exists in database for another user in case of it's change, and
@@ -38,6 +41,7 @@ import org.keycloak.validate.ValidatorConfig;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
+@AutoService(ValidatorFactory.class)
 public class DuplicateUsernameValidator implements SimpleValidator {
 
     public static final String ID = "up-duplicate-username";

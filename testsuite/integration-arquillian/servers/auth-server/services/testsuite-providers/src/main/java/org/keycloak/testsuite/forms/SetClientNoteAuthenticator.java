@@ -34,11 +34,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(AuthenticatorFactory.class)
 public class SetClientNoteAuthenticator implements Authenticator, AuthenticatorFactory {
 
     protected static final Logger logger = Logger.getLogger(SetClientNoteAuthenticator.class);

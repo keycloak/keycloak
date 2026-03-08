@@ -30,9 +30,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
  */
+@AutoService(PolicyProviderFactory.class)
 public class RegexPolicyProviderFactory implements PolicyProviderFactory<RegexPolicyRepresentation> {
 
     private RegexPolicyProvider provider = new RegexPolicyProvider(this::toRepresentation);

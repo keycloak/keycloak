@@ -19,9 +19,12 @@ package org.keycloak.models;
 
 import org.keycloak.Config;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
  */
+@AutoService(OAuth2DeviceUserCodeProviderFactory.class)
 public class DefaultOAuth2DeviceUserCodeProviderFactory implements OAuth2DeviceUserCodeProviderFactory {
 
     @Override

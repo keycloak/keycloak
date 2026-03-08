@@ -25,10 +25,13 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.client.ClientStorageProviderFactory;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(ClientStorageProviderFactory.class)
 public class HardcodedClientStorageProviderFactory implements ClientStorageProviderFactory<HardcodedClientStorageProvider> {
     @Override
     public HardcodedClientStorageProvider create(KeycloakSession session, ComponentModel model) {

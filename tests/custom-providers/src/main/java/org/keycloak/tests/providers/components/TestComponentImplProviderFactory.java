@@ -29,11 +29,14 @@ import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(TestComponentProviderFactory.class)
 public class TestComponentImplProviderFactory implements TestComponentProviderFactory {
 
     private List<ProviderConfigProperty> config = ProviderConfigurationBuilder.create()

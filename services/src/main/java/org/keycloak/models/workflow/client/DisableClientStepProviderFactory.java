@@ -24,6 +24,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.ResourceType;
 import org.keycloak.models.workflow.WorkflowStepProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(WorkflowStepProviderFactory.class)
 public class DisableClientStepProviderFactory implements
         WorkflowStepProviderFactory<DisableClientStepProvider> {
 

@@ -22,8 +22,10 @@ import org.keycloak.connections.jpa.updater.liquibase.LiquibaseConstants;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
 
+import com.google.auto.service.AutoService;
 import liquibase.Scope;
 import liquibase.change.AddColumnConfig;
+import liquibase.change.Change;
 import liquibase.change.ChangeFactory;
 import liquibase.change.ChangeMetaData;
 import liquibase.change.ChangeParameterMetaData;
@@ -54,6 +56,7 @@ import org.jboss.logging.Logger;
  */
 @DatabaseChange(name = "createIndex", description = "Creates an index on an existing column or set of columns conditionally based on the number of records.", priority = ChangeMetaData.PRIORITY_DEFAULT
     + 1, appliesTo = "index")
+@AutoService(Change.class)
 public class CustomCreateIndexChange extends CreateIndexChange {
     private static final Logger logger = Logger.getLogger(CustomCreateIndexChange.class);
     private long indexCreationThreshold;

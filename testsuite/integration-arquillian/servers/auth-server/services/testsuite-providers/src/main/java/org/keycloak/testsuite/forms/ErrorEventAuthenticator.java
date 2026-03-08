@@ -30,6 +30,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(AuthenticatorFactory.class)
 public class ErrorEventAuthenticator implements Authenticator, AuthenticatorFactory {
     public static final String PROVIDER_ID = "test-suite-fire-error-event";
     public static final String ERROR_MESSAGE = "fire-error-event";

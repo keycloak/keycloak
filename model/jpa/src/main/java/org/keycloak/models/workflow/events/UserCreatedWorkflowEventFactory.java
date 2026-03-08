@@ -4,6 +4,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.WorkflowEventProvider;
 import org.keycloak.models.workflow.WorkflowEventProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(WorkflowEventProviderFactory.class)
 public class UserCreatedWorkflowEventFactory implements WorkflowEventProviderFactory<WorkflowEventProvider> {
 
     public static final String ID = "user-created";

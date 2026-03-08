@@ -7,8 +7,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.theme.KeycloakSanitizerMethod;
 
+import com.google.auto.service.AutoService;
 import freemarker.template.Template;
 
+@AutoService(FreeMarkerProviderFactory.class)
 public class DefaultFreeMarkerProviderFactory implements FreeMarkerProviderFactory {
 
     private volatile DefaultFreeMarkerProvider provider;

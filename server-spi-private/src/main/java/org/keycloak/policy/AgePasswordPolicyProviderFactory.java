@@ -22,9 +22,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.PasswordPolicy;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:dev.maciej.mierzwa@gmail.com">Maciej Mierzwa</a>
  */
+@AutoService(PasswordPolicyProviderFactory.class)
 public class AgePasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
     public static final Integer DEFAULT_AGE_DAYS = 30;
 

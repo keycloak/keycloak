@@ -26,8 +26,10 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.CacheCrlProvider;
 import org.keycloak.models.cache.CacheCrlProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.Cache;
 
+@AutoService(CacheCrlProviderFactory.class)
 public class InfinispanCacheCrlProviderFactory implements CacheCrlProviderFactory {
 
     public static final String PROVIDER_ID = "infinispan";

@@ -22,9 +22,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
 import org.keycloak.services.x509.X509ClientCertificateLookupFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(X509ClientCertificateLookupFactory.class)
 public class VertxClientCertificateLookupFactory implements X509ClientCertificateLookupFactory {
 
     private static X509ClientCertificateLookup SINGLETON;

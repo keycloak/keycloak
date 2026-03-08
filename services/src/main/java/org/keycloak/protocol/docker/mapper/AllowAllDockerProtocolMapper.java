@@ -4,13 +4,17 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.docker.DockerAuthV2Protocol;
 import org.keycloak.representations.docker.DockerAccess;
 import org.keycloak.representations.docker.DockerResponseToken;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Populates token with requested scope.  If more scopes are present than what has been requested, they will be removed.
  */
+@AutoService(ProtocolMapper.class)
 public class AllowAllDockerProtocolMapper extends DockerAuthV2ProtocolMapper implements DockerAuthV2AttributeMapper {
 
     public static final String PROVIDER_ID = "docker-v2-allow-all-mapper";

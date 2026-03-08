@@ -9,6 +9,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(WorkflowStepProviderFactory.class)
 public class RemoveUserAttributeStepProviderFactory implements WorkflowStepProviderFactory<RemoveUserAttributeStepProvider> {
 
     public static final String ID = "remove-user-attribute";

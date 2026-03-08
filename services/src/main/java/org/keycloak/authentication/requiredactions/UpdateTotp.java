@@ -61,6 +61,7 @@ import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.CredentialHelper;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.DISABLED;
@@ -69,6 +70,7 @@ import static org.keycloak.models.AuthenticationExecutionModel.Requirement.DISAB
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(RequiredActionFactory.class)
 public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory, CredentialRegistrator {
 
     private static final Logger log = Logger.getLogger(KeycloakModelUtils.class);

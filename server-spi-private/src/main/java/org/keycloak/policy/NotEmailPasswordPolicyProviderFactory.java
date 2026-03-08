@@ -21,9 +21,12 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:thomas.darimont@googlemail.com">Thomas Darimont</a>
  */
+@AutoService(PasswordPolicyProviderFactory.class)
 public class NotEmailPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
 
     public static final String ID = "notEmail";

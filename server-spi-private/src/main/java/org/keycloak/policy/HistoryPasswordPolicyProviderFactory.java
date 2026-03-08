@@ -22,9 +22,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.PasswordPolicy;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(PasswordPolicyProviderFactory.class)
 public class HistoryPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
 
     public static final Integer DEFAULT_VALUE = 3;

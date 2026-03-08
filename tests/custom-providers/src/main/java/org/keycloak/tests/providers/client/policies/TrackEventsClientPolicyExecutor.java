@@ -13,8 +13,10 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
+@AutoService(ClientPolicyExecutorProviderFactory.class)
 public class TrackEventsClientPolicyExecutor implements ClientPolicyExecutorProviderFactory, ClientPolicyExecutorProvider<TrackEventsClientPolicyExecutor.Configuration> {
     public static final String PROVIDER_ID = "track-events-client-policy-executor";
 

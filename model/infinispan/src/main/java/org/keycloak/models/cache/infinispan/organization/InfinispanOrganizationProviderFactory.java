@@ -29,6 +29,9 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.OrganizationProviderFactory;
 import org.keycloak.organization.utils.Organizations;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(OrganizationProviderFactory.class)
 public class InfinispanOrganizationProviderFactory implements OrganizationProviderFactory {
 
     public static final String PROVIDER_ID = "infinispan";

@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -35,12 +36,15 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
 
 /**
  * <a href="mailto:external.benjamin.weimer@bosch.io">Benjamin Weimer</a>,
  * <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
  */
+@AutoService(IdentityProviderMapper.class)
 public class AdvancedAttributeToRoleMapper extends AbstractAttributeToRoleMapper {
 
     public static final String PROVIDER_ID = "saml-advanced-role-idp-mapper";

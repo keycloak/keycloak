@@ -21,11 +21,15 @@ package org.keycloak.examples.providersoverride;
 
 import org.keycloak.email.DefaultEmailSenderProviderFactory;
 import org.keycloak.email.EmailSenderProvider;
+import org.keycloak.email.EmailSenderProviderFactory;
 import org.keycloak.models.KeycloakSession;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Won't be used due lower order than CustomFreemarkerAccountProviderFactory2
  */
+@AutoService(EmailSenderProviderFactory.class)
 public class CustomDefaultEmailSenderProviderFactory1 extends DefaultEmailSenderProviderFactory {
 
     @Override

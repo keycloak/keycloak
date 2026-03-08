@@ -26,8 +26,10 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.CachePublicKeyProvider;
 import org.keycloak.models.cache.CachePublicKeyProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.Cache;
 
+@AutoService(CachePublicKeyProviderFactory.class)
 public class InfinispanCachePublicKeyProviderFactory implements CachePublicKeyProviderFactory {
 
     public static final String PROVIDER_ID = "infinispan";

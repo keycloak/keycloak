@@ -10,6 +10,7 @@ import java.util.Set;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
@@ -17,10 +18,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
 
+@AutoService(IdentityProviderMapper.class)
 public class ClaimToUserSessionNoteMapper extends AbstractClaimMapper {
 
     private static final Logger LOG = Logger.getLogger(ClaimToUserSessionNoteMapper.class);

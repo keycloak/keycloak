@@ -41,6 +41,7 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLMetadataWriter;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 
@@ -48,6 +49,7 @@ import org.jboss.logging.Logger;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(ClientInstallationProvider.class)
 public class SamlSPDescriptorClientInstallation implements ClientInstallationProvider {
 
     protected static final Logger logger = Logger.getLogger(SamlSPDescriptorClientInstallation.class);

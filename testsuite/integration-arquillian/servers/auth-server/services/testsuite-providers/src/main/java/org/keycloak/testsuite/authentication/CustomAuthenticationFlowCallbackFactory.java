@@ -22,14 +22,18 @@ import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowCallbackFactory;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@AutoService(AuthenticatorFactory.class)
 public class CustomAuthenticationFlowCallbackFactory implements AuthenticationFlowCallbackFactory {
     public static final String PROVIDER_ID = "custom-callback-authenticator";
 

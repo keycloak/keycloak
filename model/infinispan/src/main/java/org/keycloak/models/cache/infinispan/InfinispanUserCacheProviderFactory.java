@@ -28,12 +28,14 @@ import org.keycloak.models.cache.UserCacheProviderFactory;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(UserCacheProviderFactory.class)
 public class InfinispanUserCacheProviderFactory implements UserCacheProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanUserCacheProviderFactory.class);

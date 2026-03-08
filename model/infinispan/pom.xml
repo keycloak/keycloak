@@ -107,6 +107,12 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+            <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>
@@ -139,6 +145,11 @@
                             <groupId>org.infinispan.protostream</groupId>
                             <artifactId>protostream-processor</artifactId>
                             <version>${protostream.version}</version>
+                        </path>
+                        <path>
+                            <groupId>com.google.auto.service</groupId>
+                            <artifactId>auto-service</artifactId>
+                            <version>${auto-service.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

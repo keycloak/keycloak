@@ -27,9 +27,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@AutoService(AuthenticatorFactory.class)
 public class AllowAccessAuthenticatorFactory implements AuthenticatorFactory {
     private final static AllowAccessAuthenticator SINGLETON = new AllowAccessAuthenticator();
     public static final String PROVIDER_ID = "allow-access-authenticator";

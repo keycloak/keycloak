@@ -23,6 +23,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Check that input value is not empty. It means it is not null for all data types. For String it also have to be
@@ -30,6 +33,7 @@ import org.keycloak.validate.ValidatorConfig;
  * 
  * @see NotBlankValidator
  */
+@AutoService(ValidatorFactory.class)
 public class NotEmptyValidator implements SimpleValidator {
 
     public static final NotEmptyValidator INSTANCE = new NotEmptyValidator();

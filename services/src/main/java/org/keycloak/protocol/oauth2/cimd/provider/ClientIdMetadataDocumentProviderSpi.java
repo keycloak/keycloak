@@ -4,11 +4,14 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * The class is the SPI for {@link ClientIdMetadataDocumentProvider} and {@link ClientIdMetadataDocumentProviderFactory}.
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+@AutoService(Spi.class)
 public class ClientIdMetadataDocumentProviderSpi implements Spi {
 
     @Override

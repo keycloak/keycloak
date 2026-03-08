@@ -20,9 +20,12 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author rmartinc
  */
+@AutoService(PasswordPolicyProviderFactory.class)
 public class MaximumLengthPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
 
     public static final String ID = "maxLength";

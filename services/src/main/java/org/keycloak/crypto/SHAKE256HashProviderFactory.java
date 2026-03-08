@@ -19,10 +19,13 @@ package org.keycloak.crypto;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
 /**
  *
  * @author rmartinc
  */
+@AutoService(HashProviderFactory.class)
 public class SHAKE256HashProviderFactory implements HashProviderFactory {
 
     public static final String ID = JavaAlgorithm.SHAKE256;

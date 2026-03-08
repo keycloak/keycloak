@@ -42,6 +42,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.auto.service.AutoService;
 import org.apache.commons.collections4.ListUtils;
 import org.jboss.logging.Logger;
 
@@ -50,6 +51,7 @@ import org.jboss.logging.Logger;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
+@AutoService(ProtocolMapper.class)
 public class OID4VCTargetRoleMapper extends OID4VCMapper {
 
 	private static final Logger LOGGER = Logger.getLogger(OID4VCTargetRoleMapper.class);

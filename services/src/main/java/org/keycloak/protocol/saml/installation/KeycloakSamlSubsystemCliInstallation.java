@@ -33,8 +33,11 @@ import org.keycloak.protocol.saml.SamlClient;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.services.resources.RealmsResource;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.protocol.util.ClientCliInstallationUtil.quote;
 
+@AutoService(ClientInstallationProvider.class)
 public class KeycloakSamlSubsystemCliInstallation implements ClientInstallationProvider {
 
     @Override

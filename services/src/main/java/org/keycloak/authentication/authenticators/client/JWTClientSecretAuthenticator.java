@@ -29,6 +29,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.ClientModel;
@@ -40,6 +41,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ServicesLogger;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
 
 /**
@@ -50,6 +53,7 @@ import static org.keycloak.models.TokenManager.DEFAULT_VALIDATOR;
  * org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider
  * <p>
  */
+@AutoService(ClientAuthenticatorFactory.class)
 public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
     public static final String PROVIDER_ID = "client-secret-jwt";

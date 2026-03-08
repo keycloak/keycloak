@@ -27,6 +27,7 @@ import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
+import org.keycloak.authentication.actiontoken.ActionTokenHandlerFactory;
 import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -47,10 +48,13 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Action token handler for verification of e-mail address.
  * @author hmlnarik
  */
+@AutoService(ActionTokenHandlerFactory.class)
 public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<VerifyEmailActionToken> {
 
     public VerifyEmailActionTokenHandler() {

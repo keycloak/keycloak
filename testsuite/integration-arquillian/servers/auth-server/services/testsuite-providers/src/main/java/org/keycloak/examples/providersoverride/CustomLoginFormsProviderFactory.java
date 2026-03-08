@@ -20,13 +20,17 @@
 package org.keycloak.examples.providersoverride;
 
 import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.forms.login.LoginFormsProviderFactory;
 import org.keycloak.forms.login.freemarker.FreeMarkerLoginFormsProviderFactory;
 import org.keycloak.models.KeycloakSession;
+
+import com.google.auto.service.AutoService;
 
 /**
  * This has same providerID like built-in ValidateUsername provider. But it should be called in favour of ValidateUsername even
  * if it doesn't have "order" set. As it is custom provider and it worked this way in previous versions
  */
+@AutoService(LoginFormsProviderFactory.class)
 public class CustomLoginFormsProviderFactory extends FreeMarkerLoginFormsProviderFactory {
 
     @Override

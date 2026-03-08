@@ -18,8 +18,10 @@ package org.keycloak.connections.jpa.updater.liquibase.conn;
 
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseConstants;
 
+import com.google.auto.service.AutoService;
 import liquibase.Scope;
 import liquibase.change.ColumnConfig;
+import liquibase.changelog.ChangeLogHistoryService;
 import liquibase.changelog.StandardChangeLogHistoryService;
 import liquibase.database.Database;
 import liquibase.database.core.MySQLDatabase;
@@ -38,6 +40,7 @@ import liquibase.structure.core.Table;
  *
  * @author hmlnarik
  */
+@AutoService(ChangeLogHistoryService.class)
 public class MySQLCustomChangeLogHistoryService extends StandardChangeLogHistoryService {
 
     private boolean serviceInitialized;

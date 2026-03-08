@@ -30,6 +30,9 @@ import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(RequiredActionFactory.class)
 public class DummyConfigurableRequiredActionFactory implements RequiredActionFactory {
 
     public static final String PROVIDER_ID = "configurable-test-action";

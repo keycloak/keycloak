@@ -19,8 +19,11 @@
 package org.keycloak.authentication.authenticators.x509;
 
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
+
+import com.google.auto.service.AutoService;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -28,6 +31,7 @@ import org.keycloak.models.KeycloakSession;
  * @date 7/31/2016
  */
 
+@AutoService(AuthenticatorFactory.class)
 public class ValidateX509CertificateUsernameFactory extends AbstractX509ClientCertificateAuthenticatorFactory {
 
     public static final String PROVIDER_ID = "direct-grant-auth-x509-username";

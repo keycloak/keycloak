@@ -3,6 +3,9 @@ package org.keycloak.models.workflow.conditions;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.workflow.WorkflowConditionProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(WorkflowConditionProviderFactory.class)
 public class GroupMembershipWorkflowConditionFactory implements WorkflowConditionProviderFactory<GroupMembershipWorkflowConditionProvider> {
 
     public static final String ID = "is-member-of";

@@ -24,6 +24,7 @@ import org.keycloak.representations.adapters.config.AdapterConfig;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -31,6 +32,7 @@ import org.jboss.logging.Logger;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(ClientCredentialsProvider.class)
 public class ClientIdAndSecretCredentialsProvider implements ClientCredentialsProvider {
 
     private static Logger logger = Logger.getLogger(ClientIdAndSecretCredentialsProvider.class);

@@ -31,6 +31,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Validator to check User Profile email duplication conditions based on realm settings like isDuplicateEmailsAllowed.
@@ -39,6 +42,7 @@ import org.keycloak.validate.ValidatorConfig;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
+@AutoService(ValidatorFactory.class)
 public class DuplicateEmailValidator implements SimpleValidator {
 
     public static final String ID = "up-duplicate-email";

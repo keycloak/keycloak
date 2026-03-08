@@ -30,9 +30,12 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(RealmResourceProviderFactory.class)
 public class DeviceEndpointFactory implements RealmResourceProviderFactory, EnvironmentDependentProviderFactory {
 
     @Override

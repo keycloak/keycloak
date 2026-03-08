@@ -29,6 +29,8 @@ import org.keycloak.storage.ImportRealmFromRepresentationEvent;
 import org.keycloak.storage.PartialImportRealmFromRepresentationEvent;
 import org.keycloak.storage.SetDefaultsForNewRealm;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Provider to listen for {@link ImportRealmFromRepresentationEvent} events.
  * If that is no longer needed after further steps around the legacy storage migration, it can be removed.
@@ -36,6 +38,7 @@ import org.keycloak.storage.SetDefaultsForNewRealm;
  * @author Alexander Schwartz
  */
 @Deprecated
+@AutoService(RealmManagerProviderFactory.class)
 public class RealmManagerProviderFactory implements ProviderFactory<RealmManagerProviderFactory>, Provider {
     @Override
     public RealmManagerProviderFactory create(KeycloakSession session) {

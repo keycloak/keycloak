@@ -25,9 +25,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author Petter Lysne
  */
+@AutoService(SocialIdentityProviderFactory.class)
 public class PayPalIdentityProviderFactory extends AbstractIdentityProviderFactory<PayPalIdentityProvider> implements SocialIdentityProviderFactory<PayPalIdentityProvider> {
 
     public static final String PROVIDER_ID = "paypal";

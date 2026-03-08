@@ -19,12 +19,16 @@
 
 package org.keycloak.examples.providersoverride;
 
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.authenticators.directgrant.ValidateOTP;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Overrides built-in, but should not be called due the different order
  *
  */
+@AutoService(AuthenticatorFactory.class)
 public class CustomValidateOTP extends ValidateOTP {
 
     @Override

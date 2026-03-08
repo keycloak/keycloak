@@ -26,10 +26,13 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.UserStorageProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Factory for FailingUserStorageProvider - used in tests to simulate 
  * user storage provider failures for graceful degradation testing.
  */
+@AutoService(UserStorageProviderFactory.class)
 public class FailingUserStorageProviderFactory implements UserStorageProviderFactory<FailingUserStorageProvider> {
     
     public static final String PROVIDER_ID = "failing-user-storage";

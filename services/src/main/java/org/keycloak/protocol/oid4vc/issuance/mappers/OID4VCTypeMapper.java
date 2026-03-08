@@ -31,11 +31,14 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Allows to add types to the credential subject
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
+@AutoService(ProtocolMapper.class)
 public class OID4VCTypeMapper extends OID4VCMapper {
 
     public static final String MAPPER_ID = "oid4vc-vc-type-mapper";

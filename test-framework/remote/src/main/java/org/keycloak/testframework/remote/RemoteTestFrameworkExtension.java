@@ -16,6 +16,9 @@ import org.keycloak.testframework.remote.runonserver.RunTestOnServer;
 import org.keycloak.testframework.remote.runonserver.TestClassServerSupplier;
 import org.keycloak.testframework.remote.timeoffset.TimeOffsetSupplier;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(TestFrameworkExtension.class)
 public class RemoteTestFrameworkExtension implements TestFrameworkExtension, TestFrameworkExecutor {
     @Override
     public List<Supplier<?, ?>> suppliers() {

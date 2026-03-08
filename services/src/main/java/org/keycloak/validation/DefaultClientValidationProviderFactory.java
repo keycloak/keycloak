@@ -18,6 +18,9 @@ package org.keycloak.validation;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ClientValidationProviderFactory.class)
 public class DefaultClientValidationProviderFactory implements ClientValidationProviderFactory {
 
     private final DefaultClientValidationProvider provider = new DefaultClientValidationProvider();

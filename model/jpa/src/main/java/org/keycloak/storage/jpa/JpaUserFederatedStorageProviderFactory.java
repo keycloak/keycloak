@@ -25,10 +25,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(UserFederatedStorageProviderFactory.class)
 public class JpaUserFederatedStorageProviderFactory implements UserFederatedStorageProviderFactory {
     @Override
     public UserFederatedStorageProvider create(KeycloakSession session) {

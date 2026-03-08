@@ -18,6 +18,9 @@ package org.keycloak.validate.validators;
 
 import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * 
@@ -26,6 +29,7 @@ import org.keycloak.validate.ValidatorConfig;
  * 
  * @author Vlastimil Elias <velias@redhat.com>
  */
+@AutoService(ValidatorFactory.class)
 public class IntegerValidator extends AbstractNumberValidator implements ConfiguredProvider {
 
     public static final String ID = "integer";

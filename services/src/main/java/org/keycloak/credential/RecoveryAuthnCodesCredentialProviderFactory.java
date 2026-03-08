@@ -5,6 +5,9 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(CredentialProviderFactory.class)
 public class RecoveryAuthnCodesCredentialProviderFactory
         implements CredentialProviderFactory<RecoveryAuthnCodesCredentialProvider>, EnvironmentDependentProviderFactory {
 

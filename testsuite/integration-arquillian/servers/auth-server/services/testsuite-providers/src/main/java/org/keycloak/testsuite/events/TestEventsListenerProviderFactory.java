@@ -23,9 +23,12 @@ import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
+@AutoService(EventListenerProviderFactory.class)
 public class TestEventsListenerProviderFactory implements EventListenerProviderFactory {
 
     public static final String PROVIDER_ID = "event-queue";

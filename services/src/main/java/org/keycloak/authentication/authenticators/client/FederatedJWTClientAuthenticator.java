@@ -10,6 +10,7 @@ import java.util.Set;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.ConfigurableAuthenticatorFactory;
 import org.keycloak.broker.provider.ClientAssertionIdentityProvider;
 import org.keycloak.broker.provider.ClientAssertionIdentityProviderFactory;
@@ -26,8 +27,10 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.resources.IdentityBrokerService;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
+@AutoService(ClientAuthenticatorFactory.class)
 public class FederatedJWTClientAuthenticator extends AbstractClientAuthenticator implements EnvironmentDependentProviderFactory {
 
     private static final Logger LOGGER = Logger.getLogger(FederatedJWTClientAuthenticator.class);

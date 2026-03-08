@@ -17,8 +17,10 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
+import com.google.auto.service.AutoService;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.LockException;
+import liquibase.lockservice.LockService;
 import liquibase.lockservice.StandardLockService;
 
 /**
@@ -26,6 +28,7 @@ import liquibase.lockservice.StandardLockService;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(LockService.class)
 public class DummyLockService extends StandardLockService {
 
     @Override

@@ -25,6 +25,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>Executor factory that enforces that all URLs configured in a SAML client
  * are secure (https). It also enforces that no wildcard valid redirect URIs
@@ -33,6 +35,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
  *
  * @author rmartinc
  */
+@AutoService(ClientPolicyExecutorProviderFactory.class)
 public class SamlSecureClientUrisExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "saml-secure-client-uris";

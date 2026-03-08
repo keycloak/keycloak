@@ -25,12 +25,15 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>Policy executor that enforces client and server (full document or
  * assertion) signature is ON.</p>
  *
  * @author rmartinc
  */
+@AutoService(ClientPolicyExecutorProviderFactory.class)
 public class SamlSignatureEnforcerExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "saml-signature-enforcer";

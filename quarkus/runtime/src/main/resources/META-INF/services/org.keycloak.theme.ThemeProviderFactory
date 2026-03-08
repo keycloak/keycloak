@@ -1,4 +1,0 @@
-org.keycloak.quarkus.runtime.themes.QuarkusFolderThemeProviderFactory
-org.keycloak.quarkus.runtime.themes.QuarkusJarThemeProviderFactory
-
-

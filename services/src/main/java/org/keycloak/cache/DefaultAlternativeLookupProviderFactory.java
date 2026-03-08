@@ -6,6 +6,9 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(AlternativeLookupProviderFactory.class)
 public class DefaultAlternativeLookupProviderFactory implements AlternativeLookupProviderFactory {
 
     private LocalCacheConfiguration<String, CachedValue> cacheConfig;

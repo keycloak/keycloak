@@ -27,6 +27,7 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
 
+import com.google.auto.service.AutoService;
 import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder;
 import org.freedesktop.dbus.exceptions.DBusException;
@@ -36,6 +37,7 @@ import org.jboss.logging.Logger;
  * @author <a href="mailto:bruno@abstractj.org">Bruno Oliveira</a>
  * @version $Revision: 1 $
  */
+@AutoService(UserStorageProviderFactory.class)
 public class SSSDFederationProviderFactory implements UserStorageProviderFactory<SSSDFederationProvider>, EnvironmentDependentProviderFactory {
 
     private static final String PROVIDER_NAME = "sssd";

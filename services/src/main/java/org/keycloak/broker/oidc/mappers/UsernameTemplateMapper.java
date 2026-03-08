@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.saml.mappers.UsernameTemplateMapper.Target;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
@@ -52,6 +53,8 @@ import org.keycloak.social.paypal.PayPalIdentityProviderFactory;
 import org.keycloak.social.stackoverflow.StackoverflowIdentityProviderFactory;
 import org.keycloak.social.twitter.TwitterIdentityProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.TARGET;
 import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.TARGETS;
 import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.TRANSFORMERS;
@@ -61,6 +64,7 @@ import static org.keycloak.broker.saml.mappers.UsernameTemplateMapper.getTarget;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(IdentityProviderMapper.class)
 public class UsernameTemplateMapper extends AbstractClaimMapper {
 
     public static final String[] COMPATIBLE_PROVIDERS = {

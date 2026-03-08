@@ -20,6 +20,9 @@ package org.keycloak.crypto;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(CekManagementProviderFactory.class)
 public class EcdhEsA256KwCekManagementProviderFactory implements CekManagementProviderFactory {
 
     public static final String ID = JWEConstants.ECDH_ES_A256KW;

@@ -14,9 +14,11 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.resources.KeycloakApplication;
 
+import com.google.auto.service.AutoService;
 import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
 
+@AutoService(ResourceEncodingProviderFactory.class)
 public class GzipResourceEncodingProviderFactory implements ResourceEncodingProviderFactory {
 
     private static final Logger logger = Logger.getLogger(GzipResourceEncodingProviderFactory.class);

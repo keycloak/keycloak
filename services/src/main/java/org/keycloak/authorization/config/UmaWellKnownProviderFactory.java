@@ -23,9 +23,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(WellKnownProviderFactory.class)
 public class UmaWellKnownProviderFactory implements WellKnownProviderFactory {
 
     public static final String PROVIDER_ID = "uma2-configuration";

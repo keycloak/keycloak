@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -35,11 +36,14 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
 
 /**
  * @author <a href="mailto:denis.bernard@avanade.com">Denis Bernard</a>
  */
+@AutoService(IdentityProviderMapper.class)
 public class AdvancedAttributeToGroupMapper extends AbstractAttributeToGroupMapper {
 
     public static final String PROVIDER_ID = "saml-advanced-group-idp-mapper";

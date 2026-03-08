@@ -22,14 +22,18 @@ package org.keycloak.authentication.authenticators.conditional;
 import java.util.List;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(AuthenticatorFactory.class)
 public class ConditionalClientScopeAuthenticatorFactory implements ConditionalAuthenticatorFactory {
 
     public static final String PROVIDER_ID = "conditional-client-scope";

@@ -26,6 +26,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ClientPolicyExecutorProviderFactory.class)
 public class SecureClientUrisPatternExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "secure-client-uris-pattern";

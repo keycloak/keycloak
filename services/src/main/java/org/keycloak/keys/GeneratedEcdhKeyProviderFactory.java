@@ -24,10 +24,12 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 
+@AutoService(KeyProviderFactory.class)
 public class GeneratedEcdhKeyProviderFactory extends AbstractGeneratedEcKeyProviderFactory<KeyProvider> {
 
     // secp256r1,NIST P-256,X9.62 prime256v1,1.2.840.10045.3.1.7

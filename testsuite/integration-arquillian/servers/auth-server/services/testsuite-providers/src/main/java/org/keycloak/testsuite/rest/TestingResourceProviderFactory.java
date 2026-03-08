@@ -28,9 +28,12 @@ import org.keycloak.services.resource.RealmResourceProviderFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.truststore.TruststoreProvider;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(RealmResourceProviderFactory.class)
 public class TestingResourceProviderFactory implements RealmResourceProviderFactory {
 
     private Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks = new ConcurrentHashMap<>();

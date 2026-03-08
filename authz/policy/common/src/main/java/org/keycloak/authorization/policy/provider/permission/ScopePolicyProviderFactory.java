@@ -29,9 +29,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(PolicyProviderFactory.class)
 public class ScopePolicyProviderFactory implements PolicyProviderFactory<ScopePermissionRepresentation> {
 
     public static final String ID = "scope";

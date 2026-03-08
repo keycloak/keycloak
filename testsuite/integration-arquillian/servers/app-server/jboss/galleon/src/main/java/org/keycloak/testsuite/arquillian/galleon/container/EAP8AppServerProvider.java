@@ -24,12 +24,14 @@ import org.keycloak.testsuite.arquillian.container.AppServerContainerProvider;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.google.auto.service.AutoService;
 
 /**
  * Copied from <code>org.keycloak.testsuite.arquillian.eap.container.EAPAppServerProvider</code>
  * <p>
  * Create common class when refactoring
  */
+@AutoService(AppServerContainerProvider.class)
 public class EAP8AppServerProvider implements AppServerContainerProvider {
     private Node configuration;
     private static final String containerName = "eap8";

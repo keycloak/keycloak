@@ -44,12 +44,15 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 
+import com.google.auto.service.AutoService;
+
 import static java.util.Optional.ofNullable;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(RequiredActionFactory.class)
 public class UpdateProfile implements RequiredActionProvider, RequiredActionFactory {
     @Override
     public InitiatedActionSupport initiatedActionSupport() {

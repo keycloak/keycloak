@@ -19,6 +19,9 @@ package org.keycloak.crl;
 
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(Spi.class)
 public class CrlStorageSpi implements Spi {
 
     @Override

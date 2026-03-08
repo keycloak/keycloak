@@ -19,11 +19,14 @@ package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Spi implementation of the creation of {@link ProofValidator}
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
+@AutoService(Spi.class)
 public class ProofValidatorSpi implements Spi {
     private static final String NAME = "proofValidator";
 

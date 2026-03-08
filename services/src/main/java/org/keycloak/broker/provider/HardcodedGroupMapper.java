@@ -26,10 +26,13 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:dmartino@redhat.com">Daniele Martinoli</a>
  * @version $Revision: 1 $
  */
+@AutoService(IdentityProviderMapper.class)
 public class HardcodedGroupMapper extends AbstractClaimToGroupMapper {
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {

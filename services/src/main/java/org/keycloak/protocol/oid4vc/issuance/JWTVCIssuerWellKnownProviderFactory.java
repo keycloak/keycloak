@@ -23,6 +23,8 @@ import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * {@link  WellKnownProviderFactory} implementation for JWT VC Issuer metadata at endpoint /.well-known/jwt-vc-issuer
  *
@@ -30,6 +32,7 @@ import org.keycloak.wellknown.WellKnownProviderFactory;
  *
  * @author <a href="mailto:francis.pouatcha@adorsys.com">Francis Pouatcha</a>
  */
+@AutoService(WellKnownProviderFactory.class)
 public class JWTVCIssuerWellKnownProviderFactory implements WellKnownProviderFactory, OID4VCEnvironmentProviderFactory {
 
     public static final String PROVIDER_ID = "jwt-vc-issuer";

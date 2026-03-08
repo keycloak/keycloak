@@ -38,9 +38,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_ID;
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
+@AutoService(ClientProviderFactory.class)
 public class JpaClientProviderFactory implements ClientProviderFactory {
 
     private Set<String> clientSearchableAttributes = null;

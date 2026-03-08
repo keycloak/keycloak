@@ -21,7 +21,11 @@ import org.keycloak.Config;
 import org.keycloak.config.VaultOptions;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.vault.VaultProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(VaultProviderFactory.class)
 public class FilesPlainTextVaultProviderFactory extends org.keycloak.vault.FilesPlainTextVaultProviderFactory
     implements EnvironmentDependentProviderFactory {
 

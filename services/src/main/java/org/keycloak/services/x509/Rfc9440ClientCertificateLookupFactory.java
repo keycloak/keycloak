@@ -4,6 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -14,6 +15,7 @@ import org.jboss.logging.Logger;
  * @version $Revision: 1 $
  * @since 12/30/2024
  */
+@AutoService(X509ClientCertificateLookupFactory.class)
 public class Rfc9440ClientCertificateLookupFactory implements X509ClientCertificateLookupFactory {
 
     private final static Logger logger = Logger.getLogger(Rfc9440ClientCertificateLookupFactory.class);

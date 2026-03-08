@@ -22,9 +22,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProvider;
 import org.keycloak.protocol.oidc.rar.AuthorizationRequestParserProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
+@AutoService(AuthorizationRequestParserProviderFactory.class)
 public class ClientScopeAuthorizationRequestParserProviderFactory implements AuthorizationRequestParserProviderFactory {
 
     public static final String CLIENT_SCOPE_PARSER_ID = "client-scope";

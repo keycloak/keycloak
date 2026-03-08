@@ -20,9 +20,12 @@ package org.keycloak.credential;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(CredentialProviderFactory.class)
 public class WebAuthnPasswordlessCredentialProviderFactory extends WebAuthnCredentialProviderFactory {
 
     public static final String PROVIDER_ID = "keycloak-webauthn-passwordless";

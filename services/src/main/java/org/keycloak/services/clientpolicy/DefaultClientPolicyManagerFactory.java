@@ -22,11 +22,13 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(ClientPolicyManagerFactory.class)
 public class DefaultClientPolicyManagerFactory implements ClientPolicyManagerFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultClientPolicyManagerFactory.class);

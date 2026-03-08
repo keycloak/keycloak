@@ -17,9 +17,12 @@
 
 package org.keycloak.provider;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(ProviderLoaderFactory.class)
 public class DefaultProviderLoaderFactory implements ProviderLoaderFactory {
 
     @Override

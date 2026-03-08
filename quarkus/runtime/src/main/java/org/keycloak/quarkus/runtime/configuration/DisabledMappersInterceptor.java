@@ -23,6 +23,7 @@ import jakarta.annotation.Priority;
 
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
+import com.google.auto.service.AutoService;
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
@@ -41,6 +42,7 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
  * and before the {@link PropertyMappingInterceptor}
  */
 @Priority(Priorities.APPLICATION - 20)
+@AutoService(ConfigSourceInterceptor.class)
 public class DisabledMappersInterceptor implements ConfigSourceInterceptor {
 
     private static final ThreadLocal<Boolean> ENABLED = ThreadLocal.withInitial(() -> false);

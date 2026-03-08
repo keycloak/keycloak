@@ -23,9 +23,12 @@ import org.keycloak.forms.login.LoginFormsProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(LoginFormsProviderFactory.class)
 public class FreeMarkerLoginFormsProviderFactory implements LoginFormsProviderFactory {
 
     @Override

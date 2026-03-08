@@ -41,6 +41,7 @@ import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.utils.CredentialHelper;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -49,6 +50,7 @@ import org.jboss.logging.Logger;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(UserStorageProviderFactory.class)
 public class KerberosFederationProviderFactory implements UserStorageProviderFactory<KerberosFederationProvider>, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(KerberosFederationProviderFactory.class);

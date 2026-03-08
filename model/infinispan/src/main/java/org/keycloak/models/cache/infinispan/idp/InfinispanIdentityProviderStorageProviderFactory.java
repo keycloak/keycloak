@@ -22,6 +22,9 @@ import org.keycloak.models.IdentityProviderStorageProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(IdentityProviderStorageProviderFactory.class)
 public class InfinispanIdentityProviderStorageProviderFactory implements IdentityProviderStorageProviderFactory<IdentityProviderStorageProvider> {
 
     public static final String PROVIDER_ID = "infinispan";

@@ -29,6 +29,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_EXPORT_STRATEGY;
 import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_PER_FILE;
 
@@ -38,6 +40,7 @@ import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_USERS_PER_FIL
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(ExportProviderFactory.class)
 public class DirExportProviderFactory implements ExportProviderFactory {
 
     public static final String PROVIDER_ID = "dir";

@@ -33,6 +33,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
 import org.jboss.logging.Logger;
@@ -70,6 +71,7 @@ import org.jboss.logging.Logger;
  *
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
+@AutoService(PasswordPolicyProviderFactory.class)
 public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory {
 
     private static final Logger LOG = Logger.getLogger(BlacklistPasswordPolicyProviderFactory.class);

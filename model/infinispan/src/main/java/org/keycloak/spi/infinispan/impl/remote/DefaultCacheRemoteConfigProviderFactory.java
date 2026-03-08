@@ -43,6 +43,7 @@ import org.keycloak.spi.infinispan.CacheRemoteConfigProvider;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProviderFactory;
 import org.keycloak.spi.infinispan.impl.embedded.CacheConfigurator;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.client.hotrod.configuration.AuthenticationConfigurationBuilder;
 import org.infinispan.client.hotrod.configuration.ClientIntelligence;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
@@ -61,6 +62,7 @@ import static org.wildfly.security.sasl.util.SaslMechanismInformation.Names.SCRA
  * <p>
  * It is used when an external Infinispan cluster is enabled.
  */
+@AutoService(CacheRemoteConfigProviderFactory.class)
 public class DefaultCacheRemoteConfigProviderFactory implements CacheRemoteConfigProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "default";

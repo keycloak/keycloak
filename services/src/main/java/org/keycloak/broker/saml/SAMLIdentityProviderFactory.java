@@ -24,6 +24,7 @@ import javax.xml.namespace.QName;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
+import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
@@ -38,6 +39,7 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.SAMLMetadataUtil;
 import org.keycloak.saml.validators.DestinationValidator;
 
+import com.google.auto.service.AutoService;
 import org.w3c.dom.Element;
 
 import static org.keycloak.models.IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATTR;
@@ -45,6 +47,7 @@ import static org.keycloak.models.IdentityProviderModel.LEGACY_HIDE_ON_LOGIN_ATT
 /**
  * @author Pedro Igor
  */
+@AutoService(IdentityProviderFactory.class)
 public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory<SAMLIdentityProvider> {
 
     public static final String PROVIDER_ID = "saml";

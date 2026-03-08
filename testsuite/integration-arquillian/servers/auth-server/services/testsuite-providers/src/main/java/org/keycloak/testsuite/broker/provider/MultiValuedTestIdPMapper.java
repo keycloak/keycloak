@@ -21,13 +21,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
+import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Testing IdP mapper with multivalued property
  *
  * @author Martin Bartos <mabartos@redhat.com>
  */
+@AutoService(IdentityProviderMapper.class)
 public class MultiValuedTestIdPMapper extends AbstractIdentityProviderMapper {
     public static final String[] COMPATIBLE_PROVIDERS = {ANY_PROVIDER};
 

@@ -27,6 +27,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.ClaimsRepresentation;
@@ -34,11 +35,13 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+@AutoService(ProtocolMapper.class)
 public class ClaimsParameterWithValueIdTokenMapper extends AbstractOIDCProtocolMapper implements OIDCIDTokenMapper {
 
     private static final Logger LOGGER = Logger.getLogger(ClaimsParameterWithValueIdTokenMapper.class);

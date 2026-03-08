@@ -21,11 +21,14 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Spi implementation of the creation of {@link CredentialBuilder}
  *
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
+@AutoService(Spi.class)
 public class CredentialBuilderSpi implements Spi {
     private static final String NAME = "credentialBuilder";
 

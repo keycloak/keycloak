@@ -25,9 +25,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+@AutoService(AuthenticationChannelProviderFactory.class)
 public class HttpAuthenticationChannelProviderFactory implements AuthenticationChannelProviderFactory {
 
     public static final String PROVIDER_ID = "ciba-http-auth-channel";

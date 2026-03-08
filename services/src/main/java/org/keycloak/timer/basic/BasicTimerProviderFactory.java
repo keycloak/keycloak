@@ -28,9 +28,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.timer.TimerProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(TimerProviderFactory.class)
 public class BasicTimerProviderFactory implements TimerProviderFactory {
 
     private Timer timer;

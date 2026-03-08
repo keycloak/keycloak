@@ -13,9 +13,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
  */
+@AutoService(ClientPolicyExecutorProviderFactory.class)
 public class ClientSecretRotationExecutorFactory implements ClientPolicyExecutorProviderFactory,
     EnvironmentDependentProviderFactory {
 

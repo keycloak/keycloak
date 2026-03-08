@@ -28,11 +28,14 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>Just an authenticator that delays the authenticator some millis.</p>
  *
  * @author rmartinc
  */
+@AutoService(AuthenticatorFactory.class)
 public class DelayedAuthenticatorFactory implements AuthenticatorFactory, ConfigurableAuthenticatorFactory {
 
     public static final String PROVIDER_ID = "delayed-authenticator";

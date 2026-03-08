@@ -45,9 +45,12 @@ import org.keycloak.representations.idm.authorization.RolePolicyRepresentation.R
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(PolicyProviderFactory.class)
 public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePolicyRepresentation> {
 
     public static final String ID = "role";

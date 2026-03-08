@@ -22,6 +22,8 @@ import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorFactory;
 import org.keycloak.util.AuthorizationDetailsParser;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 /**
@@ -30,6 +32,7 @@ import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
  *
  * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
  */
+@AutoService(AuthorizationDetailsProcessorFactory.class)
 public class OID4VCAuthorizationDetailsProcessorFactory implements AuthorizationDetailsProcessorFactory, OID4VCEnvironmentProviderFactory {
 
     public static final String PROVIDER_ID = OPENID_CREDENTIAL;

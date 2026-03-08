@@ -26,6 +26,9 @@ import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.ValidatorConfig.ValidatorConfigBuilder;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Validator to check that User Profile attribute value is not blank (null value is OK!). Expects List of Strings as
@@ -34,6 +37,7 @@ import org.keycloak.validate.ValidatorConfig.ValidatorConfigBuilder;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
+@AutoService(ValidatorFactory.class)
 public class BlankAttributeValidator implements SimpleValidator {
 
     public static final String ID = "up-blank-attribute-value";

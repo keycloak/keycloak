@@ -21,6 +21,9 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(InfinispanTransactionProviderFactory.class)
 public class DefaultInfinispanTransactionProviderFactory implements InfinispanTransactionProviderFactory{
 
     public static final String ID = "default";

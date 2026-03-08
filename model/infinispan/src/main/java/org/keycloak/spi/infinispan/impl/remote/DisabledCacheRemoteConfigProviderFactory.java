@@ -27,11 +27,13 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProvider;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.client.hotrod.configuration.Configuration;
 
 /**
  * Implementation used when an external Infinispan cluster is not configured.
  */
+@AutoService(CacheRemoteConfigProviderFactory.class)
 public class DisabledCacheRemoteConfigProviderFactory implements CacheRemoteConfigProviderFactory, CacheRemoteConfigProvider, EnvironmentDependentProviderFactory {
 
     private static final String PROVIDER_ID = "disabled";

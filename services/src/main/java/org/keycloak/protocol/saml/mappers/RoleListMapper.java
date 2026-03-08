@@ -37,10 +37,13 @@ import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(ProtocolMapper.class)
 public class RoleListMapper extends AbstractSAMLProtocolMapper implements SAMLRoleListMapper {
     public static final String PROVIDER_ID = "saml-role-list-mapper";
     public static final String SINGLE_ROLE_ATTRIBUTE = "single";

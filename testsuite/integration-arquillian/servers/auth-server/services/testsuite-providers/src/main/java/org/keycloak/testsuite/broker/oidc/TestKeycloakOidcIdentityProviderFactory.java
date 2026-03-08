@@ -28,6 +28,7 @@ import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -36,6 +37,9 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(IdentityProviderFactory.class)
 public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentityProviderFactory {
 
     public static final String ID = "test-keycloak-oidc";

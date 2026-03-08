@@ -43,6 +43,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.commons.api.BasicCache;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.ACTION_TOKEN_CACHE;
@@ -51,6 +52,7 @@ import static org.keycloak.storage.datastore.DefaultDatastoreProviderFactory.set
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(SingleUseObjectProviderFactory.class)
 public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory<InfinispanSingleUseObjectProvider>, EnvironmentDependentProviderFactory, ServerInfoAwareProviderFactory {
 
     public static final String CONFIG_PERSIST_REVOKED_TOKENS = "persistRevokedTokens";

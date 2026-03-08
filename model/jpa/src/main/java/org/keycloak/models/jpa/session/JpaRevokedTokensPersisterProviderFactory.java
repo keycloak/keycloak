@@ -26,9 +26,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.session.RevokedTokenPersisterProvider;
 import org.keycloak.models.session.RevokedTokensPersisterProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(RevokedTokensPersisterProviderFactory.class)
 public class JpaRevokedTokensPersisterProviderFactory implements RevokedTokensPersisterProviderFactory {
 
     public static final String ID = "jpa";

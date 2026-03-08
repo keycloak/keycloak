@@ -32,10 +32,13 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(AuthenticatorFactory.class)
 public class ClickThroughAuthenticator implements Authenticator, AuthenticatorFactory {
     public static final String PROVIDER_ID = "testsuite-dummy-click-through";
 

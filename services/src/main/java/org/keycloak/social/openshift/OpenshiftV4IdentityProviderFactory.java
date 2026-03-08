@@ -8,11 +8,14 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * OpenShift 4 Identity Provider factory class.
  *
  * @author David Festal and Sebastian Łaskawiec
  */
+@AutoService(SocialIdentityProviderFactory.class)
 public class OpenshiftV4IdentityProviderFactory extends AbstractIdentityProviderFactory<OpenshiftV4IdentityProvider> implements SocialIdentityProviderFactory<OpenshiftV4IdentityProvider> {
 
     public static final String PROVIDER_ID = "openshift-v4";

@@ -4,12 +4,15 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>A {@link Spi} to replace Account resources.
  *
  * <p>Implementors can use this {@link Spi} to override the behavior of the Account endpoints and resources by
  * creating JAX-RS resources that override those served at /account by default.
  */
+@AutoService(Spi.class)
 public class AccountResourceSpi implements Spi {
 
     @Override

@@ -21,11 +21,14 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:erik.mulder@docdatapayments.com">Erik Mulder</a>
  * 
  * Spi that allows for adding extra JPA entity's to the Keycloak entity manager.
  */
+@AutoService(Spi.class)
 public class JpaEntitySpi implements Spi {
 
 	@Override

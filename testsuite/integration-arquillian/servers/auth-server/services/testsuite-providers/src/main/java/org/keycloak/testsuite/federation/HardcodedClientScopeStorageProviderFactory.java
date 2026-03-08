@@ -25,6 +25,9 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.storage.clientscope.ClientScopeStorageProviderFactory;
 import org.keycloak.storage.clientscope.ClientScopeStorageProviderModel;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ClientScopeStorageProviderFactory.class)
 public class HardcodedClientScopeStorageProviderFactory implements ClientScopeStorageProviderFactory<HardcodedClientScopeStorageProvider> {
 
     public static final String PROVIDER_ID = "hardcoded-clientscope";

@@ -26,9 +26,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.issuance.OffsetTimeProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
+@AutoService(CredentialBuilderFactory.class)
 public class JwtCredentialBuilderFactory implements CredentialBuilderFactory {
 
     protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();

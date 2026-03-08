@@ -45,12 +45,14 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.util.concurrent.BlockingManager;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME;
 
+@AutoService(UserLoginFailureProviderFactory.class)
 public class RemoteUserLoginFailureProviderFactory implements UserLoginFailureProviderFactory<RemoteUserLoginFailureProvider>, UpdaterFactory<LoginFailureKey, LoginFailureEntity, LoginFailuresUpdater>, EnvironmentDependentProviderFactory, RemoteChangeLogTransaction.SharedState<LoginFailureKey, LoginFailureEntity>, ServerInfoAwareProviderFactory {
 
     private static final Logger log = Logger.getLogger(MethodHandles.lookup().lookupClass());

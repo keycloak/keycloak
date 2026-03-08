@@ -25,9 +25,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.util.JsonSerialization;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(ClientDescriptionConverterFactory.class)
 public class KeycloakClientDescriptionConverter implements ClientDescriptionConverterFactory, ClientDescriptionConverter {
 
     public static final String ID = "keycloak";

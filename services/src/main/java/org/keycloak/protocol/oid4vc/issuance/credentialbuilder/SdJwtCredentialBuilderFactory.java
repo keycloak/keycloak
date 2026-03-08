@@ -25,9 +25,12 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:Ingrid.Kamga@adorsys.com">Ingrid Kamga</a>
  */
+@AutoService(CredentialBuilderFactory.class)
 public class SdJwtCredentialBuilderFactory implements CredentialBuilderFactory {
 
     protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();

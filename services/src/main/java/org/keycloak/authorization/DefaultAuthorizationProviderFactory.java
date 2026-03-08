@@ -25,9 +25,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(AuthorizationProviderFactory.class)
 public class DefaultAuthorizationProviderFactory implements AuthorizationProviderFactory {
 
     private PolicyEvaluator policyEvaluator = new DefaultPolicyEvaluator();

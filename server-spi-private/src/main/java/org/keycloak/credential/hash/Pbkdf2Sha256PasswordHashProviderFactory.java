@@ -2,11 +2,14 @@ package org.keycloak.credential.hash;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
 /**
  * PBKDF2 Password Hash provider with HMAC using SHA256
  *
  * @author <a href"mailto:abkaplan07@gmail.com">Adam Kaplan</a>
  */
+@AutoService(PasswordHashProviderFactory.class)
 public class Pbkdf2Sha256PasswordHashProviderFactory extends AbstractPbkdf2PasswordHashProviderFactory implements PasswordHashProviderFactory {
 
     public static final String ID = "pbkdf2-sha256";

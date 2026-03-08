@@ -25,9 +25,12 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.storage.UserStorageProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(UserStorageProviderFactory.class)
 public class BackwardsCompatibilityUserStorageFactory implements UserStorageProviderFactory<BackwardsCompatibilityUserStorage> {
 
     public static final String PROVIDER_ID = "backwards-compatibility-storage";

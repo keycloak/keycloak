@@ -44,10 +44,13 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(FormActionFactory.class)
 public class RegistrationPassword implements FormAction, FormActionFactory {
     public static final String PROVIDER_ID = "registration-password-action";
 

@@ -29,6 +29,9 @@ import org.keycloak.testframework.server.KeycloakServer;
 import org.keycloak.testframework.server.KeycloakUrlsSupplier;
 import org.keycloak.testframework.server.RemoteKeycloakServerSupplier;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(TestFrameworkExtension.class)
 public class CoreTestFrameworkExtension implements TestFrameworkExtension {
 
     @Override

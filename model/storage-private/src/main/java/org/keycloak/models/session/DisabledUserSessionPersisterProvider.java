@@ -31,12 +31,15 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Persistence of userSessions is disabled . Useful just if you never need survive of userSessions/clientSessions
  * among server restart. Offline sessions / offline tokens will be invalid after server restart as well,
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(UserSessionPersisterProviderFactory.class)
 public class DisabledUserSessionPersisterProvider implements UserSessionPersisterProviderFactory, UserSessionPersisterProvider {
 
     public static final String ID = "disabled";

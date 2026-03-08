@@ -22,6 +22,8 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>A {@link Spi} to plug additional sub-resources to Realms' RESTful API.
  *
@@ -30,6 +32,7 @@ import org.keycloak.provider.Spi;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(Spi.class)
 public class RealmResourceSPI implements Spi {
 
     @Override

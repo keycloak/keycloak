@@ -28,6 +28,7 @@ import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvide
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
 import liquibase.Scope;
 import liquibase.ThreadLocalScopeManager;
 import liquibase.database.AbstractJdbcDatabase;
@@ -43,6 +44,7 @@ import org.jboss.logging.Logger;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(LiquibaseConnectionProviderFactory.class)
 public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionProviderFactory, LiquibaseConnectionProvider {
 
     private static final Logger logger = Logger.getLogger(DefaultLiquibaseConnectionProvider.class);

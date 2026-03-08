@@ -43,8 +43,10 @@ import org.keycloak.storage.UserStorageEventListener;
 import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TimerProvider;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
+@AutoService(DatastoreProviderFactory.class)
 public class DefaultDatastoreProviderFactory implements DatastoreProviderFactory, ProviderEventListener {
 
     private static final String PROVIDER_ID = "legacy";

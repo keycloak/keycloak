@@ -54,6 +54,7 @@ import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.crypto.JavaAlgorithm;
 
+import com.google.auto.service.AutoService;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
@@ -72,6 +73,7 @@ import org.jboss.logging.Logger;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(CryptoProvider.class)
 public class FIPS1402Provider implements CryptoProvider {
 
     private static final Logger log = Logger.getLogger(FIPS1402Provider.class);

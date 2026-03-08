@@ -11,6 +11,9 @@ import org.keycloak.theme.FolderThemeProvider;
 import org.keycloak.theme.ThemeProvider;
 import org.keycloak.theme.ThemeProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ThemeProviderFactory.class)
 public class QuarkusFolderThemeProviderFactory implements ThemeProviderFactory {
 
     private static final String CONFIG_DIR_KEY = "dir";
