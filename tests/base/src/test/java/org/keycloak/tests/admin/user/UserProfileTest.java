@@ -18,7 +18,10 @@
 package org.keycloak.tests.admin.user;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -29,11 +32,13 @@ import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -171,6 +176,46 @@ public class UserProfileTest extends AbstractUserTest {
             for (UserRepresentation user : result) {
                 assertThat(user.getAttributes(), nullValue());
             }
+        } finally {
+            upConfig.removeAttribute("aName");
+            upResource.update(upConfig);
+        }
+    }
+
+    @Test
+    public void testGetUnmanagedAttributes() {
+        UserProfileResource upResource = managedRealm.admin().users().userProfile();
+        UPConfig upConfig = upResource.getConfiguration();
+        upConfig.addOrReplaceAttribute(createAttributeMetadata("aName"));
+        upResource.update(upConfig);
+
+        try {
+            UsersResource users = managedRealm.admin().users();
+            UserRepresentation user = UserConfigBuilder.create().username("test-user").attribute("aName", "aValue").build();
+            try (Response response = users.create(user)) {
+                user.setId(ApiUtil.getCreatedId(response));
+            }
+            Map<String, List<String>> unmanagedAttributes = users.get(user.getId()).getUnmanagedAttributes();
+            assertTrue(unmanagedAttributes.isEmpty());
+
+            upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+            upResource.update(upConfig);
+            user.getAttributes().put("unmanaged", List.of("value"));
+            users.get(user.getId()).update(user);
+            unmanagedAttributes = users.get(user.getId()).getUnmanagedAttributes();
+            assertThat(unmanagedAttributes.keySet(), hasSize(1));
+            upConfig.removeAttribute("aName");
+            upResource.update(upConfig);
+            unmanagedAttributes = users.get(user.getId()).getUnmanagedAttributes();
+            assertThat(unmanagedAttributes.keySet(), hasSize(2));
+            upConfig.addOrReplaceAttribute(createAttributeMetadata("aName"));
+            upResource.update(upConfig);
+            unmanagedAttributes = users.get(user.getId()).getUnmanagedAttributes();
+            assertThat(unmanagedAttributes.keySet(), hasSize(1));
+            upConfig.getAttribute("aName").setPermissions(new UPAttributePermissions(Set.of("user"), Set.of("user")));
+            upResource.update(upConfig);
+            unmanagedAttributes = users.get(user.getId()).getUnmanagedAttributes();
+            assertThat(unmanagedAttributes.keySet(), hasSize(1));
         } finally {
             upConfig.removeAttribute("aName");
             upResource.update(upConfig);
