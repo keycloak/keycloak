@@ -156,30 +156,21 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         return InfinispanUtils.isEmbeddedInfinispan();
     }
 
+    @Override
+    public void databaseFailoverDetected() {
+        logger.info("Database failover detected, clearing caches that might be out-of-sync with the database");
+        ClusterProviderFactory.super.databaseFailoverDetected();
+        clearLocalCaches();
+        clearUserSessionCaches();
+    }
+
     @Listener
     public class ViewChangeListener {
 
         @Merged
         public void mergeEvent(MergeEvent event) {
-            // During split-brain only Keycloak instances contained within the same partition will receive updates via
-            // the work cache. On split-brain healing, it's necessary for us to clear all local caches so that potentially
-            // stale values are invalidated and subsequent requests are forced to read from the DB.
-            localExecutor.execute(() ->
-                    Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
-                            .map(name -> workCache.getCacheManager().getCache(name))
-                            .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
-                            .forEach(Cache::clear)
-            );
-
-            if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
-                // If persistent user sessions are enabled, the reasoning from above is true for the user and client sessions as well.
-                // As the session caches are distributed caches and as this runs on every node, run it locally on each node.
-                localExecutor.execute(() ->
-                        Arrays.stream(InfinispanConnectionProvider.USER_AND_CLIENT_SESSION_CACHES)
-                                .map(name -> workCache.getCacheManager().getCache(name).getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL))
-                                .forEach(Cache::clear)
-                );
-            }
+            clearLocalCaches();
+            clearUserSessionCaches();
         }
 
         @ViewChanged
@@ -217,5 +208,29 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory,
         private Set<String> convertAddresses(Collection<Address> addresses) {
             return addresses.stream().map(Object::toString).collect(Collectors.toSet());
         }
+    }
+
+    private void clearUserSessionCaches() {
+        if (Profile.isFeatureEnabled(Profile.Feature.PERSISTENT_USER_SESSIONS)) {
+            // If persistent user sessions are enabled, the reasoning from above is true for the user and client sessions as well.
+            // As the session caches are distributed caches and as this runs on every node, run it locally on each node.
+            localExecutor.execute(() ->
+                    Arrays.stream(InfinispanConnectionProvider.USER_AND_CLIENT_SESSION_CACHES)
+                            .map(name -> workCache.getCacheManager().getCache(name).getAdvancedCache().withFlags(Flag.CACHE_MODE_LOCAL))
+                            .forEach(Cache::clear)
+            );
+        }
+    }
+
+    private void clearLocalCaches() {
+        // During split-brain only Keycloak instances contained within the same partition will receive updates via
+        // the work cache. On split-brain healing, it's necessary for us to clear all local caches so that potentially
+        // stale values are invalidated and subsequent requests are forced to read from the DB.
+        localExecutor.execute(() ->
+                Arrays.stream(InfinispanConnectionProvider.LOCAL_CACHE_NAMES)
+                        .map(name -> workCache.getCacheManager().getCache(name))
+                        .filter(cache -> cache.getCacheConfiguration().clustering().cacheMode() == CacheMode.LOCAL)
+                        .forEach(Cache::clear)
+        );
     }
 }
