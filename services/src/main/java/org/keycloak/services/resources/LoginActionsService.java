@@ -458,6 +458,7 @@ public class LoginActionsService {
 
             }
             authSession = createAuthenticationSessionForClient(clientId, redirectUri);
+            processLocaleParam(authSession);
             return processResetCredentials(false, null, authSession, null);
         }
 
