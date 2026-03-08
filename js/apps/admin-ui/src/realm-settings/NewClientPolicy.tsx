@@ -197,9 +197,11 @@ export default function NewClientPolicy() {
     };
 
     try {
+      const updatedPolicies = getAllPolicies();
       await adminClient.clientPolicies.updatePolicy({
-        policies: getAllPolicies(),
+        policies: updatedPolicies,
       });
+      setAllPolicies(updatedPolicies);
       addAlert(
         policyName
           ? t("updateClientPolicySuccess")
