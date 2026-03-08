@@ -478,7 +478,9 @@ export default function NewClientPolicy() {
               rules={{
                 required: t("required"),
                 validate: (value) =>
-                  policies.some((policy) => policy.name === value)
+                  policies.some(
+                    (policy) => policyName !== value && policy.name === value,
+                  )
                     ? t("createClientProfileNameHelperText")
                     : true,
               }}
