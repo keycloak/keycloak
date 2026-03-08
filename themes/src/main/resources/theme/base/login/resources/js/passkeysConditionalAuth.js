@@ -1,7 +1,12 @@
-import { base64url } from "rfc4648";
-import { returnSuccess, signal } from "./webauthnAuthenticate.js";
+import { doAuthenticate, returnSuccess } from "./webauthnAuthenticate.js";
 
-export function initAuthenticate(input, availableCallback = (available) => {}) {
+/**
+ * Entry point: replaces initAuthenticate + autoTriggerPasskey as a separate call.
+ *
+ * 1. Tries mediation "optional" → immediate native dialog without a click
+ * 2. Falls back to mediation "conditional" on failure → autofill in the username field
+ */
+export async function initAuthenticate(input, availableCallback = () => {}) {
     // Check if WebAuthn is supported by this browser
     if (!window.PublicKeyCredential) {
         // Fail silently as WebAuthn Conditional UI is not required
@@ -9,72 +14,46 @@ export function initAuthenticate(input, availableCallback = (available) => {}) {
     }
     if (input.isUserIdentified || typeof PublicKeyCredential.isConditionalMediationAvailable === "undefined") {
         availableCallback(false);
-    } else {
-        tryAutoFillUI(input, availableCallback);
-    }
-}
-
-function doAuthenticate(input) {
-    // Check if WebAuthn is supported by this browser
-    if (!window.PublicKeyCredential) {
-        // Fail silently as WebAuthn Conditional UI is not required
         return;
     }
 
-    const publicKey = {
-        rpId : input.rpId,
-        challenge: base64url.parse(input.challenge, { loose: true })
-    };
-
-    publicKey.allowCredentials = !input.isUserIdentified ? [] : getAllowCredentials();
-
-    if (input.createTimeout !== 0) {
-        publicKey.timeout = input.createTimeout * 1000;
-    }
-
-    if (input.userVerification !== 'not specified') {
-        publicKey.userVerification = input.userVerification;
-    }
-
-    return navigator.credentials.get({
-        publicKey: publicKey,
-        signal: signal(),
-        ...input.additionalOptions
-    });
-}
-
-async function tryAutoFillUI(input, availableCallback = (available) => {}) {
-    const isConditionalMediationAvailable = await PublicKeyCredential.isConditionalMediationAvailable();
-    if (isConditionalMediationAvailable) {
-        availableCallback(true);
-        input.additionalOptions = { mediation: 'conditional'};
-        try {
-            const result = await doAuthenticate(input);
-            returnSuccess(result);
-        } catch {
-            // Fail silently as WebAuthn Conditional UI is not required
-        }
-    } else {
+    const isAvailable = await PublicKeyCredential.isConditionalMediationAvailable();
+    if (!isAvailable) {
         availableCallback(false);
+        return;
     }
+
+    availableCallback(true);
+    await tryOptionalThenConditional(input);
 }
 
-function getAllowCredentials() {
-    const allowCredentials = [];
-    const authnUse = document.forms['authn_select'].authn_use_chk;
-    if (authnUse !== undefined) {
-        if (authnUse.length === undefined) {
-            allowCredentials.push({
-                id: base64url.parse(authnUse.value, {loose: true}),
-                type: 'public-key',
-            });
-        } else {
-            authnUse.forEach((entry) =>
-                allowCredentials.push({
-                    id: base64url.parse(entry.value, {loose: true}),
-                    type: 'public-key',
-                }));
+async function tryOptionalThenConditional(input) {
+    // Step 1: Immediate modal dialog without user interaction
+    try {
+        const result = await doAuthenticate({
+            ...input,
+            allowCredentials: [],
+            additionalOptions: { mediation: 'optional' },
+        });
+        if (result) {
+            returnSuccess(result);
+            return;
+        }
+    } catch (err) {
+        if (err.name !== 'NotAllowedError' && err.name !== 'AbortError') {
+            console.warn('WebAuthn optional trigger failed:', err);
         }
     }
-    return allowCredentials;
+
+    // Step 2: Fall back to Conditional UI (autofill in the username field)
+    try {
+        const result = await doAuthenticate({
+            ...input,
+            allowCredentials: [],
+            additionalOptions: { mediation: 'conditional' },
+        });
+        if (result) returnSuccess(result);
+    } catch {
+        // Fail silently as WebAuthn Conditional UI is not required
+    }
 }
