@@ -103,6 +103,7 @@ import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.protocol.oidc.token.TokenInterceptorProvider;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.rar.AuthorizationRequestContext;
@@ -868,6 +869,9 @@ public class TokenManager {
                     .map(ClientModel::getClientId)
                     .collect(Collectors.toSet()));
         }
+
+        session.getAllProviders(TokenInterceptorProvider.class).forEach(i -> i.intercept(accessToken, clientSessionCtx));
+
         return accessToken;
     }
 
