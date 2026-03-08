@@ -141,7 +141,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     public boolean validateUserAndPassword(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData)  {
         UserModel user = getUser(context, inputData);
         boolean shouldClearUserFromCtxAfterBadPassword = !isUserAlreadySetBeforeUsernamePasswordAuth(context);
-        return user != null && validatePassword(context, user, inputData, shouldClearUserFromCtxAfterBadPassword) && validateUser(context, user, inputData);
+        return user != null && validateUser(context, user, inputData) && validatePassword(context, user, inputData, shouldClearUserFromCtxAfterBadPassword);
     }
 
     public boolean validateUser(AuthenticationFlowContext context, MultivaluedMap<String, String> inputData) {
