@@ -101,12 +101,14 @@ type AdvancedSettingsProps = {
   isOIDC: boolean;
   isSAML: boolean;
   isOAuth2: boolean;
+  isKeycloakOIDC?: boolean;
 };
 
 export const AdvancedSettings = ({
   isOIDC,
   isSAML,
   isOAuth2,
+  isKeycloakOIDC = false,
 }: AdvancedSettingsProps) => {
   const { t } = useTranslation();
   const {
@@ -163,7 +165,7 @@ export const AdvancedSettings = ({
           <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
         </>
       )}
-      {isOIDC && (
+      {isOIDC && !isKeycloakOIDC && (
         <SwitchField field="config.isAccessTokenJWT" label="isAccessTokenJWT" />
       )}
       <SwitchField field="trustEmail" label="trustEmail" fieldType="boolean" />

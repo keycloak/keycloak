@@ -32,6 +32,20 @@ export async function createOIDCProvider(
   await clickAddButton(page);
 }
 
+export async function createKeycloakOIDCProvider(
+  page: Page,
+  alias: string,
+  secret: string,
+) {
+  await clickProviderCard(page, "keycloak-oidc");
+  await fillDiscoveryUrl(page, discoveryUrl);
+  await page.getByTestId("alias").fill(alias);
+  await page.getByTestId("displayName").fill(alias);
+  await page.getByTestId("config.clientId").fill(alias);
+  await page.getByTestId("config.clientSecret").fill(secret);
+  await clickAddButton(page);
+}
+
 export async function createSAMLProvider(
   page: Page,
   providerName: string,
