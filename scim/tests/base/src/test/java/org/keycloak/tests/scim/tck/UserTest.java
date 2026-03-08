@@ -1,5 +1,6 @@
 package org.keycloak.tests.scim.tck;
 
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,8 @@ import static org.keycloak.scim.resource.Scim.ENTERPRISE_USER_SCHEMA;
 import static org.keycloak.scim.resource.Scim.USER_RESOURCE_TYPE;
 import static org.keycloak.scim.resource.Scim.getCoreSchema;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -810,6 +813,35 @@ public class UserTest extends AbstractScimTest {
         }
 
         return subGroup;
+    }
+
+    @Test
+    public void testMetaTimestamps() {
+        User user = client.users().create(createUser());
+        User afterCreate = client.users().get(user.getId());
+        assertNotNull(afterCreate.getMeta().getCreated());
+        assertNotNull(afterCreate.getMeta().getLastModified());
+
+        Instant createdTimestamp = Instant.parse(afterCreate.getMeta().getCreated());
+        Instant lastModifiedAfterCreate = Instant.parse(afterCreate.getMeta().getLastModified());
+
+        // after create, lastModified should be >= created
+        assertThat(lastModifiedAfterCreate, greaterThanOrEqualTo(createdTimestamp));
+
+        // update the user
+        afterCreate.setEmail(afterCreate.getUserName() + "@updated.org");
+        client.users().update(afterCreate);
+        User afterUpdate = client.users().get(afterCreate.getId());
+
+        Instant createdAfterUpdate = Instant.parse(afterUpdate.getMeta().getCreated());
+        Instant lastModifiedAfterUpdate = Instant.parse(afterUpdate.getMeta().getLastModified());
+
+        // created should not change after update
+        assertEquals(createdTimestamp, createdAfterUpdate);
+        // lastModified should be >= created after update
+        assertThat(lastModifiedAfterUpdate, greaterThanOrEqualTo(createdAfterUpdate));
+        // lastModified should have advanced after update
+        assertThat(lastModifiedAfterUpdate, greaterThanOrEqualTo(lastModifiedAfterCreate));
     }
 
     private void assertRootAttributes(User actual, User expected) {

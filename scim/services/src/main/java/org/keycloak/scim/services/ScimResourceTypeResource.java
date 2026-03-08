@@ -27,7 +27,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 
-import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.scim.filter.ScimFilterException;
@@ -81,7 +80,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
             return resourceNotFound(id);
         }
 
-        setMetadata(resource, resource.getCreatedTimestamp());
+        setMetadata(resource);
 
         return Response.ok().entity(resource).build();
     }
@@ -114,14 +113,14 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         Stream<R> stream;
         try {
             stream = resourceTypeProvider.getAll(searchRequest)
-                    .peek(r -> setMetadata(r, r.getCreatedTimestamp()));
+                    .peek(this::setMetadata);
         } catch (ScimFilterException e) {
             return badRequest(e.getMessage(), "invalidFilter");
         }
 
         if (resourceTypeProvider instanceof SingletonResourceTypeProvider<R>) {
             return Response.ok().entity(stream
-                            .peek(r -> setMetadata(r, r.getCreatedTimestamp()))
+                            .peek(this::setMetadata)
                             .findAny().orElseThrow(NotFoundException::new))
                     .build();
         }
@@ -202,11 +201,17 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         }
     }
 
-    private void setMetadata(R resource, long createdTimestamp) {
+    private void setMetadata(R resource) {
         Meta meta = new Meta();
         meta.setResourceType(resourceTypeProvider.getName());
-        meta.setCreated(Instant.ofEpochMilli(createdTimestamp).toString());
-        meta.setLastModified(meta.getCreated());
+        Long createdTimestamp = resource.getCreatedTimestamp();
+        Long lastModifiedTimestamp = resource.getLastModifiedTimestamp();
+        if (createdTimestamp != null) {
+            meta.setCreated(Instant.ofEpochMilli(createdTimestamp).toString());
+        }
+        if (lastModifiedTimestamp != null) {
+            meta.setLastModified(Instant.ofEpochMilli(lastModifiedTimestamp).toString());
+        }
         UriBuilder location = session.getContext().getUri().getAbsolutePathBuilder();
         if (resource.getId() != null) {
             location.path(resource.getId());
@@ -228,8 +233,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     private Response onPersist(R resource, Status status, BiFunction<ScimResourceTypeProvider<R>, R, R> consumer) {
         try {
             R r = consumer.apply(resourceTypeProvider, resource);
-
-            setMetadata(resource, Time.currentTimeMillis());
+            setMetadata(r);
 
             return Response.status(status).entity(r).build();
         } catch (ModelValidationException mve) {
