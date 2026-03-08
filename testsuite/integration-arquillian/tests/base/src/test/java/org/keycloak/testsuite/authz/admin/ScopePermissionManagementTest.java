@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.authorization.ScopePermissionRepresentat
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -151,6 +152,9 @@ public class ScopePermissionManagementTest extends AbstractPolicyManagementTest 
 
         try (Response response = permissions.create(representation)) {
             ScopePermissionRepresentation created = response.readEntity(ScopePermissionRepresentation.class);
+            assertNull(created.getResources());
+            assertNull(created.getScopes());
+            assertNull(created.getPolicies());
             ScopePermissionResource permission = permissions.findById(created.getId());
             assertRepresentation(representation, permission);
         }
