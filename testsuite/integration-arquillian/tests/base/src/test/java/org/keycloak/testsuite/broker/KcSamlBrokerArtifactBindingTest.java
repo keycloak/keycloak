@@ -7,6 +7,7 @@ import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
@@ -15,6 +16,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 
+@SetDefaultProvider(spi = "login-protocol", providerId = "saml", onlyOverrideConfig = true, config = {"allow-private-metadata-urls", "true"})
 public final class KcSamlBrokerArtifactBindingTest extends AbstractInitializedBaseBrokerTest {
 
     @Override

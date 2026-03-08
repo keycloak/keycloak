@@ -61,8 +61,12 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String SCOPE_AUTHN_CONTEXT_CLASS_REF = "AuthnContextClassRef";
     private static final String ROLE_LIST_CONSENT_TEXT = "${samlRoleListScopeConsentText}";
 
+    static final String CONFIG_ALLOW_PRIVATE_METADATA_URLS = "allowPrivateMetadataUrls";
+    static final boolean DEFAULT_ALLOW_PRIVATE_METADATA_URLS = false;
+
     private DestinationValidator destinationValidator;
     private long maxInflatingSize;
+    private boolean allowPrivateMetadataUrls;
 
     @Override
     public Object createProtocolEndpoint(KeycloakSession session, EventBuilder event) {
@@ -115,6 +119,7 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         }
         this.destinationValidator = DestinationValidator.forProtocolMap(config.getArray("knownProtocols"));
         this.maxInflatingSize = config.getLong("maxInflatingSize", DeflateUtil.DEFAULT_MAX_INFLATING_SIZE);
+        this.allowPrivateMetadataUrls = config.getBoolean(CONFIG_ALLOW_PRIVATE_METADATA_URLS, DEFAULT_ALLOW_PRIVATE_METADATA_URLS);
     }
 
     @Override
@@ -226,6 +231,14 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
         return maxInflatingSize;
     }
 
+    /**
+     * Whether SAML metadata descriptor URLs pointing to private/internal network addresses are allowed.
+     * @return true if private addresses are allowed, false otherwise
+     */
+    public boolean isAllowPrivateMetadataUrls() {
+        return allowPrivateMetadataUrls;
+    }
+
     @Override
     public List<ProviderConfigProperty> getConfigMetadata() {
         return ProviderConfigurationBuilder.create()
@@ -234,6 +247,12 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
                 .type("long")
                 .helpText("The maximum inflating size in bytes for the REDIRECT binding.")
                 .defaultValue(DeflateUtil.DEFAULT_MAX_INFLATING_SIZE)
+                .add()
+                .property()
+                .name(CONFIG_ALLOW_PRIVATE_METADATA_URLS)
+                .type("boolean")
+                .helpText("Whether to allow SAML metadata descriptor URLs that point to private or internal network addresses (loopback, site-local, link-local).")
+                .defaultValue(DEFAULT_ALLOW_PRIVATE_METADATA_URLS)
                 .add()
                 .build();
     }

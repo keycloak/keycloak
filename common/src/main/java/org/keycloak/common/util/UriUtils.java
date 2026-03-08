@@ -18,11 +18,13 @@
 package org.keycloak.common.util;
 
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.regex.Pattern;
 
 import org.keycloak.common.enums.SslRequired;
@@ -102,6 +104,34 @@ public class UriUtils {
 
     public static String stripQueryParam(String url, String name){
         return url.replaceFirst("[\\?&]"+name+"=[^&]*$|"+name+"=[^&]*&", "");
+    }
+
+    /**
+     * Checks that the given URL does not resolve to a private or internal network address.
+     * This includes loopback (127.x.x.x, ::1), site-local (10.x.x.x, 172.16-31.x.x, 192.168.x.x),
+     * link-local (169.254.x.x), and wildcard (0.0.0.0) addresses.
+     *
+     * @param url the URL to check
+     * @param name a descriptive name for error messages
+     * @throws IllegalArgumentException if the URL resolves to a private/internal address or the host cannot be resolved
+     */
+    public static void checkUrlIsNotPrivateAddress(String url, String name) throws IllegalArgumentException {
+        if (url == null) {
+            return;
+        }
+
+        try {
+            URL parsed = new URL(url);
+            InetAddress address = InetAddress.getByName(parsed.getHost());
+            if (address.isLoopbackAddress() || address.isSiteLocalAddress()
+                    || address.isLinkLocalAddress() || address.isAnyLocalAddress()) {
+                throw new IllegalArgumentException("The url [" + name + "] points to a private or internal network address");
+            }
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("The url [" + name + "] is malformed", e);
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException("The url [" + name + "] has an unknown host", e);
+        }
     }
 
     public static void checkUrl(SslRequired sslRequired, String url, String name) throws IllegalArgumentException{
