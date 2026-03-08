@@ -177,9 +177,13 @@ public class BruteForceUsersResource {
         return userModels.map(user -> {
             UserProfile profile = provider.create(UserProfileContext.USER_API, user);
             UserRepresentation rep = profile.toRepresentation(!briefRepresentationB);
-            UserRepresentation userRep = briefRepresentationB ?
-                    ModelToRepresentation.toBriefRepresentation(user, rep, false) :
-                    ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
+            UserRepresentation userRep;
+            if (briefRepresentationB) {
+                userRep = ModelToRepresentation.toBriefRepresentation(user, rep, false);
+                userRep.setUserProfileMetadata(null);
+            } else {
+                userRep = ModelToRepresentation.toRepresentation(session, realm, user, rep, false);
+            }
             userRep.setAccess(usersEvaluator.getAccessForListing(user));
             return userRep;
         }).map(this::getBruteForceStatus);
