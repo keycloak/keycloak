@@ -220,7 +220,7 @@ public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
     public static class TestServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.KUBERNETES_SERVICE_ACCOUNTS, Profile.Feature.JWT_AUTHORIZATION_GRANT);
+            return config.features(Profile.Feature.KUBERNETES_SERVICE_ACCOUNTS);
         }
     }
 }
