@@ -99,9 +99,11 @@ public class Option<T> {
     /**
      * Get connected options that have a certain relationship with the current option.
      * Usually when the current option is set, the connected options should be set as well.
+     * <br>
+     * Not currently meaningful for non-wildcard options
      */
     public Set<String> getConnectedOptions() {
-        return connectedOptions;
+        return connectedOptions; // return the set directly for ease of mutability
     }
 
     /**
