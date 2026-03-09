@@ -46,6 +46,7 @@ interface PolicyRequest {
   action: string;
   requestType: string;
   status: string;
+  deleteStatus?: string;
   templateName?: string;
   templateId?: string;
   timestamp?: number;
@@ -129,15 +130,25 @@ export const PolicyChangeRequestsList = ({
       return;
     }
 
-    const { status } = allRequests[0];
+    const { status, deleteStatus } = allRequests[0];
 
-    if (status === "PENDING" || status === "DRAFT") {
+    if (status === "DENIED" || deleteStatus === "DENIED") {
+      setApproveRecord(false);
+      setCommitRecord(false);
+      return;
+    }
+
+    if (
+      status === "PENDING" ||
+      status === "DRAFT" ||
+      (status === "ACTIVE" && (deleteStatus === "DRAFT" || deleteStatus === "PENDING"))
+    ) {
       setApproveRecord(true);
       setCommitRecord(false);
       return;
     }
 
-    if (status === "APPROVED") {
+    if (status === "APPROVED" || deleteStatus === "APPROVED") {
       setCommitRecord(true);
       setApproveRecord(false);
       return;

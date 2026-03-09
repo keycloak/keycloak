@@ -10,7 +10,7 @@ export interface BundledRequest<T = any> {
   count: number;
 }
 
-export function groupRequestsByDraftId<T extends { draftRecordId: string; status: string; userRecord: any[] }>(
+export function groupRequestsByDraftId<T extends { draftRecordId: string; status: string; deleteStatus?: string; userRecord: any[] }>(
   requests: T[]
 ): BundledRequest<T>[] {
   // Group requests by draftRecordId
@@ -24,9 +24,10 @@ export function groupRequestsByDraftId<T extends { draftRecordId: string; status
   }, {} as Record<string, T[]>);
 
   return Object.entries(grouped).map(([draftRecordId, requests]) => {
-    // Calculate bundle status more intelligently
-    const statuses = [...new Set(requests.map(r => r.status))];
-    let bundleStatus = requests[0].status;
+    // Calculate bundle status - for deletions, use deleteStatus when status is ACTIVE
+    const effectiveStatus = (r: T) => r.status === "ACTIVE" ? r.deleteStatus || r.status : r.status;
+    const statuses = [...new Set(requests.map(effectiveStatus))];
+    let bundleStatus = effectiveStatus(requests[0]);
     if (statuses.length > 1) {
       bundleStatus = "MIXED";
     }
