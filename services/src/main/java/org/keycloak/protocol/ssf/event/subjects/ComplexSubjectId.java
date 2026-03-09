@@ -1,7 +1,5 @@
 package org.keycloak.protocol.ssf.event.subjects;
 
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -15,101 +13,101 @@ public class ComplexSubjectId extends SubjectId {
      * The user involved with the event
      */
     @JsonProperty("user")
-    protected Map<String, String> user;
+    protected SubjectId user;
 
     /**
      * The device involved with the event
      */
     @JsonProperty("device")
-    protected Map<String, String> device;
+    protected SubjectId device;
 
     /**
      * The session involved with the event
      */
     @JsonProperty("session")
-    protected Map<String, String> session;
+    protected SubjectId session;
 
     /**
      * The application involved with the event
      */
     @JsonProperty("application")
-    protected Map<String, String> application;
+    protected SubjectId application;
 
     /**
      * The tenant involved with the event
      */
     @JsonProperty("tenant")
-    protected Map<String, String> tenant;
+    protected SubjectId tenant;
 
     /**
      * The org_unit involved with the event
      */
     @JsonProperty("org_unit")
-    protected Map<String, String> orgUnit;
+    protected SubjectId orgUnit;
 
     /**
      * The group involved with the event
      */
     @JsonProperty("group")
-    protected Map<String, String> group;
+    protected SubjectId group;
 
     public ComplexSubjectId() {
         super(TYPE);
     }
 
-    public Map<String, String> getUser() {
+    public SubjectId getUser() {
         return user;
     }
 
-    public void setUser(Map<String, String> user) {
+    public void setUser(SubjectId user) {
         this.user = user;
     }
 
-    public Map<String, String> getDevice() {
+    public SubjectId getDevice() {
         return device;
     }
 
-    public void setDevice(Map<String, String> device) {
+    public void setDevice(SubjectId device) {
         this.device = device;
     }
 
-    public Map<String, String> getSession() {
+    public SubjectId getSession() {
         return session;
     }
 
-    public void setSession(Map<String, String> session) {
+    public void setSession(SubjectId session) {
         this.session = session;
     }
 
-    public Map<String, String> getApplication() {
+    public SubjectId getApplication() {
         return application;
     }
 
-    public void setApplication(Map<String, String> application) {
+    public void setApplication(SubjectId application) {
         this.application = application;
     }
 
-    public Map<String, String> getTenant() {
+    public SubjectId getTenant() {
         return tenant;
     }
 
-    public void setTenant(Map<String, String> tenant) {
+    public void setTenant(SubjectId tenant) {
         this.tenant = tenant;
     }
 
-    public Map<String, String> getOrgUnit() {
+    public SubjectId getOrgUnit() {
         return orgUnit;
     }
 
-    public void setOrgUnit(Map<String, String> orgUnit) {
+    public void setOrgUnit(SubjectId orgUnit) {
         this.orgUnit = orgUnit;
     }
 
-    public Map<String, String> getGroup() {
+    public SubjectId getGroup() {
         return group;
     }
 
-    public void setGroup(Map<String, String> group) {
+    public void setGroup(SubjectId group) {
         this.group = group;
     }
 

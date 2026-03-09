@@ -1,0 +1,42 @@
+package org.keycloak.protocol.ssf.transmitter.delivery;
+
+import org.keycloak.protocol.ssf.event.token.SseCaepSecurityEventToken;
+import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class SseCaepEventConverter {
+
+    public static SseCaepSecurityEventToken convert(SsfSecurityEventToken ssfEventToken) {
+
+        SseCaepSecurityEventToken sseCaepToken = new SseCaepSecurityEventToken();
+        sseCaepToken.setJti(ssfEventToken.getJti());
+        sseCaepToken.setIss(ssfEventToken.getIss());
+        sseCaepToken.setAud(ssfEventToken.getAud());
+        sseCaepToken.setIat(ssfEventToken.getIat());
+
+        Map<String, Object> sseCaepEventData = new HashMap<>();
+        for (String eventType : ssfEventToken.getEvents().keySet()) {
+
+            Map<String, Object> eventData = (Map<String, Object>) ssfEventToken.getEvents().get(eventType);
+            Map<String, Object> adjustedEventData = new HashMap<>();
+            adjustedEventData.put("reason_admin", eventData.get("reason_admin"));
+            adjustedEventData.put("reason_user", eventData.get("reason_user"));
+            adjustedEventData.put("event_timestamp", eventData.get("event_timestamp"));
+            adjustedEventData.put("initiating_entity", eventData.get("initiating_entity"));
+
+            adjustedEventData.put("credential_type", eventData.get("credential_type"));
+            adjustedEventData.put("change_type", eventData.get("change_type"));
+
+            var subjectMap = new HashMap<String, Object>();
+            subjectMap.put("user", ssfEventToken.getSubjectId());
+            adjustedEventData.put("subject", subjectMap);
+
+            sseCaepEventData.put(eventType, adjustedEventData);
+        }
+        sseCaepToken.setEvents(sseCaepEventData);
+
+        return sseCaepToken;
+    }
+}

@@ -6,33 +6,31 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.keycloak.protocol.ssf.event.types.GenericSsfEvent;
-import org.keycloak.protocol.ssf.event.types.SsfEvent;
-import org.keycloak.protocol.ssf.event.types.caep.AssuranceLevelChange;
-import org.keycloak.protocol.ssf.event.types.caep.CaepEvent;
-import org.keycloak.protocol.ssf.event.types.caep.CredentialChange;
-import org.keycloak.protocol.ssf.event.types.caep.DeviceComplianceChange;
-import org.keycloak.protocol.ssf.event.types.caep.SessionEstablished;
-import org.keycloak.protocol.ssf.event.types.caep.SessionPresented;
-import org.keycloak.protocol.ssf.event.types.caep.SessionRevoked;
-import org.keycloak.protocol.ssf.event.types.caep.TokenClaimsChanged;
-import org.keycloak.protocol.ssf.event.types.risc.AccountCredentialChangeRequired;
-import org.keycloak.protocol.ssf.event.types.risc.AccountDisabled;
-import org.keycloak.protocol.ssf.event.types.risc.AccountEnabled;
-import org.keycloak.protocol.ssf.event.types.risc.AccountPurged;
-import org.keycloak.protocol.ssf.event.types.risc.CredentialCompromise;
-import org.keycloak.protocol.ssf.event.types.risc.IdentifierChanged;
-import org.keycloak.protocol.ssf.event.types.risc.IdentifierRecycled;
-import org.keycloak.protocol.ssf.event.types.risc.OptIn;
-import org.keycloak.protocol.ssf.event.types.risc.OptOutCancelled;
-import org.keycloak.protocol.ssf.event.types.risc.OptOutEffective;
-import org.keycloak.protocol.ssf.event.types.risc.OptOutInitiated;
-import org.keycloak.protocol.ssf.event.types.risc.RecoveryActivated;
-import org.keycloak.protocol.ssf.event.types.risc.RecoveryInformationChanged;
-import org.keycloak.protocol.ssf.event.types.risc.RiscEvent;
-import org.keycloak.protocol.ssf.event.types.stream.StreamEvent;
-import org.keycloak.protocol.ssf.event.types.stream.StreamUpdatedEvent;
-import org.keycloak.protocol.ssf.event.types.stream.VerificationEvent;
+import org.keycloak.protocol.ssf.event.caep.AssuranceLevelChange;
+import org.keycloak.protocol.ssf.event.caep.CaepEvent;
+import org.keycloak.protocol.ssf.event.caep.CredentialChange;
+import org.keycloak.protocol.ssf.event.caep.DeviceComplianceChange;
+import org.keycloak.protocol.ssf.event.caep.SessionEstablished;
+import org.keycloak.protocol.ssf.event.caep.SessionPresented;
+import org.keycloak.protocol.ssf.event.caep.SessionRevoked;
+import org.keycloak.protocol.ssf.event.caep.TokenClaimsChanged;
+import org.keycloak.protocol.ssf.event.risc.AccountCredentialChangeRequired;
+import org.keycloak.protocol.ssf.event.risc.AccountDisabled;
+import org.keycloak.protocol.ssf.event.risc.AccountEnabled;
+import org.keycloak.protocol.ssf.event.risc.AccountPurged;
+import org.keycloak.protocol.ssf.event.risc.CredentialCompromise;
+import org.keycloak.protocol.ssf.event.risc.IdentifierChanged;
+import org.keycloak.protocol.ssf.event.risc.IdentifierRecycled;
+import org.keycloak.protocol.ssf.event.risc.OptIn;
+import org.keycloak.protocol.ssf.event.risc.OptOutCancelled;
+import org.keycloak.protocol.ssf.event.risc.OptOutEffective;
+import org.keycloak.protocol.ssf.event.risc.OptOutInitiated;
+import org.keycloak.protocol.ssf.event.risc.RecoveryActivated;
+import org.keycloak.protocol.ssf.event.risc.RecoveryInformationChanged;
+import org.keycloak.protocol.ssf.event.risc.RiscEvent;
+import org.keycloak.protocol.ssf.event.stream.StreamEvent;
+import org.keycloak.protocol.ssf.event.stream.StreamUpdatedEvent;
+import org.keycloak.protocol.ssf.event.stream.StreamVerificationEvent;
 
 /**
  * Registry of Standard SSF Events.
@@ -57,7 +55,7 @@ public class SsfStandardEvents {
     static {
         var ssfStreamEventTypes = new HashMap<String, Class<? extends StreamEvent>>();
         List.of(//
-                new VerificationEvent(), //
+                new StreamVerificationEvent(), //
                 new StreamUpdatedEvent() //
         ).forEach(ssfEvent -> ssfStreamEventTypes.put(ssfEvent.getEventType(), ssfEvent.getClass()));
         STREAM_EVENT_TYPES = Collections.unmodifiableMap(ssfStreamEventTypes);

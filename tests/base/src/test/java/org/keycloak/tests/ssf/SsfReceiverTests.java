@@ -16,6 +16,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Time;
 import org.keycloak.crypto.ECDSASignatureSignerContext;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -24,13 +25,13 @@ import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
-import org.keycloak.protocol.ssf.endpoint.SsfPushDeliveryResource;
-import org.keycloak.protocol.ssf.event.SecurityEventToken;
+import org.keycloak.protocol.ssf.Ssf;
+import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.protocol.ssf.event.subjects.EmailSubjectId;
 import org.keycloak.protocol.ssf.event.subjects.SubjectId;
-import org.keycloak.protocol.ssf.event.types.SsfEvent;
-import org.keycloak.protocol.ssf.event.types.caep.SessionRevoked;
-import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
+import org.keycloak.protocol.ssf.event.SsfEvent;
+import org.keycloak.protocol.ssf.event.caep.SessionRevoked;
+import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpServer;
@@ -97,7 +98,7 @@ public class SsfReceiverTests {
         keyWrapper.setKid("ssf-transmitter-key-1");
         keyWrapper.setPrivateKey(es256KeyPair.getPrivate());
 
-        ssfReceiverProviderRegistration = createSsfReceiverProviderRegistration();
+        ssfReceiverProviderRegistration = createSsfReceiverRegistration();
 
         realm.admin().identityProviders().create(ssfReceiverProviderRegistration);
 
@@ -163,7 +164,7 @@ public class SsfReceiverTests {
         }
     }
 
-    public IdentityProviderRepresentation createSsfReceiverProviderRegistration() {
+    public IdentityProviderRepresentation createSsfReceiverRegistration() {
         var ssfReceiverRegistration = new IdentityProviderRepresentation();
         ssfReceiverRegistration.setAlias("dummy-transmitter");
         ssfReceiverRegistration.setProviderId("ssf-receiver");
@@ -182,14 +183,14 @@ public class SsfReceiverTests {
         return ssfReceiverRegistration;
     }
 
-    public SecurityEventToken generateSecurityEventToken(SubjectId subjectId, SsfEvent event) {
+    public SsfSecurityEventToken generateSecurityEventToken(SubjectId subjectId, SsfEvent event) {
 
-        var securityEventToken = new SecurityEventToken();
-        securityEventToken.setId(UUID.randomUUID().toString());
-        securityEventToken.issuer("http://127.0.0.1:8500");
+        var securityEventToken = new SsfSecurityEventToken();
+        securityEventToken.setJti(UUID.randomUUID().toString());
+        securityEventToken.setIss("http://127.0.0.1:8500");
         securityEventToken.setTxn(UUID.randomUUID().toString());
-        securityEventToken.addAudience("https://keycloak-stream-audience");
-        securityEventToken.issuedNow();
+        securityEventToken.setAud(new String[]{"https://keycloak-stream-audience"});
+        securityEventToken.setIat(Time.currentTime());
         securityEventToken.setSubjectId(subjectId);
         securityEventToken.setEvents(Map.of(event.getEventType(), event));
 
@@ -330,17 +331,18 @@ public class SsfReceiverTests {
     protected void sendSsfSetViaPushDelivery(String encodedSetToken) {
 
         String ssfReceiverAlias = ssfReceiverProviderRegistration.getAlias();
-        String pushAuthorizationHeader = ssfReceiverProviderRegistration.getConfig().get("pushAuthorizationHeader");
-        String ssfPushEndpoint = realm.getBaseUrl() + "/ssf/push/" + ssfReceiverAlias;
+        String pushAuthorizationHeader = "Bearer " + ssfReceiverProviderRegistration.getConfig().get("pushAuthorizationHeader");
+        String ssfPushEndpoint = realm.getBaseUrl() + "/ssf/receivers/"+ ssfReceiverAlias + "/push/";
 
         try (SimpleHttpResponse response = http.doPost(ssfPushEndpoint)
-                .header(HttpHeaders.CONTENT_TYPE, SsfPushDeliveryResource.APPLICATION_SECEVENT_JWT_TYPE)
+                .header(HttpHeaders.CONTENT_TYPE, Ssf.APPLICATION_SECEVENT_JWT_TYPE)
                 .header(HttpHeaders.AUTHORIZATION, pushAuthorizationHeader)
                 .entity(new StringEntity(encodedSetToken))
                 .asResponse()) {
             if (response.getStatus() != 202) {
                 Map reponsePayload = response.asJson(Map.class);
                 System.out.println(reponsePayload);
+                throw new RuntimeException("Unexpected response status: " + response.getStatus() + " " + reponsePayload + "");
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -349,7 +351,7 @@ public class SsfReceiverTests {
 
     public static String encodeSecurityEventToken(Object tokenPayload, KeyWrapper key) {
         return new JWSBuilder()
-                .type(SecurityEventToken.TYPE)
+                .type(Ssf.SECEVENT_JWT_TYPE)
                 .jsonContent(tokenPayload)
                 .sign(new ECDSASignatureSignerContext(key));
     }

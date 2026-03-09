@@ -10,7 +10,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig;
 import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig.TransmitterAuthMethod;
-import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
+import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.vault.VaultStringSecret;
 

@@ -1,15 +1,14 @@
 package org.keycloak.protocol.ssf.receiver.spi;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.ssf.endpoint.SsfPushDeliveryResource;
-import org.keycloak.protocol.ssf.event.SecurityEventToken;
-import org.keycloak.protocol.ssf.event.listener.DefaultSsfEventListener;
-import org.keycloak.protocol.ssf.event.listener.SsfEventListener;
-import org.keycloak.protocol.ssf.event.parser.DefaultSsfSecurityEventTokenParser;
-import org.keycloak.protocol.ssf.event.parser.SsfSecurityEventTokenParser;
-import org.keycloak.protocol.ssf.event.processor.DefaultSsfEventProcessor;
-import org.keycloak.protocol.ssf.event.processor.SsfEventContext;
-import org.keycloak.protocol.ssf.event.processor.SsfEventProcessor;
+import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.protocol.ssf.receiver.event.listener.DefaultSsfReceiverEventListener;
+import org.keycloak.protocol.ssf.receiver.event.listener.SsfReceiverEventListener;
+import org.keycloak.protocol.ssf.receiver.event.parser.DefaultSsfSecurityEventTokenParser;
+import org.keycloak.protocol.ssf.receiver.event.parser.SsfSecurityEventTokenParser;
+import org.keycloak.protocol.ssf.receiver.event.processor.DefaultSsfEventProcessor;
+import org.keycloak.protocol.ssf.receiver.event.processor.SsfEventContext;
+import org.keycloak.protocol.ssf.receiver.event.processor.SsfEventProcessor;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.transmitter.DefaultSsfTransmitterClient;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
@@ -26,9 +25,7 @@ public class DefaultSsfReceiverProvider implements SsfReceiverProvider {
 
     protected SsfEventProcessor eventProcessor;
 
-    protected SsfEventListener eventListener;
-
-    protected SsfPushDeliveryResource pushDeliveryEndpoint;
+    protected SsfReceiverEventListener eventListener;
 
     protected SsfStreamVerificationStore verificationStore;
 
@@ -57,16 +54,9 @@ public class DefaultSsfReceiverProvider implements SsfReceiverProvider {
         return eventProcessor;
     }
 
-    protected SsfPushDeliveryResource getPushEndpoint() {
-        if (pushDeliveryEndpoint == null) {
-            pushDeliveryEndpoint = new SsfPushDeliveryResource(this);
-        }
-        return pushDeliveryEndpoint;
-    }
-
-    protected SsfEventListener getEventListener() {
+    protected SsfReceiverEventListener getEventListener() {
         if (eventListener == null) {
-            eventListener = new DefaultSsfEventListener(session);
+            eventListener = new DefaultSsfReceiverEventListener(session);
         }
         return eventListener;
     }
@@ -91,13 +81,13 @@ public class DefaultSsfReceiverProvider implements SsfReceiverProvider {
     }
 
     @Override
-    public SecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfEventContext eventContext) {
+    public SsfSecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfEventContext eventContext) {
         var parser = getSsfEventParser();
         return parser.parseSecurityEventToken(encodedSecurityEventToken, eventContext.getReceiver());
     }
 
     @Override
-    public void processEvents(SecurityEventToken securityEventToken, SsfEventContext eventContext) {
+    public void processEvents(SsfSecurityEventToken securityEventToken, SsfEventContext eventContext) {
         eventProcessor().processEvents(securityEventToken, eventContext);
     }
 
@@ -118,17 +108,12 @@ public class DefaultSsfReceiverProvider implements SsfReceiverProvider {
     }
 
     @Override
-    public SsfPushDeliveryResource pushDeliveryEndpoint() {
-        return getPushEndpoint();
-    }
-
-    @Override
     public SsfTransmitterClient transmitterClient() {
         return getTransmitterClient();
     }
 
     @Override
-    public SsfEventContext createEventContext(SecurityEventToken securityEventToken, SsfReceiver receiver) {
+    public SsfEventContext createEventContext(SsfSecurityEventToken securityEventToken, SsfReceiver receiver) {
 
         SsfEventContext context = new SsfEventContext();
         context.setSecurityEventToken(securityEventToken);

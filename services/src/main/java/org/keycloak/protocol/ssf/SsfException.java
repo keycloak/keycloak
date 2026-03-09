@@ -1,6 +1,8 @@
 package org.keycloak.protocol.ssf;
 
-public class SsfException extends RuntimeException {
+import org.keycloak.models.ModelException;
+
+public class SsfException extends ModelException {
 
     public SsfException() {
     }

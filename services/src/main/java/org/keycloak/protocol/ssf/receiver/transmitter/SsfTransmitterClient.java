@@ -1,6 +1,7 @@
 package org.keycloak.protocol.ssf.receiver.transmitter;
 
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
+import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
 
 /**
  * Client to access metadata from a remote SSF Transmitter.

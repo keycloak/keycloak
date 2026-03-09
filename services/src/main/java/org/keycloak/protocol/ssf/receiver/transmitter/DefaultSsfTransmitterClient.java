@@ -10,6 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.ssf.SsfException;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
+import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;

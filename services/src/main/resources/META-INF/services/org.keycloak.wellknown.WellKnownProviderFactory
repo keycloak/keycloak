@@ -17,6 +17,8 @@
 
 org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory
 org.keycloak.authorization.config.UmaWellKnownProviderFactory
+org.keycloak.protocol.ssf.transmitter.metadata.SseTransmitterMetadataWellKnownProvider$Factory
+org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataWellKnownProvider$Factory
 org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProviderFactory
 org.keycloak.protocol.oid4vc.issuance.JWTVCIssuerWellKnownProviderFactory
 org.keycloak.protocol.oauth2.OAuth2WellKnownProviderFactory
