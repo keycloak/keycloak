@@ -55,7 +55,7 @@ import org.junit.jupiter.api.TestMethodOrder;
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest(config = JWTAuthorizationGrantTest.JWTAuthorizationGrantServerConfig.class)
+@KeycloakIntegrationTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class AuthChainingAcrossDomainsTest {
 

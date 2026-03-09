@@ -22,7 +22,6 @@ import java.util.UUID;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -49,8 +48,6 @@ import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.tests.client.authentication.external.ClientAuthIdpServerConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.hamcrest.MatcherAssert;
@@ -131,14 +128,6 @@ public class BaseAbstractJWTAuthorizationGrantTest {
         @Override
         public OAuthIdentityProviderConfigBuilder configure(OAuthIdentityProviderConfigBuilder config) {
             return config;
-        }
-    }
-
-    public static class JWTAuthorizationGrantServerConfig extends ClientAuthIdpServerConfig {
-
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return super.configure(config).features(Profile.Feature.JWT_AUTHORIZATION_GRANT);
         }
     }
 

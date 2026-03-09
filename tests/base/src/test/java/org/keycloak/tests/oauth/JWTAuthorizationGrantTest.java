@@ -12,7 +12,7 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.TestMethodOrder;
 
-@KeycloakIntegrationTest(config = JWTAuthorizationGrantTest.JWTAuthorizationGrantServerConfig.class)
+@KeycloakIntegrationTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class JWTAuthorizationGrantTest extends AbstractJWTAuthorizationGrantTest {
 

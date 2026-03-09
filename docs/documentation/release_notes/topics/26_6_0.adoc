@@ -121,3 +121,8 @@ Fine-Grained Admin Permissions (FGAP) now includes a new `Groups` scope: `manage
 
 This scope is now used as the group-side bridge for evaluating user-side `manage-group-membership` permissions based on a user's current group memberships.
 The existing `manage-membership` scope keeps its current behavior for target group membership management operations.
+
+= JWT Authorization Grant promoted to supported
+
+In this release, the JWT Authorization Grant (https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523]) feature is promoted from preview to default. This grant allows to use an external signed JWT assertions to request OAuth 2.0 access tokens. See the link:{securing_apps_base_link}/jwt-authorization-grant[JWT Authorization Grant guide] for additional details.
+

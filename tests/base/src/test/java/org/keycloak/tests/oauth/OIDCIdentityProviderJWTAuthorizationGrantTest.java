@@ -21,7 +21,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-@KeycloakIntegrationTest(config = OIDCIdentityProviderJWTAuthorizationGrantTest.JWTAuthorizationGrantServerConfig.class)
+@KeycloakIntegrationTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class OIDCIdentityProviderJWTAuthorizationGrantTest extends AbstractJWTAuthorizationGrantTest {
 
