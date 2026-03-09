@@ -105,7 +105,7 @@ public class OID4VCBasicWallet {
         CredentialsOffer credOffer = getCredentialOffer(ctx, credOfferUri)
                 .send().getCredentialsOffer();
 
-        String preAuthCode = credOffer.getGrants().getPreAuthorizedCode().getPreAuthorizedCode();
+        String preAuthCode = credOffer.getPreAuthorizedCode();
         assertNotNull(preAuthCode, "No PreAuth Code");
 
         return credOffer;

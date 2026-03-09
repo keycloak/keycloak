@@ -35,8 +35,7 @@ import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStor
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.testsuite.AssertEvents;
@@ -327,7 +326,7 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         String nonce = testingClient.server(TEST_REALM_NAME).fetchString(session -> {
             CredentialsOffer credOffer = new CredentialsOffer()
                     .setCredentialIssuer(issuerPath)
-                    .setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(new PreAuthorizedCode().setPreAuthorizedCode("test-code")))
+                    .addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode("test-code"))
                     .setCredentialConfigurationIds(List.of(jwtTypeCredentialConfigurationIdName));
 
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
