@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak-operator
+spec:
+  template:
+    spec:
+      containers:
+        - name: keycloak-operator
+          env:
+            # Namespace env vars are evaluated per JOSDK reconciler/controller.
+            # Other classes in org.keycloak.operator.controllers (dependent resources/helpers) do not have their own *_NAMESPACES setting.
+            # Controller class: org.keycloak.operator.controllers.KeycloakController
+            - name: QUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKCONTROLLER_NAMESPACES
+              value: JOSDK_ALL_NAMESPACES
+            # Controller class: org.keycloak.operator.controllers.KeycloakRealmImportController
+            - name: QUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKREALMIMPORTCONTROLLER_NAMESPACES
+              value: JOSDK_ALL_NAMESPACES
+            # Controller class: org.keycloak.operator.controllers.KeycloakOIDCClientController
+            - name: QUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKOIDCCLIENTCONTROLLER_NAMESPACES
+              value: JOSDK_ALL_NAMESPACES
+            # Controller class: org.keycloak.operator.controllers.KeycloakSAMLClientController
+            - name: QUARKUS_OPERATOR_SDK_CONTROLLERS_KEYCLOAKSAMLCLIENTCONTROLLER_NAMESPACES
+              value: JOSDK_ALL_NAMESPACES

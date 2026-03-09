@@ -1,0 +1,137 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: keycloak-operator-clusterrole-wide
+  labels:
+    app.kubernetes.io/name: keycloak-operator
+rules:
+  - apiGroups:
+      - k8s.keycloak.org
+    resources:
+      - keycloaks
+      - keycloaks/status
+      - keycloaks/finalizers
+      - keycloakrealmimports
+      - keycloakrealmimports/status
+      - keycloakrealmimports/finalizers
+      - keycloakoidcclients
+      - keycloakoidcclients/status
+      - keycloakoidcclients/finalizers
+      - keycloaksamlclients
+      - keycloaksamlclients/status
+      - keycloaksamlclients/finalizers
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - pods/log
+    verbs:
+      - get
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - networkpolicies
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - servicemonitors
+    verbs:
+      - create
+      - delete
+      - get
+      - list
+      - update
+      - watch
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keycloak-operator-clusterrole-wide-binding
+  labels:
+    app.kubernetes.io/name: keycloak-operator
+roleRef:
+  kind: ClusterRole
+  apiGroup: rbac.authorization.k8s.io
+  name: keycloak-operator-clusterrole-wide
+subjects:
+  - kind: ServiceAccount
+    name: keycloak-operator
