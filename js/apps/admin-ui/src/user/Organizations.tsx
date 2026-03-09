@@ -29,6 +29,8 @@ import { toUsers } from "./routes/Users";
 import { CheckboxFilterComponent } from "../components/dynamic/CheckboxFilterComponent";
 import { capitalizeFirstLetterFormatter } from "../util";
 import { SearchInputComponent } from "../components/dynamic/SearchInputComponent";
+import { MembershipsModal } from "../groups/MembershipsModal";
+import { GroupResourceContext } from "../context/group-resource/GroupResourceContext";
 
 type OrganizationProps = {
   user: UserRepresentation;
@@ -61,6 +63,8 @@ export const Organizations = ({ user }: OrganizationProps) => {
     string[]
   >([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [showMemberships, toggleShowMemberships] = useToggle();
+  const [selectedOrg, setSelectedOrg] = useState<OrganizationRepresentation>();
 
   const membershipOptions = [
     { value: "Managed", label: "Managed" },
@@ -177,6 +181,17 @@ export const Organizations = ({ user }: OrganizationProps) => {
 
   return (
     <>
+      {showMemberships && selectedOrg && (
+        <GroupResourceContext
+          value={adminClient.organizations.groups(selectedOrg.id!)}
+        >
+          <MembershipsModal
+            user={user}
+            orgId={selectedOrg.id}
+            onClose={toggleShowMemberships}
+          />
+        </GroupResourceContext>
+      )}
       {openOrganizationPicker && (
         <OrganizationModal
           isJoin={shouldJoin}
@@ -241,6 +256,15 @@ export const Organizations = ({ user }: OrganizationProps) => {
           setSelectedOrgs([org]);
           toggleDeleteDialog();
         }}
+        actions={[
+          {
+            title: t("showGroupMemberships"),
+            onRowClick: (org: OrganizationRepresentation) => {
+              setSelectedOrg(org);
+              toggleShowMemberships();
+            },
+          },
+        ]}
         toolbarItem={
           <>
             <ToolbarItem>
