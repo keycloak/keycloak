@@ -1,7 +1,9 @@
 package org.keycloak.testframework.remote.timeoffset;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -61,6 +63,16 @@ public class TimeOffSet {
             throw new RuntimeException(e);
         }
 
+    }
+
+    /**
+     * Same as {@link #set(int)} but expecting a {@link Duration}.
+     *
+     * @param duration the duration
+     */
+    public void set(Duration duration) {
+        Objects.requireNonNull(duration, "duration can not be null");
+        set(Math.toIntExact(duration.toSeconds()));
     }
 
     /**

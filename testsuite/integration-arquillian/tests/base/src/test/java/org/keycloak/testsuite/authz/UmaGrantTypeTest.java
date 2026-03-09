@@ -54,7 +54,6 @@ import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
 
@@ -528,7 +527,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
     }
 
     @Test
-    public void testObtainRptWithIDToken() throws Exception {
+    public void testObtainRptWithIDToken() {
         String idToken = getIdToken("marta", "password");
         AuthorizationResponse response = authorize("Resource A", new String[] {"ScopeA", "ScopeB"}, idToken, "http://openid.net/specs/openid-connect-core-1_0.html#IDToken");
         String rpt = response.getToken();
@@ -621,11 +620,7 @@ public class UmaGrantTypeTest extends AbstractResourceServerTest {
 
     private String getIdToken(String username, String password) {
         oauth.realm("authz-test");
-        oauth.client("test-app");
-        oauth.openLoginForm();
-        AuthorizationEndpointResponse resp = oauth.doLogin(username, password);
-        String code = resp.getCode();
-        org.keycloak.testsuite.util.oauth.AccessTokenResponse response = oauth.doAccessTokenRequest(code);
-        return response.getIdToken();
+        oauth.client(getAuthzClient().getConfiguration().getResource(), getAuthzClient().getConfiguration().getCredentials().get("secret").toString());
+        return oauth.doPasswordGrantRequest(username, password).getIdToken();
     }
 }
