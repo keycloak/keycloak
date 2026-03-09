@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,42 +19,50 @@ package org.keycloak.protocol.oid4vc.model;
 
 import java.util.Objects;
 
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Container for the pre-authorized code to be used in a Credential Offer
+ * Container for the authorization code grant to be used in a Credential Offer
  * <p>
  * {@see https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-credential-offer}
  *
- * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
+ * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PreAuthorizedGrant {
+public class AuthorizationCodeGrant implements CredentialOfferGrant {
 
-    @JsonProperty(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)
-    private PreAuthorizedCode preAuthorizedCode;
+    public static final String AUTH_CODE_GRANT_TYPE = "authorization_code";
+    public static final String ISSUER_STATE = "issuer_state";
 
-    public PreAuthorizedCode getPreAuthorizedCode() {
-        return preAuthorizedCode;
+    @Override
+    @JsonIgnore
+    public String getGrantType() {
+        return AUTH_CODE_GRANT_TYPE;
     }
 
-    public PreAuthorizedGrant setPreAuthorizedCode(PreAuthorizedCode preAuthorizedCode) {
-        this.preAuthorizedCode = preAuthorizedCode;
+    @JsonProperty(ISSUER_STATE)
+    private String issuerState;
+
+    public String getIssuerState() {
+        return issuerState;
+    }
+
+    public AuthorizationCodeGrant setIssuerState(String issuerState) {
+        this.issuerState = issuerState;
         return this;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof PreAuthorizedGrant grant)) return false;
-        return Objects.equals(getPreAuthorizedCode(), grant.getPreAuthorizedCode());
+        if (!(o instanceof AuthorizationCodeGrant grant)) return false;
+        return Objects.equals(issuerState, grant.issuerState);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getPreAuthorizedCode());
+        return Objects.hash(issuerState);
     }
 }
