@@ -40,10 +40,10 @@ import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -113,7 +113,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         // Skip if we're in pre-authorized code flow (it already has an offer state that will be updated)
         // Pre-authorized flow sets VC_ISSUANCE_FLOW note on the client session
         String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
-        if (vcIssuanceFlow != null && vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
+        if (vcIssuanceFlow != null && vcIssuanceFlow.equals(PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE)) {
             logger.debugf("Skipping offer state creation for pre-authorized code flow (offer state already exists and will be updated)");
             return;
         }
