@@ -114,3 +114,10 @@ bin/kc.sh start --log="console,file" --log-file-rotation-enabled=false
 ----
 
 For more information, see the https://www.keycloak.org/server/logging/file[File logging] guide.
+
+= Fine-Grained Admin Permissions new Groups scope for user membership changes
+
+Fine-Grained Admin Permissions (FGAP) now includes a new `Groups` scope: `manage-membership-of-members`.
+
+When managing a user's group membership through user administration APIs, administrators now need this scope on the target group in addition to the user-side `manage-group-membership` scope.
+The existing `manage-membership` scope keeps its current behavior and is no longer used as a bridge for user-side membership operations.

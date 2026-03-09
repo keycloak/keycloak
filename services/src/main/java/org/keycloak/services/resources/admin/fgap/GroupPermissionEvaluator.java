@@ -113,6 +113,13 @@ public interface GroupPermissionEvaluator {
     boolean canManageMembership(GroupModel group);
 
     /**
+     * Returns {@code true} if the caller has {@link AdminRoles#MANAGE_USERS} role.
+     * <p/>
+     * Or if it has a permission to {@link AdminPermissionsSchema#MANAGE_MEMBERSHIP_OF_MEMBERS} of the group.
+     */
+    boolean canManageMembershipOfMembers(GroupModel group);
+
+    /**
      * Returns {@code true} if the caller has one of {@link AdminRoles#MANAGE_USERS} or 
      * {@link AdminRoles#VIEW_USERS} roles.
      * <p/>
@@ -124,6 +131,11 @@ public interface GroupPermissionEvaluator {
      * Throws ForbiddenException if {@link #canManageMembership(GroupModel)} returns {@code false}.
      */
     void requireManageMembership(GroupModel group);
+
+    /**
+     * Throws ForbiddenException if {@link #canManageMembershipOfMembers(GroupModel)} returns {@code false}.
+     */
+    void requireManageMembershipOfMembers(GroupModel group);
 
     /**
      * Throws ForbiddenException if {@link #canManageMembership(GroupModel)} returns {@code false}.

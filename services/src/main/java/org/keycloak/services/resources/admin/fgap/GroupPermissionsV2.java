@@ -101,6 +101,15 @@ class GroupPermissionsV2 extends GroupPermissions {
     }
 
     @Override
+    public boolean canManageMembershipOfMembers(GroupModel group) {
+        if (root.hasOneAdminRole(AdminRoles.MANAGE_USERS)) {
+            return true;
+        }
+
+        return eval.hasPermission(new GroupModelRecord(group), null, AdminPermissionsSchema.MANAGE_MEMBERSHIP_OF_MEMBERS);
+    }
+
+    @Override
     public Set<String> getGroupIdsWithViewPermission() {
         throw new UnsupportedOperationException("Not supported in V2");
     }

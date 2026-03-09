@@ -97,6 +97,9 @@ The user resource type has a strong relationship with some of the permissions yo
 users are members of groups and granting access to `view-members` or `manage-members` of a group should also allow
 a realm administrator to `view` and `manage` members of that group.
 
+To assign or unassign a specific user to or from a group, both sides of the relationship are required: `manage-group-membership`
+on the user and `manage-membership-of-members` on the group.
+
 [NOTE]
 ====
 This feature does not support enforcing access to federated resource, however, this limitation is being considered
@@ -125,6 +128,7 @@ set of management operations:
                               This operation applies to any child group in the group hierarchy.
                               This can be prevented by explicitly denying permission for specific subgroups.
 | *manage-membership*       | Defines if a realm administrator can add or remove members from groups.
+| *manage-membership-of-members* | Defines if a realm administrator can assign or unassign specific users to or from a group.
 |===
 
 ===== Clients Resource Type
@@ -374,7 +378,7 @@ if a respective admin role is assigned to a realm administrator, permission eval
                              It does not grant the ability to *view* clients.
 | *view-users*             | A realm administrator can *view* all users and groups in the realm.
 | *manage-users*           | A realm administrator can *view*, *map-roles*, *manage-group-membership* and *manage* all users in the realm,
-                             as well as *view*, *manage-membership* and *manage* groups in the realm.
+                             as well as *view*, *manage-membership*, *manage-membership-of-members* and *manage* groups in the realm.
 | *impersonation*          | A realm administrator can *impersonate* all users in the realm.
 | *view-clients*           | A realm administrator can *view* all clients in the realm.
 | *manage-clients*         | A realm administrator can *view* and *manage* all clients and client scopes in the realm.

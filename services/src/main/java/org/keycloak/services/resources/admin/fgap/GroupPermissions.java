@@ -366,8 +366,20 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     }
 
     @Override
+    public boolean canManageMembershipOfMembers(GroupModel group) {
+        return canManageMembership(group);
+    }
+
+    @Override
     public void requireManageMembership(GroupModel group) {
         if (!canManageMembership(group)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    @Override
+    public void requireManageMembershipOfMembers(GroupModel group) {
+        if (!canManageMembershipOfMembers(group)) {
             throw new ForbiddenException();
         }
     }

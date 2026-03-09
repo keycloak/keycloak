@@ -55,6 +55,7 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.IMPERSONATE
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP_OF_MEMBERS;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MAP_ROLES;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.RESET_PASSWORD;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
@@ -310,50 +311,41 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @Test
     public void testManageGroupMembership() {
+        UserRepresentation myadmin = realm.admin().users().search("myadmin").get(0);
+        UserPolicyRepresentation allowMyAdminPermission = createUserPolicy(realm, client, "Only My Admin User Policy", myadmin.getId());
+        GroupRepresentation target = createGroup("target");
+        UserRepresentation userBob = createUser("bob");
+
         // myadmin shouldn't be able to manage group membership of the user just yet
         try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
+            realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
-        //create all-users permission for "myadmin" (so that myadmin can add users into a group)
-        UserPolicyRepresentation policy = createUserPolicy(realm, client,"Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        ScopePermissionRepresentation allUsersPermission = createAllPermission(client, usersType, policy, Set.of(MANAGE_GROUP_MEMBERSHIP));
-
-        //check myadmin can manage membership using all-users permission
+        // only the user-side permission is not enough
+        createAllPermission(client, usersType, allowMyAdminPermission, Set.of(MANAGE_GROUP_MEMBERSHIP));
         try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
-            fail("Expected Exception wasn't thrown.");
-        } catch (Exception ex) {
-            // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/b5c95e9f1c58bc500316dd5c0f2d3bb5e197ca99/services/src/main/java/org/keycloak/services/resources/admin/UserResource.java#L1060
-            assertThat(ex, instanceOf(NotFoundException.class));
-        }
-
-        // remove all-users permissions to test user-permission
-        allUsersPermission = getScopePermissionsResource(client).findByName(allUsersPermission.getName());
-        getScopePermissionsResource(client).findById(allUsersPermission.getId()).remove();
-
-        // now myadmin cannot manage membership
-        try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
+            realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
             assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
-        // create userPermission
-        createPermission(client, userAlice.getId(), usersType, Set.of(MANAGE_GROUP_MEMBERSHIP), policy);
-
-        //check myadmin can manage membership using individual permission
+        // existing manage-membership does not bridge user-side membership operations
+        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP));
         try {
-            realmAdminClient.realm(realm.getName()).users().get(userAlice.getId()).joinGroup("no-such");
+            realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
             fail("Expected Exception wasn't thrown.");
         } catch (Exception ex) {
-            // expecting here NotFoundException: https://github.com/keycloak/keycloak/blob/b5c95e9f1c58bc500316dd5c0f2d3bb5e197ca99/services/src/main/java/org/keycloak/services/resources/admin/UserResource.java#L1060
-            assertThat(ex, instanceOf(NotFoundException.class));
+            assertThat(ex, instanceOf(ForbiddenException.class));
         }
+
+        // dedicated group bridge scope allows managing the user's group membership
+        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS));
+        realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
+        assertTrue(realm.admin().users().get(userBob.getId()).groups().stream().anyMatch(group -> target.getId().equals(group.getId())));
     }
 
     @Test
@@ -368,8 +360,8 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         realm.admin().users().get(userAlice.getId()).joinGroup(vault.getId());
 
         createAllPermission(client, usersType, allowMyAdminPermission, Set.of(MANAGE_GROUP_MEMBERSHIP));
-        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP));
-        createPermission(client, vault.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, Set.of(MANAGE_MEMBERSHIP), denyMyAdminPermission);
+        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS));
+        createPermission(client, vault.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS), denyMyAdminPermission);
 
         realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
         assertTrue(realm.admin().users().get(userBob.getId()).groups().stream().anyMatch(group -> target.getId().equals(group.getId())));
