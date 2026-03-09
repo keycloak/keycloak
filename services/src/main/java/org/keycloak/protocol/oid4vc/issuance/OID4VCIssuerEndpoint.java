@@ -103,14 +103,12 @@ import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.OfferResponseType;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCode;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedGrant;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantType;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -360,7 +358,7 @@ public class OID4VCIssuerEndpoint {
      * Creates a Credential Offer that is bound to a specific user.
      */
     public Response createCredentialOffer(String credConfigId, boolean preAuthorized, String targetUser) {
-        return createCredentialOffer(credConfigId, preAuthorized, false, targetUser, null, OfferResponseType.URI, 0, 0);
+        return createCredentialOffer(credConfigId, preAuthorized, targetUser, null, OfferResponseType.URI, 0, 0);
     }
 
     /**
@@ -417,7 +415,6 @@ public class OID4VCIssuerEndpoint {
      * @param credConfigId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized
      * @param targetUser    The username that the offer is authorized for
-     * @param withTxCode    A flag whether a tx_code should be generated for a pre-auth offer
      * @param expireAt      The date/time when the offer expires (in Unix timestamp seconds)
      * @param responseType  The response type, which can be 'uri', 'qr' or 'uri+qr'
      * @param width         The width of the QR code image
@@ -429,7 +426,6 @@ public class OID4VCIssuerEndpoint {
     public Response createCredentialOffer(
             @QueryParam("credential_configuration_id") String credConfigId,
             @QueryParam("pre_authorized") @DefaultValue("true") Boolean preAuthorized,
-            @QueryParam("tx_code") @DefaultValue("false") Boolean withTxCode,
             @QueryParam("target_user") String targetUser,
             @QueryParam("expire") Integer expireAt,
             @QueryParam("type") @DefaultValue("uri") OfferResponseType responseType,
@@ -536,8 +532,7 @@ public class OID4VCIssuerEndpoint {
 
         if (preAuthorized) {
             String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
-            credOffer.setGrants(new PreAuthorizedGrant().setPreAuthorizedCode(
-                    new PreAuthorizedCode().setPreAuthorizedCode(code)));
+            credOffer.addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
         }
 
         // Create the CredentialOfferState
@@ -545,12 +540,6 @@ public class OID4VCIssuerEndpoint {
         String targetClientId = clientModel.getClientId();
         String targetUserId = Optional.ofNullable(targetUserModel).map(UserModel::getId).orElse(null);
         CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt);
-
-        // Generate the TxCode
-        //
-        if (preAuthorized && withTxCode) {
-            offerState.generateTxCode();
-        }
 
         // Store the CredentialOfferState
         //
@@ -567,11 +556,9 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, targetUserId)
                 .success();
 
-        String redactedTxCode = !Strings.isEmpty(offerState.getTxCode()) ? "******" : null;
         CredentialOfferURI credOfferURI = new CredentialOfferURI()
                 .setIssuer(credOffer.getCredentialIssuer() + "/protocol/" + OID4VC_PROTOCOL + "/" + CREDENTIAL_OFFER_PATH)
-                .setNonce(offerState.getNonce())
-                .setTxCode(redactedTxCode);
+                .setNonce(offerState.getNonce());
 
         // Respond with QR-Code as 'image/png'
         if (responseType == OfferResponseType.QR) {
@@ -580,7 +567,7 @@ public class OID4VCIssuerEndpoint {
         }
 
         // Respond with URI + QR-Code as 'application/json'
-        if (responseType == OfferResponseType.URI_AND_QR) {
+        if (responseType == OfferResponseType.URI_QR) {
             byte[] qrBytes = generateQrCode(credOfferURI, width, height);
             String encodedBytes = Arrays.toString(Base64.getEncoder().encode(qrBytes));
             credOfferURI.setQrCode("data:image/png;base64," + encodedBytes);
@@ -705,7 +692,7 @@ public class OID4VCIssuerEndpoint {
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
         String vcIssuanceFlow = clientSession.getNote(PreAuthorizedCodeGrantType.VC_ISSUANCE_FLOW);
 
-        if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE)) {
+        if (vcIssuanceFlow == null || !vcIssuanceFlow.equals(PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE)) {
             // Use getAuthResult() instead of bearerTokenAuthenticator.authenticate() directly
             // This ensures we benefit from the cachedAuthResult caching that prevents DPoP proof reuse
             AccessToken accessToken = getAuthResult().token();
