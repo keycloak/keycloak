@@ -1,0 +1,108 @@
+package org.keycloak.protocol.ssf.transmitter.resources;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import org.jboss.logging.Logger;
+
+import org.keycloak.common.util.Time;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.ssf.Ssf;
+import org.keycloak.protocol.ssf.support.SsfAuthUtil;
+import org.keycloak.protocol.ssf.support.SsfErrorRepresentation;
+import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationRequest;
+import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationService;
+import org.keycloak.utils.KeycloakSessionUtil;
+
+import org.jboss.resteasy.reactive.NoCache;
+
+/**
+ * Endpoint for SSF stream verification.
+ */
+public class StreamVerificationResource {
+
+    private static final Logger log = Logger.getLogger(StreamVerificationResource.class);
+
+    private final StreamVerificationService verificationService;
+
+    public StreamVerificationResource(StreamVerificationService verificationService) {
+        this.verificationService = verificationService;
+    }
+
+    /**
+     * Triggers a verification event for a stream.
+     *
+     * @param verificationRequest The verification request
+     * @return A response indicating success or failure
+     */
+    @POST
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response triggerVerification(StreamVerificationRequest verificationRequest) {
+        try {
+
+            if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_MANAGE)) {
+                return Response.status(Response.Status.UNAUTHORIZED).build();
+            }
+
+            String streamId = verificationRequest.getStreamId();
+            KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+            ClientModel client = session.getContext().getClient();
+            if (SsfAuthUtil.hasScope(Ssf.SCOPE_APPLE_ABM)) {
+                // Store created streamId in client attributes
+                streamId = client.getAttribute("ssf.streamId");
+                verificationRequest.setStreamId(streamId);
+            }
+
+            if (streamId == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new SsfErrorRepresentation("stream_verification_error", "Stream ID is required"))
+                        .build();
+            }
+
+            checkMinVerificationInterval(client);
+
+            boolean success = verificationService.triggerVerification(verificationRequest);
+
+            if (!success) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new SsfErrorRepresentation("stream_verification_error", "Stream verification failed"))
+                        .build();
+            }
+
+            return Response.noContent()
+                    .header(HttpHeaders.CACHE_CONTROL, "no-store")
+                    .build();
+        } catch (Exception e) {
+            log.error("Error triggering verification", e);
+            return Response.serverError().build();
+        }
+    }
+
+    protected void checkMinVerificationInterval(ClientModel client) {
+
+        String lastVerifiedAt = client.getAttribute("ssf.lastVerifiedAt");
+
+        if (lastVerifiedAt == null) {
+            lastVerifiedAt = String.valueOf(Time.currentTime());
+            client.setAttribute("ssf.lastVerifiedAt", lastVerifiedAt);
+            return;
+        }
+
+        long lastVerifiedAtTime = Long.parseLong(lastVerifiedAt);
+        long currentTime = Time.currentTime();
+        long timeSinceLastVerification = currentTime - lastVerifiedAtTime;
+        if (timeSinceLastVerification < Ssf.DEFAULT_MIN_VERIFICATION_INTERVAL) {
+            throw new WebApplicationException(Response.status(Response.Status.TOO_MANY_REQUESTS)
+                    .entity(new SsfErrorRepresentation("too_many_requests", "Wait at least " + timeSinceLastVerification + "seconds before triggering another verification"))
+                    .build());
+        }
+    }
+}

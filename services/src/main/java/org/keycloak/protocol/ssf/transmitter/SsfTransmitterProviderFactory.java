@@ -1,0 +1,7 @@
+package org.keycloak.protocol.ssf.transmitter;
+
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderFactory;
+
+public interface SsfTransmitterProviderFactory extends ProviderFactory<SsfTransmitterProvider>, EnvironmentDependentProviderFactory {
+}

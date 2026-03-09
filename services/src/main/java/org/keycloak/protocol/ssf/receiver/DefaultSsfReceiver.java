@@ -10,7 +10,7 @@ import org.keycloak.protocol.ssf.SsfException;
 import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig;
 import org.keycloak.protocol.ssf.receiver.spi.SsfReceiverProvider;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
-import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterMetadata;
+import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationState;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
 

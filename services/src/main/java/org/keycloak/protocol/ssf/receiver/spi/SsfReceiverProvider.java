@@ -1,8 +1,7 @@
 package org.keycloak.protocol.ssf.receiver.spi;
 
-import org.keycloak.protocol.ssf.endpoint.SsfPushDeliveryResource;
-import org.keycloak.protocol.ssf.event.SecurityEventToken;
-import org.keycloak.protocol.ssf.event.processor.SsfEventContext;
+import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.protocol.ssf.receiver.event.processor.SsfEventContext;
 import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
@@ -19,13 +18,11 @@ public interface SsfReceiverProvider extends Provider {
         // NOOP
     }
 
-    SecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfEventContext eventContext);
+    SsfSecurityEventToken parseSecurityEventToken(String encodedSecurityEventToken, SsfEventContext eventContext);
 
-    SsfEventContext createEventContext(SecurityEventToken securityEventToken, SsfReceiver receiver);
+    SsfEventContext createEventContext(SsfSecurityEventToken securityEventToken, SsfReceiver receiver);
 
-    void processEvents(SecurityEventToken securityEventToken, SsfEventContext eventContext);
-
-    SsfPushDeliveryResource pushDeliveryEndpoint();
+    void processEvents(SsfSecurityEventToken securityEventToken, SsfEventContext eventContext);
 
     SsfStreamVerificationStore verificationStore();
 
