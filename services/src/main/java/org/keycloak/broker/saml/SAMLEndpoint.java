@@ -34,7 +34,6 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.namespace.QName;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.FormParam;
@@ -101,11 +100,9 @@ import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.ArtifactResponseUtil;
@@ -258,6 +255,7 @@ public class SAMLEndpoint {
 
         protected abstract String getBindingType();
         protected abstract boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder);
+        protected abstract boolean isMessageFullySigned(SAMLDocumentHolder documentHolder);
         protected abstract void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException;
         protected abstract SAMLDocumentHolder extractRequestDocument(String samlRequest);
         protected abstract SAMLDocumentHolder extractResponseDocument(String response);
@@ -578,7 +576,7 @@ public class SAMLEndpoint {
                 } else {
                     /* We verify the assertion using original document to handle cases where the IdP
                     includes whitespace and/or newlines inside tags. */
-                    assertionElement = DocumentUtil.getElement(holder.getSamlDocument(), new QName(JBossSAMLConstants.ASSERTION.get()));
+                    assertionElement = AssertionUtil.getAssertionElement(holder);
                 }
 
                 // Validate the response Issuer
@@ -604,7 +602,7 @@ public class SAMLEndpoint {
                 boolean signed = AssertionUtil.isSignedElement(assertionElement);
                 final boolean assertionSignatureNotExistsWhenRequired = config.isWantAssertionsSigned() && !signed;
                 final boolean signatureNotValid = signed && config.isValidateSignature() && !AssertionUtil.isSignatureValid(assertionElement, getIDPKeyLocator());
-                final boolean hasNoSignatureWhenRequired = ! signed && config.isValidateSignature() && ! containsUnencryptedSignature(holder);
+                final boolean hasNoSignatureWhenRequired = !signed && config.isValidateSignature() && !isMessageFullySigned(holder);
 
                 if (assertionSignatureNotExistsWhenRequired || signatureNotValid || hasNoSignatureWhenRequired) {
                     logger.error("validation failed");
@@ -727,6 +725,7 @@ public class SAMLEndpoint {
             CacheControlUtil.noBackButtonCacheControlHeader(session);
             Optional<ClientModel> oClient = SAMLEndpoint.this.session.clients()
               .searchClientsByAttributes(realm, Collections.singletonMap(SamlProtocol.SAML_IDP_INITIATED_SSO_URL_NAME, clientUrlName), 0, 1)
+              .filter(ClientModel::isEnabled)
               .findFirst();
 
             if (! oClient.isPresent()) {
@@ -840,6 +839,11 @@ public class SAMLEndpoint {
         }
 
         @Override
+        protected boolean isMessageFullySigned(SAMLDocumentHolder documentHolder) {
+            return AssertionUtil.isSignedElement(documentHolder.getSamlDocument().getDocumentElement());
+        }
+
+        @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
             if ((! containsUnencryptedSignature(documentHolder)) && (documentHolder.getSamlObject() instanceof ResponseType)) {
                 ResponseType responseType = (ResponseType) documentHolder.getSamlObject();
@@ -879,12 +883,15 @@ public class SAMLEndpoint {
         }
 
         @Override
+        protected boolean isMessageFullySigned(SAMLDocumentHolder documentHolder) {
+            return containsUnencryptedSignature(documentHolder);
+        }
+
+        @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
             KeyLocator locator = getIDPKeyLocator();
             SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, session.getContext().getUri(), key);
         }
-
-
 
         @Override
         protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
@@ -905,20 +912,31 @@ public class SAMLEndpoint {
 
     protected class ArtifactBinding extends Binding {
 
-        private boolean unencryptedSignaturesVerified = false;
+        // artifact binding is processed twice, first with the art and then with the response, vars to store the first pass
+        private Boolean containsUnencryptedSignature = null;
+        private Boolean messageFullySigned = null;
+        private Boolean verified = null;
 
         @Override
         protected boolean containsUnencryptedSignature(SAMLDocumentHolder documentHolder) {
-            if (unencryptedSignaturesVerified) {
-                return true;
+            if (containsUnencryptedSignature != null) {
+                return containsUnencryptedSignature;
             }
             NodeList nl = documentHolder.getSamlDocument().getElementsByTagNameNS(XMLSignature.XMLNS, "Signature");
-            return (nl != null && nl.getLength() > 0);
+            containsUnencryptedSignature = (nl != null && nl.getLength() > 0);
+            messageFullySigned = AssertionUtil.isSignedElement(documentHolder.getSamlDocument().getDocumentElement());
+            return containsUnencryptedSignature;
+        }
+
+        @Override
+        protected boolean isMessageFullySigned(SAMLDocumentHolder documentHolder) {
+            containsUnencryptedSignature(documentHolder);
+            return messageFullySigned;
         }
 
         @Override
         protected void verifySignature(String key, SAMLDocumentHolder documentHolder) throws VerificationException {
-            if (unencryptedSignaturesVerified) {
+            if (verified != null) {
                 // this is the second pass and signatures were already verified in the artifact response time
                 return;
             }
@@ -937,13 +955,14 @@ public class SAMLEndpoint {
                 }
             }
             SamlProtocolUtils.verifyDocumentSignature(documentHolder.getSamlDocument(), getIDPKeyLocator());
-            unencryptedSignaturesVerified = true; // mark signatures as verified
+            verified = true;
         }
 
         @Override
         protected SAMLDocumentHolder extractRequestDocument(String samlRequest) {
             throw new UnsupportedOperationException("SAML request is not compliant with Artifact binding");
         }
+
         @Override
         protected SAMLDocumentHolder extractResponseDocument(String response) {
             byte[] samlBytes = PostBindingUtil.base64Decode(response);

@@ -1,29 +1,21 @@
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { TextControl } from "@keycloak/keycloak-ui-shared";
 import {
   Alert,
   Flex,
   FlexItem,
   FormGroup,
-  InputGroup,
-  InputGroupItem,
   PageSection,
   Tab,
   Tabs,
   Text,
   TextContent,
-  TextInputProps,
   ToggleGroup,
   ToggleGroupItem,
 } from "@patternfly/react-core";
-import { useEffect, useMemo, useState } from "react";
-import {
-  FormProvider,
-  useForm,
-  useFormContext,
-  useWatch,
-} from "react-hook-form";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { TextControl } from "@keycloak/keycloak-ui-shared";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
 import useToggle from "../../utils/useToggle";
@@ -33,39 +25,20 @@ import { ImageUpload } from "./ImageUpload";
 import { LoginPreviewWindow } from "./LoginPreviewWindow";
 import { usePreviewLogo } from "./LogoContext";
 import { usePreviewBackground } from "./BackgroundContext";
-import { darkTheme, lightTheme } from "./PatternflyVars";
+import {
+  darkTheme,
+  lightTheme,
+  resolveColorToHex,
+  resolveColorReferences,
+  DefaultValueType,
+} from "./PatternflyVars";
 import { PreviewWindow } from "./PreviewWindow";
 import { ThemeRealmRepresentation } from "./ThemesTab";
 import { UploadJar } from "./UploadJar";
+import { DefaultColorAccordion } from "./DefaultColorAccordion";
+import { ColorControl } from "./ColorControl";
 
 type ThemeType = "light" | "dark";
-
-type ColorControlProps = TextInputProps & {
-  name: string;
-  label: string;
-  color: string;
-};
-
-const ColorControl = ({ name, color, label, ...props }: ColorControlProps) => {
-  const { t } = useTranslation();
-  const { control, setValue } = useFormContext();
-  const currentValue = useWatch({
-    control,
-    name,
-  });
-  return (
-    <InputGroup>
-      <InputGroupItem isFill>
-        <TextControl {...props} name={name} label={t(label)} />
-      </InputGroupItem>
-      <input
-        type="color"
-        value={currentValue || color}
-        onChange={(e) => setValue(name, e.target.value)}
-      />
-    </InputGroup>
-  );
-};
 
 const switchTheme = (theme: ThemeType) => {
   if (theme === "light") {
@@ -91,12 +64,15 @@ export const ThemeColors = ({
 }: ThemeColorsProps) => {
   const { t } = useTranslation();
   const form = useForm();
-  const { handleSubmit, watch } = form;
+  const { handleSubmit, watch, control, setValue } = form;
   const style = watch();
   const contextLogo = usePreviewLogo();
   const contextBackground = usePreviewBackground();
   const [open, toggle, setOpen] = useToggle();
   const [previewTab, setPreviewTab] = useState(0);
+  const [overriddenColors, setOverriddenColors] = useState<Set<string>>(
+    new Set(),
+  );
 
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
   const getDarkModeFromRealm = () => {
@@ -112,15 +88,90 @@ export const ThemeColors = ({
     [theme],
   );
 
+  const parentColors = useMemo(
+    () => mapping.filter((m) => m.dependencies && m.dependencies.length > 0),
+    [mapping],
+  );
+
+  const parentWatchNames = useMemo(
+    () =>
+      parentColors
+        .map((p) => (p.variable ? `${theme}.${p.variable}` : null))
+        .filter((name): name is string => name !== null),
+    [parentColors, theme],
+  );
+
+  const parentColorValues = useWatch({
+    control,
+    name: parentWatchNames,
+  });
+
+  const prevParentValues = useRef<(string | undefined)[]>([]);
+
+  // Mark a color as overridden by user
+  const markAsOverridden = useCallback((colorName: string) => {
+    setOverriddenColors((prev) => new Set(prev).add(colorName));
+  }, []);
+
+  // Recalculate derived colors when any parent color changes
+  useEffect(() => {
+    if (!parentColorValues || parentColorValues.length === 0) return;
+
+    // Find which parent colors changed and update their dependents
+    parentColors.forEach((parent, index) => {
+      const currentValue = parentColorValues[index];
+      const prevValue = prevParentValues.current[index];
+
+      if (currentValue && currentValue !== prevValue && parent.dependencies) {
+        // Update each dependent that hasn't been manually overridden
+        parent.dependencies.forEach((dep) => {
+          if (!overriddenColors.has(dep.name)) {
+            const resolved = resolveColorReferences(
+              dep.defaultValue,
+              currentValue,
+              theme,
+            );
+            const hexValue = resolveColorToHex(resolved);
+            setValue(`${theme}.${dep.variable}`, hexValue);
+          }
+        });
+      }
+    });
+
+    prevParentValues.current = [...parentColorValues];
+  }, [parentColorValues, parentColors, overriddenColors, theme, setValue]);
+
+  const defaultValue = (v: DefaultValueType | undefined, theme: ThemeType) =>
+    typeof v === "string" ? v : v?.[theme];
+
   const reset = () => {
+    setOverriddenColors(new Set());
+
+    const parentDefaults: Record<string, string> = {};
+    mapping.forEach((m) => {
+      if (m.defaultValue && !m.parentName) {
+        parentDefaults[m.name] = defaultValue(m.defaultValue, theme)!;
+      }
+    });
+
     form.reset({
-      [theme]: mapping.reduce(
-        (acc, m) => ({
-          ...acc,
-          [m.variable!]: m.defaultValue,
-        }),
-        {},
-      ),
+      [theme]: mapping.reduce<Record<string, string>>((acc, m) => {
+        if (!m.variable) return acc;
+
+        let value = defaultValue(m.defaultValue, theme);
+        if (m.parentName && value?.includes("{{")) {
+          const parentValue = parentDefaults[m.parentName];
+          if (parentValue) {
+            const resolved = resolveColorReferences(value, parentValue, theme);
+            value = resolveColorToHex(resolved);
+          }
+        }
+
+        if (value !== undefined) {
+          acc[defaultValue(m.variable, theme)!] = value;
+        }
+        return acc;
+      }, {}),
     });
   };
 
@@ -151,12 +202,14 @@ export const ThemeColors = ({
     const styles = JSON.parse(realm.attributes?.style || "{}");
     save({
       ...realm,
+      themeName: values.themeName as string,
+      themeDescription: values.themeDescription as string,
       favicon: values.favicon as File,
       logo: values.logo as File,
       logoWidth: values.logoWidth as string,
       logoHeight: values.logoHeight as string,
       bgimage: values.bgimage as File,
-      fileName: values.name as string,
+      fileName: values.fileName as string,
       attributes: {
         ...realm.attributes,
         style: JSON.stringify({
@@ -179,8 +232,10 @@ export const ThemeColors = ({
     <>
       {open && (
         <FileNameDialog
-          onSave={async (name) => {
-            await handleSubmit((data) => convert({ ...data, name }))();
+          onSave={async (themeName, fileName, themeDescription) => {
+            await handleSubmit((data) =>
+              convert({ ...data, themeName, fileName, themeDescription }),
+            )();
             setOpen(false);
           }}
           onClose={toggle}
@@ -240,14 +295,25 @@ export const ThemeColors = ({
                     onChange={(bg) => contextBackground?.setBackground(bg)}
                   />
                 </FormGroup>
-                {mapping.map((m) => (
-                  <ColorControl
-                    key={m.name}
-                    color={m.defaultValue!}
-                    name={`${theme}.${m.variable!}`}
-                    label={m.name}
-                  />
-                ))}
+                {mapping.map((m) =>
+                  m.parentName ? (
+                    <DefaultColorAccordion
+                      label={m.name}
+                      color={defaultValue(m.defaultValue, theme)!}
+                      key={m.name}
+                      name={`${theme}.${m.variable}`}
+                      colorName={m.name}
+                      onOverride={markAsOverridden}
+                    />
+                  ) : (
+                    <ColorControl
+                      key={m.name}
+                      color={defaultValue(m.defaultValue, theme)!}
+                      name={`${theme}.${m.variable!}`}
+                      label={m.name}
+                    />
+                  ),
+                )}
               </FormProvider>
             </FormAccess>
           </FlexItem>

@@ -34,6 +34,7 @@ export const ClientSessions = ({ client }: ClientSessionsProps) => {
         loader={loader}
         hiddenColumns={["clients"]}
         emptyInstructions={t("noSessionsForClient")}
+        isPaginated
       />
     </PageSection>
   );
