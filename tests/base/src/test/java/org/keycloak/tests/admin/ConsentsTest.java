@@ -211,9 +211,8 @@ public class ConsentsTest {
         RealmRepresentation providerRealmRep = providerRealm.admin().toRepresentation();
         providerRealmRep.setAccountTheme("keycloak");
         providerRealm.admin().update(providerRealmRep);
-        providerRealm.admin().clients().create(ClientConfigBuilder.create().clientId("test-app").redirectUris("*").publicClient(true).webOrigins("*").build());
 
-        ClientRepresentation providerAccountRep = providerRealm.admin().clients().findByClientId("test-app").get(0);
+        ClientRepresentation providerAccountRep = providerRealm.admin().clients().findByClientId("test-app-provider").get(0);
 
         // add offline_scope to default account-console client scope
         ClientScopeRepresentation offlineAccessScope = providerRealm.admin().getDefaultOptionalClientScopes().stream()
@@ -261,7 +260,7 @@ public class ConsentsTest {
     @Test
     public void testConsentCancel() {
         // setup account client to require consent
-        ClientResource accountClient = findClientByClientId(providerRealm.admin(), "test-app");
+        ClientResource accountClient = findClientByClientId(providerRealm.admin(), "test-app-provider");
 
         ClientRepresentation clientRepresentation = accountClient.toRepresentation();
         clientRepresentation.setConsentRequired(true);
@@ -308,7 +307,7 @@ public class ConsentsTest {
         userRealm.updateWithCleanup(r -> r.enabledEventTypes("REFRESH_TOKEN_ERROR"));
         String sessionId = loginEvent.getSessionId();
 
-        ClientRepresentation clientRepresentation = userRealm.admin().clients().findByClientId("test-app").get(0);
+        ClientRepresentation clientRepresentation = userRealm.admin().clients().findByClientId("test-app-user").get(0);
         try {
             clientRepresentation.setConsentRequired(true);
             userRealm.admin().clients().get(clientRepresentation.getId()).update(clientRepresentation);
@@ -339,7 +338,7 @@ public class ConsentsTest {
     @Test
     public void testConsentWithAdditionalClientAttributes() {
         // setup account client to require consent
-        ClientResource accountClient = findClientByClientId(providerRealm.admin(), "test-app");
+        ClientResource accountClient = findClientByClientId(providerRealm.admin(), "test-app-provider");
 
         ClientRepresentation clientRepresentation = accountClient.toRepresentation();
         clientRepresentation.setConsentRequired(true);
