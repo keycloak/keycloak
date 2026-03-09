@@ -121,6 +121,7 @@ public class UserInfoEndpoint {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     public Response issueUserInfoGet() {
+        setNoCacheHeaders();
         setupCors();
         AppAuthManager.AuthHeader accessToken = AppAuthManager.extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
         authorization(accessToken);
@@ -132,6 +133,7 @@ public class UserInfoEndpoint {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     public Response issueUserInfoPost() {
+        setNoCacheHeaders();
         setupCors();
 
         // Try header first
@@ -366,6 +368,11 @@ public class UserInfoEndpoint {
     private void setupCors() {
         cors = Cors.builder().auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
         error.cors(cors);
+    }
+
+    private void setNoCacheHeaders() {
+        session.getContext().getHttpResponse().setHeader(HttpHeaders.CACHE_CONTROL, "no-store");
+        session.getContext().getHttpResponse().setHeader("Pragma", "no-cache");
     }
 
     private void authorization(AppAuthManager.AuthHeader authHeader) {

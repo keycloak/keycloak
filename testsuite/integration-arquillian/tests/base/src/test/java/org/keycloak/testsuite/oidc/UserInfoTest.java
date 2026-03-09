@@ -758,24 +758,23 @@ public class UserInfoTest extends AbstractKeycloakTest {
         Client client = AdminClientUtil.createResteasyClient();
 
         try {
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "bad");
+            try (Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "bad")) {
+                assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+                assertNoCacheHeaders(response);
 
-            response.close();
+                String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+                assertNotNull(wwwAuthHeader);
+                assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
+                assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_TOKEN + "\""));
 
-            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
-
-            String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
-            assertNotNull(wwwAuthHeader);
-            assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
-            assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INVALID_TOKEN + "\""));
-
-            events.expect(EventType.USER_INFO_REQUEST_ERROR)
-                    .error(Errors.INVALID_TOKEN)
-                    .client((String) null)
-                    .user(Matchers.nullValue(String.class))
-                    .session(Matchers.nullValue(String.class))
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                    .assertEvent();
+                events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                        .error(Errors.INVALID_TOKEN)
+                        .client((String) null)
+                        .user(Matchers.nullValue(String.class))
+                        .session(Matchers.nullValue(String.class))
+                        .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                        .assertEvent();
+            }
 
         } finally {
             client.close();
@@ -787,11 +786,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
         Client client = AdminClientUtil.createResteasyClient();
 
         try {
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "");
-            String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
-            assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
-            assertEquals(wwwAuthHeader, "Bearer realm=\"test\"");
-            response.close();
+            try (Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, "")) {
+                String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+                assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+                assertNoCacheHeaders(response);
+                assertEquals(wwwAuthHeader, "Bearer realm=\"test\"");
+            }
         } finally {
             client.close();
         }
@@ -845,23 +845,23 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client, false, false);
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
-            response.close();
+            try (Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken())) {
+                assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+                assertNoCacheHeaders(response);
 
-            assertEquals(Status.FORBIDDEN.getStatusCode(), response.getStatus());
+                String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
+                assertNotNull(wwwAuthHeader);
+                assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
+                assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INSUFFICIENT_SCOPE + "\""));
 
-            String wwwAuthHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
-            assertNotNull(wwwAuthHeader);
-            assertThat(wwwAuthHeader, CoreMatchers.containsString("Bearer"));
-            assertThat(wwwAuthHeader, CoreMatchers.containsString("error=\"" + OAuthErrorException.INSUFFICIENT_SCOPE + "\""));
-
-            events.expect(EventType.USER_INFO_REQUEST_ERROR)
-                    .error(Errors.ACCESS_DENIED)
-                    .client((String) null)
-                    .user(Matchers.nullValue(String.class))
-                    .session(Matchers.nullValue(String.class))
-                    .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
-                    .assertEvent();
+                events.expect(EventType.USER_INFO_REQUEST_ERROR)
+                        .error(Errors.ACCESS_DENIED)
+                        .client((String) null)
+                        .user(Matchers.nullValue(String.class))
+                        .session(Matchers.nullValue(String.class))
+                        .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
+                        .assertEvent();
+            }
         } finally {
             client.close();
         }
@@ -1004,6 +1004,11 @@ public class UserInfoTest extends AbstractKeycloakTest {
                 .client(expectedClientId)
                 .assertEvent();
         return UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
+    }
+
+    private void assertNoCacheHeaders(Response response) {
+        assertEquals("no-store", response.getHeaderString(HttpHeaders.CACHE_CONTROL));
+        assertEquals("no-cache", response.getHeaderString("Pragma"));
     }
 
     private void testSuccessSignedResponse(String sigAlg, String acceptHeader) throws Exception {
