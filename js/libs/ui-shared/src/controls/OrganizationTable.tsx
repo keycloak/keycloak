@@ -3,11 +3,8 @@ import { Badge, Chip, ChipGroup } from "@patternfly/react-core";
 import { TableText } from "@patternfly/react-table";
 import { FunctionComponent, PropsWithChildren, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Action,
-  KeycloakDataTable,
-  LoaderFunction,
-} from "./table/KeycloakDataTable";
+import type { Action, LoaderFunction } from "./table/KeycloakDataTable";
+import { KeycloakDataTable } from "./table/KeycloakDataTable";
 
 type OrgDetailLinkProps = {
   link: FunctionComponent<
