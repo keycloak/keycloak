@@ -100,6 +100,7 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.RootAuthenticationSessionEntity
+        startupMode: NONE
       
 # end::infinispan-cache-authenticationSessions[]
 ---
@@ -132,6 +133,7 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.RemoteAuthenticatedClientSessionEntity
+        startupMode: NONE
       
 # end::infinispan-cache-clientSessions[]
 ---
@@ -164,6 +166,7 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.LoginFailureEntity
+        startupMode: NONE
       
 # end::infinispan-cache-loginFailures[]
 ---
@@ -196,6 +199,7 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.RemoteAuthenticatedClientSessionEntity
+        startupMode: NONE
       
 # end::infinispan-cache-offlineClientSessions[]
 ---
@@ -228,6 +232,7 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.RemoteUserSessionEntity
+        startupMode: NONE
       
 # end::infinispan-cache-offlineSessions[]
 ---
@@ -260,6 +265,7 @@ spec:
         enabled: true
         indexed-entities:
         - keycloak.RemoteUserSessionEntity
+        startupMode: NONE
       
 # end::infinispan-cache-sessions[]
 ---
@@ -312,8 +318,8 @@ spec:
   expose:
     type: Route
   configMapName: "cluster-config"
-  image: quay.io/infinispan/server:16.0.5
-  version: 16.0.5
+  image: quay.io/infinispan/server:16.0.8
+  version: 16.0.8
   configListener:
     enabled: false
   container:
