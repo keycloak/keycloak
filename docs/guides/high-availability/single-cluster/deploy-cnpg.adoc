@@ -15,7 +15,7 @@ include::../partials/blueprint-disclaimer.adoc[]
 
 == Architecture
 
-CloudNativePG is an opensource operator that manages PostgreSQL clusters on Kubernetes platform. It is designed to operate one primary writer instance and  optionally multiple secondary reader instances.
+CloudNativePG is an opensource operator that manages PostgreSQL clusters on {kubernetes}. It is designed to operate one primary writer instance and optional reader instances.
 
 image::high-availability/cnpg-multi-az.dio.svg[]
 
@@ -114,7 +114,7 @@ spec:
       dataDurability: required
     parameters:
       max_connections: "100" <5>
-      
+
   bootstrap:
     initdb: <6>
       database: keycloak
@@ -129,7 +129,7 @@ spec:
 <3> Pod affinity rules for Kubernetes scheduler. The `topology.kubernetes.io/zone` value ensures the scheduler will spread the pods across different availability zones.
 <4> Synchronous replication. //TODO should the number actually be 2?
 <5> Database connection limit. This value should be adjusted based on the expected total number of the JDBC connections from the {project_name} cluster.
-<6> Bootstraps a database `keycloak` owned by a user `keycloak`.
+<6> Create a database `keycloak` owned by the user `keycloak`.
 <7> Disables the `-ro` and `-r` default services which are intended for read-only applications. Since {project_name} requires a read-write access it only connects to the `-rw` service.
 +
 . Create the `cnpg-keycloak` namespace.
@@ -169,7 +169,7 @@ spec:
   - port: metrics
 EOF
 ----
-<1> Note, the name of the pod monitor resource needs to be different from the name of the cluster.
+<1> The name of the pod monitor resource needs to be different from the name of the cluster.
 +
 . Add the https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/refs/heads/main/charts/cluster/grafana-dashboard.json[CloudNativePG Grafana Dashboard] to your Grafana instance.
 
