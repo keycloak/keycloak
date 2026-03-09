@@ -200,7 +200,7 @@ public class DefaultClientService implements ClientService {
      * @param operationType the type of operation (CREATE, UPDATE, DELETE)
      * @param representation the v2 representation of the client
      */
-    private void fireAdminEvent(OperationType operationType, BaseClientRepresentation representation) {
+    protected void fireAdminEvent(OperationType operationType, BaseClientRepresentation representation) {
         if (Boolean.parseBoolean(System.getProperty("kc.admin-v2.client-service.events.enabled","false"))) {
             adminEventBuilder
                     .operation(operationType)
