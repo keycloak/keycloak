@@ -44,6 +44,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
@@ -548,5 +549,37 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             removeUserByUsername(adminClient.realm(bc.consumerRealmName()), "test-user");
             removeUserByUsername(adminClient.realm(bc.consumerRealmName()), "test-user-noemail");
         }
+    }
+
+    @Test
+    public void testDisabledBroker() {
+        loginUser();
+        logoutFromConsumerRealm();
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
+        RealmResource realm = adminClient.realm(bc.consumerRealmName());
+        identityProviderResource = realm.identityProviders().get(bc.getIDPAlias());
+        IdentityProviderRepresentation idpRep = identityProviderResource.toRepresentation();
+        idpRep.setEnabled(false);
+        identityProviderResource.update(idpRep);
+        waitForPage(driver, "sign in to", true);
+        loginPage.clickSocial(bc.getIDPAlias());
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), is("Could not send authentication request to identity provider."));
+
+        idpRep.setEnabled(true);
+        identityProviderResource.update(idpRep);
+        oauth.openLoginForm();
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+        Assert.assertTrue("Driver should be on the provider realm page right now", driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        idpRep.setEnabled(false);
+        identityProviderResource.update(idpRep);
+        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        errorPage.assertCurrent();
+        assertThat(errorPage.getError(), is("Page not found"));
     }
 }

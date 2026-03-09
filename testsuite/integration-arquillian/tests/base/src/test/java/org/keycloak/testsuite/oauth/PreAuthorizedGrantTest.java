@@ -26,8 +26,8 @@ import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
+import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.protocol.oidc.grants.PreAuthorizedCodeGrantTypeFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -89,7 +89,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
         getUserSession();
         HttpPost post = new HttpPost(getTokenEndpoint());
         List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE));
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);
 
@@ -127,7 +127,7 @@ public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
     private AccessTokenResponse postCode(String preAuthorizedCode) throws Exception {
         HttpPost post = new HttpPost(getTokenEndpoint());
         List<NameValuePair> parameters = new LinkedList<>();
-        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrantTypeFactory.GRANT_TYPE));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE));
         parameters.add(new BasicNameValuePair("pre-authorized_code", preAuthorizedCode));
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, StandardCharsets.UTF_8);
         post.setEntity(formEntity);

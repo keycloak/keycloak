@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.PermissionTicket.FilterOption;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
@@ -81,6 +82,7 @@ public class UserManagedPermissionUtil {
             filter.put(PermissionTicket.FilterOption.REQUESTER, ticket.getRequester());
             filter.put(PermissionTicket.FilterOption.RESOURCE_ID, ticket.getResource().getId());
             filter.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
+            filter.put(FilterOption.IS_ADMIN, Boolean.TRUE.toString());
 
             List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(ticket.getResourceServer(), filter, null, null);
 
