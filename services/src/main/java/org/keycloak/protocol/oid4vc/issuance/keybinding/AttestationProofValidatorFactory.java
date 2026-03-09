@@ -42,6 +42,7 @@ import org.keycloak.protocol.oidc.utils.JWKSServerUtils;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -59,6 +60,7 @@ import org.jboss.logging.Logger;
  *
  * @author <a href="mailto:Rodrick.Awambeng@adorsys.com">Rodrick Awambeng</a>
  */
+@AutoService(ProofValidatorFactory.class)
 public class AttestationProofValidatorFactory implements ProofValidatorFactory {
 
     private static final Logger logger = Logger.getLogger(AttestationProofValidatorFactory.class);

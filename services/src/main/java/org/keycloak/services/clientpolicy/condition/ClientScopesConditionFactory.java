@@ -30,9 +30,12 @@ import org.keycloak.representations.idm.ClientPolicyConditionRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.util.JsonSerialization;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+@AutoService(ClientPolicyConditionProviderFactory.class)
 public class ClientScopesConditionFactory extends AbstractClientPolicyConditionProviderFactory {
 
     public static final String PROVIDER_ID = "client-scopes";

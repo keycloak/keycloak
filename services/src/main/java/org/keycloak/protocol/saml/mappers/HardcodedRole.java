@@ -23,8 +23,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Mappings UserModel property (the property name of a getter method) to an AttributeStatement.
@@ -32,6 +35,7 @@ import org.keycloak.provider.ProviderConfigProperty;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(ProtocolMapper.class)
 public class HardcodedRole extends AbstractSAMLProtocolMapper {
     public static final String PROVIDER_ID = "saml-hardcode-role-mapper";
     public static final String ATTRIBUTE_VALUE = "attribute.value";

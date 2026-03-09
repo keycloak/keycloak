@@ -23,9 +23,12 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(ThemeProviderFactory.class)
 public class FolderThemeProviderFactory implements ThemeProviderFactory {
 
     private FolderThemeProvider themeProvider;

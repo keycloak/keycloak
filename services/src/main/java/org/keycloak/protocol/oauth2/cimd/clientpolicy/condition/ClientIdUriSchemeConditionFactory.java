@@ -10,6 +10,9 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientpolicy.condition.AbstractClientPolicyConditionProviderFactory;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
+import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProviderFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * The class is the factory class of {@link ClientIdUriSchemeCondition}.
@@ -17,6 +20,7 @@ import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvide
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
+@AutoService(ClientPolicyConditionProviderFactory.class)
 public class ClientIdUriSchemeConditionFactory extends AbstractClientPolicyConditionProviderFactory
         implements EnvironmentDependentProviderFactory {
 

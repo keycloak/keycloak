@@ -27,11 +27,14 @@ import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.models.jpa.JpaRealmProviderFactory.PROVIDER_PRIORITY;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(AuthorizationStoreFactory.class)
 public class JPAAuthorizationStoreFactory implements AuthorizationStoreFactory {
 
     @Override

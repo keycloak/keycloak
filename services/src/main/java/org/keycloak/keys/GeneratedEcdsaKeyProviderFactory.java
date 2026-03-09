@@ -24,10 +24,12 @@ import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
 
+@AutoService(KeyProviderFactory.class)
 public class GeneratedEcdsaKeyProviderFactory extends AbstractGeneratedEcKeyProviderFactory<KeyProvider> {
 
     private static final Logger logger = Logger.getLogger(GeneratedEcdsaKeyProviderFactory.class);

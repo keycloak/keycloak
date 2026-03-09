@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -29,6 +30,8 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import com.google.auto.service.AutoService;
 
 /**
  * <p>Conditional authenticator that checks if a list of configured credentials has been
@@ -39,6 +42,7 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
  *
  * @author rmartinc
  */
+@AutoService(AuthenticatorFactory.class)
 public class ConditionalCredentialAuthenticatorFactory implements ConditionalAuthenticatorFactory {
 
     public static final String PROVIDER_ID = "conditional-credential";

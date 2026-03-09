@@ -25,6 +25,8 @@ import org.keycloak.protocol.oid4vc.OID4VCEnvironmentProviderFactory;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * {@link  WellKnownProviderFactory} implementation for the OID4VCI metadata
  * <p>
@@ -32,6 +34,7 @@ import org.keycloak.wellknown.WellKnownProviderFactory;
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
+@AutoService(WellKnownProviderFactory.class)
 public class OID4VCIssuerWellKnownProviderFactory implements WellKnownProviderFactory, OID4VCEnvironmentProviderFactory {
 
     public static final String PROVIDER_ID = OID4VCConstants.WELL_KNOWN_OPENID_CREDENTIAL_ISSUER;

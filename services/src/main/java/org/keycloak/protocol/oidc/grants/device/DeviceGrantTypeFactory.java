@@ -27,11 +27,14 @@ import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Factory for OAuth 2.0 Device Authorization Grant
  *
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a>
  */
+@AutoService(OAuth2GrantTypeFactory.class)
 public class DeviceGrantTypeFactory implements OAuth2GrantTypeFactory, EnvironmentDependentProviderFactory {
 
     public static final String GRANT_SHORTCUT = "dg";

@@ -19,6 +19,9 @@ package org.keycloak.models.sessions.infinispan.transaction;
 
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(Spi.class)
 public class InfinispanTransactionSpi implements Spi {
 
     private static final String ID = "infinispanTransactions";

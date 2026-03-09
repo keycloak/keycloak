@@ -22,6 +22,9 @@ import java.util.Map;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ProofValidatorFactory.class)
 public class JwtProofValidatorFactory implements ProofValidatorFactory {
 
     @Override

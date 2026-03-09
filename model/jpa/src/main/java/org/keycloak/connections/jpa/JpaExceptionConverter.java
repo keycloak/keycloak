@@ -20,10 +20,13 @@ import jakarta.persistence.PersistenceException;
 
 import org.keycloak.provider.ExceptionConverter;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(ExceptionConverter.class)
 public class JpaExceptionConverter implements ExceptionConverter {
     @Override
     public Throwable convert(Throwable e) {

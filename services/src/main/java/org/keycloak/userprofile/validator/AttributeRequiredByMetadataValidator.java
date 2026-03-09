@@ -26,6 +26,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Validator to check that User Profile attribute value is not blank (nor null) if the attribute is required based on
@@ -34,6 +37,7 @@ import org.keycloak.validate.ValidatorConfig;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
+@AutoService(ValidatorFactory.class)
 public class AttributeRequiredByMetadataValidator implements SimpleValidator {
 
     public static final String ERROR_USER_ATTRIBUTE_REQUIRED = "error-user-attribute-required";

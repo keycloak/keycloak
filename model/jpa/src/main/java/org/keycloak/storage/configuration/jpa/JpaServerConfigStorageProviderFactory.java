@@ -28,9 +28,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.storage.configuration.ServerConfigStorageProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * A {@link ServerConfigStorageProviderFactory} that instantiates {@link JpaServerConfigStorageProvider}.
  */
+@AutoService(ServerConfigStorageProviderFactory.class)
 public class JpaServerConfigStorageProviderFactory implements ServerConfigStorageProviderFactory {
 
     @Override

@@ -28,9 +28,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -40,6 +42,7 @@ import org.jboss.logging.Logger;
  *
  * @author rmartinc
  */
+@AutoService(ProtocolMapper.class)
 public class SAMLAudienceResolveProtocolMapper extends AbstractSAMLProtocolMapper implements SAMLLoginResponseMapper {
 
     protected static final Logger logger = Logger.getLogger(SAMLAudienceResolveProtocolMapper.class);

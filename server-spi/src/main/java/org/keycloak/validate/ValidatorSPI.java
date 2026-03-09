@@ -20,9 +20,12 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * An {@link Spi} for custom {@link Validator} implementations.
  */
+@AutoService(Spi.class)
 public class ValidatorSPI implements Spi {
 
     @Override

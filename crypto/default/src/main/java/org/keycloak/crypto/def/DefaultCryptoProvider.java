@@ -33,6 +33,7 @@ import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.crypto.JavaAlgorithm;
 
+import com.google.auto.service.AutoService;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
@@ -42,6 +43,7 @@ import org.jboss.logging.Logger;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(CryptoProvider.class)
 public class DefaultCryptoProvider implements CryptoProvider {
 
     private static final Logger log = Logger.getLogger(DefaultCryptoProvider.class);

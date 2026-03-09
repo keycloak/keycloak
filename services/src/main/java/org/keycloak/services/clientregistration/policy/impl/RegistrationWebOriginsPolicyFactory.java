@@ -7,7 +7,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.clientregistration.policy.AbstractClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy;
+import org.keycloak.services.clientregistration.policy.ClientRegistrationPolicyFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ClientRegistrationPolicyFactory.class)
 public class RegistrationWebOriginsPolicyFactory extends AbstractClientRegistrationPolicyFactory {
 
     public static final String PROVIDER_ID = "registration-web-origins";

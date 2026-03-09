@@ -21,9 +21,12 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * SPI for a low-level vault access.
  */
+@AutoService(Spi.class)
 public class VaultSpi implements Spi {
 
     @Override

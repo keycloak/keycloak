@@ -55,6 +55,7 @@ import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.timer.TimerProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
+import com.google.auto.service.AutoService;
 import liquibase.GlobalConfiguration;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
@@ -67,6 +68,7 @@ import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQuerie
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(JpaConnectionProviderFactory.class)
 public class DefaultJpaConnectionProviderFactory implements JpaConnectionProviderFactory, ServerInfoAwareProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultJpaConnectionProviderFactory.class);

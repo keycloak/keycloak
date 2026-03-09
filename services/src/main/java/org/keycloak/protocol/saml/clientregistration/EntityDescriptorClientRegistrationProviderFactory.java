@@ -23,9 +23,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.clientregistration.ClientRegistrationProvider;
 import org.keycloak.services.clientregistration.ClientRegistrationProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(ClientRegistrationProviderFactory.class)
 public class EntityDescriptorClientRegistrationProviderFactory implements ClientRegistrationProviderFactory {
 
     public static final String ID = "saml2-entity-descriptor";

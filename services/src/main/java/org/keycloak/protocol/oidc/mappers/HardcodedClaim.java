@@ -26,10 +26,13 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
+
+import com.google.auto.service.AutoService;
 
 /**
  *
@@ -37,6 +40,7 @@ import org.keycloak.representations.IDToken;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(ProtocolMapper.class)
 public class HardcodedClaim extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper,
         OIDCAccessTokenResponseMapper, TokenIntrospectionTokenMapper {
 

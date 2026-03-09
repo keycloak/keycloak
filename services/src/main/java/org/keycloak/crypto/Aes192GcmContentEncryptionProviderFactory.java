@@ -20,6 +20,9 @@ package org.keycloak.crypto;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ContentEncryptionProviderFactory.class)
 public class Aes192GcmContentEncryptionProviderFactory implements ContentEncryptionProviderFactory {
     public static final String ID = JWEConstants.A192GCM;
 

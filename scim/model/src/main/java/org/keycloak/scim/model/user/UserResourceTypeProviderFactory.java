@@ -5,6 +5,9 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ScimResourceTypeProviderFactory.class)
 public class UserResourceTypeProviderFactory implements ScimResourceTypeProviderFactory<UserResourceTypeProvider> {
 
     @Override

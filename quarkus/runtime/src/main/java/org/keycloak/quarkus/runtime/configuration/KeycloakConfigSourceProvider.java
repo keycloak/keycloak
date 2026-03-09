@@ -24,11 +24,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.auto.service.AutoService;
 import io.quarkus.runtime.configuration.ConfigBuilder;
 import io.smallrye.config.SmallRyeConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 
+@AutoService(ConfigSourceProvider.class)
 public class KeycloakConfigSourceProvider implements ConfigSourceProvider, ConfigBuilder {
 
     private static final List<ConfigSource> CONFIG_SOURCES = new ArrayList<>();

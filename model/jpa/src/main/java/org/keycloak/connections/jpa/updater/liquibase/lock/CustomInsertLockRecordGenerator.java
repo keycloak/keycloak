@@ -25,9 +25,11 @@ import java.util.Set;
 
 import org.keycloak.models.dblock.DBLockProvider;
 
+import com.google.auto.service.AutoService;
 import liquibase.database.Database;
 import liquibase.exception.ValidationErrors;
 import liquibase.sql.Sql;
+import liquibase.sqlgenerator.SqlGenerator;
 import liquibase.sqlgenerator.SqlGeneratorChain;
 import liquibase.sqlgenerator.SqlGeneratorFactory;
 import liquibase.sqlgenerator.core.AbstractSqlGenerator;
@@ -39,6 +41,7 @@ import liquibase.statement.core.InsertStatement;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(SqlGenerator.class)
 public class CustomInsertLockRecordGenerator extends AbstractSqlGenerator<InitializeDatabaseChangeLogLockTableStatement> {
 
     @Override

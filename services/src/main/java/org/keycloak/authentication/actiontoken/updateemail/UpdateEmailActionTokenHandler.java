@@ -26,6 +26,7 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.actiontoken.AbstractActionTokenHandler;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
+import org.keycloak.authentication.actiontoken.ActionTokenHandlerFactory;
 import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.authentication.requiredactions.UpdateEmail;
 import org.keycloak.events.Errors;
@@ -40,6 +41,9 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.ValidationException;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ActionTokenHandlerFactory.class)
 public class UpdateEmailActionTokenHandler extends AbstractActionTokenHandler<UpdateEmailActionToken> {
 
     public UpdateEmailActionTokenHandler() {

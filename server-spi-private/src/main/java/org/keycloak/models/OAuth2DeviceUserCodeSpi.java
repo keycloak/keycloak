@@ -21,9 +21,12 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
  */
+@AutoService(Spi.class)
 public class OAuth2DeviceUserCodeSpi implements Spi {
 
     public static final String NAME = "oauth2DeviceUserCode";

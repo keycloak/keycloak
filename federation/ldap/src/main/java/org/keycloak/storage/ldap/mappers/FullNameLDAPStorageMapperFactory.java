@@ -30,9 +30,12 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(LDAPStorageMapperFactory.class)
 public class FullNameLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFactory {
 
     public static final String PROVIDER_ID =  "full-name-ldap-mapper";

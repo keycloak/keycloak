@@ -22,12 +22,14 @@ import org.keycloak.jose.jws.crypto.HashUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.auto.service.AutoService;
 import io.smallrye.config.ConfigValue;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 
+@AutoService(CompatibilityMetadataProvider.class)
 public class DatabaseCompatibilityMetadataProvider implements CompatibilityMetadataProvider {
 
     private static final Logger log = Logger.getLogger(DatabaseCompatibilityMetadataProvider.class);

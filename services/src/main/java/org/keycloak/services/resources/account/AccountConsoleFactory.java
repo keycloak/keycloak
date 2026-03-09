@@ -15,10 +15,13 @@ import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resource.AccountResourceProviderFactory;
 import org.keycloak.theme.Theme;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Provides the {@code default} {@link AccountConsole} implementation backed by the
  * {@code account} management client.
  */
+@AutoService(AccountResourceProviderFactory.class)
 public class AccountConsoleFactory implements AccountResourceProviderFactory {
 
   @Override

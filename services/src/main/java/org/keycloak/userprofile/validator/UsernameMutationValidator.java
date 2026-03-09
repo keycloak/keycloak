@@ -29,6 +29,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Validator to check User Profile username change and prevent it if not allowed in realm. Expects List of Strings as
@@ -37,6 +40,7 @@ import org.keycloak.validate.ValidatorConfig;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
+@AutoService(ValidatorFactory.class)
 public class UsernameMutationValidator implements SimpleValidator {
 
     public static final String ID = "up-username-mutation";

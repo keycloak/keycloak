@@ -27,6 +27,9 @@ import org.keycloak.protocol.oidc.ext.OIDCExtProvider;
 import org.keycloak.protocol.oidc.ext.OIDCExtProviderFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(OIDCExtProviderFactory.class)
 public class ParRootEndpoint implements OIDCExtProvider, OIDCExtProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "par";

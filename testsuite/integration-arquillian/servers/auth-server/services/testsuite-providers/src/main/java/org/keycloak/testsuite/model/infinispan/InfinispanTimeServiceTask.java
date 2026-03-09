@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.commons.logging.Log;
 import org.infinispan.commons.logging.LogFactory;
 import org.infinispan.commons.time.TimeService;
@@ -35,6 +36,7 @@ import org.infinispan.tasks.TaskContext;
 import org.infinispan.tasks.TaskExecutionMode;
 import org.infinispan.util.EmbeddedTimeService;
 
+@AutoService(ServerTask.class)
 public class InfinispanTimeServiceTask implements ServerTask<String> {
 
     private static final Log log = LogFactory.getLog(InfinispanTimeServiceTask.class);

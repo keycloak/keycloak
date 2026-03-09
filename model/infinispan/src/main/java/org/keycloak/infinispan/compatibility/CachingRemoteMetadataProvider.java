@@ -4,10 +4,14 @@ import java.util.stream.Stream;
 
 import org.keycloak.Config;
 import org.keycloak.compatibility.AbstractCompatibilityMetadataProvider;
+import org.keycloak.compatibility.CompatibilityMetadataProvider;
 import org.keycloak.infinispan.util.InfinispanUtils;
 import org.keycloak.spi.infinispan.CacheRemoteConfigProviderSpi;
 import org.keycloak.spi.infinispan.impl.remote.DefaultCacheRemoteConfigProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(CompatibilityMetadataProvider.class)
 public class CachingRemoteMetadataProvider extends AbstractCompatibilityMetadataProvider {
 
     public CachingRemoteMetadataProvider() {

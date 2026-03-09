@@ -30,6 +30,7 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.config.AdapterConfig;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -37,6 +38,7 @@ import org.jboss.logging.Logger;
  * See <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">specs</a> for more details.
  *
  */
+@AutoService(ClientCredentialsProvider.class)
 public class JWTClientSecretCredentialsProvider implements ClientCredentialsProvider {
 
     private static final Logger logger = Logger.getLogger(JWTClientSecretCredentialsProvider.class);

@@ -20,9 +20,12 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:dgozalob@redhat.com">Daniel Gozalo</a>
  */
+@AutoService(Spi.class)
 public class AuthorizationRequestParserSpi implements Spi {
     @Override
     public boolean isInternal() {

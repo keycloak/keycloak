@@ -25,6 +25,9 @@ import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProviderFactory;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(AdminRealmResourceProviderFactory.class)
 public class ClearRealmCacheRealmAdminProvider implements AdminRealmResourceProviderFactory, AdminRealmResourceProvider {
 
     @Override

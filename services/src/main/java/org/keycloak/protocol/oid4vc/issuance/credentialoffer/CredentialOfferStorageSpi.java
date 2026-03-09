@@ -18,6 +18,9 @@ package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(Spi.class)
 public class CredentialOfferStorageSpi implements Spi {
     @Override public String getName() { return "credential-offer-storage"; }
     @Override public Class<CredentialOfferStorage> getProviderClass() { return CredentialOfferStorage.class; }

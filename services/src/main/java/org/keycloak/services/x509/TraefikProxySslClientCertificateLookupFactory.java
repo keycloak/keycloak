@@ -21,6 +21,8 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Factory for the Traefik proxy SSL client certificate lookup provider.
  *
@@ -30,6 +32,7 @@ import org.keycloak.models.KeycloakSessionFactory;
  *
  * @see TraefikProxySslClientCertificateLookup
  */
+@AutoService(X509ClientCertificateLookupFactory.class)
 public class TraefikProxySslClientCertificateLookupFactory implements X509ClientCertificateLookupFactory {
 
     private static final String PROVIDER = "traefik";

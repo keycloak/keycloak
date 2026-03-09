@@ -5,6 +5,9 @@ import java.util.Set;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(WorkflowStepProviderFactory.class)
 public class RevokeRoleStepProviderFactory implements WorkflowStepProviderFactory<RevokeRoleStepProvider> {
 
     public static final String ID = "revoke-role";

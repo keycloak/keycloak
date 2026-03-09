@@ -73,6 +73,7 @@ import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
 import org.keycloak.validate.validators.PatternValidator;
 
+import com.google.auto.service.AutoService;
 import org.jspecify.annotations.NonNull;
 
 import static java.util.Optional.ofNullable;
@@ -87,6 +88,7 @@ import static org.keycloak.userprofile.UserProfileContext.UPDATE_EMAIL;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_PROFILE;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
+@AutoService(UserProfileProviderFactory.class)
 public class DeclarativeUserProfileProviderFactory implements UserProfileProviderFactory, AmphibianProviderFactory<UserProfileProvider> {
 
     public static final String CONFIG_ADMIN_READ_ONLY_ATTRIBUTES = "admin-read-only-attributes";

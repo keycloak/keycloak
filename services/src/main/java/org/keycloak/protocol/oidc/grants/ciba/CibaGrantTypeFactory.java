@@ -27,11 +27,14 @@ import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantTypeFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Factory for OpenID Connect Client-Initiated Backchannel Authentication Flow
  *
  * @author <a href="mailto:demetrio@carretti.pro">Dmitry Telegin</a>
  */
+@AutoService(OAuth2GrantTypeFactory.class)
 public class CibaGrantTypeFactory implements OAuth2GrantTypeFactory, EnvironmentDependentProviderFactory {
 
     public static final String GRANT_SHORTCUT = "ci";

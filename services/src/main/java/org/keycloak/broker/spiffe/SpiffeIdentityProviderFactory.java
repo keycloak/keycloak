@@ -5,11 +5,15 @@ import java.util.Map;
 import org.keycloak.Config;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.provider.ClientAssertionIdentityProviderFactory;
+import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(IdentityProviderFactory.class)
 public class SpiffeIdentityProviderFactory extends AbstractIdentityProviderFactory<SpiffeIdentityProvider> implements EnvironmentDependentProviderFactory, ClientAssertionIdentityProviderFactory {
 
     public static final String PROVIDER_ID = "spiffe";

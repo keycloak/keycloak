@@ -20,6 +20,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -28,8 +29,10 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
+@AutoService(ClientAuthenticatorFactory.class)
 public class X509ClientAuthenticator extends AbstractClientAuthenticator {
 
     public static final String PROVIDER_ID = "client-x509";

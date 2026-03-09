@@ -13,6 +13,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.docker.DockerAuthV2Protocol;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ClientInstallationProvider.class)
 public class DockerVariableOverrideInstallationProvider implements ClientInstallationProvider {
 
     @Override

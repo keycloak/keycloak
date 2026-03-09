@@ -25,12 +25,15 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>Executor factory for SAML client that ensures REDIRECT is not used for responses
  * and forces POST binding configuration option in the client creation/update.</p>
  *
  * @author rmartinc
  */
+@AutoService(ClientPolicyExecutorProviderFactory.class)
 public class SamlAvoidRedirectBindingExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "saml-avoid-redirect";

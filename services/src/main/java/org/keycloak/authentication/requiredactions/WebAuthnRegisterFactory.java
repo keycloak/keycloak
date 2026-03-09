@@ -26,11 +26,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.truststore.TruststoreProvider;
 
+import com.google.auto.service.AutoService;
 import com.webauthn4j.anchor.KeyStoreTrustAnchorRepository;
 import com.webauthn4j.verifier.attestation.trustworthiness.certpath.CertPathTrustworthinessVerifier;
 import com.webauthn4j.verifier.attestation.trustworthiness.certpath.DefaultCertPathTrustworthinessVerifier;
 import com.webauthn4j.verifier.attestation.trustworthiness.certpath.NullCertPathTrustworthinessVerifier;
 
+@AutoService(RequiredActionFactory.class)
 public class WebAuthnRegisterFactory implements RequiredActionFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "webauthn-register";

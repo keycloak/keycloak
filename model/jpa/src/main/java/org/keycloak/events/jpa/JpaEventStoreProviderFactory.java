@@ -26,9 +26,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.storage.datastore.PeriodicEventInvalidation;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(EventStoreProviderFactory.class)
 public class JpaEventStoreProviderFactory implements EventStoreProviderFactory, InvalidationHandler {
 
     public static final String ID = "jpa";

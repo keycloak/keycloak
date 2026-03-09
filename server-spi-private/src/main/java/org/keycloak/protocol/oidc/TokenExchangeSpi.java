@@ -21,11 +21,14 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>A {@link Spi} to support pluggable token exchange handlers in the OAuth2 Token Endpoint.
  *
  * @author <a href="mailto:dmitryt@backbase.com">Dmitry Telegin</a>
  */
+@AutoService(Spi.class)
 public class TokenExchangeSpi implements Spi {
 
     public static final String SPI_NAME = "oauth2-token-exchange";

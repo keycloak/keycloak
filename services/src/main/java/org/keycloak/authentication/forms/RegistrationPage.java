@@ -40,10 +40,13 @@ import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.messages.Messages;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(FormAuthenticatorFactory.class)
 public class RegistrationPage implements FormAuthenticator, FormAuthenticatorFactory {
 
     public static final String FIELD_PASSWORD_CONFIRM = "password-confirm";

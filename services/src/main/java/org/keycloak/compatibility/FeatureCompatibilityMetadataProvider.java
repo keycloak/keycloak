@@ -9,7 +9,9 @@ import org.keycloak.common.Profile;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.auto.service.AutoService;
 
+@AutoService(CompatibilityMetadataProvider.class)
 public class FeatureCompatibilityMetadataProvider implements CompatibilityMetadataProvider {
 
     public static final String ID = "feature-compatibility";

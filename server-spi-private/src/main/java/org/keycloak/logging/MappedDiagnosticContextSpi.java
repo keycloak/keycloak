@@ -2,11 +2,14 @@ package org.keycloak.logging;
 
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * This SPI is used to define the MDC keys and values that should be set for each request.
  *
  * @author <a href="mailto:b.eicki@gmx.net">Björn Eickvonder</a>
  */
+@AutoService(Spi.class)
 public class MappedDiagnosticContextSpi implements Spi {
 
     @Override

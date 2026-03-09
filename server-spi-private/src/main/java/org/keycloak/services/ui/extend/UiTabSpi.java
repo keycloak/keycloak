@@ -5,6 +5,9 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(Spi.class)
 public class UiTabSpi implements Spi {
     @Override
     public boolean isInternal() {

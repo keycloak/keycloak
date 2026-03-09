@@ -43,6 +43,7 @@ import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.provider.ProviderConfigProperty.LIST_TYPE;
@@ -51,6 +52,7 @@ import static org.keycloak.provider.ProviderConfigProperty.STRING_TYPE;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(KeyProviderFactory.class)
 public class JavaKeystoreKeyProviderFactory implements KeyProviderFactory {
     private static final Logger logger = Logger.getLogger(JavaKeystoreKeyProviderFactory.class);
 

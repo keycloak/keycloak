@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.ValidationContext;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -32,6 +33,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
+import com.google.auto.service.AutoService;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -40,6 +42,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
+@AutoService(FormActionFactory.class)
 public class RegistrationRecaptchaEnterprise extends AbstractRegistrationRecaptcha {
     public static final String PROVIDER_ID = "registration-recaptcha-enterprise";
 

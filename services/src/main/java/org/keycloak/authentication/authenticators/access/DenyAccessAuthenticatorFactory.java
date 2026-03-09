@@ -28,9 +28,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@AutoService(AuthenticatorFactory.class)
 public class DenyAccessAuthenticatorFactory implements AuthenticatorFactory {
     private static final DenyAccessAuthenticator SINGLETON = new DenyAccessAuthenticator();
     public static final String PROVIDER_ID = "deny-access-authenticator";

@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.keycloak.adapters.saml.config.parsers.ResourceLoader;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -85,6 +86,7 @@ import org.jboss.logging.Logger;
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
+@AutoService(RoleMappingsProvider.class)
 public class PropertiesBasedRoleMapper implements RoleMappingsProvider {
 
     private static final Logger logger = Logger.getLogger(PropertiesBasedRoleMapper.class);

@@ -28,6 +28,7 @@ import org.keycloak.models.cache.CacheRealmProviderFactory;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 
@@ -35,6 +36,7 @@ import org.jboss.logging.Logger;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(CacheRealmProviderFactory.class)
 public class InfinispanCacheRealmProviderFactory implements CacheRealmProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanCacheRealmProviderFactory.class);

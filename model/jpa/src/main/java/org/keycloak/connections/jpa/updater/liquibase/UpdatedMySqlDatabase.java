@@ -20,11 +20,14 @@ package org.keycloak.connections.jpa.updater.liquibase;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.google.auto.service.AutoService;
+import liquibase.database.Database;
 import liquibase.database.core.MySQLDatabase;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(Database.class)
 public class UpdatedMySqlDatabase extends MySQLDatabase {
 
     private static final Set<String> RESERVED_WORDS = new HashSet();

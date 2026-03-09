@@ -11,6 +11,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.truststore.TruststoreProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -22,6 +23,7 @@ import org.jboss.logging.Logger;
  * @since 10/09/2018
  */
 
+@AutoService(X509ClientCertificateLookupFactory.class)
 public class NginxProxySslClientCertificateLookupFactory extends AbstractClientCertificateFromHttpHeadersLookupFactory {
 
     private static final Logger logger = Logger.getLogger(NginxProxySslClientCertificateLookupFactory.class);

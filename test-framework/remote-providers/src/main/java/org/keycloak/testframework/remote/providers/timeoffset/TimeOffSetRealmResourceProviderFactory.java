@@ -5,6 +5,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(RealmResourceProviderFactory.class)
 public class TimeOffSetRealmResourceProviderFactory implements RealmResourceProviderFactory {
 
     private final String ID = "testing-timeoffset";

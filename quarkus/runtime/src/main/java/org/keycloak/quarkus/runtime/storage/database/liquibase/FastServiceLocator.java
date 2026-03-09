@@ -22,9 +22,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.auto.service.AutoService;
 import liquibase.exception.ServiceNotFoundException;
+import liquibase.servicelocator.ServiceLocator;
 import liquibase.servicelocator.StandardServiceLocator;
 
+@AutoService(ServiceLocator.class)
 public class FastServiceLocator extends StandardServiceLocator {
 
     private Map<String, List<String>> services = new HashMap<>();

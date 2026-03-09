@@ -23,6 +23,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.testsuite.domainextension.spi.ExampleService;
 import org.keycloak.testsuite.domainextension.spi.ExampleServiceProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(ExampleServiceProviderFactory.class)
 public class ExampleServiceProviderFactoryImpl implements ExampleServiceProviderFactory {
 
     @Override

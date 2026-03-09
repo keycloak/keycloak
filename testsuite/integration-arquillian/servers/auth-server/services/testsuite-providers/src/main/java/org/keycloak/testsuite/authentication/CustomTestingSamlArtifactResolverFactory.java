@@ -7,9 +7,12 @@ import org.keycloak.protocol.saml.ArtifactResolver;
 import org.keycloak.protocol.saml.ArtifactResolverFactory;
 import org.keycloak.protocol.saml.util.ArtifactBindingUtils;
 
+import com.google.auto.service.AutoService;
+
 /**
  * This ArtifactResolver should be used only for testing purposes.
  */
+@AutoService(ArtifactResolverFactory.class)
 public class CustomTestingSamlArtifactResolverFactory implements ArtifactResolverFactory {
 
     public  static final byte[] TYPE_CODE_AND_INDEX = {0, 5, 0, 0}; // type code and endpoint index must be present, 2 bytes each

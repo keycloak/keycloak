@@ -11,9 +11,11 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
 import ua_parser.Client;
 import ua_parser.Parser;
 
+@AutoService(DeviceRepresentationProviderFactory.class)
 public class DeviceRepresentationProviderFactoryImpl implements DeviceRepresentationProviderFactory {
 
     private static final Parser UA_PARSER = new Parser();

@@ -31,6 +31,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(AuthenticatorFactory.class)
 public class IdpOrganizationAuthenticatorFactory implements AuthenticatorFactory, EnvironmentDependentProviderFactory {
 
     public static final String ID = "idp-add-organization-member";

@@ -3,9 +3,12 @@ package org.keycloak.testsuite.theme;
 import org.keycloak.Config;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.theme.ClasspathThemeResourceProviderFactory;
+import org.keycloak.theme.ThemeResourceProviderFactory;
 
+import com.google.auto.service.AutoService;
 import io.quarkus.runtime.Application;
 
+@AutoService(ThemeResourceProviderFactory.class)
 public class TestThemeResourceProvider extends ClasspathThemeResourceProviderFactory implements EnvironmentDependentProviderFactory {
 
     public TestThemeResourceProvider() {

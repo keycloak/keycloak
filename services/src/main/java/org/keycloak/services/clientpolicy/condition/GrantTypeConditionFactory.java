@@ -27,9 +27,12 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:ggrazian@redhat.com">Giuseppe Graziano</a>
  */
+@AutoService(ClientPolicyConditionProviderFactory.class)
 public class GrantTypeConditionFactory extends AbstractClientPolicyConditionProviderFactory {
 
     public static final String PROVIDER_ID = "grant-type";

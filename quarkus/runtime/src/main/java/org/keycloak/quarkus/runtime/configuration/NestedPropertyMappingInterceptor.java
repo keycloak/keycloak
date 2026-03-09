@@ -24,6 +24,7 @@ import jakarta.annotation.Priority;
 
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
+import com.google.auto.service.AutoService;
 import io.smallrye.config.ConfigSourceInterceptor;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
@@ -37,6 +38,7 @@ import io.smallrye.config.Priorities;
  * This is needed in case the expression contains something that requires property mapping.
  */
 @Priority(Priorities.LIBRARY + 299)
+@AutoService(ConfigSourceInterceptor.class)
 public class NestedPropertyMappingInterceptor implements ConfigSourceInterceptor {
 
     static final ThreadLocal<LinkedHashSet<String>> recursions = new ThreadLocal<>();

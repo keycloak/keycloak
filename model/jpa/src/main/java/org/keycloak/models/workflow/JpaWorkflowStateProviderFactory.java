@@ -23,6 +23,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel.RealmRemovedEvent;
 import org.keycloak.models.UserModel.UserRemovedEvent;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(WorkflowStateProviderFactory.class)
 public class JpaWorkflowStateProviderFactory implements WorkflowStateProviderFactory {
 
     public static final String PROVIDER_ID = "jpa";

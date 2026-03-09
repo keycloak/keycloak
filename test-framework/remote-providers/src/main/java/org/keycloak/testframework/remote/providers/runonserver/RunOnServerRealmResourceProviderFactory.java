@@ -7,6 +7,9 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(RealmResourceProviderFactory.class)
 public class RunOnServerRealmResourceProviderFactory implements RealmResourceProviderFactory {
 
     private static final String ID = "testing-run-on-server";

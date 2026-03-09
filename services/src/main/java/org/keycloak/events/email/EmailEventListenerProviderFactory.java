@@ -33,9 +33,12 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(EventListenerProviderFactory.class)
 public class EmailEventListenerProviderFactory implements EventListenerProviderFactory {
 
     private static final Set<EventType> SUPPORTED_EVENTS = new HashSet<>();

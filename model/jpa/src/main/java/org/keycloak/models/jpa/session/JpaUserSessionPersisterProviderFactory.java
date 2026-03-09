@@ -34,9 +34,12 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(UserSessionPersisterProviderFactory.class)
 public class JpaUserSessionPersisterProviderFactory implements UserSessionPersisterProviderFactory, ServerInfoAwareProviderFactory {
 
     public static final String ID = "jpa";

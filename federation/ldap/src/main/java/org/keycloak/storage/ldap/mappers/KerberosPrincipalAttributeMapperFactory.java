@@ -20,6 +20,9 @@ package org.keycloak.storage.ldap.mappers;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(LDAPStorageMapperFactory.class)
 public class KerberosPrincipalAttributeMapperFactory extends AbstractLDAPStorageMapperFactory {
 
     public static final String PROVIDER_ID = "kerberos-principal-attribute-mapper";

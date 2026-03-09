@@ -5,10 +5,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  *
  * @author <a href="mailto:svacek@redhat.com">Simon Vacek</a>
  */
+@AutoService(RealmResourceProviderFactory.class)
 public class MyCustomRealmResourceProviderFactory implements RealmResourceProviderFactory {
 
     public static final String ID = "custom-provider";

@@ -21,11 +21,14 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>A {@link Spi} to support additional tokens types to the OAuth2 Token Introspection Endpoint.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(Spi.class)
 public class TokenIntrospectionSpi implements Spi {
     @Override
     public boolean isInternal() {

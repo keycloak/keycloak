@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.AuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnConditionalUIAuthenticator;
 import org.keycloak.common.Profile;
@@ -32,11 +33,14 @@ import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.provider.ProviderConfigProperty.BOOLEAN_TYPE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(AuthenticatorFactory.class)
 public class OrganizationAuthenticatorFactory extends IdentityProviderAuthenticatorFactory implements EnvironmentDependentProviderFactory {
 
     public static final String ID = "organization";

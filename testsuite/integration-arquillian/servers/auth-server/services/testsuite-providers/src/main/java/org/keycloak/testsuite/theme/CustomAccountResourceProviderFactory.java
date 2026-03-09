@@ -11,8 +11,10 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resource.AccountResourceProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.resteasy.reactive.NoCache;
 
+@AutoService(AccountResourceProviderFactory.class)
 public class CustomAccountResourceProviderFactory implements AccountResourceProviderFactory, AccountResourceProvider {
   public static final String ID = "ext-custom-account-console";
 

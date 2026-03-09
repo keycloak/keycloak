@@ -32,6 +32,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.truststore.TruststoreProvider;
 
+import com.google.auto.service.AutoService;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.entity.EntityBuilder;
@@ -57,6 +58,7 @@ import static org.keycloak.utils.StringUtil.isBlank;
  * }
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(HttpClientFactory.class)
 public class DefaultHttpClientFactory implements HttpClientFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultHttpClientFactory.class);

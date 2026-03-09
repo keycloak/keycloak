@@ -19,9 +19,12 @@ package org.keycloak.crypto;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(HashProviderFactory.class)
 public class SHA512HashProviderFactory implements HashProviderFactory {
 
     public static final String ID = JavaAlgorithm.SHA512;

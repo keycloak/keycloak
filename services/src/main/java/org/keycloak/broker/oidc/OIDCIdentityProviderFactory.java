@@ -20,14 +20,18 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
+import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.util.JsonSerialization;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author Pedro Igor
  */
+@AutoService(IdentityProviderFactory.class)
 public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory<OIDCIdentityProvider> {
 
     public static final String PROVIDER_ID = "oidc";

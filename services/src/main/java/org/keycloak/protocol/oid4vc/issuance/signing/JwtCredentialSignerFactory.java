@@ -20,6 +20,9 @@ package org.keycloak.protocol.oid4vc.issuance.signing;
 import org.keycloak.VCFormat;
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(CredentialSignerFactory.class)
 public class JwtCredentialSignerFactory implements CredentialSignerFactory {
 
     @Override

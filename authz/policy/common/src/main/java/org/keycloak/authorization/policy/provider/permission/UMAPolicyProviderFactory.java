@@ -46,9 +46,12 @@ import org.keycloak.representations.idm.authorization.RolePolicyRepresentation.R
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(PolicyProviderFactory.class)
 public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermissionRepresentation> {
 
     private UMAPolicyProvider provider = new UMAPolicyProvider();

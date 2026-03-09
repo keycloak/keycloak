@@ -24,8 +24,10 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
+@AutoService(JtaTransactionManagerLookup.class)
 public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManagerLookup {
 
     private static final Logger logger = Logger.getLogger(QuarkusJtaTransactionManagerLookup.class);

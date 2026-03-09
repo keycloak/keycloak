@@ -28,6 +28,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Validator to check User Profile username attribute uniqueness during registration (when
@@ -36,6 +39,7 @@ import org.keycloak.validate.ValidatorConfig;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
+@AutoService(ValidatorFactory.class)
 public class RegistrationUsernameExistsValidator implements SimpleValidator {
 
     public static final String ID = "up-registration-username-exists";

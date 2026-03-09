@@ -30,10 +30,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.storage.UserStorageProviderFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@AutoService(UserStorageProviderFactory.class)
 public class UserMapStorageFactory implements UserStorageProviderFactory<UserMapStorage> {
 
 

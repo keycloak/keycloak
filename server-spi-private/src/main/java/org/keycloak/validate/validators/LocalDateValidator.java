@@ -32,10 +32,14 @@ import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * A date validator that only takes into account the format associated with the current locale.
  */
+@AutoService(ValidatorFactory.class)
 public class LocalDateValidator extends AbstractStringValidator implements ConfiguredProvider {
 
     public static final LocalDateValidator INSTANCE = new LocalDateValidator();

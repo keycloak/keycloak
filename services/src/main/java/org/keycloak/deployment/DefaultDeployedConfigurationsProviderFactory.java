@@ -27,9 +27,12 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(DeployedConfigurationsProviderFactory.class)
 public class DefaultDeployedConfigurationsProviderFactory implements DeployedConfigurationsProviderFactory {
 
     public static final String PROVIDER_ID = "default";

@@ -19,6 +19,7 @@ package org.keycloak.credential.hash;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -28,6 +29,7 @@ import org.jboss.logging.Logger;
  * @deprecated The PBKDF2 provider with SHA1 and the recommended number of 1.300.000 iterations is known to be very slow. We recommend to use the PBKDF2 variants with SHA256 or SHA512 instead.
  */
 @Deprecated
+@AutoService(PasswordHashProviderFactory.class)
 public class Pbkdf2PasswordHashProviderFactory extends AbstractPbkdf2PasswordHashProviderFactory implements PasswordHashProviderFactory {
 
     private static final Logger LOG = Logger.getLogger(Pbkdf2PasswordHashProviderFactory.class);

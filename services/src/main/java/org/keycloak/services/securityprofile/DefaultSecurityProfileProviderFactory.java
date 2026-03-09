@@ -33,6 +33,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.FileUtils;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
@@ -40,6 +41,7 @@ import org.jboss.logging.Logger;
  * from the file configured.
  * @author rmartinc
  */
+@AutoService(SecurityProfileProviderFactory.class)
 public class DefaultSecurityProfileProviderFactory implements SecurityProfileProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultSecurityProfileProviderFactory.class);

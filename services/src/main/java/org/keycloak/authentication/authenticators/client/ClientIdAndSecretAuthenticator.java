@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -44,6 +45,8 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.utils.StringUtil;
 
+import com.google.auto.service.AutoService;
+
 
 /**
  * Validates client based on "client_id" and "client_secret" sent either in request parameters or in "Authorization: Basic" header .
@@ -52,6 +55,7 @@ import org.keycloak.utils.StringUtil;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(ClientAuthenticatorFactory.class)
 public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator {
 
     public static final String PROVIDER_ID = "client-secret";

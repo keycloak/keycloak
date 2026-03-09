@@ -32,9 +32,12 @@ import org.keycloak.provider.Provider;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.tracing.TracingProvider;
 
+import com.google.auto.service.AutoService;
+
 /**
  * The traced {@link HttpClientFactory} for {@link HttpClientProvider HttpClientProvider's} used by Keycloak for outbound HTTP calls which are traced.
  */
+@AutoService(HttpClientFactory.class)
 public class OTelHttpClientFactory extends DefaultHttpClientFactory implements EnvironmentDependentProviderFactory {
     public static final String PROVIDER_ID = "opentelemetry";
 

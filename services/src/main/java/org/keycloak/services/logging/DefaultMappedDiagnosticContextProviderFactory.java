@@ -24,6 +24,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.MDC;
 
 /**
@@ -33,6 +34,7 @@ import org.jboss.logging.MDC;
  *
  * @author <a href="mailto:b.eicki@gmx.net">Björn Eickvonder</a>
  */
+@AutoService(MappedDiagnosticContextProviderFactory.class)
 public class DefaultMappedDiagnosticContextProviderFactory implements MappedDiagnosticContextProviderFactory, MappedDiagnosticContextProvider, EnvironmentDependentProviderFactory {
 
     public static final String MDC_KEY_REALM_NAME = MDC_PREFIX + "realmName";

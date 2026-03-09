@@ -29,6 +29,9 @@ import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * Validation against list of allowed values - accepts plain string and collection of strings (every value is validated against allowed values), for basic behavior like null/blank
@@ -36,6 +39,7 @@ import org.keycloak.validate.ValidatorConfig;
  * <p>
  * Configuration have to be always provided using {@link #KEY_OPTIONS} option, which have to contain <code>List</code> of <code>String</code> values.
  */
+@AutoService(ValidatorFactory.class)
 public class OptionsValidator extends AbstractStringValidator implements ConfiguredProvider {
 
     public static final OptionsValidator INSTANCE = new OptionsValidator();

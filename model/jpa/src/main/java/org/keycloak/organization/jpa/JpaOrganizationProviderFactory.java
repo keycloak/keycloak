@@ -28,6 +28,9 @@ import org.keycloak.organization.OrganizationProviderFactory;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.provider.ProviderEvent;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(OrganizationProviderFactory.class)
 public class JpaOrganizationProviderFactory implements OrganizationProviderFactory {
 
     public static final String ID = "jpa";

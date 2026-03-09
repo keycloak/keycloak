@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.ValidationContext;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -32,6 +33,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
+import com.google.auto.service.AutoService;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -41,6 +43,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 
+@AutoService(FormActionFactory.class)
 public class RegistrationRecaptcha extends AbstractRegistrationRecaptcha {
 
     private static final Logger LOGGER = Logger.getLogger(RegistrationRecaptcha.class);

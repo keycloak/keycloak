@@ -123,6 +123,12 @@
             <version>${jdbc.mvn.version}</version>
             <scope>test</scope>
         </dependency>
+            <dependency>
+            <groupId>com.google.auto.service</groupId>
+            <artifactId>auto-service</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>

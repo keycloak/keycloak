@@ -30,12 +30,15 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 /**
  * Construct a {@link SingleFileExportProvider} to be used to export one or more realms.
  * For the sake of testing in the legacy testing setup, configurations can be overwritten via system properties.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(ExportProviderFactory.class)
 public class SingleFileExportProviderFactory implements ExportProviderFactory {
 
     public static final String PROVIDER_ID = "singleFile";

@@ -23,9 +23,12 @@ import org.keycloak.migration.MigrationProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(MigrationProviderFactory.class)
 public class DefaultMigrationProviderFactory implements MigrationProviderFactory {
 
     @Override

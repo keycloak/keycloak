@@ -29,6 +29,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 import static org.keycloak.common.util.CollectionUtil.collectionEquals;
 import static org.keycloak.validate.BuiltinValidators.notBlankValidator;
@@ -38,6 +41,7 @@ import static org.keycloak.validate.BuiltinValidators.notBlankValidator;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@AutoService(ValidatorFactory.class)
 public class ImmutableAttributeValidator implements SimpleValidator {
 
     public static final String ID = "up-immutable-attribute";

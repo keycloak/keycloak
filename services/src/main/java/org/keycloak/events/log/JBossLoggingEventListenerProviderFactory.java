@@ -29,11 +29,13 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(EventListenerProviderFactory.class)
 public class JBossLoggingEventListenerProviderFactory implements EventListenerProviderFactory {
 
     public static final String ID = "jboss-logging";

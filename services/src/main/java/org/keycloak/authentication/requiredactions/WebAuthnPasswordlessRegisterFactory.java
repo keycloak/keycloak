@@ -18,13 +18,16 @@
 
 package org.keycloak.authentication.requiredactions;
 
+import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
 import com.webauthn4j.verifier.attestation.trustworthiness.certpath.CertPathTrustworthinessVerifier;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(RequiredActionFactory.class)
 public class WebAuthnPasswordlessRegisterFactory extends WebAuthnRegisterFactory {
 
     public static final String PROVIDER_ID = "webauthn-register-passwordless";

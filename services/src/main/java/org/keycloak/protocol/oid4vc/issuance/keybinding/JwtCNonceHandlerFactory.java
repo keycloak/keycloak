@@ -20,9 +20,12 @@ package org.keycloak.protocol.oid4vc.issuance.keybinding;
 
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author Pascal Knüppel
  */
+@AutoService(CNonceHandlerFactory.class)
 public class JwtCNonceHandlerFactory implements CNonceHandlerFactory {
 
     public static final String PROVIDER_ID = "oid4vci-jwt-c-nonce-builder";

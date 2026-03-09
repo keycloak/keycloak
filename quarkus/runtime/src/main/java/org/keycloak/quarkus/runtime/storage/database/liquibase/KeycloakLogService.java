@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime.storage.database.liquibase;
 
+import com.google.auto.service.AutoService;
+import liquibase.logging.LogService;
 import liquibase.logging.Logger;
 import liquibase.logging.core.AbstractLogService;
 
@@ -25,6 +27,7 @@ import liquibase.logging.core.AbstractLogService;
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
+@AutoService(LogService.class)
 public class KeycloakLogService extends AbstractLogService {
 
     @Override

@@ -22,9 +22,12 @@ import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author Pedro Igor
  */
+@AutoService(SocialIdentityProviderFactory.class)
 public class BitbucketIdentityProviderFactory extends AbstractIdentityProviderFactory<BitbucketIdentityProvider> implements SocialIdentityProviderFactory<BitbucketIdentityProvider> {
 
     public static final String PROVIDER_ID = "bitbucket";

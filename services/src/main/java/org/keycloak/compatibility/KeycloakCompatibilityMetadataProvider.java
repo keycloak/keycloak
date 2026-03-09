@@ -5,9 +5,12 @@ import java.util.Map;
 import org.keycloak.common.Version;
 import org.keycloak.migration.ModelVersion;
 
+import com.google.auto.service.AutoService;
+
 /**
  * A {@link CompatibilityMetadataProvider} implementation to provide the Keycloak version.
  */
+@AutoService(CompatibilityMetadataProvider.class)
 public class KeycloakCompatibilityMetadataProvider implements CompatibilityMetadataProvider {
 
     public static final String ID = "keycloak";

@@ -42,11 +42,13 @@ import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author hmlnarik
  */
+@AutoService(ComponentFactoryProviderFactory.class)
 public class DefaultComponentFactoryProviderFactory implements ComponentFactoryProviderFactory {
 
     private static final Logger LOG = Logger.getLogger(DefaultComponentFactoryProviderFactory.class);

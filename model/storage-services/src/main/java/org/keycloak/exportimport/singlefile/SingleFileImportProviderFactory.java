@@ -31,11 +31,14 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.exportimport.ExportImportConfig.DEFAULT_STRATEGY;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(ImportProviderFactory.class)
 public class SingleFileImportProviderFactory implements ImportProviderFactory {
 
     public static final String PROVIDER_ID = SingleFileExportProviderFactory.PROVIDER_ID;

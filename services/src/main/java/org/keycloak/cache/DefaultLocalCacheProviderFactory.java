@@ -9,12 +9,14 @@ import org.keycloak.models.KeycloakSessionFactory;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.google.auto.service.AutoService;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.binder.cache.CaffeineStatsCounter;
 
 /**
  * The default implementation for {@link LocalCacheProvider} and {@link LocalCacheProviderFactory}.
  */
+@AutoService(LocalCacheProviderFactory.class)
 public class DefaultLocalCacheProviderFactory implements LocalCacheProvider, LocalCacheProviderFactory {
 
     @Override

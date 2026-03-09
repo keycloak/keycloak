@@ -45,9 +45,12 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
+import com.google.auto.service.AutoService;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(RequiredActionFactory.class)
 public class DeleteCredentialAction implements RequiredActionProvider, RequiredActionFactory, CredentialAction {
 
     public static final String PROVIDER_ID = "delete_credential";

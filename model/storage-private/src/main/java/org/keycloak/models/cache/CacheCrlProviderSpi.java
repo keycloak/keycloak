@@ -19,6 +19,9 @@ package org.keycloak.models.cache;
 
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
+@AutoService(Spi.class)
 public class CacheCrlProviderSpi implements Spi {
 
     @Override

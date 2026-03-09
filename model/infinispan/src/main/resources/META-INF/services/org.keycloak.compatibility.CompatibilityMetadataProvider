@@ -1,3 +1,0 @@
-org.keycloak.infinispan.compatibility.CachingEmbeddedMetadataProvider
-org.keycloak.infinispan.compatibility.CachingRemoteMetadataProvider
-org.keycloak.jgroups.certificates.JGroupsCertificatesMetadataProvider

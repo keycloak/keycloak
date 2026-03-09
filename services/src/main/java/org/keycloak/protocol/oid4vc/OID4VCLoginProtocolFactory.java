@@ -47,6 +47,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
@@ -77,6 +78,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SUPPORTED_TYPE
  *
  * @author <a href="https://github.com/wistefan">Stefan Wiedemann</a>
  */
+@AutoService(LoginProtocolFactory.class)
 public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCEnvironmentProviderFactory {
 
 	private static final Logger LOGGER = Logger.getLogger(OID4VCLoginProtocolFactory.class);

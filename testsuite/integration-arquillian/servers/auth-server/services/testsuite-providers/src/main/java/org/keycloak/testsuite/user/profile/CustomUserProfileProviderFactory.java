@@ -21,10 +21,14 @@ package org.keycloak.testsuite.user.profile;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.userprofile.DeclarativeUserProfileProviderFactory;
+import org.keycloak.userprofile.UserProfileProviderFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@AutoService(UserProfileProviderFactory.class)
 public class CustomUserProfileProviderFactory extends DeclarativeUserProfileProviderFactory {
 
     public static final String ID = "custom-user-profile";

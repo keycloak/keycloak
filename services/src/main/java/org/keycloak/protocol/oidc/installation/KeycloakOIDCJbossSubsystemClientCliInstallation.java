@@ -31,8 +31,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ClientInstallationProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 
+import com.google.auto.service.AutoService;
+
 import static org.keycloak.protocol.util.ClientCliInstallationUtil.quote;
 
+@AutoService(ClientInstallationProvider.class)
 public class KeycloakOIDCJbossSubsystemClientCliInstallation implements ClientInstallationProvider {
 
     @Override

@@ -33,6 +33,8 @@ import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.representations.AccessToken;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>Simple mapper that adds the nonce claim into the access token as before.
  * Just adding the mapper reverts back to full old behavior in all the
@@ -40,6 +42,7 @@ import org.keycloak.representations.AccessToken;
  *
  * @author rmartinc
  */
+@AutoService(ProtocolMapper.class)
 public class NonceBackwardsCompatibleMapper implements OIDCAccessTokenMapper, ProtocolMapper {
 
     public static final String PROVIDER_ID = "oidc-nonce-backwards-compatible-mapper";

@@ -22,12 +22,15 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
+
 /**
  * <p>A {@link Spi} to plug additional sub-resources to Realms' RESTful Admin API.
  *
  * <p>Implementors can use this {@link Spi} to provide additional services to the mentioned API and extend Keycloak capabilities by
  * creating JAX-RS sub-resources for paths not known by the server.
  */
+@AutoService(Spi.class)
 public class AdminRealmResourceSpi implements Spi {
 
     @Override

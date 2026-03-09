@@ -19,6 +19,7 @@ package org.keycloak.spi.infinispan;
 
 import org.keycloak.provider.Spi;
 
+import com.google.auto.service.AutoService;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.manager.EmbeddedCacheManager;
 
@@ -28,6 +29,7 @@ import org.infinispan.manager.EmbeddedCacheManager;
  * <p>
  * It provides the {@link ConfigurationBuilderHolder} to configure the {@link EmbeddedCacheManager}.
  */
+@AutoService(Spi.class)
 public class CacheEmbeddedConfigProviderSpi implements Spi {
 
     public static final String SPI_NAME = "cacheEmbedded";

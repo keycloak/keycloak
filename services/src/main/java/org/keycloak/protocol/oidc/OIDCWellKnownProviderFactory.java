@@ -32,11 +32,13 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@AutoService(WellKnownProviderFactory.class)
 public class OIDCWellKnownProviderFactory implements WellKnownProviderFactory {
 
     public static final String PROVIDER_ID = "openid-configuration";

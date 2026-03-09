@@ -29,6 +29,9 @@ import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidationResult;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
+
+import com.google.auto.service.AutoService;
 
 /**
  * String value length validation - accepts plain string and collection of strings, for basic behavior like null/blank
@@ -38,6 +41,7 @@ import org.keycloak.validate.ValidatorConfig;
  * <p>
  * Configuration have to be always provided, with at least one of {@link #KEY_MIN} and {@link #KEY_MAX}.
  */
+@AutoService(ValidatorFactory.class)
 public class LengthValidator extends AbstractStringValidator implements ConfiguredProvider {
 
     public static final LengthValidator INSTANCE = new LengthValidator();

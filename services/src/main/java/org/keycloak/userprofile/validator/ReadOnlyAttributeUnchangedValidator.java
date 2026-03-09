@@ -28,7 +28,9 @@ import org.keycloak.validate.SimpleValidator;
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.ValidationError;
 import org.keycloak.validate.ValidatorConfig;
+import org.keycloak.validate.ValidatorFactory;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.ObjectUtil.isBlank;
@@ -40,6 +42,7 @@ import static org.keycloak.common.util.ObjectUtil.isBlank;
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
+@AutoService(ValidatorFactory.class)
 public class ReadOnlyAttributeUnchangedValidator implements SimpleValidator {
 
     private static final Logger logger = Logger.getLogger(ReadOnlyAttributeUnchangedValidator.class);

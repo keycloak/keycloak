@@ -48,7 +48,9 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
+import com.google.auto.service.AutoService;
 import org.jboss.logging.Logger;
+@AutoService(RequiredActionFactory.class)
 public class DeleteAccount implements RequiredActionProvider, RequiredActionFactory {
 
   public static final String PROVIDER_ID = "delete_account";
