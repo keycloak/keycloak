@@ -21,7 +21,7 @@ public abstract class AbstractClientApiV2Test {
     }
 
     public String getClientsApiUrl() {
-        return "http://localhost:8080/admin/api/%s/clients/v2".formatted(getRealmName());
+        return "http://localhost:8080/admin/api/v2/%s/clients".formatted(getRealmName());
     }
 
     @BeforeAll

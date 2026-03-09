@@ -363,7 +363,7 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
     }
 
     private void deleteClient(String clientId) throws Exception {
-        //TODO adjust when <code>deleteClient()</code> returns something. Assert on response code
+        //TODO adjust when 'deleteClient()' returns something. Assert on response code
         adminClient.clients(masterRealm.getName()).v2().client(clientId).deleteClient();
         assertNull(adminClient.clients(masterRealm.getName()).v2().client(clientId).getClient());
     }

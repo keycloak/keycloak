@@ -63,6 +63,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @KeycloakIntegrationTest(config = ClientApiV2Test.AdminV2Config.class)
 public class ClientApiV2Test extends AbstractClientApiV2Test{
@@ -88,6 +89,14 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals("account", client.getClientId());
         }
+    }
+
+    @Test
+    public void getClientV2() throws Exception {
+        adminClient.clients("master").v2().client("sdddd").getClient();
+
+        assertTrue(adminClient.clients("master").v2().getClients()
+            .anyMatch(client -> client.getClientId().equals("account")));
     }
 
     @Test
