@@ -341,16 +341,16 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         clientScope.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
         Map<String, String> attributes =
                 new HashMap<>(Map.of(ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE, "true",
-                        CredentialScopeModel.EXPIRY_IN_SECONDS, "15"));
+                        CredentialScopeModel.VC_EXPIRY_IN_SECONDS, "15"));
         BiConsumer<String, String> addAttribute = (attributeName, value) -> {
             if (value != null) {
                 attributes.put(attributeName, value);
             }
         };
-        addAttribute.accept(CredentialScopeModel.ISSUER_DID, issuerDid);
-        addAttribute.accept(CredentialScopeModel.CONFIGURATION_ID, credentialConfigurationId);
-        addAttribute.accept(CredentialScopeModel.CREDENTIAL_IDENTIFIER, credentialIdentifier);
-        addAttribute.accept(CredentialScopeModel.FORMAT, format);
+        addAttribute.accept(CredentialScopeModel.VC_ISSUER_DID, issuerDid);
+        addAttribute.accept(CredentialScopeModel.VC_CONFIGURATION_ID, credentialConfigurationId);
+        addAttribute.accept(CredentialScopeModel.VC_IDENTIFIER, credentialIdentifier);
+        addAttribute.accept(CredentialScopeModel.VC_FORMAT, format);
         addAttribute.accept(CredentialScopeModel.VCT, Optional.ofNullable(vct).orElse(credentialIdentifier));
         if (credentialConfigurationId != null) {
             String vcDisplay;
@@ -365,11 +365,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             addAttribute.accept(CredentialScopeModel.VC_DISPLAY, vcDisplay);
         }
         if (acceptedKeyAttestationValues != null) {
-            attributes.put(CredentialScopeModel.KEY_ATTESTATION_REQUIRED, "true");
+            attributes.put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED, "true");
             if (!acceptedKeyAttestationValues.isEmpty()) {
-                attributes.put(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_KEY_STORAGE,
+                attributes.put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE,
                         String.join(",", acceptedKeyAttestationValues));
-                attributes.put(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_USER_AUTH,
+                attributes.put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_USER_AUTH,
                         String.join(",", acceptedKeyAttestationValues));
             }
         }
@@ -558,8 +558,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                                                            BiFunction<String, String, String> f,
                                                            Consumer<Map<String, Object>> c) {
         String testScope = clientScope.getName();
-        String testFormat = clientScope.getAttributes().get(CredentialScopeModel.FORMAT);
-        String testCredentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String testFormat = clientScope.getAttributes().get(CredentialScopeModel.VC_FORMAT);
+        String testCredentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
         try (Client client = AdminClientUtil.createResteasyClient()) {
             String metadataUrl = getRealmMetadataPath(TEST_REALM_NAME);
