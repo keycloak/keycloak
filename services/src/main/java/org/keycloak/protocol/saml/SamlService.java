@@ -387,7 +387,7 @@ public class SamlService extends AuthorizationEndpointBase {
                     return;
                 }
 
-            } catch (ArtifactResolverProcessingException e) {
+            } catch (ArtifactResolverProcessingException | IllegalArgumentException e) {
                 event.event(EventType.LOGIN);
                 event.detail(Details.REASON, e.getMessage());
                 event.error(Errors.INVALID_SAML_ARTIFACT);
@@ -1218,7 +1218,13 @@ public class SamlService extends AuthorizationEndpointBase {
             return emptyArtifactResponseMessage(artifactResolveMessage, null, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.getUri());
         }
 
-        ArtifactResolver artifactResolver = getArtifactResolver(artifact);
+        ArtifactResolver artifactResolver;
+        try {
+            artifactResolver = getArtifactResolver(artifact);
+        } catch (IllegalArgumentException e) {
+            logger.errorf("Invalid artifact format: %s", artifact);
+            return emptyArtifactResponseMessage(artifactResolveMessage, null, JBossSAMLURIConstants.STATUS_REQUEST_DENIED.getUri());
+        }
 
         if (artifactResolver == null) {
             logger.errorf("Cannot find ArtifactResolver for artifact %s", artifact);

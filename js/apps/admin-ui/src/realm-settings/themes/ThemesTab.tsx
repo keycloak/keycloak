@@ -14,6 +14,7 @@ import { ThemesTabType, toThemesTab } from "../routes/ThemesTab";
 import { LogoContext } from "./LogoContext";
 import { ThemeColors } from "./ThemeColors";
 import { ThemeSettingsTab } from "./ThemeSettings";
+import { BackgroundContext } from "./BackgroundContext";
 
 type ThemesTabProps = {
   realm: RealmRepresentation;
@@ -21,6 +22,8 @@ type ThemesTabProps = {
 };
 
 export type ThemeRealmRepresentation = RealmRepresentation & {
+  themeName?: string;
+  themeDescription?: string;
   fileName?: string;
   favicon?: File;
   logo?: File;
@@ -39,28 +42,33 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
     const zip = new JSZip();
 
     const styles = JSON.parse(realm.attributes?.style ?? "{}");
-    const { favicon, logo, bgimage, fileName } = realm;
+    const { favicon, logo, bgimage, fileName, themeName, themeDescription } =
+      realm;
 
+    const name = themeName || "quick-theme";
+    const description = themeDescription || t("themeDescriptionDefault");
     const logoName =
       "img/logo" + logo?.name?.substring(logo?.name?.lastIndexOf("."));
     const bgimageName =
       "img/bgimage" + bgimage?.name?.substring(bgimage?.name?.lastIndexOf("."));
 
     if (favicon) {
-      zip.file(`theme/quick-theme/common/resources/img/favicon.ico`, favicon);
+      zip.file(`theme/${name}/common/resources/img/favicon.ico`, favicon);
     }
     if (logo) {
-      zip.file(`theme/quick-theme/common/resources/${logoName}`, logo);
+      zip.file(`theme/${name}/common/resources/${logoName}`, logo);
     }
     if (bgimage) {
-      zip.file(`theme/quick-theme/common/resources/${bgimageName}`, bgimage);
+      zip.file(`theme/${name}/common/resources/${bgimageName}`, bgimage);
     }
 
     zip.file(
-      "theme/quick-theme/admin/theme.properties",
+      `theme/${name}/admin/theme.properties`,
       `
 parent=keycloak.v2
-import=common/quick-theme
+import=common/${name}
+
+description=${description}
 
 ${logo ? "logo=" + logoName : ""}
 ${favicon ? "favIcon=/img/favicon.ico" : ""}
@@ -69,10 +77,12 @@ styles=css/theme-styles.css
     );
 
     zip.file(
-      "theme/quick-theme/account/theme.properties",
+      `theme/${name}/account/theme.properties`,
       `
 parent=keycloak.v3
-import=common/quick-theme
+import=common/${name}
+
+description=${description}
 
 ${logo ? "logo=" + logoName : ""}
 ${favicon ? "favIcon=/img/favicon.ico" : ""}
@@ -81,10 +91,12 @@ styles=css/theme-styles.css
     );
 
     zip.file(
-      "theme/quick-theme/login/theme.properties",
+      `theme/${name}/login/theme.properties`,
       `
 parent=keycloak.v2
-import=common/quick-theme
+import=common/${name}
+
+description=${description}
 
 styles=css/styles.css css/theme-styles.css
 `,
@@ -94,7 +106,7 @@ styles=css/styles.css css/theme-styles.css
       "META-INF/keycloak-themes.json",
       `{
   "themes": [{
-      "name" : "quick-theme",
+      "name" : "${name}",
       "types": [ "login", "account", "admin", "common" ]
   }]
 }`,
@@ -104,12 +116,10 @@ styles=css/styles.css css/theme-styles.css
       "theme-settings.json",
       JSON.stringify({
         ...styles,
-        logo: logo ? `theme/quick-theme/common/resources/${logoName}` : "",
-        bgimage: bgimage
-          ? `theme/quick-theme/common/resources/${bgimageName}`
-          : "",
+        logo: logo ? `theme/${name}/common/resources/${logoName}` : "",
+        bgimage: bgimage ? `theme/${name}/common/resources/${bgimageName}` : "",
         favicon: favicon
-          ? "theme/quick-theme/common/resources/img/favicon.ico"
+          ? `theme/${name}/common/resources/img/favicon.ico`
           : "",
       }),
     );
@@ -124,10 +134,10 @@ styles=css/styles.css css/theme-styles.css
         `/resources/${environment.resourceVersion}/login/keycloak.v2/css/styles.css`,
       )
     ).text();
-    zip.file("theme/quick-theme/common/resources/css/styles.css", loginCss);
+    zip.file(`theme/${name}/common/resources/css/styles.css`, loginCss);
 
     zip.file(
-      "theme/quick-theme/common/resources/css/theme-styles.css",
+      `theme/${name}/common/resources/css/theme-styles.css`,
       `:root {
         ${bgimage ? `--keycloak-bg-logo-url: url('../${bgimageName}');` : ""}
         ${logo ? `--keycloak-logo-url: url('../${logoName}');` : ""}
@@ -185,9 +195,11 @@ styles=css/styles.css css/theme-styles.css
         data-testid="quickTheme-tab"
         {...quickThemeTab}
       >
-        <LogoContext>
-          <ThemeColors realm={realm} save={saveTheme} />
-        </LogoContext>
+        <BackgroundContext>
+          <LogoContext>
+            <ThemeColors realm={realm} save={saveTheme} />
+          </LogoContext>
+        </BackgroundContext>
       </Tab>
     </RoutableTabs>
   );

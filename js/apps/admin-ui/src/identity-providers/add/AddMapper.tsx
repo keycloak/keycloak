@@ -2,8 +2,10 @@ import type IdentityProviderRepresentation from "libs/keycloak-admin-client/lib/
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import type { IdentityProviderMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperTypeRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import { TextControl, useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
+import { useAlerts, useFetch } from "@keycloak/keycloak-ui-shared";
 import {
+  FormGroup,
+  TextInput,
   ActionGroup,
   AlertVariant,
   Button,
@@ -203,14 +205,18 @@ export default function AddMapper() {
       >
         <FormProvider {...form}>
           {id && (
-            <TextControl
-              name="id"
-              label={t("id")}
-              readOnly
-              rules={{
-                required: t("required"),
-              }}
-            />
+            <>
+              <FormGroup label={t("id")} fieldId="id">
+                <TextInput name="id" readOnly value={id} />
+              </FormGroup>
+              <FormGroup label={t("name")} fieldId="name">
+                <TextInput
+                  name="name"
+                  readOnly
+                  value={form.getValues("name")}
+                />
+              </FormGroup>
+            </>
           )}
           {currentMapper.properties && (
             <>

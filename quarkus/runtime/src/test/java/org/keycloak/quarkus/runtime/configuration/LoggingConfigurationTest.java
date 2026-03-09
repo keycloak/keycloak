@@ -527,4 +527,65 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.http.access-log.exclude-pattern", "/realms/test/*"
         ));
     }
+
+    // File log rotation
+    @Test
+    public void fileRotationDefaults() {
+        ConfigArgsConfigSource.setCliArgs("--log=file");
+        initConfig();
+
+        assertConfig(Map.of(
+                "log-file-rotation-enabled", "true",
+                "log-file-rotation-max-file-size", "10M",
+                "log-file-rotation-max-backup-index", "5",
+                "log-file-rotation-rotate-on-boot", "true"
+        ));
+        assertConfigNull("log-file-rotation-file-suffix");
+
+        assertExternalConfig(Map.of(
+                "quarkus.log.file.rotation.enabled", "true",
+                "quarkus.log.file.rotation.max-file-size", "10M",
+                "quarkus.log.file.rotation.max-backup-index", "5",
+                "quarkus.log.file.rotation.rotate-on-boot", "true"
+        ));
+        assertExternalConfigNull("quarkus.log.file.rotation.file-suffix");
+    }
+
+    @Test
+    public void fileRotationDisabled() {
+        putEnvVars(Map.of(
+                "KC_LOG", "file",
+                "KC_LOG_FILE_ROTATION_ENABLED", "false"
+        ));
+        initConfig();
+
+        assertConfig("log-file-rotation-enabled", "false");
+        assertExternalConfig("quarkus.log.file.rotation.enabled", "false");
+    }
+
+    @Test
+    public void fileRotationCustomValues() {
+        putEnvVars(Map.of(
+                "KC_LOG", "file",
+                "KC_LOG_FILE_ROTATION_MAX_FILE_SIZE", "50M",
+                "KC_LOG_FILE_ROTATION_MAX_BACKUP_INDEX", "3",
+                "KC_LOG_FILE_ROTATION_FILE_SUFFIX", ".yyyy-MM-dd",
+                "KC_LOG_FILE_ROTATION_ROTATE_ON_BOOT", "false"
+        ));
+        initConfig();
+
+        assertConfig(Map.of(
+                "log-file-rotation-max-file-size", "50M",
+                "log-file-rotation-max-backup-index", "3",
+                "log-file-rotation-file-suffix", ".yyyy-MM-dd",
+                "log-file-rotation-rotate-on-boot", "false"
+        ));
+
+        assertExternalConfig(Map.of(
+                "quarkus.log.file.rotation.max-file-size", "50M",
+                "quarkus.log.file.rotation.max-backup-index", "3",
+                "quarkus.log.file.rotation.file-suffix", ".yyyy-MM-dd",
+                "quarkus.log.file.rotation.rotate-on-boot", "false"
+        ));
+    }
 }

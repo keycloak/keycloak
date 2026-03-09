@@ -19,6 +19,7 @@ package org.keycloak.services.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
@@ -36,6 +37,10 @@ public class ResourceOwnerPasswordCredentialsContext implements ClientPolicyCont
     @Override
     public ClientPolicyEvent getEvent() {
         return ClientPolicyEvent.RESOURCE_OWNER_PASSWORD_CREDENTIALS_REQUEST;
+    }
+
+    public String getScope() {
+        return this.params.getFirst(OAuth2Constants.SCOPE);
     }
 
     public MultivaluedMap<String, String> getParams() {

@@ -139,8 +139,8 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
             for (ModelSchema<M, R> schema : schemas) {
                 switch (op.toLowerCase()) {
                     case "add" -> schema.add(model, path, value);
-                    case "replace" -> schema.replace(model, path, value);
-                    case "remove" -> schema.remove(model, path);
+                    case "replace" -> schema.replace(existing, model, path, value);
+                    case "remove" -> schema.remove(existing, model, path);
                     default -> throw new RuntimeException("Unsupported patch operation " + op);
                 }
             }
@@ -179,19 +179,6 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
                 schema.populate(model, resource);
             }
         }
-    }
-
-    protected String[] splitScimAttribute(String scimAttrPath) {
-        // first split the attribute path into schema and attribute name. If no schema is specified, use the core user schema by default
-        String schemaName;
-        int lastColon = scimAttrPath.lastIndexOf(':');
-        if (lastColon > 0 && (scimAttrPath.contains("://") || scimAttrPath.startsWith("urn:"))) {
-            schemaName = scimAttrPath.substring(0, lastColon);
-            scimAttrPath = scimAttrPath.substring(lastColon + 1);
-        } else {
-            schemaName = this.schema.getName();
-        }
-        return new String[] {schemaName, scimAttrPath};
     }
 
     private R createResourceTypeInstance() {

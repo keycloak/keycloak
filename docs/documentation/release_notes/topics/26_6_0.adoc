@@ -82,6 +82,11 @@ This behavior is enabled by default and can be controlled with the server option
 
 Most deployments do not require any action. If you relied on the Operator to manage these truststore entries previously, the server now performs the same function directly.
 
+== Traefik Client certificate lookup
+
+You can now use a new client certificate lookup provider specifically for Traefik proxies.
+For details, navigate to link:{server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup[Enabling Client Certificate Lookup] section of the documentation.
+
 = Java 25 support
 
 {project_name} now supports running with JRE 25. OpenJDK 25 is also now used in the official container images.
@@ -95,3 +100,17 @@ You can now use the `spec.http.serviceName`, `spec.http.serviceHttpsPort`, and `
 configure these independently.
 
 For more details, see the https://www.keycloak.org/operator/advanced-configuration[Advanced configuration] guide.
+
+= Configurable log file rotation
+
+It is now possible to configure log file rotation when using {project_name}'s built-in file logging handler.
+This includes a simple option to fully disable log rotation, which is useful when using an external log rotation solution such as `logrotate`.
+
+To disable log file rotation:
+
+[source,bash]
+----
+bin/kc.sh start --log="console,file" --log-file-rotation-enabled=false
+----
+
+For more information, see the https://www.keycloak.org/server/logging/file[File logging] guide.
