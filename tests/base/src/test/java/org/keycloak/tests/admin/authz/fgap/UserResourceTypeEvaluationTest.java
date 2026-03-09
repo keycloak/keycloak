@@ -333,17 +333,8 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
             assertThat(ex, instanceOf(ForbiddenException.class));
         }
 
-        // existing manage-membership does not bridge user-side membership operations
+        // target group must allow membership changes
         createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP));
-        try {
-            realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
-            fail("Expected Exception wasn't thrown.");
-        } catch (Exception ex) {
-            assertThat(ex, instanceOf(ForbiddenException.class));
-        }
-
-        // dedicated group bridge scope allows managing the user's group membership
-        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS));
         realmAdminClient.realm(realm.getName()).users().get(userBob.getId()).joinGroup(target.getId());
         assertTrue(realm.admin().users().get(userBob.getId()).groups().stream().anyMatch(group -> target.getId().equals(group.getId())));
     }
@@ -360,6 +351,7 @@ public class UserResourceTypeEvaluationTest extends AbstractPermissionTest {
         realm.admin().users().get(userAlice.getId()).joinGroup(vault.getId());
 
         createAllPermission(client, usersType, allowMyAdminPermission, Set.of(MANAGE_GROUP_MEMBERSHIP));
+        createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP));
         createAllPermission(client, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, allowMyAdminPermission, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS));
         createPermission(client, vault.getId(), AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS), denyMyAdminPermission);
 

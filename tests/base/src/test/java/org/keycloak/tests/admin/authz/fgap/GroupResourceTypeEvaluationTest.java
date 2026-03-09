@@ -50,7 +50,6 @@ import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERS;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP;
-import static org.keycloak.authorization.fgap.AdminPermissionsSchema.MANAGE_MEMBERSHIP_OF_MEMBERS;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.VIEW_MEMBERS;
@@ -297,7 +296,7 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
         createAllUserPermission(policy, Set.of(MANAGE_GROUP_MEMBERSHIP));
 
         //create group permission to allow manage membership for the group
-        createGroupPermission(topGroup, Set.of(MANAGE_MEMBERSHIP_OF_MEMBERS), policy);
+        createGroupPermission(topGroup, Set.of(MANAGE_MEMBERSHIP), policy);
 
         
         //create new user
@@ -310,9 +309,9 @@ public class GroupResourceTypeEvaluationTest extends AbstractPermissionTest {
 
     @Test
     public void testCreateGroupMembers() {
-        //create group permission for "topGroup" to allow "myadmin" view, manage-members and manage-membership-of-members
+        //create group permission for "topGroup" to allow "myadmin" view, manage-members and manage-membership
         UserPolicyRepresentation policy = createUserPolicy(realm, client, "Only My Admin User Policy", realm.admin().users().search("myadmin").get(0).getId());
-        createGroupPermission(topGroup, Set.of(VIEW, MANAGE_MEMBERSHIP_OF_MEMBERS, MANAGE_MEMBERS), policy);
+        createGroupPermission(topGroup, Set.of(VIEW, MANAGE_MEMBERSHIP, MANAGE_MEMBERS), policy);
         
         //create new user as realm user should fail
         try (Response response = realmAdminClient.realm(realm.getName()).users().create(UserConfigBuilder.create().username("bob").build())) {

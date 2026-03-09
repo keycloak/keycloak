@@ -1183,7 +1183,7 @@ public class UserResource {
         if (Organizations.isOrganizationGroup(group)) {
             throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
         }
-        auth.groups().requireManageMembershipOfMembers(group);
+        auth.groups().requireManageMembership(group);
 
         try {
             if (user.isMemberOf(group)){
@@ -1225,7 +1225,7 @@ public class UserResource {
         if (Organizations.isOrganizationGroup(group)) {
             throw ErrorResponse.error("Cannot access organization related group via non Organization API.", Status.BAD_REQUEST);
         }
-        auth.groups().requireManageMembershipOfMembers(group);
+        auth.groups().requireManageMembership(group);
 
         if (!RoleUtils.isDirectMember(user.getGroupsStream(),group)){
             user.joinGroup(group);

@@ -119,5 +119,5 @@ For more information, see the https://www.keycloak.org/server/logging/file[File 
 
 Fine-Grained Admin Permissions (FGAP) now includes a new `Groups` scope: `manage-membership-of-members`.
 
-When managing a user's group membership through user administration APIs, administrators now need this scope on the target group in addition to the user-side `manage-group-membership` scope.
-The existing `manage-membership` scope keeps its current behavior and is no longer used as a bridge for user-side membership operations.
+This scope is now used as the group-side bridge for evaluating user-side `manage-group-membership` permissions based on a user's current group memberships.
+The existing `manage-membership` scope keeps its current behavior for target group membership management operations.
