@@ -10,7 +10,6 @@ import org.keycloak.testframework.TestFrameworkExtension;
 import org.keycloak.testframework.injection.Registry;
 import org.keycloak.testframework.injection.Supplier;
 import org.keycloak.testframework.remote.annotations.TestOnServer;
-import org.keycloak.testframework.remote.infinispan.InfinispanTimeServiceSupplier;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.runonserver.RunOnServerSupplier;
 import org.keycloak.testframework.remote.runonserver.RunTestOnServer;
@@ -24,8 +23,7 @@ public class RemoteTestFrameworkExtension implements TestFrameworkExtension, Tes
                 new TimeOffsetSupplier(),
                 new RunOnServerSupplier(),
                 new RemoteProvidersSupplier(),
-                new TestClassServerSupplier(),
-                new InfinispanTimeServiceSupplier()
+                new TestClassServerSupplier()
         );
     }
 

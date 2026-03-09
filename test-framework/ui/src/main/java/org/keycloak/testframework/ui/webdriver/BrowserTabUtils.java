@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.htmlunit.WebClient;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 /**
  * Helper class for managing tabs in browser.
@@ -31,21 +29,7 @@ public class BrowserTabUtils {
 
     private void driverValidation() {
         this.driver = managedDriver.driver();
-
-        if (driver instanceof JavascriptExecutor) {
-            this.jsExecutor = (JavascriptExecutor) driver;
-        } else {
-            throw new RuntimeException("WebDriver must be instance of JavascriptExecutor");
-        }
-
-        // HtmlUnit doesn't work very well with JS and it's recommended to use this settings.
-        // HtmlUnit validates all scripts and then fails. It turned off the validation.
-        if (driver instanceof HtmlUnitDriver) {
-            WebClient client = ((HtmlUnitDriver) driver).getWebClient();
-            client.getOptions().setThrowExceptionOnScriptError(false);
-            client.getOptions().setThrowExceptionOnFailingStatusCode(false);
-        }
-
+        this.jsExecutor = (JavascriptExecutor) driver;
         tabs = new ArrayList<>(driver.getWindowHandles());
     }
 

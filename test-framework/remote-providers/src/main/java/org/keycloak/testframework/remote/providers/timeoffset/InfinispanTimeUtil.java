@@ -1,4 +1,4 @@
-package org.keycloak.tests.utils.infinispan;
+package org.keycloak.testframework.remote.providers.timeoffset;
 
 import java.io.Serializable;
 
@@ -30,7 +30,7 @@ public class InfinispanTimeUtil implements Serializable {
 
     public static void enableTestingTimeService(KeycloakSession session) {
         if (origTimeService != null) {
-            throw new IllegalStateException("Calling setTestingTimeService when testing TimeService was already set");
+            return;
         }
 
         InfinispanConnectionProvider ispnProvider = session.getProvider(InfinispanConnectionProvider.class);

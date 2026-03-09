@@ -39,8 +39,6 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.ManagedUser;
-import org.keycloak.testframework.remote.infinispan.InfinispanTimeService;
-import org.keycloak.testframework.remote.infinispan.InjectInfinispanTimeService;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
@@ -92,7 +90,7 @@ public class RefreshTokenTimeoutsTest {
     @InjectEvents
     Events events;
 
-    @InjectTimeOffSet
+    @InjectTimeOffSet(enableForCaches = true)
     TimeOffSet timeOffSet;
 
     @InjectPage
@@ -106,9 +104,6 @@ public class RefreshTokenTimeoutsTest {
 
     @InjectClient(attachTo = "test-app")
     ManagedClient managedClient;
-
-    @InjectInfinispanTimeService
-    InfinispanTimeService infinispanTimeService;
 
     @BeforeEach
     public void before() {
@@ -201,10 +196,6 @@ public class RefreshTokenTimeoutsTest {
         return userSession.getLastAccess() / 1000;
     }
 
-    private void setTestingInfinispanTimeService() {
-        infinispanTimeService.setTestingInfinispanTimeService();
-    }
-
     @Test
     public void testUserSessionRefreshAndIdleRememberMe() {
         realm.updateWithCleanup(r -> r
@@ -276,7 +267,6 @@ public class RefreshTokenTimeoutsTest {
 
     @Test
     public void refreshTokenUserSessionMaxLifespan() {
-        setTestingInfinispanTimeService();
         realm.updateWithCleanup(r -> r
                 .ssoSessionMaxLifespan(3600)
                 .ssoSessionIdleTimeout(7200));
@@ -327,12 +317,11 @@ public class RefreshTokenTimeoutsTest {
 
     @Test
     public void refreshTokenUserClientMaxLifespanSmallerThanSession() {
-        setTestingInfinispanTimeService();
         realm.updateWithCleanup(r ->
-            r.ssoSessionMaxLifespan(3600)
-             .ssoSessionIdleTimeout(7200)
-             .clientSessionMaxLifespan(1000)
-            .clientSessionIdleTimeout(7200)
+                r.ssoSessionMaxLifespan(3600)
+                        .ssoSessionIdleTimeout(7200)
+                        .clientSessionMaxLifespan(1000)
+                        .clientSessionIdleTimeout(7200)
         );
 
         oauth.doLogin("test-user@localhost", "password");
@@ -420,7 +409,6 @@ public class RefreshTokenTimeoutsTest {
     @Test
     public void refreshTokenUserSessionMaxLifespanModifiedAfterTokenRefresh() {
         isPersistentSessionsFeatureEnabled();
-        setTestingInfinispanTimeService();
         realm.updateWithCleanup(r ->
                 r.ssoSessionMaxLifespan(7200)
                         .ssoSessionIdleTimeout(7200)
@@ -460,7 +448,6 @@ public class RefreshTokenTimeoutsTest {
 
     @Test
     public void refreshTokenClientSessionMaxLifespanModifiedAfterTokenRefresh() {
-        setTestingInfinispanTimeService();
         realm.updateWithCleanup(r ->
                 r.ssoSessionMaxLifespan(7200)
                         .ssoSessionIdleTimeout(7200)
@@ -523,7 +510,6 @@ public class RefreshTokenTimeoutsTest {
 
     @Test
     public void silentLoginClientSessionMaxLifespanModifiedAfterTokenRefresh() {
-        setTestingInfinispanTimeService();
         realm.updateWithCleanup(r ->
                 r.ssoSessionMaxLifespan(7200)
                         .ssoSessionIdleTimeout(7200)
@@ -620,8 +606,6 @@ public class RefreshTokenTimeoutsTest {
         ClientResource client = managedClient.admin();
         ClientRepresentation clientRepresentation = client.toRepresentation();
 
-        setTestingInfinispanTimeService();
-
         try {
             rep.setSsoSessionMaxLifespan(1000);
             realm.update(rep);
@@ -703,8 +687,6 @@ public class RefreshTokenTimeoutsTest {
         try (Response resp = realm.clients().create(clientRepresentation2)) {
             clientUUID = ApiUtil.getCreatedId(resp);
         }
-
-        setTestingInfinispanTimeService();
 
         String origClientId = oauth.getClientId();
         String origClientSecret = oauth.config().getClientSecret();
@@ -857,7 +839,7 @@ public class RefreshTokenTimeoutsTest {
         } finally {
             rep.setClientSessionIdleTimeout(originalClientSessionIdleTimeout);
             realm.update(rep);
-            clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, null);
+            clientRepresentation.getAttributes().put(CLIENT_SESSION_IDLE_TIMEOUT, "");
             client.update(clientRepresentation);
         }
     }
@@ -875,7 +857,6 @@ public class RefreshTokenTimeoutsTest {
         clientRepresentation.getAttributes().put(CLIENT_SESSION_MAX_LIFESPAN, "65"); // 1 minute 5 seconds
         client.update(clientRepresentation);
 
-        setTestingInfinispanTimeService();
         try {
             oauth.doLogin("test-user@localhost", "password");
             String code = oauth.parseLoginResponse().getCode();
