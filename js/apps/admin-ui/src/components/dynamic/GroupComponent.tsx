@@ -8,7 +8,7 @@ import {
   FormGroup,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "@keycloak/keycloak-ui-shared";
@@ -17,6 +17,7 @@ import {
   useGroupResource,
   GroupResourceContext,
 } from "../../context/group-resource/GroupResourceContext";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { GroupPickerDialog } from "../group/GroupPickerDialog";
 import type { ComponentProps } from "./components";
 
@@ -31,10 +32,27 @@ export const GroupComponent = ({
   const [open, setOpen] = useState(false);
   const [openOrgGroups, setOpenOrgGroups] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>();
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
   const { adminClient } = useAdminClient();
+  const serverInfo = useServerInfo();
   const hasLinkedOrganization = useGroupResource().isOrgGroups();
+  const groupTypeFieldName = convertToName("groupType");
 
+  // Get group type enum values from server
+  const groupTypes = serverInfo.enums?.["type"] || [];
+  const GROUP_TYPE_REALM =
+    groupTypes.find((t: string) => t === "REALM") || "REALM";
+  const GROUP_TYPE_ORG =
+    groupTypes.find((t: string) => t === "ORGANIZATION") || "ORGANIZATION";
+
+  const groupType = useWatch({
+    name: groupTypeFieldName,
+    control,
+    defaultValue: GROUP_TYPE_REALM,
+  });
+
+  const shouldRenderOrgField =
+    hasLinkedOrganization || groupType == GROUP_TYPE_ORG;
   return (
     <Controller
       name={convertToName(name!)}
@@ -52,6 +70,7 @@ export const GroupComponent = ({
                 }}
                 onConfirm={(groups) => {
                   field.onChange(groups?.[0].path);
+                  setValue(groupTypeFieldName, GROUP_TYPE_REALM);
                   setGroups(groups);
                   setOpen(false);
                 }}
@@ -69,6 +88,7 @@ export const GroupComponent = ({
               }}
               onConfirm={(groups) => {
                 field.onChange(groups?.[0].path);
+                setValue(groupTypeFieldName, GROUP_TYPE_ORG);
                 setGroups(groups);
                 setOpenOrgGroups(false);
               }}
@@ -89,7 +109,20 @@ export const GroupComponent = ({
               <ActionListItem>
                 <ChipGroup>
                   {field.value && (
-                    <Chip onClick={() => field.onChange(undefined)}>
+                    <Chip
+                      onClick={() => {
+                        field.onChange(undefined);
+                        setValue(groupTypeFieldName, undefined);
+                      }}
+                    >
+                      {shouldRenderOrgField && (
+                        <>
+                          {groupType === GROUP_TYPE_REALM
+                            ? t("realm")
+                            : t("organization")}
+                          :&nbsp;
+                        </>
+                      )}
                       {field.value}
                     </Chip>
                   )}
@@ -105,7 +138,7 @@ export const GroupComponent = ({
                   {t("selectGroup")}
                 </Button>
               </ActionListItem>
-              {hasLinkedOrganization && (
+              {shouldRenderOrgField && (
                 <ActionListItem>
                   <Button
                     id="kc-join-org-groups-button"

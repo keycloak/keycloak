@@ -26,6 +26,7 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.broker.provider.HardcodedGroupMapper;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderSyncMode;
@@ -100,6 +101,7 @@ public class OrganizationGroupSamlIdpMapperTest extends AbstractOrganizationTest
         mapper.setConfig(ImmutableMap.<String, String>builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.IMPORT.toString())
                 .put(ConfigConstants.GROUP, groupPath)
+                .put(ConfigConstants.GROUP_TYPE, GroupModel.Type.ORGANIZATION.name())
                 .build());
 
         try (Response response = testRealm().identityProviders().get(idp.getAlias()).addMapper(mapper)) {
