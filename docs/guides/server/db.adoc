@@ -499,6 +499,260 @@ The `transaction-default-timeout` option takes precedence over the unsupported `
 If you are using the Quarkus property, migrate to the supported `transaction-default-timeout` option and remove the Quarkus property from your configuration.
 ====
 
+== Secure the database connection
+
+Encrypting the traffic between {project_name} and the database is recommended for increased security, as it prevents third parties from examining the network traffic.
+
+It is recommended to go a step further and enable certificate verification to prevent more complex attacks such as DNS poisoning and address hijacking, whereby {project_name} could be directed to a different server than intended.
+To perform the certificate validation, the database certificate, or the Certificate Authority (CA) certificate, must be added to the {project_name} truststore.
+
+This section provides guidance on how to enable these settings in {project_name} and configure the JDBC driver properly.
+Configuring the database server with the private keys and certificates is outside the scope of this section.
+Consult your vendor documentation on how to do it.
+
+=== Using {project_name} CLI options
+
+{project_name} provides unified CLI options to configure database TLS settings across different database vendors.
+These options simplify the configuration by abstracting vendor-specific JDBC properties and providing a consistent interface.
+
+The following options are available:
+
+`db-tls-mode`::
+Sets the TLS mode for the database connection.
+Valid values are `disabled` and `verify-server`.
+When set to `verify-server`, it enables encryption and server identity verification.
+Default: `disabled`
+
+`db-tls-trust-store-file`::
+The path to the truststore file containing the database server certificates or Certificate Authority (CA) certificates used to verify the database server's identity.
+
+`db-tls-trust-store-password`::
+The password to access the truststore file (if required and supported by the JDBC driver).
+
+`db-tls-trust-store-type`::
+The type of the truststore file.
+Common values include `JKS` (Java KeyStore) and `PKCS12`.
+If not specified, the driver's default truststore type is used.
+
+NOTE: These unified CLI options are the recommended approach for configuring database TLS.
+{project_name} automatically translates these options to the appropriate vendor-specific JDBC properties.
+
+The following example demonstrates how to configure database TLS using these options for a PostgreSQL database.
+
+<@kc.start parameters="--db=postgres --db-tls-mode=verify-server --db-tls-trust-store-file=/path/to/certificate.pem"/>
+
+Alternatively, you can use `--truststore-paths` instead of the `db-tls-trust-store-*` options to add your certificate to the Java truststore.
+
+<@kc.start parameters="--db=postgres --db-tls-mode=verify-server --truststore-paths=/path/to/certificate.pem"/>
+
+=== Using the Java truststore
+
+{project_name} allows adding certificates to the Java truststore using the CLI option `--truststore-paths`, which is supported by most drivers.
+The recommended settings for each database are provided below.
+
+==== PostgreSQL
+// https://jdbc.postgresql.org/documentation/ssl/
+PostgreSQL requires the following JDBC properties to be configured.
+
+[%autowidth]
+|===
+|JDBC Property |Value | Description
+
+m|sslmode
+m|verify-full
+|Encrypts the network traffic and validates the server identity.
+
+m|sslfactory
+m|org.postgresql.ssl.DefaultJavaSSLFactory
+|By default, the driver uses `LibPQFactory` which does not support the Java truststore.
+
+|===
+
+<@kc.start parameters="--truststore-paths=/path/to/database_cert.pem --db-url-properties=?sslmode=verify-full&sslfactory=org.postgresql.ssl.DefaultJavaSSLFactory"/>
+
+==== MySQL
+// https://dev.mysql.com/doc/connector-j/en/connector-j-reference-using-ssl.html
+MySQL requires the following JDBC property to be configured.
+
+[%autowidth]
+|===
+|JDBC Property |Value | Description
+
+m|sslMode
+m|VERIFY_IDENTITY
+|Encrypts the network traffic and validates the server identity.
+
+|===
+
+<@kc.start parameters="--truststore-paths=/path/to/database_cert.pem --db-url-properties=?sslMode=VERIFY_IDENTITY"/>
+
+[%autowidth]
+==== MariaDB
+// https://mariadb.com/docs/connectors/mariadb-connector-j/using-tls-ssl-with-mariadb-java-connector
+MariaDB requires the following JDBC property to be configured.
+
+|===
+|JDBC Property |Value | Description
+
+m|sslMode
+m|verify-full
+|Encrypts the network traffic and validates the server identity.
+
+|===
+
+<@kc.start parameters="--truststore-paths=/path/to/database_cert.pem --db-url-properties=?sslMode=verify-full"/>
+
+[%autowidth]
+==== Microsoft SQL Server
+// https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-with-ssl-encryption?view=sql-server-ver17#configuring-the-connection
+Microsoft SQL Server requires the following JDBC properties to be configured.
+
+|===
+|JDBC Property |Value | Description
+
+m|encrypt
+m|true
+|Encrypts the network traffic.
+
+m|trustServerCertificate
+m|false
+|Validates the server identity.
+
+|===
+
+<@kc.start parameters="--truststore-paths=/path/to/database_cert.pem --db-url-properties=;encrypt=true;trustServerCertificate=false"/>
+
+[%autowidth]
+==== Oracle
+// https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/oracle/jdbc/OracleDriver.html
+Oracle by default verifies the server identity when the protocol `tcps` is used.
+
+<@kc.start parameters="--truststore-paths=/path/to/database_cert.pem --db-url=jdbc:oracle:thin:@tcps://host:port/database"/>
+
+=== Using database-specific certificate paths
+
+Alternatively, instead of using the Java truststore with `--truststore-paths`, you can configure each database driver to use its own certificate file or truststore directly through JDBC properties.
+This approach is useful when you want to keep database certificates separate from the Java truststore.
+
+==== PostgreSQL
+
+PostgreSQL supports specifying the certificate file directly using the `sslrootcert` property.
+
+[%autowidth]
+|===
+|JDBC Property |Value | Description
+
+m|sslmode
+m|verify-full
+|Encrypts the network traffic and validates the server identity.
+
+m|sslrootcert
+m|/path/to/cert.pem
+|The path to the server's certificate file on the client machine.
+
+|===
+
+<@kc.start parameters="--db-url-properties=?sslmode=verify-full&sslrootcert=/path/to/cert.pem"/>
+
+==== MySQL
+
+MySQL supports specifying the certificate file or truststore through dedicated SSL properties.
+
+[%autowidth]
+|===
+|JDBC Property |Value | Description
+
+m|sslMode
+m|VERIFY_IDENTITY
+|Encrypts the network traffic and validates the server identity.
+
+m|trustCertificateKeyStoreUrl
+m|file:/path/to/truststore.jks
+|The URL to a custom truststore file containing the server certificate.
+
+m|trustCertificateKeyStorePassword
+m|password
+|The password for the custom truststore (if required).
+
+|===
+
+<@kc.start parameters="--db-url-properties=?sslMode=VERIFY_IDENTITY&trustCertificateKeyStoreUrl=file:/path/to/truststore.jks&trustCertificateKeyStorePassword=password"/>
+
+==== MariaDB
+
+MariaDB supports specifying the certificate file directly using the `serverSslCert` property.
+
+[%autowidth]
+|===
+|JDBC Property |Value | Description
+
+m|sslMode
+m|verify-full
+|Encrypts the network traffic and validates the server identity.
+
+m|serverSslCert
+m|/path/to/cert.pem
+|The path to the server's certificate file on the client machine.
+
+|===
+
+<@kc.start parameters="--db-url-properties=?sslMode=verify-full&serverSslCert=/path/to/cert.pem"/>
+
+==== Microsoft SQL Server
+
+Microsoft SQL Server supports specifying a custom truststore using the `trustStore` and `trustStorePassword` properties.
+
+[%autowidth]
+|===
+|JDBC Property |Value | Description
+
+m|encrypt
+m|true
+|Encrypts the network traffic.
+
+m|trustServerCertificate
+m|false
+|Validates the server identity.
+
+m|trustStore
+m|/path/to/truststore.jks
+|The path to a custom truststore file containing the server certificate.
+
+m|trustStorePassword
+m|password
+|The password for the custom truststore.
+
+|===
+
+<@kc.start parameters="--db-url-properties=;encrypt=true;trustServerCertificate=false;trustStore=/path/to/truststore.jks;trustStorePassword=password"/>
+
+==== Oracle
+
+Oracle supports using Oracle Wallet or Java keystores for certificate management.
+When using `tcps` protocol, you can specify a custom keystore location.
+
+[%autowidth]
+|===
+|JDBC Property |Value | Description
+
+m|javax.net.ssl.trustStore
+m|/path/to/truststore.jks
+|The path to a custom truststore file containing the server certificate.
+
+m|javax.net.ssl.trustStorePassword
+m|password
+|The password for the custom truststore.
+
+m|javax.net.ssl.trustStoreType
+m|JKS
+|The type of truststore (JKS, PKCS12, etc.).
+
+|===
+
+<@kc.start parameters="--db-url=jdbc:oracle:thin:@tcps://host:port/database --db-url-properties=?javax.net.ssl.trustStore=/path/to/truststore.jks&javax.net.ssl.trustStorePassword=password&javax.net.ssl.trustStoreType=JKS"/>
+
+Alternatively, you can use Oracle Wallet by configuring the wallet location in the JDBC URL or through Oracle-specific properties.
+
 == Setting JPA provider configuration option for migrationStrategy
 
 To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA provider as follows:
