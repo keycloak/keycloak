@@ -1406,7 +1406,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         typedResourcePermission.addPolicy(onlyOwnerPolicy.getName());
 
         try (Response response = authorization.permissions().resource().create(typedResourcePermission)) {
-            typedResourcePermission = response.readEntity(ResourcePermissionRepresentation.class);
+            typedResourcePermission.setId(response.readEntity(ResourcePermissionRepresentation.class).getId());
         }
 
         ResourceRepresentation martaResource = new ResourceRepresentation();
@@ -1468,7 +1468,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         martaResourcePermission.addPolicy(onlyKoloPolicy.getName());
 
         try (Response response1 = authorization.permissions().resource().create(martaResourcePermission)) {
-            martaResourcePermission = response1.readEntity(ResourcePermissionRepresentation.class);
+            martaResourcePermission.setId(response1.readEntity(ResourcePermissionRepresentation.class).getId());
         }
 
         response = authzClient.authorization(accessToken).authorize(request);
@@ -1509,7 +1509,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         martaResourceUpdatePermission.addPolicy(onlyOwnerPolicy.getName());
 
         try (Response response1 = authorization.permissions().scope().create(martaResourceUpdatePermission)) {
-            martaResourceUpdatePermission = response1.readEntity(ScopePermissionRepresentation.class);
+            martaResourceUpdatePermission.setId(response1.readEntity(ScopePermissionRepresentation.class).getId());
         }
 
         // now kolo can only read, but not update
@@ -1665,7 +1665,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         martaResourcePermission.addPolicy(onlyKoloPolicy.getName());
 
         try (Response response1 = authorization.permissions().resource().create(martaResourcePermission)) {
-            martaResourcePermission = response1.readEntity(ResourcePermissionRepresentation.class);
+            martaResourcePermission.setId(response1.readEntity(ResourcePermissionRepresentation.class).getId());
         }
 
         response = authzClient.authorization(accessToken).authorize(request);
@@ -1688,7 +1688,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         martaResourceUpdatePermission.addPolicy(onlyOwnerPolicy.getName());
 
         try (Response response1 = authorization.permissions().scope().create(martaResourceUpdatePermission)) {
-            martaResourceUpdatePermission = response1.readEntity(ScopePermissionRepresentation.class);
+            martaResourceUpdatePermission.setId(response1.readEntity(ScopePermissionRepresentation.class).getId());
         }
 
         // now kolo can only read, but not update
@@ -1802,7 +1802,7 @@ public class EntitlementAPITest extends AbstractAuthzTest {
         typedResourcePermission.addPolicy(onlyPublicResourcesPolicy.getName());
 
         try (Response response = authorization.permissions().resource().create(typedResourcePermission)) {
-            typedResourcePermission = response.readEntity(ResourcePermissionRepresentation.class);
+            typedResourcePermission.setId(response.readEntity(ResourcePermissionRepresentation.class).getId());
         }
 
         // marta can access any public resource
