@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
+import jakarta.validation.groups.Default;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -26,7 +26,7 @@ import org.keycloak.models.mapper.ClientModelMapper;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
-import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
+import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -138,6 +138,12 @@ public class DefaultClientService implements ClientService {
             if (strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
+
+            // Validate with default group for PUT only
+            if (!strategy.equals(CreateOrUpdateStrategy.PATCH)) {
+                validator.validate(client);
+            }
+
             model = mapper.toModel(client, clientResource.viewClientModel());
             var rep = ModelToRepresentation.toRepresentation(model, session);
 
@@ -147,7 +153,7 @@ public class DefaultClientService implements ClientService {
             }
         } else {
             created = true;
-            validator.validate(client, CreateClientDefault.class);
+            validator.validate(client, CreateClient.class, Default.class);
 
             // First, create a basic v1 representation to persist the client in the database.
             // We can't use mapper.toModel(client) directly for creation because the "detached model"
@@ -213,7 +219,7 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, JsonNode patch) throws ServiceException {
-        Supplier<BaseClientRepresentation> getOriginalClient = () -> getClient(realm, clientId)
+        BaseClientRepresentation originalClient = getClient(realm, clientId)
                 .orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
 
         BaseClientRepresentation updated;
@@ -224,7 +230,15 @@ public class DefaultClientService implements ClientService {
                         // based on the RFC 7396 JSON Merge Patch should replace the whole entity if the patch is not an object - we can't do it
                         throw new ServiceException("Cannot replace client resource with null", Response.Status.BAD_REQUEST);
                     }
-                    final ObjectReader objectReader = MAPPER.readerForUpdating(getOriginalClient.get());
+
+                    // Ensure protocol field is set in patch for polymorphic deserialization
+                    if (patch.isObject() && !patch.has("protocol")) {
+                        ((com.fasterxml.jackson.databind.node.ObjectNode) patch).put("protocol", originalClient.getProtocol());
+                    }
+                    final BaseClientRepresentation partialRep = MAPPER.treeToValue(patch, BaseClientRepresentation.class);
+                    validator.validate(partialRep);
+
+                    final ObjectReader objectReader = MAPPER.readerForUpdating(originalClient);
                     updated = objectReader.readValue(patch);
                 } catch (JsonProcessingException e) {
                     throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);

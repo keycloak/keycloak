@@ -440,6 +440,120 @@ public class ClientApiV2ValidationTest {
     }
 
     // ===========================================
+    // Server-managed field validation tests
+    // ===========================================
+
+    @Test
+    public void createClientWithUuidFailsValidation() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-with-uuid",
+                    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                    "enabled": true
+                }
+                """));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("uuid: This field is server-managed and cannot be set by the user"));
+        }
+    }
+
+
+    @Test
+    public void updateClientWithUuidFailsValidation() throws Exception {
+        // First create a client without UUID
+        HttpPost createRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(createRequest);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        createRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-client-for-update",
+                    "enabled": true
+                }
+                """));
+
+        try (var createResponse = client.execute(createRequest)) {
+            assertThat(createResponse.getStatusLine().getStatusCode(), is(201));
+            EntityUtils.consumeQuietly(createResponse.getEntity());
+        }
+
+        // Try to update the client with a UUID (should fail)
+        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-client-for-update");
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        updateRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-client-for-update",
+                    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                    "enabled": true
+                }
+                """));
+
+        try (var response = client.execute(updateRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("uuid: This field is server-managed and cannot be set by the user"));
+        }
+    }
+
+    @Test
+    public void patchClientWithUuidFailsValidation() throws Exception {
+        // First create a client without UUID
+        HttpPost createRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(createRequest);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        createRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-client-for-patch",
+                    "enabled": true
+                }
+                """));
+
+        try (var createResponse = client.execute(createRequest)) {
+            assertThat(createResponse.getStatusLine().getStatusCode(), is(201));
+            EntityUtils.consumeQuietly(createResponse.getEntity());
+        }
+
+        // Try to patch the client with a UUID (should fail)
+        var patchRequest = new org.apache.http.client.methods.HttpPatch(HOSTNAME_LOCAL_ADMIN + "/test-client-for-patch");
+        setAuthHeader(patchRequest);
+        patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, "application/merge-patch+json");
+
+        patchRequest.setEntity(new StringEntity("""
+                {
+                    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                    "displayName": "Updated Name"
+                }
+                """));
+
+        try (var response = client.execute(patchRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("uuid: This field is server-managed and cannot be set by the user"));
+        }
+    }
+
+
+    // ===========================================
     // Valid client creation (positive test)
     // ===========================================
 
