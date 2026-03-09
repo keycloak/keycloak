@@ -13,6 +13,7 @@ import org.keycloak.events.admin.v2.AdminEventV2Builder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.ModelValidationException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.ServiceException;
@@ -96,10 +97,11 @@ public class NewClientService extends DefaultClientService implements ClientServ
                 .orElseThrow(() -> new ServiceException("Could not find client", Response.Status.NOT_FOUND));
 
         permissions.clients().requireManage(client);
-        AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
-
         try {
+            AdminPermissionsSchema.SCHEMA.throwExceptionIfAdminPermissionClient(session, client.getId());
             session.clientPolicy().triggerOnEvent(new AdminClientUnregisterContext(client, permissions.adminAuth()));
+        } catch (ModelValidationException e) {
+            throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
         }

@@ -22,6 +22,7 @@ import org.keycloak.representations.idm.authorization.Logic;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.services.PatchTypeNames;
+import org.keycloak.services.client.ClientServiceHelper;
 import org.keycloak.testframework.admin.AdminClientFactory;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectClient;
@@ -426,6 +427,38 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
         setAuthHeader(request, adminClients.get("view-clients"));
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(404));
+        }
+    }
+
+    /**
+     * DELETE /clients/{client} - Admin Permissions Client
+     * Should not allow deletion of the admin permissions client (used for FGAP)
+     */
+    @Test
+    public void cannotDeleteAdminPermissionsClient() throws Exception {
+        var adminPermissionsClientRep = Optional.ofNullable(testRealm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID))
+                .filter(f -> !f.isEmpty())
+                .map(f -> f.get(0))
+                .orElseThrow(() -> new AssertionError("Cannot find admin permissions client"));
+
+        HttpDelete request = new HttpDelete(getClientsApiUrl() + "/" + adminPermissionsClientRep.getClientId());
+        setAuthHeader(request, adminClients.get("realm-admin"));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            var body = EntityUtils.toString(response.getEntity());
+            if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
+                assertThat(body, containsString("unknown_error"));
+            } else {
+                assertThat(body, containsString("Not supported for this client"));
+            }
+        }
+
+        // Verify the client still exists (was not deleted)
+        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/" + adminPermissionsClientRep.getClientId());
+        setAuthHeader(getRequest, adminClients.get("realm-admin"));
+        try (var response = client.execute(getRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
         }
     }
 
