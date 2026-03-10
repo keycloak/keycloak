@@ -83,7 +83,8 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
     @Override
     public JPAFilterResult visitPresentExpression(ScimFilterParser.PresentExpressionContext ctx) {
         String scimAttrPath = ctx.ATTRPATH().getText();
-        return predicateProvider.createPresentPredicate(scimAttrPath);
+        String operator = ctx.PR().getText().toLowerCase();
+        return predicateProvider.createPredicate(scimAttrPath, operator, null);
     }
 
     @Override
@@ -92,7 +93,7 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
         String operator = ctx.compareOp().getText().toLowerCase();
         String value = extractValue(ctx.compValue());
 
-        return predicateProvider.createComparisonPredicate(scimAttrPath, operator, value);
+        return predicateProvider.createPredicate(scimAttrPath, operator, value);
     }
 
     private String extractValue(ScimFilterParser.CompValueContext ctx) {

@@ -13,11 +13,9 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import org.keycloak.common.util.TriFunction;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * Creates JPA predicates for SCIM filter operators. Handles both direct root entity fields and custom attributes stored
@@ -35,6 +33,7 @@ public class ScimJPAPredicateProvider {
     private final Map<String, TriFunction<CriteriaBuilder, Expression, Object, Predicate>> operatorMap = Map.of(
             "eq", CriteriaBuilder::equal,
             "ne", CriteriaBuilder::notEqual,
+            "pr", (cb, exp, val) -> cb.isNotNull(exp),
             "gt", (cb, exp, val) -> cb.greaterThan(exp, asComparable(val)),
             "ge", (cb, exp, val) -> cb.greaterThanOrEqualTo(exp, asComparable(val)),
             "lt", (cb, exp, val) -> cb.lessThan(exp, asComparable(val)),
@@ -54,46 +53,18 @@ public class ScimJPAPredicateProvider {
     }
 
     /**
-     * Create a predicate for "presence" operator (pr). For direct fields, this checks that the field is not null. For custom attributes,
-     * this checks that there is an entry in the attributes collection with the given name and a non-null value.
-     *
-     * @param path the SCIM attribute path to check for presence
-     * @return a {@link JPAFilterResult} containing the presence predicate if the attribute is known and mapped, or an unsupported
-     * result if the attribute is unknown
-     */
-    public JPAFilterResult createPresentPredicate(String path) {
-        Attribute<?,?> attrInfo = resolve(path);
-        if (attrInfo == null) {
-            return JPAFilterResult.unsupported(cb.disjunction());
-        }
-        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
-        String modelAttributeName = attrInfo.getModelAttributeName();
-        if (attrInfo.isPrimary()) {
-            // direct field: check not null
-            return JPAFilterResult.valid(cb.isNotNull(root.get(modelAttributeName)));
-        } else {
-            // custom attribute: must exist in attributes collection with non-null value
-            Join<?, ?> join = getOrCreateAttributeJoin();
-            return JPAFilterResult.valid(cb.and(
-                cb.equal(join.get("name"), modelAttributeName),
-                cb.isNotNull(join.get("value"))
-            ));
-        }
-    }
-
-    /**
-     * Create a predicate for comparison operators (eq, ne, gt, ge, lt, le, co, sw, ew). This method first resolves the SCIM
+     * Create a predicate for SCIM operators (eq, ne, pr, gt, ge, lt, le, co, sw, ew). This method first resolves the SCIM
      * attribute path to get the corresponding metadata, then validates that the operator is supported for the attribute type,
      * normalizes the value to the correct type, and finally builds the appropriate predicate based on whether the attribute
      * is a direct field or a custom attribute.
      *
      * @param path the SCIM attribute path to compare
-     * @param operator the comparison operator (eq, ne, gt, ge, lt, le, co, sw, ew)
+     * @param operator the comparison operator (eq, ne, pr, gt, ge, lt, le, co, sw, ew)
      * @param value the value to compare against, as a string (will be normalized to the correct type based on the attribute metadata)
      * @return a {@link JPAFilterResult} containing the comparison predicate if the attribute is known and mapped, or an unsupported
      * result if the attribute is unknown
      */
-    public JPAFilterResult createComparisonPredicate(String path, String operator, String value) {
+    public JPAFilterResult createPredicate(String path, String operator, String value) {
         Attribute<?,?> attrInfo = resolve(path);
         if (attrInfo == null) return JPAFilterResult.unsupported(cb.disjunction());
 
@@ -147,8 +118,8 @@ public class ScimJPAPredicateProvider {
             basePredicate = cb.equal(join.get("name"), modelAttributeName);
         }
 
-        Predicate comparison = operatorMap.get(operation).apply(cb, path, value);
-        return (basePredicate != null) ? cb.and(basePredicate, comparison) : comparison;
+        Predicate predicate = operatorMap.get(operation).apply(cb, path, value);
+        return (basePredicate != null) ? cb.and(basePredicate, predicate) : predicate;
     }
 
     /**
@@ -177,9 +148,9 @@ public class ScimJPAPredicateProvider {
     private void validateOperator(Attribute<?,?> attrInfo, String scimAttribute, String operator) {
         String op = operator.toLowerCase();
 
-        // boolean validation: only allows equality
+        // boolean validation: only allows equality and presence operators
         if (attrInfo.isBoolean()) {
-            if (!op.equals("eq") && !op.equals("ne")) {
+            if (!op.equals("eq") && !op.equals("ne") && !op.equals("pr")) {
                 throw new ScimFilterException(
                         "Operator '" + operator + "' is not supported for boolean attribute: " + scimAttribute);
             }
