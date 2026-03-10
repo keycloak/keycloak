@@ -208,10 +208,6 @@ They should avoid keeping the returned items in memory by for example binding th
 
 A similar change was done for the `UserSessionPersisterProvider`.
 
-=== OpenJDK upgrade
-
-The official container images for server and the Operator now use OpenJDK 25 instead of previously used OpenJDK 21.
-
 === Updated HTTP status code for invalid_grant errors in the Resource Owner Password Credentials Grant
 
 Authentication failures resulting in an invalid_grant now correctly return an HTTP 400 status code instead of 401 for the Resource Owner Password Credentials and UMA Permission grants. This change was done to properly follow the OAuth 2.0 Authorization Framework specification.
