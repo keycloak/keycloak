@@ -17,7 +17,9 @@
 package org.keycloak.tests.admin.client.v2;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -29,6 +31,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -54,6 +57,7 @@ import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SERVER_SIGNAT
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_SIGNATURE_ALGORITHM;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -412,6 +416,107 @@ public class InteropTest extends AbstractClientApiV2Test {
             assertThat(updatedV1Client.getDescription(), is("Updated SAML description via V2 API"));
             assertThat(updatedV1Client.getAttributes().get("saml.server.signature"), is("true"));
             assertThat(updatedV1Client.getAttributes().get("saml.signature.algorithm"), is("RSA_SHA512"));
+        } finally {
+            realm.clients().get(clientUuid).remove();
+        }
+    }
+
+    /**
+     * Test: Create a client with roles using v2 API, then assert roles using v1 API.
+     */
+    @Test
+    public void createWithV2RolesAssertWithV1() throws Exception {
+        RealmResource realm = adminClient.realm("master");
+
+        OIDCClientRepresentation v2Client = new OIDCClientRepresentation();
+        v2Client.setClientId("v2-client-with-roles");
+        v2Client.setDisplayName("V2 Client With Roles");
+        v2Client.setDescription("Client with roles created via v2 API");
+        v2Client.setEnabled(true);
+        v2Client.setRoles(Set.of("viewer", "editor", "admin"));
+        v2Client.setRedirectUris(Set.of("http://localhost:3000/*"));
+        v2Client.setLoginFlows(Set.of(OIDCClientRepresentation.Flow.STANDARD));
+
+        HttpPost createRequest = new HttpPost(getClientsApiUrl());
+        setAuthHeader(createRequest, adminClient);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        createRequest.setEntity(new StringEntity(mapper.writeValueAsString(v2Client)));
+
+        try (var httpResponse = httpClient.execute(createRequest)) {
+            assertThat(httpResponse.getStatusLine().getStatusCode(), is(201));
+        }
+
+        ClientRepresentation v1Client = realm.clients().findByClientId("v2-client-with-roles").get(0);
+        String clientUuid = v1Client.getId();
+
+        try {
+            List<RoleRepresentation> roles = realm.clients().get(clientUuid).roles().list();
+            Set<String> roleNames = roles.stream()
+                .map(RoleRepresentation::getName)
+                .collect(Collectors.toSet());
+
+            assertThat(roleNames, containsInAnyOrder("viewer", "editor", "admin"));
+
+            HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/v2-client-with-roles");
+            setAuthHeader(getRequest, adminClient);
+
+            try (var httpResponse = httpClient.execute(getRequest)) {
+                assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
+                OIDCClientRepresentation fetchedV2Client = mapper.createParser(httpResponse.getEntity().getContent())
+                        .readValueAs(OIDCClientRepresentation.class);
+
+                assertThat(fetchedV2Client.getRoles(), containsInAnyOrder("viewer", "editor", "admin"));
+            }
+        } finally {
+            realm.clients().get(clientUuid).remove();
+        }
+    }
+
+    /**
+     * Test: Create a client using v1 API, add roles via v1 API, then assert roles using v2 API.
+     */
+    @Test
+    public void createWithV1RolesAssertWithV2() throws Exception {
+        RealmResource realm = adminClient.realm("master");
+
+        ClientRepresentation v1Client = new ClientRepresentation();
+        v1Client.setClientId("v1-client-with-roles");
+        v1Client.setName("V1 Client With Roles");
+        v1Client.setDescription("Client with roles created via v1 API");
+        v1Client.setEnabled(true);
+        v1Client.setProtocol("openid-connect");
+        v1Client.setRedirectUris(Arrays.asList("http://localhost:4000/*"));
+        v1Client.setStandardFlowEnabled(true);
+
+        Response response = realm.clients().create(v1Client);
+        String clientUuid = ApiUtil.getCreatedId(response);
+        response.close();
+
+        try {
+            RoleRepresentation role1 = new RoleRepresentation();
+            role1.setName("read-access");
+            role1.setDescription("Read access role");
+            realm.clients().get(clientUuid).roles().create(role1);
+
+            RoleRepresentation role2 = new RoleRepresentation();
+            role2.setName("write-access");
+            role2.setDescription("Write access role");
+            realm.clients().get(clientUuid).roles().create(role2);
+
+            RoleRepresentation role3 = new RoleRepresentation();
+            role3.setName("delete-access");
+            realm.clients().get(clientUuid).roles().create(role3);
+
+            HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/v1-client-with-roles");
+            setAuthHeader(getRequest, adminClient);
+
+            try (var httpResponse = httpClient.execute(getRequest)) {
+                assertThat(httpResponse.getStatusLine().getStatusCode(), is(200));
+                OIDCClientRepresentation fetchedV2Client = mapper.createParser(httpResponse.getEntity().getContent())
+                        .readValueAs(OIDCClientRepresentation.class);
+
+                assertThat(fetchedV2Client.getRoles(), containsInAnyOrder("read-access", "write-access", "delete-access"));
+            }
         } finally {
             realm.clients().get(clientUuid).remove();
         }
