@@ -838,13 +838,15 @@ public class OID4VCIssuerEndpoint {
         String requestedCredentialIdentifier = credentialRequest.getCredentialIdentifier();
         String requestedCredentialConfigurationId = credentialRequest.getCredentialConfigurationId();
         if (Strings.isEmpty(requestedCredentialIdentifier) && Strings.isEmpty(requestedCredentialConfigurationId)) {
-            String errorMessage = "No credential_configuration_id nor credential_identifier in credential request";
+            String errorMessage = String.format("No credential_configuration_id nor credential_identifier in credential request: %s",
+                    JsonSerialization.valueAsString(credentialRequest));
             LOGGER.debug(errorMessage);
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
         if (!Strings.isEmpty(requestedCredentialIdentifier) && !Strings.isEmpty(requestedCredentialConfigurationId)) {
-            String errorMessage = "Both credential_configuration_id and credential_identifier in credential request";
+            String errorMessage = String.format("Both credential_configuration_id and credential_identifier in credential request: %s",
+                    JsonSerialization.valueAsString(credentialRequest));
             LOGGER.debug(errorMessage);
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
@@ -900,12 +902,12 @@ public class OID4VCIssuerEndpoint {
         AccessToken accessToken = authResult.token();
         List<OID4VCAuthorizationDetail> tokenAuthDetails = getAuthorizationDetailsResponse(accessToken);
         if (tokenAuthDetails == null || tokenAuthDetails.isEmpty()) {
-            var errorMessage = "No authorization_details in AccessToken";
+            var errorMessage = "Invalid AccessToken for credential request. No authorization_details";
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
         }
         if (tokenAuthDetails.size() > 1) {
-            var errorMessage = "Multiple authorization_details not supported";
+            var errorMessage = String.format("Multiple authorization_details not supported: %s", tokenAuthDetails);
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
@@ -916,7 +918,7 @@ public class OID4VCIssuerEndpoint {
 
         // AccessToken authorization_details MUST contain a credential_configuration_id
         if (authorizedCredentialConfigurationId == null) {
-            var errorMessage = "No credential_configuration_id in AuthorizationDetails";
+            var errorMessage = String.format("No credential_configuration_id in authorization_details: %s", tokenAuthDetail);
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
@@ -976,7 +978,7 @@ public class OID4VCIssuerEndpoint {
         //
         SupportedCredentialConfiguration credConfig = getSupportedCredentials(session).get(authorizedCredentialConfigurationId);
         if (credConfig == null) {
-            var errorMessage = "Mapped credential configuration not found: " + authorizedCredentialConfigurationId;
+            var errorMessage = "Credential configuration not found in issuer metadata: " + authorizedCredentialConfigurationId;
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
         }
@@ -987,12 +989,12 @@ public class OID4VCIssuerEndpoint {
                 realmModel, () -> clientModel.getClientScopes(false).values().stream(), authorizedCredentialConfigurationId);
 
         if (authorizedCredentialScope == null) {
-            var errorMessage = String.format("Cannot find credential scope model for: %s", authorizedCredentialConfigurationId);
+            var errorMessage = String.format("Credential client scope not found: %s", authorizedCredentialConfigurationId);
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
         }
 
-        LOGGER.debugf("Successfully mapped credential scope: %s", authorizedCredentialConfigurationId);
+        LOGGER.debugf("Found credential scope for credential_configuration_id: %s", authorizedCredentialConfigurationId);
         eventBuilder.detail(Details.CREDENTIAL_TYPE, authorizedCredentialConfigurationId);
 
         checkScope(authorizedCredentialScope);

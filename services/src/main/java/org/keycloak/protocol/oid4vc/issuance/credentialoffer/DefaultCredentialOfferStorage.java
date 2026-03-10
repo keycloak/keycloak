@@ -17,9 +17,11 @@
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.util.JsonSerialization;
 
 /**
@@ -79,37 +81,33 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
 
     @Override
     public CredentialOfferState getOfferStateById(KeycloakSession session, String offerId) {
-        if (session.singleUseObjects().contains(offerId)) {
-            String entryJson = session.singleUseObjects().get(offerId).get(ENTRY_KEY);
-            return JsonSerialization.valueFromString(entryJson, CredentialOfferState.class);
-        }
-        return null;
+        return Optional.ofNullable(session.singleUseObjects().get(offerId))
+                .map(o -> o.get(ENTRY_KEY))
+                .map(o -> JsonSerialization.valueFromString(o, CredentialOfferState.class))
+                .orElse(null);
     }
 
     @Override
     public CredentialOfferState getOfferStateByNonce(KeycloakSession session, String nonce) {
-        if (session.singleUseObjects().contains(nonce)) {
-            String entryJson = session.singleUseObjects().get(nonce).get(ENTRY_KEY);
-            return JsonSerialization.valueFromString(entryJson, CredentialOfferState.class);
-        }
-        return null;
+        return Optional.ofNullable(session.singleUseObjects().get(nonce))
+                .map(o -> o.get(ENTRY_KEY))
+                .map(o -> JsonSerialization.valueFromString(o, CredentialOfferState.class))
+                .orElse(null);
     }
 
     @Override
     public CredentialOfferState getOfferStateByPreAuthCode(KeycloakSession session, String preAuthCode) {
-        if (session.singleUseObjects().contains(preAuthCode)) {
-            String entryJson = session.singleUseObjects().get(preAuthCode).get(ENTRY_KEY);
-            return JsonSerialization.valueFromString(entryJson, CredentialOfferState.class);
-        }
-        return null;
+        return Optional.ofNullable(session.singleUseObjects().get(preAuthCode))
+                .map(o -> o.get(ENTRY_KEY))
+                .map(o -> JsonSerialization.valueFromString(o, CredentialOfferState.class))
+                .orElse(null);
     }
 
     @Override
-    public void removeOfferState(KeycloakSession session, CredentialOfferState entry) {
-        session.singleUseObjects().remove(entry.getOfferId());
-        session.singleUseObjects().remove(entry.getNonce());
-        entry.getPreAuthorizedCode().ifPresent(it -> {
-            session.singleUseObjects().remove(it);
-        });
+    public void removeOfferState(KeycloakSession session, CredentialOfferState offerState) {
+        SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
+        singleUseObjects.remove(offerState.getOfferId());
+        singleUseObjects.remove(offerState.getNonce());
+        offerState.getPreAuthorizedCode().ifPresent(singleUseObjects::remove);
     }
 }
