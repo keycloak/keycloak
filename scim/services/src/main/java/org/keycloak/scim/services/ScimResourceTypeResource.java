@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.scim.filter.ScimFilterException;
@@ -39,6 +40,7 @@ import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.common.Meta;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.theme.Theme;
 import org.keycloak.util.JsonSerialization;
 
@@ -49,11 +51,13 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     private final KeycloakSession session;
     private final ScimResourceTypeProvider<R> resourceTypeProvider;
     private final Class<? extends ResourceTypeRepresentation> resourceTypeClazz;
+    private final AdminEventBuilder adminEvent;
 
-    public ScimResourceTypeResource(KeycloakSession session, ScimResourceTypeProvider<R> resourceTypeProvider) {
+    public ScimResourceTypeResource(KeycloakSession session, ScimResourceTypeProvider<R> resourceTypeProvider, AdminEventBuilder adminEvent) {
         this.session = session;
         this.resourceTypeProvider = resourceTypeProvider;
         this.resourceTypeClazz = resourceTypeProvider.getResourceType();
+        this.adminEvent = adminEvent.resource(resourceTypeProvider.getAdminEventResourceType());
     }
 
     @POST
@@ -67,7 +71,14 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         }
 
         return onPersist(resource, Status.CREATED,
-                (rScimResourceTypeProvider, r) -> resourceTypeProvider.create(r));
+                (rScimResourceTypeProvider, r) -> {
+                    R created = resourceTypeProvider.create(r);
+                    adminEvent.operation(OperationType.CREATE)
+                            .resourcePath(session.getContext().getUri(), created.getId())
+                            .representation(created)
+                            .success();
+                    return created;
+                });
     }
 
     @Path("{id}")
@@ -148,6 +159,10 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         }
 
         if (resourceTypeProvider.delete(id)) {
+            adminEvent.operation(OperationType.DELETE)
+                    .resourcePath(session.getContext().getUri())
+                    .representation(resource)
+                    .success();
             return Response.noContent().build();
         }
 
@@ -172,7 +187,14 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         }
 
         return onPersist(resource, Status.OK,
-                (rScimResourceTypeProvider, r) -> resourceTypeProvider.update(r));
+                (rScimResourceTypeProvider, r) -> {
+                    R updated = resourceTypeProvider.update(r);
+                    adminEvent.operation(OperationType.UPDATE)
+                            .resourcePath(session.getContext().getUri())
+                            .representation(updated)
+                            .success();
+                    return updated;
+                });
     }
 
     @Path("{id}")
@@ -188,7 +210,12 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
         return onPersist(existing, Status.OK, (rScimResourceTypeProvider, r) -> {
             resourceTypeProvider.patch(existing, request.getOperations());
-            return getResource(id);
+            R patched = getResource(id);
+            adminEvent.operation(OperationType.UPDATE)
+                    .resourcePath(session.getContext().getUri())
+                    .representation(patched)
+                    .success();
+            return patched;
         });
     }
 
