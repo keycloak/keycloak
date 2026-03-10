@@ -180,7 +180,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         // targetServerType already set to same or different value in db-url, ignore
         return dbUrl == null || !dbUrl.contains("targetServerType");
     }
-    
+
     public static boolean isMssqlSendStringParametersAsUnicode() {
         String db = Configuration.getConfigValue(DB).getValue();
         Database.Vendor vendor = Database.getVendor(db).orElse(null);
@@ -337,10 +337,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 }
 
                 PropertyMapper<?> mapper = created.build();
-                if (mapper.getMapFrom() == null && mapper.getDefaultValue().isPresent() && !getDatasourceOption(DB)
-                        .orElseThrow().getConnectedOptions().contains(mapper.getOption().getKey())) {
-                    throw new AssertionError("Mapper should be connected to the primary to be discovered");
-                }
+                getDatasourceOption(DB).orElseThrow().getConnectedOptions().add(mapper.getOption().getKey());
                 datasourceMappers.add(mapper);
             }
 

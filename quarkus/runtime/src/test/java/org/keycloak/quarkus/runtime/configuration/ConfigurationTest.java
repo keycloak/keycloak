@@ -149,8 +149,16 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testProfiledPropertyExposure() {
         ConfigArgsConfigSource.setCliArgs("");
         SmallRyeConfig config = createConfig();
-        // the "nope" profile is not active, the property should not be advertised
-        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).noneMatch("quarkus.http.proxy.proxy-address-forwarding"::equals));
+        // profiled values are not support in keycloak.conf
+        assertNull(config.getConfigValue("key").getValue());
+    }
+
+    @Test
+    public void testProfiledPropertyExposure2() {
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        // profiled values are not support in keycloak.conf
+        assertNull(config.getConfigValue("key").getValue());
     }
 
     @Test
@@ -598,14 +606,17 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testReloadPeriod() {
         ConfigArgsConfigSource.setCliArgs("");
-        initConfig();
+        var config = createConfig();
         assertExternalConfig(Map.of(
                 "quarkus.http.ssl.certificate.reload-period", "1h",
                 "quarkus.management.ssl.certificate.reload-period", "1h"
         ));
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).anyMatch("quarkus.http.ssl.certificate.reload-period"::equals));
 
         ConfigArgsConfigSource.setCliArgs("--https-certificates-reload-period=-1");
-        initConfig();
+        config = createConfig();
+
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).noneMatch("quarkus.http.ssl.certificate.reload-period"::equals));
         assertExternalConfigNull("quarkus.http.ssl.certificate.reload-period");
         assertExternalConfigNull("quarkus.management.ssl.certificate.reload-period");
 
