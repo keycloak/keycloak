@@ -29,7 +29,7 @@ Install the operator directly using the operator manifest:
 [source,bash]
 ----
 kubectl apply --server-side -f \
-  https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.28/releases/cnpg-1.28.1.yaml
+  https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-${properties["cnpg.major-minor-version"]}/releases/cnpg-${properties["cnpg.version"]}.yaml
 ----
 
 Use the following command to verify the installation status:
@@ -49,7 +49,7 @@ deployment "cnpg-controller-manager" successfully rolled out
 
 
 
-It is possible to install the operator using other supported methods such as Helm Chart, OLM, or `cnpg` plugin for `kubectl`. See the https://cloudnative-pg.io/docs/[CloudNativePG documentation] for details.
+It is possible to install the operator using other supported methods such as Helm Chart, OLM, or `cnpg` plugin for `kubectl`. See the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/installation_upgrade[CloudNativePG documentation] for details.
 
 === Installing CloudNativePG Cluster
 
@@ -97,7 +97,7 @@ spec:
 <1> Number of instances.
 <2> Pod storage size. This setting needs to take into account the expected size of the database and PostgreSQL WAL logs.
 <3> Pod affinity rules for Kubernetes scheduler. The `topology.kubernetes.io/zone` value ensures the scheduler will spread the pods across different availability zones.
-<4> Enables synchronous replication to 1 standby server using the quorum-based method.
+<4> Enable quorum-based synchronous replication with a single standby server. For more information about synchronous replication follow the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/replication/#synchronous-replication[CloudNativePG documentation].
 <5> Database connection limit. This value should be adjusted based on the expected total number of the JDBC connections from the {project_name} cluster.
 <6> Create a database `keycloak` owned by the user `keycloak`.
 <7> Disables the `-ro` and `-r` default services which are intended for read-only applications. Since {project_name} requires a read-write access it only connects to the `-rw` service.
