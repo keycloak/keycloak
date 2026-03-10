@@ -34,10 +34,13 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.ServiceException;
+import org.keycloak.services.managers.ClientManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.ClientResource;
 import org.keycloak.services.resources.admin.ClientsResource;
 import org.keycloak.services.resources.admin.RealmAdminResource;
+import org.keycloak.services.resources.admin.RoleContainerResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.util.ObjectMapperResolver;
 import org.keycloak.utils.StringUtil;
@@ -114,7 +117,7 @@ public class DefaultClientService implements ClientService {
         return createOrUpdate(realm, clientId, client, CreateOrUpdateStrategy.PUT);
     }
 
-    private enum CreateOrUpdateStrategy {
+    protected enum CreateOrUpdateStrategy {
         ONLY_CREATE(CreateClient.class),
         PUT(PutClient.class),
         PATCH(PatchClient.class);
@@ -194,9 +197,9 @@ public class DefaultClientService implements ClientService {
             });
         }
 
-        handleRoles(clientResource, client.getRoles());
+        handleRoles(clientResource.getRoleContainerResource(), client.getRoles());
         if (client instanceof OIDCClientRepresentation oidcClient) {
-            handleServiceAccount(clientResource, model, oidcClient);
+            handleServiceAccount(clientResource.getRoleContainerResource(), realmResource.getRoleContainerResource(), model, oidcClient);
         }
 
         fireAdminEvent(created ? OperationType.CREATE : OperationType.UPDATE, mapper.fromModel(model));
@@ -282,13 +285,11 @@ public class DefaultClientService implements ClientService {
      * <p>
      * Reuses API v1 logic
      */
-    protected void handleRoles(ClientResource clientResource, Set<String> rolesFromRep) {
-        var roleResource = clientResource.getRoleContainerResource();
-
+    protected void handleRoles(RoleContainerResource clientRoles, Set<String> rolesFromRep) {
         Set<String> desiredRoleNames = Optional.ofNullable(rolesFromRep)
                 .orElse(Collections.emptySet());
 
-        Set<String> currentRoleNames = roleResource.getRoles(null, null, null, false)
+        Set<String> currentRoleNames = clientRoles.getRoles(null, null, null, false)
                 .map(RoleRepresentation::getName)
                 .collect(Collectors.toSet());
 
@@ -296,7 +297,7 @@ public class DefaultClientService implements ClientService {
         desiredRoleNames.stream()
                 .filter(roleName -> !currentRoleNames.contains(roleName))
                 .forEach(roleName -> {
-                    try (var response = roleResource.createRole(new RoleRepresentation(roleName, "", false))) {
+                    try (var response = clientRoles.createRole(new RoleRepresentation(roleName, "", false))) {
                         // close response and consume payload due to performance reasons
                         EntityUtils.consumeQuietly((HttpEntity) response.getEntity());
                     }
@@ -305,7 +306,7 @@ public class DefaultClientService implements ClientService {
         // Remove extra roles (in currentRoleNames but not in desiredRoleNames)
         currentRoleNames.stream()
                 .filter(role -> !desiredRoleNames.contains(role))
-                .forEach(roleResource::deleteRole);
+                .forEach(clientRoles::deleteRole);
     }
 
     /**
@@ -313,20 +314,18 @@ public class DefaultClientService implements ClientService {
      * <p>
      * Reuses API v1 logic
      */
-    protected void handleServiceAccount(ClientResource clientResource, ClientModel model, OIDCClientRepresentation rep) {
+    protected void handleServiceAccount(RoleContainerResource clientRoleResource, RoleContainerResource realmRoleResource, ClientModel model, OIDCClientRepresentation rep) {
         boolean serviceAccountEnabled = rep.getLoginFlows().contains(OIDCClientRepresentation.Flow.SERVICE_ACCOUNT);
 
-        ClientResource.updateClientServiceAccount(session, model, serviceAccountEnabled);
+        ClientManager.updateClientServiceAccount(session, model, serviceAccountEnabled);
 
         if (!serviceAccountEnabled) {
             return;
         }
 
-        var clientRoleResource = clientResource.getRoleContainerResource();
-        var realmRoleResource = realmResource.getRoleContainerResource();
-
-        var serviceAccountUser = session.users().getServiceAccount(model);
-        var serviceAccountRoleResource = realmResource.users().user(clientResource.getServiceAccountUser().getId()).getRoleMappings();
+        var serviceAccountUser = new ClientManager(new RealmManager(session)).getServiceAccountUser(model)
+                .orElseThrow(() -> new ServiceException("Cannot find service account user", Response.Status.BAD_REQUEST));
+        var serviceAccountRoleResource = realmResource.users().user(serviceAccountUser.getId()).getRoleMappings();
 
         Set<String> desiredRoleNames = Optional.ofNullable(rep.getServiceAccountRoles()).orElse(Collections.emptySet());
         Set<RoleModel> currentRoles = serviceAccountUser.getRoleMappingsStream().collect(Collectors.toSet());

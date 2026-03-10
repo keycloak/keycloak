@@ -152,7 +152,12 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             // Should fail with 400 Bad Request due to policy violation
             assertEquals(400, response.getStatusLine().getStatusCode());
             String body = EntityUtils.toString(response.getEntity());
-            assertThat(body, containsString("invalid_client_metadata"));
+            if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
+                assertThat(body, containsString("invalid_client_metadata"));
+            } else {
+                // TODO might be more consistent in error messages
+                assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
+            }
         }
     }
 
@@ -275,7 +280,27 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             // Should fail with 400 Bad Request due to policy violation
             assertEquals(400, response.getStatusLine().getStatusCode());
             String body = EntityUtils.toString(response.getEntity());
-            assertThat(body, containsString("invalid_client_metadata"));
+            if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
+                assertThat(body, containsString("invalid_client_metadata"));
+            } else {
+                // TODO might be more consistent in error messages
+                assertThat(body, containsString("Invalid client metadata: token_endpoint_auth_method"));
+            }
+        }
+
+        // Verify the client was NOT updated (transaction rollback worked)
+        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/test-put-update-client");
+        setAuthHeader(getRequest);
+        try (var response = client.execute(getRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            String body = EntityUtils.toString(response.getEntity());
+            OIDCClientRepresentation current = mapper.readValue(body, OIDCClientRepresentation.class);
+
+            // Should still have the original auth method, not the rejected one
+            assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, current.getAuth().getMethod(),
+                    "Client auth method should remain unchanged after policy rejection");
+            assertEquals("secret", current.getAuth().getSecret(),
+                    "Client secret should remain unchanged after policy rejection");
         }
     }
 
@@ -364,6 +389,21 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
             assertEquals(400, response.getStatusLine().getStatusCode());
             String body = EntityUtils.toString(response.getEntity());
             assertThat(body, containsString("invalid_client_metadata"));
+        }
+
+        // Verify the client was NOT updated (transaction rollback worked)
+        HttpGet getRequest = new HttpGet(getClientsApiUrl() + "/test-patch-update-client");
+        setAuthHeader(getRequest);
+        try (var response = client.execute(getRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            String body = EntityUtils.toString(response.getEntity());
+            OIDCClientRepresentation current = mapper.readValue(body, OIDCClientRepresentation.class);
+
+            // Should still have the original auth method, not the rejected one
+            assertEquals(JWTClientSecretAuthenticator.PROVIDER_ID, current.getAuth().getMethod(),
+                    "Client auth method should remain unchanged after policy rejection");
+            assertEquals("secret", current.getAuth().getSecret(),
+                    "Client secret should remain unchanged after policy rejection");
         }
     }
 
@@ -489,7 +529,11 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         }
 
         // for now, the VIEW is also present, but it is not required for update
-        assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
+        if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
+            assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
+        } else {
+            assertClientPolicyEventIsEmitted(ClientPolicyEvent.UPDATE, ClientPolicyEvent.UPDATED);
+        }
     }
 
     /**
