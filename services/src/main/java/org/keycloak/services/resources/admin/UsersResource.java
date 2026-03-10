@@ -272,7 +272,8 @@ public class UsersResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
-    @Operation(summary = "Get users Returns a stream of users, filtered according to query parameters.")
+    @Operation(summary = "Get users Returns a stream of users, filtered according to query parameters.",
+               description = "Returns a stream of users. Note that the 'credentials' field in the returned UserRepresentation objects is typically not populated for performance reasons. If specific credential metadata is required, use the dedicated 'GET /admin/realms/{realm}/users/{user-id}/credentials' endpoint.")
     public Stream<UserRepresentation> getUsers(
             @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
             @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
