@@ -20,11 +20,17 @@ Use it together with the other building blocks outlined in the <@links.ha id="si
 * A database deployed according to one of the following guides:
 ** <@links.ha id="single-cluster-deploy-aurora" /> {section},
 ** <@links.ha id="single-cluster-deploy-cnpg" /> {section}.
-* Determine the sizing of the deployment using the <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" /> {section}.
-* Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
 
 [#single-cluster-deploy-keycloak-procedure]
-== Procedure for connecting {project_name} to AWS Aurora
+== Procedure
+
+Depending on the database you deployed use the relevant procedure for deploying {project_name}.
+
+[#single-cluster-deploy-keycloak-with-aurora-procedure]
+=== Procedure for deploying {project_name} with AWS Aurora
+. Determine the sizing of the deployment using the <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" /> {section}.
+
+. Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
 
 . Notice the configuration file below contains options relevant for connecting to the Aurora database from <@links.ha id="single-cluster-deploy-aurora" anchor="single-cluster-aurora-connecting" />
 
@@ -101,7 +107,11 @@ See the <@links.ha id="single-cluster-concepts-database-connections" /> {section
 <5> Specify the `ConfigMap` name that contains the Amazon Aurora PostgreSQL database certificate bundle.
 The Operator will automatically mount the file in directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`
 
-== Procedure for connecting {project_name} to CloudNativePG
+[#single-cluster-deploy-keycloak-with-cnpg-procedure]
+=== Procedure for deploying {project_name} with CloudNativePG
+. Determine the sizing of the deployment using the <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" /> {section}.
+
+. Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
 
 . Notice the configuration file below contains options relevant for connecting to the CloudNativePG database from <@links.ha id="single-cluster-deploy-cnpg" anchor="single-cluster-cnpg-connecting" />
 
