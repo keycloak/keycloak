@@ -42,7 +42,6 @@ import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.client.clienttype.ClientTypeException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
-import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Errors;
 import org.keycloak.events.admin.OperationType;
@@ -506,15 +505,8 @@ public class ClientResource {
     public UserRepresentation getServiceAccountUser() {
         auth.clients().requireView(client);
 
-        UserModel user = session.users().getServiceAccount(client);
-        if (user == null) {
-            if (client.isServiceAccountsEnabled()) {
-                new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-                user = session.users().getServiceAccount(client);
-            } else {
-                throw new BadRequestException("Service account not enabled for the client '" + client.getClientId() + "'");
-            }
-        }
+        UserModel user = new ClientManager(new RealmManager(session)).getServiceAccountUser(client)
+                .orElseThrow(() -> new BadRequestException("Service account not enabled for the client '" + client.getClientId() + "'"));
 
         return ModelToRepresentation.toRepresentation(session, realm, user);
     }
@@ -864,17 +856,7 @@ public class ClientResource {
     }
 
     public static void updateClientServiceAccount(KeycloakSession session, ClientModel client, Boolean isServiceAccountEnabled) {
-        UserModel serviceAccount = session.users().getServiceAccount(client);
-        boolean serviceAccountScopeAssigned = client.getClientScopes(true).containsKey(ServiceAccountConstants.SERVICE_ACCOUNT_SCOPE);
-        if (Boolean.TRUE.equals(isServiceAccountEnabled)) {
-            if (serviceAccount == null || !serviceAccountScopeAssigned) {
-                new ClientManager(new RealmManager(session)).enableServiceAccount(client);
-            }
-        } else if (Boolean.FALSE.equals(isServiceAccountEnabled) || !client.isServiceAccountsEnabled()) {
-            if (serviceAccount != null || serviceAccountScopeAssigned) {
-                new ClientManager(new RealmManager(session)).disableServiceAccount(client);
-            }
-        }
+        ClientManager.updateClientServiceAccount(session, client, isServiceAccountEnabled);
     }
 
     private void updateAuthorizationSettings(ClientRepresentation rep) {
