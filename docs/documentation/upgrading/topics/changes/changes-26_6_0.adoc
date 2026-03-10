@@ -237,6 +237,12 @@ The default value is 30 minutes, as these operations may take a while to complet
 
 The provider configuration `spi-dblock--jpa--lock-wait-timeout` option has been replaced with the CLI option `transaction-setup-timeout`.
 
+=== New columns for tracking resource creation and modification timestamps
+
+The `USER_ENTITY` table now has a new column `LAST_MODIFIED_TIMESTAMP`, and the `KEYCLOAK_GROUP` table now has two new columns `CREATED_TIMESTAMP` and `LAST_MODIFIED_TIMESTAMP`. These columns track when users and groups were created and last modified.
+
+For existing users and groups created before this upgrade, these columns will be `NULL`. Newly created or modified resources will have these timestamps populated automatically.
+
 === Database character encoding checks during startup
 
 {project_name} will log a warning if the database is not configured to use UTF-8 encoding.

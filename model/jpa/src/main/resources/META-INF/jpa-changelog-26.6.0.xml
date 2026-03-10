@@ -97,4 +97,27 @@
         </createIndex>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.6.0-add-last-modified-timestamp-user">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="USER_ENTITY" columnName="LAST_MODIFIED_TIMESTAMP"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="USER_ENTITY">
+            <column name="LAST_MODIFIED_TIMESTAMP" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.6.0-add-timestamps-group">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="KEYCLOAK_GROUP" columnName="CREATED_TIMESTAMP"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="KEYCLOAK_GROUP">
+            <column name="CREATED_TIMESTAMP" type="BIGINT"/>
+            <column name="LAST_MODIFIED_TIMESTAMP" type="BIGINT"/>
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>

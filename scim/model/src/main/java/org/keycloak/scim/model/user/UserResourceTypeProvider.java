@@ -13,6 +13,7 @@ import jakarta.persistence.criteria.Root;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
@@ -59,6 +60,9 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
             throw handleValidationException(ve);
         }
 
+        resource.setCreatedTimestamp(model.getCreatedTimestamp());
+        resource.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
+
         return resource;
     }
 
@@ -71,6 +75,10 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         } catch (ValidationException ve) {
             throw handleValidationException(ve);
         }
+
+        model.setLastModifiedTimestamp(Time.currentTimeMillis());
+        resource.setCreatedTimestamp(model.getCreatedTimestamp());
+        resource.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
 
         return resource;
     }
