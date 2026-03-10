@@ -712,4 +712,61 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     private static Config.Scope cacheEmbeddedConfiguration() {
         return initConfig(CacheEmbeddedConfigProviderSpi.SPI_NAME, DefaultCacheEmbeddedConfigProviderFactory.PROVIDER_ID);
     }
+
+    @Test
+    public void testDefaultDatabaseConnectTimeouts() {
+
+        ConfigArgsConfigSource.setCliArgs("--db=mysql");
+        SmallRyeConfig config = createConfig();
+        assertTrue(DatabasePropertyMappers.isMysqlConnectTimeoutEnabled());
+        assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.MYSQL_CONNECT_TIMEOUT).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--db=mysql", "--db-url-properties=?connectTimeout=5000");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isMysqlConnectTimeoutEnabled());
+
+        ConfigArgsConfigSource.setCliArgs("--db=mysql", "--db-url=jdbc:mysql://localhost:3306/keycloak?connectTimeout=5000");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isMysqlConnectTimeoutEnabled());
+
+        ConfigArgsConfigSource.setCliArgs("--db=mariadb");
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
+        assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.MARIADB_CONNECT_TIMEOUT).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--db=mariadb", "--db-url=jdbc:mariadb://localhost:3306/keycloak?connectTimeout=5000");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
+
+        // MariaDB: connectTimeout
+        ConfigArgsConfigSource.setCliArgs("--db=mariadb", "--db-url-properties=?connectTimeout=5000");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
+
+        ConfigArgsConfigSource.setCliArgs("--db=oracle");
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
+        assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--db=oracle", "--db-url-properties=?oracle.net.CONNECT_TIMEOUT=5000");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
+
+        ConfigArgsConfigSource.setCliArgs("--db=oracle", "--db-url=jdbc:oracle:thin:@//localhost:1521/keycloak?oracle.net.CONNECT_TIMEOUT=5000");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
+
+        ConfigArgsConfigSource.setCliArgs("--db=mssql");
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isMssqlLoginTimeoutEnabled());
+        assertEquals("10", config.getConfigValue(DatabasePropertyMappers.MSSQL_CONNECT_TIMEOUT).getValue());
+
+        ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-url-properties=;loginTimeout=20");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isMssqlLoginTimeoutEnabled());
+
+        ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-url=jdbc:sqlserver://localhost:1433;databaseName=keycloak;loginTimeout=20");
+        config = createConfig();
+        assertFalse(DatabasePropertyMappers.isMssqlLoginTimeoutEnabled());
+    }
 }
