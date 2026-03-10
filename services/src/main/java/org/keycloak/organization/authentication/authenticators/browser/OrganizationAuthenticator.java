@@ -34,6 +34,7 @@ import org.keycloak.authentication.FlowStatus;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticator;
 import org.keycloak.authentication.authenticators.browser.WebAuthnConditionalUIAuthenticator;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.email.freemarker.beans.ProfileBean;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
@@ -110,6 +111,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         HttpRequest request = context.getHttpRequest();
         MultivaluedMap<String, String> parameters = request.getDecodedFormParameters();
         String username = parameters.getFirst(UserModel.USERNAME);
+
+        // preserve the rememberMe selection from the identity-first login form
+        // so it is not lost when the flow continues to the password authenticator
+        AuthenticatorUtils.processRememberMe(context, parameters);
 
         // check if it's a webauthn submission and perform the webauth login
         if (webauthnAuth.isPasskeysEnabled() && (parameters.containsKey(WebAuthnConstants.AUTHENTICATOR_DATA)
