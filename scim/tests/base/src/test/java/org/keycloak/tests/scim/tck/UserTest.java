@@ -10,6 +10,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import org.keycloak.admin.client.resource.GroupResource;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
@@ -30,6 +32,7 @@ import org.keycloak.scim.resource.user.EnterpriseUser.Manager;
 import org.keycloak.scim.resource.user.GroupMembership;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
@@ -74,6 +77,7 @@ public class UserTest extends AbstractScimTest {
             iterator.remove();
         }
         realm.admin().users().userProfile().update(upConfig);
+        adminEvents.clear();
     }
 
     @Test
@@ -81,6 +85,11 @@ public class UserTest extends AbstractScimTest {
         User expected = new User();
         expected.setUserName(KeycloakModelUtils.generateId());
         User actual = client.users().create(expected);
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.CREATE)
+                .resourceType(ResourceType.USER)
+                .representation(Map.of("userName", expected.getUserName()));
 
         actual = client.users().get(actual.getId());
         assertEquals(1, actual.getSchemas().size());
@@ -288,8 +297,15 @@ public class UserTest extends AbstractScimTest {
     @Test
     public void testUpdate() {
         User expected = client.users().create(createUser());
+        adminEvents.clear();
         expected.setEmail(expected.getEmail().replace("keycloak.org", "updated.org"));
         User actual = client.users().update(expected);
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER)
+                .representation(Map.of("userName", expected.getUserName()));
+
         assertEquals(1, actual.getSchemas().size());
         assertRootAttributes(actual, expected);
 
@@ -335,8 +351,15 @@ public class UserTest extends AbstractScimTest {
     public void testDelete() {
         User expected = createUser();
         String id = client.users().create(expected).getId();
+        adminEvents.clear();
         User actual = client.users().get(id);
         client.users().delete(actual.getId());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.DELETE)
+                .resourceType(ResourceType.USER)
+                .representation(Map.of("id", id, "userName", expected.getUserName()));
+
         actual = client.users().get(id);
         assertNull(actual);
     }
@@ -385,6 +408,7 @@ public class UserTest extends AbstractScimTest {
         configuration.addOrReplaceAttribute(new UPAttribute("honorificSuffix", Map.of(
                 ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, "name.honorificSuffix")));
         realm.admin().users().userProfile().update(configuration);
+        adminEvents.clear();
 
         // patch multiple attributes in a single request
         client.users().patch(expected.getId(), PatchRequest.create()
@@ -394,6 +418,13 @@ public class UserTest extends AbstractScimTest {
                 .add("name.honorificSuffix", "HonorificSuffix")
                 .add("active", "false")
                 .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.USER)
+                .representation(Map.of("userName", expected.getUserName()));
+        adminEvents.clear();
+
         User actual = client.users().get(expected.getId());
         expected.setFirstName("PatchedGivenName");
         expected.getName().setMiddleName("MiddleName");

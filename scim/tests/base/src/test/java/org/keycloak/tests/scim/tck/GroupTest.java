@@ -1,12 +1,16 @@
 package org.keycloak.tests.scim.tck;
 
 import java.time.Instant;
+import java.util.Map;
 
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.AdminEventAssertion;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +30,11 @@ public class GroupTest extends AbstractScimTest {
         expected = client.groups().create(expected);
         assertNotNull(expected);
 
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.CREATE)
+                .resourceType(ResourceType.GROUP)
+                .representation(Map.of("displayName", expected.getDisplayName()));
+
         Group actual = client.groups().get(expected.getId());
         assertNotNull(actual);
         assertEquals(expected.getDisplayName(), actual.getDisplayName());
@@ -37,9 +46,18 @@ public class GroupTest extends AbstractScimTest {
         expected.setDisplayName(KeycloakModelUtils.generateId());
         expected = client.groups().create(expected);
         assertNotNull(expected);
+        String id = expected.getId();
+        String displayName = expected.getDisplayName();
+        adminEvents.clear();
 
-        client.groups().delete(expected.getId());
-        expected = client.groups().get(expected.getId());
+        client.groups().delete(id);
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.DELETE)
+                .resourceType(ResourceType.GROUP)
+                .representation(Map.of("id", id, "displayName", displayName));
+
+        expected = client.groups().get(id);
         assertNull(expected);
     }
 
@@ -52,7 +70,14 @@ public class GroupTest extends AbstractScimTest {
 
         expected = client.groups().get(expected.getId());
         expected.setDisplayName("Updated " + expected.getDisplayName());
+        adminEvents.clear();
         client.groups().update(expected);
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP)
+                .representation(Map.of("displayName", expected.getDisplayName()));
+
         Group actual = client.groups().get(expected.getId());
         assertEquals(expected.getDisplayName(), actual.getDisplayName());
     }
@@ -66,9 +91,16 @@ public class GroupTest extends AbstractScimTest {
 
         expected = client.groups().get(expected.getId());
         expected.setDisplayName("Updated " + expected.getDisplayName());
+        adminEvents.clear();
         client.groups().patch(expected.getId(), PatchRequest.create()
                 .replace("displayName", expected.getDisplayName())
                 .build());
+
+        AdminEventAssertion.assertSuccess(adminEvents.poll())
+                .operationType(OperationType.UPDATE)
+                .resourceType(ResourceType.GROUP)
+                .representation(Map.of("displayName", expected.getDisplayName()));
+
         Group actual = client.groups().get(expected.getId());
         assertEquals(expected.getDisplayName(), actual.getDisplayName());
     }
