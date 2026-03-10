@@ -317,10 +317,10 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     private AccessTokenResponse doTokenRefresh(EventBuilder event, String refreshToken) throws IOException {
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-            String responseStr = getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asString();
+            SimpleHttpResponse response = getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asResponse();
 
-            if (responseStr.contains("error")) {
-                logger.debugv("Error refreshing token, refresh token expiration?: {0}", responseStr);
+            if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {
+                logger.debugv("Error refreshing token, refresh token expiration?: {0}", response.asString());
                 if (event != null) {
                     event.detail(Details.REASON, "requested_issuer token expired");
                     event.error(Errors.INVALID_TOKEN);
@@ -328,7 +328,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 return null;
             }
 
-            return JsonSerialization.readValue(responseStr, AccessTokenResponse.class);
+            return response.asJson(AccessTokenResponse.class);
         }
     }
 

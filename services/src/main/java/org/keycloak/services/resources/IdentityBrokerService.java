@@ -522,10 +522,6 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerAlias);
             UserSessionModel userSession = null;
 
-            if (!identityProviderConfig.isEnabled()) {
-                return corsResponse(badRequest("Identity Provider is not enabled"), clientModel);
-            }
-
             if (Booleans.isTrue(identityProviderConfig.isStoreToken())) {
                 if (identity.getToken() == null) {
                     return corsResponse(notFound("No token stored for user [" + user.getId() + "] with associated identity provider [" + providerAlias + "]."), clientModel);
