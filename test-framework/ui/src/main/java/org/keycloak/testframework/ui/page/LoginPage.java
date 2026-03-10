@@ -30,6 +30,9 @@ public class LoginPage extends AbstractLoginPage {
     @FindBy(id = "input-error-username")
     private WebElement userNameInputError;
 
+    @FindBy(className = "pf-m-danger")
+    private WebElement loginErrorMessage;
+
     public LoginPage(ManagedWebDriver driver) {
         super(driver);
     }
@@ -90,6 +93,14 @@ public class LoginPage extends AbstractLoginPage {
     public String getUsernameInputError() {
         try {
             return userNameInputError.getText();
+        } catch (NoSuchElementException e) {
+            return null;
+        }
+    }
+
+    public String getError() {
+        try {
+            return loginErrorMessage.getText();
         } catch (NoSuchElementException e) {
             return null;
         }
