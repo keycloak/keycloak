@@ -110,12 +110,43 @@ spec:
 kubectl create ns cnpg-keycloak
 ----
 +
-. Create the `cnpg-keycloak` Cluster resource by applying the `cluster.yaml` file.
+. Create the `cnpg-keycloak` cluster resource by applying the `cluster.yaml` file.
 +
 .Command:
 [source,bash]
 ----
 kubectl -n cnpg-keycloak apply -f cluster.yaml
+----
++
+. Wait for the `cnpg-keycloak` cluster to get into the `Ready` state.
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak wait --for condition=Ready --timeout=300s cluster cnpg-keycloak
+----
++
+.Output:
+[source,bash]
+----
+cluster.postgresql.cnpg.io/cnpg-keycloak condition met
+----
++
+. Optionally, view the `cnpg-keycloak` cluster pods and their roles.
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak get pods -L role
+----
++
+.Example output:
+[source,bash]
+----
+NAME              READY   STATUS    RESTARTS   AGE   ROLE
+cnpg-keycloak-1   1/1     Running   0          10m   primary
+cnpg-keycloak-2   1/1     Running   0          10m   replica
+cnpg-keycloak-3   1/1     Running   0          10m   replica
 ----
 
 
@@ -126,7 +157,7 @@ kubectl -n cnpg-keycloak apply -f cluster.yaml
 .Command:
 [source,yaml,indent=0]
 ----
-kubectl apply -f - <<EOF
+kubectl -n cnpg-keycloak apply -f - <<EOF
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
