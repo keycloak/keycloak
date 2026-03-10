@@ -18,8 +18,8 @@ This {section} provides an overview of the platforms, versions, and configuratio
 * OpenJDK 21 (LTS)
 * OpenJDK 25 (LTS)
 
-NOTE: Always the latest supported JDK version is recommended for production deployments to benefit from the latest performance improvements.
-This is currently OpenJDK {jdk_version_recommended}.
+NOTE: To benefit from the latest performance improvements, we suggest using the latest supported JDK version for production deployments.
+This is currently OpenJDK {jdk_version_latest}.
 
 == Runtime Platform
 
@@ -37,7 +37,7 @@ NOTE: The supported versions of each respective environment are limited to the v
 === Container Image
 
 {project_name} provides official container image that is using OpenJDK {jdk_version_container}. Consider this when writing
-custom extensions, or override the OpenJDK version in a custom container image of {project_name}. For more details on the container image, see <@links.server id="containers"/>.
+custom extensions. For more details on the container image, see <@links.server id="containers"/>.
 
 == Supported Databases
 
