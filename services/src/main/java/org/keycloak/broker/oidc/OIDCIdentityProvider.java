@@ -316,20 +316,23 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     private AccessTokenResponse doTokenRefresh(EventBuilder event, String refreshToken) throws IOException {
-        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-            SimpleHttpResponse response = getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asResponse();
+        VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret());
+        SimpleHttpResponse response = getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asResponse();
 
-            if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {
-                logger.debugv("Error refreshing token, refresh token expiration?: {0}", response.asString());
-                if (event != null) {
-                    event.detail(Details.REASON, "requested_issuer token expired");
-                    event.error(Errors.INVALID_TOKEN);
-                }
-                return null;
+        if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {
+            logger.debugv("Error refreshing token, refresh token expiration?: {0}", response.asString());
+            if (event != null) {
+                event.detail(Details.REASON, "requested_issuer token expired");
+                event.error(Errors.INVALID_TOKEN);
             }
-
-            return response.asJson(AccessTokenResponse.class);
+            return null;
         }
+
+        AccessTokenResponse accessTokenResponse = response.asJson(AccessTokenResponse.class);
+        if (accessTokenResponse.getError() != null) {
+            return null;
+        }
+        return accessTokenResponse;
     }
 
     private void updateUserSessionFromRefresh(UserSessionModel tokenUserSession, AccessTokenResponse newResponse, int currentTime) {
