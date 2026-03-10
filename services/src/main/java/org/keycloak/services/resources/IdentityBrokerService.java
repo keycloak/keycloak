@@ -120,6 +120,7 @@ import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
+import org.keycloak.services.util.UserSessionUtil;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -473,7 +474,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     @NoCache
     @Path("{provider_alias}/token")
     public Response retrieveToken(@PathParam("provider_alias") String providerAlias) {
-        return getToken(providerAlias, false);
+        return getToken(providerAlias);
     }
 
     private boolean canReadBrokerToken(AccessToken token) {
@@ -482,7 +483,7 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         return brokerRoles != null && brokerRoles.isUserInRole(Constants.READ_TOKEN_ROLE);
     }
 
-    private Response getToken(String providerAlias, boolean forceRetrieval) {
+    private Response getToken(String providerAlias) {
         this.event.event(EventType.IDENTITY_PROVIDER_RETRIEVE_TOKEN);
 
         try {
@@ -492,67 +493,71 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
                     .setHeaders(request.getHttpHeaders())
                     .authenticate();
 
-            if (authResult != null) {
-                AccessToken token = authResult.token();
-                ClientModel clientModel = authResult.client();
-                event.client(clientModel);
-                event.user(authResult.user());
-
-                session.getContext().setClient(clientModel);
-
-                ClientModel brokerClient = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
-                if (brokerClient == null) {
-                    return corsResponse(forbidden("Realm has not migrated to support the broker token exchange service"), clientModel);
-
-                }
-                if (!canReadBrokerToken(token)) {
-                    return corsResponse(forbidden("Client [" + clientModel.getClientId() + "] not authorized to retrieve tokens from identity provider [" + providerAlias + "]."), clientModel);
-
-                }
-
-                UserAuthenticationIdentityProvider<?> identityProvider = getIdentityProvider(session, providerAlias);
-                IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerAlias);
-
-                if (Booleans.isTrue(identityProviderConfig.isStoreToken())) {
-                    FederatedIdentityModel identity = this.session.users().getFederatedIdentity(this.realmModel, authResult.user(), providerAlias);
-
-                    if (identity == null) {
-                        return corsResponse(badRequest("User [" + authResult.user().getId() + "] is not associated with identity provider [" + providerAlias + "]."), clientModel);
-                    }
-
-                    if (identity.getToken() == null) {
-                        return corsResponse(notFound("No token stored for user [" + authResult.user().getId() + "] with associated identity provider [" + providerAlias + "]."), clientModel);
-                    }
-
-                    String oldToken = identity.getToken();
-                    try {
-                        Response response = corsResponse(identityProvider.retrieveToken(session, identity), clientModel);
-                        this.event.success();
-                        return response;
-                    } catch (WebApplicationException e) {
-                        this.event.detail(Details.REASON, e.getMessage());
-                        this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
-                        return corsResponse(e.getResponse(), clientModel);
-                    } finally {
-                        if (!Objects.equals(oldToken, identity.getToken())) {
-                            // The API of the IdentityProvider doesn't allow use to pass down the realm and the user, so we check if the token has changed,
-                            // and then update the store.
-                            session.users().updateFederatedIdentity(session.getContext().getRealm(), authResult.user(), identity);
-                        }
-                    }
-                }
-
-                return corsResponse(badRequest("Identity Provider [" + providerAlias + "] does not support this operation."), clientModel);
+            if (authResult == null) {
+                return badRequest("Invalid token.");
             }
 
-            return badRequest("Invalid token.");
+            AccessToken token = authResult.token();
+            ClientModel clientModel = authResult.client();
+            UserModel user = authResult.user();
+
+            this.event.client(clientModel);
+            this.event.user(user);
+            this.session.getContext().setClient(clientModel);
+
+            ClientModel brokerClient = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
+            if (brokerClient == null) {
+                return corsResponse(forbidden("Realm has not migrated to support the broker token exchange service"), clientModel);
+            }
+            if (!canReadBrokerToken(token)) {
+                return corsResponse(forbidden("Client [" + clientModel.getClientId() + "] not authorized to retrieve tokens from identity provider [" + providerAlias + "]."), clientModel);
+            }
+
+            FederatedIdentityModel identity = this.session.users().getFederatedIdentity(this.realmModel, user, providerAlias);
+            if (identity == null) {
+                return corsResponse(badRequest("User [" + user.getId() + "] is not associated with identity provider [" + providerAlias + "]."), clientModel);
+            }
+
+            UserAuthenticationIdentityProvider<?> identityProvider = getIdentityProvider(session, providerAlias);
+            IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerAlias);
+            UserSessionModel userSession = null;
+
+            if (Booleans.isTrue(identityProviderConfig.isStoreToken())) {
+                if (identity.getToken() == null) {
+                    return corsResponse(notFound("No token stored for user [" + user.getId() + "] with associated identity provider [" + providerAlias + "]."), clientModel);
+                }
+            } else {
+                UserSessionUtil.UserSessionValidationResult userSessionValidation = UserSessionUtil.findValidSessionForAccessToken(session, realmModel, token, clientModel, (invalidUserSession -> {}));
+                if (userSessionValidation.getError() != null) {
+                    this.event.detail(Details.REASON, userSessionValidation.getError());
+                    this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
+                    return corsResponse(badRequest(userSessionValidation.getError()), clientModel);
+                }
+                userSession = userSessionValidation.getUserSession();
+            }
+
+            String oldToken = identity.getToken();
+            try {
+                Response response = corsResponse(identityProvider.retrieveToken(session, identity, userSession, user), clientModel);
+                this.event.success();
+                return response;
+            } catch (WebApplicationException e) {
+                this.event.detail(Details.REASON, e.getMessage());
+                this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
+                return corsResponse(e.getResponse(), clientModel);
+            } finally {
+                if (Booleans.isTrue(identityProviderConfig.isStoreToken()) && !Objects.equals(oldToken, identity.getToken())) {
+                    session.users().updateFederatedIdentity(session.getContext().getRealm(), user, identity);
+                }
+            }
+
         } catch (WebApplicationException e) {
             this.event.detail(Details.REASON, e.getMessage());
             this.event.error(Errors.IDENTITY_PROVIDER_ERROR);
             return e.getResponse();
         } catch (IdentityBrokerException e) {
             return redirectToErrorPage(Response.Status.BAD_GATEWAY, Messages.COULD_NOT_OBTAIN_TOKEN, e, providerAlias);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             return redirectToErrorPage(Response.Status.BAD_GATEWAY, Messages.UNEXPECTED_ERROR_RETRIEVING_TOKEN, e, providerAlias);
         }
     }

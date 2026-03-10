@@ -113,8 +113,12 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         Map<String, String> error = new HashMap<>();
         error.put("error", errorCode);
         error.put("error_description", reason);
-        String accountLinkUrl = getLinkingUrl(uriInfo, authorizedClient, tokenUserSession);
-        if (accountLinkUrl != null) error.put(ACCOUNT_LINK_URL, accountLinkUrl);
+        if (authorizedClient != null) {
+            String accountLinkUrl = getLinkingUrl(uriInfo, authorizedClient, tokenUserSession);
+            if (accountLinkUrl != null) {
+                error.put(ACCOUNT_LINK_URL, accountLinkUrl);
+            }
+        }
         return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 

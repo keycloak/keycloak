@@ -215,32 +215,39 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     protected Response exchangeStoredToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        FederatedIdentityModel model = session.users().getFederatedIdentity(authorizedClient.getRealm(), tokenSubject, getConfig().getAlias());
+        RealmModel realm = authorizedClient != null ? authorizedClient.getRealm() : session.getContext().getRealm();
+        FederatedIdentityModel model = session.users().getFederatedIdentity(realm, tokenSubject, getConfig().getAlias());
+
         if (model == null || model.getToken() == null) {
-            event.detail(Details.REASON, "requested_issuer is not linked");
-            event.error(Errors.INVALID_TOKEN);
+            if (event != null) {
+                event.detail(Details.REASON, "requested_issuer is not linked");
+                event.error(Errors.INVALID_TOKEN);
+            }
             return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
-        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+
+        try {
             String modelTokenString = model.getToken();
             AccessTokenResponse tokenResponse = JsonSerialization.readValue(modelTokenString, AccessTokenResponse.class);
             Integer exp = (Integer) tokenResponse.getOtherClaims().get(ACCESS_TOKEN_EXPIRATION);
             final int currentTime = Time.currentTime();
+
             if (exp != null && exp <= currentTime + getConfig().getMinValidityToken()) {
                 if (tokenResponse.getRefreshToken() == null) {
+                    if (event != null) {
+                        event.detail(Details.REASON, "requested_issuer token expired");
+                        event.error(Errors.INVALID_TOKEN);
+                    }
                     return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
                 }
-                String response = getRefreshTokenRequest(session, tokenResponse.getRefreshToken(),
-                        getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asString();
-                if (response.contains("error")) {
-                    logger.debugv("Error refreshing token, refresh token expiration?: {0}", response);
+
+                AccessTokenResponse newResponse = doTokenRefresh(event, tokenResponse.getRefreshToken());
+                if (newResponse == null) {
                     model.setToken(null);
-                    session.users().updateFederatedIdentity(authorizedClient.getRealm(), tokenSubject, model);
-                    event.detail(Details.REASON, "requested_issuer token expired");
-                    event.error(Errors.INVALID_TOKEN);
+                    session.users().updateFederatedIdentity(realm, tokenSubject, model);
                     return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
                 }
-                AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
+
                 if (newResponse.getExpiresIn() > 0) {
                     int accessTokenExpiration = currentTime + (int) newResponse.getExpiresIn();
                     newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
@@ -250,34 +257,90 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     newResponse.setRefreshToken(tokenResponse.getRefreshToken());
                     newResponse.setRefreshExpiresIn(tokenResponse.getRefreshExpiresIn());
                 }
-                response = JsonSerialization.writeValueAsString(newResponse);
 
-                String oldToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
-                if (oldToken != null && oldToken.equals(tokenResponse.getToken())) {
-                    int accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + (int) newResponse.getExpiresIn() : 0;
-                    tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
-                    tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
-                    tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
-                    tokenUserSession.setNote(FEDERATED_ID_TOKEN, newResponse.getIdToken());
-
+                if (tokenUserSession != null) {
+                    String oldToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+                    if (oldToken != null && oldToken.equals(tokenResponse.getToken())) {
+                        updateUserSessionFromRefresh(tokenUserSession, newResponse, currentTime);
+                    }
                 }
-                model.setToken(response);
-                session.users().updateFederatedIdentity(authorizedClient.getRealm(), tokenSubject, model);
+
+                model.setToken(JsonSerialization.writeValueAsString(newResponse));
+                session.users().updateFederatedIdentity(realm, tokenSubject, model);
                 tokenResponse = newResponse;
             } else if (exp != null) {
                 tokenResponse.setExpiresIn(exp - currentTime);
             }
-            tokenResponse.setIdToken(null);
-            tokenResponse.setRefreshToken(null);
-            tokenResponse.setRefreshExpiresIn(0);
-            tokenResponse.getOtherClaims().clear();
-            tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
-            tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
-            event.success();
-            return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+
+            return super.buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+        String refreshToken = tokenUserSession.getNote(FEDERATED_REFRESH_TOKEN);
+        String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+
+        if (accessToken == null) {
+            if (event != null) {
+                event.detail(Details.REASON, "requested_issuer is not linked");
+                event.error(Errors.INVALID_TOKEN);
+            }
+            return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+        }
+
+        try {
+            long expiration = Long.parseLong(tokenUserSession.getNote(FEDERATED_TOKEN_EXPIRATION));
+            final int currentTime = Time.currentTime();
+
+            if (expiration == 0 || expiration > currentTime + getConfig().getMinValidityToken()) {
+                AccessTokenResponse tokenResponse = new AccessTokenResponse();
+                tokenResponse.setExpiresIn(expiration > 0 ? expiration - currentTime : 0);
+                tokenResponse.setToken(accessToken);
+                return super.buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse);
+            }
+
+            AccessTokenResponse newResponse = doTokenRefresh(event, refreshToken);
+            if (newResponse == null) {
+                return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+            }
+
+            updateUserSessionFromRefresh(tokenUserSession, newResponse, currentTime);
+
+            return super.buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, newResponse);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private AccessTokenResponse doTokenRefresh(EventBuilder event, String refreshToken) throws IOException {
+        VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret());
+        SimpleHttpResponse response = getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asResponse();
+
+        if (Response.Status.fromStatusCode(response.getStatus()).getFamily() != Response.Status.Family.SUCCESSFUL) {
+            logger.debugv("Error refreshing token, refresh token expiration?: {0}", response.asString());
+            if (event != null) {
+                event.detail(Details.REASON, "requested_issuer token expired");
+                event.error(Errors.INVALID_TOKEN);
+            }
+            return null;
+        }
+
+        AccessTokenResponse accessTokenResponse = response.asJson(AccessTokenResponse.class);
+        if (accessTokenResponse.getError() != null) {
+            return null;
+        }
+        return accessTokenResponse;
+    }
+
+    private void updateUserSessionFromRefresh(UserSessionModel tokenUserSession, AccessTokenResponse newResponse, int currentTime) {
+        long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + newResponse.getExpiresIn() : 0;
+        tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
+        tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
+        tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
+        tokenUserSession.setNote(FEDERATED_ID_TOKEN, newResponse.getIdToken());
     }
 
     @Override
@@ -285,7 +348,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         BrokeredIdentityContext context = super.validateExternalTokenThroughUserInfo(event, subjectToken, subjectTokenType);
 
         if (context != null && (OAuth2Constants.ID_TOKEN_TYPE.equals(subjectTokenType) ||
-            (OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType) && getConfig().isAccessTokenJwt()))) {
+                (OAuth2Constants.ACCESS_TOKEN_TYPE.equals(subjectTokenType) && getConfig().isAccessTokenJwt()))) {
 
             JsonWebToken parsedToken;
             try {
@@ -317,57 +380,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         if (getConfig().isAccessTokenJwt()) {
             JsonWebToken access = validateToken(response.getToken(), true);
             context.getContextData().put(VALIDATED_ACCESS_TOKEN, access);
-        }
-    }
-
-    @Override
-    protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        String refreshToken = tokenUserSession.getNote(FEDERATED_REFRESH_TOKEN);
-        String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
-
-        if (accessToken == null) {
-            event.detail(Details.REASON, "requested_issuer is not linked");
-            event.error(Errors.INVALID_TOKEN);
-            return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
-        }
-        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-            long expiration = Long.parseLong(tokenUserSession.getNote(FEDERATED_TOKEN_EXPIRATION));
-            final int currentTime = Time.currentTime();
-            if (expiration == 0 || expiration > currentTime + getConfig().getMinValidityToken()) {
-                AccessTokenResponse tokenResponse = new AccessTokenResponse();
-                tokenResponse.setExpiresIn(expiration > 0? expiration - currentTime : 0);
-                tokenResponse.setToken(accessToken);
-                tokenResponse.setIdToken(null);
-                tokenResponse.setRefreshToken(null);
-                tokenResponse.setRefreshExpiresIn(0);
-                tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
-                tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
-                event.success();
-                return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
-            }
-            String response = getRefreshTokenRequest(session, refreshToken, getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret())).asString();
-            if (response.contains("error")) {
-                logger.debugv("Error refreshing token, refresh token expiration?: {0}", response);
-                event.detail(Details.REASON, "requested_issuer token expired");
-                event.error(Errors.INVALID_TOKEN);
-                return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
-            }
-            AccessTokenResponse newResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
-            long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + newResponse.getExpiresIn() : 0;
-            tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
-            tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
-            tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
-            tokenUserSession.setNote(FEDERATED_ID_TOKEN, newResponse.getIdToken());
-            newResponse.setIdToken(null);
-            newResponse.setRefreshToken(null);
-            newResponse.setRefreshExpiresIn(0);
-            newResponse.getOtherClaims().clear();
-            newResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
-            newResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
-            event.success();
-            return Response.ok(newResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
