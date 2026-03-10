@@ -28,7 +28,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class BackchannelTokenResponseContext implements ClientPolicyContext {
+public class BackchannelTokenResponseContext implements ClientPolicyContext, CIBAContext {
 
     private final CIBAAuthenticationRequest parsedRequest;
     private final MultivaluedMap<String, String> requestParameters;
@@ -50,6 +50,7 @@ public class BackchannelTokenResponseContext implements ClientPolicyContext {
         return ClientPolicyEvent.BACKCHANNEL_TOKEN_RESPONSE;
     }
 
+    @Override
     public CIBAAuthenticationRequest getParsedRequest() {
         return parsedRequest;
     }

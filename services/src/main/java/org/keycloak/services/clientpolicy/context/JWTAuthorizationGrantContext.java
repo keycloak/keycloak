@@ -16,7 +16,9 @@
  */
 package org.keycloak.services.clientpolicy.context;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
@@ -25,12 +27,14 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
  *
  * @author rmartinc
  */
-public class JWTAuthorizationGrantContext implements ClientPolicyContext {
+public class JWTAuthorizationGrantContext implements ClientPolicyContext, ClientModelContext, ScopeParameterContext {
 
+    private final KeycloakSession session;
     private final JWTAuthorizationGrantValidationContext authorizationGrantContext;
     private final IdentityProviderModel idp;
 
-    public JWTAuthorizationGrantContext(JWTAuthorizationGrantValidationContext authorizationGrantContext, IdentityProviderModel idp) {
+    public JWTAuthorizationGrantContext(KeycloakSession session, JWTAuthorizationGrantValidationContext authorizationGrantContext, IdentityProviderModel idp) {
+        this.session = session;
         this.authorizationGrantContext = authorizationGrantContext;
         this.idp = idp;
     }
@@ -46,5 +50,15 @@ public class JWTAuthorizationGrantContext implements ClientPolicyContext {
 
     public IdentityProviderModel getIdentityProvider() {
         return idp;
+    }
+
+    @Override
+    public ClientModel getClient() {
+        return session.getContext().getClient();
+    }
+
+    @Override
+    public String getScopeParameter() {
+        return getAuthorizationGrantContext().getScopeParam();
     }
 }

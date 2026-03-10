@@ -80,7 +80,7 @@ public class ResourceOwnerPasswordCredentialsGrantType extends OAuth2GrantTypeBa
         }
 
         try {
-            session.clientPolicy().triggerOnEvent(new ResourceOwnerPasswordCredentialsContext(formParams));
+            session.clientPolicy().triggerOnEvent(new ResourceOwnerPasswordCredentialsContext(context.getSession(), formParams));
         } catch (ClientPolicyException cpe) {
             event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
             event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());

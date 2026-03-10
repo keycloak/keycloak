@@ -18,6 +18,7 @@ package org.keycloak.services.clientpolicy.context;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
@@ -27,7 +28,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class TokenResponseContext implements ClientPolicyContext {
+public class TokenResponseContext implements ClientPolicyContext, ClientPolicyClientSessionContext {
 
     private final MultivaluedMap<String, String> params;
     private final OAuth2CodeParser.ParseResult parseResult;
@@ -59,6 +60,11 @@ public class TokenResponseContext implements ClientPolicyContext {
 
     public TokenManager.AccessTokenResponseBuilder getAccessTokenResponseBuilder() {
         return accessTokenResponseBuilder;
+    }
+
+    @Override
+    public AuthenticatedClientSessionModel getClientSession() {
+        return getParseResult().getClientSession();
     }
 
     public ClientSessionContext getClientSessionContext() {

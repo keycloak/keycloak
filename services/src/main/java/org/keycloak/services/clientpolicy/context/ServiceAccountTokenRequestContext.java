@@ -27,7 +27,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ServiceAccountTokenRequestContext implements ClientPolicyContext  {
+public class ServiceAccountTokenRequestContext implements ClientPolicyContext, ClientPolicyClientSessionContext {
 
     private final MultivaluedMap<String, String> params;
     private final AuthenticatedClientSessionModel clientSession;
@@ -47,6 +47,7 @@ public class ServiceAccountTokenRequestContext implements ClientPolicyContext  {
         return params;
     }
 
+    @Override
     public AuthenticatedClientSessionModel getClientSession() {
         return clientSession;
     }
