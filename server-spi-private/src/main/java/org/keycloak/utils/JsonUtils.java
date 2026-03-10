@@ -148,7 +148,7 @@ public class JsonUtils {
      * @return the value
      */
     public static Object getJsonValue(JsonNode node, String claim) {
-        if (node != null) {
+        if (node != null && claim != null) {
             List<String> paths = splitClaimPath(claim);
             if (paths.isEmpty() || claim.endsWith(".")) {
                 return null;
