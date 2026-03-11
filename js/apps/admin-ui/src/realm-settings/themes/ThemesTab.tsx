@@ -10,20 +10,19 @@ import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { ThemesTabType, toThemesTab } from "../routes/ThemesTab";
 import { QuickTheme } from "./QuickTheme";
 import { ThemeSettingsTab } from "./ThemeSettings";
+import { borderRadiusToCss } from "./BorderRadiusControl";
 
 type ThemesTabProps = {
   realm: RealmRepresentation;
   save: (realm: RealmRepresentation) => void;
 };
 
-  borderRadius?: string;
 export default function ThemesTab({ realm, save }: ThemesTabProps) {
   const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const isFeatureEnabled = useIsFeatureEnabled();
 
-        ${styles.borderRadius ? `--pf-v5-global--BorderRadius--sm: ${styles.borderRadius};` : ""}
-        ${styles.borderRadius ? `--pf-v5-global--BorderRadius--lg: ${styles.borderRadius};` : ""}
+        ${borderRadiusToCss(styles)}
   const param = (tab: ThemesTabType) => ({
     realm: realmName,
     tab,
