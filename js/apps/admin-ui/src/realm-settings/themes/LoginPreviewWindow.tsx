@@ -3,6 +3,7 @@ import { useEnvironment } from "@keycloak/keycloak-ui-shared";
 import { Environment } from "../../environment-types";
 import { usePreviewBackground } from "./BackgroundContext";
 import { LoginForm, LoginPage } from "@patternfly/react-core";
+import { borderRadiusToCss } from "./BorderRadiusControl";
 
 type LoginPreviewWindowProps = {
   cssVars: Record<string, string>;
@@ -49,8 +50,7 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
           --keycloak-bg-logo-url: url('${bgUrl}');
           ${logoHeight ? `--keycloak-logo-height: ${logoHeight};` : ""}
           ${logoWidth ? `--keycloak-logo-width: ${logoWidth};` : ""}
-          ${cssVars["borderRadius"] ? `--pf-v5-global--BorderRadius--sm: ${cssVars["borderRadius"]};` : ""}
-          ${cssVars["borderRadius"] ? `--pf-v5-global--BorderRadius--lg: ${cssVars["borderRadius"]};` : ""}
+          ${borderRadiusToCss(cssVars)}
         }
 
         /* Apply background to #keycloak-bg */
