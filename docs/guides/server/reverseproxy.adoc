@@ -394,24 +394,15 @@ Calculation:
 
 For production with TLS passthrough:
 
-[source,bash]
-----
 <@kc.start parameters="--shutdown-delay=30s --shutdown-timeout=1s"/>
-----
 
 For load balancers that poll readiness:
 
-[source,bash]
-----
 <@kc.start parameters="--shutdown-delay=16s --shutdown-timeout=1s"/>
-----
 
 For test environments:
 
-[source,bash]
-----
 <@kc.start parameters="--shutdown-delay=0s --shutdown-timeout=500ms"/>
-----
 
 [NOTE]
 ====
