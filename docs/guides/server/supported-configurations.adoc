@@ -7,7 +7,6 @@
     title="Supported Configurations"
     summary="Overview of supported platforms, Java versions, databases, and other system requirements for {project_name}.">
 
-<@profile.ifCommunity>
 This {section} provides an overview of the platforms, versions, and configurations that are tested and supported for running {project_name} in production environments.
 
 == Java Virtual Machine
@@ -21,6 +20,11 @@ This {section} provides an overview of the platforms, versions, and configuratio
 NOTE: To benefit from the latest performance improvements, we suggest using the latest supported JDK version for production deployments.
 This is currently OpenJDK {jdk_version_latest}.
 
+=== Container Image
+
+{project_name} provides official container image that is using OpenJDK {jdk_version_container}. Consider this when writing
+custom extensions. For more details on the container image, see <@links.server id="containers"/>.
+
 == Runtime Platform
 
 {project_name} can be deployed in various environments:
@@ -33,11 +37,6 @@ NOTE: Other non-OpenShift Kubernetes distributions (like Amazon EKS or Azure Kub
 are specific to the supported Kubernetes API or OpenShift versions, but issues that are reproducible only on a particular Kubernetes distribution may not be supported.
 
 NOTE: The supported versions of each respective environment are limited to the versions that are currently supported by the respective vendors. For example, for OpenShift, only the versions that are currently supported by Red Hat are supported by {project_name}.
-
-=== Container Image
-
-{project_name} provides official container image that is using OpenJDK {jdk_version_container}. Consider this when writing
-custom extensions. For more details on the container image, see <@links.server id="containers"/>.
 
 == Supported Databases
 
@@ -61,6 +60,8 @@ The {project_name} UI including login pages, Admin Console and Account Console a
 |Apple Safari | Latest stable version
 |===
 
+NOTE: Both desktop and mobile versions of the browsers are supported.
+
 NOTE: The Admin Console and Account Console require JavaScript to be enabled. Browsers must support modern web standards including ES6+, WebAuthn, and Web Crypto API for full functionality.
 
 == Clustering and High Availability
@@ -72,11 +73,6 @@ For details, visit the <@links.ha id="introduction"/>.
 
 The hardware requirements for running {project_name} depend on the expected load and deployment environment.
 Consult  the <@links.ha id="introduction"/> for recommendations on hardware sizing for different deployment scenarios.
-</@profile.ifCommunity>
-
-<@profile.ifProduct>
-Visit the {rhbk_supported_configurations_link}[Red Hat Knowledgebase Article on supported configurations] for detailed information on supported platforms, Java versions, databases, and other system requirements for running {project_name} in production environments.
-</@profile.ifProduct>
 
 == Additional Resources
 
