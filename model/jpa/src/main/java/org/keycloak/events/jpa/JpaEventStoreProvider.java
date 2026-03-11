@@ -28,6 +28,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventStoreProvider;
@@ -36,7 +37,6 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
@@ -70,24 +70,17 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void clear() {
-        deleteByIdBatches("select event.id from EventEntity event", query -> {
-        }, "delete from EventEntity event where event.id in :eventIds");
+        em.createQuery("delete from EventEntity").executeUpdate();
     }
 
     @Override
     public void clear(RealmModel realm) {
-        deleteByIdBatches(
-                "select event.id from EventEntity event where event.realmId = :realmId",
-                query -> query.setParameter("realmId", realm.getId()),
-                "delete from EventEntity event where event.id in :eventIds");
+        em.createQuery("delete from EventEntity where realmId = :realmId").setParameter("realmId", realm.getId()).executeUpdate();
     }
 
     @Override
     public void clear(RealmModel realm, long olderThan) {
-        deleteByIdBatches(
-                "select event.id from EventEntity event where event.realmId = :realmId and event.time < :time",
-                query -> query.setParameter("realmId", realm.getId()).setParameter("time", olderThan),
-                "delete from EventEntity event where event.id in :eventIds");
+        em.createQuery("delete from EventEntity where realmId = :realmId and time < :time").setParameter("realmId", realm.getId()).setParameter("time", olderThan).executeUpdate();
     }
 
     @Override
@@ -124,24 +117,17 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void clearAdmin() {
-        deleteByIdBatches("select event.id from AdminEventEntity event", query -> {
-        }, "delete from AdminEventEntity event where event.id in :eventIds");
+        em.createQuery("delete from AdminEventEntity").executeUpdate();
     }
 
     @Override
     public void clearAdmin(RealmModel realm) {
-        deleteByIdBatches(
-                "select event.id from AdminEventEntity event where event.realmId = :realmId",
-                query -> query.setParameter("realmId", realm.getId()),
-                "delete from AdminEventEntity event where event.id in :eventIds");
+        em.createQuery("delete from AdminEventEntity where realmId = :realmId").setParameter("realmId", realm.getId()).executeUpdate();
     }
 
     @Override
     public void clearAdmin(RealmModel realm, long olderThan) {
-        deleteByIdBatches(
-                "select event.id from AdminEventEntity event where event.realmId = :realmId and event.time < :time",
-                query -> query.setParameter("realmId", realm.getId()).setParameter("time", olderThan),
-                "delete from AdminEventEntity event where event.id in :eventIds");
+        em.createQuery("delete from AdminEventEntity where realmId = :realmId and time < :time").setParameter("realmId", realm.getId()).setParameter("time", olderThan).executeUpdate();
     }
 
     @Override
@@ -271,7 +257,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
             List<String> realmIds = value.stream().map(RealmAttributeEntity::getRealm).map(RealmEntity::getId).collect(Collectors.toList());
             long eventTime = current - (key * 1000);
             int currentNumDeleted = deleteByIdBatches(
-                    "select event.id from AdminEventEntity event where event.realmId in :realmIds and event.time < :eventTime",
+                    "select event.id from AdminEventEntity event where event.realmId in :realmIds and event.time < :eventTime order by event.time",
                     queryBuilder -> queryBuilder.setParameter("realmIds", realmIds).setParameter("eventTime", eventTime),
                     "delete from AdminEventEntity event where event.id in :eventIds");
             logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, key);
