@@ -262,9 +262,8 @@ The previously documented `utf8mb3` (or `utf8`) character set has been removed f
 
 === Automatic database connection timeout defaults
 
-To improve failover behavior and startup resilience during network issues, {project_name} now sets a default database connection timeout of 10 seconds for selected database vendors (for example MySQL, MSSQL, MariaDB, and Oracle).
-For PostgreSQL, the connection timeout already defaults to 10s internally.
-You can override these defaults by specifying the corresponding JDBC driver properties in `db-url` or `db-url-properties`.
+To improve failover behavior and startup resilience during network issues, {project_name} now sets a default database connection timeout of 10 seconds.
+See https://www.keycloak.org/server/db[Configuring the database] for the list of databases, and on how to change this default.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
