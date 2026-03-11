@@ -5,13 +5,13 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-public class ResourceIndicatorsInterceptorFactory implements TokenInterceptorProviderFactory, EnvironmentDependentProviderFactory {
+public class ResourceIndicatorsPostProcessorFactory implements TokenPostProcessorFactory, EnvironmentDependentProviderFactory {
 
     public static final String ID = "resource-indicators";
 
     @Override
-    public TokenInterceptorProvider create(KeycloakSession session) {
-        return new ResourceIndicatorsInterceptor(session);
+    public TokenPostProcessor create(KeycloakSession session) {
+        return new ResourceIndicatorsPostProcessor(session);
     }
 
     @Override

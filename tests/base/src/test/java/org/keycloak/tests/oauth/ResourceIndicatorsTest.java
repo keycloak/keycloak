@@ -25,8 +25,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OAuthErrorException.INVALID_TARGET;
-import static org.keycloak.protocol.oidc.token.ResourceIndicatorsInterceptor.ERROR_INVALID_RESOURCE;
-import static org.keycloak.protocol.oidc.token.ResourceIndicatorsInterceptor.ERROR_NOT_MATCHING;
+import static org.keycloak.protocol.oidc.token.ResourceIndicatorsPostProcessor.ERROR_INVALID_RESOURCE;
+import static org.keycloak.protocol.oidc.token.ResourceIndicatorsPostProcessor.ERROR_NOT_MATCHING;
 
 @KeycloakIntegrationTest(config = ResourceIndicatorsTest.ResourceIndicatorServerConfig.class)
 public class ResourceIndicatorsTest {

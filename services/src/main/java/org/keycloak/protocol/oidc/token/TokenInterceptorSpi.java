@@ -18,11 +18,11 @@ public class TokenInterceptorSpi implements Spi {
 
     @Override
     public Class<? extends Provider> getProviderClass() {
-        return TokenInterceptorProvider.class;
+        return TokenPostProcessor.class;
     }
 
     @Override
     public Class<? extends ProviderFactory> getProviderFactoryClass() {
-        return TokenInterceptorProviderFactory.class;
+        return TokenPostProcessorFactory.class;
     }
 }

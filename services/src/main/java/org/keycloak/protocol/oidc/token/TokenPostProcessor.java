@@ -2,9 +2,9 @@ package org.keycloak.protocol.oidc.token;
 
 import org.keycloak.provider.Provider;
 
-public interface TokenInterceptorProvider extends Provider {
+public interface TokenPostProcessor extends Provider {
 
-    void intercept(TokenInterceptorContext context);
+    void process(TokenPostProcessorContext context);
 
     default void close() {}
 }

@@ -103,8 +103,8 @@ import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
-import org.keycloak.protocol.oidc.token.TokenInterceptorContext;
-import org.keycloak.protocol.oidc.token.TokenInterceptorProvider;
+import org.keycloak.protocol.oidc.token.TokenPostProcessor;
+import org.keycloak.protocol.oidc.token.TokenPostProcessorContext;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.rar.AuthorizationRequestContext;
@@ -1374,13 +1374,13 @@ public class TokenManager {
             return offlineToken;
         }
 
-        private void invokeInterceptors() {
-            TokenInterceptorContext tokenInterceptorContext = new TokenInterceptorContext(refreshToken, accessToken, clientSessionCtx);
-            session.getAllProviders(TokenInterceptorProvider.class).forEach(i -> i.intercept(tokenInterceptorContext));
+        private void invokeTokenPostProcessors() {
+            TokenPostProcessorContext context = new TokenPostProcessorContext(refreshToken, accessToken, clientSessionCtx);
+            session.getAllProviders(TokenPostProcessor.class).forEach(processor -> processor.process(context));
         }
 
         public AccessTokenResponse build() {
-            invokeInterceptors();
+            invokeTokenPostProcessors();
 
             if (response != null) return response;
 

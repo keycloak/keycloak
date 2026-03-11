@@ -6,7 +6,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 
-public class ResourceIndicatorsInterceptor implements TokenInterceptorProvider {
+public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
 
     public static final String ERROR_NOT_MATCHING = "The requested resource is not matching the original request.";
     public static final String ERROR_INVALID_RESOURCE = "The requested resource is invalid, missing, unknown, or malformed.";
@@ -15,12 +15,12 @@ public class ResourceIndicatorsInterceptor implements TokenInterceptorProvider {
 
     private final KeycloakSession session;
 
-    public ResourceIndicatorsInterceptor(KeycloakSession session) {
+    public ResourceIndicatorsPostProcessor(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
-    public void intercept(TokenInterceptorContext context) {
+    public void process(TokenPostProcessorContext context) {
         String requestedResource = context.clientSessionCtx().getAttribute(OAuth2Constants.RESOURCE, String.class);
         if (requestedResource == null) {
             return;

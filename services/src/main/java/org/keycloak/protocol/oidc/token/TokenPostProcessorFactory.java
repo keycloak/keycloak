@@ -4,7 +4,7 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderFactory;
 
-public interface TokenInterceptorProviderFactory extends ProviderFactory<TokenInterceptorProvider> {
+public interface TokenPostProcessorFactory extends ProviderFactory<TokenPostProcessor> {
 
     @Override
     default void init(Config.Scope config) {
