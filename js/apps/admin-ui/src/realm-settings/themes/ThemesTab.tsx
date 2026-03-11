@@ -15,6 +15,7 @@ import { LogoContext } from "./LogoContext";
 import { ThemeColors } from "./ThemeColors";
 import { ThemeSettingsTab } from "./ThemeSettings";
 import { BackgroundContext } from "./BackgroundContext";
+import { borderRadiusToCss } from "./BorderRadiusControl";
 
 type ThemesTabProps = {
   realm: RealmRepresentation;
@@ -29,7 +30,6 @@ export type ThemeRealmRepresentation = RealmRepresentation & {
   logo?: File;
   logoWidth?: string;
   logoHeight?: string;
-  borderRadius?: string;
   bgimage?: File;
 };
 
@@ -144,8 +144,7 @@ styles=css/styles.css css/theme-styles.css
         ${logo ? `--keycloak-logo-url: url('../${logoName}');` : ""}
         --keycloak-logo-height: ${realm.logoHeight};
         --keycloak-logo-width: ${realm.logoWidth};
-        ${styles.borderRadius ? `--pf-v5-global--BorderRadius--sm: ${styles.borderRadius};` : ""}
-        ${styles.borderRadius ? `--pf-v5-global--BorderRadius--lg: ${styles.borderRadius};` : ""}
+        ${borderRadiusToCss(styles)}
         ${toCss(styles.light)}
       }
       .pf-v5-theme-dark {

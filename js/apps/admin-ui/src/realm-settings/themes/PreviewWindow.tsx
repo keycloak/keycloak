@@ -10,6 +10,7 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 import { Header } from "../../PageHeader";
+import { borderRadiusToCss } from "./BorderRadiusControl";
 
 type PreviewWindowProps = {
   cssVars: Record<string, string>;
@@ -20,11 +21,10 @@ export const PreviewWindow = ({ cssVars }: PreviewWindowProps) => (
     <style>{`
       .preview {
         ${Object.entries(cssVars)
-          .filter(([key]) => key !== "borderRadius")
+          .filter(([key]) => !key.startsWith("borderRadius"))
           .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
           .join("\n")}
-        ${cssVars["borderRadius"] ? `--pf-v5-global--BorderRadius--sm: ${cssVars["borderRadius"]};` : ""}
-        ${cssVars["borderRadius"] ? `--pf-v5-global--BorderRadius--lg: ${cssVars["borderRadius"]};` : ""}
+        ${borderRadiusToCss(cssVars)}
       }
     `}</style>
     <Page className="preview" header={<Header />}>

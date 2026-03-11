@@ -37,6 +37,7 @@ import { ThemeRealmRepresentation } from "./ThemesTab";
 import { UploadJar } from "./UploadJar";
 import { DefaultColorAccordion } from "./DefaultColorAccordion";
 import { ColorControl } from "./ColorControl";
+import { BorderRadiusControl } from "./BorderRadiusControl";
 
 type ThemeType = "light" | "dark";
 
@@ -289,12 +290,7 @@ export const ThemeColors = ({
                   placeholder="63px"
                   defaultValue="63px"
                 />
-                <TextControl
-                  name={"borderRadius"}
-                  label={t("borderRadius")}
-                  placeholder="4px"
-                  defaultValue="4px"
-                />
+                <BorderRadiusControl />
                 <FormGroup label={t("backgroundImage")}>
                   <ImageUpload
                     name="bgimage"
@@ -338,7 +334,9 @@ export const ThemeColors = ({
                     ...(style?.[theme] || {}),
                     logoWidth: style?.["logoWidth"],
                     logoHeight: style?.["logoHeight"],
-                    borderRadius: style?.["borderRadius"],
+                    borderRadiusMain: style?.["borderRadiusMain"],
+                    borderRadiusInput: style?.["borderRadiusInput"],
+                    borderRadiusButton: style?.["borderRadiusButton"],
                   }}
                 />
               </Tab>
@@ -346,7 +344,9 @@ export const ThemeColors = ({
                 <PreviewWindow
                   cssVars={{
                     ...(style?.[theme] || {}),
-                    borderRadius: style?.["borderRadius"],
+                    borderRadiusMain: style?.["borderRadiusMain"],
+                    borderRadiusInput: style?.["borderRadiusInput"],
+                    borderRadiusButton: style?.["borderRadiusButton"],
                   }}
                 />
               </Tab>
