@@ -336,8 +336,14 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                     customTransformer.accept(created);
                 }
 
+                Option<String> primaryOption = getDatasourceOption(DB).orElseThrow();
+
                 PropertyMapper<?> mapper = created.build();
-                getDatasourceOption(DB).orElseThrow().getConnectedOptions().add(mapper.getOption().getKey());
+                // if we're not the DB option, nor mapped directly from the DB option, then
+                // it's considered "connected" for the purposes of discovery
+                if (parentOption != DB && !primaryOption.getKey().equals(mapper.getMapFrom())) {
+                    primaryOption.getConnectedOptions().add(mapper.getOption().getKey());
+                }
                 datasourceMappers.add(mapper);
             }
 

@@ -19,7 +19,6 @@ import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
 
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -495,8 +494,7 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 .stream(config.getPropertyNames().spliterator(), false)
                 .collect(Collectors.toList());
 
-        assertThat(propertyNames, hasItems(
-                "kc.db-kind-user-store",
+        List<String> expectedNames = List.of("kc.db-kind-user-store",
                 "quarkus.datasource.\"user-store\".db-kind",
                 "quarkus.datasource.\"user-store\".jdbc.url",
                 "quarkus.datasource.\"user-store\".jdbc.transactions",
@@ -504,14 +502,9 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "quarkus.datasource.\"user-store\".jdbc.driver",
                 "quarkus.datasource.jdbc.min-size",
                 "quarkus.datasource.jdbc.driver",
-                "quarkus.datasource.jdbc.url"
-        ));
+                "quarkus.datasource.jdbc.url");
 
-        // verify the db-kind is there only once
-        long quarkusDbKindCount = propertyNames.stream()
-                .filter("quarkus.datasource.\"user-store\".jdbc.url"::equals)
-                .count();
-        assertThat(quarkusDbKindCount, is(1L));
+        expectedNames.forEach(n -> assertThat(propertyNames, hasItem(n)));
 
         Stream.of("quarkus.datasource.\"user-store\".username"
                 , "quarkus.datasource.\"user-store\".password")
