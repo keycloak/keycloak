@@ -283,7 +283,9 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
         return attributes != null ? attributes.get(key) : null;
     }
 
-    public CredentialScopeRepresentation setAttribute(String key, String value) {
+    // Private ---------------------------------------------------------------------------------------------------------
+
+    private CredentialScopeRepresentation setAttribute(String key, String value) {
         if (attributes == null) {
             attributes = new LinkedHashMap<>();
         }
@@ -294,6 +296,4 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
         }
         return this;
     }
-
-    // Private ---------------------------------------------------------------------------------------------------------
 }

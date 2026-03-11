@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -57,7 +57,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             String targetUsername,
             Integer expireAt) {
 
-        // Ensure single credential_configuration_id
+        // Ensure at least one credential_configuration_id
         //
         if (credentialConfigurationIds == null || credentialConfigurationIds.isEmpty()) {
             throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credentialConfigurationIds");
@@ -122,6 +122,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         }
 
         // Verify that the issuing user holds the required {@code credential_offer_create} role if `loginUser != targetUser`
+        // i.e. A self issued credential offer does not require the {@code credential_offer_create} role
         //
         //   - Targeted or Anonymous `authorization_code` grant
         //   - Targeted `pre-authorized_code` grant

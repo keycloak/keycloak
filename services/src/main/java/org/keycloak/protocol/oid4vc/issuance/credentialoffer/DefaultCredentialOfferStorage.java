@@ -22,7 +22,10 @@ import java.util.Optional;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.logging.Logger;
 
 /**
  * Default implementation of {@link CredentialOfferStorage} that uses Keycloak's
@@ -35,17 +38,19 @@ import org.keycloak.util.JsonSerialization;
  */
 class DefaultCredentialOfferStorage implements CredentialOfferStorage {
 
+    private static final Logger LOGGER = Logger.getLogger(OID4VCLoginProtocolFactory.class);
+
     private static final String ENTRY_KEY = "json";
 
     /**
      * Calculates the lifespan in seconds from the current time to the expiration timestamp.
      * 
-     * @param expireAt Absolute expiration timestamp in seconds
+     * @param expiresAt Absolute expiration timestamp in seconds
      * @return Lifespan in seconds, or 0 if the entry is already expired
      */
-    private int calculateLifespanSeconds(int expireAt) {
-        int currentTime = Time.currentTime();
-        int lifespan = expireAt - currentTime;
+    private long calculateLifespanSeconds(long expiresAt) {
+        long currentTime = Time.currentTime();
+        long lifespan = expiresAt - currentTime;
         
         // If already expired or about to expire immediately, skip storage
         // This prevents storing entries that won't be usable
@@ -57,8 +62,9 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     public void putOfferState(KeycloakSession session, CredentialOfferState entry) {
 
         // Skip storing if already expired (following pattern from InfinispanSingleUseObjectProviderFactory)
-        int lifespanSeconds = calculateLifespanSeconds(entry.getExpireAt());
+        long lifespanSeconds = calculateLifespanSeconds(entry.getExpiresAt());
         if (lifespanSeconds <= 0) {
+            LOGGER.warnf("Credential offer state not stored - expired already");
             return;
         }
         
@@ -71,9 +77,9 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
         session.singleUseObjects().put(entry.getNonce(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
 
         // Store with key=pre_auth_code
-        entry.getPreAuthorizedCode().ifPresent(preAuthCode -> {
-            session.singleUseObjects().put(preAuthCode, lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
-        });
+        entry.getPreAuthorizedCode().ifPresent(preAuthCode ->
+            session.singleUseObjects().put(preAuthCode, lifespanSeconds, Map.of(ENTRY_KEY, entryJson))
+        );
     }
 
     @Override

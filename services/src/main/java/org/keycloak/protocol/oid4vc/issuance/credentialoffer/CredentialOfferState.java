@@ -16,11 +16,9 @@
  */
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
-import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.function.Function;
 
 import org.keycloak.common.util.Base64Url;
@@ -42,7 +40,7 @@ public class CredentialOfferState {
     private String targetUserId;
     private String nonce;
     private String txCode;
-    private int expireAt;
+    private long expiresAt;
     private List<OID4VCAuthorizationDetail> authDetails;
 
     /**
@@ -51,24 +49,24 @@ public class CredentialOfferState {
      * This should only be called from the configured  {@code CredentialOfferProvider}.
      * The constructor is public for testing purposes only.
      *
-     * @param credOffer           The credential offer
-     * @param clientId            The target client_id
-     * @param userId              The target user id
-     * @param expireAt            The expiry date of the offer in seconds
+     * @param credOffer   The credential offer
+     * @param clientId    The target client_id
+     * @param userId      The target user id
+     * @param expiresAt    The expiry date of the offer in seconds
      * @param authDetailsProvider A provider function for authorization details, (optionally) one for each credential_configuration_id
      */
     public CredentialOfferState(
             CredentialsOffer credOffer,
             String clientId,
             String userId,
-            int expireAt,
+            long expiresAt,
             Function<String, List<OID4VCAuthorizationDetail>> authDetailsProvider
     ) {
-        this.credentialsOfferId = UUID.randomUUID().toString();
+        this.credentialsOfferId = Base64Url.encode(RandomSecret.createRandomSecret(64));
         this.credentialsOffer = credOffer;
         this.targetClientId = clientId;
         this.targetUserId = userId;
-        this.expireAt = expireAt;
+        this.expiresAt = expiresAt;
         this.nonce = Base64Url.encode(RandomSecret.createRandomSecret(64));
         if (authDetailsProvider != null) {
             this.authDetails = authDetailsProvider.apply(credentialsOfferId);
@@ -104,8 +102,8 @@ public class CredentialOfferState {
         return txCode;
     }
 
-    public int getExpireAt() {
-        return expireAt;
+    public long getExpiresAt() {
+        return expiresAt;
     }
 
     public List<OID4VCAuthorizationDetail> getAuthorizationDetails() {
@@ -123,7 +121,7 @@ public class CredentialOfferState {
     @JsonIgnore
     public boolean isExpired() {
         int currentTime = Time.currentTime();
-        return expireAt <= currentTime;
+        return expiresAt <= currentTime;
     }
 
     // Private ---------------------------------------------------------------------------------------------------------

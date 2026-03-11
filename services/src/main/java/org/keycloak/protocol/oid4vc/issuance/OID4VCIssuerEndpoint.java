@@ -421,7 +421,7 @@ public class OID4VCIssuerEndpoint {
      * @param credentialConfigurationId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized
      * @param targetUser    The username that the offer is authorized for
-     * @param expireAt      The date/time when the offer expires (in Unix timestamp seconds)
+     * @param expiresAt      The date/time when the offer expires (in Unix timestamp seconds)
      * @param responseType  The response type, which can be 'uri', 'qr' or 'uri+qr'
      * @param width         The width of the QR code image
      * @param height        The height of the QR code image
@@ -433,7 +433,7 @@ public class OID4VCIssuerEndpoint {
             @QueryParam("credential_configuration_id") String credentialConfigurationId,
             @QueryParam("pre_authorized") @DefaultValue("true") Boolean preAuthorized,
             @QueryParam("target_user") String targetUser,
-            @QueryParam("expire") Integer expireAt,
+            @QueryParam("expire") Integer expiresAt,
             @QueryParam("type") @DefaultValue("uri") OfferResponseType responseType,
             @QueryParam("width") @DefaultValue("200") int width,
             @QueryParam("height") @DefaultValue("200") int height
@@ -474,8 +474,8 @@ public class OID4VCIssuerEndpoint {
             targetUser = loginUserModel.getUsername();
         }
 
-        if (expireAt == null) {
-            expireAt = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
+        if (expiresAt == null) {
+            expiresAt = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
         }
 
         // Create the CredentialsOffer
@@ -489,7 +489,7 @@ public class OID4VCIssuerEndpoint {
 
             CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
             offerState = offerProvider.createCredentialOffer(session, userSession, grantType,
-                    credentialConfigurationIds, targetClientId, targetUser, expireAt);
+                    credentialConfigurationIds, targetClientId, targetUser, expiresAt);
 
         } catch (CredentialOfferException ex) {
             eventBuilder.detail(Details.REASON, ex.getMessage()).error(ex.getErrorType());
