@@ -17,11 +17,17 @@ Use it together with the other building blocks outlined in the <@links.ha id="si
 
 * {kubernetes} cluster deployed across multiple availability-zones with a worker-pool configured for each.
 * Understanding of a <@links.operator id="basic-deployment" /> of {project_name} with the {project_name} Operator.
-* AWS Aurora database deployed using the <@links.ha id="single-cluster-deploy-aurora" /> {section}.
+* A database deployed according to one of the following guides:
+** <@links.ha id="single-cluster-deploy-aurora" /> {section},
+** <@links.ha id="single-cluster-deploy-cnpg" /> {section}.
 
 [#single-cluster-deploy-keycloak-procedure]
 == Procedure
 
+Depending on the database you deployed use the relevant procedure for deploying {project_name}.
+
+[#single-cluster-deploy-keycloak-with-aurora-procedure]
+=== Procedure for deploying {project_name} with AWS Aurora
 . Determine the sizing of the deployment using the <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" /> {section}.
 
 . Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
@@ -61,7 +67,7 @@ spec:
       memory: "2250M"
   db:
     vendor: postgres
-    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak?sslmode=verify-full&sslrootcert=/opt/keycloak/conf/truststores/configmap-keycloak-aurora-rootcert/aurora.pem # <1>
+    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak?sslmode=verify-full&sslfactory=org.postgresql.ssl.DefaultJavaSSLFactory # <1>
     poolMinSize: 30 # <2>
     poolInitialSize: 30
     poolMaxSize: 30
@@ -91,15 +97,81 @@ spec:
         name: keycloak-aurora-rootcert # <5>
 
 ----
-<1> Secure the database connection with the `sslmode=verify-full` and `sslrootcert` properties.
+<1> Secure the database connection with the `sslmode=verify-full` and `sslfactory` properties.
 <2> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
 Adjust this number to meet the needs of your system.
-As most requests will not touch the database due to the {project_name} embedded cache, this change can server several hundreds of requests per second.
+As most requests will not touch the database due to the {project_name} embedded cache, this change can serve several hundreds of requests per second.
 See the <@links.ha id="single-cluster-concepts-database-connections" /> {section} for details.
 <3> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
 <4> To be able to analyze the system under load, enable the metrics endpoint.
 <5> Specify the `ConfigMap` name that contains the Amazon Aurora PostgreSQL database certificate bundle.
-The Operator will automatic mount the file in directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`
+The Operator will automatically mount the file in directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`
+
+[#single-cluster-deploy-keycloak-with-cnpg-procedure]
+=== Procedure for deploying {project_name} with CloudNativePG
+. Determine the sizing of the deployment using the <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" /> {section}.
+
+. Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
+
+. Notice the configuration file below contains options relevant for connecting to the CloudNativePG database from <@links.ha id="single-cluster-deploy-cnpg" anchor="single-cluster-cnpg-connecting" />
+
+. Deploy the {project_name} CR with the following values with the resource requests and limits calculated in the first step:
++
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak
+  namespace: keycloak
+spec:
+  hostname:
+    hostname: <KEYCLOAK_URL_HERE>
+  resources:
+    requests:
+      cpu: "2"
+      memory: "1250M"
+    limits:
+      cpu: "6"
+      memory: "2250M"
+  db:
+    vendor: postgres
+    url: jdbc:postgresql://cnpg-keycloak-rw.cnpg-keycloak.svc.cluster.local:5432/keycloak?sslmode=verify-full&sslfactory=org.postgresql.ssl.DefaultJavaSSLFactory <1>
+    poolMinSize: 30 <2>
+    poolInitialSize: 30
+    poolMaxSize: 30
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  additionalOptions:
+    - name: log-console-output
+      value: json
+    - name: metrics-enabled <3>
+      value: 'true'
+    - name: event-metrics-user-enabled
+      value: 'true'
+  http:
+    tlsSecret: keycloak-tls-secret
+  instances: 3
+  truststores:
+    cnpg:
+      configMap:
+        name: cnpg-keycloak-ca <4>
+
+----
+<1> Secure the database connection with the `sslmode=verify-full` and `sslfactory` properties.
+<2> The database connection pool initial, max and min size should be identical to allow statement caching for the database.
+Adjust this number to meet the needs of your system.
+As most requests will not touch the database due to the {project_name} embedded cache, this change can serve several hundreds of requests per second.
+See the <@links.ha id="single-cluster-concepts-database-connections" /> {section} for details.
+<3> To be able to analyze the system under load, enable the metrics endpoint.
+<4> Specify the `ConfigMap` name that contains the CloudNativePG CA certificate.
+The Operator will automatically mount the file in directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`
 
 <#include "/high-availability/partials/building-blocks/verifying-deployment.adoc" />
 
