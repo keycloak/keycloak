@@ -103,6 +103,8 @@ public abstract class OID4VCIssuerTestBase {
     public static final String OID4VCI_CLIENT_ID = "oid4vci-client";
     public static final URI ISSUER_DID = URI.create("did:web:test.org");
     public static final String TEST_CREDENTIAL_MAPPERS_FILE = "/oid4vc/test-credential-mappers.json";
+    public static final String TEST_USER = "john";
+    public static final String TEST_PASSWORD = "password";
 
     public static final String sdJwtTypeCredentialScopeName = "sd-jwt-credential";
     public static final String sdJwtTypeCredentialConfigurationIdName = "sd-jwt-credential-config-id";
@@ -117,6 +119,7 @@ public abstract class OID4VCIssuerTestBase {
     protected CredentialScopeRepresentation jwtTypeCredentialScope;
     protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
 
+    protected String clientId = "test-app";
     protected ClientRepresentation client;
 
     @InjectRealm(config = VCTestRealmConfig.class)
