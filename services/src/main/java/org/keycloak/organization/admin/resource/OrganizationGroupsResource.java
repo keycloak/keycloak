@@ -199,9 +199,10 @@ public class OrganizationGroupsResource {
             groups = organizationProvider.getTopLevelGroups(organization, first, max);
         }
 
-        // builds hierarchy maily for admin UI
+        // builds hierarchy mainly for admin UI
         if (populateHierarchy) {
-            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, groups, !briefRepresentation, subGroupsCount);
+            String internalGroupId = organizationProvider.getOrganizationGroup(organization).getId();
+            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, groups, !briefRepresentation, subGroupsCount, internalGroupId);
         }
 
         return groups.map(group -> {
