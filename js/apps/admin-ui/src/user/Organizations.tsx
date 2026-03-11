@@ -31,15 +31,11 @@ import { capitalizeFirstLetterFormatter } from "../util";
 import { SearchInputComponent } from "../components/dynamic/SearchInputComponent";
 import { MembershipsModal } from "../groups/MembershipsModal";
 import { GroupResourceContext } from "../context/group-resource/GroupResourceContext";
+import OrganizationMemberRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationMemberRepresentation";
 
 type OrganizationProps = {
   user: UserRepresentation;
 };
-
-type MembershipTypeRepresentation = OrganizationRepresentation &
-  UserRepresentation & {
-    membershipType?: string;
-  };
 
 export const Organizations = ({ user }: OrganizationProps) => {
   const { adminClient } = useAdminClient();
@@ -95,21 +91,15 @@ export const Organizations = ({ user }: OrganizationProps) => {
       const userOrganizationsWithMembershipTypes = await Promise.all(
         userOrganizations.map(async (org) => {
           const orgId = org.id;
-          const memberships: MembershipTypeRepresentation[] =
-            await adminClient.organizations.listMembers({
+          const membership: OrganizationMemberRepresentation =
+            await adminClient.organizations.getMember({
+              userId: user.id!,
               orgId: orgId!,
             });
 
-          const userMemberships = memberships.filter(
-            (membership) => membership.username === user.username,
+          const membershipType = capitalizeFirstLetterFormatter()(
+            membership.membershipType,
           );
-
-          const membershipType = userMemberships.map((membership) => {
-            const formattedMembershipType = capitalizeFirstLetterFormatter()(
-              membership.membershipType,
-            );
-            return formattedMembershipType;
-          });
 
           return { ...org, membershipType };
         }),
@@ -118,9 +108,7 @@ export const Organizations = ({ user }: OrganizationProps) => {
       let filteredOrgs = userOrganizationsWithMembershipTypes;
       if (filteredMembershipTypes.length > 0) {
         filteredOrgs = filteredOrgs.filter((org) =>
-          org.membershipType?.some((type) =>
-            filteredMembershipTypes.includes(type as string),
-          ),
+          filteredMembershipTypes.includes(org.membershipType as string),
         );
       }
 
