@@ -220,7 +220,13 @@ jobs:
             echo "========================================================================="
             ./mvnw test -Pauth-server-quarkus \
               -Dtest=org.keycloak.testsuite.oauth.OfflineTokenTest#offlineTokenBrowserFlow \
-              -pl
+              -pl testsuite/integration-arquillian/tests/base || FAILURES=$((FAILURES + 1))
+          done
+          if [ $FAILURES -gt 0 ]; then
+            echo "Test failed $FAILURES times out of 50 runs"
+            exit 1
+          fi
+          
 
   adapter-integration-tests-strict-cookies:
     name: Adapter IT Strict Cookies
