@@ -68,7 +68,7 @@ import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 /**
  * Abstract base class for OID4VCI Testing
  *
- * [TODO] Can the server runtime mode be configures by the testcase?
+ * [TODO] Can the server runtime mode be configured by the testcase?
  * Server-side debugging: KC_TEST_SERVER=embedded
  */
 public abstract class OID4VCIssuerTestBase {
