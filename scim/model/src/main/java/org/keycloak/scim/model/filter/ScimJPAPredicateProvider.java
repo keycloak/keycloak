@@ -2,8 +2,10 @@ package org.keycloak.scim.model.filter;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Expression;
@@ -16,6 +18,7 @@ import org.keycloak.common.util.TriFunction;
 import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
+import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 
 /**
  * Creates JPA predicates for SCIM filter operators. Handles both direct root entity fields and custom attributes stored
@@ -25,6 +28,7 @@ import org.keycloak.scim.resource.schema.attribute.Attribute;
  */
 public class ScimJPAPredicateProvider {
 
+    private final ScimResourceTypeProvider resourceTypeProvider;
     private final List<ModelSchema<?, ?>> schemas;
     private final CriteriaBuilder cb;
     private final Root<?> root;
@@ -44,9 +48,10 @@ public class ScimJPAPredicateProvider {
     );
 
     // cache joins to avoid creating duplicate joins for the same filter
-    private Join<?, ?> attributeJoin;
+    private Map<String, Join<?, ?>> attributeJoin = new HashMap<>();
 
-    public ScimJPAPredicateProvider(List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, Root<?> root) {
+    public ScimJPAPredicateProvider(ScimResourceTypeProvider resourceTypeProvider, List<ModelSchema<?, ?>> schemas, CriteriaBuilder cb, Root<?> root) {
+        this.resourceTypeProvider = resourceTypeProvider;
         this.schemas = schemas;
         this.cb = cb;
         this.root = root;
@@ -106,19 +111,29 @@ public class ScimJPAPredicateProvider {
      * @return the JPA {@link Predicate} representing the comparison for the given attribute, operator, and value
      */
     private Predicate getAttributePredicate(Attribute<?,?> attrInfo, String operation, Object value) {
-        Expression<?> path;
+        Expression<?> expression = null;
         Predicate basePredicate = null;
         String modelAttributeName = attrInfo.getModelAttributeName();
 
-        if (attrInfo.isPrimary()) {
-            path = root.get(modelAttributeName);
-        } else {
-            Join<?, ?> join = getOrCreateAttributeJoin();
-            path = join.get("value");
+        try {
+            expression = root.get(modelAttributeName);
+        } catch (IllegalArgumentException ignore) {
+            // not a primary attribute - continue to check for custom attribute
+        }
+
+        if (expression == null) {
+            if (resourceTypeProvider instanceof ScimAttributeJpaExpressionResolver mapper) {
+                expression = mapper.getAttributeExpression(attrInfo, cb, root, (aClass, joinSupplier) -> getOrCreateAttributeJoin(aClass.getName(), joinSupplier));
+            }
+        }
+
+        if (expression == null) {
+            Join<?, ?> join = getOrCreateAttributeJoin("attributes", createAttributesJoinSupplier());
+            expression = join.get("value");
             basePredicate = cb.equal(join.get("name"), modelAttributeName);
         }
 
-        Predicate predicate = operatorMap.get(operation).apply(cb, path, value);
+        Predicate predicate = operatorMap.get(operation).apply(cb, expression, value);
         return (basePredicate != null) ? cb.and(basePredicate, predicate) : predicate;
     }
 
@@ -128,11 +143,8 @@ public class ScimJPAPredicateProvider {
      *
      * @return the existing or newly created join to the "attributes" collection
      */
-    private Join<?, ?> getOrCreateAttributeJoin() {
-        if (attributeJoin == null) {
-            attributeJoin = root.join("attributes", JoinType.LEFT);
-        }
-        return attributeJoin;
+    private Join<?, ?> getOrCreateAttributeJoin(String type, Supplier<Join<?, ?>> joinFactory) {
+        return attributeJoin.computeIfAbsent(type, k -> joinFactory.get());
     }
 
     /**
@@ -259,5 +271,9 @@ public class ScimJPAPredicateProvider {
         return value.replace("\\", "\\\\")
                 .replace("%", "\\%")
                 .replace("_", "\\_");
+    }
+
+    private Supplier<Join<?, ?>> createAttributesJoinSupplier() {
+        return () -> root.join("attributes", JoinType.LEFT);
     }
 }

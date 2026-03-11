@@ -22,6 +22,7 @@ import org.keycloak.scim.client.ScimClient;
 import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
+import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.common.Email;
 import org.keycloak.scim.resource.common.Name;
 import org.keycloak.scim.resource.user.EnterpriseUser;
@@ -782,6 +783,54 @@ public class UserTest extends AbstractScimTest {
         groups = actual.getGroups();
         assertNotNull(groups);
         assertEquals(1, groups.size());
+
+        User finalExpected = expected;
+        assertNotNull(client.users().search("groups.value eq \"" + groupA.getId() + "\"").getResources().stream()
+                .filter(u -> u.getId().equals(finalExpected.getId()))
+                .findFirst().orElse(null));
+        assertNull(client.users().search("groups.value eq \"" + groupC.getId() + "\"").getResources().stream()
+                .filter(u -> u.getId().equals(finalExpected.getId()))
+                .findFirst().orElse(null));
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("groups", groupC.getId())
+                .build());
+        assertNotNull(client.users().search("groups.value eq \"" + groupC.getId() + "\"").getResources().stream()
+                .filter(u -> u.getId().equals(finalExpected.getId()))
+                .findFirst().orElse(null));
+        assertNull(client.users().search("(groups.value eq \"" + groupC.getId() + "\") and (groups.value eq \"" + groupB.getId() + "\")").getResources().stream()
+                .filter(u -> u.getId().equals(finalExpected.getId()))
+                .findFirst().orElse(null));
+        assertNotNull(client.users().search("(groups.value eq \"" + groupC.getId() + "\") or (groups.value eq \"" + groupB.getId() + "\")").getResources().stream()
+                .filter(u -> u.getId().equals(finalExpected.getId()))
+                .findFirst().orElse(null));
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .remove("groups[value eq \"" + groupA.getId() + "\"]")
+                .remove("groups[value eq \"" + groupC.getId() + "\"]")
+                .build());
+        User expected1 = client.users().create(createUser());
+        client.users().patch(expected1.getId(), PatchRequest.create()
+                .add("groups", groupC.getId())
+                .add("groups", groupA21.getId())
+                .build());
+        ListResponse<User> resources = client.users().search("groups.value ne \"" + groupC.getId() + "\"");
+        assertEquals(1, resources.getResources().size());
+        assertNotNull(resources.getResources().stream()
+                .filter(u -> u.getId().equals(expected1.getId()))
+                .findFirst().orElse(null));
+
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .add("groups", groupC.getId())
+                .build());
+        resources = client.users().search("groups.value eq \"" + groupC.getId() + "\"");
+        assertEquals(2, resources.getResources().size());
+        assertNotNull(resources.getResources().stream()
+                .filter(u -> u.getId().equals(finalExpected.getId()))
+                .findFirst().orElse(null));
+        assertNotNull(resources.getResources().stream()
+                .filter(u -> u.getId().equals(expected1.getId()))
+                .findFirst().orElse(null));
     }
 
     private static void assertGroup(List<GroupMembership> groups, GroupRepresentation group, String type) {
