@@ -128,6 +128,8 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
                     .peek(this::setMetadata);
         } catch (ScimFilterException e) {
             return badRequest(e.getMessage(), "invalidFilter");
+        } catch (ForbiddenException fe) {
+            return Response.status(Status.FORBIDDEN).build();
         }
 
         if (resourceTypeProvider instanceof SingletonResourceTypeProvider<R>) {
@@ -152,21 +154,25 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @DELETE
     @Produces(APPLICATION_SCIM_JSON)
     public Response delete(@PathParam("id") String id) {
-        R resource = getResource(id);
+        try {
+            R resource = getResource(id);
 
-        if (resource == null) {
-            return resourceNotFound(id);
+            if (resource == null) {
+                return resourceNotFound(id);
+            }
+
+            if (resourceTypeProvider.delete(id)) {
+                adminEvent.operation(OperationType.DELETE)
+                        .resourcePath(session.getContext().getUri())
+                        .representation(resource)
+                        .success();
+                return Response.noContent().build();
+            }
+
+            return badRequest("Could not delete resource not found with id " + id);
+        } catch (ForbiddenException fe) {
+            return Response.status(Status.FORBIDDEN).build();
         }
-
-        if (resourceTypeProvider.delete(id)) {
-            adminEvent.operation(OperationType.DELETE)
-                    .resourcePath(session.getContext().getUri())
-                    .representation(resource)
-                    .success();
-            return Response.noContent().build();
-        }
-
-        return badRequest("Could not delete resource not found with id " + id);
     }
 
     @Path("{id}")
