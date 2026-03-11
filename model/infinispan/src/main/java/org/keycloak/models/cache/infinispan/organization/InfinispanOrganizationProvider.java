@@ -331,10 +331,10 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     @Override
-    public Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member, Integer first, Integer max) {
+    public Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member, String search, Integer first, Integer max) {
         // Don't cache paginated queries - delegate directly to DB
         // This follows the same pattern as searchGroupsByName to avoid caching partial results
-        return getDelegate().getOrganizationGroupsByMember(organization, member, first, max);
+        return getDelegate().getOrganizationGroupsByMember(organization, member, search, first, max);
     }
 
     @Override
