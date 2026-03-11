@@ -82,6 +82,7 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.util.JsonSerialization;
@@ -1114,22 +1115,26 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     }
     
     private void authenticateWithUsernamePassword() {
+        WaitUtils.waitUntilPageIsCurrent(loginPage);
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
     }
 
     private void reauthenticateWithPassword() {
+        WaitUtils.waitUntilPageIsCurrent(loginPage);
         loginPage.assertCurrent();
         Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
         loginPage.login(getPassword("test-user@localhost"));
     }
 
     private void authenticateWithTotp() {
+        WaitUtils.waitUntilPageIsCurrent(loginTotpPage);
         loginTotpPage.assertCurrent();
         loginTotpPage.login(totp.generateTOTP("totpSecret"));
     }
 
     private void authenticateWithButton() {
+        WaitUtils.waitUntilPageIsCurrent(pushTheButtonPage);
         pushTheButtonPage.assertCurrent();
         pushTheButtonPage.submit();
     }
