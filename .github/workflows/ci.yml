@@ -199,6 +199,29 @@ jobs:
         with:
           job-name: Adapter IT
 
+  test-offline-token-stability:
+    name: Offline Token Stability Test
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run OfflineTokenTest 50 times
+        run: |
+          FAILURES=0
+          for i in {1..50}; do
+            echo "========================================================================="
+            echo "Run $i of 50"
+            echo "========================================================================="
+            ./mvnw test -Pauth-server-quarkus \
+              -Dtest=org.keycloak.testsuite.oauth.OfflineTokenTest#offlineTokenBrowserFlow \
+              -pl
+
   adapter-integration-tests-strict-cookies:
     name: Adapter IT Strict Cookies
     needs: build
