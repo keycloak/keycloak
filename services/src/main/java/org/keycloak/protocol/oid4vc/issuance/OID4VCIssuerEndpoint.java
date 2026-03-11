@@ -161,7 +161,7 @@ public class OID4VCIssuerEndpoint {
     /**
      * Session note key for storing a potential credential offer ID
      */
-    public static final String CREDENTIAL_OFFER_ID_NOTE = "CREDENTIAL_OFFER_ID";
+    public static final String CREDENTIAL_OFFER_ID_ATTR = "CREDENTIAL_OFFER_ID";
 
     private Cors cors;
 
@@ -176,7 +176,7 @@ public class OID4VCIssuerEndpoint {
     private AuthenticationManager.AuthResult cachedAuthResult;
 
     private static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
-    private static final int DEFAULT_CODE_LIFESPAN_S = 30;
+    public static final int DEFAULT_CODE_LIFESPAN_S = 30;
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String NONCE_PATH = "nonce";
@@ -537,11 +537,6 @@ public class OID4VCIssuerEndpoint {
                 .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
                 .setCredentialConfigurationIds(List.of(credentialConfigurationId));
 
-        if (preAuthorized) {
-            String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
-            credOffer.addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
-        }
-
         // Create the CredentialOfferState
         //
         String targetClientId = clientModel.getClientId();
@@ -558,6 +553,8 @@ public class OID4VCIssuerEndpoint {
 
         // Attach authorization_details that correspond to the credential_offer
         //
+        OID4VCAuthorizationDetail authDetail = buildOID4VCAuthorizationDetail(credScopeModel);
+        authDetail.setOfferId(offerState.getOfferId());
         offerState.setAuthorizationDetails(buildOID4VCAuthorizationDetail(credScopeModel));
 
         // Store the CredentialOfferState
@@ -858,8 +855,32 @@ public class OID4VCIssuerEndpoint {
         CredentialOfferState offerState = null;
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
 
-        AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
-        String credOfferId = clientSession.getNote(CREDENTIAL_OFFER_ID_NOTE);
+        AccessToken accessToken = authResult.token();
+
+        // Retrieve the authorization_detail from the AccessToken
+        //
+        // Currently we always have one element in authorization_details (also for request by scope)
+        // [TODO] Add support for multiple authorization_details in credential offer, request and token response
+        //
+        // REQUIRED when the authorization_details parameter, is used in either the Authorization Request or Token Request.
+        // OPTIONAL when scope parameter was used to request Credential of a certain Credential Configuration
+        // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-6.2
+        //
+        // When not provided, it is generated in {@link OID4VCAuthorizationDetailsProcessor}
+        List<OID4VCAuthorizationDetail> tokenAuthDetails = getAuthorizationDetailsResponse(accessToken);
+        if (tokenAuthDetails == null || tokenAuthDetails.isEmpty()) {
+            var errorMessage = "Invalid AccessToken for credential request. No authorization_details";
+            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
+            throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
+        }
+        if (tokenAuthDetails.size() > 1) {
+            var errorMessage = String.format("Multiple authorization_details not supported: %s", tokenAuthDetails);
+            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+        }
+        OID4VCAuthorizationDetail tokenAuthDetail = tokenAuthDetails.get(0);
+
+        String credOfferId = tokenAuthDetail.getOfferId();
         if (credOfferId != null) {
 
             offerState = offerStorage.getOfferStateById(session, credOfferId);
@@ -886,33 +907,16 @@ public class OID4VCIssuerEndpoint {
                 eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
             }
+
+            // Verify not expired
+            if (offerState.isExpired()) {
+                var errorMessage = "Offer is expired";
+                LOGGER.errorf(errorMessage);
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            }
         }
 
-        // Retrieve the authorization_detail from the AccessToken
-        //
-        // Currently we always have one element in authorization_details (also for request by scope)
-        // [TODO] Add support for multiple authorization_details in credential offer, request and token response
-        //
-        // REQUIRED when the authorization_details parameter, is used in either the Authorization Request or Token Request.
-        // OPTIONAL when scope parameter was used to request Credential of a certain Credential Configuration
-        // https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-6.2
-        //
-        // When not provided, it is generated in {@link OID4VCAuthorizationDetailsProcessor}
-
-        AccessToken accessToken = authResult.token();
-        List<OID4VCAuthorizationDetail> tokenAuthDetails = getAuthorizationDetailsResponse(accessToken);
-        if (tokenAuthDetails == null || tokenAuthDetails.isEmpty()) {
-            var errorMessage = "Invalid AccessToken for credential request. No authorization_details";
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue());
-            throw new BadRequestException(getErrorResponse(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION, errorMessage));
-        }
-        if (tokenAuthDetails.size() > 1) {
-            var errorMessage = String.format("Multiple authorization_details not supported: %s", tokenAuthDetails);
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-        }
-
-        OID4VCAuthorizationDetail tokenAuthDetail = tokenAuthDetails.get(0);
         String authorizedCredentialConfigurationId = tokenAuthDetail.getCredentialConfigurationId();
         List<String> authorizedCredentialIdentifiers = Optional.ofNullable(tokenAuthDetail.getCredentialIdentifiers()).orElse(List.of());
 

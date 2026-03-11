@@ -152,12 +152,12 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
         AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, clientModel, userSession);
-        clientSession.setNote(OID4VCIssuerEndpoint.CREDENTIAL_OFFER_ID_NOTE, offerState.getOfferId());
         clientSession.setNote(OIDCLoginProtocol.ISSUER, credOffer.getCredentialIssuer());
         clientSession.setNote(VC_ISSUANCE_FLOW, PRE_AUTH_GRANT_TYPE);
 
         ClientSessionContext sessionContext = fromClientSessionAndScopeParameter(clientSession, OAuth2Constants.SCOPE_OPENID, session);
         sessionContext.setAttribute(Constants.GRANT_TYPE, PRE_AUTH_GRANT_TYPE);
+        sessionContext.setAttribute(OID4VCIssuerEndpoint.CREDENTIAL_OFFER_ID_ATTR, offerState.getOfferId());
 
         // set the client as retrieved from the pre-authorized session
         session.getContext().setClient(clientModel);

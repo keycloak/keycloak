@@ -61,6 +61,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CODE_LIFESPAN_S;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -828,6 +829,27 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
     @Test
     public void testCompleteFlowWithClaimsValidation() throws Exception {
+        AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
+        assertSuccessfulCredentialRequest(tokenResponse);
+    }
+
+    @Test
+    public void testCompleteFlowWithExpiredCredentialOffer() throws Exception {
+        AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
+        // Make sure that offer is expired
+        setTimeOffset(DEFAULT_CODE_LIFESPAN_S + 10);
+        assertFailedCredentialRequest(tokenResponse);
+    }
+
+    @Test
+    public void testCompleteFlowWithConsumedCredentialOffer() throws Exception {
+        AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
+        assertSuccessfulCredentialRequest(tokenResponse);
+        // Second credential request should fail as offer is already expired
+        assertFailedCredentialRequest(tokenResponse);
+    }
+
+    private AccessTokenResponse preAuthzCodeSuccessful() throws Exception {
         String token = getBearerToken(oauth, client, getCredentialClientScope().getName());
         String credConfigId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         Oid4vcTestContext ctx = prepareOid4vcTestContext(token);
@@ -882,7 +904,14 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         // Step 2: Request the actual credential using the identifier and config id
         // Clear events before credential request
         events.clear();
+        return tokenResponse;
+    }
 
+    private void assertSuccessfulCredentialRequest(AccessTokenResponse tokenResponse) {
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
+        OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
+        String credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
+        String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
                 .bearerToken(tokenResponse.getAccessToken())
@@ -915,6 +944,26 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         // Verify the credential structure based on format
         verifyCredentialStructure(credentialObj);
+    }
+
+    private void assertFailedCredentialRequest(AccessTokenResponse tokenResponse) {
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
+        OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
+        String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
+
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .bearerToken(tokenResponse.getAccessToken())
+                .send();
+        assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
+
+        // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
+        events.expect(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
+                .client(clientId)
+                .user(AssertEvents.isUUID())
+                .session(AssertEvents.isSessionId())
+                .error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue())
+                .assertEvent();
     }
 
     @Test

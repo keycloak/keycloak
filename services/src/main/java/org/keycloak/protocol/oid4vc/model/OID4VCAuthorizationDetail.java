@@ -35,6 +35,7 @@ import static org.keycloak.OID4VCConstants.CREDENTIAL_IDENTIFIERS;
 public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresentation implements Cloneable {
 
     public static final String CLAIMS = "claims";
+    public static final String OFFER_ID = "offer_id";
 
     @JsonProperty(CREDENTIAL_CONFIGURATION_ID)
     private String credentialConfigurationId;
@@ -53,6 +54,9 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
     @JsonProperty(CLAIMS)
     private List<ClaimsDescription> claims;
 
+    @JsonProperty(OFFER_ID)
+    private String offerId;
+
     public String getCredentialConfigurationId() {
         return credentialConfigurationId;
     }
@@ -67,6 +71,14 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
 
     public void setCredentialIdentifiers(List<String> credentialIdentifiers) {
         this.credentialIdentifiers = credentialIdentifiers;
+    }
+
+    public String getOfferId() {
+        return offerId;
+    }
+
+    public void setOfferId(String offerId) {
+        this.offerId = offerId;
     }
 
     public List<ClaimsDescription> getClaims() {
@@ -95,11 +107,11 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
         if (!super.equals(o)) return false;
         OID4VCAuthorizationDetail that = (OID4VCAuthorizationDetail) o;
         return Objects.equals(credentialConfigurationId, that.credentialConfigurationId)
-                && Objects.equals(claims, that.claims);
+                && Objects.equals(credentialIdentifiers, that.credentialIdentifiers);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), credentialConfigurationId, claims);
+        return Objects.hash(super.hashCode(), credentialConfigurationId, credentialIdentifiers);
     }
 }
