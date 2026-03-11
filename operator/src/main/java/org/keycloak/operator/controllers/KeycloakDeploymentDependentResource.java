@@ -76,6 +76,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 import io.quarkus.logging.Log;
 
 import static org.keycloak.operator.Utils.addResources;
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.LEGACY_MANAGEMENT_ENABLED;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
@@ -559,7 +560,14 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         // set env vars
         List<EnvVar> envVars = serverConfigsList.stream()
                 .flatMap(v -> {
-                    var envBuilder = new EnvVarBuilder().withName(getKeycloakOptionEnvVarName(v.getName()));
+                    // Quarkus properties (starting with "quarkus.") must be set as env vars
+                    // without the KC_ prefix, so that SmallRye Config can pick them up directly.
+                    boolean isQuarkusProperty = v.getName().startsWith("quarkus.");
+                    String envVarName = isQuarkusProperty
+                            ? replaceNonAlphanumericByUnderscores(v.getName()).toUpperCase()
+                            : getKeycloakOptionEnvVarName(v.getName());
+
+                    var envBuilder = new EnvVarBuilder().withName(envVarName);
                     var secret = v.getSecret();
                     if (secret != null) {
                         envBuilder.withValueFrom(
@@ -568,7 +576,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
                         envBuilder.withValue(v.getValue());
                     }
                     EnvVar mainVar = envBuilder.build();
-                    if (!defaultKeys.contains(v.getName())) {
+                    // Quarkus properties don't need KCKEY_ companions as they bypass
+                    // KcEnvConfigSource and are handled directly by SmallRye Config.
+                    if (!defaultKeys.contains(v.getName()) && !isQuarkusProperty) {
                         EnvVar keyVar = new EnvVarBuilder()
                                 .withName("KCKEY_" + mainVar.getName().substring(KeycloakDistConfigurator.KC_PREFIX.length()))
                                 .withValue(v.getName()).build();

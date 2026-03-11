@@ -618,6 +618,45 @@ public class PodTemplateTest {
     }
 
     @Test
+    public void testQuarkusPropertyInAdditionalOptions() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        var additionalOptions = List.of(
+                new ValueOrSecret("quarkus.log.console.json.additional-field.\"service.name\".value", "my-service"),
+                new ValueOrSecret("quarkus.log.console.json.additional-field.\"service.environment\".value", "production")
+        );
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.addAllToAdditionalOptions(additionalOptions))
+                .getSpec().getTemplate();
+
+        // Assert - Quarkus properties should NOT have KC_ prefix and should NOT have KCKEY_ companions
+        var envVars = podTemplate.getSpec().getContainers().get(0).getEnv().stream()
+                .filter(e -> e.getValue() != null)
+                .collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+
+        // Env var names should follow SmallRye convention (no KC_ prefix)
+        assertThat(envVars).containsEntry(
+                "QUARKUS_LOG_CONSOLE_JSON_ADDITIONAL_FIELD__SERVICE_NAME__VALUE", "my-service");
+        assertThat(envVars).containsEntry(
+                "QUARKUS_LOG_CONSOLE_JSON_ADDITIONAL_FIELD__SERVICE_ENVIRONMENT__VALUE", "production");
+
+        // Should NOT have KC_ prefixed versions
+        assertThat(envVars).doesNotContainKey(
+                "KC_QUARKUS_LOG_CONSOLE_JSON_ADDITIONAL_FIELD__SERVICE_NAME__VALUE");
+        assertThat(envVars).doesNotContainKey(
+                "KC_QUARKUS_LOG_CONSOLE_JSON_ADDITIONAL_FIELD__SERVICE_ENVIRONMENT__VALUE");
+
+        // Should NOT have KCKEY_ companions
+        assertThat(envVars).doesNotContainKey(
+                "KCKEY_QUARKUS_LOG_CONSOLE_JSON_ADDITIONAL_FIELD__SERVICE_NAME__VALUE");
+        assertThat(envVars).doesNotContainKey(
+                "KCKEY_QUARKUS_LOG_CONSOLE_JSON_ADDITIONAL_FIELD__SERVICE_ENVIRONMENT__VALUE");
+    }
+
+    @Test
     public void testImageForceOptimized() {
         // Arrange
         PodTemplateSpec additionalPodTemplate = null;
