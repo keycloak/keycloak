@@ -31,15 +31,18 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.JpaRealmProviderFactory;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
@@ -79,6 +82,9 @@ public class IdentityProviderStoreTokenTest {
 
     @InjectRealm(ref = "external-realm", config = ExternalRealmConfig.class)
     ManagedRealm externalRealm;
+
+    @InjectClient(attachTo = "test-app")
+    ManagedClient client;
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
@@ -161,6 +167,43 @@ public class IdentityProviderStoreTokenTest {
         //use the stored token to refresh for a refresh token request
         UserInfoResponse userInfoResponse = oauthExternal.userInfoRequest(externalTokens.getAccessToken()).send();
         Assertions.assertEquals(200, userInfoResponse.getStatusCode());
+    }
+
+    @Test
+    public void testOIDCIdentityProviderStoreTokenGrantViaClientSettings() {
+        realm.updateIdentityProvider(IDP_ALIAS, idp -> {
+            idp.setAddReadTokenRoleOnCreate(false);
+        });
+
+        oauth.openLoginForm();
+        loginPage.clickSocial(IDP_ALIAS);
+        loginPage.fillLogin("testuser", "password");
+        loginPage.submit();
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(tokenResponse.isSuccess());
+
+        //external access disabled
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, tokenResponse.getAccessToken());
+        Assertions.assertEquals(403, externalTokens.getStatusCode());
+
+        //external access enabled but idp is not selected
+        client.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.TRUE.toString()));
+        externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, tokenResponse.getAccessToken());
+        Assertions.assertEquals(403, externalTokens.getStatusCode());
+
+        //external access disabled but idp selected
+        client.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.FALSE.toString()).attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, IDP_ALIAS));
+        externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, tokenResponse.getAccessToken());
+        Assertions.assertEquals(403, externalTokens.getStatusCode());
+
+        //external access enabled and idp selected
+        client.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.TRUE.toString()).attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, IDP_ALIAS));
+        externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, tokenResponse.getAccessToken());
+        Assertions.assertEquals(200, externalTokens.getStatusCode());
+
+        //restore attributes as cleanup for client is wip
+        client.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.FALSE.toString()).attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, null));
     }
 
     @Test
@@ -322,40 +365,6 @@ public class IdentityProviderStoreTokenTest {
         Assertions.assertEquals(400, externalTokens.getStatusCode());
     }
 
-    public static class ExternalRealmConfig implements RealmConfig {
-
-        @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-
-            realm.addUser("testuser")
-                    .name("Test", "User")
-                    .email("test@localhost")
-                    .emailVerified(Boolean.TRUE)
-                    .password("password");
-            return realm;
-        }
-    }
-
-    public static class IdpRealmConfig implements RealmConfig {
-
-        @Override
-        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.identityProvider(IdentityProviderBuilder.create()
-                    .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
-                    .alias(IDP_ALIAS)
-                    .setAttribute("clientId", "test-app")
-                    .setAttribute("clientSecret", "test-secret")
-                    .setAttribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
-                    .setAttribute(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/token")
-                    .setAttribute("authorizationUrl", "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/auth")
-                    .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/cert")
-                    .storeToken(true)
-                    .addReadTokenRoleOnCreate(true)
-                    .build());
-            return realm;
-        }
-    }
-
     @Test
     public void testRefreshTokenFetchExternalIdpFromDifferentLogin() {
         oauth.openLoginForm();
@@ -405,6 +414,40 @@ public class IdentityProviderStoreTokenTest {
         externalTokensPasswordGrant = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokensPasswordGrant.getAccessToken());
         Assertions.assertEquals(400, externalTokensPasswordGrant.getStatusCode());
         timeOffSet.set(0);
+    }
+
+    public static class ExternalRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+
+            realm.addUser("testuser")
+                    .name("Test", "User")
+                    .email("test@localhost")
+                    .emailVerified(Boolean.TRUE)
+                    .password("password");
+            return realm;
+        }
+    }
+
+    public static class IdpRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.identityProvider(IdentityProviderBuilder.create()
+                    .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
+                    .alias(IDP_ALIAS)
+                    .setAttribute("clientId", "test-app")
+                    .setAttribute("clientSecret", "test-secret")
+                    .setAttribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
+                    .setAttribute(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/token")
+                    .setAttribute("authorizationUrl", "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/auth")
+                    .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/cert")
+                    .storeToken(true)
+                    .addReadTokenRoleOnCreate(true)
+                    .build());
+            return realm;
+        }
     }
 
     public static class TestClientConfig implements ClientConfig {

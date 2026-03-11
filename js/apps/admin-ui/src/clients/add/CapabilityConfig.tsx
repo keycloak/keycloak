@@ -44,6 +44,10 @@ export const CapabilityConfig = ({
     ),
     false,
   );
+  const externalTokenEnabled = watch(
+    convertAttributeNameToForm<FormFields>("attributes.external.token.enabled"),
+    false,
+  );
   const isFeatureEnabled = useIsFeatureEnabled();
   const { hasSomeAccess } = useAccess();
   const showIdentityProviders = hasSomeAccess("view-identity-providers");
@@ -467,6 +471,28 @@ export const CapabilityConfig = ({
               stringify
             />
           )}
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<FormFields>(
+              "attributes.external.token.enabled",
+            )}
+            label={t("externalTokenEnabled")}
+            labelIcon={t("externalTokenEnabledHelp")}
+            stringify
+          />
+          {showIdentityProviders &&
+            externalTokenEnabled?.toString() === "true" && (
+              <IdentityProviderSelect
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.external.token.idp",
+                )}
+                label={t("externalTokenIdp")}
+                helpText={t("externalTokenIdpHelp")}
+                convertToName={convertAttributeNameToForm}
+                identityProviderType={IdentityProviderType.ANY}
+                realmOnly
+                stringify
+              />
+            )}
         </>
       )}
       {protocol === "saml" && (
