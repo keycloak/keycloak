@@ -483,4 +483,56 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
         assertThat(updatedGroups, hasSize(1));
         assertEquals("Sales", updatedGroups.get(0).getName());
     }
+
+    @Test
+    public void testGetMemberGroupMembershipsWithSearch() {
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        MemberRepresentation member = addMember(orgResource);
+
+        // Create three groups
+        GroupRepresentation engineeringRep = new GroupRepresentation();
+        engineeringRep.setName("Engineering");
+        String engineeringId;
+        try (Response response = orgResource.groups().addTopLevelGroup(engineeringRep)) {
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation salesRep = new GroupRepresentation();
+        salesRep.setName("Sales");
+        String salesId;
+        try (Response response = orgResource.groups().addTopLevelGroup(salesRep)) {
+            salesId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation supportRep = new GroupRepresentation();
+        supportRep.setName("Support");
+        String supportId;
+        try (Response response = orgResource.groups().addTopLevelGroup(supportRep)) {
+            supportId = ApiUtil.getCreatedId(response);
+        }
+
+        // Add member to all three groups
+        orgResource.groups().group(engineeringId).addMember(member.getId());
+        orgResource.groups().group(salesId).addMember(member.getId());
+        orgResource.groups().group(supportId).addMember(member.getId());
+
+        // Search for "sal" - should return only Sales
+        List<GroupRepresentation> results = orgResource.members().member(member.getId()).groups(null, null, "sal", true);
+        assertThat(results, hasSize(1));
+        assertEquals("Sales", results.get(0).getName());
+
+        // Search for "s" - should return Sales and Support
+        results = orgResource.members().member(member.getId()).groups(null, null, "s", true);
+        assertThat(results, hasSize(2));
+
+        // Search for non-matching term - should return empty
+        results = orgResource.members().member(member.getId()).groups(null, null, "nonexistent", true);
+        assertThat(results, hasSize(0));
+
+        // No search - should return all three
+        results = orgResource.members().member(member.getId()).groups(null, null, null, true);
+        assertThat(results, hasSize(3));
+    }
 }
