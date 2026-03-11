@@ -231,11 +231,17 @@ public class DefaultClientService implements ClientService {
                         throw new ServiceException("Cannot replace client resource with null", Response.Status.BAD_REQUEST);
                     }
 
-                    // Ensure protocol field is set in patch for polymorphic deserialization
+                    // Ensure protocol field is set in patch for polymorphic deserialization.
+                    // This is required as we need to know the specific Client representation type to properly deserialize
+                    // and validate the specific fields for that type.
                     if (patch.isObject() && !patch.has("protocol")) {
                         ((com.fasterxml.jackson.databind.node.ObjectNode) patch).put("protocol", originalClient.getProtocol());
                     }
                     final BaseClientRepresentation partialRep = MAPPER.treeToValue(patch, BaseClientRepresentation.class);
+                    // Validate the partial representation, i.e. only the fields included in the patch.
+                    // We don't want to validate the whole final representation (after applying the patch) as it may happen
+                    // it contains invalid fields (e.g. updated via a different API version where it was valid), and we
+                    // don't want to fail validation for unrelevant fields that are not even included in the patch.
                     validator.validate(partialRep);
 
                     final ObjectReader objectReader = MAPPER.readerForUpdating(originalClient);

@@ -3,6 +3,8 @@ package org.keycloak.representations.admin.v2.validation;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
+import org.keycloak.utils.StringUtil;
+
 /**
  * Validator for {@link ServerManaged} constraint.
  * Validates that server-managed fields are not populated by the user.
@@ -13,6 +15,6 @@ public class ServerManagedValidator implements ConstraintValidator<ServerManaged
 
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
-        return value == null || value.trim().isEmpty();
+        return StringUtil.isBlank(value);
     }
 }
