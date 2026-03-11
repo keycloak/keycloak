@@ -9,6 +9,7 @@ public final class Scim {
     public static final String SERVICE_PROVIDER_CONFIG_CORE_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig";
     public static final String SCHEMA_CORE_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Schema";
     public static final String RESOURCE_TYPE_CORE_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:ResourceType";
+    public static final String PATCH_OP_CORE_SCHEMA = "urn:ietf:params:scim:api:messages:2.0:PatchOp";
 
     // Core Resource Types
     public static final String USER_RESOURCE_TYPE = "User";

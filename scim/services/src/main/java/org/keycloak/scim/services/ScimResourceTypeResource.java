@@ -37,6 +37,7 @@ import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
+import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.common.Meta;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
@@ -131,7 +132,6 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
         if (resourceTypeProvider instanceof SingletonResourceTypeProvider<R>) {
             return Response.ok().entity(stream
-                            .peek(this::setMetadata)
                             .findAny().orElseThrow(NotFoundException::new))
                     .build();
         }
@@ -206,6 +206,10 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
         if (existing == null) {
             return resourceNotFound(id);
+        }
+
+        if (!request.getSchemas().contains(Scim.PATCH_OP_CORE_SCHEMA)) {
+            return badRequest("Unsupported patch schema: " + Scim.PATCH_OP_CORE_SCHEMA, "invalidPatch");
         }
 
         return onPersist(existing, Status.OK, (rScimResourceTypeProvider, r) -> {
