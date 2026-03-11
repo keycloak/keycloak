@@ -26,6 +26,11 @@ public class RefreshRequest extends AbstractHttpPostRequest<RefreshRequest, Acce
         return this;
     }
 
+    public RefreshRequest resource(String resource) {
+        parameter(OAuth2Constants.RESOURCE, resource);
+        return this;
+    }
+
     protected void initRequest() {
         parameter(OAuth2Constants.GRANT_TYPE, OAuth2Constants.REFRESH_TOKEN);
         parameter(OAuth2Constants.REFRESH_TOKEN, refreshToken);
