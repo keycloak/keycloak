@@ -43,6 +43,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String ORACLEDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT";
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
     private static final String POSTGRES_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
+    private static final String TIDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
+
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
     /**
@@ -100,6 +102,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(DatabaseOptions.DB_POSTGRES_CONNECT_TIMEOUT)
                         .to(POSTGRES_CONNECT_TIMEOUT)
                         .isEnabled(() -> isPostgresConnectTimeoutEnabled())
+                        .build(),
+                fromOption(DatabaseOptions.DB_TIDB_CONNECT_TIMEOUT)
+                        .to(TIDB_CONNECT_TIMEOUT)
+                        .isEnabled(() -> isTidbConnectTimeoutEnabled())
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")
@@ -246,6 +252,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
 
     public static boolean isPostgresConnectTimeoutEnabled() {
         return isConnectTimeoutEnabled(Database.Vendor.POSTGRES, "connectTimeout");
+    }
+
+    public static boolean isTidbConnectTimeoutEnabled() {
+        return isConnectTimeoutEnabled(Database.Vendor.TIDB, "connectTimeout");
     }
 
     private static boolean isConnectTimeoutEnabled(Database.Vendor expectedVendor, String timeoutProperty) {

@@ -151,6 +151,11 @@ public class DatabaseOptions {
             .defaultValue("10") // 10 seconds, unit is SECONDS
             .hidden()
             .build();
+    public static final Option<String> DB_TIDB_CONNECT_TIMEOUT = new OptionBuilder<>("db-tidb-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10000") // 10 seconds in milliseconds
+            .hidden()
+            .build();
     public static final class Datasources {
         /**
          * Options that have their sibling for a named datasource

@@ -661,51 +661,6 @@ Therefore, use `quarkus.datasource.user-store.db-kind=h2`, instead of `quarkus.d
 
 <@opts.printRelevantOptions includedOptions="db db-* transaction-xa-enabled transaction-default-timeout transaction-setup-timeout" excludedOptions="db-*-<datasource>">
 
-=== Default database connection timeout(connect timeout)
-
-When {project_name} connects to the database, network problems can occur, especially during failovers.
-To avoid {project_name} waiting indefinitely while establishing a new database connection, {project_name} sets a default connection timeout for selected database vendors.
-
-By default, {project_name} sets the following JDBC driver properties:
-
-* *MySQL*: `connectTimeout=10000` (milliseconds)
-* *MariaDB*: `connectTimeout=10000` (milliseconds)
-* *Oracle*: `oracle.net.CONNECT_TIMEOUT=10000` (milliseconds)
-
-The default values are applied only when:
-
-* The database vendor is selected via `--db`.
-* {project_name} uses the default JDBC driver for that vendor (for example, not a custom JDBC driver).
-* The property is not already set explicitly by the user.
-
-If you need to override this setting, set the property explicitly in the JDBC URL (using `db-url`) or via `db-url-properties`.
-
-For example:
-
-MySQL:
-
-<@kc.start parameters="--db mysql --db-url-properties='?connectTimeout=30000'"/>
-
-MariaDB:
-
-<@kc.start parameters="--db mariadb --db-url-properties='?connectTimeout=30000'"/>
-
-Oracle:
-
-<@kc.start parameters="--db oracle --db-url-properties='?oracle.net.CONNECT_TIMEOUT=30000'"/>
-
-[NOTE]
-====
-The JDBC driver properties and their formats are vendor-specific.
-When using `db-url-properties`, ensure you prepend the correct delimiter (for example `?` or `;`) as expected by your JDBC driver and URL format.
-====
-
-//// Optional (only add if you decide to implement it):
-//// Microsoft SQL Server:
-//// For Microsoft SQL Server, the JDBC driver uses the `loginTimeout` property (seconds) to control how long the driver waits while establishing a connection.
-//// {project_name} does not set this property by default; you can configure it explicitly using `db-url` or `db-url-properties`.
-
-////
 === Additional datasources options
 <@opts.includeOptions includedOptions="*-<datasource>"/>
 
