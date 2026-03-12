@@ -93,6 +93,11 @@ Most deployments do not require any action. If you relied on the Operator to man
 You can now use a new client certificate lookup provider specifically for Traefik proxies.
 For details, navigate to link:{server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup[Enabling Client Certificate Lookup] section of the documentation.
 
+== Envoy Client certificate lookup
+
+You can now use a new client certificate lookup provider specifically for Envoy proxies.
+For details, navigate to link:{server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup[Enabling Client Certificate Lookup] section of the documentation.
+
 = Java 25 support
 
 {project_name} now supports running with JRE 25.
