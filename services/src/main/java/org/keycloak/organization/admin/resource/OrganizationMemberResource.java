@@ -249,7 +249,7 @@ public class OrganizationMemberResource {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
-        UserModel member = getUser(memberId);
+        UserModel member = organization == null ? getUser(memberId) : getMember(memberId);
 
         return provider.getByMember(member)
                 .map(model -> ModelToRepresentation.toRepresentation(model, briefRepresentation));
