@@ -499,6 +499,50 @@ The `transaction-default-timeout` option takes precedence over the unsupported `
 If you are using the Quarkus property, migrate to the supported `transaction-default-timeout` option and remove the Quarkus property from your configuration.
 ====
 
+== Secure the database connection
+
+Encrypting the traffic between {project_name} and the database is recommended for increased security, as it prevents third parties from examining the network traffic.
+
+It is recommended to go a step further and enable certificate verification to prevent more complex attacks such as DNS poisoning and address hijacking, whereby {project_name} could be directed to a different server than intended.
+To perform the certificate validation, the database certificate, or the Certificate Authority (CA) certificate, must be added to the {project_name} truststore.
+
+This section provides guidance on how to enable these settings in {project_name} and configure the JDBC driver properly.
+Configuring the database server with the private keys and certificates is outside the scope of this section.
+Consult your vendor documentation on how to do it.
+
+{project_name} provides unified CLI options to configure database TLS settings across different database vendors.
+These options simplify the configuration by abstracting vendor-specific JDBC properties and providing a consistent interface.
+
+The following options are available:
+
+`db-tls-mode`::
+Sets the TLS mode for the database connection.
+Valid values are `disabled` and `verify-server`.
+When set to `verify-server`, it enables encryption and server identity verification.
+Default: `disabled`
+
+`db-tls-trust-store-file`::
+The path to the truststore file containing the database server certificates or Certificate Authority (CA) certificates used to verify the database server's identity.
+
+`db-tls-trust-store-password`::
+The password to access the truststore file (if required and supported by the JDBC driver).
+
+`db-tls-trust-store-type`::
+The type of the truststore file.
+Common values include `JKS` (Java KeyStore) and `PKCS12`.
+If not specified, the driver's default truststore type is used.
+
+NOTE: These unified CLI options are the recommended approach for configuring database TLS.
+{project_name} automatically translates these options to the appropriate vendor-specific JDBC properties.
+
+The following example demonstrates how to configure database TLS using these options for a PostgreSQL database.
+
+<@kc.start parameters="--db=postgres --db-tls-mode=verify-server --db-tls-trust-store-file=/path/to/certificate.pem"/>
+
+Alternatively, you can use `--truststore-paths` instead of the `db-tls-trust-store-*` options to add your certificate to the Java truststore.
+
+<@kc.start parameters="--db=postgres --db-tls-mode=verify-server --truststore-paths=/path/to/certificate.pem"/>
+
 == Setting JPA provider configuration option for migrationStrategy
 
 To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA provider as follows:
