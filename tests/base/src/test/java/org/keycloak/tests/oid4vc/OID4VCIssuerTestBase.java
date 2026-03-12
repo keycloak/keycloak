@@ -406,6 +406,7 @@ public abstract class OID4VCIssuerTestBase {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name(TEST_REALM_NAME);
+            realm.verifiableCredentialsEnabled(true);
             return realm;
         }
     }
