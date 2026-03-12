@@ -46,10 +46,12 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -114,7 +116,7 @@ public class UserProfileTest extends AbstractUserTest {
         user.setEmail("test_email@test.com");
         user.setEnabled(true);
         user.setEmailVerified(true);
-        createUser(user);
+        String id = createUser(user);
 
         UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
         upConfig.getAttribute(UserModel.FIRST_NAME).setPermissions(new UPAttributePermissions());
@@ -123,6 +125,43 @@ public class UserProfileTest extends AbstractUserTest {
         assertThat(users, hasSize(1));
         user = users.get(0);
         assertThat(user.getFirstName(), is(nullValue()));
+
+        user = managedRealm.admin().users().get(id).toRepresentation();
+        user.setAttributes(Map.of("test", List.of("value")));
+        managedRealm.admin().users().get(id).update(user);
+        assertNull(upConfig.getUnmanagedAttributePolicy());
+        users = managedRealm.admin().users().search(user.getUsername(), null, null, true);
+        assertThat(users, hasSize(1));
+        user = users.get(0);
+        assertThat(user.getAttributes(), is(nullValue()));
+
+        users = managedRealm.admin().users().search(user.getUsername(), null, null, false);
+        assertThat(users, hasSize(1));
+        user = users.get(0);
+        assertThat(user.getAttributes(), is(not(nullValue())));
+        // test is a managed attribute, return it
+        assertTrue(user.getAttributes().containsKey("test"));
+
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+        managedRealm.admin().users().userProfile().update(upConfig);
+        user = managedRealm.admin().users().get(id).toRepresentation();
+        user.getAttributes().put("unmanaged", List.of("value"));
+        managedRealm.admin().users().get(id).update(user);
+        users = managedRealm.admin().users().search(user.getUsername(), null, null, false);
+        assertThat(users, hasSize(1));
+        user = users.get(0);
+        assertThat(user.getFirstName(), is(nullValue()));
+        assertThat(user.getAttributes(), is(not(nullValue())));
+        assertTrue(user.getAttributes().containsKey("test"));
+        assertTrue(user.getAttributes().containsKey("unmanaged"));
+
+        upConfig.setUnmanagedAttributePolicy(null);
+        managedRealm.admin().users().userProfile().update(upConfig);
+        users = managedRealm.admin().users().search(user.getUsername(), null, null, true);
+        assertThat(users, hasSize(1));
+        user = users.get(0);
+        assertThat(user.getFirstName(), is(nullValue()));
+        assertThat(user.getAttributes(), is(nullValue()));
     }
 
     @Test
