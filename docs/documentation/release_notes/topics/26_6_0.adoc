@@ -88,9 +88,9 @@ This behavior is enabled by default and can be controlled with the server option
 
 Most deployments do not require any action. If you relied on the Operator to manage these truststore entries previously, the server now performs the same function directly.
 
-== Traefik Client certificate lookup
+= Client certificate lookup providers for Traefik and Envoy
 
-You can now use a new client certificate lookup provider specifically for Traefik proxies.
+You can now use a new client certificate lookup providers for Traefik and Envoy proxies.
 For details, navigate to link:{server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup[Enabling Client Certificate Lookup] section of the documentation.
 
 = Java 25 support
@@ -131,4 +131,3 @@ The existing `manage-membership` scope keeps its current behavior for target gro
 = JWT Authorization Grant promoted to supported
 
 In this release, the JWT Authorization Grant (https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523]) feature is promoted from preview to default. This grant allows to use an external signed JWT assertions to request OAuth 2.0 access tokens. See the link:{securing_apps_base_link}/jwt-authorization-grant[JWT Authorization Grant guide] for additional details.
-
