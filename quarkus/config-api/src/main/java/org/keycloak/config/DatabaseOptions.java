@@ -126,7 +126,36 @@ public class DatabaseOptions {
             .defaultValue("false")
             .hidden()
             .build();
-
+    public static final Option<String> DB_MYSQL_CONNECT_TIMEOUT = new OptionBuilder<>("db-mysql-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10000") // 10 seconds in milliseconds
+            .hidden()
+            .build();
+    public static final Option<String> DB_MARIADB_CONNECT_TIMEOUT = new OptionBuilder<>("db-mariadb-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10000") // 10 seconds in milliseconds
+            .hidden()
+            .build();
+    public static final Option<String> DB_ORACLE_CONNECT_TIMEOUT = new OptionBuilder<>("db-oracle-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10000") // 10 seconds in milliseconds
+            .hidden()
+            .build();
+    public static final Option<String> DB_MSSQL_CONNECT_TIMEOUT = new OptionBuilder<>("db-mssql-login-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10") // 10 seconds, unit is SECONDS
+            .hidden()
+            .build();
+    public static final Option<String> DB_POSTGRES_CONNECT_TIMEOUT = new OptionBuilder<>("db-postgres-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10") // 10 seconds, unit is SECONDS
+            .hidden()
+            .build();
+    public static final Option<String> DB_TIDB_CONNECT_TIMEOUT = new OptionBuilder<>("db-tidb-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10000") // 10 seconds in milliseconds
+            .hidden()
+            .build();
     public static final class Datasources {
         /**
          * Options that have their sibling for a named datasource

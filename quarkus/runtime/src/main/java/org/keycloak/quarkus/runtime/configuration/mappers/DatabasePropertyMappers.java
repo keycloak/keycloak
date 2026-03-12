@@ -38,6 +38,13 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
+    public static final String MYSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
+    public static final String MARIADB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
+    public static final String ORACLEDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT";
+    public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
+    private static final String POSTGRES_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
+    private static final String TIDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
+
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
     /**
@@ -75,6 +82,30 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(DatabaseOptions.DB_MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
                         .isEnabled(() -> isMssqlSendStringParametersAsUnicode())
+                        .build(),
+                fromOption(DatabaseOptions.DB_MYSQL_CONNECT_TIMEOUT)
+                        .to(MYSQL_CONNECT_TIMEOUT)
+                        .isEnabled(() -> isMysqlConnectTimeoutEnabled())
+                        .build(),
+                fromOption(DatabaseOptions.DB_MARIADB_CONNECT_TIMEOUT)
+                        .to(MARIADB_CONNECT_TIMEOUT)
+                        .isEnabled(() -> isMariadbConnectTimeoutEnabled())
+                        .build(),
+                fromOption(DatabaseOptions.DB_ORACLE_CONNECT_TIMEOUT)
+                        .to(ORACLEDB_CONNECT_TIMEOUT)
+                        .isEnabled(() -> isOracleConnectTimeoutEnabled())
+                        .build(),
+                fromOption(DatabaseOptions.DB_MSSQL_CONNECT_TIMEOUT)
+                        .to(MSSQL_CONNECT_TIMEOUT)
+                        .isEnabled(() -> isMssqlLoginTimeoutEnabled())
+                        .build(),
+                fromOption(DatabaseOptions.DB_POSTGRES_CONNECT_TIMEOUT)
+                        .to(POSTGRES_CONNECT_TIMEOUT)
+                        .isEnabled(() -> isPostgresConnectTimeoutEnabled())
+                        .build(),
+                fromOption(DatabaseOptions.DB_TIDB_CONNECT_TIMEOUT)
+                        .to(TIDB_CONNECT_TIMEOUT)
+                        .isEnabled(() -> isTidbConnectTimeoutEnabled())
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")
@@ -196,14 +227,58 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
 
         if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
                 !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
-            // Custom JDBC-Driver, for example, AWS JDBC Wrapper.
             return false;
         }
 
-        // sendStringParametersAsUnicode already set by user in db-url or db-url-properties, ignore
         return !dbUrl.contains("sendStringParametersAsUnicode") &&
                 !dbUrlProperties.contains("sendStringParametersAsUnicode");
     }
+
+    public static boolean isMysqlConnectTimeoutEnabled() {
+        return isConnectTimeoutEnabled(Database.Vendor.MYSQL, "connectTimeout");
+    }
+
+    public static boolean isMariadbConnectTimeoutEnabled() {
+        return isConnectTimeoutEnabled(Database.Vendor.MARIADB, "connectTimeout");
+    }
+
+    public static boolean isOracleConnectTimeoutEnabled() {
+        return isConnectTimeoutEnabled(Database.Vendor.ORACLE, "oracle.net.CONNECT_TIMEOUT");
+    }
+
+    public static boolean isMssqlLoginTimeoutEnabled() {
+        return isConnectTimeoutEnabled(Database.Vendor.MSSQL, "loginTimeout");
+    }
+
+    public static boolean isPostgresConnectTimeoutEnabled() {
+        return isConnectTimeoutEnabled(Database.Vendor.POSTGRES, "connectTimeout");
+    }
+
+    public static boolean isTidbConnectTimeoutEnabled() {
+        return isConnectTimeoutEnabled(Database.Vendor.TIDB, "connectTimeout");
+    }
+
+    private static boolean isConnectTimeoutEnabled(Database.Vendor expectedVendor, String timeoutProperty) {
+        String db = Configuration.getConfigValue(DB).getValue();
+        Database.Vendor vendor = Database.getVendor(db).orElse(null);
+        if (vendor != expectedVendor) {
+            return false;
+        }
+
+        String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
+        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
+                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
+            // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
+            return false;
+        }
+
+        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValueOrDefault("");
+        String dbUrlProperties = Configuration.getKcConfigValue(DatabaseOptions.DB_URL_PROPERTIES.getKey()).getValueOrDefault("");
+
+        // Property already set explicitly by the user — do not override
+        return !dbUrl.contains(timeoutProperty) && !dbUrlProperties.contains(timeoutProperty);
+    }
+
     /**
      * Starting with H2 version 2.x, marking "VALUE" as a non-keyword is necessary as some columns are named "VALUE" in the Keycloak schema.
      * <p />
