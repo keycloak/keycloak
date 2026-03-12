@@ -18,9 +18,10 @@
 
 package org.keycloak.testsuite.client.policies;
 
+import java.util.List;
 import java.util.Set;
 
-import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionSpi;
@@ -40,10 +41,10 @@ import static org.junit.Assert.fail;
 
 /**
  * This test class is for enabling and disabling client policies by feature mechanism.
- * 
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientPoliciesFeatureTest extends AbstractTestRealmKeycloakTest  {
+public class ClientPoliciesFeatureTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -64,8 +65,10 @@ public class ClientPoliciesFeatureTest extends AbstractTestRealmKeycloakTest  {
     // Check if the feature really works
     private void checkIfFeatureWorks(boolean shouldWork) {
         try {
-            ClientPoliciesRepresentation clientPolicies = testRealm().clientPoliciesPoliciesResource().getPolicies();
-            Assert.assertTrue(clientPolicies.getPolicies().isEmpty());
+            List<ClientPolicyRepresentation> clientPolicies = testRealm().clientPoliciesPoliciesResource().getPolicies().getPolicies();
+            Assert.assertEquals(2, clientPolicies.size());
+            Assert.assertEquals("oid4vci-offer-required", clientPolicies.get(0).getName());
+            Assert.assertEquals("oid4vci-offer-preauth-allowed", clientPolicies.get(1).getName());
             if (!shouldWork)
                 fail("Feature is available, but at this moment should be disabled");
 

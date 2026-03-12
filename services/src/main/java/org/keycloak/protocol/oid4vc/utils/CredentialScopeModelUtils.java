@@ -1,17 +1,21 @@
 package org.keycloak.protocol.oid4vc.utils;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.util.Strings;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 
 public class CredentialScopeModelUtils {
 
@@ -63,5 +67,24 @@ public class CredentialScopeModelUtils {
         } else {
             return credScopes.get(0);
         }
+    }
+
+    public static OID4VCAuthorizationDetail buildOID4VCAuthorizationDetail(CredentialScopeModel credScope, String credOffersId) {
+
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setCredentialsOfferId(credOffersId);
+        authDetail.setType(OPENID_CREDENTIAL);
+
+        String credConfigId = Optional.ofNullable(credScope.getCredentialConfigurationId())
+                .orElseThrow(() -> new IllegalStateException("No " + VC_CONFIGURATION_ID + " in client scope: " + credScope.getName()));
+
+        authDetail.setCredentialConfigurationId(credConfigId);
+
+        String credIdentifier = credScope.getCredentialIdentifier();
+        if (!Strings.isEmpty(credIdentifier)) {
+            authDetail.setCredentialIdentifiers(List.of(credIdentifier));
+        }
+
+        return authDetail;
     }
 }

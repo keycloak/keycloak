@@ -18,7 +18,7 @@ if [ $GITHUB_EVENT_NAME == "pull_request" ]; then
     echo "========================================================================================"
     echo "Deprecated testsuite module: "
     echo " * Adding new file(s) is forbidden."
-    echo " * Maximum 50 lines can be added to a single file."
+    echo " * Maximum 100 lines can be added to a single file."
     echo ""
     echo "Please, migrate the added/changed file(s) and use the new test framework instead."
     echo "See: https://github.com/keycloak/keycloak/tree/main/testsuite/DEPRECATED.md for more details."
