@@ -553,9 +553,8 @@ public class OID4VCIssuerEndpoint {
 
         // Attach authorization_details that correspond to the credential_offer
         //
-        OID4VCAuthorizationDetail authDetail = buildOID4VCAuthorizationDetail(credScopeModel);
-        authDetail.setCredentialsOfferId(offerState.getCredentialsOfferId());
-        offerState.setAuthorizationDetails(buildOID4VCAuthorizationDetail(credScopeModel));
+        OID4VCAuthorizationDetail authDetail = buildOID4VCAuthorizationDetail(credScopeModel, offerState);
+        offerState.setAuthorizationDetails(authDetail);
 
         // Store the CredentialOfferState
         //
@@ -670,7 +669,7 @@ public class OID4VCIssuerEndpoint {
                 credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
 
         if (offerState.isExpired()) {
-            var errorMessage = "Credential offer already expired";
+            var errorMessage = "Credential offer has already expired";
             eventBuilder.detail(Details.REASON, errorMessage).error(Errors.EXPIRED_CODE);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST, errorMessage));
         }
@@ -893,7 +892,7 @@ public class OID4VCIssuerEndpoint {
             // Verify not expired
             // The cache should have evicted the expired CredentialOfferState - we check anyway
             if (offerState.isExpired()) {
-                var errorMessage = "Credential offer state has already expired";
+                var errorMessage = "Credential offer has already expired";
                 LOGGER.errorf(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));

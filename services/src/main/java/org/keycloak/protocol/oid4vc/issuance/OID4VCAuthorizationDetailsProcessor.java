@@ -38,7 +38,6 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
-import org.keycloak.protocol.oid4vc.utils.OID4VCAuthorizationDetailUtils;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
@@ -221,18 +220,17 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             }
             OID4VCAuthorizationDetail responseAuthDetail = offeredAuthDetail.clone();
             responseAuthDetail.setClaims(requestAuthDetail.getClaims());
-            responseAuthDetail.setCredentialsOfferId(offerState.getCredentialsOfferId());
             return responseAuthDetail;
         }
 
         // Handle AccessToken request without credential offer
         //
         RealmModel realmModel = clientSessionCtx.getClientSession().getRealm();
-        CredentialScopeModel credScopeModel = findCredentialScopeModelByConfigurationId(realmModel, clientSessionCtx::getClientScopesStream, requestedCredentialConfigurationId);
-        if (credScopeModel == null)
+        CredentialScopeModel credScope = findCredentialScopeModelByConfigurationId(realmModel, clientSessionCtx::getClientScopesStream, requestedCredentialConfigurationId);
+        if (credScope == null)
             throw getInvalidRequestException("Cannot find or access client scope for credential_configuration_id: " + requestedCredentialConfigurationId);
 
-        OID4VCAuthorizationDetail responseAuthDetail = buildOID4VCAuthorizationDetail(credScopeModel);
+        OID4VCAuthorizationDetail responseAuthDetail = buildOID4VCAuthorizationDetail(credScope, offerState);
         responseAuthDetail.setClaims(requestAuthDetail.getClaims());
 
         return responseAuthDetail;
@@ -247,7 +245,6 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         CredentialOfferState offerState = getCredentialOfferState(clientSessionCtx);
         if (offerState != null) {
             OID4VCAuthorizationDetail authDetail = offerState.getAuthorizationDetails();
-            authDetail.setCredentialsOfferId(offerState.getCredentialsOfferId());
             return List.of(authDetail);
         }
 
@@ -262,7 +259,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
         for (String scope : scopeParam.split(" ")) {
             Optional.ofNullable(CredentialScopeModelUtils.findCredentialScopeModelByName(realmModel, clientSessionCtx::getClientScopesStream, scope))
-                    .map(OID4VCAuthorizationDetailUtils::buildOID4VCAuthorizationDetail)
+                    .map(csm -> buildOID4VCAuthorizationDetail(csm, offerState))
                     .ifPresent(authorizationDetails::add);
         }
         if (authorizationDetails.isEmpty()) {

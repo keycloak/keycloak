@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.util.Strings;
 
@@ -12,7 +13,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_
 
 public class OID4VCAuthorizationDetailUtils {
 
-    public static OID4VCAuthorizationDetail buildOID4VCAuthorizationDetail(CredentialScopeModel credScopeModel) {
+    public static OID4VCAuthorizationDetail buildOID4VCAuthorizationDetail(CredentialScopeModel credScopeModel, CredentialOfferState offerState) {
 
         // Read the credential_identifiers from the client scope configuration
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -26,6 +27,11 @@ public class OID4VCAuthorizationDetailUtils {
         if (!Strings.isEmpty(credIdentifier)) {
             authDetail.setCredentialIdentifiers(List.of(credIdentifier));
         }
+
+        if (offerState != null) {
+            authDetail.setCredentialsOfferId(offerState.getCredentialsOfferId());
+        }
+
         return authDetail;
     }
 }

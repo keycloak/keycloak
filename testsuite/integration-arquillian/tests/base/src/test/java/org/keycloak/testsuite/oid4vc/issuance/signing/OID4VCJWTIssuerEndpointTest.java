@@ -503,7 +503,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 6. Get the credential using credential_identifier (required when authorization_details are present)
         credentialsOffer.getCredentialConfigurationIds().stream()
-                .map(offeredCredentialId -> credentialIssuer.getCredentialsSupported().get(offeredCredentialId))
+                .map(credConfigId -> credentialIssuer.getCredentialsSupported().get(credConfigId))
                 .forEach(supportedCredential -> {
                     try {
                         requestCredentialWithIdentifier(theToken,

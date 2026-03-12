@@ -304,7 +304,7 @@ public class OID4VCCredentialOfferMatrixTest extends OID4VCIssuerTestBase {
                 () -> wallet.credentialRequest(ctx, accessToken)
                         .credentialIdentifier(authorizedIdentifier)
                         .send().getCredentialResponse());
-        assertTrue(error.getMessage().contains("Offer is expired"), error.getMessage());
+        assertTrue(error.getMessage().contains("Credential offer has already expired"), error.getMessage());
         timeOffSet.set(0);
     }
 

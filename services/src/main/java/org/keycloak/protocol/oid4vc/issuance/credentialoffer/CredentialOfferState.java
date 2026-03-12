@@ -108,6 +108,7 @@ public class CredentialOfferState {
 
     @Transient
     public boolean isExpired() {
-        return expireAt < Time.currentTime();
+        int currentTime = Time.currentTime();
+        return expireAt <= currentTime;
     }
 }
