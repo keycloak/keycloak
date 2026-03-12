@@ -36,15 +36,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class IssuerState {
 
-    @JsonProperty("credential_offer_id")
-    private String credentialOfferId;
+    @JsonProperty("credentials_offer_id")
+    private String credentialsOfferId;
 
-    public String getCredentialOfferId() {
-        return credentialOfferId;
+    public String getCredentialsOfferId() {
+        return credentialsOfferId;
     }
 
-    public IssuerState setCredentialOfferId(String credentialOfferId) {
-        this.credentialOfferId = credentialOfferId;
+    public IssuerState setCredentialsOfferId(String credentialsOfferId) {
+        this.credentialsOfferId = credentialsOfferId;
         return this;
     }
 
@@ -63,11 +63,11 @@ public class IssuerState {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof IssuerState grant)) return false;
-        return Objects.equals(credentialOfferId, grant.credentialOfferId);
+        return Objects.equals(credentialsOfferId, grant.credentialsOfferId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(credentialOfferId);
+        return Objects.hash(credentialsOfferId);
     }
 }

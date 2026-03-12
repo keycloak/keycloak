@@ -33,7 +33,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialOfferState {
 
-    private String offerId;
+    private String credentialsOfferId;
     private CredentialsOffer credentialsOffer;
     private String clientId;
     private String userId;
@@ -43,7 +43,7 @@ public class CredentialOfferState {
     private OID4VCAuthorizationDetail authDetail;
 
     public CredentialOfferState(CredentialsOffer credOffer, String clientId, String userId, int expireAt) {
-        this.offerId = UUID.randomUUID().toString();
+        this.credentialsOfferId = UUID.randomUUID().toString();
         this.credentialsOffer = credOffer;
         this.clientId = clientId;
         this.userId = userId;
@@ -70,8 +70,8 @@ public class CredentialOfferState {
         txCode = sb.toString();
     }
 
-    public String getOfferId() {
-        return offerId;
+    public String getCredentialsOfferId() {
+        return credentialsOfferId;
     }
 
     public CredentialsOffer getCredentialsOffer() {

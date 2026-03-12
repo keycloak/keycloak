@@ -35,7 +35,7 @@ import static org.keycloak.OID4VCConstants.CREDENTIAL_IDENTIFIERS;
 public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresentation implements Cloneable {
 
     public static final String CLAIMS = "claims";
-    public static final String OFFER_ID = "offer_id";
+    public static final String CREDENTIALS_OFFER_ID = "credentials_offer_id";
 
     @JsonProperty(CREDENTIAL_CONFIGURATION_ID)
     private String credentialConfigurationId;
@@ -54,8 +54,8 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
     @JsonProperty(CLAIMS)
     private List<ClaimsDescription> claims;
 
-    @JsonProperty(OFFER_ID)
-    private String offerId;
+    @JsonProperty(CREDENTIALS_OFFER_ID)
+    private String credentialsOfferId;
 
     public String getCredentialConfigurationId() {
         return credentialConfigurationId;
@@ -73,12 +73,12 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
         this.credentialIdentifiers = credentialIdentifiers;
     }
 
-    public String getOfferId() {
-        return offerId;
+    public String getCredentialsOfferId() {
+        return credentialsOfferId;
     }
 
-    public void setOfferId(String offerId) {
-        this.offerId = offerId;
+    public void setCredentialsOfferId(String credentialsOfferId) {
+        this.credentialsOfferId = credentialsOfferId;
     }
 
     public List<ClaimsDescription> getClaims() {
@@ -107,11 +107,12 @@ public class OID4VCAuthorizationDetail extends AuthorizationDetailsJSONRepresent
         if (!super.equals(o)) return false;
         OID4VCAuthorizationDetail that = (OID4VCAuthorizationDetail) o;
         return Objects.equals(credentialConfigurationId, that.credentialConfigurationId)
-                && Objects.equals(credentialIdentifiers, that.credentialIdentifiers);
+                && Objects.equals(credentialIdentifiers, that.credentialIdentifiers)
+                && Objects.equals(credentialsOfferId, that.credentialsOfferId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), credentialConfigurationId, credentialIdentifiers);
+        return Objects.hash(super.hashCode(), credentialConfigurationId, credentialIdentifiers, credentialsOfferId);
     }
 }

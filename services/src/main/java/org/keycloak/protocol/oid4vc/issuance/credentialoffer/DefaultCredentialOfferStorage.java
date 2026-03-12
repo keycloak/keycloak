@@ -68,7 +68,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
         String entryJson = JsonSerialization.valueAsString(entry);
 
         // Store with key=offerId
-        session.singleUseObjects().put(entry.getOfferId(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
+        session.singleUseObjects().put(entry.getCredentialsOfferId(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
 
         // Store with key=nonce
         session.singleUseObjects().put(entry.getNonce(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
@@ -106,7 +106,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     @Override
     public void removeOfferState(KeycloakSession session, CredentialOfferState offerState) {
         SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
-        singleUseObjects.remove(offerState.getOfferId());
+        singleUseObjects.remove(offerState.getCredentialsOfferId());
         singleUseObjects.remove(offerState.getNonce());
         offerState.getPreAuthorizedCode().ifPresent(singleUseObjects::remove);
     }

@@ -159,9 +159,9 @@ public class OID4VCIssuerEndpoint {
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpoint.class);
 
     /**
-     * Session note key for storing a potential credential offer ID
+     * AccessToken claim attribute for storing a potential credentials offer id
      */
-    public static final String CREDENTIAL_OFFER_ID_ATTR = "CREDENTIAL_OFFER_ID";
+    public static final String CREDENTIALS_OFFER_ID_ATTR = "CREDENTIALS_OFFER_ID";
 
     private Cors cors;
 
@@ -547,14 +547,14 @@ public class OID4VCIssuerEndpoint {
             String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
             credOffer.addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
         } else {
-            IssuerState issuerState = new IssuerState().setCredentialOfferId(offerState.getOfferId());
+            IssuerState issuerState = new IssuerState().setCredentialsOfferId(offerState.getCredentialsOfferId());
             credOffer.addGrant(new AuthorizationCodeGrant().setIssuerState(issuerState.encodeToString()));
         }
 
         // Attach authorization_details that correspond to the credential_offer
         //
         OID4VCAuthorizationDetail authDetail = buildOID4VCAuthorizationDetail(credScopeModel);
-        authDetail.setOfferId(offerState.getOfferId());
+        authDetail.setCredentialsOfferId(offerState.getCredentialsOfferId());
         offerState.setAuthorizationDetails(buildOID4VCAuthorizationDetail(credScopeModel));
 
         // Store the CredentialOfferState
@@ -880,12 +880,21 @@ public class OID4VCIssuerEndpoint {
         }
         OID4VCAuthorizationDetail tokenAuthDetail = tokenAuthDetails.get(0);
 
-        String credOfferId = tokenAuthDetail.getOfferId();
+        String credOfferId = tokenAuthDetail.getCredentialsOfferId();
         if (credOfferId != null) {
 
             offerState = offerStorage.getOfferStateById(session, credOfferId);
             if (offerState == null) {
                 var errorMessage = "No credential offer state for: " + credOfferId;
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
+                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
+            }
+
+            // Verify not expired
+            // The cache should have evicted the expired CredentialOfferState - we check anyway
+            if (offerState.isExpired()) {
+                var errorMessage = "Credential offer state has already expired";
+                LOGGER.errorf(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
             }
@@ -904,14 +913,6 @@ public class OID4VCIssuerEndpoint {
             if (offerState.getClientId() != null && !offerState.getClientId().equals(clientModel.getClientId())) {
                 var errorMessage = "Unexpected login client: " + clientModel.getClientId();
                 LOGGER.errorf(errorMessage + " != %s", offerState.getClientId());
-                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
-                throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
-            }
-
-            // Verify not expired
-            if (offerState.isExpired()) {
-                var errorMessage = "Offer is expired";
-                LOGGER.errorf(errorMessage);
                 eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
             }
@@ -1804,7 +1805,6 @@ public class OID4VCIssuerEndpoint {
             );
         }
     }
-
 
     private List<ClaimsDescription> getClaimsFromAuthzDetails(String scope, UserModel user, OID4VCAuthorizationDetail authzDetail) {
         List<ClaimsDescription> storedClaims = authzDetail == null ? null : authzDetail.getClaims();

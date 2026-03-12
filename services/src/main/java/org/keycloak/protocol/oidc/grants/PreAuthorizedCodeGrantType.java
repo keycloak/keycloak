@@ -157,7 +157,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
         ClientSessionContext sessionContext = fromClientSessionAndScopeParameter(clientSession, OAuth2Constants.SCOPE_OPENID, session);
         sessionContext.setAttribute(Constants.GRANT_TYPE, PRE_AUTH_GRANT_TYPE);
-        sessionContext.setAttribute(OID4VCIssuerEndpoint.CREDENTIAL_OFFER_ID_ATTR, offerState.getOfferId());
+        sessionContext.setAttribute(OID4VCIssuerEndpoint.CREDENTIALS_OFFER_ID_ATTR, offerState.getCredentialsOfferId());
 
         // set the client as retrieved from the pre-authorized session
         session.getContext().setClient(clientModel);

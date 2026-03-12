@@ -47,7 +47,7 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.ISSUER_STATE;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_ID_ATTR;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIALS_OFFER_ID_ATTR;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId;
 import static org.keycloak.protocol.oid4vc.utils.OID4VCAuthorizationDetailUtils.buildOID4VCAuthorizationDetail;
 import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX;
@@ -221,7 +221,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             }
             OID4VCAuthorizationDetail responseAuthDetail = offeredAuthDetail.clone();
             responseAuthDetail.setClaims(requestAuthDetail.getClaims());
-            responseAuthDetail.setOfferId(offerState.getOfferId());
+            responseAuthDetail.setCredentialsOfferId(offerState.getCredentialsOfferId());
             return responseAuthDetail;
         }
 
@@ -247,7 +247,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         CredentialOfferState offerState = getCredentialOfferState(clientSessionCtx);
         if (offerState != null) {
             OID4VCAuthorizationDetail authDetail = offerState.getAuthorizationDetails();
-            authDetail.setOfferId(offerState.getOfferId());
+            authDetail.setCredentialsOfferId(offerState.getCredentialsOfferId());
             return List.of(authDetail);
         }
 
@@ -302,14 +302,14 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
         // Check if we have a credential offer - this should work for pre-authorized
         //
-        String credOfferId = clientSessionCtx.getAttribute(CREDENTIAL_OFFER_ID_ATTR, String.class);
+        String credOfferId = clientSessionCtx.getAttribute(CREDENTIALS_OFFER_ID_ATTR, String.class);
 
         // Check if we have issuer_state - this should work for authorization_code
         //
         String issuerStateNote = clientSessionCtx.getClientSession().getNote(LOGIN_SESSION_NOTE_ADDITIONAL_REQ_PARAMS_PREFIX + ISSUER_STATE);
         if (credOfferId == null && issuerStateNote != null) {
             IssuerState issuerState = IssuerState.fromEncodedString(issuerStateNote);
-            credOfferId = issuerState.getCredentialOfferId();
+            credOfferId = issuerState.getCredentialsOfferId();
         }
 
         if (credOfferId != null) {
