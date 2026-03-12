@@ -91,7 +91,7 @@ public class JWTVCIssuerWellKnownProvider implements WellKnownProvider {
         }
 
         var base = session.getContext().getUri().getBaseUriBuilder();
-        var successor = ServerMetadataResource.wellKnownOAuthProviderUrl(base)
+        var successor = ServerMetadataResource.wellKnownProviderUrl(base)
                 .build(JWTVCIssuerWellKnownProviderFactory.PROVIDER_ID, realm.getName());
 
         HttpResponse httpResponse = session.getContext().getHttpResponse();
