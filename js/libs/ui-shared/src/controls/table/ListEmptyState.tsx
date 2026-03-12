@@ -6,12 +6,10 @@ import {
 } from "react";
 import {
   EmptyState,
-  EmptyStateIcon,
   EmptyStateBody,
   Button,
   ButtonVariant,
   EmptyStateActions,
-  EmptyStateHeader,
   EmptyStateFooter,
 } from "@patternfly/react-core";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
@@ -47,14 +45,20 @@ export const ListEmptyState = ({
   isDisabled = false,
   children,
 }: PropsWithChildren<ListEmptyStateProps>) => {
+  const IconComponent = hasIcon
+    ? isSearchVariant
+      ? SearchIcon
+      : icon || PlusCircleIcon
+    : undefined;
+
   return (
-    <EmptyState data-testid="empty-state" variant="lg">
-      {hasIcon && isSearchVariant ? (
-        <EmptyStateIcon icon={SearchIcon} />
-      ) : (
-        hasIcon && <EmptyStateIcon icon={icon ? icon : PlusCircleIcon} />
-      )}
-      <EmptyStateHeader titleText={message} headingLevel="h1" />
+    <EmptyState
+      data-testid="empty-state"
+      variant="lg"
+      headingLevel="h1"
+      icon={IconComponent}
+      titleText={message}
+    >
       <EmptyStateBody>{instructions}</EmptyStateBody>
       <EmptyStateFooter>
         {primaryActionText && (

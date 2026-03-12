@@ -80,7 +80,7 @@ export const LocalizationTab = ({
         <FormAccess
           isHorizontal
           role="manage-realm"
-          className="pf-v5-u-mt-lg pf-v5-u-ml-md"
+          className="pf-v6-u-mt-lg pf-v6-u-ml-md"
           onSubmit={handleSubmit(save)}
         >
           <FormProvider {...form}>
@@ -89,7 +89,6 @@ export const LocalizationTab = ({
               label={t("internationalization")}
               labelIcon={t("internationalizationHelp")}
               labelOn={t("enabled")}
-              labelOff={t("disabled")}
               aria-label={t("internationalization")}
             />
             {internationalizationEnabled && (

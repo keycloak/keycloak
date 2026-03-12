@@ -83,7 +83,7 @@ export const BruteForceDetection = ({
         <FormGroup
           label={t("bruteForceMode")}
           fieldId="kc-brute-force-mode"
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("bruteForceModeHelpText")}
               fieldLabelId="bruteForceMode"

@@ -162,7 +162,7 @@ const ClientDetailHeader = ({
         subKey="clientsExplain"
         badges={badges}
         divider={false}
-        isReadOnly={!isManager}
+        readOnly={!isManager}
         helpTextKey="enableDisable"
         dropdownItems={dropdownItems}
         isEnabled={value}
@@ -434,7 +434,7 @@ export default function ClientDetails() {
           />
         )}
       />
-      <PageSection variant="light" className="pf-v5-u-p-0">
+      <PageSection hasBodyWrapper={false} className="pf-v6-u-p-0">
         <FormProvider {...form}>
           <RoutableTabs
             data-testid="client-tabs"
@@ -512,7 +512,7 @@ export default function ClientDetails() {
                     tab: "details",
                   })
                 }
-                isReadOnly={!(hasManageClients || client.access?.configure)}
+                readOnly={!(hasManageClients || client.access?.configure)}
               />
             </Tab>
             {!isRealmClient(client) && !client.bearerOnly && (

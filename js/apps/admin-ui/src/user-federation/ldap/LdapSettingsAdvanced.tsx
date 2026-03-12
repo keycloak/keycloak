@@ -64,7 +64,7 @@ export const LdapSettingsAdvanced = ({
       <FormAccess role="manage-realm" isHorizontal>
         <FormGroup
           label={t("enableLdapv3Password")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("enableLdapv3PasswordHelp")}
               fieldLabelId="enableLdapv3Password"
@@ -85,7 +85,6 @@ export const LdapSettingsAdvanced = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("enableLdapv3Password")}
               />
             )}
@@ -94,7 +93,7 @@ export const LdapSettingsAdvanced = ({
 
         <FormGroup
           label={t("validatePasswordPolicy")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("validatePasswordPolicyHelp")}
               fieldLabelId="validatePasswordPolicy"
@@ -115,7 +114,6 @@ export const LdapSettingsAdvanced = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("validatePasswordPolicy")}
               />
             )}
@@ -124,7 +122,7 @@ export const LdapSettingsAdvanced = ({
 
         <FormGroup
           label={t("enableLdapPasswordPolicy")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("enableLdapPasswordPolicyHelp")}
               fieldLabelId="enableLdapPasswordPolicy"
@@ -145,7 +143,6 @@ export const LdapSettingsAdvanced = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("enableLdapPasswordPolicy")}
               />
             )}
@@ -154,7 +151,7 @@ export const LdapSettingsAdvanced = ({
 
         <FormGroup
           label={t("trustEmail")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("trustEmailHelp")}
               fieldLabelId="trustEmail"
@@ -175,7 +172,6 @@ export const LdapSettingsAdvanced = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("trustEmail")}
               />
             )}
@@ -183,7 +179,7 @@ export const LdapSettingsAdvanced = ({
         </FormGroup>
         <FormGroup
           label={t("connectionTrace")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("connectionTraceHelp")}
               fieldLabelId="connectionTrace"
@@ -204,7 +200,6 @@ export const LdapSettingsAdvanced = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("connectionTrace")}
               />
             )}
@@ -212,7 +207,6 @@ export const LdapSettingsAdvanced = ({
         </FormGroup>
         <FormGroup fieldId="query-extensions">
           <Button
-            variant="secondary"
             id="query-extensions"
             data-testid="query-extensions"
             onClick={testLdap}

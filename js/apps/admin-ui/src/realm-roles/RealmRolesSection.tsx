@@ -37,14 +37,14 @@ export default function RealmRolesSection() {
         subKey="roleExplain"
         helpUrl={helpUrls.realmRolesUrl}
       />
-      <PageSection variant="light" padding={{ default: "noPadding" }}>
+      <PageSection hasBodyWrapper={false} padding={{ default: "noPadding" }}>
         <RolesList
           loader={loader}
           toCreate={toAddRole({ realm })}
           toDetail={(roleId) =>
             toRealmRole({ realm, id: roleId, tab: "details" })
           }
-          isReadOnly={!isManager}
+          readOnly={!isManager}
         />
       </PageSection>
     </>

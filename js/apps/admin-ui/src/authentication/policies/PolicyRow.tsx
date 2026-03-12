@@ -39,7 +39,7 @@ export const PolicyRow = ({
       label={displayName}
       fieldId={id!}
       isRequired
-      labelIcon={
+      labelHelp={
         <HelpItem
           helpText={t(`passwordPoliciesHelp.${id}`)}
           fieldLabelId={id!}
@@ -91,7 +91,6 @@ export const PolicyRow = ({
             <Switch
               id={id!}
               label={t("on")}
-              labelOff={t("off")}
               isChecked
               isDisabled
               aria-label={displayName}
@@ -100,14 +99,13 @@ export const PolicyRow = ({
         </SplitItem>
         <SplitItem>
           <Button
+            icon={<MinusCircleIcon />}
             data-testid={`remove-${id}`}
             variant="link"
             className="keycloak__policies_authentication__minus-icon"
             onClick={() => onRemove(id)}
             aria-label={t("remove")}
-          >
-            <MinusCircleIcon />
-          </Button>
+          ></Button>
         </SplitItem>
       </Split>
       {error && <FormErrorText message={t("required")} />}

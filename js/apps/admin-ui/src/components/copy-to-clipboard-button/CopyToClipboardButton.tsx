@@ -22,7 +22,6 @@ type CopyToClipboardButtonProps = Pick<ClipboardCopyButtonProps, "variant"> & {
 
 export const CopyToClipboardButton = ({
   id,
-  label,
   text,
   variant = "plain",
 }: CopyToClipboardButtonProps) => {
@@ -67,7 +66,6 @@ export const CopyToClipboardButton = ({
   return (
     <ClipboardCopyButton
       id={`copy-button-${id}`}
-      textId={label}
       aria-label={t("copyToClipboard")}
       onClick={() => copyToClipboard(text)}
       exitDelay={600}

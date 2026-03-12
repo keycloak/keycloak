@@ -7,8 +7,8 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
   FormGroup,
   MenuToggle,
   Select,
@@ -103,7 +103,7 @@ export const IdentityProviderSelect = ({
     <FormGroup
       label={t(label!)}
       isRequired={isRequired}
-      labelIcon={
+      labelHelp={
         helpText ? (
           <HelpItem helpText={helpText!} fieldLabelId={label!} />
         ) : undefined
@@ -156,10 +156,10 @@ export const IdentityProviderSelect = ({
                   >
                     {variant === "typeaheadMulti" &&
                       Array.isArray(field.value) && (
-                        <ChipGroup aria-label="Current selections">
+                        <LabelGroup aria-label="Current selections">
                           {field.value.map(
                             (selection: string, index: number) => (
-                              <Chip
+                              <Label
                                 key={index}
                                 onClick={(ev) => {
                                   ev.stopPropagation();
@@ -171,15 +171,16 @@ export const IdentityProviderSelect = ({
                                 }}
                               >
                                 {selection}
-                              </Chip>
+                              </Label>
                             ),
                           )}
-                        </ChipGroup>
+                        </LabelGroup>
                       )}
                   </TextInputGroupMain>
                   <TextInputGroupUtilities>
                     {!!search && (
                       <Button
+                        icon={<TimesIcon aria-hidden />}
                         variant="plain"
                         onClick={() => {
                           setInputValue("");
@@ -188,9 +189,7 @@ export const IdentityProviderSelect = ({
                           textInputRef?.current?.focus();
                         }}
                         aria-label={t("clear")}
-                      >
-                        <TimesIcon aria-hidden />
-                      </Button>
+                      />
                     )}
                   </TextInputGroupUtilities>
                 </TextInputGroup>

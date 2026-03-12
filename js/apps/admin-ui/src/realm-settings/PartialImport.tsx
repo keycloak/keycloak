@@ -18,14 +18,12 @@ import {
   DataListItemRow,
   Divider,
   Label,
-  Modal,
-  ModalVariant,
   SelectOption,
   Stack,
   StackItem,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
@@ -308,9 +306,9 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       >
         <Stack hasGutter>
           <StackItem>
-            <TextContent>
-              <Text>{t("partialImportHeaderText")}</Text>
-            </TextContent>
+            <Content>
+              <Content component="p">{t("partialImportHeaderText")}</Content>
+            </Content>
           </StackItem>
           <StackItem>
             <JsonFileUpload
@@ -327,7 +325,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
               </StackItem>
               {Array.isArray(importedFile) && importedFile.length > 1 && (
                 <StackItem>
-                  <Text>{t("selectRealm")}:</Text>
+                  <Content component="p">{t("selectRealm")}:</Content>
                   <KeycloakSelect
                     toggleId="realm-selector"
                     isOpen={isRealmSelectOpen}
@@ -343,7 +341,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                 </StackItem>
               )}
               <StackItem>
-                <Text>{t("chooseResources")}:</Text>
+                <Content component="p">{t("chooseResources")}:</Content>
                 <DataList aria-label={t("resourcesToImport")} isCompact>
                   {targetHasResource("users") &&
                     resourceDataListItem("users", t("users"))}
@@ -363,7 +361,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                 </DataList>
               </StackItem>
               <StackItem>
-                <Text>{t("selectIfResourceExists")}:</Text>
+                <Content component="p">{t("selectIfResourceExists")}:</Content>
                 <KeycloakSelect
                   isOpen={isCollisionSelectOpen}
                   direction="up"

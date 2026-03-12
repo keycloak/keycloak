@@ -1,10 +1,6 @@
 import { ReactElement, ReactNode, useState } from "react";
-import {
-  Button,
-  ButtonVariant,
-  Modal,
-  ModalVariant,
-} from "@patternfly/react-core";
+import { Button, ButtonVariant } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { useTranslation } from "react-i18next";
 
 export const useConfirmDialog = (

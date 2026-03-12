@@ -2,18 +2,17 @@ import { KeycloakSelect, SelectVariant } from "@keycloak/keycloak-ui-shared";
 import {
   ActionGroup,
   Button,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
   Divider,
   Flex,
   FlexItem,
   Form,
   FormGroup,
   SelectOption,
-  Text,
-  TextContent,
+  Content,
   TextInput,
-  TextVariants,
+  ContentVariants,
 } from "@patternfly/react-core";
 import { pickBy } from "lodash-es";
 import { useMemo, useState } from "react";
@@ -202,14 +201,14 @@ export const EffectiveMessageBundles = ({
         spaceItems={{ default: "spaceItemsNone" }}
       >
         <FlexItem>
-          <TextContent>
-            <Text
-              className="pf-v5-u-mb-md pf-v5-u-mt-0 pf-v5-u-mr-md"
-              component={TextVariants.p}
+          <Content>
+            <Content
+              className="pf-v6-u-mb-md pf-v6-u-mt-0 pf-v6-u-mr-md"
+              component={ContentVariants.p}
             >
               {t("effectiveMessageBundlesDescription")}
-            </Text>
-          </TextContent>
+            </Content>
+          </Content>
         </FlexItem>
         <FlexItem>
           <DropdownPanel
@@ -221,7 +220,7 @@ export const EffectiveMessageBundles = ({
           >
             <Form
               isHorizontal
-              className="pf-v5-u-w-25vw"
+              className="pf-v6-u-w-25vw"
               data-testid="effectiveMessageBundlesSearchForm"
               onSubmit={(e) => e.preventDefault()}
             >
@@ -237,7 +236,7 @@ export const EffectiveMessageBundles = ({
                     <KeycloakSelect
                       data-testid="effective_message_bundles-theme-searchField"
                       chipGroupProps={{
-                        numChips: 1,
+                        numLabels: 1,
                         expandedText: t("hide"),
                         collapsedText: t("showRemaining"),
                       }}
@@ -255,8 +254,8 @@ export const EffectiveMessageBundles = ({
                       isOpen={selectThemesOpen}
                       aria-label={t("selectTheme")}
                       chipGroupComponent={
-                        <ChipGroup>
-                          <Chip
+                        <LabelGroup>
+                          <Label
                             key={field.value}
                             onClick={(theme) => {
                               theme.stopPropagation();
@@ -264,8 +263,8 @@ export const EffectiveMessageBundles = ({
                             }}
                           >
                             {field.value}
-                          </Chip>
-                        </ChipGroup>
+                          </Label>
+                        </LabelGroup>
                       }
                     >
                       {[
@@ -303,7 +302,7 @@ export const EffectiveMessageBundles = ({
                     <KeycloakSelect
                       data-testid="effective-message-bundles-feature-searchField"
                       chipGroupProps={{
-                        numChips: 1,
+                        numLabels: 1,
                         expandedText: t("hide"),
                         collapsedText: t("showRemaining"),
                       }}
@@ -321,8 +320,8 @@ export const EffectiveMessageBundles = ({
                       isOpen={selectThemeTypeOpen}
                       aria-label={t("selectThemeType")}
                       chipGroupComponent={
-                        <ChipGroup>
-                          <Chip
+                        <LabelGroup>
+                          <Label
                             key={field.value}
                             onClick={(themeType) => {
                               themeType.stopPropagation();
@@ -330,8 +329,8 @@ export const EffectiveMessageBundles = ({
                             }}
                           >
                             {field.value}
-                          </Chip>
-                        </ChipGroup>
+                          </Label>
+                        </LabelGroup>
                       }
                     >
                       {[
@@ -365,7 +364,7 @@ export const EffectiveMessageBundles = ({
                     <KeycloakSelect
                       data-testid="effective-message-bundles-language-searchField"
                       chipGroupProps={{
-                        numChips: 1,
+                        numLabels: 1,
                         expandedText: t("hide"),
                         collapsedText: t("showRemaining"),
                       }}
@@ -383,9 +382,9 @@ export const EffectiveMessageBundles = ({
                       isOpen={selectLanguageOpen}
                       aria-label={t("selectLanguage")}
                       chipGroupComponent={
-                        <ChipGroup>
+                        <LabelGroup>
                           {field.value ? (
-                            <Chip
+                            <Label
                               key={field.value}
                               onClick={(language) => {
                                 language.stopPropagation();
@@ -393,9 +392,9 @@ export const EffectiveMessageBundles = ({
                               }}
                             >
                               {localeToDisplayName(field.value, whoAmI.locale)}
-                            </Chip>
+                            </Label>
                           ) : null}
-                        </ChipGroup>
+                        </LabelGroup>
                       }
                     >
                       {[
@@ -441,9 +440,9 @@ export const EffectiveMessageBundles = ({
                           }
                         }}
                       />
-                      <ChipGroup>
+                      <LabelGroup>
                         {field.value.map((word: string, index: number) => (
-                          <Chip
+                          <Label
                             key={index}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -454,14 +453,14 @@ export const EffectiveMessageBundles = ({
                             }}
                           >
                             {word}
-                          </Chip>
+                          </Label>
                         ))}
-                      </ChipGroup>
+                      </LabelGroup>
                     </div>
                   )}
                 />
               </FormGroup>
-              <ActionGroup className="pf-v5-u-mt-sm">
+              <ActionGroup className="pf-v6-u-mt-sm">
                 <Button
                   variant={"primary"}
                   onClick={() => {
@@ -474,7 +473,6 @@ export const EffectiveMessageBundles = ({
                   {t("search")}
                 </Button>
                 <Button
-                  variant="secondary"
                   onClick={resetSearch}
                   data-testid="reset-search-effective-message-bundles-btn"
                   isDisabled={!isDirty}
@@ -494,33 +492,33 @@ export const EffectiveMessageBundles = ({
                   string | string[],
                 ];
                 return (
-                  <ChipGroup
-                    className="pf-v5-u-mt-md pf-v5-u-mr-md"
+                  <LabelGroup
+                    className="pf-v6-u-mt-md pf-v6-u-mr-md"
                     key={key}
                     categoryName={filterLabels[key]}
                     isClosable
                     onClick={() => removeFilter(key)}
                   >
                     {typeof value === "string" ? (
-                      <Chip isReadOnly>
+                      <Label readOnly>
                         {key === "locale"
                           ? localeToDisplayName(
                               value,
                               whoAmI.locale,
                             )?.toLowerCase()
                           : value}
-                      </Chip>
+                      </Label>
                     ) : (
                       value.map((entry) => (
-                        <Chip
+                        <Label
                           key={entry}
                           onClick={() => removeFilterValue(key, entry)}
                         >
                           {entry}
-                        </Chip>
+                        </Label>
                       ))
                     )}
-                  </ChipGroup>
+                  </LabelGroup>
                 );
               })}
             </>
@@ -533,7 +531,7 @@ export const EffectiveMessageBundles = ({
   if (!searchPerformed) {
     return (
       <>
-        <div className="pf-v5-u-py-lg pf-v5-u-pl-md">
+        <div className="pf-v6-u-py-lg pf-v6-u-pl-md">
           {effectiveMessageBunldesSearchFormDisplay()}
         </div>
         <Divider />

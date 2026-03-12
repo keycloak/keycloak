@@ -15,7 +15,7 @@ export const SwitchField = ({
   label,
   field,
   fieldType = "string",
-  isReadOnly = false,
+  readOnly = false,
   defaultValue,
 }: SwitchFieldProps) => {
   const { t } = useTranslation();
@@ -32,7 +32,6 @@ export const SwitchField = ({
           <Switch
             id={label}
             label={t("on")}
-            labelOff={t("off")}
             isChecked={
               fieldType === "string"
                 ? field.value === "true"
@@ -41,7 +40,7 @@ export const SwitchField = ({
             onChange={(_event, value) =>
               field.onChange(fieldType === "string" ? "" + value : value)
             }
-            isDisabled={isReadOnly}
+            isDisabled={readOnly}
             aria-label={label}
           />
         )}

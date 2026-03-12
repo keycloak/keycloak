@@ -79,11 +79,7 @@ export const CredentialRow = ({
       </Td>
       {credential.type === "password" ? (
         <Td isActionCell>
-          <Button
-            variant="secondary"
-            data-testid="resetPasswordBtn"
-            onClick={resetPassword}
-          >
+          <Button data-testid="resetPasswordBtn" onClick={resetPassword}>
             {t("resetPasswordBtn")}
           </Button>
         </Td>

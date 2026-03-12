@@ -59,7 +59,7 @@ export const DiscoveryEndpointField = ({
           id === "oidc" ? "useDiscoveryEndpoint" : "useEntityDescriptor",
         )}
         fieldId="kc-discovery-endpoint"
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t(
               id === "oidc"
@@ -73,7 +73,6 @@ export const DiscoveryEndpointField = ({
         <Switch
           id="kc-discovery-endpoint-switch"
           label={t("on")}
-          labelOff={t("off")}
           isChecked={discovery}
           onChange={(_event, checked) => {
             clearErrors("discoveryError");

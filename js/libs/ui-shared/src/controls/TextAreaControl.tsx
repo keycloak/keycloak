@@ -41,7 +41,7 @@ export const TextAreaControl = <
     <FormLabel
       isRequired={required}
       label={props.label}
-      labelIcon={props.labelIcon}
+      labelHelp={props.labelIcon}
       name={props.name}
       error={fieldState.error}
     >

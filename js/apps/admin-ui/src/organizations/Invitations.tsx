@@ -2,7 +2,7 @@ import type { OrganizationInvitationRepresentation } from "@keycloak/keycloak-ad
 import { OrganizationInvitationStatus } from "@keycloak/keycloak-admin-client";
 import {
   Button,
-  Chip,
+  Label,
   Dropdown,
   DropdownItem,
   DropdownList,
@@ -33,9 +33,9 @@ const InvitationStatusBadge = ({
   const { t } = useTranslation();
 
   return (
-    <Chip isReadOnly>
+    <Label readOnly>
       {status ? t(`organizationInvitationStatus.${status.toLowerCase()}`) : ""}
-    </Chip>
+    </Label>
   );
 };
 
@@ -270,12 +270,11 @@ export const Invitations = () => {
             </ToolbarItem>
             <ToolbarItem>
               <Button
+                icon={t("deleteInvitations")}
                 variant="plain"
                 isDisabled={selectedInvitations.length === 0}
                 onClick={toggleDeleteDialog}
-              >
-                {t("deleteInvitations")}
-              </Button>
+              />
             </ToolbarItem>
             <ToolbarItem>
               <CheckboxFilterComponent

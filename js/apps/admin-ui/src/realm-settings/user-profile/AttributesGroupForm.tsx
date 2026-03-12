@@ -5,8 +5,7 @@ import {
   Button,
   FormGroup,
   PageSection,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
 import { useEffect, useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
@@ -128,7 +127,10 @@ export default function AttributesGroupForm() {
         titleKey={matchingGroup ? "editGroupText" : "createGroupText"}
         divider
       />
-      <PageSection variant="light" onSubmit={form.handleSubmit(onSubmit)}>
+      <PageSection
+        hasBodyWrapper={false}
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
         <FormAccess isHorizontal role="manage-realm">
           <TextControl
             name="name"
@@ -141,7 +143,7 @@ export default function AttributesGroupForm() {
           />
           <FormGroup
             label={t("displayHeader")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("displayHeaderHintHelp")}
                 fieldLabelId="displayHeader"
@@ -157,7 +159,7 @@ export default function AttributesGroupForm() {
           </FormGroup>
           <FormGroup
             label={t("displayDescription")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("displayDescriptionHintHelp")}
                 fieldLabelId="displayDescription"
@@ -171,9 +173,9 @@ export default function AttributesGroupForm() {
               prefix="profile.attribute-group-description"
             />
           </FormGroup>
-          <TextContent>
-            <Text component="h2">{t("annotationsText")}</Text>
-          </TextContent>
+          <Content>
+            <Content component="h2">{t("annotationsText")}</Content>
+          </Content>
           <FormGroup label={t("annotationsText")} fieldId="kc-annotations">
             <KeyValueInput label={t("annotationsText")} name="annotations" />
           </FormGroup>

@@ -1,5 +1,6 @@
 import KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { Button, Form, Modal } from "@patternfly/react-core";
+import { Button, Form } from "@patternfly/react-core";
+import { Modal } from "@patternfly/react-core/deprecated";
 import { saveAs } from "file-saver";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -82,7 +83,7 @@ export const ExportSamlKeyDialog = ({
     >
       <Form
         id="export-saml-key-form"
-        className="pf-v5-u-pt-lg"
+        className="pf-v6-u-pt-lg"
         onSubmit={form.handleSubmit(download)}
       >
         <FormProvider {...form}>

@@ -4,7 +4,6 @@ import {
   Form,
   FormGroup,
   MenuToggle,
-  ModalVariant,
   Select,
   SelectList,
   SelectOption,
@@ -12,6 +11,7 @@ import {
   StackItem,
   TextArea,
 } from "@patternfly/react-core";
+import { ModalVariant } from "@patternfly/react-core/deprecated";
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -115,7 +115,7 @@ export const DownloadDialog = ({
             <FormGroup
               fieldId="type"
               label={t("formatOption")}
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("downloadType")}
                   fieldLabelId="formatOption"
@@ -165,7 +165,7 @@ export const DownloadDialog = ({
               <FormGroup
                 fieldId="details"
                 label={t("details")}
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("detailsHelp")}
                     fieldLabelId="details"

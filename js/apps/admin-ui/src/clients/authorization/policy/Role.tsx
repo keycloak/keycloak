@@ -57,7 +57,7 @@ export const Role = () => {
     <>
       <FormGroup
         label={t("roles")}
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("policyRolesHelp")} fieldLabelId="roles" />
         }
         fieldId="roles"
@@ -89,7 +89,6 @@ export const Role = () => {
               )}
               <AddRoleButton
                 data-testid="select-role-button"
-                variant="secondary"
                 onFilerTypeChange={(type) => {
                   setFilterType(type);
                   setOpen(true);

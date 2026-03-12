@@ -73,7 +73,7 @@ export const AdvancedSettings = ({
           <FormGroup
             label={t("assertionLifespan")}
             fieldId="assertionLifespan"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("assertionLifespanHelp")}
                 fieldLabelId="assertionLifespan"
@@ -100,7 +100,7 @@ export const AdvancedSettings = ({
               <FormGroup
                 label={t("acrToLoAMapping")}
                 fieldId="acrToLoAMapping"
-                labelIcon={
+                labelHelp={
                   <HelpItem
                     helpText={t("acrToLoAMappingSamlHelp")}
                     fieldLabelId="acrToLoAMapping"
@@ -229,7 +229,7 @@ export const AdvancedSettings = ({
           <FormGroup
             label={t("acrToLoAMapping")}
             fieldId="acrToLoAMapping"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("acrToLoAMappingHelp")}
                 fieldLabelId="acrToLoAMapping"
@@ -257,7 +257,7 @@ export const AdvancedSettings = ({
           <FormGroup
             label={t("defaultACRValues")}
             fieldId="defaultACRValues"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("defaultACRValuesHelp")}
                 fieldLabelId="defaultACRValues"
@@ -280,11 +280,7 @@ export const AdvancedSettings = ({
         </>
       )}
       <ActionGroup>
-        <Button
-          variant="secondary"
-          onClick={save}
-          data-testid="OIDCAdvancedSave"
-        >
+        <Button onClick={save} data-testid="OIDCAdvancedSave">
           {t("save")}
         </Button>
         <Button variant="link" onClick={reset} data-testid="OIDCAdvancedRevert">

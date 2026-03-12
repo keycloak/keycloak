@@ -17,8 +17,8 @@ import {
   Alert,
   AlertVariant,
   Button,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
   FormGroup,
   InputGroup,
   InputGroupItem,
@@ -184,7 +184,7 @@ export const UserForm = ({
       onSubmit={handleSubmit(save)}
       role="query-users"
       fineGrainedAccess={user?.access?.manage}
-      className="pf-v5-u-mt-lg"
+      className="pf-v6-u-mt-lg"
     >
       <FormProvider {...form}>
         {open && (
@@ -253,7 +253,7 @@ export const UserForm = ({
         {user?.federationLink && canViewFederationLink && (
           <FormGroup
             label={t("federationLink")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("federationLinkHelp")}
                 fieldLabelId="federationLink"
@@ -343,7 +343,6 @@ export const UserForm = ({
               label={t("emailVerified")}
               labelIcon={t("emailVerifiedHelp")}
               labelOn={t("yes")}
-              labelOff={t("no")}
             />
             <TextControl name="firstName" label={t("firstName")} />
             <TextControl name="lastName" label={t("lastName")} />
@@ -353,7 +352,7 @@ export const UserForm = ({
           <FormGroup
             label={t("temporaryLocked")}
             fieldId="temporaryLocked"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("temporaryLockedHelp")}
                 fieldLabelId="temporaryLocked"
@@ -370,7 +369,6 @@ export const UserForm = ({
               isChecked={locked}
               isDisabled={!locked}
               label={t("on")}
-              labelOff={t("off")}
             />
           </FormGroup>
         )}
@@ -378,7 +376,7 @@ export const UserForm = ({
           <FormGroup
             label={t("groups")}
             fieldId="kc-groups"
-            labelIcon={
+            labelHelp={
               <HelpItem helpText={t("groupsHelp")} fieldLabelId="groups" />
             }
           >
@@ -389,22 +387,21 @@ export const UserForm = ({
               render={() => (
                 <InputGroup>
                   <InputGroupItem>
-                    <ChipGroup categoryName={" "}>
+                    <LabelGroup categoryName={" "}>
                       {selectedGroups.map((currentChip) => (
-                        <Chip
+                        <Label
                           key={currentChip.id}
                           onClick={() => deleteItem(currentChip.name!)}
                         >
                           {currentChip.path}
-                        </Chip>
+                        </Label>
                       ))}
-                    </ChipGroup>
+                    </LabelGroup>
                   </InputGroupItem>
                   <InputGroupItem>
                     <Button
                       id="kc-join-groups-button"
                       onClick={toggleModal}
-                      variant="secondary"
                       data-testid="join-groups-button"
                     >
                       {t("joinGroups")}

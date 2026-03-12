@@ -114,7 +114,7 @@ export const LdapSettingsConnection = ({
         />
         <FormGroup
           label={t("enableStartTls")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("enableStartTlsHelp")}
               fieldLabelId="enableStartTls"
@@ -135,7 +135,6 @@ export const LdapSettingsConnection = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("enableStartTls")}
               />
             )}
@@ -156,7 +155,7 @@ export const LdapSettingsConnection = ({
         />
         <FormGroup
           label={t("connectionPooling")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("connectionPoolingHelp")}
               fieldLabelId="connectionPooling"
@@ -177,7 +176,6 @@ export const LdapSettingsConnection = ({
                 onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
-                labelOff={t("off")}
                 aria-label={t("connectionPooling")}
               />
             )}
@@ -192,7 +190,6 @@ export const LdapSettingsConnection = ({
         />
         <FormGroup fieldId="kc-test-connection-button">
           <Button
-            variant="secondary"
             id="kc-test-connection-button"
             data-testid="test-connection-button"
             onClick={() => testLdap("testConnection")}
@@ -202,7 +199,7 @@ export const LdapSettingsConnection = ({
         </FormGroup>
         <FormGroup
           label={t("bindType")}
-          labelIcon={
+          labelHelp={
             <HelpItem helpText={t("bindTypeHelp")} fieldLabelId="bindType" />
           }
           fieldId="kc-bind-type"
@@ -258,7 +255,6 @@ export const LdapSettingsConnection = ({
         )}
         <FormGroup fieldId="kc-test-auth-button">
           <Button
-            variant="secondary"
             id="kc-test-auth-button"
             data-testid="test-auth-button"
             onClick={() => testLdap("testAuthentication")}

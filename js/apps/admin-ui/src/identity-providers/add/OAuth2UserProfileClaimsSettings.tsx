@@ -6,7 +6,7 @@ export const UserProfileClaimsSettings = () => {
   const { t } = useTranslation();
 
   return (
-    <Form isHorizontal className="pf-v5-u-py-lg">
+    <Form isHorizontal className="pf-v6-u-py-lg">
       <Title headingLevel="h2" size="xl" className="kc-form-panel__title">
         {t("userProfileClaims")}
       </Title>

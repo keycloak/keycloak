@@ -1,5 +1,6 @@
 import { TextControl } from "@keycloak/keycloak-ui-shared";
-import { Form, ModalVariant } from "@patternfly/react-core";
+import { Form } from "@patternfly/react-core";
+import { ModalVariant } from "@patternfly/react-core/deprecated";
 import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm, useWatch } from "react-hook-form";

@@ -50,7 +50,7 @@ export const FileUploadControl = <
     <FormLabel
       name={props.name}
       label={props.label}
-      labelIcon={labelIcon}
+      labelHelp={labelIcon}
       isRequired={required}
       error={fieldState.error}
     >

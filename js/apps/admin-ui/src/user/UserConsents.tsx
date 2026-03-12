@@ -2,8 +2,8 @@ import type UserConsentRepresentation from "@keycloak/keycloak-admin-client/lib/
 import {
   AlertVariant,
   ButtonVariant,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
 } from "@patternfly/react-core";
 import { CubesIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
@@ -46,13 +46,13 @@ export const UserConsents = () => {
     grantedClientScopes,
   }: UserConsentRepresentation) => {
     return (
-      <ChipGroup className="kc-consents-chip-group">
+      <LabelGroup className="kc-consents-chip-group">
         {grantedClientScopes!.map((currentChip) => (
-          <Chip key={currentChip} isReadOnly className="kc-consents-chip">
+          <Label key={currentChip} readOnly className="kc-consents-chip">
             {currentChip}
-          </Chip>
+          </Label>
         ))}
-      </ChipGroup>
+      </LabelGroup>
     );
   };
 

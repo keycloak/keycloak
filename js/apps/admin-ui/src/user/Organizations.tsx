@@ -305,7 +305,6 @@ export const Organizations = ({ user }: OrganizationProps) => {
             <ToolbarItem>
               <Button
                 data-testid="removeOrganization"
-                variant="secondary"
                 isDisabled={selectedOrgs.length === 0}
                 onClick={() => toggleDeleteDialog()}
               >

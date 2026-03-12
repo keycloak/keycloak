@@ -7,9 +7,8 @@ import {
   FormHelperText,
   HelperText,
   HelperTextItem,
-  Modal,
-  ModalVariant,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import {
   ChangeEvent,
   DragEvent as ReactDragEvent,

@@ -140,7 +140,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   }
 
   return (
-    <PageSection variant="light" padding={{ default: "noPadding" }}>
+    <PageSection hasBodyWrapper={false} padding={{ default: "noPadding" }}>
       <PublicKeyDialog />
       <CertificateDialog />
       <KeycloakDataTable
@@ -202,7 +202,6 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                         togglePublicKeyDialog();
                         setPublicKey(publicKey!);
                       }}
-                      variant="secondary"
                       id={publicKey}
                     >
                       {t("publicKey")}
@@ -212,7 +211,6 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                         toggleCertificateDialog();
                         setCertificate(certificate!);
                       }}
-                      variant="secondary"
                       id={certificate}
                       className="kc-certificate"
                     >
@@ -227,7 +225,6 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                       togglePublicKeyDialog();
                       setPublicKey(publicKey!);
                     }}
-                    variant="secondary"
                     id="kc-public-key"
                   >
                     {t("publicKey")}

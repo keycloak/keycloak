@@ -1,13 +1,11 @@
 import type AccessTokenRepresentation from "@keycloak/keycloak-admin-client/lib/defs/accessTokenRepresentation";
 import {
   Button,
-  Modal,
-  ModalVariant,
-  Text,
+  Content,
   TextArea,
-  TextContent,
-  TextVariants,
+  ContentVariants,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { useTranslation } from "react-i18next";
 
 import { prettyPrintJSON } from "../../util";
@@ -25,11 +23,7 @@ export const AuthorizationDataModal = ({
 
   return (
     <>
-      <Button
-        data-testid="authorization-revert"
-        onClick={toggle}
-        variant="secondary"
-      >
+      <Button data-testid="authorization-revert" onClick={toggle}>
         {t("showAuthData")}
       </Button>
       <Modal
@@ -37,10 +31,10 @@ export const AuthorizationDataModal = ({
         isOpen={show}
         aria-label={t("authData")}
         header={
-          <TextContent>
-            <Text component={TextVariants.h1}>{t("authData")}</Text>
-            <Text>{t("authDataDescription")}</Text>
-          </TextContent>
+          <Content>
+            <Content component={ContentVariants.h1}>{t("authData")}</Content>
+            <Content component="p">{t("authDataDescription")}</Content>
+          </Content>
         }
         onClose={toggle}
         actions={[

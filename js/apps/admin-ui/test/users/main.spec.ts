@@ -65,7 +65,7 @@ test.describe("User creation", () => {
     await login(page, { to: toUsers({ realm: DEFAULT_REALM }) });
 
     // check banner visibility first
-    await expect(page.locator(".pf-v5-c-banner")).toContainText(
+    await expect(page.locator(".pf-v6-c-banner")).toContainText(
       "You are logged in as a temporary admin user.",
     );
 
@@ -196,7 +196,7 @@ test.describe("Existing users", () => {
     await clickSaveButton(page);
 
     const fieldError = page.locator(
-      "#customRequired ~ .pf-v5-c-helper-text, [data-testid='customRequired-helper']",
+      "#customRequired ~ .pf-v6-c-helper-text, [data-testid='customRequired-helper']",
     );
     await expect(fieldError).toBeVisible();
 

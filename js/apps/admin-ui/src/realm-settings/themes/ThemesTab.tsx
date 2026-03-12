@@ -29,7 +29,9 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
   const settingsTab = useRoutableTab(toThemesTab(param("settings")));
   const quickThemeTab = useRoutableTab(toThemesTab(param("quickTheme")));
 
-  if (!isFeatureEnabled(Feature.QuickTheme)) {
+  const hasQuickTheme = isFeatureEnabled(Feature.QuickTheme);
+
+  if (!hasQuickTheme) {
     return <ThemeSettingsTab realm={realm} save={save} />;
   }
 
@@ -50,14 +52,16 @@ export default function ThemesTab({ realm, save }: ThemesTabProps) {
       >
         <ThemeSettingsTab realm={realm} save={save} />
       </Tab>
-      <Tab
-        id="quickTheme"
-        title={<TabTitleText>{t("quickTheme")}</TabTitleText>}
-        data-testid="quickTheme-tab"
-        {...quickThemeTab}
-      >
+      {hasQuickTheme && (
+        <Tab
+          id="quickTheme"
+          title={<TabTitleText>{t("quickTheme")}</TabTitleText>}
+          data-testid="quickTheme-tab"
+          {...quickThemeTab}
+        >
         <QuickTheme realm={realm} />
-      </Tab>
+        </Tab>
+      )}
     </RoutableTabs>
   );
 }

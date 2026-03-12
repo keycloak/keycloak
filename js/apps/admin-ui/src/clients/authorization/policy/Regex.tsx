@@ -23,7 +23,6 @@ export const Regex = () => {
         label={t("targetContextAttributes")}
         labelIcon={t("targetContextAttributesHelp")}
         labelOn={t("yes")}
-        labelOff={t("no")}
       />
     </>
   );

@@ -3,8 +3,8 @@ import {
   ActionList,
   ActionListItem,
   Button,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
   FormGroup,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -99,7 +99,7 @@ export const GroupComponent = ({
 
           <FormGroup
             label={t(label!)}
-            labelIcon={
+            labelHelp={
               <HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />
             }
             fieldId={name!}
@@ -107,9 +107,9 @@ export const GroupComponent = ({
           >
             <ActionList>
               <ActionListItem>
-                <ChipGroup>
+                <LabelGroup>
                   {field.value && (
-                    <Chip
+                    <Label
                       onClick={() => {
                         field.onChange(undefined);
                         setValue(groupTypeFieldName, undefined);
@@ -124,15 +124,14 @@ export const GroupComponent = ({
                         </>
                       )}
                       {field.value}
-                    </Chip>
+                    </Label>
                   )}
-                </ChipGroup>
+                </LabelGroup>
               </ActionListItem>
               <ActionListItem>
                 <Button
                   id="kc-join-groups-button"
                   onClick={() => setOpen(true)}
-                  variant="secondary"
                   data-testid="join-groups-button"
                 >
                   {t("selectGroup")}
@@ -143,7 +142,6 @@ export const GroupComponent = ({
                   <Button
                     id="kc-join-org-groups-button"
                     onClick={() => setOpenOrgGroups(true)}
-                    variant="secondary"
                     data-testid="join-org-groups-button"
                   >
                     {t("selectOrgGroup")}

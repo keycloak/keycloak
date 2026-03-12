@@ -53,7 +53,7 @@ type RolesListProps = {
   paginated?: boolean;
   parentRoleId?: string;
   messageBundle?: string;
-  isReadOnly: boolean;
+  readOnly: boolean;
   toCreate: To;
   toDetail: (roleId: string) => To;
   loader?: (
@@ -70,7 +70,7 @@ export const RolesList = ({
   messageBundle = "roles",
   toCreate,
   toDetail,
-  isReadOnly,
+  readOnly,
 }: RolesListProps) => {
   const { adminClient } = useAdminClient();
 
@@ -117,7 +117,7 @@ export const RolesList = ({
         searchPlaceholderKey="searchForRoles"
         isPaginated={paginated}
         toolbarItem={
-          !isReadOnly && (
+          !readOnly && (
             <Button
               data-testid="create-role"
               component={(props) => <Link {...props} to={toCreate} />}
@@ -127,7 +127,7 @@ export const RolesList = ({
           )
         }
         actions={
-          isReadOnly
+          readOnly
             ? undefined
             : [
                 {
@@ -175,9 +175,9 @@ export const RolesList = ({
             hasIcon={true}
             message={t(`noRoles-${messageBundle}`)}
             instructions={
-              isReadOnly ? "" : t(`noRolesInstructions-${messageBundle}`)
+              readOnly ? "" : t(`noRolesInstructions-${messageBundle}`)
             }
-            primaryActionText={isReadOnly ? "" : t("createRole")}
+            primaryActionText={readOnly ? "" : t("createRole")}
             onPrimaryAction={() => navigate(toCreate)}
           />
         }

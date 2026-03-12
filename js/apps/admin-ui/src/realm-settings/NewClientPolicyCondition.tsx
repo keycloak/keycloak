@@ -188,18 +188,18 @@ export default function NewClientPolicyCondition() {
         }
         divider
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         <FormAccess
           isHorizontal
           role="manage-realm"
-          isReadOnly={isGlobalPolicy}
-          className="pf-v5-u-mt-lg"
+          readOnly={isGlobalPolicy}
+          className="pf-v6-u-mt-lg"
           onSubmit={form.handleSubmit(save)}
         >
           <FormGroup
             label={t("conditionType")}
             fieldId="conditionType"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={condition?.helpText || t("conditionsHelp")}
                 fieldLabelId="conditionType"

@@ -52,7 +52,7 @@ export const NumberControl = <
       label={label}
       isRequired={controller.rules?.required === true}
       error={errors[name]}
-      labelIcon={labelIcon}
+      labelHelp={labelIcon}
     >
       <Controller
         {...controller}

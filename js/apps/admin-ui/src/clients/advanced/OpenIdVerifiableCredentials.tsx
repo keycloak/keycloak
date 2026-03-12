@@ -30,7 +30,6 @@ export const OpenIdVerifiableCredentials = ({
       />
       <ActionGroup>
         <Button
-          variant="secondary"
           id="oid4vciSave"
           data-testid="oid4vciSave"
           onClick={() => save()}

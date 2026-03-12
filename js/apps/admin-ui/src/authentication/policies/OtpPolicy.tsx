@@ -11,8 +11,8 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
   FormGroup,
   PageSection,
   Radio,
@@ -96,7 +96,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
   };
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <FormAccess
         role="manage-realm"
         isHorizontal
@@ -106,7 +106,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
         <FormProvider {...form}>
           <FormGroup
             label={t("otpType")}
-            labelIcon={
+            labelHelp={
               <HelpItem helpText={t("otpTypeHelp")} fieldLabelId="otpType" />
             }
             hasNoPaddingTop
@@ -146,7 +146,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           />
           <FormGroup
             label={t("otpPolicyDigits")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("otpPolicyDigitsHelp")}
                 fieldLabelId="otpPolicyDigits"
@@ -211,7 +211,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           )}
           <FormGroup
             label={t("supportedApplications")}
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("supportedApplicationsHelp")}
                 fieldLabelId="supportedApplications"
@@ -219,13 +219,13 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             }
           >
             <span data-testid="supportedApplications">
-              <ChipGroup>
+              <LabelGroup>
                 {supportedApplications.map((label) => (
-                  <Chip key={label} isReadOnly>
+                  <Label key={label} readOnly>
                     {label}
-                  </Chip>
+                  </Label>
                 ))}
-              </ChipGroup>
+              </LabelGroup>
             </span>
           </FormGroup>
 
@@ -235,7 +235,6 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
               label={t("otpPolicyCodeReusable")}
               labelIcon={t("otpPolicyCodeReusableHelp")}
               labelOn={t("on")}
-              labelOff={t("off")}
             />
           )}
 

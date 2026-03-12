@@ -65,7 +65,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
   };
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <FormAccess
         role="manage-realm"
         isHorizontal

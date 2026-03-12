@@ -59,7 +59,7 @@ export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
   return (
     <FormGroup
       label={isRadio ? t("role") : t("roles")}
-      labelIcon={
+      labelHelp={
         <HelpItem
           helpText={isRadio ? t("selectRole") : t("policyRolesHelp")}
           fieldLabelId="roles"
@@ -93,7 +93,6 @@ export const RoleSelect = ({ name, isRadio = false }: RoleSelectorProps) => {
       <AddRoleButton
         label={isRadio ? t("selectRole") : t("addRoles")}
         data-testid="select-role-button"
-        variant="secondary"
         onFilerTypeChange={(type) => {
           setFilterType(type);
           setIsModalOpen(true);

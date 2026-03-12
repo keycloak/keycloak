@@ -19,7 +19,7 @@ export type SwitchControlProps<
     label?: string;
     labelIcon?: string;
     labelOn: string;
-    labelOff: string;
+    labelOff?: string;
     stringify?: boolean;
   };
 
@@ -42,7 +42,7 @@ export const SwitchControl = <
       name={props.name}
       isRequired={props.rules?.required === true}
       label={props.label}
-      labelIcon={labelIcon}
+      labelHelp={labelIcon}
     >
       <Controller
         control={control}

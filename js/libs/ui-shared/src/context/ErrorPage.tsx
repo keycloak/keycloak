@@ -1,11 +1,12 @@
 import {
   Button,
-  Modal,
-  ModalVariant,
+  Content,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   Page,
-  Text,
-  TextContent,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { useTranslation } from "react-i18next";
 import { getNetworkErrorMessage } from "../utils/errors";
 
@@ -26,27 +27,27 @@ export const ErrorPage = (props: ErrorPageProps) => {
 
   return (
     <Page>
-      <Modal
-        variant={ModalVariant.small}
-        title={t("somethingWentWrong")}
-        titleIconVariant="danger"
-        showClose={false}
-        isOpen
-        actions={[
+      <Modal variant={ModalVariant.small} isOpen>
+        <ModalHeader
+          title={t("somethingWentWrong")}
+          titleIconVariant="danger"
+        />
+        <ModalBody>
+          <Content>
+            {errorMessage ? (
+              <p>{t(errorMessage)}</p>
+            ) : networkErrorMessage && i18n.exists(networkErrorMessage) ? (
+              <p>{t(networkErrorMessage)}</p>
+            ) : (
+              <p>{t("somethingWentWrongDescription")}</p>
+            )}
+          </Content>
+        </ModalBody>
+        <ModalFooter>
           <Button key="tryAgain" variant="primary" onClick={onRetry}>
             {t("tryAgain")}
-          </Button>,
-        ]}
-      >
-        <TextContent>
-          {errorMessage ? (
-            <Text>{t(errorMessage)}</Text>
-          ) : networkErrorMessage && i18n.exists(networkErrorMessage) ? (
-            <Text>{t(networkErrorMessage)}</Text>
-          ) : (
-            <Text>{t("somethingWentWrongDescription")}</Text>
-          )}
-        </TextContent>
+          </Button>
+        </ModalFooter>
       </Modal>
     </Page>
   );

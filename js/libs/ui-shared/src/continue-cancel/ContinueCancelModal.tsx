@@ -1,5 +1,12 @@
 import { ReactNode, useState } from "react";
-import { Button, ButtonProps, Modal, ModalProps } from "@patternfly/react-core";
+import {
+  Button,
+  ButtonProps,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from "@patternfly/react-core";
+import { Modal, ModalProps } from "@patternfly/react-core/deprecated";
 
 export type ContinueCancelModalProps = Omit<ModalProps, "ref" | "children"> & {
   modalTitle: string;
@@ -43,10 +50,12 @@ export const ContinueCancelModal = ({
       <Modal
         variant="small"
         {...rest}
-        title={modalTitle}
         isOpen={open}
         onClose={() => setOpen(false)}
-        actions={[
+      >
+        <ModalHeader title={modalTitle} />
+        <ModalBody>{children}</ModalBody>
+        <ModalFooter>
           <Button
             id="modal-confirm"
             key="confirm"
@@ -57,18 +66,11 @@ export const ContinueCancelModal = ({
             }}
           >
             {continueLabel}
-          </Button>,
-          <Button
-            id="modal-cancel"
-            key="cancel"
-            variant="secondary"
-            onClick={() => setOpen(false)}
-          >
+          </Button>
+          <Button id="modal-cancel" key="cancel" onClick={() => setOpen(false)}>
             {cancelLabel}
-          </Button>,
-        ]}
-      >
-        {children}
+          </Button>
+        </ModalFooter>
       </Modal>
     </>
   );

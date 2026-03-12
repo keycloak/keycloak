@@ -64,7 +64,7 @@ export const GroupSelect = ({
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId="groups" />}
+      labelHelp={<HelpItem helpText={t(helpText!)} fieldLabelId="groups" />}
       fieldId="groups"
       isRequired={isRequired}
     >
@@ -109,7 +109,6 @@ export const GroupSelect = ({
             <Button
               data-testid="select-group-button"
               isDisabled={isDisabled}
-              variant="secondary"
               onClick={() => {
                 setOpen(true);
               }}

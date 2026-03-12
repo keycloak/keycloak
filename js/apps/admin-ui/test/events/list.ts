@@ -82,7 +82,7 @@ export async function clickSearchButton(page: Page) {
   await page.getByTestId("search-events-btn").click();
 }
 
-export async function assertSearchChipGroupItemExist(
+export async function assertSearchLabelGroupItemExist(
   page: Page,
   itemName: string,
   exist = true,

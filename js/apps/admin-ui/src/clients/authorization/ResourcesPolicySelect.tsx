@@ -14,8 +14,8 @@ import {
 import {
   Button,
   ButtonVariant,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
   SelectOption,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -214,13 +214,13 @@ export const ResourcesPolicySelect = ({
       </SelectOption>
     ));
 
-  const toChipGroupItems = (
+  const toLabelGroupItems = (
     field: ControllerRenderProps<PolicyRepresentation, Type>,
   ) => {
     return (
-      <ChipGroup>
+      <LabelGroup>
         {selected?.map((item) => (
-          <Chip
+          <Label
             key={item.id}
             onClick={() => {
               field.onChange(field.value?.filter((id) => id !== item.id) || []);
@@ -243,9 +243,9 @@ export const ResourcesPolicySelect = ({
             ) : (
               item.name
             )}
-          </Chip>
+          </Label>
         ))}
-      </ChipGroup>
+      </LabelGroup>
     );
   };
 
@@ -309,7 +309,7 @@ export const ResourcesPolicySelect = ({
             aria-label={t(name)}
             validated={errors[name] ? "error" : "default"}
             typeAheadAriaLabel={t(name)}
-            chipGroupComponent={toChipGroupItems(field)}
+            chipGroupComponent={toLabelGroupItems(field)}
             footer={
               name === "policies" && !isAdminPermissionsClient ? (
                 <Button

@@ -197,12 +197,11 @@ export const Members = () => {
             </ToolbarItem>
             <ToolbarItem>
               <Button
+                icon={t("removeMember")}
                 variant="plain"
                 isDisabled={selectedMembers.length === 0}
                 onClick={() => removeMember(selectedMembers)}
-              >
-                {t("removeMember")}
-              </Button>
+              />
             </ToolbarItem>
             <ToolbarItem>
               <CheckboxFilterComponent

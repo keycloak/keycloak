@@ -52,7 +52,7 @@ export const SingleSelectControl = <
       label={label}
       isRequired={required}
       error={get(errors, name)}
-      labelIcon={labelIcon}
+      labelHelp={labelIcon}
     >
       <Controller
         {...controller}

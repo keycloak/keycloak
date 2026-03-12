@@ -45,7 +45,7 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
       <style>{`
         .login-preview {
             ${Object.entries(cssVars)
-              .map(([key, value]) => `--pf-v5-global--${key}: ${value};`)
+              .map(([key, value]) => `--pf-v6-global--${key}: ${value};`)
               .join("\n")}
 
           /* Keycloak login theme variables - override with local/uploaded images */
@@ -79,8 +79,8 @@ export const LoginPreviewWindow = ({ cssVars }: LoginPreviewWindowProps) => {
           <div id="keycloak-bg" data-page-id="login-preview">
             <div className={properties.kcLogin}>
               <div className={properties.kcLoginContainer}>
-                <header id="kc-header" className="pf-v5-c-login__header">
-                  <div id="kc-header-wrapper" className="pf-v5-c-brand">
+                <header id="kc-header" className="pf-v6-c-login__header">
+                  <div id="kc-header-wrapper" className="pf-v6-c-brand">
                     <div className="kc-logo-text">
                       <span>Keycloak</span>
                     </div>

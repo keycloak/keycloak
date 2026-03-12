@@ -16,14 +16,12 @@ export const RedirectUrl = ({ id }: { id: string }) => {
   return (
     <FormGroup
       label={t("redirectURI")}
-      labelIcon={
+      labelHelp={
         <HelpItem helpText={t("redirectURIHelp")} fieldLabelId="redirectURI" />
       }
       fieldId="kc-redirect-uri"
     >
-      <ClipboardCopy
-        isReadOnly
-      >{`${callbackUrl}/${id}/endpoint`}</ClipboardCopy>
+      <ClipboardCopy readOnly>{`${callbackUrl}/${id}/endpoint`}</ClipboardCopy>
     </FormGroup>
   );
 };

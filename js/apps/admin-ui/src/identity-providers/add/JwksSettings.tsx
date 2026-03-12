@@ -114,7 +114,6 @@ export const JwksSettings = ({ readOnly = false }: JwksSettingsProps) => {
           {!readOnly && (
             <FormGroup fieldId="kc-import-certificate-button">
               <Button
-                variant="secondary"
                 data-testid="import-certificate-button"
                 onClick={() => setOpenImportKeys(true)}
               >

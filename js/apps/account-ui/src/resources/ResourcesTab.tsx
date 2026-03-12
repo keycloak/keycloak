@@ -4,8 +4,8 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
   Dropdown,
   DropdownItem,
   DropdownList,
@@ -231,13 +231,13 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
               {isShared ? (
                 <Td>
                   {resource.scopes.length > 0 && (
-                    <ChipGroup categoryName={t("permissions")}>
+                    <LabelGroup categoryName={t("permissions")}>
                       {resource.scopes.map((scope) => (
-                        <Chip key={scope.name} isReadOnly>
+                        <Label key={scope.name} readOnly>
                           {scope.displayName || scope.name}
-                        </Chip>
+                        </Label>
                       ))}
-                    </ChipGroup>
+                    </LabelGroup>
                   )}
                 </Td>
               ) : (
@@ -247,13 +247,14 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                       <OverflowMenuGroup groupType="button">
                         <OverflowMenuItem>
                           <Button
+                            icon={<ShareAltIcon />}
                             data-testid={`share-${resource.name}`}
                             variant="link"
                             onClick={() =>
                               toggleOpen(resource._id, "shareDialogOpen", true)
                             }
                           >
-                            <ShareAltIcon /> {t("share")}
+                            {t("share")}
                           </Button>
                         </OverflowMenuItem>
                         <OverflowMenuItem>

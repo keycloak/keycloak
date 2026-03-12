@@ -6,6 +6,8 @@ import {
   MastheadBrand,
   MastheadBrandProps,
   MastheadContent,
+  MastheadLogo,
+  MastheadMain,
   MastheadMainProps,
   MastheadToggle,
   PageToggleButton,
@@ -13,7 +15,7 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { BarsIcon } from "@patternfly/react-icons";
+
 import { TFunction } from "i18next";
 import Keycloak, { type KeycloakTokenParsed } from "keycloak-js";
 import { ReactNode } from "react";
@@ -59,7 +61,7 @@ type KeycloakMastheadProps = MastheadMainProps & {
 
 const KeycloakMasthead = ({
   keycloak,
-  brand: { src, alt, className, ...brandProps },
+  brand: { src, alt, className },
   avatar,
   features: {
     hasLogout = true,
@@ -95,20 +97,26 @@ const KeycloakMasthead = ({
   const picture = keycloak.idTokenParsed?.picture;
   return (
     <Masthead {...rest}>
-      <MastheadToggle>
-        <PageToggleButton variant="plain" aria-label={t("navigation")}>
-          <BarsIcon />
-        </PageToggleButton>
-      </MastheadToggle>
-      <MastheadBrand {...brandProps}>
-        <img src={src} alt={alt} className={className} />
-      </MastheadBrand>
+      <MastheadMain>
+        <MastheadToggle>
+          <PageToggleButton
+            isHamburgerButton
+            variant="plain"
+            aria-label={t("navigation")}
+          ></PageToggleButton>
+        </MastheadToggle>
+        <MastheadBrand data-codemods>
+          <MastheadLogo data-codemods>
+            <img src={src} alt={alt} className={className} />
+          </MastheadLogo>
+        </MastheadBrand>
+      </MastheadMain>
       <MastheadContent>
         {toolbar}
         <Toolbar>
           <ToolbarContent>
             {toolbarItems?.map((item, index) => (
-              <ToolbarItem key={index} align={{ default: "alignRight" }}>
+              <ToolbarItem key={index} align={{ default: "alignEnd" }}>
                 {item}
               </ToolbarItem>
             ))}
@@ -129,7 +137,7 @@ const KeycloakMasthead = ({
               />
             </ToolbarItem>
             <ToolbarItem
-              align={{ default: "alignLeft" }}
+              align={{ default: "alignStart" }}
               visibility={{
                 md: "hidden",
               }}
@@ -144,9 +152,8 @@ const KeycloakMasthead = ({
               />
             </ToolbarItem>
             <ToolbarItem
-              variant="overflow-menu"
-              align={{ default: "alignRight" }}
-              className="pf-v5-u-m-0-on-lg"
+              align={{ default: "alignEnd" }}
+              className="pf-v6-u-m-0-on-lg"
             >
               {picture || avatar?.src ? (
                 <Avatar {...{ src: picture, alt: t("avatar"), ...avatar }} />

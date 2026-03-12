@@ -1,4 +1,4 @@
-// variable is the PF5 variable with the --pf-v5-global-- prefix removed
+// variable is the PF5 variable with the --pf-v6-global-- prefix removed
 // Dependencies use {{color}} token which gets replaced with parent's current value
 type Value = { light?: string; dark?: string };
 export type DefaultValueType = string | Value;

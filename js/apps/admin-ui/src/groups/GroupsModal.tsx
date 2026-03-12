@@ -11,9 +11,8 @@ import {
   Button,
   ButtonVariant,
   Form,
-  Modal,
-  ModalVariant,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { useGroupResource } from "../context/group-resource/GroupResourceContext";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";

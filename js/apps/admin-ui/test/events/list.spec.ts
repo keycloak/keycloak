@@ -11,7 +11,7 @@ import {
 } from "../utils/table.ts";
 import {
   assertSearchButtonDisabled,
-  assertSearchChipGroupItemExist,
+  assertSearchLabelGroupItemExist,
   clickSearchButton,
   clickSearchPanel,
   enableSaveEvents,
@@ -107,7 +107,7 @@ test.describe.serial("Events tests", () => {
       });
       await clickSearchButton(page);
 
-      await assertSearchChipGroupItemExist(
+      await assertSearchLabelGroupItemExist(
         page,
         eventsTestUser.eventsTestUserId,
       );

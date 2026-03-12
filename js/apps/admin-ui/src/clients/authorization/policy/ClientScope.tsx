@@ -46,7 +46,7 @@ export const ClientScope = () => {
   return (
     <FormGroup
       label={t("clientScopes")}
-      labelIcon={
+      labelHelp={
         <HelpItem
           helpText={t("clientsClientScopesHelp")}
           fieldLabelId="clientScopes"
@@ -87,7 +87,6 @@ export const ClientScope = () => {
             )}
             <Button
               data-testid="select-scope-button"
-              variant="secondary"
               onClick={() => {
                 setOpen(true);
               }}

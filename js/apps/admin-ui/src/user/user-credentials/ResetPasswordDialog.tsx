@@ -204,7 +204,7 @@ export const ResetPasswordDialog = ({
               name="temporaryPassword"
               label={t("temporaryPassword")}
               labelIcon={t("temporaryPasswordHelpText")}
-              className="pf-v5-u-mb-md"
+              className="pf-v6-u-mb-md"
               defaultValue="true"
             />
           </FormProvider>

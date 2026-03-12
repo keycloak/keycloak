@@ -11,13 +11,11 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
   EmptyState,
   FlexItem,
-  Label,
-  Text,
-  TextContent,
+  Content,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
@@ -68,7 +66,7 @@ const UserDetailLink = (user: BruteUser) => {
       {user.attributes?.["is_temporary_admin"]?.[0] === "true" && (
         <Tooltip content={t("temporaryAdmin")}>
           <WarningTriangleIcon
-            className="pf-v5-u-ml-sm"
+            className="pf-v6-u-ml-sm"
             id="temporary-admin-label"
           />
         </Tooltip>
@@ -263,8 +261,8 @@ export function UserDataTable() {
           <>
             {Object.values(activeFilters.userAttribute).map((entry) => {
               return (
-                <ChipGroup
-                  className="pf-v5-u-mt-md pf-v5-u-mr-md"
+                <LabelGroup
+                  className="pf-v6-u-mt-md pf-v6-u-mr-md"
                   data-testid="user-attribute-search-chips-group"
                   key={entry.name}
                   categoryName={
@@ -287,10 +285,10 @@ export function UserDataTable() {
                     refresh();
                   }}
                 >
-                  <Chip key={entry.name} isReadOnly>
+                  <Label key={entry.name} readOnly>
                     {entry.value}
-                  </Chip>
-                </ChipGroup>
+                  </Label>
+                </LabelGroup>
               );
             })}
           </>
@@ -366,9 +364,11 @@ export function UserDataTable() {
                 <ToolbarContent>{toolbar()}</ToolbarContent>
               </Toolbar>
               <EmptyState data-testid="empty-state" variant="lg">
-                <TextContent className="kc-search-users-text">
-                  <Text>{t("searchForUserDescription")}</Text>
-                </TextContent>
+                <Content className="kc-search-users-text">
+                  <Content component="p">
+                    {t("searchForUserDescription")}
+                  </Content>
+                </Content>
               </EmptyState>
             </>
           ) : (

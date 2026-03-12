@@ -46,7 +46,7 @@ export type FormAccessProps = FormProps & {
   /**
    * Overwrite the fineGrainedAccess and make form regardless of access rights.
    */
-  isReadOnly?: boolean;
+  readOnly?: boolean;
 };
 
 /**
@@ -57,7 +57,7 @@ export const FormAccess = ({
   children,
   role,
   fineGrainedAccess = false,
-  isReadOnly = false,
+  readOnly = false,
   unWrap = false,
   ...rest
 }: PropsWithChildren<FormAccessProps>) => {
@@ -120,7 +120,7 @@ export const FormAccess = ({
     });
   };
 
-  const isDisabled = isReadOnly || (!hasAccess(role) && !fineGrainedAccess);
+  const isDisabled = readOnly || (!hasAccess(role) && !fineGrainedAccess);
 
   return (
     <>

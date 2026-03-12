@@ -40,9 +40,7 @@ const SkipCustomizationFooter = () => {
   const { t } = useTranslation();
   return (
     <WizardFooterWrapper>
-      <Button variant="secondary" onClick={goToPrevStep}>
-        {t("back")}
-      </Button>
+      <Button onClick={goToPrevStep}>{t("back")}</Button>
       <Button variant="primary" type="submit" onClick={goToNextStep}>
         {t("next")}
       </Button>

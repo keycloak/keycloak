@@ -149,17 +149,17 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   });
 
   return (
-    <PageSection>
+    <PageSection hasBodyWrapper={false}>
       <FormAccess
         onSubmit={handleSubmit(save)}
         isHorizontal
-        className="pf-v5-u-mt-md"
+        className="pf-v6-u-mt-md"
         role="manage-clients"
         fineGrainedAccess={client.access?.configure}
       >
         <ClientSecretConfirm />
         <AccessTokenConfirm />
-        <Card isFlat>
+        <Card isCompact>
           <CardBody>
             <SelectControl
               name="clientAuthenticatorType"
@@ -229,12 +229,12 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
             </ActionGroup>
           </CardBody>
         </Card>
-        <Card isFlat>
+        <Card isCompact>
           <CardBody>
             <FormGroup
               label={t("registrationAccessToken")}
               fieldId="kc-access-token"
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t("registrationAccessTokenHelp")}
                   fieldLabelId="registrationAccessToken"
@@ -243,15 +243,12 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
             >
               <Split hasGutter>
                 <SplitItem isFilled>
-                  <ClipboardCopy id="kc-access-token" isReadOnly>
+                  <ClipboardCopy id="kc-access-token" readOnly>
                     {accessToken}
                   </ClipboardCopy>
                 </SplitItem>
                 <SplitItem>
-                  <Button
-                    variant="secondary"
-                    onClick={toggleAccessTokenConfirm}
-                  >
+                  <Button onClick={toggleAccessTokenConfirm}>
                     {t("regenerate")}
                   </Button>
                 </SplitItem>

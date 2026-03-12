@@ -5,12 +5,10 @@ import {
   ButtonVariant,
   Form,
   FormGroup,
-  Modal,
-  ModalVariant,
   Switch,
-  Text,
-  TextContent,
+  Content,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -93,9 +91,9 @@ export const PartialExportDialog = ({
         </Button>,
       ]}
     >
-      <TextContent>
-        <Text>{t("partialExportHeaderText")}</Text>
-      </TextContent>
+      <Content>
+        <Content component="p">{t("partialExportHeaderText")}</Content>
+      </Content>
       <Form
         isHorizontal
         className="keycloak__realm-settings__partial-import_form"
@@ -111,7 +109,6 @@ export const PartialExportDialog = ({
             isChecked={exportGroupsAndRoles}
             onChange={(_event, val) => setExportGroupsAndRoles(val)}
             label={t("on")}
-            labelOff={t("off")}
             aria-label={t("includeGroupsAndRoles")}
           />
         </FormGroup>
@@ -126,7 +123,6 @@ export const PartialExportDialog = ({
             onChange={(_event, val) => setExportClients(val)}
             isChecked={exportClients}
             label={t("on")}
-            labelOff={t("off")}
             aria-label={t("includeClients")}
           />
         </FormGroup>

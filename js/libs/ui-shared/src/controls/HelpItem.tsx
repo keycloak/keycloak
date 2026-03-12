@@ -1,4 +1,4 @@
-import { Icon, Popover } from "@patternfly/react-core";
+import { Button, Icon, Popover } from "@patternfly/react-core";
 import { HelpIcon, ExclamationTriangleIcon } from "@patternfly/react-icons";
 import { ReactNode } from "react";
 import { useHelp } from "../context/HelpContext";
@@ -25,11 +25,12 @@ export const HelpItem = ({
     <Popover bodyContent={helpText}>
       <>
         {!unWrap && (
-          <button
+          <Button
             data-testid={`help-label-${fieldLabelId}`}
             aria-label={fieldLabelId}
             onClick={(e) => e.preventDefault()}
-            className="pf-v5-c-form__group-label-help"
+            variant="plain"
+            className="pf-v6-c-form__group-label-help"
           >
             <Icon
               isInline={noVerticalAlign}
@@ -37,7 +38,7 @@ export const HelpItem = ({
             >
               <IconComponent />
             </Icon>
-          </button>
+          </Button>
         )}
         {unWrap && (
           <Icon

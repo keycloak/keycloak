@@ -63,11 +63,11 @@ export const AuthorizationExport = () => {
   }
 
   return (
-    <PageSection>
+    <PageSection hasBodyWrapper={false}>
       <FormAccess
         isHorizontal
         role="manage-authorization"
-        className="pf-v5-u-mt-lg"
+        className="pf-v6-u-mt-lg"
       >
         <CodeEditor
           data-testid="authorization-export-code-editor"
@@ -86,7 +86,6 @@ export const AuthorizationExport = () => {
           </Button>
           <Button
             data-testid="authorization-export-copy"
-            variant="secondary"
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(code!);

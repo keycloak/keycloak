@@ -6,9 +6,7 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DragDrop,
   DropdownItem,
-  Droppable,
   Label,
   PageSection,
   ToggleGroup,
@@ -17,6 +15,7 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { DragDrop, Droppable } from "@patternfly/react-core/deprecated";
 import { DomainIcon, TableIcon } from "@patternfly/react-icons";
 import { Table, Tbody } from "@patternfly/react-table";
 import { useState } from "react";
@@ -364,7 +363,7 @@ export default function FlowDetails() {
         ]}
         dropdownItems={dropdownItems}
       />
-      <PageSection variant="light">
+      <PageSection hasBodyWrapper={false}>
         {executionList && hasExecutions && (
           <>
             <Toolbar id="toolbar">
@@ -390,7 +389,6 @@ export default function FlowDetails() {
                 <ToolbarItem>
                   <Button
                     data-testid="addStep"
-                    variant="secondary"
                     onClick={() => setShowAddExecutionDialog(true)}
                   >
                     {t("addExecution")}
@@ -399,7 +397,6 @@ export default function FlowDetails() {
                 <ToolbarItem>
                   <Button
                     data-testid="addSubFlow"
-                    variant="secondary"
                     onClick={() => setShowSubFlowDialog(true)}
                   >
                     {t("addSubFlow")}
@@ -502,7 +499,7 @@ export default function FlowDetails() {
                 )}
               </>
             )}
-            <div className="pf-v5-screen-reader" aria-live="assertive">
+            <div className="pf-v6-screen-reader" aria-live="assertive">
               {liveText}
             </div>
           </>

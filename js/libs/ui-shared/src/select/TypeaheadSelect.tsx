@@ -1,7 +1,7 @@
 import {
   Button,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
   MenuFooter,
   MenuToggle,
   MenuToggleStatus,
@@ -160,9 +160,9 @@ export const TypeaheadSelect = ({
                 (chipGroupComponent ? (
                   chipGroupComponent
                 ) : (
-                  <ChipGroup {...chipGroupProps}>
+                  <LabelGroup {...chipGroupProps}>
                     {selections.map((selection, index: number) => (
-                      <Chip
+                      <Label
                         key={index}
                         onClick={(ev) => {
                           ev.stopPropagation();
@@ -170,14 +170,15 @@ export const TypeaheadSelect = ({
                         }}
                       >
                         {selection}
-                      </Chip>
+                      </Label>
                     ))}
-                  </ChipGroup>
+                  </LabelGroup>
                 ))}
             </TextInputGroupMain>
             <TextInputGroupUtilities>
               {!!filterValue && (
                 <Button
+                  icon={<TimesIcon aria-hidden />}
                   variant="plain"
                   onClick={() => {
                     onSelect?.("");
@@ -186,9 +187,7 @@ export const TypeaheadSelect = ({
                     textInputRef?.current?.focus();
                   }}
                   aria-label="Clear input value"
-                >
-                  <TimesIcon aria-hidden />
-                </Button>
+                />
               )}
             </TextInputGroupUtilities>
           </TextInputGroup>

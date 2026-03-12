@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Modal, ModalVariant } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import {
   Table,
   TableVariant,

@@ -21,7 +21,6 @@ export const ClickableCard = ({
       <CardHeader
         selectableActions={{
           onClickAction: onClick,
-          selectableActionId: `input-${id}`,
           selectableActionAriaLabelledby: id,
         }}
       >

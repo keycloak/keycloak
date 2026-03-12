@@ -1,7 +1,7 @@
 import {
   Button,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
   MenuToggle,
   MenuToggleStatus,
   Select,
@@ -175,7 +175,7 @@ export const TypeaheadSelectControl = <
       label={label}
       isRequired={required}
       error={get(errors, name)}
-      labelIcon={labelIcon}
+      labelHelp={labelIcon}
     >
       <Controller
         {...controller}
@@ -240,10 +240,10 @@ export const TypeaheadSelectControl = <
                   >
                     {variant === SelectVariant.typeaheadMulti &&
                       Array.isArray(field.value) && (
-                        <ChipGroup aria-label="Current selections">
+                        <LabelGroup aria-label="Current selections">
                           {field.value.map(
                             (selection: string, index: number) => (
-                              <Chip
+                              <Label
                                 key={index}
                                 onClick={(ev) => {
                                   ev.stopPropagation();
@@ -260,15 +260,16 @@ export const TypeaheadSelectControl = <
                                       ...selectedOptionsState,
                                     ].find((o) => selection === o.key)?.value
                                   : getValue(selection)}
-                              </Chip>
+                              </Label>
                             ),
                           )}
-                        </ChipGroup>
+                        </LabelGroup>
                       )}
                   </TextInputGroupMain>
                   <TextInputGroupUtilities>
                     {(!!filterValue || field.value) && (
                       <Button
+                        icon={<TimesIcon aria-hidden />}
                         variant="plain"
                         onClick={() => {
                           setFilterValue("");
@@ -276,9 +277,7 @@ export const TypeaheadSelectControl = <
                           textInputRef?.current?.focus();
                         }}
                         aria-label="Clear input value"
-                      >
-                        <TimesIcon aria-hidden />
-                      </Button>
+                      />
                     )}
                   </TextInputGroupUtilities>
                 </TextInputGroup>

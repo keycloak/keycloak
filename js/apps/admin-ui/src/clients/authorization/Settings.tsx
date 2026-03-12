@@ -83,7 +83,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
   }
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       {importDialog && (
         <ImportDialog
           onConfirm={importResource}
@@ -98,18 +98,16 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
         <FormGroup
           label={t("import")}
           fieldId="import"
-          labelIcon={
+          labelHelp={
             <HelpItem helpText={t("importHelp")} fieldLabelId="import" />
           }
         >
-          <Button variant="secondary" onClick={toggleImportDialog}>
-            {t("import")}
-          </Button>
+          <Button onClick={toggleImportDialog}>{t("import")}</Button>
         </FormGroup>
         <Divider />
         <FormGroup
           label={t("policyEnforcementMode")}
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("policyEnforcementModeHelp")}
               fieldLabelId="policyEnforcementMode"
@@ -135,7 +133,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
                     name="policyEnforcementMode"
                     onChange={() => field.onChange(mode)}
                     label={t(`policyEnforcementModes.${mode}`)}
-                    className="pf-v5-u-mb-md"
+                    className="pf-v6-u-mb-md"
                   />
                 ))}
               </>

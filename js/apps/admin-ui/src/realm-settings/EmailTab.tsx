@@ -100,13 +100,13 @@ export const RealmSettingsEmailTab = ({
   };
 
   return (
-    <PageSection variant="light">
+    <PageSection hasBodyWrapper={false}>
       <FormProvider {...form}>
         <FormPanel title={t("template")} className="kc-email-template">
           <FormAccess
             isHorizontal
             role="manage-realm"
-            className="pf-v5-u-mt-lg"
+            className="pf-v6-u-mt-lg"
             onSubmit={handleSubmit(save)}
           >
             <TextControl
@@ -161,7 +161,7 @@ export const RealmSettingsEmailTab = ({
           <FormAccess
             isHorizontal
             role="manage-realm"
-            className="pf-v5-u-mt-lg"
+            className="pf-v6-u-mt-lg"
             onSubmit={handleSubmit(save)}
           >
             <TextControl
@@ -212,7 +212,6 @@ export const RealmSettingsEmailTab = ({
               data-testid="smtpServer.auth"
               defaultValue=""
               labelOn={t("enabled")}
-              labelOff={t("disabled")}
               stringify
             />
             {authenticationEnabled === "true" && (
@@ -309,7 +308,6 @@ export const RealmSettingsEmailTab = ({
               data-testid="smtpServer.allowutf8"
               defaultValue=""
               labelOn={t("enabled")}
-              labelOff={t("disabled")}
               stringify
             />
             <TextControl
@@ -401,7 +399,6 @@ export const RealmSettingsEmailTab = ({
               </ActionListItem>
               <ActionListItem>
                 <Button
-                  variant="secondary"
                   onClick={() => testConnection()}
                   data-testid="test-connection-button"
                   isDisabled={

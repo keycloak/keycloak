@@ -10,9 +10,8 @@ import {
   DropdownList,
   DropdownProps,
   MenuToggle,
-  Modal,
-  ModalVariant,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { cellWidth, TableText } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

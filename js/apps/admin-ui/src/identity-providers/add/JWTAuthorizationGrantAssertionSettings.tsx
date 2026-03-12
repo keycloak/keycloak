@@ -23,7 +23,7 @@ export const JWTAuthorizationGrantAssertionSettings = () => {
       <FormGroup
         label={t("jwtAuthorizationGrantMaxAllowedAssertionExpiration")}
         fieldId="jwtAuthorizationGrantMaxAllowedAssertionExpiration"
-        labelIcon={
+        labelHelp={
           <HelpItem
             helpText={t(
               "jwtAuthorizationGrantMaxAllowedAssertionExpirationHelp",

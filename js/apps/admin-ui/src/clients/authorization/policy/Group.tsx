@@ -56,7 +56,7 @@ export const Group = () => {
       />
       <FormGroup
         label={t("groups")}
-        labelIcon={
+        labelHelp={
           <HelpItem helpText={t("policyGroupsHelp")} fieldLabelId="groups" />
         }
         fieldId="groups"
@@ -92,7 +92,6 @@ export const Group = () => {
               )}
               <Button
                 data-testid="select-group-button"
-                variant="secondary"
                 onClick={() => {
                   setOpen(true);
                 }}

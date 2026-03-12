@@ -4,7 +4,8 @@ import {
   TextControl,
   useAlerts,
 } from "@keycloak/keycloak-ui-shared";
-import { Button, Modal } from "@patternfly/react-core";
+import { Button } from "@patternfly/react-core";
+import { Modal } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -92,7 +93,7 @@ export default function NewRealmForm({ onClose }: NewRealmFormProps) {
           isHorizontal
           onSubmit={handleSubmit(save)}
           role="query-realms"
-          isReadOnly={!whoAmI.createRealm}
+          readOnly={!whoAmI.createRealm}
         >
           <JsonFileUpload
             id="kc-realm-filename"

@@ -1,10 +1,5 @@
-import {
-  Button,
-  ButtonVariant,
-  Form,
-  Modal,
-  ModalVariant,
-} from "@patternfly/react-core";
+import { Button, ButtonVariant, Form } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { FormProvider, SubmitHandler, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { TextControl } from "@keycloak/keycloak-ui-shared";

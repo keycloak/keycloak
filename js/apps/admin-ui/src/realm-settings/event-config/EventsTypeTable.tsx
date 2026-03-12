@@ -58,7 +58,6 @@ export function EventsTypeTable({
               <Button
                 onClick={() => onDeleteAll(selectedTypes)}
                 data-testid="removeAll"
-                variant="secondary"
                 isDisabled={selectedTypes.length === 0}
               >
                 {t("remove")}

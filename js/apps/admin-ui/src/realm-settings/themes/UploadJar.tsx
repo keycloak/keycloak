@@ -46,9 +46,7 @@ export const UploadJar = ({ onUpload }: UploadJarProps) => {
         style={{ display: "none" }}
         onChange={(acceptedFiles) => handleAcceptedFiles(acceptedFiles)}
       />
-      <Button variant="secondary" onClick={triggerUpload}>
-        {t("uploadGeneratedThemeJar")}
-      </Button>
+      <Button onClick={triggerUpload}>{t("uploadGeneratedThemeJar")}</Button>
     </>
   );
 };

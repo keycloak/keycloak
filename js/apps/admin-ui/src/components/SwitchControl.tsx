@@ -6,7 +6,7 @@ import { SwitchControl } from "@keycloak/keycloak-ui-shared";
 export type DefaultSwitchControlProps<
   T extends FieldValues,
   P extends FieldPath<T> = FieldPath<T>,
-> = Omit<SwitchControlProps<T, P>, "labelOn" | "labelOff">;
+> = Omit<SwitchControlProps<T, P>, "labelOn">;
 
 export const DefaultSwitchControl = <
   T extends FieldValues,
@@ -16,5 +16,5 @@ export const DefaultSwitchControl = <
 ) => {
   const { t } = useTranslation();
 
-  return <SwitchControl {...props} labelOn={t("on")} labelOff={t("off")} />;
+  return <SwitchControl {...props} labelOn={t("on")} />;
 };

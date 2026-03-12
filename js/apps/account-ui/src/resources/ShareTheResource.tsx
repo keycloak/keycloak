@@ -5,16 +5,16 @@ import {
 } from "@keycloak/keycloak-ui-shared";
 import {
   Button,
-  Chip,
-  ChipGroup,
+  Label,
+  LabelGroup,
   Form,
   FormGroup,
   InputGroup,
   InputGroupItem,
-  Modal,
   TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { Modal } from "@patternfly/react-core/deprecated";
 import { useEffect } from "react";
 import {
   FormProvider,
@@ -177,16 +177,16 @@ export const ShareTheResource = ({
             </InputGroupItem>
           </InputGroup>
           {fields.length > 1 && (
-            <ChipGroup categoryName={t("shareWith") + " "}>
+            <LabelGroup categoryName={t("shareWith") + " "}>
               {fields.map(
                 (field, index) =>
                   index !== fields.length - 1 && (
-                    <Chip key={field.id} onClick={() => remove(index)}>
+                    <Label key={field.id} onClick={() => remove(index)}>
                       {field.value}
-                    </Chip>
+                    </Label>
                   ),
               )}
-            </ChipGroup>
+            </LabelGroup>
           )}
           {errors.usernames && (
             <FormErrorText message={errors.usernames.message!} />

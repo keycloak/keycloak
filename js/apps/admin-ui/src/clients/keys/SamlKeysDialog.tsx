@@ -9,15 +9,13 @@ import {
   FlexItem,
   Form,
   FormGroup,
-  Modal,
-  ModalVariant,
   Radio,
   Split,
   SplitItem,
-  Text,
-  TextContent,
+  Content,
   Title,
 } from "@patternfly/react-core";
+import { Modal, ModalVariant } from "@patternfly/react-core/deprecated";
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -121,18 +119,18 @@ export const SamlKeysDialog = ({
       variant={ModalVariant.medium}
       aria-label={t("enableClientSignatureRequiredModal")}
       header={
-        <TextContent>
+        <Content>
           <Title headingLevel="h1">
             {t("enableClientSignatureRequired", {
               key: t(localeKey),
             })}
           </Title>
-          <Text>
+          <Content component="p">
             {t("enableClientSignatureRequiredExplain", {
               key: t(localeKey),
             })}
-          </Text>
-        </TextContent>
+          </Content>
+        </Content>
       }
       isOpen={true}
       onClose={onClose}
@@ -195,7 +193,7 @@ export const SamlKeysDialog = ({
             <FormGroup
               label={t("certificate")}
               fieldId="certificate"
-              labelIcon={
+              labelHelp={
                 <HelpItem
                   helpText={t(`saml${localeKey}CertificateHelp`)}
                   fieldLabelId="certificate"
@@ -207,11 +205,7 @@ export const SamlKeysDialog = ({
                   <Certificate plain keyInfo={keys} />
                 </SplitItem>
                 <SplitItem>
-                  <Button
-                    variant="secondary"
-                    data-testid="generate"
-                    onClick={generate}
-                  >
+                  <Button data-testid="generate" onClick={generate}>
                     {t("generate")}
                   </Button>
                 </SplitItem>

@@ -8,18 +8,18 @@ export type FieldProps<T extends FieldValues = FieldValues> = {
   id?: string | undefined;
   label?: string;
   name: string;
-  labelIcon?: string | ReactNode;
+  labelHelp?: string | ReactNode;
   error?: FieldError | Merge<FieldError, T>;
   isRequired: boolean;
 };
 
-type FormLabelProps = FieldProps & Omit<FormGroupProps, "label" | "labelIcon">;
+type FormLabelProps = FieldProps & Omit<FormGroupProps, "label" | "labelHelp">;
 
 export const FormLabel = ({
   id,
   name,
   label,
-  labelIcon,
+  labelHelp,
   error,
   children,
   ...rest
@@ -27,9 +27,9 @@ export const FormLabel = ({
   <FormGroup
     label={label || name}
     fieldId={id || name}
-    labelIcon={
-      labelIcon ? (
-        <HelpItem helpText={labelIcon} fieldLabelId={id || name} />
+    labelHelp={
+      labelHelp ? (
+        <HelpItem helpText={labelHelp} fieldLabelId={id || name} />
       ) : undefined
     }
     {...rest}

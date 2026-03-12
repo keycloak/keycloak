@@ -70,11 +70,7 @@ export const AuthenticationOverrides = ({
         />
       )}
       <ActionGroup>
-        <Button
-          variant="secondary"
-          onClick={save}
-          data-testid="OIDCAuthFlowOverrideSave"
-        >
+        <Button onClick={save} data-testid="OIDCAuthFlowOverrideSave">
           {t("save")}
         </Button>
         <Button

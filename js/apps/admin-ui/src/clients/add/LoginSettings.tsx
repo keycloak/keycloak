@@ -39,7 +39,7 @@ export const LoginSettings = ({
           <FormGroup
             label={t("validRedirectUri")}
             fieldId="kc-redirect"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("validRedirectURIsHelp")}
                 fieldLabelId="validRedirectUri"
@@ -56,7 +56,7 @@ export const LoginSettings = ({
           <FormGroup
             label={t("validPostLogoutRedirectUri")}
             fieldId="kc-postLogoutRedirect"
-            labelIcon={
+            labelHelp={
               <HelpItem
                 helpText={t("validPostLogoutRedirectURIsHelp")}
                 fieldLabelId="validPostLogoutRedirectUri"
@@ -99,7 +99,7 @@ export const LoginSettings = ({
         <FormGroup
           label={t("webOrigins")}
           fieldId="kc-web-origins"
-          labelIcon={
+          labelHelp={
             <HelpItem
               helpText={t("webOriginsHelp")}
               fieldLabelId="webOrigins"

@@ -17,13 +17,13 @@ export const FormPanel = ({
   const id = useId();
 
   return (
-    <Card id={id} className={className} isFlat>
-      <CardHeader className="kc-form-panel__header">
+    <Card id={id} className={className} isCompact>
+      <CardHeader>
         <CardTitle tabIndex={0}>
           <FormTitle id={scrollId} title={title} />
         </CardTitle>
       </CardHeader>
-      <CardBody className="kc-form-panel__body">{children}</CardBody>
+      <CardBody>{children}</CardBody>
     </Card>
   );
 };
