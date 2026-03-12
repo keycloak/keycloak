@@ -31,6 +31,7 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -54,6 +55,7 @@ import org.keycloak.client.clienttype.ClientTypeManager;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.email.EmailAuthenticator;
 import org.keycloak.email.EmailException;
@@ -68,6 +70,7 @@ import org.keycloak.exportimport.ClientDescriptionConverter;
 import org.keycloak.exportimport.ClientDescriptionConverterFactory;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
+import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
@@ -292,9 +295,9 @@ public class RealmAdminResource {
         if (clientScope == null) {
             throw new NotFoundException("Client scope not found");
         }
-        
+
         ClientResource.validateClientScopeAssignment(session, clientScope, defaultScope, realm);
-        
+
         realm.addDefaultClientScope(clientScope, defaultScope);
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.CLIENT_SCOPE).resourcePath(session.getContext().getUri()).success();
@@ -1396,6 +1399,24 @@ public class RealmAdminResource {
             }
         });
         return response.build();
+    }
+
+    @GET
+    @Path("dev-export")
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Full export of existing realm into a JSON file. Only for dev mode.")
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "403", description = "Forbidden")
+        })
+    public RealmRepresentation devExport() {
+        auth.requireRealmAdmin();
+        if (!Environment.DEV_PROFILE_VALUE.equals(Environment.getProfile())) {
+            throw new ForbiddenException("Full export only allowed in dev mode.");
+        }
+        return ExportUtils.exportRealm(session, realm, true, true);
     }
 
     @Path("keys")
