@@ -18,7 +18,7 @@ WARNING: The backwards compatibility switch will be removed in some future versi
 Until now, administrators, which used SAML javascript protocol mapper on their SAML clients or client scopes, were allowed to upload scripts to the server through the {project_name} Administration Console as well as
 through the RESTful Admin API.
 
-For now on, this capability is *disabled* and users should deploy scripts directly to the server. This behaviour is aligned with other script based providers. For more details,
+For now on, this capability is *disabled* and users should deploy scripts to the server as a JAR file. For more details,
 please take a look at link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
 
 = UserInfo Endpoint Changes
