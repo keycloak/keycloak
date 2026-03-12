@@ -59,6 +59,7 @@ import org.keycloak.models.cache.infinispan.events.UserUpdatedEvent;
 import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.models.utils.StorageUnavailableUserModelDelegate;
 import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.StoreManagers;
@@ -400,6 +401,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
             UserStorageProviderModel model = new UserStorageProviderModel(component);
             if (!model.isEnabled()) {
                 return new ReadOnlyUserModelDelegate(delegate, false);
+            }
+
+            if (delegate instanceof StorageUnavailableUserModelDelegate) {
+                return delegate;
             }
 
             long lifespan = getLifespan(realm, delegate);
