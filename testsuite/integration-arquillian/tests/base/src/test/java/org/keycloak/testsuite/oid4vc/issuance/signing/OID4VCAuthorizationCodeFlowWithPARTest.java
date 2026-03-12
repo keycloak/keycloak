@@ -20,7 +20,6 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
@@ -44,7 +43,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Test class for Authorization Code Flow with PAR (Pushed Authorization Request) containing authorization_details.
@@ -174,13 +172,6 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
         assertNotNull("Credential identifier should not be null", credentialIdentifier);
         assertFalse("Credential identifier should not be empty", credentialIdentifier.isEmpty());
-
-        // Verify it's a valid UUID
-        try {
-            UUID.fromString(credentialIdentifier);
-        } catch (IllegalArgumentException e) {
-            fail("Credential identifier should be a valid UUID, but was: " + credentialIdentifier);
-        }
 
         // Step 5: Request the actual credential using the identifier
         // When authorization_details are present in the token, credential_identifier must be used

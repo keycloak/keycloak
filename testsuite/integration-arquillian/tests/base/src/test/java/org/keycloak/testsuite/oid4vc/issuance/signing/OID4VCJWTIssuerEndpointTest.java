@@ -503,7 +503,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         // 6. Get the credential using credential_identifier (required when authorization_details are present)
         credentialsOffer.getCredentialConfigurationIds().stream()
-                .map(offeredCredentialId -> credentialIssuer.getCredentialsSupported().get(offeredCredentialId))
+                .map(credConfigId -> credentialIssuer.getCredentialsSupported().get(credConfigId))
                 .forEach(supportedCredential -> {
                     try {
                         requestCredentialWithIdentifier(theToken,
@@ -580,14 +580,13 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     /**
-     * When the token contains authorization_details, the credential_identifier from that token determines
-     * which credential is issued.
+     * When the token contains authorization_details, the credential_identifier from the request must match that in
+     * the authorization_details from the AccessTokenResponse and in the AccessToken JWT.
      */
     @Test
     public void testCredentialIssuanceWithScopeUnmatched() {
-        BiFunction<String, String, String> getAccessToken = (testClientId, testScope) -> {
-            return getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
-        };
+        BiFunction<String, String, String> getAccessToken = (testClientId, testScope) ->
+            getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
 
         Consumer<Map<String, Object>> sendCredentialRequest = m -> {
             String accessToken = (String) m.get("accessToken");
@@ -597,26 +596,16 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             try (Response response = credentialTarget.request()
                     .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
                     .post(Entity.json(credentialRequest))) {
-                assertEquals(200, response.getStatus());
-                CredentialResponse credentialResponse = JsonSerialization.readValue(response.readEntity(String.class),
-                        CredentialResponse.class);
+                assertEquals(400, response.getStatus());
+                String errorMessage = response.readEntity(String.class);
 
-                JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialResponse.getCredentials().get(0).getCredential(),
-                        JsonWebToken.class).getToken();
-                assertEquals(TEST_DID.toString(), jsonWebToken.getIssuer());
-
-                VerifiableCredential credential = JsonSerialization.mapper.convertValue(jsonWebToken.getOtherClaims()
-                                .get("vc"),
-                        VerifiableCredential.class);
-                assertEquals(List.of(jwtTypeCredentialClientScope.getName()), credential.getType());
-                assertEquals(TEST_DID, credential.getIssuer());
-                assertEquals("john@email.cz", credential.getCredentialSubject().getClaims().get("email"));
-            } catch (VerificationException | IOException e) {
-                throw new RuntimeException(e);
+                assertTrue(errorMessage.contains("unknown_credential_identifier"));
+                assertTrue(errorMessage.contains("credential_identifier must match one from the authorization_details in the access token"));
             }
         };
 
-        testCredentialIssuanceWithAuthZCodeFlow(sdJwtTypeCredentialClientScope, getAccessToken, sendCredentialRequest);
+        testCredentialIssuanceWithAuthZCodeFlow(sdJwtTypeCredentialClientScope, getAccessToken, sendCredentialRequest,
+                (cid) -> new CredentialRequest().setCredentialIdentifier("sd-jwt-credential"));
     }
 
     /**
@@ -922,7 +911,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 Assert.fail("Expected BadRequestException due to unknown credential configuration");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), error.getError());
+                assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue(), error.getError());
             }
         });
     }
@@ -1078,7 +1067,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         org.keycloak.testsuite.util.oauth.AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        String credentialConfigurationId = authDetailsResponse.get(0).getCredentialConfigurationId();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
@@ -1086,7 +1075,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
             OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
             CredentialRequest credentialRequest = new CredentialRequest()
-                    .setCredentialIdentifier(credentialIdentifier);
+                    .setCredentialConfigurationId(credentialConfigurationId);
 
             String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
             Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);

@@ -19,6 +19,7 @@ package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 import java.beans.Transient;
 import java.security.SecureRandom;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
@@ -28,18 +29,21 @@ import org.keycloak.saml.RandomSecret;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CredentialOfferState {
 
+    private String credentialsOfferId;
     private CredentialsOffer credentialsOffer;
     private String clientId;
     private String userId;
     private String nonce;
     private String txCode;
     private int expireAt;
-    private OID4VCAuthorizationDetail authorizationDetails;
+    private OID4VCAuthorizationDetail authDetail;
 
     public CredentialOfferState(CredentialsOffer credOffer, String clientId, String userId, int expireAt) {
+        this.credentialsOfferId = UUID.randomUUID().toString();
         this.credentialsOffer = credOffer;
         this.clientId = clientId;
         this.userId = userId;
@@ -64,6 +68,10 @@ public class CredentialOfferState {
             sb.append(alphabet[rnd.nextInt(alphabet.length)]);
         }
         txCode = sb.toString();
+    }
+
+    public String getCredentialsOfferId() {
+        return credentialsOfferId;
     }
 
     public CredentialsOffer getCredentialsOffer() {
@@ -91,15 +99,16 @@ public class CredentialOfferState {
     }
 
     public OID4VCAuthorizationDetail getAuthorizationDetails() {
-        return authorizationDetails;
+        return authDetail != null ? authDetail.clone() : null;
     }
 
-    public void setAuthorizationDetails(OID4VCAuthorizationDetail authorizationDetails) {
-        this.authorizationDetails = authorizationDetails;
+    public void setAuthorizationDetails(OID4VCAuthorizationDetail authDetail) {
+        this.authDetail = authDetail != null ? authDetail.clone() : null;
     }
 
     @Transient
     public boolean isExpired() {
-        return expireAt < Time.currentTime();
+        int currentTime = Time.currentTime();
+        return expireAt <= currentTime;
     }
 }

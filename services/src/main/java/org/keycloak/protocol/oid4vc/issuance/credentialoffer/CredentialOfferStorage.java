@@ -23,13 +23,11 @@ public interface CredentialOfferStorage extends Provider {
 
     void putOfferState(KeycloakSession session, CredentialOfferState entry);
 
-    CredentialOfferState findOfferStateByNonce(KeycloakSession session, String nonce);
+    CredentialOfferState getOfferStateById(KeycloakSession session, String offerId);
 
-    CredentialOfferState findOfferStateByCode(KeycloakSession session, String code);
+    CredentialOfferState getOfferStateByNonce(KeycloakSession session, String nonce);
 
-    CredentialOfferState findOfferStateByCredentialId(KeycloakSession session, String credId);
-
-    void replaceOfferState(KeycloakSession session, CredentialOfferState entry);
+    CredentialOfferState getOfferStateByPreAuthCode(KeycloakSession session, String code);
 
     void removeOfferState(KeycloakSession session, CredentialOfferState entry);
 

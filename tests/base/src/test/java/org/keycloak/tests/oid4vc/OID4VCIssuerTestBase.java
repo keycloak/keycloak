@@ -47,9 +47,13 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
+import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.ui.annotations.InjectWebDriver;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.util.AuthorizationDetailsParser;
 import org.keycloak.util.JsonSerialization;
 
@@ -83,6 +87,12 @@ public abstract class OID4VCIssuerTestBase {
 
     @InjectOAuthClient
     OAuthClient oauth;
+
+    @InjectTimeOffSet
+    TimeOffSet timeOffSet;
+
+    @InjectWebDriver
+    ManagedWebDriver driver;
 
     String clientId = "test-app";
     ClientRepresentation client;
@@ -396,6 +406,7 @@ public abstract class OID4VCIssuerTestBase {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name(TEST_REALM_NAME);
+            realm.verifiableCredentialsEnabled(true);
             return realm;
         }
     }
