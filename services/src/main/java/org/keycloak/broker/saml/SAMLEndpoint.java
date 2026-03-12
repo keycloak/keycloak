@@ -648,6 +648,7 @@ public class SAMLEndpoint {
                 BrokeredIdentityContext identity = new BrokeredIdentityContext(principal, config);
                 identity.getContextData().put(SAML_LOGIN_RESPONSE, responseType);
                 identity.getContextData().put(SAML_ASSERTION, assertion);
+                identity.getContextData().put(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, samlResponse);
                 identity.setAuthenticationSession(authSession);
 
                 identity.setUsername(principal);

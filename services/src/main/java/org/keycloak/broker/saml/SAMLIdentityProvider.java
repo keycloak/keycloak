@@ -271,11 +271,19 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
 
         }
+        // TODO: Do we always store the SAML response in the session? Maybe add store token options as no, database, session?
+        authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN));
     }
 
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
-        return Response.ok(identity.getToken()).type(MediaType.TEXT_PLAIN_TYPE).build();
+        final String token = userSession != null
+                ? userSession.getNote(FEDERATED_ACCESS_TOKEN)
+                : identity.getToken();
+
+        return token != null
+                ? Response.ok(token).type(MediaType.TEXT_PLAIN_TYPE).build()
+                : Response.status(Response.Status.NOT_FOUND).build();
     }
 
     @Override
