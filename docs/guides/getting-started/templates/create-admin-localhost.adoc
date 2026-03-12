@@ -4,3 +4,4 @@
 
 . Open http://localhost:8080/[http://localhost:8080/].
 . Fill in the form with your preferred username and password.
+. If you cannot Login Localhost: run bin/kc.sh bootstrap-admin user.
