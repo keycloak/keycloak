@@ -13,6 +13,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +36,7 @@ import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
@@ -504,7 +506,12 @@ public abstract class OID4VCIssuerTestBase {
 
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
-            realm.name(TEST_REALM_NAME);
+            realm.name(TEST_REALM_NAME)
+                    .eventsEnabled(true)
+                    .enabledEventTypes(
+                            EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_REQUEST.name()
+                    );
 
             CryptoIntegration.init(this.getClass().getClassLoader());
             realm.verifiableCredentialsEnabled(true);
@@ -549,7 +556,7 @@ public abstract class OID4VCIssuerTestBase {
 
             realm.addUser(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), Collections.emptyMap()));
             realm.addUser(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
-
+            
             return realm;
         }
     }
