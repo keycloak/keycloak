@@ -264,7 +264,7 @@ public class PropertyMapper<T> {
         return parentMapper;
     }
 
-    ValueMapper getMapper() {
+    public ValueMapper getMapper() {
         return mapper;
     }
 
