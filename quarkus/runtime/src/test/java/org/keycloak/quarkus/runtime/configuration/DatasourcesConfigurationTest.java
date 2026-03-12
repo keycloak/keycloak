@@ -518,7 +518,6 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "jdbc:postgresql://myhost:5432/keycloak",
                 Map.of("sslmode", "verify-full"),
                 Map.of("sslfactory", DefaultJavaSSLFactory.class.getName()),
-                Map.of(),
                 "sslrootcert",
                 null,
                 null);
@@ -529,7 +528,6 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         doDatabaseTlsOptionTest("mysql",
                 "jdbc:mysql://myhost:3306/keycloak",
                 Map.of("sslMode", "VERIFY_IDENTITY"),
-                Map.of(),
                 Map.of(),
                 "trustCertificateKeyStoreUrl",
                 "trustCertificateKeyStorePassword",
@@ -542,7 +540,6 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "jdbc:sqlserver://myhost:1433;databaseName=keycloak",
                 Map.of("encrypt", "true", "trustServerCertificate", "false"),
                 Map.of(),
-                Map.of(),
                 "trustStore",
                 "trustStorePassword",
                 null);
@@ -553,7 +550,6 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         doDatabaseTlsOptionTest("mariadb",
                 "jdbc:mariadb://myhost:3306/keycloak",
                 Map.of("sslMode", "verify-full"),
-                Map.of(),
                 Map.of(),
                 "serverSslCert",
                 null,
@@ -566,7 +562,6 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "jdbc:oracle:thin:@//myhost:1521/keycloak",
                 Map.of("ssl_server_dn_match", "true"),
                 Map.of(),
-                Map.of(),
                 "javax.net.ssl.trustStore",
                 "javax.net.ssl.trustStorePassword",
                 "javax.net.ssl.trustStoreType");
@@ -577,8 +572,6 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                                                 Map<String, String> tlsJdbcProperties,
                                                 // other properties available when --db-tls-truststore-file is not set
                                                 Map<String, String> withJavaTrustStoreJdbcProperties,
-                                                // other properties available when --db-tls-truststore-file is set
-                                                Map<String, String> withTrustStoreFileJdbcProperties,
                                                 String truststoreFileProperty,
                                                 String trustStorePasswordProperty,
                                                 String trustStoreTypeProperty) {
@@ -591,7 +584,6 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         assertNullAllAdditionalJdbcProperty(config, null, tlsJdbcProperties.keySet());
         assertNullAllAdditionalJdbcProperty(config, null, withJavaTrustStoreJdbcProperties.keySet());
-        assertNullAllAdditionalJdbcProperty(config, null, withTrustStoreFileJdbcProperties.keySet());
         assertNullAdditionalJdbcProperty(config, null, truststoreFileProperty);
         assertNullAdditionalJdbcProperty(config, null, trustStorePasswordProperty);
         assertNullAdditionalJdbcProperty(config, null, trustStoreTypeProperty);
@@ -599,14 +591,13 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         assertNullAllAdditionalJdbcProperty(config, "users", tlsJdbcProperties.keySet());
         assertNullAllAdditionalJdbcProperty(config, "users", withJavaTrustStoreJdbcProperties.keySet());
-        assertNullAllAdditionalJdbcProperty(config, "users", withTrustStoreFileJdbcProperties.keySet());
         assertNullAdditionalJdbcProperty(config, "users", truststoreFileProperty);
         assertNullAdditionalJdbcProperty(config, "users", trustStorePasswordProperty);
         assertNullAdditionalJdbcProperty(config, "users", trustStoreTypeProperty);
 
         // oracle has a different protocol for TLS
         if ("oracle".equals(dbKind)) {
-            dbUrl = dbUrl.replace("jdbc:oracle:thin:@//", "jdbc:oracle:thin:@tcps//");
+            dbUrl = dbUrl.replace("jdbc:oracle:thin:@//", "jdbc:oracle:thin:@tcps://");
         }
 
         // check defaults
@@ -616,14 +607,12 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         assertNullAllAdditionalJdbcProperty(config, null, tlsJdbcProperties.keySet());
         assertNullAllAdditionalJdbcProperty(config, null, withJavaTrustStoreJdbcProperties.keySet());
-        assertNullAllAdditionalJdbcProperty(config, null, withTrustStoreFileJdbcProperties.keySet());
         assertNullAdditionalJdbcProperty(config, null, truststoreFileProperty);
         assertNullAdditionalJdbcProperty(config, null, trustStorePasswordProperty);
         assertNullAdditionalJdbcProperty(config, null, trustStoreTypeProperty);
 
         assertAllAdditionalJdbcProperty(config, "users", tlsJdbcProperties);
         assertAllAdditionalJdbcProperty(config, "users", withJavaTrustStoreJdbcProperties);
-        assertNullAllAdditionalJdbcProperty(config, "users", withTrustStoreFileJdbcProperties.keySet());
         assertNullAdditionalJdbcProperty(config, "users", truststoreFileProperty);
         assertNullAdditionalJdbcProperty(config, "users", trustStorePasswordProperty);
         assertNullAdditionalJdbcProperty(config, "users", trustStoreTypeProperty);
@@ -642,7 +631,6 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         assertNullAllAdditionalJdbcProperty(config, null, tlsJdbcProperties.keySet());
         assertNullAllAdditionalJdbcProperty(config, null, withJavaTrustStoreJdbcProperties.keySet());
-        assertNullAllAdditionalJdbcProperty(config, null, withTrustStoreFileJdbcProperties.keySet());
         assertNullAdditionalJdbcProperty(config, null, truststoreFileProperty);
         assertNullAdditionalJdbcProperty(config, null, trustStorePasswordProperty);
         assertNullAdditionalJdbcProperty(config, null, trustStoreTypeProperty);
@@ -655,7 +643,6 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
             }
         }
         assertAllAdditionalJdbcProperty(config, "users", withJavaTrustStoreJdbcProperties);
-        assertNullAllAdditionalJdbcProperty(config, "users", withTrustStoreFileJdbcProperties.keySet());
         assertNullAdditionalJdbcProperty(config, "users", truststoreFileProperty);
         assertNullAdditionalJdbcProperty(config, "users", trustStorePasswordProperty);
         assertNullAdditionalJdbcProperty(config, "users", trustStoreTypeProperty);
@@ -667,14 +654,12 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
 
         assertNullAllAdditionalJdbcProperty(config, null, tlsJdbcProperties.keySet());
         assertNullAllAdditionalJdbcProperty(config, null, withJavaTrustStoreJdbcProperties.keySet());
-        assertNullAllAdditionalJdbcProperty(config, null, withTrustStoreFileJdbcProperties.keySet());
         assertNullAdditionalJdbcProperty(config, null, truststoreFileProperty);
         assertNullAdditionalJdbcProperty(config, null, trustStorePasswordProperty);
         assertNullAdditionalJdbcProperty(config, null, trustStoreTypeProperty);
 
         assertAllAdditionalJdbcProperty(config, "users", tlsJdbcProperties);
         assertNullAllAdditionalJdbcProperty(config, "users", withJavaTrustStoreJdbcProperties.keySet());
-        assertAllAdditionalJdbcProperty(config, "users", withTrustStoreFileJdbcProperties);
         assertAdditionalJdbcProperty(config, "users", truststoreFileProperty, "cert.pem");
         assertAdditionalJdbcProperty(config, "users", trustStorePasswordProperty, "no-secret");
         assertAdditionalJdbcProperty(config, "users", trustStoreTypeProperty, "pem");
