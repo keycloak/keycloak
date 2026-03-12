@@ -213,7 +213,7 @@ public final class Database {
                 (namedProperty, alias) -> "jdbc:oracle:thin:%s//%s:%s/%s".formatted(
                         getProperty(DatabaseOptions.DB_ORACLE_TLS_TRANSPORT, namedProperty, "@"),
                         getProperty(DatabaseOptions.DB_URL_HOST, namedProperty, "localhost"),
-                        getProperty(DatabaseOptions.DB_URL_PORT, namedProperty, "1521"), //TODO how to change default!?
+                        getProperty(DatabaseOptions.DB_URL_PORT, namedProperty, "1521"),
                         getProperty(DatabaseOptions.DB_URL_DATABASE, namedProperty, "keycloak")),
                 "liquibase.database.core.OracleDatabase"
         );

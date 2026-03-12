@@ -104,31 +104,31 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromOption(DatabaseOptions.DB_MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
-                        .isEnabled(() -> isMssqlSendStringParametersAsUnicode())
+                        .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
                         .build(),
                 fromOption(DatabaseOptions.DB_MYSQL_CONNECT_TIMEOUT)
                         .to(MYSQL_CONNECT_TIMEOUT)
-                        .isEnabled(() -> isMysqlConnectTimeoutEnabled())
+                        .isEnabled(DatabasePropertyMappers::isMysqlConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_MARIADB_CONNECT_TIMEOUT)
                         .to(MARIADB_CONNECT_TIMEOUT)
-                        .isEnabled(() -> isMariadbConnectTimeoutEnabled())
+                        .isEnabled(DatabasePropertyMappers::isMariadbConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_ORACLE_CONNECT_TIMEOUT)
                         .to(ORACLEDB_CONNECT_TIMEOUT)
-                        .isEnabled(() -> isOracleConnectTimeoutEnabled())
+                        .isEnabled(DatabasePropertyMappers::isOracleConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_MSSQL_CONNECT_TIMEOUT)
                         .to(MSSQL_CONNECT_TIMEOUT)
-                        .isEnabled(() -> isMssqlLoginTimeoutEnabled())
+                        .isEnabled(DatabasePropertyMappers::isMssqlLoginTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_POSTGRES_CONNECT_TIMEOUT)
                         .to(POSTGRES_CONNECT_TIMEOUT)
-                        .isEnabled(() -> isPostgresConnectTimeoutEnabled())
+                        .isEnabled(DatabasePropertyMappers::isPostgresConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_TIDB_CONNECT_TIMEOUT)
                         .to(TIDB_CONNECT_TIMEOUT)
-                        .isEnabled(() -> isTidbConnectTimeoutEnabled())
+                        .isEnabled(DatabasePropertyMappers::isTidbConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")
@@ -517,7 +517,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
 
     private static String transformOracleProtocol(String datasource, String value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
         var tlsMode = DatabaseOptions.DatabaseTlsMode.fromCliValue(value);
-        return tlsMode != DatabaseOptions.DatabaseTlsMode.DISABLED ? "@tcps" : "@";
+        return tlsMode != DatabaseOptions.DatabaseTlsMode.DISABLED ? "@tcps:" : "@";
     }
 
     private static PropertyMapper<?> setTlsJdbcProperty(Option<String> option, String jdbcPropertyKey, Map<Database.Vendor, String> vendorValues) {
