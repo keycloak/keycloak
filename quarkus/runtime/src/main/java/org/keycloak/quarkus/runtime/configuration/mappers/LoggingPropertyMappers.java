@@ -78,6 +78,16 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .to("quarkus.log.console.json.log-format")
                         .paramLabel("format")
                         .build(),
+                fromOption(LoggingOptions.LOG_CONSOLE_JSON_SERVICE_NAME)
+                        .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, "%s and output is set to 'json'".formatted(CONSOLE_ENABLED_MSG))
+                        .to("quarkus.log.console.json.additional-field.\"service.name\".value")
+                        .paramLabel("name")
+                        .build(),
+                fromOption(LoggingOptions.LOG_CONSOLE_JSON_SERVICE_ENVIRONMENT)
+                        .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, "%s and output is set to 'json'".formatted(CONSOLE_ENABLED_MSG))
+                        .to("quarkus.log.console.json.additional-field.\"service.environment\".value")
+                        .paramLabel("environment")
+                        .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isConsoleEnabled() && TracingPropertyMappers.isTracingEnabled(),
                                 "Console log handler and Tracing is activated")
@@ -133,6 +143,16 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(LoggingPropertyMappers::isFileJsonEnabled, FILE_ENABLED_MSG + " and output is set to 'json'")
                         .to("quarkus.log.file.json.log-format")
                         .paramLabel("format")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_JSON_SERVICE_NAME)
+                        .isEnabled(LoggingPropertyMappers::isFileJsonEnabled, FILE_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.file.json.additional-field.\"service.name\".value")
+                        .paramLabel("name")
+                        .build(),
+                fromOption(LoggingOptions.LOG_FILE_JSON_SERVICE_ENVIRONMENT)
+                        .isEnabled(LoggingPropertyMappers::isFileJsonEnabled, FILE_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.file.json.additional-field.\"service.environment\".value")
+                        .paramLabel("environment")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isFileEnabled() && TracingPropertyMappers.isTracingEnabled(),
