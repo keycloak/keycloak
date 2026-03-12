@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.models.workflow.SetUserAttributeStepProviderFactory;
+import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.workflows.WorkflowRepresentation;
 import org.keycloak.representations.workflows.WorkflowScheduleRepresentation;
 import org.keycloak.representations.workflows.WorkflowStepRepresentation;
@@ -32,6 +34,9 @@ public class WorkflowScheduleTest extends AbstractWorkflowTest {
 
     @Test
     public void testSchedule() {
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ADMIN_VIEW);
+        managedRealm.admin().users().userProfile().update(upConfig);
         WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
                 .schedule(WorkflowScheduleRepresentation.create().after("1s").batchSize(10).build())
                 .withSteps(
