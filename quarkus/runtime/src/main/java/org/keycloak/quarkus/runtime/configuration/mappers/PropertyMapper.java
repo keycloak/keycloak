@@ -578,7 +578,7 @@ public class PropertyMapper<T> {
      * Create a property mapper that get value from the parent option
      */
     public static <T> PropertyMapper.Builder<T> fromParentOption(Option<T> parentOption) {
-        final var option = new OptionBuilder<>(parentOption.getKey() + KeycloakModelUtils.generateShortId(), parentOption.getType())
+        final var option = new OptionBuilder<>(parentOption.getKey() + KeycloakModelUtils.generateId(), parentOption.getType())
                 .buildTime(parentOption.isBuildTime())
                 .hidden()
                 .build();
