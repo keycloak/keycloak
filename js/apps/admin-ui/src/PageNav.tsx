@@ -102,6 +102,7 @@ export const PageNav = () => {
     const getCount = async () => {
       const userRequest = await adminClient.tideUsersExt.getRequestedChangesForUsers();
       const roleRequest = await adminClient.tideUsersExt.getRequestedChangesForRoles();
+      const groupRequest = await adminClient.tideUsersExt.getRequestedChangesForGroups();
       const clientRequest = await adminClient.tideUsersExt.getRequestedChangesForClients();
       const realmSettingsRequest = await adminClient.tideUsersExt.getRequestedChangesForRagnarokSettings();
       const realmLicensingRequest = await adminClient.tideUsersExt.getRequestedChangesForRealmLicensing();
@@ -111,7 +112,7 @@ export const PageNav = () => {
         if (realmPolicy && realmPolicy.status === "pending") policyCount = 1;
       } catch (_) { /* ignore */ }
 
-      setClientRequestCount(userRequest.length + roleRequest.length + clientRequest.length + realmSettingsRequest.length + realmLicensingRequest.length + policyCount)
+      setClientRequestCount(userRequest.length + roleRequest.length + groupRequest.length + clientRequest.length + realmSettingsRequest.length + realmLicensingRequest.length + policyCount)
     }
 
     getCount();

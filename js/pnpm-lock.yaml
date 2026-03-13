@@ -1550,6 +1550,12 @@ packages:
   '@tidecloak/js@file:../../../tidecloak-js/packages/tidecloak-js':
     resolution: {directory: ../../../tidecloak-js/packages/tidecloak-js, type: directory}
 
+  '@tideorg/js@0.13.22':
+    resolution: {integrity: sha512-HodfZL6rtM6kWSaVe0Yh1Wz9SWbDjnWUVm5QQ4ZJl02oZurQXE02dZUfLBgY4gdrxxZl18/yARWX8+MJEs2l7g==}
+
+  '@tideorg/js@file:../../tide-js':
+    resolution: {directory: ../../tide-js, type: directory}
+
   '@tsconfig/node10@1.0.11':
     resolution: {integrity: sha512-DcRjDCujK/kCk/cUe8Xz8ZSpm8mS3mNNpta+jGCA6USEDfktlNvm1+IuZ9eTcDbNk41BHwpHHeW+N1lKCz4zOw==}
 
@@ -1992,9 +1998,6 @@ packages:
   arraybuffer.prototype.slice@1.0.4:
     resolution: {integrity: sha512-BNoCY6SXXPQ7gF2opIP4GBE+Xw7U+pHMYKuzjgCN3GwiaIR09UUeKfheyIry77QtrCBlC0KK0q5/TER/tYh3PQ==}
     engines: {node: '>= 0.4'}
-
-  asgard-tide@0.13.16:
-    resolution: {integrity: sha512-4XW9b/dIggCduCrcAwloxJhNs11sXtTdh84Oe9tfx43AbXjWCHlyeYyO5/P/ojkY5Lyel9fYw2/EfimJKoHzyA==}
 
   assertion-error@2.0.1:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
@@ -2833,8 +2836,8 @@ packages:
   heimdall-tide@0.1.1:
     resolution: {integrity: sha512-+S0c+yyZFIIjcWx4wljOnvrIZmq99h5hZOyP3Dqd6sWNFAN7ejPmgnd3LM7m2aWMV1aX2vb9wmg8dknOr0CxMw==}
 
-  heimdall-tide@0.13.16:
-    resolution: {integrity: sha512-9XSEUJ2aOZdSPCxq3h9Y6s2EcgaF6kEdFDzAEfqP2R+rHuLG7A14D1yWtl3oPBNfyFWDP3uD7lQT8AmCx1YGCA==}
+  heimdall-tide@0.13.22:
+    resolution: {integrity: sha512-0ZUVwE2OWHtSQYk4yaXfRCA5B4XZ+dNuIs839TiWcqYbhsQnli6hOByr3QS7ZLCJshs2kbUPb05dEyU+56FoFg==}
 
   hermes-estree@0.25.1:
     resolution: {integrity: sha512-0wUoCcLp+5Ev5pDW2OriHC2MJCbwLwuRx+gAqMTOkGKJJiBCLjtrvy4PWUGn6MIVefecRpzoOZ/UV6iGdOr+Cw==}
@@ -5542,7 +5545,12 @@ snapshots:
 
   '@tidecloak/js@file:../../../tidecloak-js/packages/tidecloak-js':
     dependencies:
-      heimdall-tide: 0.13.16
+      '@tideorg/js': 0.13.22
+      heimdall-tide: 0.13.22
+
+  '@tideorg/js@0.13.22': {}
+
+  '@tideorg/js@file:../../tide-js': {}
 
   '@tsconfig/node10@1.0.11': {}
 
@@ -6083,8 +6091,6 @@ snapshots:
       es-errors: 1.3.0
       get-intrinsic: 1.3.0
       is-array-buffer: 3.0.5
-
-  asgard-tide@0.13.16: {}
 
   assertion-error@2.0.1: {}
 
@@ -7026,9 +7032,9 @@ snapshots:
 
   heimdall-tide@0.1.1: {}
 
-  heimdall-tide@0.13.16:
+  heimdall-tide@0.13.22:
     dependencies:
-      asgard-tide: 0.13.16
+      '@tideorg/js': file:../../tide-js
 
   hermes-estree@0.25.1: {}
 

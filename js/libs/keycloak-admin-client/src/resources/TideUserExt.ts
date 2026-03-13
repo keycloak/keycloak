@@ -3,6 +3,7 @@ import Resource from "./resource.js";
 import type RequestedChanges from "../defs/RequestedChanges.js";
 import type RoleChangeRequest from "../defs/RoleChangeRequest.js";
 import type CompositeRoleChangeRequest from "../defs/CompositeRoleChangeRequest.js";
+import type GroupChangeRequest from "../defs/GroupChangeRequest.js";
 import type DraftChangeSetRequest from "../defs/DraftChangeSetRequest.js";
 
 // TIDECLOAK IMPLEMENTATION
@@ -81,6 +82,11 @@ export class TideUsersExt extends Resource<{ realm?: string }> {
   public getRequestedChangesForClients = this.makeRequest<void, RequestedChanges[]>({
     method: "GET",
     path: "/tide-admin/change-set/clients/requests",
+  });
+
+  public getRequestedChangesForGroups = this.makeRequest<void, GroupChangeRequest[]>({
+    method: "GET",
+    path: "/tide-admin/change-set/groups/requests",
   });
 
   public getRequestedChangesForRagnarokSettings = this.makeRequest<void, RequestedChanges[]>({

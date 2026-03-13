@@ -32,6 +32,7 @@ import { RolesChangeRequestsList } from "./RolesChangeRequestsList"
 import { ClientChangeRequestsList } from './ClientChangeRequestsList';
 import { SettingsChangeRequestsList } from './SettingsChangeRequestsList';
 import { PolicyChangeRequestsList } from './PolicyChangeRequestsList';
+import { GroupsChangeRequestsList } from './GroupsChangeRequestsList';
 import { groupRequestsByDraftId } from './utils/bundleUtils';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { useAccess } from '../context/access/Access';
@@ -68,6 +69,7 @@ export default function ChangeRequestsSection() {
   const [roleRequestCount, setRoleRequestCount] = useState(0);
   const [clientRequestCount, setClientRequestCount] = useState(0);
   const [realmSettingsRequestCount, setRealmSettingsRequestCount] = useState(0);
+  const [groupRequestCount, setGroupRequestCount] = useState(0);
   const [policyRequestCount, setPolicyRequestCount] = useState(0);
   const [isTideEnabled, setIsTideEnabled] = useState<boolean>(true)
 
@@ -371,6 +373,11 @@ export default function ChangeRequestsSection() {
       setRoleRequestCount(counter);
     }
   }
+  const updateGroupCounter = (counter: number) => {
+    if (counter != groupRequestCount) {
+      setGroupRequestCount(counter);
+    }
+  }
   const updateRealmSettingsCounter = (counter: number) => {
     if (counter != realmSettingsRequestCount) {
       setRealmSettingsRequestCount(counter);
@@ -399,6 +406,7 @@ export default function ChangeRequestsSection() {
 
   const userRequestsTab = useTab("users");
   const roleRequestsTab = useTab("roles");
+  const groupRequestsTab = useTab("groups");
   const clientRequestsTab = useTab("clients");
   const settingsRequestsTab = useTab("settings");
   const policiesTab = useTab("policies");
@@ -520,6 +528,21 @@ export default function ChangeRequestsSection() {
             {...roleRequestsTab}
           >
             <RolesChangeRequestsList updateCounter={updateRoleCounter} />
+          </Tab>
+          <Tab
+            title={
+              <>
+                <TabTitleText>Groups</TabTitleText>
+                {groupRequestCount > 0 && (
+                  <Label className="keycloak-admin--role-mapping__client-name pf-v5-u-ml-sm">
+                    {groupRequestCount}
+                  </Label>
+                )}
+              </>
+            }
+            {...groupRequestsTab}
+          >
+            <GroupsChangeRequestsList updateCounter={updateGroupCounter} />
           </Tab>
           <Tab
             title={
