@@ -349,12 +349,11 @@ const GroupRow = ({
             checked={group.checked}
             isDisabled={isRowDisabled(group)}
             onChange={(_event, checked) => {
-              group.checked = checked;
               let newSelectedRows: SelectableGroup[] = [];
-              if (!group.checked) {
+              if (!checked) {
                 newSelectedRows = selectedRows.filter((r) => r.id !== group.id);
               } else {
-                newSelectedRows = [...selectedRows, group];
+                newSelectedRows = [...selectedRows, { ...group, checked }];
               }
 
               setSelectedRows(newSelectedRows);

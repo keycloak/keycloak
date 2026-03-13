@@ -19,7 +19,7 @@ import {
 } from "@patternfly/react-core";
 import { TimesIcon } from "@patternfly/react-icons";
 import { debounce } from "lodash-es";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
@@ -58,7 +58,7 @@ export const UserSelect = ({
   const [search, setSearch] = useState("");
   const textInputRef = useRef<HTMLInputElement>();
 
-  const debounceFn = useCallback(debounce(setSearch, 500), []);
+  const debounceFn = useMemo(() => debounce(setSearch, 500), []);
 
   useFetch(
     async () => {

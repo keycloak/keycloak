@@ -38,7 +38,7 @@ import { RequiredActions } from "./RequiredActions";
 import { UsedBy } from "./components/UsedBy";
 import { AuthenticationType } from "./constants";
 import { Policies } from "./policies/Policies";
-import { AuthenticationTab, toAuthentication } from "./routes/Authentication";
+import { toAuthentication } from "./routes/Authentication";
 import { toCreateFlow } from "./routes/CreateFlow";
 import { toFlow } from "./routes/Flow";
 
@@ -98,12 +98,15 @@ export default function AuthenticationSection() {
     );
   };
 
-  const useTab = (tab: AuthenticationTab) =>
-    useRoutableTab(toAuthentication({ realm: realmName, tab }));
-
-  const flowsTab = useTab("flows");
-  const requiredActionsTab = useTab("required-actions");
-  const policiesTab = useTab("policies");
+  const flowsTab = useRoutableTab(
+    toAuthentication({ realm: realmName, tab: "flows" }),
+  );
+  const requiredActionsTab = useRoutableTab(
+    toAuthentication({ realm: realmName, tab: "required-actions" }),
+  );
+  const policiesTab = useRoutableTab(
+    toAuthentication({ realm: realmName, tab: "policies" }),
+  );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "deleteConfirmFlow",

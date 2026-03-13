@@ -34,7 +34,6 @@ import {
 } from "./OrganizationForm";
 import {
   EditOrganizationParams,
-  OrganizationTab,
   toEditOrganization,
 } from "./routes/EditOrganization";
 import { useAccess } from "../context/access/Access";
@@ -76,21 +75,24 @@ export default function DetailOrganization() {
     [id],
   );
 
-  const useTab = (tab: OrganizationTab) =>
-    useRoutableTab(
-      toEditOrganization({
-        realm,
-        id,
-        tab,
-      }),
-    );
-
-  const settingsTab = useTab("settings");
-  const attributesTab = useTab("attributes");
-  const membersTab = useTab("members");
-  const groupsTab = useTab("groups");
-  const identityProvidersTab = useTab("identityProviders");
-  const eventsTab = useTab("events");
+  const settingsTab = useRoutableTab(
+    toEditOrganization({ realm, id, tab: "settings" }),
+  );
+  const attributesTab = useRoutableTab(
+    toEditOrganization({ realm, id, tab: "attributes" }),
+  );
+  const membersTab = useRoutableTab(
+    toEditOrganization({ realm, id, tab: "members" }),
+  );
+  const groupsTab = useRoutableTab(
+    toEditOrganization({ realm, id, tab: "groups" }),
+  );
+  const identityProvidersTab = useRoutableTab(
+    toEditOrganization({ realm, id, tab: "identityProviders" }),
+  );
+  const eventsTab = useRoutableTab(
+    toEditOrganization({ realm, id, tab: "events" }),
+  );
 
   const { hasAccess } = useAccess();
   const [activeEventsTab, setActiveEventsTab] = useState("adminEvents");
