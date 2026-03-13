@@ -57,6 +57,11 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
     }
 
     @Override
+    public boolean isOneTimeAction() {
+        return true;
+    }
+
+    @Override
     public void evaluateTriggers(RequiredActionContext context) {
     }
 

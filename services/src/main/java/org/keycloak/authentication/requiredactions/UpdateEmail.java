@@ -124,6 +124,11 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     }
 
     @Override
+    public boolean isOneTimeAction() {
+        return true;
+    }
+
+    @Override
     public String getDisplayText() {
         return "Update Email";
     }
