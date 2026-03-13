@@ -223,28 +223,28 @@ Site name::
 If your {project_name} cluster is deployed between different datacenters, use this option to ensure the data replicas are stored in a different datacenter.
 It prevents data loss if a datacenter goes offline or fails.
 +
-Use the SPI option `spi-cache-embedded--default--site-name` (or environment variable `KC_SPI_CACHE_EMBEDDED\__DEFAULT__SITE_NAME`).
+Use the SPI option `+spi-cache-embedded--default--site-name+` (or environment variable `+KC_SPI_CACHE_EMBEDDED__DEFAULT__SITE_NAME+`).
 The value itself is not important, but each datacenter must have a unique value.
 +
-For example: `--spi-cache-embedded--default--site-name=site-1`
+For example: `+--spi-cache-embedded--default--site-name=site-1+`
 
 Rack name::
 If your {project_name} cluster is running in different racks on your datacenter, set this option to ensure the data replicas are stored in a different physical rack.
 It prevents data loss if a rack is suddenly disconnected or fails.
 +
-Use the SPI option `spi-cache-embedded--default--rack-name` (or environment variable `KC_SPI_CACHE_EMBEDDED\__DEFAULT__RACK_NAME`).
+Use the SPI option `+spi-cache-embedded--default--rack-name+` (or environment variable `+KC_SPI_CACHE_EMBEDDED__DEFAULT__RACK_NAME+`).
 The value itself is not important, but each rack must have a unique value.
 +
-For example: `--spi-cache-embedded--default--rack-name=rack-1`
+For example: `+--spi-cache-embedded--default--rack-name=rack-1+`
 
 Machine name::
 If you have multiple {project_name} instances running on the same physical machine (using virtual machines or containers for example), use this option to ensure the data replicas are stored in different physical machines.
 It prevents data loss against a physical machine failure.
 +
-Use the SPI option `spi-cache-embedded--default--machine-name` (or environment variable `KC_SPI_CACHE_EMBEDDED\__DEFAULT__MACHINE_NAME`).
+Use the SPI option `+spi-cache-embedded--default--machine-name+` (or environment variable `+KC_SPI_CACHE_EMBEDDED__DEFAULT__MACHINE_NAME+`).
 The value itself is not important, but each machine must have a unique value.
 +
-For example: `--spi-cache-embedded--default--machine-name=machine-1`
+For example: `+--spi-cache-embedded--default--machine-name=machine-1+`
 +
 [NOTE]
 ====
