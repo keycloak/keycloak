@@ -25,5 +25,5 @@ public class CredentialOfferProviderSpi implements Spi {
     @Override public String getName() { return "credential-offer-provider"; }
     @Override public Class<CredentialOfferProvider> getProviderClass() { return CredentialOfferProvider.class; }
     @Override public Class<CredentialOfferProviderFactory> getProviderFactoryClass() { return CredentialOfferProviderFactory.class; }
-    @Override public boolean isInternal() { return false; }
+    @Override public boolean isInternal() { return true; }
 }

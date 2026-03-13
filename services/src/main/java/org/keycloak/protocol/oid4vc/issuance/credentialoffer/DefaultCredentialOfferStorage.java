@@ -42,6 +42,12 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
 
     private static final String ENTRY_KEY = "json";
 
+    private final KeycloakSession session;
+
+    DefaultCredentialOfferStorage(KeycloakSession session) {
+        this.session = session;
+    }
+
     /**
      * Calculates the lifespan in seconds from the current time to the expiration timestamp.
      * 
@@ -59,7 +65,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     }
 
     @Override
-    public void putOfferState(KeycloakSession session, CredentialOfferState entry) {
+    public void putOfferState(CredentialOfferState entry) {
 
         // Skip storing if already expired (following pattern from InfinispanSingleUseObjectProviderFactory)
         long lifespanSeconds = calculateLifespanSeconds(entry.getExpiresAt());
@@ -83,7 +89,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     }
 
     @Override
-    public CredentialOfferState getOfferStateById(KeycloakSession session, String offerId) {
+    public CredentialOfferState getOfferStateById(String offerId) {
         return Optional.ofNullable(session.singleUseObjects().get(offerId))
                 .map(o -> o.get(ENTRY_KEY))
                 .map(o -> JsonSerialization.valueFromString(o, CredentialOfferState.class))
@@ -91,7 +97,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     }
 
     @Override
-    public CredentialOfferState getOfferStateByNonce(KeycloakSession session, String nonce) {
+    public CredentialOfferState getOfferStateByNonce(String nonce) {
         return Optional.ofNullable(session.singleUseObjects().get(nonce))
                 .map(o -> o.get(ENTRY_KEY))
                 .map(o -> JsonSerialization.valueFromString(o, CredentialOfferState.class))
@@ -99,7 +105,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     }
 
     @Override
-    public CredentialOfferState getOfferStateByPreAuthCode(KeycloakSession session, String preAuthCode) {
+    public CredentialOfferState getOfferStateByPreAuthCode(String preAuthCode) {
         return Optional.ofNullable(session.singleUseObjects().get(preAuthCode))
                 .map(o -> o.get(ENTRY_KEY))
                 .map(o -> JsonSerialization.valueFromString(o, CredentialOfferState.class))
@@ -107,7 +113,7 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     }
 
     @Override
-    public void removeOfferState(KeycloakSession session, CredentialOfferState offerState) {
+    public void removeOfferState(CredentialOfferState offerState) {
         SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
         singleUseObjects.remove(offerState.getCredentialsOfferId());
         singleUseObjects.remove(offerState.getNonce());

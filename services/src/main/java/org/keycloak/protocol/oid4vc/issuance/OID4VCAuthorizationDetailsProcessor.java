@@ -317,7 +317,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         if (credOfferId != null) {
             String auxCredOfferId = credOfferId;
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-            offerState = Optional.ofNullable(offerStorage.getOfferStateById(session, credOfferId))
+            offerState = Optional.ofNullable(offerStorage.getOfferStateById(credOfferId))
                     .orElseThrow(() -> new IllegalStateException("No credential offer state for: " + auxCredOfferId));
         }
 

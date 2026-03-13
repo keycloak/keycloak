@@ -241,7 +241,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
                     CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
                     CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() + 60, null);
-                    offerStorage.putOfferState(session, offerState);
+                    offerStorage.putOfferState(offerState);
 
                     // The cache transactions need to be committed explicitly in the test. Without that, the OAuth2Code will only be committed to
                     // the cache after .run((session)-> ...)

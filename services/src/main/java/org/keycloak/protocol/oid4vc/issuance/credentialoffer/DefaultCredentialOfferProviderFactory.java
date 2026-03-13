@@ -25,18 +25,13 @@ import org.keycloak.models.KeycloakSessionFactory;
  * <p/>
  * This factory provides the default implementation of a {@link CredentialOfferProvider}.
  *
- * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
+ * @author <a href="mailto:tdiesler@proton.me">Thomas Diesler</a>
  */
 public class DefaultCredentialOfferProviderFactory implements CredentialOfferProviderFactory {
 
-    private static CredentialOfferProvider INSTANCE;
-
     @Override
     public CredentialOfferProvider create(KeycloakSession session) {
-        if (INSTANCE == null) {
-            INSTANCE = new DefaultCredentialOfferProvider();
-        }
-        return INSTANCE;
+        return new DefaultCredentialOfferProvider(session);
     }
 
     @Override

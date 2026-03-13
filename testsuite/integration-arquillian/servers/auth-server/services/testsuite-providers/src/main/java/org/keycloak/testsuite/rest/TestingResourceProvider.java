@@ -1148,7 +1148,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         });
 
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        offerStorage.putOfferState(session, offerState);
+        offerStorage.putOfferState( offerState);
 
         return code;
     }
@@ -1158,7 +1158,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     public String getTxCode(@QueryParam("pre-auth-code") final String preAuthCode) {
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        var offerState = offerStorage.getOfferStateByPreAuthCode(session, preAuthCode);
+        var offerState = offerStorage.getOfferStateByPreAuthCode( preAuthCode);
         return Optional.ofNullable(offerState).map(CredentialOfferState::getTxCode).orElse(null);
     }
 

@@ -47,9 +47,14 @@ import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH
  */
 class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
+    private final KeycloakSession session;
+
+    DefaultCredentialOfferProvider(KeycloakSession session) {
+        this.session = session;
+    }
+
     @Override
     public CredentialOfferState createCredentialOffer(
-            KeycloakSession session,
             UserSessionModel userSession,
             String grantType,
             List<String> credentialConfigurationIds,

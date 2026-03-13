@@ -92,7 +92,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
         }
 
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        var offerState = offerStorage.getOfferStateByPreAuthCode(session, preAuthCode);
+        var offerState = offerStorage.getOfferStateByPreAuthCode(preAuthCode);
         if (offerState == null) {
             var errorMessage = "No credential offer state for pre-auth code: " + preAuthCode;
             event.detail(REASON, errorMessage).error(Errors.INVALID_CODE);

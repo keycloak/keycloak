@@ -488,7 +488,7 @@ public class OID4VCIssuerEndpoint {
         try {
 
             CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
-            offerState = offerProvider.createCredentialOffer(session, userSession, grantType,
+            offerState = offerProvider.createCredentialOffer(userSession, grantType,
                     credentialConfigurationIds, targetClientId, targetUser, expiresAt);
 
         } catch (CredentialOfferException ex) {
@@ -500,7 +500,7 @@ public class OID4VCIssuerEndpoint {
         // Store the CredentialOfferState
         //
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-        offerStorage.putOfferState(session, offerState);
+        offerStorage.putOfferState(offerState);
 
         String targetUserId = offerState.getTargetUserId();
         LOGGER.debugf("Stored credential offer state: [grant=%s, ids=%s, cid=%s, uid=%s, nonce=%s]",
@@ -598,7 +598,7 @@ public class OID4VCIssuerEndpoint {
 
         // Retrieve the associated credential offer state
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-        CredentialOfferState offerState = offerStorage.getOfferStateByNonce(session, nonce);
+        CredentialOfferState offerState = offerStorage.getOfferStateByNonce(nonce);
         if (offerState == null) {
             var errorMessage = "Credential offer not found or already consumed";
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue());
@@ -825,7 +825,7 @@ public class OID4VCIssuerEndpoint {
         String credOfferId = tokenAuthDetail.getCredentialsOfferId();
         if (credOfferId != null) {
 
-            offerState = offerStorage.getOfferStateById(session, credOfferId);
+            offerState = offerStorage.getOfferStateById(credOfferId);
             if (offerState == null) {
                 var errorMessage = "No credential offer state for: " + credOfferId;
                 eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
@@ -997,7 +997,7 @@ public class OID4VCIssuerEndpoint {
         // Clean up offer state after successful credential issuance
         // This prevents memory leaks while ensuring the state remains available during the request
         if (offerState != null) {
-            offerStorage.removeOfferState(session, offerState);
+            offerStorage.removeOfferState(offerState);
             LOGGER.debugf("Removed credential offer state after successful issuance");
         }
 

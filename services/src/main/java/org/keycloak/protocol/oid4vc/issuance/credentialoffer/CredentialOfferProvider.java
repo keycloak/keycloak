@@ -18,7 +18,6 @@ package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
 import java.util.List;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 
@@ -77,7 +76,6 @@ import org.keycloak.provider.Provider;
 public interface CredentialOfferProvider extends Provider {
 
     CredentialOfferState createCredentialOffer(
-            KeycloakSession session,
             UserSessionModel userSession,
             String grantType,
             List<String> credentialConfigurationIds,
