@@ -47,6 +47,11 @@ import static org.hamcrest.Matchers.nullValue;
  * Tests for the composite client role mappings admin API endpoint:
  * GET /admin/realms/{realm}/users/{user-id}/role-mappings/clients/{client-id}/composite
  *
+ * Call chain exercised by these tests:
+ *   test: user.roles().clientLevel(clientId).listEffective(briefRepresentation)
+ *     -> RoleScopeResource: GET .../role-mappings/clients/{client-id}/composite
+ *       -> ClientRoleMappingsResource.getCompositeClientRoleMappings(briefRepresentation)
+ *
  * Verifies that effective (composite-expanded) client roles are correctly returned
  * for users with different role assignments across multiple clients, and that the
  * briefRepresentation parameter controls attribute inclusion.
