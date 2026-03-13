@@ -36,5 +36,6 @@
         <module>storage-services</module>
         <module>jpa</module>
         <module>infinispan</module>
+        <module>redis</module>
     </modules>
 </project>

@@ -1,0 +1,115 @@
+version: '3.8'
+
+services:
+  # Redis standalone instance for testing
+  redis-test:
+    image: redis:7-alpine
+    container_name: redis-atdd-test
+    ports:
+      - "16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 5s
+    networks:
+      - atdd-network
+
+  # PostgreSQL database for Keycloak
+  postgres-test:
+    image: postgres:16.8
+    container_name: postgres-atdd-test
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    ports:
+      - "15432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+    networks:
+      - atdd-network
+
+  # Keycloak with Redis providers for ATDD testing
+  keycloak-test:
+    image: keycloak/keycloak:26.4.0
+    pull_policy: if_not_present
+    container_name: keycloak-atdd-test
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres-test
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password
+      KC_HOSTNAME: localhost
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    ports:
+      - "18080:8080"
+      - "18443:8443"
+    volumes:
+      # Mount the built Redis provider JAR (version determined by atdd-env.sh)
+      - ${REDIS_PROVIDER_JAR:-../../../target/keycloak-model-redis-999.0.0-SNAPSHOT.jar}:/opt/keycloak/providers/keycloak-model-redis.jar
+      # Mount test realm configuration
+      - ./test-realms:/opt/keycloak/data/import:ro
+    command:
+      - "start-dev"
+      - "--import-realm"
+      - "-Dkeycloak.migration.strategy=OVERWRITE_EXISTING"
+      - "--health-enabled=true"
+      - "--metrics-enabled=true"
+      # Redis connection configuration
+      - "--spi-redis-connection-default-host=redis-test"
+      - "--spi-redis-connection-default-port=6379"
+      - "--spi-redis-connection-default-ssl=false"
+      - "--spi-redis-connection-default-cluster=false"
+      # Enable Redis providers
+      - "--spi-user-sessions-provider=redis"
+      - "--spi-single-use-object-provider=redis"
+      - "--spi-cluster-provider=redis"
+      - "--spi-user-login-failure-provider=redis"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    networks:
+      - atdd-network
+
+  # Redis Commander for web-based Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    platform: linux/amd64
+    container_name: redis-commander-atdd
+    environment:
+      REDIS_HOSTS: redis-test:redis-test:6379
+      HTTP_USER: ${REDIS_COMMANDER_USER:-admin}
+      HTTP_PASSWORD: ${REDIS_COMMANDER_PASSWORD:-admin}
+    ports:
+      - "18081:8081"
+    depends_on:
+      redis-test:
+        condition: service_healthy
+    networks:
+      - atdd-network
+
+networks:
+  atdd-network:
+    driver: bridge
+
+volumes:
+  postgres-test-data:
+  redis-test-data:

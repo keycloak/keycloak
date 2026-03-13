@@ -1,0 +1,142 @@
+{
+  "realm": "test-realm",
+  "enabled": true,
+  "displayName": "Test Realm for ATDD",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 3,
+  "accessTokenLifespan": 3600,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "offlineSessionIdleTimeout": 2592000,
+  "clients": [
+    {
+      "clientId": "test-client",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "test-client-2",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "client-1",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "client-2",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": ["*"],
+      "webOrigins": ["*"],
+      "protocol": "openid-connect"
+    }
+  ],
+  "users": [
+    {
+      "username": "testuser",
+      "enabled": true,
+      "email": "testuser@test.com",
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user", "offline_access"]
+    },
+    {
+      "username": "testuser2",
+      "enabled": true,
+      "email": "testuser2@test.com",
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "User2",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user", "offline_access"]
+    },
+    {
+      "username": "testuser3",
+      "enabled": true,
+      "email": "testuser3@test.com",
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "User3",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user", "offline_access"]
+    },
+    {
+      "username": "user1",
+      "enabled": true,
+      "email": "user1@test.com",
+      "emailVerified": true,
+      "firstName": "User",
+      "lastName": "One",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Test123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user", "offline_access"]
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "User role"
+      },
+      {
+        "name": "offline_access",
+        "description": "Offline access role"
+      }
+    ]
+  }
+}

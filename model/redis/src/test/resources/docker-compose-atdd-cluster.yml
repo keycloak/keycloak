@@ -1,0 +1,258 @@
+version: '3.8'
+
+services:
+  # Redis Cluster Nodes (3 masters + 3 replicas)
+  redis-cluster-1:
+    image: redis:7-alpine
+    container_name: redis-cluster-1
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "16379:6379"
+      - "16380:16379"
+    networks:
+      - atdd-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  redis-cluster-2:
+    image: redis:7-alpine
+    container_name: redis-cluster-2
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "16381:6379"
+      - "16382:16379"
+    networks:
+      - atdd-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  redis-cluster-3:
+    image: redis:7-alpine
+    container_name: redis-cluster-3
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "16383:6379"
+      - "16384:16379"
+    networks:
+      - atdd-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  redis-cluster-4:
+    image: redis:7-alpine
+    container_name: redis-cluster-4
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "16385:6379"
+      - "16386:16379"
+    networks:
+      - atdd-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  redis-cluster-5:
+    image: redis:7-alpine
+    container_name: redis-cluster-5
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "16387:6379"
+      - "16388:16379"
+    networks:
+      - atdd-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  redis-cluster-6:
+    image: redis:7-alpine
+    container_name: redis-cluster-6
+    command: redis-server --port 6379 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    ports:
+      - "16389:6379"
+      - "16390:16379"
+    networks:
+      - atdd-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "ping"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  # Redis Cluster Initializer
+  redis-cluster-init:
+    image: redis:7-alpine
+    container_name: redis-cluster-init
+    depends_on:
+      redis-cluster-1:
+        condition: service_healthy
+      redis-cluster-2:
+        condition: service_healthy
+      redis-cluster-3:
+        condition: service_healthy
+      redis-cluster-4:
+        condition: service_healthy
+      redis-cluster-5:
+        condition: service_healthy
+      redis-cluster-6:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        echo 'Waiting for Redis nodes to be ready...';
+        sleep 5;
+        echo 'Creating Redis cluster...';
+        redis-cli --cluster create redis-cluster-1:6379 redis-cluster-2:6379 redis-cluster-3:6379 redis-cluster-4:6379 redis-cluster-5:6379 redis-cluster-6:6379 --cluster-replicas 1 --cluster-yes;
+        echo 'Redis cluster created successfully';
+        echo 'Waiting for cluster to stabilize...';
+        sleep 10;
+        echo 'Verifying cluster status...';
+        redis-cli -h redis-cluster-1 -p 6379 cluster info;
+        echo 'Cluster is ready!';
+        sleep infinity;
+    networks:
+      - atdd-network
+    healthcheck:
+      test: ["CMD", "sh", "-c", "redis-cli -h redis-cluster-1 -p 6379 cluster info | grep -q 'cluster_state:ok'"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 20s
+
+  # PostgreSQL database for Keycloak
+  postgres-test:
+    image: postgres:16.8
+    container_name: postgres-atdd-test
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
+    ports:
+      - "15432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+    networks:
+      - atdd-network
+
+  # Keycloak with Redis cluster providers
+  keycloak-test:
+    image: keycloak/keycloak:26.4.0
+    pull_policy: if_not_present
+    container_name: keycloak-atdd-test
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres-test
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: password
+      KC_HOSTNAME: localhost
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    ports:
+      - "18080:8080"
+      - "18443:8443"
+    volumes:
+      - ${REDIS_PROVIDER_JAR:-../../../target/keycloak-model-redis-999.0.0-SNAPSHOT.jar}:/opt/keycloak/providers/keycloak-model-redis.jar
+      - ./test-realms:/opt/keycloak/data/import:ro
+    command:
+      - "start-dev"
+      - "--import-realm"
+      - "-Dkeycloak.migration.strategy=OVERWRITE_EXISTING"
+      - "--health-enabled=true"
+      - "--metrics-enabled=true"
+      # Redis cluster connection configuration (single seed node - cluster discovery will find others)
+      - "--spi-redis-connection-default-host=redis-cluster-1"
+      - "--spi-redis-connection-default-port=6379"
+      - "--spi-redis-connection-default-ssl=false"
+      - "--spi-redis-connection-default-cluster=true"
+      # Enable Redis providers
+      - "--spi-user-sessions-provider=redis"
+      - "--spi-single-use-object-provider=redis"
+      - "--spi-cluster-provider=redis"
+      - "--spi-user-login-failure-provider=redis"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-cluster-init:
+        condition: service_healthy
+    networks:
+      - atdd-network
+
+  # Redis Commander for cluster visualization
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    platform: linux/amd64
+    container_name: redis-commander-atdd
+    environment:
+      REDIS_HOSTS: cluster1:redis-cluster-1:6379,cluster2:redis-cluster-2:6379,cluster3:redis-cluster-3:6379
+      HTTP_USER: ${REDIS_COMMANDER_USER:-admin}
+      HTTP_PASSWORD: ${REDIS_COMMANDER_PASSWORD:-admin}
+    ports:
+      - "18081:8081"
+    depends_on:
+      redis-cluster-1:
+        condition: service_healthy
+    networks:
+      - atdd-network
+
+  # Test Runner - Runs tests inside Docker network with access to cluster nodes
+  test-runner:
+    build:
+      context: ../../..
+      dockerfile: src/test/resources/Dockerfile.test-runner
+    container_name: atdd-test-runner
+    environment:
+      # Point to cluster nodes using internal Docker network hostnames
+      REDIS_HOST: redis-cluster-1
+      REDIS_PORT: 6379
+      REDIS_CLUSTER_ENABLED: "true"
+      KEYCLOAK_BASE_URL: http://keycloak-test:8080
+    depends_on:
+      keycloak-test:
+        condition: service_started
+      redis-cluster-init:
+        condition: service_healthy
+    networks:
+      - atdd-network
+    volumes:
+      # Mount target directory to see test results
+      - ../../../target:/workspace/target
+      # Mount local .m2 repository to avoid re-downloading dependencies
+      - ~/.m2:/root/.m2
+    profiles:
+      - test
+    command: 
+      - sh
+      - -c
+      - |
+        echo "Waiting for Keycloak to be ready..."
+        sleep 30
+        echo "Starting tests with docker-cluster environment..."
+        mvn test -Dtest=CucumberTestRunner -Dtest.environment=docker-cluster -B
+
+networks:
+  atdd-network:
+    driver: bridge
+
+volumes:
+  postgres-test-data:

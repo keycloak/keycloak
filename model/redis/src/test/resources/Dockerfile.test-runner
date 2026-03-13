@@ -1,0 +1,11 @@
+# Dockerfile for running ATDD tests inside Docker network
+FROM maven:3.9-eclipse-temurin-21-alpine
+
+WORKDIR /workspace
+
+# Copy project files
+COPY pom.xml .
+COPY src ./src
+
+# Command to run tests
+CMD ["mvn", "test", "-Dtest=CucumberTestRunner", "-B"]
