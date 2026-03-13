@@ -14,67 +14,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.tests.oauth;
+package org.keycloak.tests.broker;
 
+import java.security.PublicKey;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
-import org.keycloak.models.jpa.JpaRealmProviderFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
+import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.saml.SignatureAlgorithm;
+import org.keycloak.saml.common.constants.GeneralConstants;
+import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.testframework.ui.annotations.InjectPage;
-import org.keycloak.testframework.ui.page.LoginPage;
-import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.PlainStringResponse;
+import org.keycloak.util.TokenUtil;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
 
 /**
  *
  * @author rmartinc
  */
 @KeycloakIntegrationTest
-public class SamlIdentityProviderStoreTokenTest {
-
-    public static String IDP_ALIAS = "saml-idp-alias";
-    public static String EXTERNAL_REALM_NAME = "external-realm";
-
-    @InjectOAuthClient
-    OAuthClient oauth;
+public class SamlIdentityProviderStoreTokenTest extends AbstractIdentityProviderStoreTokenTest {
 
     @InjectRealm(config = IdpRealmConfig.class)
     protected ManagedRealm realm;
@@ -82,110 +71,38 @@ public class SamlIdentityProviderStoreTokenTest {
     @InjectRealm(ref = "external-realm", config = ExternalRealmConfig.class)
     ManagedRealm externalRealm;
 
-    @InjectPage
-    LoginPage loginPage;
+    @Override
+    protected ManagedRealm getRealm() {
+        return realm;
+    }
 
-    @InjectRunOnServer
-    RunOnServerClient runOnServer;
+    @Override
+    protected ManagedRealm getExternalRealm() {
+        return externalRealm;
+    }
 
-    @AfterEach
-    public void logout() {
-        Optional<UserRepresentation> userResult = realm.admin().users().search("testuser", true).stream().findFirst();
-        if (userResult.isPresent()) {
-            AccountHelper.logout(realm.admin(), "testuser");
-            realm.admin().users().delete(userResult.get().getId()).close();
+    @Override
+    protected void checkSuccessfulTokenResponse(AccessTokenResponse externalTokens) {
+        try {
+            Assertions.assertEquals(OAuth2Constants.SAML2_TOKEN_TYPE, externalTokens.getIssuedTokenType());
+            Assertions.assertEquals(TokenUtil.TOKEN_TYPE_BEARER, externalTokens.getTokenType());
+            Assertions.assertNotNull(externalTokens.getAccessToken());
+            Document assertion = DocumentUtil.getDocument(
+                    new String(Base64.getUrlDecoder().decode(externalTokens.getAccessToken()), GeneralConstants.SAML_CHARSET));
+            Assertions.assertEquals(JBossSAMLConstants.ASSERTION.getNsUri().get(), assertion.getDocumentElement().getNamespaceURI());
+            Assertions.assertEquals(JBossSAMLConstants.ASSERTION.get(), assertion.getDocumentElement().getLocalName());
+            Assertions.assertTrue(AssertionUtil.isSignedElement(assertion.getDocumentElement()));
+
+            KeysMetadataRepresentation keysMetadata = externalRealm.admin().keys().getKeyMetadata();
+            String kid = keysMetadata.getActive().get("RS256");
+            KeyMetadataRepresentation keyMetadata = keysMetadata.getKeys().stream()
+                    .filter(k -> kid.equals(k.getKid())).findAny().orElse(null);
+            PublicKey realmPubKey = KeycloakModelUtils.getPublicKey(keyMetadata.getPublicKey());
+
+            SamlProtocolUtils.verifyDocumentSignature(assertion, new HardcodedKeyLocator(realmPubKey));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-
-        userResult = externalRealm.admin().users().search("testuser", true).stream().findFirst();
-        if (userResult.isPresent()) {
-            AccountHelper.logout(externalRealm.admin(), "testuser");
-        }
-    }
-
-    @Test
-    public void testIdentityProviderStoreTokenManualRoleGrant() throws Exception {
-        realm.updateIdentityProvider(IDP_ALIAS, idp-> {
-            idp.setAddReadTokenRoleOnCreate(false);
-        });
-
-        oauth.openLoginForm();
-        loginPage.clickSocial(IDP_ALIAS);
-        loginPage.fillLogin("testuser", "password");
-        loginPage.submit();
-
-        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
-        Assertions.assertTrue(internalTokens.isSuccess());
-
-        //user without the role tries to read the stored token
-        PlainStringResponse response = oauth.doFetchExternalIdpTokenString(IDP_ALIAS, internalTokens.getAccessToken());
-        Assertions.assertEquals(403, response.getStatusCode());
-
-        AccountHelper.logout(realm.admin(), "testuser");
-
-        //grant the role to the user and repeat the login
-        runOnServer.run(session -> {
-            RealmModel realm = session.getContext().getRealm();
-            ClientModel brokerClient = realm.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
-            RoleModel readTokenRole = brokerClient.getRole(Constants.READ_TOKEN_ROLE);
-            UserModel user = session.users().getUserByUsername(realm, "testuser");
-            user.grantRole(readTokenRole);
-        });
-
-        oauth.openLoginForm();
-        loginPage.clickSocial(IDP_ALIAS);
-        loginPage.fillLogin("testuser", "password");
-        loginPage.submit();
-
-        internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
-        Assertions.assertTrue(internalTokens.isSuccess());
-
-        response = oauth.doFetchExternalIdpTokenString(IDP_ALIAS, internalTokens.getAccessToken());
-        Assertions.assertEquals(200, response.getStatusCode());
-        Assertions.assertNotNull(response.getResponse());
-    }
-
-    @Test
-    public void testIdentityProviderStoreTokenRoleGrantOnUserCreation() throws Exception {
-        oauth.openLoginForm();
-        loginPage.clickSocial(IDP_ALIAS);
-        loginPage.fillLogin("testuser", "password");
-        loginPage.submit();
-
-        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
-        Assertions.assertTrue(tokenResponse.isSuccess());
-
-        PlainStringResponse response = oauth.doFetchExternalIdpTokenString(IDP_ALIAS, tokenResponse.getAccessToken());
-        Assertions.assertEquals(200, response.getStatusCode());
-        Assertions.assertNotNull(response.getResponse());
-    }
-
-    @Test
-    public void testStoreTokenDisabled() {
-        realm.updateIdentityProvider(IDP_ALIAS, idp -> {
-            idp.setStoreToken(false);
-        });
-
-        oauth.openLoginForm();
-        loginPage.clickSocial(IDP_ALIAS);
-        loginPage.fillLogin("testuser", "password");
-        loginPage.submit();
-
-        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
-        Assertions.assertTrue(internalTokens.isSuccess());
-
-        PlainStringResponse response = oauth.doFetchExternalIdpTokenString(IDP_ALIAS, internalTokens.getAccessToken());
-        Assertions.assertEquals(200, response.getStatusCode());
-        Assertions.assertNotNull(response.getResponse());
-
-        String realmName = realm.getName();
-        String oldTokenFromDatabase = runOnServer.fetch(session -> {
-            RealmModel realm = session.realms().getRealmByName(realmName);
-            UserModel user = session.users().getUserByUsername(realm, "testuser");
-            return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(realm, user, IDP_ALIAS).getToken();
-        }, String.class);
-
-        //Ensure that the token is null in the db
-        Assertions.assertNull(oldTokenFromDatabase);
     }
 
     public static class IdpRealmConfig implements RealmConfig {

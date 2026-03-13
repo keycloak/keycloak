@@ -22,6 +22,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,6 +38,7 @@ import jakarta.ws.rs.core.UriInfo;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPMessage;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -83,6 +85,7 @@ import org.keycloak.protocol.saml.SamlSessionUtils;
 import org.keycloak.protocol.saml.mappers.SamlMetadataDescriptorUpdater;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
 import org.keycloak.protocol.saml.profile.util.Soap;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.saml.SAML2ArtifactResolveRequestBuilder;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAML2LogoutRequestBuilder;
@@ -105,6 +108,7 @@ import org.keycloak.saml.validators.DestinationValidator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import org.jboss.logging.Logger;
 import org.w3c.dom.Document;
@@ -271,19 +275,23 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
 
         }
-        // TODO: Do we always store the SAML response in the session? Maybe add store token options as no, database, session?
         authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN));
     }
 
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
         final String token = userSession != null
-                ? userSession.getNote(FEDERATED_ACCESS_TOKEN)
+                ? getFederatedAccessToken(userSession)
                 : identity.getToken();
 
-        return token != null
-                ? Response.ok(token).type(MediaType.TEXT_PLAIN_TYPE).build()
-                : Response.status(Response.Status.NOT_FOUND).build();
+        if (token == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        AccessTokenResponse tokenResponse = new AccessTokenResponse();
+        tokenResponse.setToken(Base64.getUrlEncoder().withoutPadding().encodeToString(token.getBytes(GeneralConstants.SAML_CHARSET)));
+        tokenResponse.setTokenType(TokenUtil.TOKEN_TYPE_BEARER);
+        return buildTokenResponse(session.getContext().getUri(), null, null, userSession, tokenResponse, OAuth2Constants.SAML2_TOKEN_TYPE);
     }
 
     @Override

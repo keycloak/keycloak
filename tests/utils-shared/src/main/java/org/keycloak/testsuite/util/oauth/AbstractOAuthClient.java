@@ -1,7 +1,5 @@
 package org.keycloak.testsuite.util.oauth;
 
-import java.io.IOException;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
@@ -13,7 +11,6 @@ import org.keycloak.testsuite.util.oauth.ciba.CibaClient;
 import org.keycloak.testsuite.util.oauth.device.DeviceClient;
 import org.keycloak.testsuite.util.oauth.oid4vc.OID4VCClient;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.openqa.selenium.WebDriver;
 
@@ -226,22 +223,12 @@ public abstract class AbstractOAuthClient<T> {
         return tokenExchangeRequest(subjectToken).send();
     }
 
-    public AccessTokenResponse doFetchExternalIdpToken(String providerAlias, String accessToken) {
-        return new FetchExternalIdpTokenRequest<AccessTokenResponse>(providerAlias, accessToken, this) {
-            @Override
-            protected AccessTokenResponse toResponse(CloseableHttpResponse response) throws IOException {
-                return new AccessTokenResponse(response);
-            }
-        }.send();
+    public FetchExternalIdpTokenRequest fetchExternalIdpTokenRequest(String providerAlias, String accessToken) {
+        return new FetchExternalIdpTokenRequest(providerAlias, accessToken, this);
     }
 
-    public PlainStringResponse doFetchExternalIdpTokenString(String providerAlias, String accessToken) {
-        return new FetchExternalIdpTokenRequest<PlainStringResponse>(providerAlias, accessToken, this) {
-            @Override
-            protected PlainStringResponse toResponse(CloseableHttpResponse response) throws IOException {
-                return new PlainStringResponse(response);
-            }
-        }.send();
+    public AccessTokenResponse doFetchExternalIdpToken(String providerAlias, String accessToken) {
+        return fetchExternalIdpTokenRequest(providerAlias, accessToken).send();
     }
 
     public CibaClient ciba() {
