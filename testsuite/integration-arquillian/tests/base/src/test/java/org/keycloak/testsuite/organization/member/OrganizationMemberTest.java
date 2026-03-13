@@ -138,6 +138,25 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testGetMemberOrganizationRequiresMembershipInCurrentOrganization() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationRepresentation orgB = createOrganization("orgb");
+        OrganizationResource organizationB = testRealm().organizations().get(orgB.getId());
+        UserRepresentation member = addMember(organizationB);
+
+        try {
+            organization.members().member(member.getId()).getOrganizations(true);
+            fail("should not resolve organizations for a user that is not a member of the current organization");
+        } catch (NotFoundException expected) {
+        }
+
+        List<OrganizationRepresentation> actual = testRealm().organizations().members().getOrganizations(member.getId(), true);
+        assertNotNull(actual);
+        assertEquals(1, actual.size());
+        assertEquals(orgB.getId(), actual.get(0).getId());
+    }
+
+    @Test
     public void testGetAll() {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         List<UserRepresentation> expected = new ArrayList<>();
