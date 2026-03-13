@@ -72,6 +72,16 @@ public class LoggingOptions {
             .description("Indicates whether to log asynchronously to all handlers.")
             .build();
 
+    public static final Option<String> LOG_SERVICE_NAME = new OptionBuilder<>("log-service-name", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("Set the 'service.name' field in JSON log entries for all log handlers. In ECS format, defaults to 'Keycloak' if not set.")
+            .build();
+
+    public static final Option<String> LOG_SERVICE_ENVIRONMENT = new OptionBuilder<>("log-service-environment", String.class)
+            .category(OptionCategory.LOGGING)
+            .description("Set the 'service.environment' field in JSON log entries for all log handlers. In ECS format, defaults to the Quarkus profile if not set.")
+            .build();
+
     public enum Output {
         DEFAULT,
         JSON;
@@ -118,16 +128,6 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .defaultValue(JsonFormat.DEFAULT)
             .description("Set the format of the produced JSON.")
-            .build();
-
-    public static final Option<String> LOG_CONSOLE_JSON_SERVICE_NAME = new OptionBuilder<>("log-console-json-service-name", String.class)
-            .category(OptionCategory.LOGGING)
-            .description("Set the 'service.name' field in the console JSON log entries. In ECS format, defaults to 'Keycloak' if not set.")
-            .build();
-
-    public static final Option<String> LOG_CONSOLE_JSON_SERVICE_ENVIRONMENT = new OptionBuilder<>("log-console-json-service-environment", String.class)
-            .category(OptionCategory.LOGGING)
-            .description("Set the 'service.environment' field in the console JSON log entries. In ECS format, defaults to the Quarkus profile if not set.")
             .build();
 
     public static final Option<Boolean> LOG_CONSOLE_INCLUDE_TRACE = new OptionBuilder<>("log-console-include-trace", Boolean.class)
@@ -197,16 +197,6 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .defaultValue(JsonFormat.DEFAULT)
             .description("Set the format of the produced JSON.")
-            .build();
-
-    public static final Option<String> LOG_FILE_JSON_SERVICE_NAME = new OptionBuilder<>("log-file-json-service-name", String.class)
-            .category(OptionCategory.LOGGING)
-            .description("Set the 'service.name' field in the file JSON log entries. In ECS format, defaults to 'Keycloak' if not set.")
-            .build();
-
-    public static final Option<String> LOG_FILE_JSON_SERVICE_ENVIRONMENT = new OptionBuilder<>("log-file-json-service-environment", String.class)
-            .category(OptionCategory.LOGGING)
-            .description("Set the 'service.environment' field in the file JSON log entries. In ECS format, defaults to the Quarkus profile if not set.")
             .build();
 
     public static final Option<Boolean> LOG_FILE_INCLUDE_TRACE = new OptionBuilder<>("log-file-include-trace", Boolean.class)

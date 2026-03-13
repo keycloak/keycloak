@@ -308,29 +308,28 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void jsonServiceFields() {
         putEnvVars(Map.of(
+                "KC_LOG", "console,file,syslog",
                 "KC_LOG_CONSOLE_OUTPUT", "json",
-                "KC_LOG_CONSOLE_JSON_SERVICE_NAME", "my-service",
-                "KC_LOG_CONSOLE_JSON_SERVICE_ENVIRONMENT", "production",
-                "KC_LOG", "console,file",
                 "KC_LOG_FILE_OUTPUT", "json",
-                "KC_LOG_FILE_JSON_SERVICE_NAME", "my-service",
-                "KC_LOG_FILE_JSON_SERVICE_ENVIRONMENT", "production"
+                "KC_LOG_SYSLOG_OUTPUT", "json",
+                "KC_LOG_SERVICE_NAME", "my-service",
+                "KC_LOG_SERVICE_ENVIRONMENT", "production"
         ));
 
         initConfig();
 
         assertConfig(Map.of(
-                "log-console-json-service-name", "my-service",
-                "log-console-json-service-environment", "production",
-                "log-file-json-service-name", "my-service",
-                "log-file-json-service-environment", "production"
+                "log-service-name", "my-service",
+                "log-service-environment", "production"
         ));
 
         assertExternalConfig(Map.of(
                 "quarkus.log.console.json.additional-field.\"service.name\".value", "my-service",
                 "quarkus.log.console.json.additional-field.\"service.environment\".value", "production",
                 "quarkus.log.file.json.additional-field.\"service.name\".value", "my-service",
-                "quarkus.log.file.json.additional-field.\"service.environment\".value", "production"
+                "quarkus.log.file.json.additional-field.\"service.environment\".value", "production",
+                "quarkus.log.syslog.json.additional-field.\"service.name\".value", "my-service",
+                "quarkus.log.syslog.json.additional-field.\"service.environment\".value", "production"
         ));
     }
 
