@@ -42,6 +42,7 @@ import org.keycloak.utils.StringUtil;
 import org.keycloak.validation.ValidationUtil;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
+import org.keycloak.validation.jakarta.ValidationContext;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -73,7 +74,7 @@ public class DefaultClientService implements ClientService {
                                 @Nonnull RealmAdminResource realmResource) {
         this.session = session;
         this.permissions = permissions;
-        this.validator = new HibernateValidatorProvider();
+        this.validator = new HibernateValidatorProvider(new ValidationContext(session, realm));
 
         this.realmResource = realmResource;
         this.clientsResource = realmResource.getClients();
