@@ -74,7 +74,8 @@ public class LoggingOptions {
 
     public static final Option<String> LOG_SERVICE_NAME = new OptionBuilder<>("log-service-name", String.class)
             .category(OptionCategory.LOGGING)
-            .description("Set the 'service.name' field in JSON log entries for all log handlers. In ECS format, defaults to 'Keycloak' if not set.")
+            .description("Set the 'service.name' field in JSON log entries for all log handlers.")
+            .defaultValue("keycloak")
             .build();
 
     public static final Option<String> LOG_SERVICE_ENVIRONMENT = new OptionBuilder<>("log-service-environment", String.class)

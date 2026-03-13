@@ -55,6 +55,10 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .build(),
                 fromOption(LoggingOptions.LOG_ASYNC)
                         .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_NAME)
+                        .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_ENVIRONMENT)
+                        .build(),
                 // Console
                 fromOption(LoggingOptions.LOG_CONSOLE_OUTPUT)
                         .isEnabled(LoggingPropertyMappers::isConsoleEnabled, CONSOLE_ENABLED_MSG)
