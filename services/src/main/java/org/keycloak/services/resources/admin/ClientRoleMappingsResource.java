@@ -17,6 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -45,6 +46,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
@@ -128,10 +130,18 @@ public class ClientRoleMappingsResource {
     public Stream<RoleRepresentation> getCompositeClientRoleMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
-        Stream<RoleModel> roles = client.getRolesStream();
         Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation
                 ? ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
-        return roles.filter(user::hasRole).map(toBriefRepresentation);
+
+        // Pre-compute the user's full effective role set once via BFS expansion,
+        // then filter by client. This avoids the O(C*M*D) cost of calling
+        // user.hasRole() per client role which recursively expands composites
+        // without memoization for each of the C client roles.
+        Set<RoleModel> directRoles = user.getRoleMappingsStream().collect(Collectors.toSet());
+        Set<RoleModel> effectiveRoles = RoleUtils.expandCompositeRoles(directRoles);
+        return effectiveRoles.stream()
+                .filter(r -> r.isClientRole() && r.getContainerId().equals(client.getId()))
+                .map(toBriefRepresentation);
     }
 
     /**
