@@ -535,4 +535,38 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
         results = orgResource.members().member(member.getId()).groups(null, null, null, true);
         assertThat(results, hasSize(3));
     }
+
+    @Test
+    public void testGroupMembershipsRequiresMembershipInCurrentOrganization() {
+        // Calling groupMemberships for a user who is a member of another org should return 404
+        OrganizationRepresentation orgARep = createOrganization("orgA", "orga.com");
+        OrganizationResource orgA = testRealm().organizations().get(orgARep.getId());
+
+        OrganizationRepresentation orgBRep = createOrganization("orgB", "orgb.com");
+        OrganizationResource orgB = testRealm().organizations().get(orgBRep.getId());
+
+        // Add member to orgB
+        MemberRepresentation memberB = addMember(orgB, "memberb@orgb.com");
+
+        // Create a group in orgB and add the member
+        GroupRepresentation groupRep = new GroupRepresentation();
+        groupRep.setName("TeamB");
+        String groupId;
+        try (Response response = orgB.groups().addTopLevelGroup(groupRep)) {
+            groupId = ApiUtil.getCreatedId(response);
+        }
+        orgB.groups().group(groupId).addMember(memberB.getId());
+
+        // Verify memberB has groups in orgB
+        List<GroupRepresentation> orgBGroups = orgB.members().member(memberB.getId()).groups(null, null, true);
+        assertThat(orgBGroups, hasSize(1));
+
+        // Try to get memberB's group memberships via orgA - should return 404
+        try {
+            orgA.members().member(memberB.getId()).groups(null, null, true);
+            fail("Should not be able to get group memberships for a non-member of the organization");
+        } catch (jakarta.ws.rs.NotFoundException expected) {
+            // expected - memberB is not a member of orgA
+        }
+    }
 }
