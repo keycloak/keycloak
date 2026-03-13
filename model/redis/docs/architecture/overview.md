@@ -17,8 +17,6 @@ limitations under the License.
 
 # Architecture Overview
 
-> **⚠️ EXPERIMENTAL FEATURE:** This provider requires the `redis-storage` feature flag to be enabled. See the [main README](../../README.md#enabling-the-feature) for details.
-
 ## System Architecture
 
 The Keycloak Redis Provider replaces the default Infinispan cache with Redis for session storage, providing a cloud-native alternative with managed service support.

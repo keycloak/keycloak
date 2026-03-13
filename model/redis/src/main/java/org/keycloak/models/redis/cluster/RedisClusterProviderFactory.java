@@ -25,10 +25,8 @@ import org.keycloak.Config;
 import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.util.Map;
 import java.util.UUID;
@@ -38,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Factory for RedisClusterProvider.
  */
-public class RedisClusterProviderFactory implements ClusterProviderFactory, EnvironmentDependentProviderFactory {
+public class RedisClusterProviderFactory implements ClusterProviderFactory {
 
     private static final Logger logger = Logger.getLogger(RedisClusterProviderFactory.class);
 
@@ -180,15 +178,5 @@ public class RedisClusterProviderFactory implements ClusterProviderFactory, Envi
     @Override
     public String getId() {
         return PROVIDER_ID;
-    }
-
-    @Override
-    public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.REDIS_STORAGE);
-    }
-
-    @Override
-    public int order() {
-        return 10; // Higher order to take precedence over Infinispan when configured
     }
 }

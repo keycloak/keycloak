@@ -51,7 +51,6 @@ services:
       KC_HTTP_ENABLED: "true"
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
-      KC_FEATURES: redis-storage
     ports:
       - "18080:8080"
       - "18443:8443"

@@ -17,11 +17,8 @@
 
 package org.keycloak.models.redis;
 
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 
@@ -29,8 +26,7 @@ import org.keycloak.provider.ProviderFactory;
  * Abstract base class for Redis-based provider factories.
  * Provides common functionality for Redis provider initialization and lifecycle.
  */
-public abstract class AbstractRedisProviderFactory<T extends Provider>
-        implements ProviderFactory<T>, EnvironmentDependentProviderFactory {
+public abstract class AbstractRedisProviderFactory<T extends Provider> implements ProviderFactory<T> {
 
     protected static final String PROVIDER_ID = "redis";
     protected static final int REDIS_PROVIDER_ORDER = 10;
@@ -71,10 +67,5 @@ public abstract class AbstractRedisProviderFactory<T extends Provider>
      */
     public int order() {
         return REDIS_PROVIDER_ORDER;
-    }
-
-    @Override
-    public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.REDIS_STORAGE);
     }
 }

@@ -128,8 +128,6 @@ public class Profile {
 
         PERSISTENT_USER_SESSIONS("Persistent online user sessions across restarts and upgrades", Type.DEFAULT, FeatureUpdatePolicy.SHUTDOWN),
 
-        REDIS_STORAGE("Redis storage provider for sessions and caching", Type.EXPERIMENTAL, FeatureUpdatePolicy.SHUTDOWN),
-
         OID4VC_VCI("Support for the OID4VCI protocol as part of OID4VC.", Type.EXPERIMENTAL),
 
         OPENTELEMETRY("OpenTelemetry support", Type.DEFAULT),

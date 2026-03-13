@@ -19,8 +19,6 @@ limitations under the License.
 
 **Acceptance Test-Driven Development (ATDD)** for Keycloak Redis Session Provider
 
-> **⚠️ EXPERIMENTAL FEATURE:** The Redis storage provider requires the `redis-storage` feature flag. Tests automatically enable this feature.
-
 ---
 
 ## 📋 Table of Contents
@@ -703,7 +701,7 @@ bash -x ./atdd-env.sh cluster
   - `src/test/resources/features/*.feature` - Gherkin test scenarios
 
 - **Step Definitions:**
-  - `src/test/java/org/keycloak/models/redis/test/steps/` - Test implementation
+  - `src/test/java/org/keycloak/models/redis/steps/` - Test implementation
 
 ### Key Classes
 

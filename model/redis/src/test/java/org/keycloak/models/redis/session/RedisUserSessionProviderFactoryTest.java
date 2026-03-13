@@ -17,12 +17,9 @@
 
 package org.keycloak.models.redis.session;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.redis.RedisConnectionProvider;
@@ -30,7 +27,6 @@ import org.keycloak.models.redis.session.RedisUserSessionProvider;
 import org.keycloak.models.redis.session.RedisUserSessionProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,20 +43,6 @@ class RedisUserSessionProviderFactoryTest {
     private Config.Scope config;
     private KeycloakSession session;
     private RedisConnectionProvider redis;
-
-    @BeforeAll
-    static void initProfile() {
-        // Initialize Profile with REDIS_STORAGE feature enabled
-        Map<Profile.Feature, Boolean> features = new HashMap<>();
-        features.put(Profile.Feature.REDIS_STORAGE, true);
-        Profile.init(Profile.ProfileName.DEFAULT, features);
-    }
-
-    @AfterAll
-    static void resetProfile() {
-        // Clean up Profile after all tests
-        Profile.reset();
-    }
 
     @BeforeEach
     void setUp() {
