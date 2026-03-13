@@ -259,6 +259,7 @@ export const GroupTree = ({
           {
             first: `${firstSub}`,
             max: `${SUBGROUP_COUNT}`,
+            ...(isOrgGroups ? { subGroupsCount: "true" } : {}),
           },
         );
       }
