@@ -78,7 +78,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
         KeycloakContext context = session.getContext();
 
-        if (!context.hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+        if (!context.hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.VIEW)) {
             throw new ForbiddenException();
         }
 
@@ -92,9 +92,6 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     @Override
     public Stream<R> getAll(SearchRequest searchRequest) {
         return getModels(searchRequest).map(m -> {
-            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm())) {
-                return get(m.getId());
-            }
             try {
                 return get(m.getId());
             } catch (ForbiddenException fe) {

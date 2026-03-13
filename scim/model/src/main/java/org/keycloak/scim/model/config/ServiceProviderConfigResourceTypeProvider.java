@@ -19,7 +19,7 @@ public class ServiceProviderConfigResourceTypeProvider implements SingletonResou
 
         config.setId("");
         config.setBulk(new BulkSupport());
-        config.setPatch(Supported.FALSE);
+        config.setPatch(Supported.TRUE);
         config.setEtag(Supported.FALSE);
         config.setAuthenticationSchemes(List.of());
         config.setChangePassword(Supported.FALSE);
