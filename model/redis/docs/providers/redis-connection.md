@@ -17,6 +17,8 @@ limitations under the License.
 
 # Redis Connection Layer
 
+> **⚠️ EXPERIMENTAL FEATURE:** This provider requires the `redis-storage` feature flag to be enabled. See the [main README](../../README.md#enabling-the-feature) for details.
+
 The Redis Connection Layer is the foundational infrastructure that enables all Keycloak Redis providers to communicate with Redis. It abstracts Redis operations to support both standalone and cluster modes, handles connection pooling, provides optimistic locking, and tracks comprehensive metrics.
 
 ## Table of Contents

@@ -17,7 +17,9 @@ limitations under the License.
 
 # Keycloak Redis Provider
 
-A production-ready Redis storage provider for Keycloak sessions, enabling cloud-native deployments with managed Redis services ( like AWS ElastiCache, Azure Cache etc).
+A production-ready Redis storage provider for Keycloak sessions, enabling cloud-native deployments with managed Redis services (like AWS ElastiCache, Azure Cache etc).
+
+> **⚠️ EXPERIMENTAL FEATURE:** This provider is marked as experimental in Keycloak and must be explicitly enabled using the `redis-storage` feature flag. See [Enabling the Feature](#enabling-the-feature) below.
 
 ## Table of Contents
 
@@ -25,6 +27,7 @@ A production-ready Redis storage provider for Keycloak sessions, enabling cloud-
 - [Why Use Redis?](#why-use-redis)
 - [Features](#features)
 - [Architecture](#architecture)
+- [Enabling the Feature](#enabling-the-feature)
 - [Quick Start](#quick-start)
 - [Configuration](#configuration)
 - [Deployment](#deployment)
@@ -40,10 +43,11 @@ A production-ready Redis storage provider for Keycloak sessions, enabling cloud-
 This provider replaces Keycloak's default Infinispan cache with Redis, offering:
 
 - ✅ **Performance Validated:** >1000 TPS sustained, 100k+ concurrent sessions tested
-- ✅ **Zero Core Changes:** Pure SPI implementation, no Keycloak core component modifications 
+- ✅ **Zero Core Changes:** Pure SPI implementation, no Keycloak core component modifications
 - ✅ **Cloud-Native:** Works with managed Redis services
 - ✅ **Thoroughly Tested:** 80%+ code coverage, 33 ATDD scenarios, chaos engineering validated
 - ✅ **Simple Operations:** Standard Redis tooling, monitoring, and debugging
+- ⚠️ **Experimental:** Requires explicit feature flag enablement
 
 ## Why Use Redis?
 
@@ -170,7 +174,76 @@ kc:actionTokens:code_abc123xyz
 
 ---
 
+## Enabling the Feature
+
+The Redis storage provider is marked as **EXPERIMENTAL** in Keycloak and must be explicitly enabled before use.
+
+### Feature Flag: `redis-storage`
+
+**Type:** `EXPERIMENTAL`
+**Update Policy:** `SHUTDOWN` (requires cluster shutdown to enable/disable)
+
+### Why Experimental?
+
+- **Production Readiness:** While extensively tested, the provider is seeking broader community validation
+- **API Stability:** Provider interfaces and configuration may evolve based on feedback
+- **Integration Maturity:** Gaining operational experience across diverse deployment scenarios
+
+### Enabling the Feature
+
+**Method 1: Environment Variable**
+```bash
+export KC_FEATURES=redis-storage
+$KC_HOME/bin/kc.sh build
+```
+
+**Method 2: Command Line**
+```bash
+$KC_HOME/bin/kc.sh build --features=redis-storage
+```
+
+**Method 3: Configuration File (conf/keycloak.conf)**
+```properties
+features=redis-storage
+```
+
+**Method 4: Multiple Features**
+```bash
+# Enable Redis storage along with other features
+$KC_HOME/bin/kc.sh build --features=redis-storage,docker,token-exchange
+```
+
+### Verification
+
+After building with the feature enabled:
+
+```bash
+# Check that Redis providers are available
+$KC_HOME/bin/kc.sh show-config | grep redis
+
+# Start Keycloak and verify in logs
+$KC_HOME/bin/kc.sh start-dev
+# Look for: "Redis UserSessionProvider initialized"
+```
+
+### Important Notes
+
+- **Build Time Required:** Enabling/disabling this feature requires running `kc.sh build`
+- **Cluster Shutdown:** All nodes must be stopped when toggling this feature
+- **Feature Status:** Check [Keycloak Feature Documentation](https://www.keycloak.org/server/features) for current status
+- **Feedback Welcome:** Report experiences in [GitHub Discussion #37137](https://github.com/keycloak/keycloak/discussions/37137)
+
+---
+
 ## Quick Start
+
+### 0. Enable the Feature
+
+**IMPORTANT:** The Redis provider must be enabled before use:
+
+```bash
+export KC_FEATURES=redis-storage
+```
 
 ### 1. Start Redis
 
@@ -190,7 +263,7 @@ mvn clean install
 
 ```bash
 cp model/redis/target/keycloak-redis-provider-*.jar $KC_HOME/providers/
-$KC_HOME/bin/kc.sh build
+$KC_HOME/bin/kc.sh build --features=redis-storage
 ```
 
 ### 4. Start Keycloak
@@ -221,6 +294,8 @@ redis-cli TTL "kc:sessions:{sessionId}"
 ---
 
 ## Configuration
+
+> **Prerequisites:** Ensure the `redis-storage` feature is enabled (see [Enabling the Feature](#enabling-the-feature))
 
 ### Essential Parameters
 
@@ -258,6 +333,9 @@ $KC_HOME/bin/kc.sh start \
 
 **Method 2: Environment Variables (conf/keycloak.conf)**
 ```properties
+# Enable experimental Redis storage feature
+features=redis-storage
+
 # Enable Redis providers
 spi-user-sessions-provider=redis
 spi-authentication-sessions-provider=redis
@@ -299,6 +377,7 @@ services:
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+      KC_FEATURES: redis-storage
       REDIS_HOST: redis
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     command:
@@ -342,6 +421,8 @@ spec:
       - name: keycloak
         image: quay.io/keycloak/keycloak:latest
         env:
+        - name: KC_FEATURES
+          value: "redis-storage"
         - name: NODE_NAME
           valueFrom:
             fieldRef:

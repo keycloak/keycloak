@@ -23,14 +23,13 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProviderFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * Factory for Redis-based SingleUseObjectProvider.
  * This provider handles authorization codes, one-time tokens, and similar single-use objects.
  */
-public class RedisSingleUseObjectProviderFactory extends AbstractRedisProviderFactory<RedisSingleUseObjectProvider> 
-        implements SingleUseObjectProviderFactory<RedisSingleUseObjectProvider>, EnvironmentDependentProviderFactory {
+public class RedisSingleUseObjectProviderFactory extends AbstractRedisProviderFactory<RedisSingleUseObjectProvider>
+        implements SingleUseObjectProviderFactory<RedisSingleUseObjectProvider> {
 
     private static final Logger logger = Logger.getLogger(RedisSingleUseObjectProviderFactory.class);
 
@@ -42,10 +41,5 @@ public class RedisSingleUseObjectProviderFactory extends AbstractRedisProviderFa
     @Override
     public void init(Config.Scope config) {
         logger.debug("Initializing Redis SingleUseObjectProviderFactory");
-    }
-
-    @Override
-    public boolean isSupported(Config.Scope config) {
-        return true; // Will fail gracefully if Redis is not configured
     }
 }

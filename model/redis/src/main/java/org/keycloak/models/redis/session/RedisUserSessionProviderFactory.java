@@ -21,6 +21,7 @@ import org.keycloak.models.redis.RedisConnectionProvider;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.UserSessionProvider;
@@ -91,8 +92,7 @@ public class RedisUserSessionProviderFactory implements UserSessionProviderFacto
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        // This provider is enabled when explicitly configured
-        return true;
+        return Profile.isFeatureEnabled(Profile.Feature.REDIS_STORAGE);
     }
 
     @Override

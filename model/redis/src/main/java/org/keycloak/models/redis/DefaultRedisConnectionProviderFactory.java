@@ -28,8 +28,10 @@ import io.lettuce.core.resource.ClientResources;
 import io.lettuce.core.resource.DefaultClientResources;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
@@ -43,7 +45,8 @@ import java.util.Map;
  * Factory for creating Redis connection providers using Lettuce.
  * Supports both standalone and cluster mode configurations.
  */
-public class DefaultRedisConnectionProviderFactory implements RedisConnectionProviderFactory, ServerInfoAwareProviderFactory {
+public class DefaultRedisConnectionProviderFactory implements RedisConnectionProviderFactory,
+        ServerInfoAwareProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(DefaultRedisConnectionProviderFactory.class);
 
@@ -514,15 +517,15 @@ public class DefaultRedisConnectionProviderFactory implements RedisConnectionPro
             info.put("connected", String.valueOf(connectionProvider.isHealthy()));
             info.put("clusterMode", String.valueOf(clusterMode));
             info.put("connectionInfo", connectionInfo);
-            
+
             // Expose metrics for monitoring and observability
             if (connectionProvider instanceof DefaultRedisConnectionProvider) {
                 DefaultRedisConnectionProvider provider = (DefaultRedisConnectionProvider) connectionProvider;
                 Map<String, Long> metrics = provider.getMetrics();
-                
+
                 // Add metrics to operational info
                 metrics.forEach((key, value) -> info.put("metrics." + key, String.valueOf(value)));
-                
+
                 logger.debugf("Operational metrics: gets=%d, puts=%d, deletes=%d, errors=%d, hitRate=%d%%",
                         metrics.get("operations.get"),
                         metrics.get("operations.put"),
@@ -536,5 +539,15 @@ public class DefaultRedisConnectionProviderFactory implements RedisConnectionPro
         }
 
         return info;
+    }
+
+    @Override
+    public boolean isSupported(Config.Scope config) {
+        return Profile.isFeatureEnabled(Profile.Feature.REDIS_STORAGE);
+    }
+
+    @Override
+    public int order() {
+        return 10; // Higher order to take precedence over Infinispan when configured
     }
 }
