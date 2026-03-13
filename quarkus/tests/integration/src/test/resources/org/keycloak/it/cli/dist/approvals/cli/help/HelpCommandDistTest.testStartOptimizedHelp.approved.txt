@@ -459,6 +459,12 @@ Logging:
                      The log level of a category. Takes precedence over the 'log-level' option.
                        Possible values are (case insensitive): off, fatal, error, warn, info,
                        debug, trace, all.
+--log-service-environment <environment>
+                     Set the 'service.environment' field in JSON log entries for all log handlers.
+                       In ECS format, defaults to the Quarkus profile if not set.
+--log-service-name <name>
+                     Set the 'service.name' field in JSON log entries for all log handlers.
+                       Default: keycloak.
 
 Truststore:
 

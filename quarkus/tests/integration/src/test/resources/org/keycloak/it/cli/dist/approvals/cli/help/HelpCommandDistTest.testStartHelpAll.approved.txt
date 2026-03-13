@@ -678,6 +678,12 @@ Logging:
                        ipAddress, org, sessionId, authenticationSessionId, authenticationTabId.
                        Default: realmName,clientId,org,sessionId,authenticationSessionId,
                        authenticationTabId. Available only when MDC logging is enabled.
+--log-service-environment <environment>
+                     Set the 'service.environment' field in JSON log entries for all log handlers.
+                       In ECS format, defaults to the Quarkus profile if not set.
+--log-service-name <name>
+                     Set the 'service.name' field in JSON log entries for all log handlers.
+                       Default: keycloak.
 --log-syslog-app-name <name>
                      Set the app name used when formatting the message in RFC5424 format. Default:
                        keycloak. Available only when Syslog is activated.
