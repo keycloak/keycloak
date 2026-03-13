@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,21 +16,14 @@
  */
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
-import org.keycloak.provider.Provider;
+import org.keycloak.provider.Spi;
 
-public interface CredentialOfferStorage extends Provider {
-
-    void putOfferState(CredentialOfferState entry);
-
-    CredentialOfferState getOfferStateById(String offerId);
-
-    CredentialOfferState getOfferStateByNonce(String nonce);
-
-    CredentialOfferState getOfferStateByPreAuthCode(String code);
-
-    void removeOfferState(CredentialOfferState entry);
-
-    @Override
-    default void close() {
-    }
+/**
+ * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
+ */
+public class CredentialOfferProviderSpi implements Spi {
+    @Override public String getName() { return "credential-offer-provider"; }
+    @Override public Class<CredentialOfferProvider> getProviderClass() { return CredentialOfferProvider.class; }
+    @Override public Class<CredentialOfferProviderFactory> getProviderFactoryClass() { return CredentialOfferProviderFactory.class; }
+    @Override public boolean isInternal() { return true; }
 }

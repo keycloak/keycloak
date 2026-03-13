@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,17 +21,17 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 /**
- * Factory for {@link DefaultCredentialOfferStorage}.
- * 
- * <p>This factory provides the default cluster-aware implementation of credential offer storage.
- * The storage uses Keycloak's distributed cache infrastructure, making it suitable for
- * clustered and cross-DC deployments.
+ * Factory for {@link DefaultCredentialOfferProvider}.
+ * <p/>
+ * This factory provides the default implementation of a {@link CredentialOfferProvider}.
+ *
+ * @author <a href="mailto:tdiesler@proton.me">Thomas Diesler</a>
  */
-public class DefaultCredentialOfferStorageFactory implements CredentialOfferStorageFactory {
+public class DefaultCredentialOfferProviderFactory implements CredentialOfferProviderFactory {
 
     @Override
-    public CredentialOfferStorage create(KeycloakSession session) {
-        return new DefaultCredentialOfferStorage(session);
+    public CredentialOfferProvider create(KeycloakSession session) {
+        return new DefaultCredentialOfferProvider(session);
     }
 
     @Override

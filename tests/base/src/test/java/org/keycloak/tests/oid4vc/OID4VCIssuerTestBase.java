@@ -65,6 +65,12 @@ import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 
+/**
+ * Abstract base class for OID4VCI Testing
+ *
+ * [TODO] Can the server runtime mode be configured by the testcase?
+ * Server-side debugging: KC_TEST_SERVER=embedded
+ */
 public abstract class OID4VCIssuerTestBase {
 
     final Logger log = Logger.getLogger(getClass());

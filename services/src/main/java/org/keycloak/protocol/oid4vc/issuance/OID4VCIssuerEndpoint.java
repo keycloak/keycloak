@@ -52,7 +52,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Details;
@@ -79,6 +78,7 @@ import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBody;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilderFactory;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
@@ -88,7 +88,6 @@ import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCMapper;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSigner;
 import org.keycloak.protocol.oid4vc.issuance.signing.CredentialSignerException;
 import org.keycloak.protocol.oid4vc.model.AttestationProof;
-import org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
@@ -100,12 +99,10 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
-import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.JwtProof;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.OfferResponseType;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -141,11 +138,10 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
-import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
+import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
-import static org.keycloak.protocol.oid4vc.utils.OID4VCAuthorizationDetailUtils.buildOID4VCAuthorizationDetail;
 
 /**
  * Provides the (REST-)endpoints required for the OID4VCI protocol.
@@ -425,7 +421,7 @@ public class OID4VCIssuerEndpoint {
      * @param credentialConfigurationId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized
      * @param targetUser    The username that the offer is authorized for
-     * @param expireAt      The date/time when the offer expires (in Unix timestamp seconds)
+     * @param expiresAt      The date/time when the offer expires (in Unix timestamp seconds)
      * @param responseType  The response type, which can be 'uri', 'qr' or 'uri+qr'
      * @param width         The width of the QR code image
      * @param height        The height of the QR code image
@@ -437,14 +433,15 @@ public class OID4VCIssuerEndpoint {
             @QueryParam("credential_configuration_id") String credentialConfigurationId,
             @QueryParam("pre_authorized") @DefaultValue("true") Boolean preAuthorized,
             @QueryParam("target_user") String targetUser,
-            @QueryParam("expire") Integer expireAt,
+            @QueryParam("expire") Integer expiresAt,
             @QueryParam("type") @DefaultValue("uri") OfferResponseType responseType,
             @QueryParam("width") @DefaultValue("200") int width,
             @QueryParam("height") @DefaultValue("200") int height
     ) {
         configureCors(true);
         AuthenticatedClientSessionModel clientSession = getAuthenticatedClientSession();
-        UserModel loginUserModel = clientSession.getUserSession().getUser();
+        UserSessionModel userSession = clientSession.getUserSession();
+        UserModel loginUserModel = userSession.getUser();
         ClientModel clientModel = clientSession.getClient();
         RealmModel realmModel = clientModel.getRealm();
 
@@ -452,7 +449,7 @@ public class OID4VCIssuerEndpoint {
         eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
                 .client(clientModel)
                 .user(loginUserModel)
-                .session(clientSession.getUserSession().getId())
+                .session(userSession.getId())
                 .detail(Details.CREDENTIAL_TYPE, credentialConfigurationId)
                 .detail(Details.USERNAME, targetUser);
 
@@ -466,18 +463,7 @@ public class OID4VCIssuerEndpoint {
             var errorMessage = "Missing credential configuration id";
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_REQUEST.getValue());
             throw new CorsErrorResponseException(cors,
-                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
-        }
-
-        // Check whether the credential configuration exists in available client scopes
-        //
-        CredentialScopeModel credScopeModel = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
-                realmModel, () -> session.clientScopes().getClientScopesStream(realmModel), credentialConfigurationId);
-        if (credScopeModel == null) {
-            var errorMessage = "Invalid credential configuration id: " + credentialConfigurationId;
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_REQUEST.getValue());
-            throw new CorsErrorResponseException(cors,
-                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
+                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), errorMessage, Response.Status.BAD_REQUEST);
         }
 
         LOGGER.debugf("Create a credential offer for %s", credentialConfigurationId);
@@ -488,81 +474,37 @@ public class OID4VCIssuerEndpoint {
             targetUser = loginUserModel.getUsername();
         }
 
-        UserModel targetUserModel = null;
-        if (targetUser != null) {
-
-            // Verify that the target user exists
-            //
-            targetUserModel = session.users().getUserByUsername(realmModel, targetUser);
-            if (targetUserModel == null) {
-                var errorMessage = "Not found user with username: " + targetUser;
-                eventBuilder.detail(Details.REASON, errorMessage).error(Errors.USER_NOT_FOUND);
-                throw new CorsErrorResponseException(cors,
-                        ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
-            }
-
-            // Verify that the target user is enabled
-            //
-            if (!targetUserModel.isEnabled()) {
-                var errorMessage = "User '" + targetUser + "' disabled";
-                eventBuilder.detail(Details.REASON, errorMessage).error(Errors.USER_DISABLED);
-                throw new CorsErrorResponseException(cors,
-                        ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.BAD_REQUEST);
-            }
-        }
-
-        // Verify that the issuing user holds the required {@code credential_offer_create} role if `loginUser != targetUser`
-        //
-        //   - Targeted or Anonymous `authorization_code` grant
-        //   - Targeted `pre-authorized_code` grant
-        //
-        if (Strings.isEmpty(targetUser) || !loginUserModel.getUsername().equals(targetUser)) {
-            boolean hasCredentialOfferRole = loginUserModel.getRoleMappingsStream()
-                    .anyMatch(rm -> rm.getName().equals(CREDENTIAL_OFFER_CREATE.getName()));
-            if (!hasCredentialOfferRole) {
-                var errorMessage = "Credential offer creation requires role: " + CREDENTIAL_OFFER_CREATE.getName();
-                eventBuilder.detail(Details.REASON, errorMessage).error(Errors.NOT_ALLOWED);
-                throw new CorsErrorResponseException(cors,
-                        ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.toString(), errorMessage, Response.Status.FORBIDDEN);
-            }
-        }
-
-        if (expireAt == null) {
-            expireAt = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
+        if (expiresAt == null) {
+            expiresAt = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
         }
 
         // Create the CredentialsOffer
         //
-        CredentialsOffer credOffer = new CredentialsOffer()
-                .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
-                .setCredentialConfigurationIds(List.of(credentialConfigurationId));
-
-        // Create the CredentialOfferState
-        //
         String targetClientId = clientModel.getClientId();
-        String targetUserId = Optional.ofNullable(targetUserModel).map(UserModel::getId).orElse(null);
-        CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt);
+        String grantType = preAuthorized ? PRE_AUTH_GRANT_TYPE : AUTH_CODE_GRANT_TYPE;
+        List<String> credentialConfigurationIds = List.of(credentialConfigurationId);
 
-        if (preAuthorized) {
-            String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
-            credOffer.addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
-        } else {
-            IssuerState issuerState = new IssuerState().setCredentialsOfferId(offerState.getCredentialsOfferId());
-            credOffer.addGrant(new AuthorizationCodeGrant().setIssuerState(issuerState.encodeToString()));
+        CredentialOfferState offerState;
+        try {
+
+            CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
+            offerState = offerProvider.createCredentialOffer(userSession, grantType,
+                    credentialConfigurationIds, targetClientId, targetUser, expiresAt);
+
+        } catch (CredentialOfferException ex) {
+            eventBuilder.detail(Details.REASON, ex.getMessage()).error(ex.getErrorType());
+            throw new CorsErrorResponseException(cors,
+                    ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), ex.getMessage(), Response.Status.BAD_REQUEST);
         }
-
-        // Attach authorization_details that correspond to the credential_offer
-        //
-        OID4VCAuthorizationDetail authDetail = buildOID4VCAuthorizationDetail(credScopeModel, offerState);
-        offerState.setAuthorizationDetails(authDetail);
 
         // Store the CredentialOfferState
         //
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-        offerStorage.putOfferState(session, offerState);
+        offerStorage.putOfferState(offerState);
 
-        LOGGER.debugf("Stored credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
-                credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
+        String targetUserId = offerState.getTargetUserId();
+        LOGGER.debugf("Stored credential offer state: [grant=%s, ids=%s, cid=%s, uid=%s, nonce=%s]",
+                grantType, credentialConfigurationIds, offerState.getTargetClientId(), targetUserId, offerState.getNonce());
 
         // Add event details
         eventBuilder.detail(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(preAuthorized))
@@ -571,6 +513,7 @@ public class OID4VCIssuerEndpoint {
                 .detail(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, targetUserId)
                 .success();
 
+        CredentialsOffer credOffer = offerState.getCredentialsOffer();
         CredentialOfferURI credOfferURI = new CredentialOfferURI()
                 .setIssuer(credOffer.getCredentialIssuer() + "/protocol/" + OID4VC_PROTOCOL + "/" + CREDENTIAL_OFFER_PATH)
                 .setNonce(offerState.getNonce());
@@ -655,7 +598,7 @@ public class OID4VCIssuerEndpoint {
 
         // Retrieve the associated credential offer state
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
-        CredentialOfferState offerState = offerStorage.getOfferStateByNonce(session, nonce);
+        CredentialOfferState offerState = offerStorage.getOfferStateByNonce(nonce);
         if (offerState == null) {
             var errorMessage = "Credential offer not found or already consumed";
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue());
@@ -666,7 +609,7 @@ public class OID4VCIssuerEndpoint {
         // i.e. an authenticated client/user session is not required nor checked against the offer state
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
         LOGGER.debugf("Found credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
-                credOffer.getCredentialConfigurationIds(), offerState.getClientId(), offerState.getUserId(), offerState.getNonce());
+                credOffer.getCredentialConfigurationIds(), offerState.getTargetClientId(), offerState.getTargetUserId(), offerState.getNonce());
 
         if (offerState.isExpired()) {
             var errorMessage = "Credential offer has already expired";
@@ -687,11 +630,11 @@ public class OID4VCIssuerEndpoint {
         LOGGER.debugf("Removed credential offer nonce %s for replay protection", nonce);
 
         // Add event details
-        if (offerState.getClientId() != null) {
-            eventBuilder.client(offerState.getClientId());
+        if (offerState.getTargetClientId() != null) {
+            eventBuilder.client(offerState.getTargetClientId());
         }
-        if (offerState.getUserId() != null) {
-            eventBuilder.user(offerState.getUserId());
+        if (offerState.getTargetUserId() != null) {
+            eventBuilder.user(offerState.getTargetUserId());
         }
         if (credOffer.getCredentialConfigurationIds() != null && !credOffer.getCredentialConfigurationIds().isEmpty()) {
             eventBuilder.detail(Details.CREDENTIAL_TYPE, String.join(",", credOffer.getCredentialConfigurationIds()));
@@ -717,7 +660,7 @@ public class OID4VCIssuerEndpoint {
                                 "scope in access token = %s.",
                         requestedCredential.getName(), accessToken.getScope());
                 throw new CorsErrorResponseException(cors,
-                        ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.toString(),
+                        ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue(),
                         "Scope check failure",
                         Response.Status.BAD_REQUEST);
             } else {
@@ -882,7 +825,7 @@ public class OID4VCIssuerEndpoint {
         String credOfferId = tokenAuthDetail.getCredentialsOfferId();
         if (credOfferId != null) {
 
-            offerState = offerStorage.getOfferStateById(session, credOfferId);
+            offerState = offerStorage.getOfferStateById(credOfferId);
             if (offerState == null) {
                 var errorMessage = "No credential offer state for: " + credOfferId;
                 eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
@@ -900,18 +843,18 @@ public class OID4VCIssuerEndpoint {
 
             // Verify the user login session
             //
-            if (offerState.getUserId() != null && !offerState.getUserId().equals(userModel.getId())) {
+            if (offerState.getTargetUserId() != null && !offerState.getTargetUserId().equals(userModel.getId())) {
                 var errorMessage = "Unexpected login user: " + userModel.getUsername();
-                LOGGER.errorf(errorMessage + " != %s", offerState.getUserId());
+                LOGGER.errorf(errorMessage + " != %s", offerState.getTargetUserId());
                 eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
             }
 
             // Verify the login client
             //
-            if (offerState.getClientId() != null && !offerState.getClientId().equals(clientModel.getClientId())) {
+            if (offerState.getTargetClientId() != null && !offerState.getTargetClientId().equals(clientModel.getClientId())) {
                 var errorMessage = "Unexpected login client: " + clientModel.getClientId();
-                LOGGER.errorf(errorMessage + " != %s", offerState.getClientId());
+                LOGGER.errorf(errorMessage + " != %s", offerState.getTargetClientId());
                 eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue());
                 throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_REQUEST, errorMessage));
             }
@@ -929,7 +872,7 @@ public class OID4VCIssuerEndpoint {
 
         // Validate that authorization_details from the token matches the offer state
         // This ensures the correct access token is being used for the credential request
-        if (offerState != null && !tokenAuthDetail.equals(offerState.getAuthorizationDetails())) {
+        if (offerState != null && !List.of(tokenAuthDetail).equals(offerState.getAuthorizationDetails())) {
             var errorMessage = "Authorization details in access token do not match the credential offer state. " +
                     "The access token may not be the one issued for this credential offer.";
             LOGGER.debug(errorMessage);
@@ -1054,7 +997,7 @@ public class OID4VCIssuerEndpoint {
         // Clean up offer state after successful credential issuance
         // This prevents memory leaks while ensuring the state remains available during the request
         if (offerState != null) {
-            offerStorage.removeOfferState(session, offerState);
+            offerStorage.removeOfferState(offerState);
             LOGGER.debugf("Removed credential offer state after successful issuance");
         }
 
@@ -1484,7 +1427,7 @@ public class OID4VCIssuerEndpoint {
         if (clientSession == null) {
             throw new CorsErrorResponseException(
                     cors,
-                    ErrorType.INVALID_TOKEN.toString(),
+                    ErrorType.INVALID_TOKEN.getValue(),
                     "Invalid or missing token",
                     Response.Status.BAD_REQUEST);
         }
@@ -1500,7 +1443,7 @@ public class OID4VCIssuerEndpoint {
         if (authResult == null) {
             throw new CorsErrorResponseException(
                     cors,
-                    ErrorType.INVALID_TOKEN.toString(),
+                    ErrorType.INVALID_TOKEN.getValue(),
                     "Invalid or missing token",
                     Response.Status.BAD_REQUEST);
         }
@@ -1525,7 +1468,7 @@ public class OID4VCIssuerEndpoint {
                     LOGGER.debugf("DPoP nonce validation failed: %s", e.getMessage());
                     throw new CorsErrorResponseException(
                             cors,
-                            ErrorType.INVALID_TOKEN.toString(),
+                            ErrorType.INVALID_TOKEN.getValue(),
                             "Invalid or missing token",
                             Response.Status.BAD_REQUEST);
                 }
