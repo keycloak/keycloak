@@ -131,20 +131,20 @@ article.pf-v5-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
 
 .user-attribute-search-form {
   display: block;
-  padding: 20px;
+  padding: var(--pf-v5-global--spacer--lg);
   width: 700px;
 }
 
 .user-attribute-search-form-headline {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--pf-v5-global--spacer--xl);
 }
 
 .user-attribute-search-form-alert {
-  margin-bottom: 1.5rem;
+  margin-bottom: var(--pf-v5-global--spacer--xl);
 }
 
 .user-attribute-search-form-key-value {
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--pf-v5-global--spacer--sm);
 }
 
 .user-attribute-search-form-left {
@@ -158,7 +158,7 @@ article.pf-v5-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
 }
 
 .user-attribute-search-form-action-group button {
-  margin-top: 2rem;
+  margin-top: var(--pf-v5-global--spacer--2xl);
 }
 
 .user-attribute-search-form-subtoolbar {
