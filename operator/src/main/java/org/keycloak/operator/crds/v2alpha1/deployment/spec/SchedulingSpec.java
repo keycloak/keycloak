@@ -1,7 +1,9 @@
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.fabric8.kubernetes.api.model.Affinity;
@@ -19,6 +21,8 @@ public class SchedulingSpec {
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private List<TopologySpreadConstraint> topologySpreadConstraints = new ArrayList<TopologySpreadConstraint>();
     private String priorityClassName;
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    private Map<String, String> podLabels = Collections.emptyMap();
 
     public Affinity getAffinity() {
         return affinity;
@@ -50,6 +54,14 @@ public class SchedulingSpec {
 
     public void setPriorityClassName(String priorityClassName) {
         this.priorityClassName = priorityClassName;
+    }
+
+    public Map<String, String> getPodLabels() {
+        return podLabels;
+    }
+
+    public void setPodLabels(Map<String, String> podLabels) {
+        this.podLabels = podLabels;
     }
 
 }

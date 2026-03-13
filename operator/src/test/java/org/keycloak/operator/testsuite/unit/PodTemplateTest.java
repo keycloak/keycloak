@@ -657,6 +657,20 @@ public class PodTemplateTest {
 
 
     @Test
+    public void testPodLabels() {
+        var keycloak = createKeycloak(null, builder -> builder
+                .withNewSchedulingSpec()
+                .addToPodLabels("custom-label", "custom-value")
+                .endSchedulingSpec());
+
+        var deployment = getDeployment(keycloak.getSpec().getUnsupported() != null ? keycloak.getSpec().getUnsupported().getPodTemplate() : null, null,
+                builder -> builder.withSchedulingSpec(keycloak.getSpec().getSchedulingSpec()));
+
+        assertThat(deployment.getSpec().getSelector().getMatchLabels().get("custom-label")).isEqualTo("custom-value");
+        assertThat(deployment.getSpec().getTemplate().getMetadata().getLabels().get("custom-label")).isEqualTo("custom-value");
+    }
+
+    @Test
     public void testPriorityClass() {
         // Arrange
         PodTemplateSpec additionalPodTemplate = null;
