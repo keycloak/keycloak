@@ -1,5 +1,6 @@
+import { useErrorBoundary } from "@keycloak/keycloak-ui-shared";
 import type { DependencyList } from "react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 /**
  * Function that creates a Promise. Receives an [AbortSignal](https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal)
@@ -47,7 +48,7 @@ export function usePromise<T>(
   callback: PromiseResolvedFn<T>,
   deps: DependencyList = [],
 ) {
-  const [error, setError] = useState<unknown>();
+  const { showBoundary } = useErrorBoundary();
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
@@ -62,7 +63,7 @@ export function usePromise<T>(
           return;
         }
 
-        setError(error);
+        showBoundary(error instanceof Error ? error : new Error(String(error)));
       }
     }
 
@@ -71,9 +72,4 @@ export function usePromise<T>(
     // Abort the Promise when the component unmounts, or the dependencies change.
     return () => controller.abort();
   }, deps);
-
-  // Rethrow other errors.
-  if (error) {
-    throw error;
-  }
 }
