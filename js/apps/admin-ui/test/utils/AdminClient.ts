@@ -389,6 +389,105 @@ class AdminClient {
     }
   }
 
+  async #withRealm<T>(realm: string, fn: () => Promise<T>): Promise<T> {
+    const savedRealm = this.#client.realmName;
+    this.#client.realmName = realm;
+    try {
+      return await fn();
+    } finally {
+      this.#client.realmName = savedRealm;
+    }
+  }
+
+  async #findOrgId(orgName: string): Promise<string> {
+    const found = await this.#client.organizations.find({ search: orgName });
+    if (found.length === 0)
+      throw new Error(`Organization not found: ${orgName}`);
+    return found[0].id!;
+  }
+
+  async addOrgMember(
+    orgName: string,
+    userId: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      await this.#client.organizations.addMember({ orgId, userId });
+    });
+  }
+
+  async createOrgGroup(
+    orgName: string,
+    groupName: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      return this.#client.organizations
+        .groups(orgId)
+        .create({ name: groupName });
+    });
+  }
+
+  async createOrgSubGroups(
+    orgName: string,
+    groups: string[],
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      const groupsResource = this.#client.organizations.groups(orgId);
+      let parentGroup: { id: string } | undefined;
+      const createdGroups: { id: string }[] = [];
+      for (const group of groups) {
+        if (!parentGroup) {
+          parentGroup = await groupsResource.create({ name: group });
+        } else {
+          parentGroup = await groupsResource.createChildGroup(
+            { id: parentGroup.id },
+            { name: group },
+          );
+        }
+        createdGroups.push(parentGroup);
+      }
+      return createdGroups;
+    });
+  }
+
+  async deleteOrgGroups(
+    orgName: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      const groupsResource = this.#client.organizations.groups(orgId);
+      const groups = await groupsResource.find({});
+      for (const group of groups) {
+        await groupsResource.del({ id: group.id! });
+      }
+    });
+  }
+
+  async addUserToOrgGroup(
+    userId: string,
+    groupId: string,
+    orgName: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      const orgId = await this.#findOrgId(orgName);
+      await this.#client.organizations
+        .groups(orgId)
+        .addMemberToOrgGroup({ groupId, userId });
+    });
+  }
+
   async copyFlow(
     name: string,
     newName: string,
