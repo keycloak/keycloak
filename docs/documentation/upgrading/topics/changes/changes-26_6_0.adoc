@@ -265,6 +265,24 @@ The previously documented `utf8mb3` (or `utf8`) character set has been removed f
 To improve failover behavior and startup resilience during network issues, {project_name} now sets a default database connection timeout of 10 seconds.
 See https://www.keycloak.org/server/db[Configuring the database] for the list of databases, and on how to change this default.
 
+=== New CLI options for database TLS configuration
+
+New CLI options are now available to configure TLS encryption for database connections in a vendor-independent way:
+
+* `db-tls-mode`: Sets the TLS mode for the database connection.
+Valid values are `disabled` (default) and `verify-server`.
+When set to `disabled`, {project_name} does not configure TLS and the driver's default behavior applies.
+When set to `verify-server`, encryption and server identity verification are enabled.
+* `db-tls-trust-store-file`: The path to the truststore file containing the database server certificate or Certificate Authority (CA) certificate.
+* `db-tls-trust-store-password`: The password to access the truststore file.
+* `db-tls-trust-store-type`: The type of the truststore file (for example, `JKS` or `PKCS12`).
+
+These options replace the need to configure vendor-specific JDBC properties manually. {project_name} automatically translates them to the appropriate driver-specific settings.
+
+As an alternative to specifying a truststore file with `db-tls-trust-store-file`, you can use `--truststore-paths` to add the certificate to the Java truststore.
+
+See the https://www.keycloak.org/server/db#_secure_the_database_connection[Secure the database connection] section of the database guide for more details and examples.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
