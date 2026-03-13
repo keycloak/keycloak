@@ -113,7 +113,7 @@ export const ClusteringPanel = ({
           clientId={id!}
           isOpen={addNodeOpen}
           onAdded={(node) => {
-            nodes[node] = Date.now() / 1000;
+            setNodes({ ...nodes, [node]: Date.now() / 1000 });
             refresh();
           }}
           onClose={() => setAddNodeOpen(false)}

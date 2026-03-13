@@ -1,4 +1,4 @@
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import path from "path";
 import { defineConfig, loadEnv } from "vite";
 import { checker } from "vite-plugin-checker";
@@ -8,7 +8,19 @@ import dts from "vite-plugin-dts";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const external = ["react", "react/jsx-runtime", "react-dom"];
-  const plugins = [react(), checker({ typescript: true })];
+  const plugins = [
+    react({
+      babel: {
+        plugins: [
+          [
+            "babel-plugin-react-compiler",
+            { target: "18", panicThreshold: "NONE" },
+          ],
+        ],
+      },
+    }),
+    checker({ typescript: true }),
+  ];
   const input = env.LIB ? undefined : "src/main.tsx";
   if (env.LIB) {
     external.push("react-router-dom");

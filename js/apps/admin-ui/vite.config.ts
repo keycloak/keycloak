@@ -1,4 +1,4 @@
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import { readFileSync } from "node:fs";
 import path from "path";
 import { getProperties } from "properties-file";
@@ -12,7 +12,16 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const external = ["react", "react/jsx-runtime", "react-dom"];
   const plugins = [
-    react(),
+    react({
+      babel: {
+        plugins: [
+          [
+            "babel-plugin-react-compiler",
+            { target: "18", panicThreshold: "NONE" },
+          ],
+        ],
+      },
+    }),
     checker({ typescript: true }),
     {
       name: "message-bundle-transformer",

@@ -12,7 +12,7 @@ import {
 } from "../../components/routable-tabs/RoutableTabs";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { KEY_PROVIDER_TYPE } from "../../util";
-import { KeySubTab, toKeysTab } from "../routes/KeysTab";
+import { toKeysTab } from "../routes/KeysTab";
 import { KeysListTab } from "./KeysListTab";
 import { KeysProvidersTab } from "./KeysProvidersTab";
 
@@ -53,11 +53,10 @@ export const KeysTab = () => {
     [key],
   );
 
-  const useTab = (tab: KeySubTab) =>
-    useRoutableTab(toKeysTab({ realm: realmName, tab }));
-
-  const listTab = useTab("list");
-  const providersTab = useTab("providers");
+  const listTab = useRoutableTab(toKeysTab({ realm: realmName, tab: "list" }));
+  const providersTab = useRoutableTab(
+    toKeysTab({ realm: realmName, tab: "providers" }),
+  );
 
   if (!realmComponents) {
     return <KeycloakSpinner />;

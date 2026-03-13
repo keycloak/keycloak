@@ -6,7 +6,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { UserDataTable } from "../components/users/UserDataTable";
-import { toUsers, UserTab } from "./routes/Users";
+import { toUsers } from "./routes/Users";
 import {
   RoutableTabs,
   useRoutableTab,
@@ -25,16 +25,10 @@ export default function UsersSection() {
     isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
     hasAccess("manage-authorization", "manage-users", "manage-clients");
 
-  const useTab = (tab: UserTab) =>
-    useRoutableTab(
-      toUsers({
-        realm: realmName,
-        tab,
-      }),
-    );
-
-  const listTab = useTab("list");
-  const permissionsTab = useTab("permissions");
+  const listTab = useRoutableTab(toUsers({ realm: realmName, tab: "list" }));
+  const permissionsTab = useRoutableTab(
+    toUsers({ realm: realmName, tab: "permissions" }),
+  );
 
   return (
     <>

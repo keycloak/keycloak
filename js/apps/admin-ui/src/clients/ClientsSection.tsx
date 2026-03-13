@@ -37,7 +37,7 @@ import { InitialAccessTokenList } from "./initial-access/InitialAccessTokenList"
 import { ClientRegistration } from "./registration/ClientRegistration";
 import { toAddClient } from "./routes/AddClient";
 import { toClient } from "./routes/Client";
-import { ClientsTab, toClients } from "./routes/Clients";
+import { toClients } from "./routes/Clients";
 import { toImportClient } from "./routes/ImportClient";
 import { getProtocolName, isRealmClient } from "./utils";
 
@@ -160,11 +160,13 @@ export default function ClientsSection() {
     return adminClient.clients.find({ ...params });
   };
 
-  const useTab = (tab: ClientsTab) => useRoutableTab(toClients({ realm, tab }));
-
-  const listTab = useTab("list");
-  const initialAccessTokenTab = useTab("initial-access-token");
-  const clientRegistrationTab = useTab("client-registration");
+  const listTab = useRoutableTab(toClients({ realm, tab: "list" }));
+  const initialAccessTokenTab = useRoutableTab(
+    toClients({ realm, tab: "initial-access-token" }),
+  );
+  const clientRegistrationTab = useRoutableTab(
+    toClients({ realm, tab: "client-registration" }),
+  );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("clientDelete", { clientId: selectedClient?.clientId }),
