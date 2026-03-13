@@ -62,6 +62,7 @@ export default function PageList() {
     const params: ComponentQuery = {
       parent: realm?.id,
       type: PAGE_PROVIDER,
+      providerId,
     };
     return await adminClient.components.find({ ...params });
   };
