@@ -277,7 +277,7 @@ public class OrganizationMemberResource {
             throw ErrorResponse.error("id cannot be null", Status.BAD_REQUEST);
         }
 
-        UserModel member = getUser(memberId);
+        UserModel member = getMember(memberId);
 
         return provider.getOrganizationGroupsByMember(organization, member, search, firstResult, maxResults)
                 .map(group -> ModelToRepresentation.toRepresentation(group, !briefRepresentation));
