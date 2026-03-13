@@ -1,7 +1,11 @@
 package org.keycloak.validation.jakarta;
 
+import jakarta.validation.ConstraintValidatorContext;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+
+import org.hibernate.validator.constraintvalidation.HibernateConstraintValidatorContext;
 
 /**
  * Context object passed to constraint validators via Hibernate Validator's
@@ -11,16 +15,14 @@ import org.keycloak.models.RealmModel;
  * {@link jakarta.validation.ConstraintValidatorContext} to
  * {@link org.hibernate.validator.constraintvalidation.HibernateConstraintValidatorContext}
  * and retrieving the payload:
+ * 
  * <pre>{@code
  * @Override
  * public boolean isValid(String value, ConstraintValidatorContext context) {
- *     HibernateConstraintValidatorContext hibernateContext =
- *         context.unwrap(HibernateConstraintValidatorContext.class);
- *     ValidationContext validationContext =
- *         hibernateContext.getConstraintValidatorPayload(ValidationContext.class);
+ *     ValidationContext validationContext = ValidationContext.unwrap(context);
  *
- *     KeycloakSession session = validationContext.session();
- *     RealmModel realm = validationContext.realm();
+ *     KeycloakSession session = validationContext.getSession();
+ *     RealmModel realm = validationContext.getRealm();
  *     // ... use session and realm for validation logic
  * }
  * }</pre>
@@ -38,4 +40,11 @@ public record ValidationContext(KeycloakSession session, RealmModel realm) {
             throw new IllegalArgumentException("realm cannot be null");
         }
     }
+
+    public static ValidationContext unwrap(ConstraintValidatorContext context) {
+        HibernateConstraintValidatorContext hibernateContext = context
+                .unwrap(HibernateConstraintValidatorContext.class);
+        return hibernateContext.getConstraintValidatorPayload(ValidationContext.class);
+    }
+
 }
