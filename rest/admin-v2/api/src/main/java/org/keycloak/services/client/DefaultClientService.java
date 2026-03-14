@@ -27,6 +27,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
+import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -234,15 +235,21 @@ public class DefaultClientService implements ClientService {
                     // Ensure protocol field is set in patch for polymorphic deserialization.
                     // This is required as we need to know the specific Client representation type to properly deserialize
                     // and validate the specific fields for that type.
-                    if (patch.isObject() && !patch.has("protocol")) {
-                        ((com.fasterxml.jackson.databind.node.ObjectNode) patch).put("protocol", originalClient.getProtocol());
+                    if (patch.isObject()) {
+                        if (!patch.has("protocol")) {
+                            ((com.fasterxml.jackson.databind.node.ObjectNode) patch).put("protocol", originalClient.getProtocol());
+                        }
+                        if (!patch.has("clientId")) {
+                            // Some validations and logic rely on clientId being present in the representation
+                            ((com.fasterxml.jackson.databind.node.ObjectNode) patch).put("clientId", originalClient.getClientId());
+                        }
                     }
                     final BaseClientRepresentation partialRep = MAPPER.treeToValue(patch, BaseClientRepresentation.class);
                     // Validate the partial representation, i.e. only the fields included in the patch.
                     // We don't want to validate the whole final representation (after applying the patch) as it may happen
                     // it contains invalid fields (e.g. updated via a different API version where it was valid), and we
                     // don't want to fail validation for unrelevant fields that are not even included in the patch.
-                    validator.validate(partialRep);
+                    validator.validate(partialRep, Default.class, PatchClient.class);
 
                     final ObjectReader objectReader = MAPPER.readerForUpdating(originalClient);
                     updated = objectReader.readValue(patch);

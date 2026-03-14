@@ -22,6 +22,7 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
+import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -440,7 +441,7 @@ public class ClientApiV2ValidationTest {
     }
 
     // ===========================================
-    // Server-managed field validation tests
+    // UUID field validation tests
     // ===========================================
 
     @Test
@@ -463,7 +464,7 @@ public class ClientApiV2ValidationTest {
 
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("uuid: This field is server-managed and cannot be set by the user"));
+            assertThat(body.violations(), hasItem("uuid: UUID is server-managed and must not be user-specified"));
         }
     }
 
@@ -483,9 +484,11 @@ public class ClientApiV2ValidationTest {
                 }
                 """));
 
+        String actualUuid;
         try (var createResponse = client.execute(createRequest)) {
             assertThat(createResponse.getStatusLine().getStatusCode(), is(201));
-            EntityUtils.consumeQuietly(createResponse.getEntity());
+            OIDCClientRepresentation rep = mapper.createParser(createResponse.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            actualUuid = rep.getUuid();
         }
 
         // Try to update the client with a UUID (should fail)
@@ -507,7 +510,50 @@ public class ClientApiV2ValidationTest {
 
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("uuid: This field is server-managed and cannot be set by the user"));
+            assertThat(body.violations(), hasItem("uuid: UUID is server-managed and must not be user-specified"));
+        }
+
+        // Update the client with the same UUID (should succeed)
+        updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-client-for-update");
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        updateRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-client-for-update",
+                    "uuid": "%s",
+                    "enabled": true
+                }
+                """.formatted(actualUuid)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
+        }
+    }
+
+    @Test
+    public void createClientViaPutFailsUuidValidation() throws Exception {
+        // Try to create client with a UUID (should fail)
+        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-client-for-create-via-put");
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        updateRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-client-for-create-via-put",
+                    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                    "enabled": true
+                }
+                """));
+
+        try (var response = client.execute(updateRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("uuid: UUID is server-managed and must not be user-specified"));
         }
     }
 
@@ -526,9 +572,11 @@ public class ClientApiV2ValidationTest {
                 }
                 """));
 
+        String actualUuid;
         try (var createResponse = client.execute(createRequest)) {
             assertThat(createResponse.getStatusLine().getStatusCode(), is(201));
-            EntityUtils.consumeQuietly(createResponse.getEntity());
+            OIDCClientRepresentation rep = mapper.createParser(createResponse.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            actualUuid = rep.getUuid();
         }
 
         // Try to patch the client with a UUID (should fail)
@@ -548,7 +596,23 @@ public class ClientApiV2ValidationTest {
 
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
-            assertThat(body.violations(), hasItem("uuid: This field is server-managed and cannot be set by the user"));
+            assertThat(body.violations(), hasItem("uuid: UUID is server-managed and must not be user-specified"));
+        }
+
+        // Patch the client with the same UUID (should succeed)
+        patchRequest = new org.apache.http.client.methods.HttpPatch(HOSTNAME_LOCAL_ADMIN + "/test-client-for-patch");
+        setAuthHeader(patchRequest);
+        patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, "application/merge-patch+json");
+
+        patchRequest.setEntity(new StringEntity("""
+                {
+                    "uuid": "%s",
+                    "displayName": "Updated Name"
+                }
+                """.formatted(actualUuid)));
+
+        try (var response = client.execute(patchRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
         }
     }
 

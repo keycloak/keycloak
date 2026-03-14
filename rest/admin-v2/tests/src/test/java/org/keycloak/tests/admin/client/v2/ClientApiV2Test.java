@@ -72,6 +72,7 @@ import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -795,7 +796,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfig(auth, request, clientId);
         assertThat(createdAuth, notNullValue());
-        assertThat(createdAuth.getSecret(), Matchers.not(emptyOrNullString()));
+        assertThat(createdAuth.getSecret(), not(emptyOrNullString()));
 
         // make sure that the created model was persisted and GET method returns the newly generated secret
         HttpGet getRequest = new HttpGet(getClientApiUrl(clientId));
@@ -804,7 +805,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(200, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals(clientId, client.getClientId());
-            assertThat(client.getAuth().getSecret(), Matchers.not(emptyOrNullString()));
+            assertThat(client.getAuth().getSecret(), not(emptyOrNullString()));
         }
     }
 
@@ -847,7 +848,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(authWithoutSecret, request, clientId);
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
-        assertThat(newlyGeneratedSecret, Matchers.not(emptyOrNullString()));
+        assertThat(newlyGeneratedSecret, not(emptyOrNullString()));
     }
 
     /**
@@ -877,7 +878,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(authWithoutSecret, request, clientId);
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
-        assertThat(newlyGeneratedSecret, Matchers.not(is(createdAuth.getSecret())));
+        assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
     }
 
     /**
@@ -906,7 +907,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(authWithoutSecret, request, clientId);
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
-        assertThat(newlyGeneratedSecret, Matchers.not(is(createdAuth.getSecret())));
+        assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
     }
 
     /**
