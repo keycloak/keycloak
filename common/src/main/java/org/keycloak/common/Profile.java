@@ -166,6 +166,8 @@ public class Profile {
 
         CIMD("OAuth Client ID Metadata Document", Type.EXPERIMENTAL),
 
+        IDENTITY_ASSERTION_JWT("Identity Assertion JWT", Type.EXPERIMENTAL),
+        
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
          */

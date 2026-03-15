@@ -80,6 +80,9 @@ public interface OAuth2Constants {
     String JWT_AUTHORIZATION_GRANT = "urn:ietf:params:oauth:grant-type:jwt-bearer";
     String ASSERTION = "assertion";
 
+    // https://datatracker.ietf.org/doc/draft-ietf-oauth-identity-assertion-authz-grant/
+    String IDENTITY_ASSERTION_JWT_HEADER_TYPE = "oauth-id-jag+jwt";
+
     // https://tools.ietf.org/html/draft-ietf-oauth-assertions-01#page-5
     String CLIENT_ASSERTION_TYPE = "client_assertion_type";
     String CLIENT_ASSERTION = "client_assertion";
