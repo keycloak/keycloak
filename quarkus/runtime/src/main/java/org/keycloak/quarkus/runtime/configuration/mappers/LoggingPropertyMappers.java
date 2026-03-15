@@ -34,6 +34,7 @@ import static org.keycloak.config.LoggingOptions.LOG_SYSLOG_ENABLED;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isSet;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromParentOption;
 
 public final class LoggingPropertyMappers implements PropertyMapperGrouping {
 
@@ -53,6 +54,12 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .paramLabel("<handler>")
                         .build(),
                 fromOption(LoggingOptions.LOG_ASYNC)
+                        .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_NAME)
+                        .paramLabel("name")
+                        .build(),
+                fromOption(LoggingOptions.LOG_SERVICE_ENVIRONMENT)
+                        .paramLabel("environment")
                         .build(),
                 // Console
                 fromOption(LoggingOptions.LOG_CONSOLE_OUTPUT)
@@ -77,6 +84,14 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, "%s and output is set to 'json'".formatted(CONSOLE_ENABLED_MSG))
                         .to("quarkus.log.console.json.log-format")
                         .paramLabel("format")
+                        .build(),
+                fromParentOption(LoggingOptions.LOG_SERVICE_NAME)
+                        .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, "%s and output is set to 'json'".formatted(CONSOLE_ENABLED_MSG))
+                        .to("quarkus.log.console.json.additional-field.\"service.name\".value")
+                        .build(),
+                fromParentOption(LoggingOptions.LOG_SERVICE_ENVIRONMENT)
+                        .isEnabled(LoggingPropertyMappers::isConsoleJsonEnabled, "%s and output is set to 'json'".formatted(CONSOLE_ENABLED_MSG))
+                        .to("quarkus.log.console.json.additional-field.\"service.environment\".value")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isConsoleEnabled() && TracingPropertyMappers.isTracingEnabled(),
@@ -133,6 +148,14 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(LoggingPropertyMappers::isFileJsonEnabled, FILE_ENABLED_MSG + " and output is set to 'json'")
                         .to("quarkus.log.file.json.log-format")
                         .paramLabel("format")
+                        .build(),
+                fromParentOption(LoggingOptions.LOG_SERVICE_NAME)
+                        .isEnabled(LoggingPropertyMappers::isFileJsonEnabled, FILE_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.file.json.additional-field.\"service.name\".value")
+                        .build(),
+                fromParentOption(LoggingOptions.LOG_SERVICE_ENVIRONMENT)
+                        .isEnabled(LoggingPropertyMappers::isFileJsonEnabled, FILE_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.file.json.additional-field.\"service.environment\".value")
                         .build(),
                 fromOption(LoggingOptions.LOG_FILE_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isFileEnabled() && TracingPropertyMappers.isTracingEnabled(),
@@ -245,6 +268,14 @@ public final class LoggingPropertyMappers implements PropertyMapperGrouping {
                         .isEnabled(LoggingPropertyMappers::isSyslogJsonEnabled, SYSLOG_ENABLED_MSG + " and output is set to 'json'")
                         .to("quarkus.log.syslog.json.log-format")
                         .paramLabel("format")
+                        .build(),
+                fromParentOption(LoggingOptions.LOG_SERVICE_NAME)
+                        .isEnabled(LoggingPropertyMappers::isSyslogJsonEnabled, SYSLOG_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.syslog.json.additional-field.\"service.name\".value")
+                        .build(),
+                fromParentOption(LoggingOptions.LOG_SERVICE_ENVIRONMENT)
+                        .isEnabled(LoggingPropertyMappers::isSyslogJsonEnabled, SYSLOG_ENABLED_MSG + " and output is set to 'json'")
+                        .to("quarkus.log.syslog.json.additional-field.\"service.environment\".value")
                         .build(),
                 fromOption(LoggingOptions.LOG_SYSLOG_INCLUDE_TRACE)
                         .isEnabled(() -> LoggingPropertyMappers.isSyslogEnabled() && TracingPropertyMappers.isTracingEnabled(),
