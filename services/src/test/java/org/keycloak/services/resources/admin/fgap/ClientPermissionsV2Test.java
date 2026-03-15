@@ -16,15 +16,6 @@
  */
 package org.keycloak.services.resources.admin.fgap;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class ClientPermissionsV2Test {
 
-    @Test
-    public void canExchangeToShouldDenyInsteadOfThrowingWhenUnsupported() {
-        ClientPermissionsV2 permissions = new ClientPermissionsV2(null, null, null, null);
-
-        Assert.assertFalse(permissions.canExchangeTo(null, null, null));
-    }
 }

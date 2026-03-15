@@ -28,7 +28,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.AccessToken;
 import org.keycloak.services.resources.admin.fgap.ModelRecord.ClientModelRecord;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.CLIENTS_RESOURCE_TYPE;
@@ -136,13 +135,6 @@ class ClientPermissionsV2 extends ClientPermissions {
     @Override
     public Set<String> getClientIdsByScope(String scope) {
         return eval.getIdsByScope(CLIENTS_RESOURCE_TYPE, scope);
-    }
-
-    @Override
-    public boolean canExchangeTo(ClientModel authorizedClient, ClientModel to, AccessToken token) {
-        // V2 does not support configuring token-exchange permissions.
-        // Deny gracefully instead of failing with an uncaught exception.
-        return false;
     }
 
     @Override
