@@ -404,6 +404,13 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
+    public static class VCTestServerWithABCAEnabled implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.CLIENT_AUTH_ABCA);
+        }
+    }
+
     public static class VCTestRealmConfig implements RealmConfig {
 
         public static final String TEST_REALM_NAME = "test";

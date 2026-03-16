@@ -28,8 +28,6 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.services.x509.X509ClientCertificateLookup;
 
-import org.jboss.logging.Logger;
-
 public class X509ClientAuthenticator extends AbstractClientAuthenticator {
 
     public static final String PROVIDER_ID = "client-x509";
@@ -55,8 +53,6 @@ public class X509ClientAuthenticator extends AbstractClientAuthenticator {
         }
         CUSTOM_OIDS_REVERSED.put("E", "1.2.840.113549.1.9.1"); // Another synonym for "EMAILADDRESS"
     }
-
-    private final static Logger logger = Logger.getLogger(X509ClientAuthenticator.class);
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
