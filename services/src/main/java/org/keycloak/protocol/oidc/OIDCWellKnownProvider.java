@@ -69,6 +69,8 @@ import org.keycloak.urls.UrlType;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.wellknown.WellKnownProvider;
 
+import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ATTEST_JWT_CLIENT_AUTH;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -153,10 +155,18 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
 
         config.setPromptValuesSupported(getPromptValuesSupported(realm));
 
-        config.setTokenEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
-        config.setTokenEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
-        config.setIntrospectionEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
-        config.setIntrospectionEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
+        List<String> clientAuthMethodsSupported = getClientAuthMethodsSupported();
+        List<String> supportedClientSigningAlgorithms = getSupportedClientSigningAlgorithms(false);
+
+        config.setTokenEndpointAuthMethodsSupported(clientAuthMethodsSupported);
+        config.setTokenEndpointAuthSigningAlgValuesSupported(supportedClientSigningAlgorithms);
+        config.setIntrospectionEndpointAuthMethodsSupported(clientAuthMethodsSupported);
+        config.setIntrospectionEndpointAuthSigningAlgValuesSupported(supportedClientSigningAlgorithms);
+
+        if (clientAuthMethodsSupported.contains(ATTEST_JWT_CLIENT_AUTH)) {
+            config.setClientAttestationSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
+            config.setClientAttestationPopSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
+        }
 
         config.setAuthorizationSigningAlgValuesSupported(getSupportedSigningAlgorithms(false));
         config.setAuthorizationEncryptionAlgValuesSupported(getSupportedEncryptionAlg(false));
@@ -199,8 +209,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         // NOTE: Don't hardcode HTTPS checks here. JWKS URI is exposed just in the development/testing environment. For the production environment, the OIDCWellKnownProvider
         // is not exposed over "http" at all.
         config.setRevocationEndpoint(revocationEndpoint.toString());
-        config.setRevocationEndpointAuthMethodsSupported(getClientAuthMethodsSupported());
-        config.setRevocationEndpointAuthSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(false));
+        config.setRevocationEndpointAuthMethodsSupported(clientAuthMethodsSupported);
+        config.setRevocationEndpointAuthSigningAlgValuesSupported(supportedClientSigningAlgorithms);
 
         config.setBackchannelLogoutSupported(true);
         config.setBackchannelLogoutSessionSupported(true);
@@ -249,11 +259,12 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private List<String> getClientAuthMethodsSupported() {
-        return session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class)
+        List<String> clientAuthMethods = session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class)
                 .map(ClientAuthenticatorFactory.class::cast)
                 .map(caf -> caf.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
+        return clientAuthMethods;
     }
 
     private List<String> getSupportedAlgorithms(Class<? extends Provider> clazz, boolean includeNone) {

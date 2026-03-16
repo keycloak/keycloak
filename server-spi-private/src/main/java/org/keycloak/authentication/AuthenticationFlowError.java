@@ -47,5 +47,6 @@ public enum AuthenticationFlowError {
     DISPLAY_NOT_SUPPORTED,
 
     ACCESS_DENIED,
+    UNAUTHORIZED_CLIENT,
     GENERIC_AUTHENTICATION_ERROR
 }
