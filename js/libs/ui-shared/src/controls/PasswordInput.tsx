@@ -11,17 +11,21 @@ import { useTranslation } from "react-i18next";
 
 export type PasswordInputProps = TextInputProps & {
   hasReveal?: boolean;
+  isTideIdp?: boolean; // TIDECLOAK IMPLEMENTATION
 };
 
 const PasswordInputBase = ({
   hasReveal = true,
   innerRef,
+  isTideIdp = false, // TIDECLOAK IMPLEMENTATION
   ...rest
 }: PasswordInputProps) => {
   const { t } = useTranslation();
   const [hidePassword, setHidePassword] = useState(true);
   return (
-    <InputGroup>
+    <>
+      {/** TIDECLOAK IMPLEMENTATION */}
+      <InputGroup style={{ display: isTideIdp ? 'none' : undefined }}>
       <InputGroupItem isFill>
         <TextInput
           {...rest}
@@ -39,6 +43,7 @@ const PasswordInputBase = ({
         </Button>
       )}
     </InputGroup>
+    </>
   );
 };
 

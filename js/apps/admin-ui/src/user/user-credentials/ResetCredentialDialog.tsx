@@ -64,6 +64,31 @@ export const ResetCredentialDialog = ({
     }
   };
 
+  /* TIDECLOAK IMPLEMENTATION */
+  const getLinkTideAccountBtn = async () => {
+    const actions = form.getValues("actions");
+    const lifespan = form.getValues("lifespan")
+    if (isEmpty(actions)) {
+      return;
+    }
+
+    try {
+
+      const response = await adminClient.tideAdmin.getRequiredActionLink({
+        userId,
+        actions,
+        lifespan,
+      });
+
+
+      navigator.clipboard.writeText(response);
+      addAlert(t("Link copied to clipboard"), AlertVariant.success);
+      onClose();
+    } catch (error) {
+      addError("Could not get required action link", error);
+    }
+  };
+
   return (
     <ConfirmDialogModal
       variant={ModalVariant.medium}
@@ -91,6 +116,17 @@ export const ResetCredentialDialog = ({
           <LifespanField />
         </FormProvider>
       </Form>
+
+      {/* TIDECLOAK IMPLEMENTATION */}
+      <button
+        type="button"
+        onClick={async () => {
+          await getLinkTideAccountBtn();
+        }}
+        style={{ marginTop: "1rem" }}
+      >
+        Copy Link
+      </button>
     </ConfirmDialogModal>
   );
 };

@@ -27,6 +27,7 @@ export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   stringify?: boolean;
   convertToName: (name: string) => string;
   onSearch?: (search: string) => void;
+  isHidden?: boolean; // TIDECLOAK IMPLEMENTATION
 };
 
 export type NumberComponentProps = ComponentProps & {

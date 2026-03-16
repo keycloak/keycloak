@@ -47,6 +47,8 @@ export type FormAccessProps = FormProps & {
    * Overwrite the fineGrainedAccess and make form regardless of access rights.
    */
   isReadOnly?: boolean;
+
+  fullWidth?: boolean; // TIDECLOAK IMPLEMENTATION
 };
 
 /**
@@ -59,6 +61,7 @@ export const FormAccess = ({
   fineGrainedAccess = false,
   isReadOnly = false,
   unWrap = false,
+  fullWidth = false,
   ...rest
 }: PropsWithChildren<FormAccessProps>) => {
   const { hasAccess } = useAccess();
@@ -121,11 +124,11 @@ export const FormAccess = ({
   };
 
   const isDisabled = isReadOnly || (!hasAccess(role) && !fineGrainedAccess);
-
+  const classNameToUse = fullWidth ? "tidecloak__full__width__form " : "keycloak__form " // TIDECLOAK IMPLEMENTATION
   return (
     <>
       {!unWrap && (
-        <Form {...rest} className={"keycloak__form " + (rest.className || "")}>
+        <Form {...rest} className={classNameToUse + (rest.className || "")}>
           {recursiveCloneChildren(children, isDisabled ? { isDisabled } : {})}
         </Form>
       )}

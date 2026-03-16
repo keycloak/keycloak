@@ -10,6 +10,7 @@ import {
   ScrollForm,
   useAlerts,
   useFetch,
+  HelpItem,
 } from "@keycloak/keycloak-ui-shared";
 import {
   AlertVariant,
@@ -23,8 +24,16 @@ import {
   TabTitleText,
   Text,
   ToolbarItem,
+  FormGroup,
+  Gallery,
+  GalleryItem,
+  Grid,
+  GridItem,
+  ClipboardCopy,
+  FileUpload,
+  DropEvent
 } from "@patternfly/react-core";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Controller,
   FormProvider,
@@ -36,6 +45,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { useOffboardingDialog } from "../../components/confirm-dialog/OffboardingDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
@@ -70,6 +80,8 @@ import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
 import { SpiffeSettings } from "./SpiffeSettings";
+import { toKeyProvider } from "../../realm-settings/routes/KeyProvider";
+import { createTideComponent, findTideComponent } from "../utils/SignSettingsUtil";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
 import { KubernetesSettings } from "./KubernetesSettings";
@@ -82,6 +94,7 @@ type HeaderProps = {
   value: boolean;
   save: () => void;
   toggleDeleteDialog: () => void;
+  toggleOffboardingDialog?: () => void;
 };
 
 type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
@@ -92,7 +105,7 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
   mapperId: string;
 };
 
-const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
+const Header = ({ onChange, value, save, toggleDeleteDialog, toggleOffboardingDialog }: HeaderProps) => {
   const { adminClient } = useAdminClient();
 
   const { t } = useTranslation();
@@ -218,6 +231,11 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
                   </DropdownItem>,
                 ]
               : []),
+          ...(provider?.alias === "tide" && toggleOffboardingDialog ? [
+            <DropdownItem key="offboard" onClick={() => toggleOffboardingDialog()}>
+              {t("offboard", "Offboard")}
+            </DropdownItem>,
+          ] : []),
           <Divider key="separator" />,
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
             {t("delete")}
@@ -266,11 +284,20 @@ export default function DetailSettings() {
   const { alias, providerId } = useParams<IdentityProviderParams>();
   const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<IdentityProviderRepresentation>();
-  const { handleSubmit, getValues, reset, control } = form;
+  const { handleSubmit, getValues, reset, setValue } = form;
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
   const serverInfo = useServerInfo();
+
+  /** TIDECLOAK IMPLEMENTATION START */
+  const [backgroundImage, setBackgroundImage] = useState<File | null>(null);
+  const [logo, setLogo] = useState<File | null>(null);
+  const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState<string>("");
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string>("");
+  const [imageDeleteRequested, setImageDeleteRequested] = useState<boolean>(false);
+  /** TIDECLOAK IMPLEMENTATION END */
+
   const providerInfo = useMemo(() => {
     const namespaces = [
       "org.keycloak.broker.social.SocialIdentityProvider",
@@ -294,6 +321,119 @@ export default function DetailSettings() {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const { hasAccess } = useAccess();
+  const handleTideRefresh = async () => {
+    const updatedProvider = await adminClient.identityProviders.findOne({ alias })
+    reset(updatedProvider);
+    refresh()
+  }
+
+  /** TIDECLOAK IMPLEMENTATION START */
+  const currentHost = window.location.origin;
+
+  const backgroundUrl = `${currentHost}/realms/${realm}/tide-idp-resources/images/BACKGROUND_IMAGE`;
+  const logoUrl = `${currentHost}/realms/${realm}/tide-idp-resources/images/LOGO`;
+
+  const handleFileChange = (type: 'background' | 'logo') => (
+    event: DropEvent,
+    file: File
+  ) => {
+    if (type === 'background') {
+      setBackgroundImage(file);
+      setBackgroundPreviewUrl(URL.createObjectURL(file));
+    } else if (type === 'logo') {
+      setLogo(file);
+      setLogoPreviewUrl(URL.createObjectURL(file));
+    }
+    setImageDeleteRequested(false);
+
+  };
+
+  const handleClear = (type: 'background' | 'logo') => {
+    if (type === 'background') {
+      setBackgroundImage(null);
+      setBackgroundPreviewUrl("");
+    } else if (type === 'logo') {
+      setLogo(null);
+      setLogoPreviewUrl("");
+    }
+    setImageDeleteRequested(true)
+  };
+
+  async function fetchImage(type: string) {
+    try {
+      const response = await adminClient.tideAdmin.getImageName({ type });
+
+      if (response === null && response === "") {
+        return;
+      }
+      // Create a new File object from the Blob
+      const file = new File([], response!, { type });
+      return file;
+    } catch (error) {
+      console.error("Failed to fetch image: ", error);
+      return null;
+    }
+  }
+  const initializeImages = async () => {
+    const backgroundImageFile = await fetchImage("BACKGROUND_IMAGE");
+    const logoImageFile = await fetchImage("LOGO");
+
+    if (backgroundImageFile?.size !== undefined && backgroundImageFile.name !== "") {
+      setBackgroundImage(backgroundImageFile);
+      setBackgroundPreviewUrl(backgroundUrl);
+    }
+
+    if (logoImageFile?.size !== undefined && logoImageFile.name !== "") {
+      setLogo(logoImageFile);
+      setLogoPreviewUrl(logoUrl);
+    }
+    setImageDeleteRequested(false);
+  };
+
+  useEffect(() => {
+    initializeImages();
+  }, []);
+
+
+  const hasValue = (value: string) => value !== undefined && value !== null && value !== "" ? true : false;
+  const handleImageUpdate = async (image: File | null, type: string) => {
+    try {
+      if (image === null && imageDeleteRequested === true) {
+        // delete image on server
+        await adminClient.tideAdmin.deleteImage({ type });
+      } else if (image !== null && image.size > 0) {
+        const formData = new FormData();
+        formData.append("fileData", image);
+        formData.append("fileName", image.name);
+        formData.append("fileType", type);
+        await adminClient.tideAdmin.uploadImage(formData);
+      }
+    } catch (error) {
+      addError("Error upload image", error);
+    }
+  };
+
+  const handleReset = async () => {
+    reset();
+    if (providerId === "tide") {
+      await adminClient.identityProviders.update(
+        { alias },
+        {
+          ...provider,
+          config: { ...provider?.config, pendingUpdateSettings: false },
+          alias,
+          providerId,
+        },
+      );
+      await initializeImages();
+      setImageDeleteRequested(false);
+      refresh();
+    }
+  };
+
+  function getSingleValue(value: string | string[]): string {
+    return Array.isArray(value) ? value[0] : value;
+  }
 
   useFetch(
     () => adminClient.identityProviders.findOne({ alias }),
@@ -319,7 +459,7 @@ export default function DetailSettings() {
         );
       }
     },
-    [],
+    [key], // TIDE IMPLEMENTATION
   );
 
   const toTab = (tab: IdentityProviderTab) =>
@@ -338,19 +478,29 @@ export default function DetailSettings() {
   const eventsTab = useTab("events");
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
-    const p = savedProvider || getValues();
-    const origAuthnContextClassRefs = p.config?.authnContextClassRefs;
-    if (p.config?.authnContextClassRefs)
-      p.config.authnContextClassRefs = JSON.stringify(
-        p.config.authnContextClassRefs,
-      );
-    const origAuthnContextDeclRefs = p.config?.authnContextDeclRefs;
-    if (p.config?.authnContextDeclRefs)
-      p.config.authnContextDeclRefs = JSON.stringify(
-        p.config.authnContextDeclRefs,
-      );
-
     try {
+      // Check if settings needs to be re-signed
+      const { LogoURL, ImageURL, backupOn, CustomAdminUIDomain } = provider!.config!;
+      const settingsUnchanged =
+        form.getValues("config.LogoURL") === LogoURL &&
+        form.getValues("config.ImageURL") === ImageURL &&
+        form.getValues("config.backupOn") === backupOn &&
+        form.getValues("config.CustomAdminUIDomain") === CustomAdminUIDomain;
+
+
+      // always get current form values for tide idp
+      const p = providerId === "tide" ? getValues() : savedProvider || getValues();
+      const origAuthnContextClassRefs = p.config?.authnContextClassRefs;
+      if (p.config?.authnContextClassRefs)
+        p.config.authnContextClassRefs = JSON.stringify(
+          p.config.authnContextClassRefs,
+        );
+      const origAuthnContextDeclRefs = p.config?.authnContextDeclRefs;
+      if (p.config?.authnContextDeclRefs)
+        p.config.authnContextDeclRefs = JSON.stringify(
+          p.config.authnContextDeclRefs,
+        );
+
       await adminClient.identityProviders.update(
         { alias },
         {
@@ -366,8 +516,31 @@ export default function DetailSettings() {
       if (origAuthnContextDeclRefs) {
         p.config!.authnContextDeclRefs = origAuthnContextDeclRefs;
       }
+      /** TIDECLOAK IMPLEMENTATION START */
+
+      if (providerId === "tide") {
+        const tideComponent = await findTideComponent(adminClient, realm);
+
+        if (tideComponent) {
+          const vvkId = getSingleValue(tideComponent!.config!.vvkId);
+          const resignSettingsRequired = hasValue(vvkId) && !settingsUnchanged
+          if (resignSettingsRequired) {
+            await adminClient.tideAdmin.signIdpSettings();
+          }
+        }
+
+        handleImageUpdate(logo, "LOGO");
+        handleImageUpdate(backgroundImage, "BACKGROUND_IMAGE")
+        setImageDeleteRequested(false);
+      }
+      /** TIDECLOAK IMPLEMENTATION end */
       reset(p);
       addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
+      /** TIDECLOAK IMPLEMENTATION start */
+      const data = new FormData();
+      data.append("isRagnarokEnabled", form.getValues("config.backupOn"));
+      await adminClient.tideAdmin.toggleRagnarok(data)
+      /** TIDECLOAK IMPLEMENTATION end */
     } catch (error) {
       addError("updateErrorIdentityProvider", error);
     }
@@ -380,7 +553,14 @@ export default function DetailSettings() {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
+        /** TIDECLOAK IMPLEMENTATION START */
+        if (alias === "tide") {
+          await adminClient.tideAdmin.deleteImage({ type: "LOGO" }); //TIDE
+          await adminClient.tideAdmin.deleteImage({ type: "BACKGROUND_IMAGE" }); // TIDE
+        }
+        /** TIDECLOAK IMPLEMENTATION end */
         await adminClient.identityProviders.del({ alias: alias });
+
         addAlert(t("deletedSuccessIdentityProvider"), AlertVariant.success);
         navigate(toIdentityProviders({ realm }));
       } catch (error) {
@@ -412,8 +592,28 @@ export default function DetailSettings() {
       }
     },
   });
+
+  const [toggleOffboardingDialog, OffboardingConfirm] = useOffboardingDialog({
+    titleKey: "offboardProvider",
+    messageKey: "offboardProviderConfirmation",
+    confirmationText: "CONFIRM OFFBOARDING",
+    onConfirm: async () => {
+      try {
+        const message  = await adminClient.tideAdmin.offboardProvider();
+        addAlert(
+          t("offboardingSuccessful", message || "Provider offboarded successfully"),
+          AlertVariant.success
+        );
+        navigate(toIdentityProviders({ realm }));
+
+      } catch (error) {
+        addError("offboardingError", error);
+      }
+    },
+  });
+
   const jwtAuthorizationGrantEnabled = useWatch({
-    control,
+    control: form.control,
     name: "config.jwtAuthorizationGrantEnabled",
   });
 
@@ -460,6 +660,29 @@ export default function DetailSettings() {
     return components;
   };
 
+  const handleManageLicenseClick = async () => {
+    try {
+      const tideComponent = await findTideComponent(adminClient, realm);
+
+      if (!tideComponent) {
+        const newComponent = await createTideComponent(adminClient, realm, serverInfo);
+        const id = getSingleValue(newComponent!.id!);
+        navigateToKeyProvider(id);
+      } else {
+        const id = getSingleValue(tideComponent!.id!);
+        navigateToKeyProvider(id);
+      }
+    } catch (error) {
+      console.error("Error handling the link click:", error);
+    }
+  };
+
+  const navigateToKeyProvider = (id: string) => {
+    const path = toKeyProvider({ realm, id, providerType: "tide-vendor-key" });
+    path.pathname += "/license"
+    navigate(path);
+  };
+
   const sections = [
     {
       title: t("generalSettings"),
@@ -474,8 +697,98 @@ export default function DetailSettings() {
           {(isOIDC || isOAuth2) && <OIDCGeneralSettings />}
           {isSAML && <SamlGeneralSettings isAliasReadonly />}
           {providerInfo && (
-            <DynamicComponents stringify properties={providerInfo.properties} />
+            <DynamicComponents stringify properties={providerInfo.properties} isTideProvider={providerId === "tide"} />
           )}
+          <FormGroup
+            label={t("License")}
+            labelIcon={
+              <HelpItem
+                helpText={"Manage your licensing here"}
+                fieldLabelId={"license"}
+              />
+            }
+            fieldId="license"
+          >
+            <Button
+              type="button"
+              onClick={async (e) => {
+                e.preventDefault(); // Prevent the default anchor behavior
+                await handleManageLicenseClick();
+              }}            >
+              Manage License
+            </Button>
+          </FormGroup>
+          {/* TIDECLOAK IMPLEMENTATION START */}
+          {providerId === "tide" && (
+            <>
+              <div style={{ paddingTop: "5rem" }}>
+                <h1 className="pf-v5-c-title pf-m-xl">Image Upload for Keycloak Hosting</h1>
+                <p className="pf-v5-c-content ">Optionally upload images to Keycloak for hosting. This is used by default if not updated above.</p>
+              </div>
+              <FormGroup
+                label={t("Upload Background Image")}
+                labelIcon={<HelpItem helpText={"Upload an image for Keycloak to host for you. Remember to provide the URL on Vendor sign up. IMPORTANT: this image does not get backed up"} fieldLabelId={"UploadBackgroundImage"} />}
+                fieldId="background-image-upload"
+              >
+                <Grid hasGutter>
+                  <GridItem span={12}>
+                    <ClipboardCopy isReadOnly>{backgroundUrl}</ClipboardCopy>
+                  </GridItem>
+                  <GridItem span={12}>
+                    <FileUpload
+                      id="background-image-upload"
+                      value={backgroundImage || undefined}
+                      filename={backgroundImage?.name || ""}
+                      onFileInputChange={handleFileChange('background')}
+                      isRequired
+                      onClearClick={() => handleClear('background')}
+                    />
+                  </GridItem>
+                  {backgroundPreviewUrl !== "" && (
+                    <GridItem span={12}>
+                      <Gallery hasGutter>
+                        <GalleryItem>
+                          <img src={backgroundPreviewUrl} alt="Background Image Preview" style={{ maxWidth: "200px", marginTop: "10px" }} />
+                        </GalleryItem>
+                      </Gallery>
+                    </GridItem>
+                  )}
+                </Grid>
+              </FormGroup>
+              <FormGroup
+                label={t("Upload Logo Image")}
+                labelIcon={<HelpItem helpText={"Upload an image for Keycloak to host for you. Remember to provide the URL on Vendor sign up. IMPORTANT: this image does not get backed up"} fieldLabelId={"UploadLogoImage"} />}
+                fieldId="logo-upload"
+              >
+                <Grid hasGutter>
+                  <GridItem span={12}>
+                    <ClipboardCopy isReadOnly>{logoUrl}</ClipboardCopy>
+                  </GridItem>
+                  <GridItem span={12}>
+                    <FileUpload
+                      id="logo-upload"
+                      value={logo || undefined}
+                      filename={logo?.name || ""}
+                      onFileInputChange={handleFileChange('logo')}
+                      isRequired
+                      onClearClick={() => handleClear('logo')}
+
+                    />
+                  </GridItem>
+                  {logoPreviewUrl !== "" && (
+                    <GridItem span={12}>
+                      <Gallery hasGutter>
+                        <GalleryItem>
+                          <img src={logoPreviewUrl} alt="Logo Preview" style={{ maxWidth: "200px", marginTop: "10px" }} />
+                        </GalleryItem>
+                      </Gallery>
+                    </GridItem>
+                  )}
+                </Grid>
+              </FormGroup>
+            </>
+          )}
+          {/* TIDECLOAK IMPLEMENTATION END */}
         </FormAccess>
       ),
     },
@@ -610,7 +923,7 @@ export default function DetailSettings() {
             isOAuth2={isOAuth2!}
           />
 
-          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
+          <FixedButtonsGroup name="idp-details" isSubmit reset={handleReset} />
         </FormAccess>
       ),
     },
@@ -620,6 +933,7 @@ export default function DetailSettings() {
     <FormProvider {...form}>
       <DeleteConfirm />
       <DeleteMapperConfirm />
+      <OffboardingConfirm />
       <Controller
         name="enabled"
         control={form.control}
@@ -630,6 +944,7 @@ export default function DetailSettings() {
             onChange={field.onChange}
             save={save}
             toggleDeleteDialog={toggleDeleteDialog}
+            toggleOffboardingDialog={alias === "tide" ? toggleOffboardingDialog : undefined}
           />
         )}
       />

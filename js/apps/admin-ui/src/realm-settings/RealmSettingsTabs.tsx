@@ -335,7 +335,8 @@ export const RealmSettingsTabs = () => {
             data-testid="rs-general-tab"
             {...generalTab}
           >
-            <RealmSettingsGeneralTab realm={realm!} save={save} />
+            {/* TIDECLOAK IMPLEMENTATION */}
+            <RealmSettingsGeneralTab realm={realm!} save={save} refresh={refresh} />
           </Tab>
           <Tab
             title={<TabTitleText>{t("login")}</TabTitleText>}

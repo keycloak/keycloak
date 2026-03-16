@@ -13,7 +13,7 @@ import {
   TextArea,
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -21,6 +21,7 @@ import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { addTrailingSlash, prettyPrintJSON } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
+import { findTideComponent } from "../../identity-providers/utils/SignSettingsUtil";
 
 type DownloadDialogProps = {
   id: string;
@@ -37,7 +38,7 @@ export const DownloadDialog = ({
 }: DownloadDialogProps) => {
   const { adminClient } = useAdminClient();
 
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const { t } = useTranslation();
   const { enabled } = useHelp();
   const serverInfo = useServerInfo();
@@ -48,6 +49,7 @@ export const DownloadDialog = ({
   );
   const [snippet, setSnippet] = useState<string | ArrayBuffer>();
   const [openType, setOpenType] = useState(false);
+  const [isTidecloak, setIsTidecloak] = useState(false);
 
   const selectedConfig = useMemo(
     () => configFormats.find((config) => config.id === selected) ?? null,
@@ -59,6 +61,19 @@ export const DownloadDialog = ({
       /<PrivateKeyPem>.*<\/PrivateKeyPem>/gs,
       `<PrivateKeyPem>${t("privateKeyMask")}</PrivateKeyPem>`,
     );
+
+  const checkTidecloakStatus = useCallback(async () => {
+    const hasTideIdp = await adminClient.identityProviders.findOne({ alias: "tide" });
+    return hasTideIdp ? true : false;
+  }, [adminClient, realm]);
+
+  useEffect(() => {
+    const updateStatus = async () => {
+      const hasTideIdp = await checkTidecloakStatus();
+      setIsTidecloak(hasTideIdp);
+    };
+    updateStatus();
+  }, [checkTidecloakStatus]);
 
   useFetch(
     async () => {
@@ -77,10 +92,12 @@ export const DownloadDialog = ({
 
         return response.arrayBuffer();
       } else {
-        const snippet = await adminClient.clients.getInstallationProviders({
-          id,
-          providerId: selected,
-        });
+        // TIDECLOAK IMPLEMENTATION
+        const snippet = await adminClient.tideAdmin.getInstallationProviders({
+            clientId: id,
+            providerId: selected,
+          });
+
         if (typeof snippet === "string") {
           return sanitizeSnippet(snippet);
         } else {
@@ -102,7 +119,7 @@ export const DownloadDialog = ({
       onConfirm={() => {
         saveAs(
           new Blob([snippet!], { type: selectedConfig?.mediaType }),
-          selectedConfig?.filename,
+          isTidecloak ? "tidecloak" : selectedConfig?.filename,
         );
       }}
       open={open}

@@ -170,6 +170,7 @@ export default function IdentityProvidersSection() {
       </DropdownGroup>
     ));
 
+  const hasValue = (value: string) => value !== undefined && value !== null && value !== "" ? true : false;
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "deleteProvider",
     messageKey: t("deleteConfirm", { provider: selectedProvider?.alias }),
@@ -177,6 +178,13 @@ export default function IdentityProvidersSection() {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
+        /** TIDECLOAK IMPLEMENTATION START */
+        if (selectedProvider!.alias! === "tide") {
+          await adminClient.tideAdmin.deleteImage({ type: "LOGO" }); //TIDE
+          await adminClient.tideAdmin.deleteImage({ type: "BACKGROUND_IMAGE" }); // TIDE
+        }
+        /** TIDECLOAK IMPLEMENTATION END */
+
         await adminClient.identityProviders.del({
           alias: selectedProvider!.alias!,
         });

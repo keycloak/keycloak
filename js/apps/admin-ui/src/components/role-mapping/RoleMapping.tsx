@@ -9,9 +9,10 @@ import {
   ButtonVariant,
   Checkbox,
   ToolbarItem,
+  Label
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
@@ -38,6 +39,7 @@ export type Row = {
   client?: ClientRepresentation;
   role: RoleRepresentation | CompositeRole;
   id?: string; // KeycloakDataTable expects an id for the row
+  type?: ResourcesKey;
 };
 
 export const mapRoles = (
@@ -65,16 +67,80 @@ export const mapRoles = (
       }))),
 ];
 
-export const ServiceRole = ({ role, client }: Row) => (
-  <>
-    {client?.clientId && (
-      <Badge isRead className="keycloak-admin--role-mapping__client-name">
-        {client.clientId}
-      </Badge>
-    )}
-    {role.name}
-  </>
-);
+export const ServiceRole = ({ role, client, id, type }: Row) => {
+  const { adminClient } = useAdminClient();
+
+  const [roleStatus, setRoleStatus] = useState("");
+  const [deleteStatus, setDeleteStatus] = useState("");
+
+
+
+  /** TIDECLOAK IMPLEMENTATION START */
+  useEffect(() => {
+      const fetchUserStatus = async () => {
+        const test = ((role as CompositeRole).parent || null)
+
+        if (type === "users" ) {
+          const result = await adminClient.tideUsersExt.getUserRoleDraftStatus({ userId: id!, roleId: role.id!}); // TIDE IMPLEMENTATION
+
+          setRoleStatus(result.draftStatus ?? "");
+          setDeleteStatus(result.deleteStatus ?? "");
+
+        }
+        else if (type === "roles" ){
+            const result = await adminClient.tideUsersExt.getRoleDraftStatus({ parentId: id!, childId: role.id!}); // TIDE IMPLEMENTATION
+            setRoleStatus(result.draftStatus ?? "");
+            setDeleteStatus(result.deleteStatus ?? "");
+            // sort this out another time
+            //           const roleIsInherited = (role as CompositeRole).isInherited || false
+            //           console.log("I AM ROLES CHECKING STATUS AND IM INHERITED " + roleIsInherited)
+            //           if (roleIsInherited){
+            //
+            // }
+
+        }
+    }
+    fetchUserStatus();
+  }, [id, role.id, adminClient]);
+
+  return (
+    <>
+      {client?.clientId && (
+        <Badge isRead className="keycloak-admin--role-mapping__client-name">
+          {client.clientId}
+        </Badge>
+      )}
+      {role.name}
+      {roleStatus === "DRAFT" && (
+        <Label className="keycloak-admin--role-mapping__client-name">
+          {"DRAFT"}
+        </Label>
+      )}
+      {roleStatus === "PENDING" && (
+        <Label color="orange" className="keycloak-admin--role-mapping__client-name">
+          {"PENDING"}
+        </Label>
+      )}
+      {roleStatus === "APPROVED" && (
+          <Label color="blue" className="keycloak-admin--role-mapping__client-name">
+            {"APPROVED"}
+          </Label>
+      )}
+      {roleStatus === "ACTIVE" && (
+        <Label color="green" className="keycloak-admin--role-mapping__client-name">
+          {"ACTIVE"}
+        </Label>
+      )}
+      {roleStatus === "ACTIVE" && deleteStatus === "DRAFT" && (
+        <Label color="gold" className="keycloak-admin--role-mapping__client-name">
+          {"Pending delete"}
+        </Label>
+      )}
+    </>
+  );
+};
+
+  /** TIDECLOAK IMPLEMENTATION END */
 
 export type ResourcesKey = keyof KeycloakAdminClient;
 
@@ -259,7 +325,7 @@ export const RoleMapping = ({
             name: "role.name",
             displayKey: "name",
             transforms: [cellWidth(30)],
-            cellRenderer: ServiceRole,
+            cellRenderer: (row => <ServiceRole id={id} client={row.client} role={row.role} type={type}/>),
           },
           {
             name: "role.isInherited",

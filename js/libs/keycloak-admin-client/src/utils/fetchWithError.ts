@@ -19,7 +19,8 @@ export async function fetchWithError(
 ) {
   const response = await fetch(input, init);
 
-  if (!response.ok) {
+  // TIDECLOAK IMPLEMENTATION allow for redirect method
+  if (!response.ok  && response.status !== 303) {
     const responseData = await parseResponse(response);
     const message = getErrorMessage(responseData);
     throw new NetworkError(message, {

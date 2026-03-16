@@ -317,3 +317,12 @@ export { AdminClientContext, initAdminClient } from "./admin-client";
 export { AppContexts } from "./App";
 export * as PermissionsConfigurationSection from "./permissions-configuration/PermissionsConfigurationSection";
 export { routes } from "./routes";
+
+/** TIDECLOAK IMPLEMENTATION */
+export { default as ChangeRequestsSection } from "./tide-change-requests/ChangeRequestsSection";
+export { ClientChangeRequestsList } from "./tide-change-requests/ClientChangeRequestsList";
+export { GenerateDefaultUserContextModal } from "./tide-change-requests/GenerateDefaultUserContextModal";
+export { RolesChangeRequestsList } from "./tide-change-requests/RolesChangeRequestsList";
+export { TideLicenseHistory } from "./components/tide-licensing-tab/TideLicenseHistory";
+export { TideLicensingTab } from "./components/tide-licensing-tab/TideLicensingTab";
+export { TideScheduledTasks } from "./components/tide-licensing-tab/TideScheduledTasks";
