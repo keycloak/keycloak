@@ -36,6 +36,7 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.config.WildcardOptionsUtil;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
@@ -571,6 +572,18 @@ public class PropertyMapper<T> {
 
     public static <T> PropertyMapper.Builder<T> fromOption(Option<T> opt) {
         return new PropertyMapper.Builder<>(opt);
+    }
+
+    /**
+     * Create a property mapper that get value from the parent option
+     */
+    public static <T> PropertyMapper.Builder<T> fromParentOption(Option<T> parentOption) {
+        final var option = new OptionBuilder<>(parentOption.getKey() + KeycloakModelUtils.generateId(), parentOption.getType())
+                .buildTime(parentOption.isBuildTime())
+                .hidden()
+                .build();
+        return new Builder<>(option)
+                .mapFrom(parentOption);
     }
 
     /**

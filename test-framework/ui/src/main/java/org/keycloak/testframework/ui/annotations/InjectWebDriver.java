@@ -5,10 +5,23 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.keycloak.testframework.injection.LifeCycle;
+
 /**
  * Inject a {@link org.keycloak.testframework.ui.webdriver.ManagedWebDriver} to interact directly with the web driver.
  * When possible it is recommended to use pages instead of directly accessing the web driver.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface InjectWebDriver { }
+public @interface InjectWebDriver {
+
+    /**
+     * A ref must be set if a test requires multiple instances
+     */
+    String ref() default "";
+
+    /**
+     * Controls the lifecycle of the resource
+     */
+    LifeCycle lifecycle() default LifeCycle.GLOBAL;
+}

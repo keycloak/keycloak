@@ -320,6 +320,46 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
     }
 
     @Test
+    public void testCrossOrganizationInvitationAccess() {
+        // Create second organization
+        OrganizationRepresentation org2Rep = createOrganization("test-org-2", "test-org-2.com");
+        OrganizationResource organization2 = testRealm().organizations().get(org2Rep.getId());
+
+        // Create invitation in org1
+        sendInvitation("user@test-org.com", "User", "One");
+        String org1InvitationId = organization.invitations().list().get(0).getId();
+
+        // Create invitation in org2
+        sendInvitationToOrganization(organization2, "user@test-org-2.com", "User", "Two");
+        String org2InvitationId = organization2.invitations().list().get(0).getId();
+
+        // Try to get org1's invitation via org2 - should return 404
+        try {
+            organization2.invitations().get(org1InvitationId);
+            fail("Should not be able to get invitation from another organization");
+        } catch (NotFoundException expected) {
+        }
+
+        // Try to delete org1's invitation via org2 - should return 404
+        try (Response response = organization2.invitations().delete(org1InvitationId)) {
+            assertThat(response.getStatus(), equalTo(404));
+        }
+
+        // Try to resend org1's invitation via org2 - should return 404
+        try (Response response = organization2.invitations().resend(org1InvitationId)) {
+            assertThat(response.getStatus(), equalTo(404));
+        }
+
+        // Verify the invitations are still intact in their respective orgs
+        assertThat(organization.invitations().list(), hasSize(1));
+        assertThat(organization2.invitations().list(), hasSize(1));
+
+        // Verify accessing own invitations still works
+        assertThat(organization.invitations().get(org1InvitationId).getEmail(), equalTo("user@test-org.com"));
+        assertThat(organization2.invitations().get(org2InvitationId).getEmail(), equalTo("user@test-org-2.com"));
+    }
+
+    @Test
     public void testMultipleOrganizationInvitationIsolation() {
         // Create second organization
         OrganizationRepresentation org2Rep = createOrganization("test-org-2", "test-org-2.com");

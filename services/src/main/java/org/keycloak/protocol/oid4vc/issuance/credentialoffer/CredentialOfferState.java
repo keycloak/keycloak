@@ -16,10 +16,10 @@
  */
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
-import java.beans.Transient;
-import java.security.SecureRandom;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.function.Function;
 
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
@@ -27,6 +27,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.saml.RandomSecret;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 
@@ -35,39 +36,46 @@ public class CredentialOfferState {
 
     private String credentialsOfferId;
     private CredentialsOffer credentialsOffer;
-    private String clientId;
-    private String userId;
+    private String targetClientId;
+    private String targetUserId;
     private String nonce;
     private String txCode;
-    private int expireAt;
-    private OID4VCAuthorizationDetail authDetail;
+    private long expiresAt;
+    private List<OID4VCAuthorizationDetail> authDetails;
 
-    public CredentialOfferState(CredentialsOffer credOffer, String clientId, String userId, int expireAt) {
-        this.credentialsOfferId = UUID.randomUUID().toString();
+    /**
+     * Create a new CredentialOfferState.
+     * <p>
+     * This should only be called from the configured  {@code CredentialOfferProvider}.
+     * The constructor is public for testing purposes only.
+     *
+     * @param credOffer   The credential offer
+     * @param clientId    The target client_id
+     * @param userId      The target user id
+     * @param expiresAt    The expiry date of the offer in seconds
+     * @param authDetailsProvider A provider function for authorization details, (optionally) one for each credential_configuration_id
+     */
+    public CredentialOfferState(
+            CredentialsOffer credOffer,
+            String clientId,
+            String userId,
+            long expiresAt,
+            Function<String, List<OID4VCAuthorizationDetail>> authDetailsProvider
+    ) {
+        this.credentialsOfferId = Base64Url.encode(RandomSecret.createRandomSecret(64));
         this.credentialsOffer = credOffer;
-        this.clientId = clientId;
-        this.userId = userId;
-        this.expireAt = expireAt;
+        this.targetClientId = clientId;
+        this.targetUserId = userId;
+        this.expiresAt = expiresAt;
         this.nonce = Base64Url.encode(RandomSecret.createRandomSecret(64));
+        if (authDetailsProvider != null) {
+            this.authDetails = authDetailsProvider.apply(credentialsOfferId);
+        }
     }
 
-    // For json serialization
-    CredentialOfferState() {
-    }
-
-    @Transient
+    @JsonIgnore
     public Optional<String> getPreAuthorizedCode() {
         return Optional.ofNullable(credentialsOffer.getPreAuthorizedCode());
-    }
-
-    public void generateTxCode() {
-        SecureRandom rnd = new SecureRandom();
-        char[] alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".toCharArray();
-        StringBuilder sb = new StringBuilder(6);
-        for (int i = 0; i < 6; i++) {
-            sb.append(alphabet[rnd.nextInt(alphabet.length)]);
-        }
-        txCode = sb.toString();
     }
 
     public String getCredentialsOfferId() {
@@ -78,12 +86,12 @@ public class CredentialOfferState {
         return credentialsOffer;
     }
 
-    public String getClientId() {
-        return clientId;
+    public String getTargetClientId() {
+        return targetClientId;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getTargetUserId() {
+        return targetUserId;
     }
 
     public String getNonce() {
@@ -94,21 +102,36 @@ public class CredentialOfferState {
         return txCode;
     }
 
-    public int getExpireAt() {
-        return expireAt;
+    public long getExpiresAt() {
+        return expiresAt;
     }
 
-    public OID4VCAuthorizationDetail getAuthorizationDetails() {
-        return authDetail != null ? authDetail.clone() : null;
+    public List<OID4VCAuthorizationDetail> getAuthorizationDetails() {
+        return Collections.unmodifiableList(authDetails != null ? authDetails : List.of());
     }
 
-    public void setAuthorizationDetails(OID4VCAuthorizationDetail authDetail) {
-        this.authDetail = authDetail != null ? authDetail.clone() : null;
+    public OID4VCAuthorizationDetail getAuthorizationDetails(String credConfigId) {
+        return getAuthorizationDetails().stream()
+                .filter(it -> it.getCredentialConfigurationId().equals(credConfigId))
+                .findFirst()
+                .map(OID4VCAuthorizationDetail::clone)
+                .orElse(null);
     }
 
-    @Transient
+    @JsonIgnore
     public boolean isExpired() {
         int currentTime = Time.currentTime();
-        return expireAt <= currentTime;
+        return expiresAt <= currentTime;
+    }
+
+    // Private ---------------------------------------------------------------------------------------------------------
+
+    // For json serialization
+    private CredentialOfferState() {
+    }
+
+    // For json serialization
+    private void setAuthorizationDetails(List<OID4VCAuthorizationDetail> authDetails) {
+        this.authDetails = authDetails;
     }
 }

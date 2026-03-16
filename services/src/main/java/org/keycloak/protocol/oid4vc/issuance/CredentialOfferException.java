@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,23 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
+package org.keycloak.protocol.oid4vc.issuance;
 
-import org.keycloak.provider.Provider;
+public class CredentialOfferException extends RuntimeException {
 
-public interface CredentialOfferStorage extends Provider {
+    private final String errorType;
 
-    void putOfferState(CredentialOfferState entry);
+    public CredentialOfferException(String errorType, String message) {
+        this(errorType, message, null);
+    }
 
-    CredentialOfferState getOfferStateById(String offerId);
+    public CredentialOfferException(String errorType, String message, Throwable cause) {
+        super(message, cause);
+        this.errorType = errorType;
 
-    CredentialOfferState getOfferStateByNonce(String nonce);
+    }
 
-    CredentialOfferState getOfferStateByPreAuthCode(String code);
-
-    void removeOfferState(CredentialOfferState entry);
-
-    @Override
-    default void close() {
+    public String getErrorType() {
+        return errorType;
     }
 }

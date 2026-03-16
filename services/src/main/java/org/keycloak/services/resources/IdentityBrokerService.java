@@ -97,6 +97,7 @@ import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -505,11 +506,13 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
             this.event.user(user);
             this.session.getContext().setClient(clientModel);
 
+            OIDCAdvancedConfigWrapper oidcClient = OIDCAdvancedConfigWrapper.fromClientModel(clientModel);
             ClientModel brokerClient = realmModel.getClientByClientId(Constants.BROKER_SERVICE_CLIENT_ID);
-            if (brokerClient == null) {
-                return corsResponse(forbidden("Realm has not migrated to support the broker token exchange service"), clientModel);
-            }
-            if (!canReadBrokerToken(token)) {
+
+            boolean isBrokerAuthorized = brokerClient != null && canReadBrokerToken(token);
+            boolean isClientAuthorized = oidcClient.getExternalTokenEnabled() && oidcClient.getExternalAllowedIdentityProviders().contains(providerAlias);
+
+            if (!isBrokerAuthorized && !isClientAuthorized) {
                 return corsResponse(forbidden("Client [" + clientModel.getClientId() + "] not authorized to retrieve tokens from identity provider [" + providerAlias + "]."), clientModel);
             }
 

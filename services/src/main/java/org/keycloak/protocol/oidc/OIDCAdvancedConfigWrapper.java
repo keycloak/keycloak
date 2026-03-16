@@ -287,6 +287,16 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         return MapperTypeSerializer.deserialize(audiences);
     }
 
+    public boolean getExternalTokenEnabled() {
+        String val = getAttribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public List<String> getExternalAllowedIdentityProviders() {
+        List<String> allowedIDPs = getAttributeMultivalued(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP);
+        return allowedIDPs == null ? Collections.emptyList() : allowedIDPs;
+    }
+
     public String getTlsClientAuthSubjectDn() {
         return getAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN);
      }

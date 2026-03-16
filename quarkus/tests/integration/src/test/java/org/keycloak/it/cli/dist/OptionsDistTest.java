@@ -60,7 +60,7 @@ public class OptionsDistTest {
     @Launch({"start", "--db=dev-file", "--log=console", "--log-file-output=json", "--http-enabled=true", "--hostname-strict=false"})
     public void testServerDoesNotStartIfDisabledFileLogOption(CLIResult result) {
         result.assertError("Disabled option: '--log-file-output'. Available only when File log handler is activated");
-        result.assertError("--log, --log-async, --log-console-output, --log-console-level, --log-console-format, --log-console-color, --log-console-async, --log-level, --log-level-<category>");
+        result.assertError("--log, --log-async, --log-service-name, --log-service-environment, --log-console-output, --log-console-level, --log-console-format, --log-console-color, --log-console-async, --log-level, --log-level-<category>");
     }
 
     @DryRun
@@ -114,7 +114,7 @@ public class OptionsDistTest {
     @Launch({"start-dev", "--log=console", "--log-file-output=json"})
     public void testServerDoesNotStartDevIfDisabledFileLogOption(CLIResult result) {
         result.assertError("Disabled option: '--log-file-output'. Available only when File log handler is activated");
-        result.assertError("Possible solutions: --log, --log-async, --log-console-output, --log-console-level, --log-console-format, --log-console-color, --log-console-async, --log-level, --log-level-<category>");
+        result.assertError("Possible solutions: --log, --log-async, --log-service-name, --log-service-environment, --log-console-output, --log-console-level, --log-console-format, --log-console-color, --log-console-async, --log-level, --log-level-<category>");
     }
 
     @DryRun
@@ -124,7 +124,7 @@ public class OptionsDistTest {
     public void testServerStartDevIfEnabledFileLogOption(CLIResult result) {
         result.assertNoError("Disabled option: '--log-file-output'. Available only when File log handler is activated");
         result.assertError("Disabled option: '--log-console-color'. Available only when Console log handler is activated");
-        result.assertError("Possible solutions: --log, --log-async, --log-file, --log-file-level, --log-file-format, --log-file-json-format, --log-file-output, --log-file-async, --log-file-rotation-enabled, --log-file-rotation-max-file-size, --log-file-rotation-max-backup-index, --log-file-rotation-file-suffix, --log-file-rotation-rotate-on-boot, --log-level, --log-level-<category>, --log-mdc-enabled");
+        result.assertError("Possible solutions: --log, --log-async, --log-service-name, --log-service-environment, --log-file, --log-file-level, --log-file-format, --log-file-json-format, --log-file-output, --log-file-async, --log-file-rotation-enabled, --log-file-rotation-max-file-size, --log-file-rotation-max-backup-index, --log-file-rotation-file-suffix, --log-file-rotation-rotate-on-boot, --log-level, --log-level-<category>, --log-mdc-enabled");
     }
 
     @DryRun
