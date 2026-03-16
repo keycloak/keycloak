@@ -131,3 +131,11 @@ The existing `manage-membership` scope keeps its current behavior for target gro
 = JWT Authorization Grant promoted to supported
 
 In this release, the JWT Authorization Grant (https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523]) feature is promoted from preview to default. This grant allows to use an external signed JWT assertions to request OAuth 2.0 access tokens. See the link:{securing_apps_base_link}/jwt-authorization-grant[JWT Authorization Grant guide] for additional details.
+
+= Federated client authentication promoted to supported
+
+Federated client authentication is now promoted to supported, including support for client assertions issued by
+external OpenID Connect identity providers and Kubernetes Service Accounts.
+
+Since the OAuth SPIFFE Client Authentication specification is still in a draft status this feature remains a preview
+feature in Keycloak.

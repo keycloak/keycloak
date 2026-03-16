@@ -25,20 +25,17 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.broker.jwtauthorizationgrant.JWTAuthorizationGrantIdentityProviderFactory;
 import org.keycloak.broker.kubernetes.KubernetesIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.social.google.GoogleIdentityProviderFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.server.KeycloakServerConfig;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@KeycloakIntegrationTest(config = IdentityProviderIssuerTest.TestServerConfig.class)
+@KeycloakIntegrationTest
 public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
 
     @Test
@@ -215,12 +212,5 @@ public class IdentityProviderIssuerTest extends AbstractIdentityProviderTest {
         identityProvider.getConfig().put("jwksUrl", issuer);
 
         return identityProvider;
-    }
-
-    public static class TestServerConfig implements KeycloakServerConfig {
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.features(Profile.Feature.KUBERNETES_SERVICE_ACCOUNTS);
-        }
     }
 }
