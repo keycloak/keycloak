@@ -24,6 +24,8 @@ public @interface InjectOAuthClient {
 
     String realmRef() default "";
 
+    String webDriverRef() default "";
+
     boolean kcAdmin() default false;
 
 }

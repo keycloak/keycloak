@@ -12,4 +12,12 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface InjectPage {
+
+    /**
+     * A ref must be set if a test requires multiple instances
+     */
+    String ref() default "";
+
+    String webDriverRef() default "";
+
 }
