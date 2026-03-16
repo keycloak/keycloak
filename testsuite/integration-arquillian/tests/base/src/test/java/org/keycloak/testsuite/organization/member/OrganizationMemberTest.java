@@ -24,13 +24,16 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.models.Constants;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -49,6 +52,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.Matchers;
@@ -703,6 +707,38 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertNotNull("Full representation should include attributes", fullOrgsGlobal.get(0).getAttributes());
         assertTrue("Full representation should include the test attribute", 
                 fullOrgsGlobal.get(0).getAttributes().containsKey("testAttribute"));
+    }
+
+    @Test
+    public void testGetMemberOrganizationsForbiddenForNonAdminUser() throws Exception {
+        // create 2 orgs
+        OrganizationRepresentation orgA = createOrganization("orga");
+        OrganizationRepresentation orgB = createOrganization("orgb");
+
+        // create userA and add as member of both orgs
+        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        UserRepresentation userA = addMember(orgAResource, "usera@orga.org");
+        orgBResource.members().addMember(userA.getId()).close();
+
+        // create userB (non-admin user)
+        UserRepresentation userB = UserBuilder.create()
+                .username("userb")
+                .password("password")
+                .enabled(true)
+                .build();
+        try (Response response = testRealm().users().create(userB)) {
+            userB.setId(ApiUtil.getCreatedId(response));
+        }
+        getCleanup().addCleanup(() -> testRealm().users().get(userB.getId()).remove());
+
+        // send request as userB to OrganizationsResource.getOrganizations with member-id = userA
+        try (Keycloak userBClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                TEST_REALM_NAME, "userb", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            userBClient.realm(TEST_REALM_NAME).organizations().members().getOrganizations(userA.getId(), true);
+            fail("Expected ForbiddenException");
+        } catch (ForbiddenException expected) {
+        }
     }
 
     private void loginViaNonOrgIdP(String idpAlias) {
