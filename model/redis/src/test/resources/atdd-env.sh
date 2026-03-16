@@ -41,7 +41,7 @@ fi
 
 function find_and_export_jar() {
     # Find the Redis provider JAR using wildcard pattern
-    JAR_FILE=$(find "${PROJECT_ROOT}/target" -maxdepth 1 -name "keycloak-model-redis-*.jar" -type f | head -n 1)
+    JAR_FILE=$(find "${PROJECT_ROOT}/target" -maxdepth 1 -name "keycloak-model-redis-*.jar" -not -name "*-sources.jar" -not -name "*-tests.jar"  -type f | head -n 1)
 
     if [ -z "$JAR_FILE" ]; then
         echo "❌ Redis provider JAR not found in ${PROJECT_ROOT}/target/"
