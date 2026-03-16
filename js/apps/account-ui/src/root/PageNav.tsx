@@ -24,8 +24,8 @@ import {
 } from "react-router-dom";
 
 import fetchContentJson from "../content/fetchContent";
-import { environment, type Environment, type Feature } from "../environment";
-import { TFuncKey } from "../i18n";
+import type { TFuncKey } from "../i18n-type";
+import type { AccountEnvironment, Feature } from "..";
 import { usePromise } from "../utils/usePromise";
 
 type RootMenuItem = {
@@ -46,7 +46,7 @@ export type MenuItem = RootMenuItem | MenuItemWithChildren;
 
 export const PageNav = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>();
-  const context = useEnvironment<Environment>();
+  const context = useEnvironment<AccountEnvironment>();
 
   usePromise((signal) => fetchContentJson({ signal, context }), setMenuItems);
   return (
@@ -81,13 +81,11 @@ type NavMenuItemProps = {
 
 function NavMenuItem({ menuItem }: NavMenuItemProps) {
   const { t } = useTranslation();
-  const {
-    environment: { features },
-  } = useEnvironment<Environment>();
+  const { environment } = useEnvironment<AccountEnvironment>();
   const { pathname } = useLocation();
   const isActive = useMemo(
-    () => matchMenuItem(pathname, menuItem),
-    [pathname, menuItem],
+    () => matchMenuItem(pathname, menuItem, environment.baseUrl),
+    [pathname, menuItem, environment.baseUrl],
   );
 
   if ("path" in menuItem) {
@@ -107,7 +105,7 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
     >
       {menuItem.children
         .filter((menuItem) =>
-          menuItem.isVisible ? features[menuItem.isVisible] : true,
+          menuItem.isVisible ? environment.features[menuItem.isVisible] : true,
         )
         .map((child) => (
           <NavMenuItem key={child.label as string} menuItem={child} />
@@ -116,16 +114,22 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
   );
 }
 
-function getFullUrl(path: string) {
-  return `${new URL(environment.baseUrl).pathname}${path}`;
+function getFullUrl(path: string, baseUrl: string) {
+  return `${new URL(baseUrl).pathname}${path}`;
 }
 
-function matchMenuItem(currentPath: string, menuItem: MenuItem): boolean {
+function matchMenuItem(
+  currentPath: string,
+  menuItem: MenuItem,
+  baseUrl: string,
+): boolean {
   if ("path" in menuItem) {
-    return !!matchPath(getFullUrl(menuItem.path), currentPath);
+    return !!matchPath(getFullUrl(menuItem.path, baseUrl), currentPath);
   }
 
-  return menuItem.children.some((child) => matchMenuItem(currentPath, child));
+  return menuItem.children.some((child) =>
+    matchMenuItem(currentPath, child, baseUrl),
+  );
 }
 
 type NavLinkProps = {
@@ -138,7 +142,8 @@ export const NavLink = ({
   isActive,
   children,
 }: PropsWithChildren<NavLinkProps>) => {
-  const menuItemPath = getFullUrl(path) + location.search;
+  const { environment } = useEnvironment<AccountEnvironment>();
+  const menuItemPath = getFullUrl(path, environment.baseUrl) + location.search;
   const href = useHref(menuItemPath);
   const handleClick = useLinkClickHandler(menuItemPath);
 
