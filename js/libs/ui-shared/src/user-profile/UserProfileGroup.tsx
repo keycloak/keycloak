@@ -29,6 +29,7 @@ export const UserProfileGroup = ({
   renderer,
   children,
 }: PropsWithChildren<UserProfileGroupProps>) => {
+  "use no memo";
   const helpText = label(
     t,
     attribute.annotations?.["inputHelperTextBefore"] as string,
