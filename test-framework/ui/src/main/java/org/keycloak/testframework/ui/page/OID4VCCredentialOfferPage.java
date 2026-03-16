@@ -1,25 +1,27 @@
-package org.keycloak.testsuite.pages;
+package org.keycloak.testframework.ui.page;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
-import org.keycloak.testsuite.util.UIUtils;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
-public class OID4VCCredentialOfferPage extends LanguageComboboxAwarePage {
+public class OID4VCCredentialOfferPage extends AbstractLoginPage {
 
     @FindBy(id = "credential-offer-uri-link")
     private WebElement credentialOfferUri;
 
-    @FindBy(id = "continueVCOffer")
+    @FindBy(id = "continue-vc-offer")
     private WebElement continueButton;
 
     @FindBy(name = "cancel-aia")
     private WebElement cancelAIAButton;
+
+    public OID4VCCredentialOfferPage(ManagedWebDriver driver) {
+        super(driver);
+    }
 
     /**
      * @return full URL from the page. Usually something like "openid-credential-offer://?credential_offer_uri=https%3A%2F%2Flocalhost..."
@@ -41,28 +43,18 @@ public class OID4VCCredentialOfferPage extends LanguageComboboxAwarePage {
         return URLDecoder.decode(url, StandardCharsets.UTF_8);
     }
 
+
     public void clickContinueButton() {
-        UIUtils.clickLink(continueButton);
+        continueButton.click();
     }
+
 
     public void cancel() {
-        UIUtils.clickLink(cancelAIAButton);
+        cancelAIAButton.click();
     }
 
-    public boolean isCurrent() {
-        try {
-            driver.findElement(By.id("kc-credential-offer-uri"));
-            return true;
-        } catch (Throwable t) {
-            return false;
-        }
-    }
-
-    public boolean isCancelDisplayed() {
-        try {
-            return cancelAIAButton.isDisplayed();
-        } catch (NoSuchElementException e) {
-            return false;
-        }
+    @Override
+    public String getExpectedPageId() {
+        return "login-oid4vc-credential-offer";
     }
 }

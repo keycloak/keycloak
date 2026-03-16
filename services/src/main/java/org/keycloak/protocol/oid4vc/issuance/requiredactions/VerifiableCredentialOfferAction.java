@@ -173,7 +173,7 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         int expiresAt = timeProvider.currentTimeSeconds() + codeLifeSpan;
 
         String credentialConfigurationId = actionConfig.getCredentialConfigurationId();
-        event.detail(Details.CREDENTIAL_TYPE, credentialConfigurationId);
+        event = event.clone().detail(Details.CREDENTIAL_TYPE, credentialConfigurationId);
 
         String clientId = actionConfig.getClientId();
         CredentialOfferProvider offerProvider = session.getProvider(CredentialOfferProvider.class);
@@ -183,12 +183,11 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
         offerStorage.putOfferState(offerState);
 
-        // TODO:mposolda debug
-        logger.infof("Stored credential offer state: [credentialConfigId=%s, clientId=%s, username=%s, nonce=%s]",
+        logger.debugf("Stored credential offer state: [credentialConfigId=%s, clientId=%s, username=%s, nonce=%s]",
                 credentialConfigurationId, clientId, user.getUsername(), offerState.getNonce());
 
         // Add event details
-        event.clone().detail(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(preAuthorized));
+        event.detail(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(preAuthorized));
         event.detail(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, user.getId());
         if (clientId != null) {
             event.detail(Details.VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID, clientId);
@@ -229,7 +228,7 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         RequiredActionProvider.super.initiatedActionCanceled(session, authSession);
     }
 
-    // TODO:mposolda more props...
+
     public static class CredentialOfferActionConfig {
 
         @JsonProperty(CREDENTIAL_CONFIGURATION_ID)

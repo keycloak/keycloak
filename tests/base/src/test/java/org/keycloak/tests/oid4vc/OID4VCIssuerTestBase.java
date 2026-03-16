@@ -53,8 +53,10 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;
+import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.TestSetup;
+import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ClientConfig;
@@ -106,7 +108,7 @@ public abstract class OID4VCIssuerTestBase {
     static final String jwtTypeCredentialScopeName = "jwt-credential";
     static final String jwtTypeCredentialConfigurationIdName = "jwt-credential-config-id";
     static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
-    static final String minimalJwtTypeCredentialScopeIdName = "vc-with-minimal-config-id";
+    static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
 
     CredentialScopeRepresentation minimalJwtTypeCredentialScope;
     CredentialScopeRepresentation jwtTypeCredentialScope;
@@ -127,6 +129,8 @@ public abstract class OID4VCIssuerTestBase {
     @InjectWebDriver
     ManagedWebDriver driver;
 
+    @InjectEvents
+    Events events;
 
     ClientRepresentation client;
 
@@ -535,7 +539,7 @@ public abstract class OID4VCIssuerTestBase {
             realm.addClientScope(createCredentialScope(
                     minimalJwtTypeCredentialScopeName,
                    null,
-                    minimalJwtTypeCredentialScopeIdName,
+                    minimalJwtTypeCredentialConfigurationIdName,
                     null,
                     minimalJwtTypeCredentialScopeName,
                     VC_FORMAT_DEFAULT,

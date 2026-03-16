@@ -24,16 +24,16 @@
                     <#if isAppInitiatedAction??>
                         <input type="submit"
                             class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}"
-                            id="continueVCOffer" value="${msg("doContinue")}"
+                            id="continue-vc-offer" value="${msg("doContinue")}"
                         />
                         <button type="submit"
                                 class="${properties.kcButtonClass!} ${properties.kcButtonDefaultClass!} ${properties.kcButtonLargeClass!} ${properties.kcButtonLargeClass!}"
-                                id="cancelVCOffer" name="cancel-aia" value="true">${msg("doCancel")}
+                                id="cancel-vc-offer" name="cancel-aia" value="true">${msg("doCancel")}
                         </button>
                     <#else>
                         <input type="submit"
                             class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"
-                            id="continueVCOffer" value="${msg("doContinue")}"
+                            id="continue-vc-offer" value="${msg("doContinue")}"
                         />
                     </#if>
                 </div>
