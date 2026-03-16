@@ -14,7 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@ExtendWith({DisabledForDatabasesCondition.class})
+@ExtendWith({DisabledForServersCondition.class})
 public @interface DisabledForServers {
 
     String[] value() default "";
