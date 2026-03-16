@@ -31,6 +31,7 @@ import org.keycloak.representations.admin.v2.OIDCClientRepresentation.Flow;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 
+import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ALLOW_ECP_FLOW;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_ASSERTION_SIGNATURE;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_AUTHNSTATEMENT;
 import static org.keycloak.protocol.saml.SamlConfigAttributes.SAML_CANONICALIZATION_METHOD_ATTRIBUTE;
@@ -87,7 +88,7 @@ public class ClientRepresentationComparator {
         compare("baseUrl→appUrl", v1.getBaseUrl(), v2.getAppUrl());
         compare("protocol", v1.getProtocol(), v2.getProtocol());
         compareAsSet("redirectUris", v1.getRedirectUris(), v2.getRedirectUris());
-        compareAsSet("roles", Set.of(v1.getDefaultRoles() == null ? new String[0] : v1.getDefaultRoles()), v2.getRoles());
+        result.addV2OnlyField("roles", nullIfEmpty(v2.getRoles()));
     }
 
     private void compareOIDCFields(OIDCClientRepresentation oidc) {
@@ -143,7 +144,7 @@ public class ClientRepresentationComparator {
         compareSamlBoolean(SAML_ASSERTION_SIGNATURE, "signAssertions", saml.getSignAssertions());
         compareSamlBoolean(SAML_CLIENT_SIGNATURE_ATTRIBUTE, "clientSignatureRequired", saml.getClientSignatureRequired());
         compareSamlBoolean(SAML_FORCE_POST_BINDING, "forcePostBinding", saml.getForcePostBinding());
-        compareSamlBoolean(SAML_SIGNATURE_ALGORITHM, "allowEcpFlow", saml.getAllowEcpFlow());
+        compareSamlBoolean(SAML_ALLOW_ECP_FLOW, "allowEcpFlow", saml.getAllowEcpFlow());
         compare("attr[saml.signature.algorithm]→signatureAlgorithm", attrs.get(SAML_SIGNATURE_ALGORITHM), saml.getSignatureAlgorithm());
         compare("attr[saml_signature_canonicalization_method]→signatureCanonicalizationMethod", attrs.get(SAML_CANONICALIZATION_METHOD_ATTRIBUTE), saml.getSignatureCanonicalizationMethod());
         compare("attr[saml.signing.certificate]→signingCertificate", attrs.get(SAML_SIGNING_CERTIFICATE_ATTRIBUTE), saml.getSigningCertificate());
