@@ -189,6 +189,13 @@ When enabling this feature, make sure your LDAP server is configured to not forc
 second time after the user changes their password. Not doing so might cause a password change loop where the user is
 forced to change their password every time they log in.
 
+==== Enabling password expiration
+
+You can force users to change their password when it reaches its maximum age as defined by the LDAP password policy.
+
+To do this, enable the `Enable LDAP password policy` setting so that a `UPDATE_PASSWORD` required action will be added to
+the user whenever the LDAP server indicates that the user's password has expired.
+
 [NOTE]
 ====
 This capability is based on https://datatracker.ietf.org/doc/html/draft-behera-ldap-password-policy-11[Password Policy for LDAP Directories (IETF draft-behera-ldap-password-policy)].

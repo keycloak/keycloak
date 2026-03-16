@@ -550,6 +550,27 @@ public class LDAPOperationManager {
             if (logger.isDebugEnabled()) {
                 logger.debugf(ae, "Authentication failed for DN [%s]", dn);
             }
+
+            try {
+                Control[] responseControls = authCtx.getResponseControls();
+                if (responseControls != null) {
+                    for (Control control : responseControls) {
+                        if (control instanceof PasswordPolicyControl) {
+                            PasswordPolicyControl response = (PasswordPolicyControl) control;
+                            if (response.passwordExpired()) {
+                                throw new PasswordPolicyPasswordChangeException();
+                            }
+                        }
+                    }
+                }
+
+            } catch (PasswordPolicyPasswordChangeException ppe) {
+                tracing.error(ppe);
+                throw ppe;
+            } catch (NamingException ne) {
+                logger.debugf(ne, "Could not read response controls after failed bind");
+            }
+
             tracing.error(ae);
             throw ae;
         } catch(RuntimeException re){
