@@ -62,7 +62,7 @@ export const url = (environment: BaseEnvironment, path: string) =>
     ),
   );
 
-export const token = (keycloak: Keycloak) =>
+export const token = (keycloak: any) => // TIDECLOAK IMPLEMENTATION - accepts TideCloak
   async function getAccessToken() {
     try {
       await keycloak.updateToken(5);

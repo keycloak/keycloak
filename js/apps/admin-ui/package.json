@@ -100,6 +100,7 @@
     "i18next": "^25.7.3",
     "i18next-fetch-backend": "^6.0.0",
     "jszip": "^3.10.1",
+    "@tidecloak/js": "file:~/tidecloak-js/packages/tidecloak-js",
     "keycloak-js": "^26.2.2",
     "lodash-es": "^4.17.22",
     "p-debounce": "^5.1.0",

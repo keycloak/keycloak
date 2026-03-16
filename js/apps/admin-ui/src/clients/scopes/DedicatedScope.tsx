@@ -69,8 +69,15 @@ export const DedicatedScope = ({
     const newClient = { ...client, fullScopeAllowed: !client.fullScopeAllowed };
     try {
       await adminClient.clients.update({ id: client.id! }, newClient);
-      addAlert(t("clientScopeSuccess"), AlertVariant.success);
-      setClient(newClient);
+      // TIDECLOAK IMPLEMENTATION START
+      const clientModel = await adminClient.clients.findOne({ id: client.id! })
+      if(newClient!.fullScopeAllowed === clientModel!.fullScopeAllowed) {
+        addAlert(t("clientScopeSuccess"), AlertVariant.success);
+      } else {
+        addAlert(t("Change request created, pending review."), AlertVariant.success);
+      }
+      setClient(clientModel!);
+      // TIDECLOAK IMPLEMENTATION END
     } catch (error) {
       addError("clientScopeError", error);
     }

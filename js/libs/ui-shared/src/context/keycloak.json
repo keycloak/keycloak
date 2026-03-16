@@ -1,0 +1,23 @@
+{
+  "realm": "sdfsd",
+  "auth-server-url": "http://localhost:8080",
+  "ssl-required": "external",
+  "resource": "security-admin-console",
+  "public-client": true,
+  "confidential-port": 0,
+  "jwk": {
+    "keys": [
+      {
+        "kid": "-dw3m7RV7lamZpBrYpfKEWAn89NYj0ka2klWbh3miT4",
+        "kty": "OKP",
+        "alg": "EdDSA",
+        "use": "sig",
+        "crv": "Ed25519",
+        "x": "Pkt3ntIs7e2EeTt-Ox3CX_X4_s04Zm55FdfQr8hZ8fA"
+      }
+    ]
+  },
+  "vendorId": "5735778507914095714942284414436322178942980296935512427378338390557954556819",
+  "homeOrkUrl": "http://localhost:1001",
+  "client-origin-auth-http://localhost:8080": "iAk7TCC1LVRtiPoWjrCUC/W6+YXZK7hctucKzb3/m+Q4zANvyoIEmTSYaRdV2Pt9fjnVD/j507kMi2rGQE3iCQ=="
+}

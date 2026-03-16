@@ -15,7 +15,8 @@ import {
 } from "@patternfly/react-core";
 import { BarsIcon } from "@patternfly/react-icons";
 import { TFunction } from "i18next";
-import Keycloak, { type KeycloakTokenParsed } from "keycloak-js";
+import { type KeycloakTokenParsed } from "keycloak-js";
+import  {TideCloak} from "@tidecloak/js"; // TIDECLOAK IMPLEMENTATION
 import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { DefaultAvatar } from "./DefaultAvatar";
@@ -43,7 +44,7 @@ function loggedInUserName(
 type BrandLogo = MastheadBrandProps;
 
 type KeycloakMastheadProps = MastheadMainProps & {
-  keycloak: Keycloak;
+  keycloak: TideCloak; // TIDECLOAK IMPLEMENTATION
   brand: BrandLogo;
   avatar?: AvatarProps;
   features?: {

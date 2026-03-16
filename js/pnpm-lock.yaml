@@ -171,6 +171,9 @@ importers:
       '@patternfly/react-table':
         specifier: ^5.4.16
         version: 5.4.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tidecloak/js':
+        specifier: file:~/tidecloak-js/packages/tidecloak-js
+        version: file:../../../tidecloak-js/packages/tidecloak-js
       '@uiw/react-textarea-code-editor':
         specifier: ^3.1.1
         version: 3.1.1(@babel/runtime@7.28.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -380,6 +383,9 @@ importers:
       '@patternfly/react-table':
         specifier: ^5.4.16
         version: 5.4.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tidecloak/js':
+        specifier: file:~/tidecloak-js/packages/tidecloak-js
+        version: file:../../../tidecloak-js/packages/tidecloak-js
       i18next:
         specifier: ^25.7.3
         version: 25.7.3(typescript@5.9.3)
@@ -1504,6 +1510,12 @@ packages:
         optional: true
       '@types/react-dom':
         optional: true
+
+  '@tidecloak/js@file:../../../tidecloak-js/packages/tidecloak-js':
+    resolution: {directory: ../../../tidecloak-js/packages/tidecloak-js, type: directory}
+
+  '@tideorg/js@0.13.23':
+    resolution: {integrity: sha512-WGK73KbhpsJHmFKyGztfSIwrkL303j2AOGpzl7UPt4F5N3/mF9GdROHLs0XFPZUHFrjUnd0cmPXL3Q/I40x8jA==}
 
   '@tsconfig/node10@1.0.11':
     resolution: {integrity: sha512-DcRjDCujK/kCk/cUe8Xz8ZSpm8mS3mNNpta+jGCA6USEDfktlNvm1+IuZ9eTcDbNk41BHwpHHeW+N1lKCz4zOw==}
@@ -2777,6 +2789,9 @@ packages:
   he@1.2.0:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
+
+  heimdall-tide@0.13.23:
+    resolution: {integrity: sha512-u60lpQ2D0Od6btRVjNXq7PKMPTP1kBm6DsJbunUjbHZnaEbcRsL4yZ21fKCg8yhLopQxYJUmYcPJjZNDX0242A==}
 
   hermes-estree@0.25.1:
     resolution: {integrity: sha512-0wUoCcLp+5Ev5pDW2OriHC2MJCbwLwuRx+gAqMTOkGKJJiBCLjtrvy4PWUGn6MIVefecRpzoOZ/UV6iGdOr+Cw==}
@@ -5028,6 +5043,7 @@ snapshots:
       '@patternfly/react-icons': 5.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@patternfly/react-styles': 5.4.1
       '@patternfly/react-table': 5.4.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@tidecloak/js': file:../../../tidecloak-js/packages/tidecloak-js
       '@uiw/react-textarea-code-editor': 3.1.1(@babel/runtime@7.28.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       file-saver: 2.0.5
       flat: 6.0.1
@@ -5540,6 +5556,13 @@ snapshots:
     optionalDependencies:
       '@types/react': 18.3.23
       '@types/react-dom': 18.3.7(@types/react@18.3.23)
+
+  '@tidecloak/js@file:../../../tidecloak-js/packages/tidecloak-js':
+    dependencies:
+      '@tideorg/js': 0.13.23
+      heimdall-tide: 0.13.23
+
+  '@tideorg/js@0.13.23': {}
 
   '@tsconfig/node10@1.0.11': {}
 
@@ -7023,6 +7046,10 @@ snapshots:
       space-separated-tokens: 2.0.2
 
   he@1.2.0: {}
+
+  heimdall-tide@0.13.23:
+    dependencies:
+      '@tideorg/js': 0.13.23
 
   hermes-estree@0.25.1: {}
 
