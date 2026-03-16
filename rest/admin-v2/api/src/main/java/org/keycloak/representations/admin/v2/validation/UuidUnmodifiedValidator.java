@@ -8,19 +8,23 @@ import org.keycloak.validation.jakarta.ValidationContext;
 
 /**
  * Validates that UUID provided by the client is not specified, or equal to the persisted UUID (in case of an update).
- * It assumes that the resource has a unique alias (e.g. name or clientId) that is used to identify the resource,
- * and that the persisted alias can be retrieved using the provided UUID.
+ * <p>
+ * Additionally, it checks that the provided UUID does not exist in the system to prevent re-creation of a renamed resource.
+ * This is useful for PUT create.
+ * <p>
+ * It assumes that the resource has a unique alias (e.g. name or clientId) that is used to identify the resource
+ * in addition to the UUID.
  *
  * @author Vaclav Muzikar <vmuzikar@ibm.com>
  */
 public class UuidUnmodifiedValidator implements ConstraintValidator<UuidUnmodified, BaseRepresentation> {
 
-    private AliasProvider aliasProvider;
+    private UuidProvider uuidProvider;
 
     @Override
     public void initialize(UuidUnmodified constraintAnnotation) {
         try {
-            aliasProvider = constraintAnnotation.aliasProvider().getDeclaredConstructor().newInstance();
+            uuidProvider = constraintAnnotation.aliasProvider().getDeclaredConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to instantiate UUID provider: " + constraintAnnotation.aliasProvider().getName(), e);
         }
@@ -29,16 +33,16 @@ public class UuidUnmodifiedValidator implements ConstraintValidator<UuidUnmodifi
     @Override
     public boolean isValid(BaseRepresentation representation, ConstraintValidatorContext context) {
         String providedUuid = representation.getUuid();
-        String providedAlias = aliasProvider.getAliasFromRepresentation(representation);
-        if (providedUuid == null || providedAlias == null) {
+        if (providedUuid == null || providedUuid.isEmpty()) { // no UUID provided, so nothing to validate
             return true;
         }
 
         ValidationContext validationContext = ValidationContext.unwrap(context);
+        String persistedUuid = uuidProvider.getPersistedUuid(validationContext, representation);
 
-        String persistedAlias = aliasProvider.getPersistedAlias(validationContext.session(), validationContext.realm(), providedUuid);
-
-        if (persistedAlias != null && persistedAlias.equals(providedAlias)) {
+        if (persistedUuid != null) { // resource exists
+            if (persistedUuid.equals(providedUuid)) return true;
+        } else if (!uuidProvider.uuidExists(validationContext, providedUuid)) { // additional check for PUT create to check the resource was just not renamed
             return true;
         }
 

@@ -6,7 +6,7 @@ import java.util.Set;
 
 import jakarta.validation.constraints.NotBlank;
 
-import org.keycloak.representations.admin.v2.validation.ClientAliasProvider;
+import org.keycloak.representations.admin.v2.validation.ClientUuidProvider;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
@@ -29,7 +29,7 @@ import org.hibernate.validator.constraints.URL;
     @JsonSubTypes.Type(value = OIDCClientRepresentation.class, name = OIDCClientRepresentation.PROTOCOL),
     @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = SAMLClientRepresentation.PROTOCOL)
 })
-@UuidUnmodified(aliasProvider = ClientAliasProvider.class, groups = {CreateClient.class, PutClient.class, PatchClient.class})
+@UuidUnmodified(aliasProvider = ClientUuidProvider.class, groups = {PutClient.class, PatchClient.class})
 public abstract class BaseClientRepresentation extends BaseRepresentation {
     public static final String DISCRIMINATOR_FIELD = "protocol";
 
