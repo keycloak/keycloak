@@ -88,21 +88,21 @@ const CellRenderer = ({
   index,
   actions,
   actionResolver,
-}: CellRendererProps) => {
-  const items = actions || actionResolver?.(row, {});
-  return (
-    <>
-      {row.cells!.map((c, i) => (
-        <Td key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</Td>
-      ))}
-      {items && items.length > 0 && !row.disableActions && (
-        <Td isActionCell>
-          <ActionsColumn items={items} extraData={{ rowIndex: index }} />
-        </Td>
-      )}
-    </>
-  );
-};
+}: CellRendererProps) => (
+  <>
+    {row.cells!.map((c, i) => (
+      <Td key={`cell-${i}`}>{(isRow(c) ? c.title : c) as ReactNode}</Td>
+    ))}
+    {(actions || actionResolver) && (
+      <Td isActionCell>
+        <ActionsColumn
+          items={actions || actionResolver?.(row, {})!}
+          extraData={{ rowIndex: index }}
+        />
+      </Td>
+    )}
+  </>
+);
 
 const ExpandableRowRenderer = ({ row }: CellRendererProps) =>
   row.cells!.map((c, i) => (
@@ -133,7 +133,7 @@ function DataTable<T>({
       intersectionBy(
         selectedRows,
         rows.map((row) => row.data),
-        "id",
+        (item) => get(item, "id") ?? get(item, "draftRecordId") // # TIDE IMPLEMENTATION #
       ),
     [selectedRows, rows],
   );
@@ -162,14 +162,18 @@ function DataTable<T>({
     } else {
       if (rowIndex === -1) {
         const rowsSelectedOnPageIds = rowsSelectedOnPage.map((v) =>
-          get(v, "id"),
+          get(v, "id") ?? get(v, "draftRecordId") // # TIDE IMPLEMENTATION #
         );
+        // TIDE IMPLEMENTATION STOP
         updateSelectedRows(
           isSelected
             ? [...selectedRows, ...rows.map((row) => row.data)]
             : selectedRows.filter(
-                (v) => !rowsSelectedOnPageIds.includes(get(v, "id")),
-              ),
+              (v) =>
+                !rowsSelectedOnPageIds.includes(
+                  get(v, "id") ?? get(v, "draftRecordId") // # TIDE IMPLEMENTATION #
+                ),
+            ),
         );
       } else {
         if (isSelected) {
@@ -177,7 +181,10 @@ function DataTable<T>({
         } else {
           updateSelectedRows(
             selectedRows.filter(
-              (v) => get(v, "id") !== (rows[rowIndex] as IRow).data.id,
+              (v) =>
+                (get(v, "id") ?? get(v, "draftRecordId")) !==
+                ((rows[rowIndex] as IRow).data.id ??
+                  (rows[rowIndex] as IRow).data.draftRecordId) // # TIDE IMPLEMENTATION #
             ),
           );
         }
@@ -193,81 +200,140 @@ function DataTable<T>({
     >
       <Thead>
         <Tr>
-          {onCollapse && <Th screenReaderText={t("expandRow")} />}
-          {canSelectAll && (
+          {/*
+            1) If you want a “select all” checkbox, render Th select=…
+            2) Otherwise, if you still have per-row checkboxes/radios, render an empty Th so header and body align
+          */}
+          {canSelectAll ? (
             <Th
-              screenReaderText={t("selectAll")}
               select={
                 !isRadio
                   ? {
-                      onSelect: (_, isSelected) => {
-                        updateState(-1, isSelected);
-                      },
-                      isSelected: rowsSelectedOnPage.length === rows.length,
-                    }
+                    onSelect: (_, isSelected) => {
+                      updateState(-1, isSelected);
+                    },
+                    isSelected: rowsSelectedOnPage.length === rows.length,
+                  }
                   : undefined
               }
             />
-          )}
-          {columns.map((column) => (
-            <Th
-              screenReaderText={t("expandRow")}
-              key={column.displayKey || column.name}
-              className={column.transforms?.[0]().className}
-            >
-              {t(column.displayKey || column.name)}
-            </Th>
+          ) : canSelect ? (
+            <Th /> /* blank placeholder for per-row selector */
+          ) : null}
+
+          {onCollapse && <Th screenReaderText={t("expandRow")} />}
+
+          {columns.map((col) => (
+            <Th key={col.name}>{col.name}</Th>
           ))}
         </Tr>
       </Thead>
       {!onCollapse ? (
         <Tbody>
-          {(rows as IRow[]).map((row, index) => (
-            <Tr key={index} isExpanded={expandedRows[index]}>
-              {canSelect && (
-                <Td
-                  select={{
-                    rowIndex: index,
-                    onSelect: (_, isSelected, rowIndex) => {
-                      updateState(rowIndex, isSelected);
-                    },
+          {(rows as IRow[]).map((row, index) => {
+            // derive a stable ID and selection flag
+            const recordId =
+              get(row.data, "id") ?? get(row.data, "draftRecordId");
+            const rowSelected = selectedRows.some(
+              v =>
+                (get(v, "id") ?? get(v, "draftRecordId")) === recordId
+            );
+
+            return (
+              <Tr
+                key={index}
+                isExpanded={expandedRows[index]}
+                // make the whole row clickable
+                onClick={() => updateState(index, !rowSelected)}
+                style={{ cursor: "pointer" }}
+                tabIndex={0}
+                onKeyDown={e => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    updateState(index, !rowSelected);
+                  }
+                }}
+              >
+                {canSelect && (
+                  <Td
+                    // bump the whole cell up to at least 32×32px
+                    select={{
+                      rowIndex: index,
+                    onSelect: (_, isSelected) =>
+                      updateState(index, isSelected),
                     isSelected: !!selectedRows.find(
-                      (v) => get(v, "id") === row.data.id,
+                      (v) =>
+                        (get(v, "id") ?? get(v, "draftRecordId")) ===
+                        (get(row.data, "id") ??
+                          get(row.data, "draftRecordId"))
                     ),
-                    variant: isRadio ? "radio" : "checkbox",
-                    isDisabled: row.disableSelection,
-                  }}
+                      variant: isRadio ? "radio" : "checkbox",
+                    }}
+                  />
+                )}
+                <CellRenderer
+                  row={row}
+                  index={index}
+                  actions={actions}
+                  actionResolver={actionResolver}
                 />
-              )}
-              <CellRenderer
-                row={row}
-                index={index}
-                actions={actions}
-                actionResolver={actionResolver}
-              />
-            </Tr>
-          ))}
+              </Tr>
+            );
+          })}
         </Tbody>
       ) : (
         (rows as IRow[]).map((row, index) => (
           <Tbody key={index}>
             {index % 2 === 0 ? (
-              <Tr>
+              <Tr
+                onClick={() => updateState(index, !selectedRows.some(
+                  v => (get(v, "id") ?? get(v, "draftRecordId")) === ((rows as IRow[])[index].data.id ?? (rows as IRow[])[index].data.draftRecordId)
+                ))}
+                style={{ cursor: "pointer" }}
+                tabIndex={0}
+                onKeyDown={e => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    updateState(index, !selectedRows.some(
+                      v => (get(v, "id") ?? get(v, "draftRecordId")) === ((rows as IRow[])[index].data.id ?? (rows as IRow[])[index].data.draftRecordId)
+                    ));
+                  }
+                }}
+              >
+                {/* // tide implementation start */}
+                {canSelect && (
+                  <Td
+                    select={{
+                      rowIndex: index,
+                      onSelect: (_, isSelected) =>
+                        updateState(index, isSelected),
+                      isSelected: !!selectedRows.find(
+                        (v) =>
+                          (get(v, "id") ?? get(v, "draftRecordId")) ===
+                          (get(row.data, "id") ??
+                            get(row.data, "draftRecordId"))
+                      ),
+                      variant: isRadio ? "radio" : "checkbox",
+                    }}
+                  />
+                )}
+                {/* // tide implementation end */}
+
                 <Td
                   expand={
                     rows[index + 1].cells.length === 0
                       ? undefined
                       : {
-                          isExpanded: expandedRows[index] ?? false,
-                          rowIndex: index,
-                          expandId: "expandable-row-",
-                          onToggle: (_, rowIndex, isOpen) => {
-                            onCollapse(isOpen, rowIndex);
-                            const expand = [...expandedRows];
-                            expand[index] = isOpen;
-                            setExpandedRows(expand);
-                          },
-                        }
+                        isExpanded: !!expandedRows[index],
+                        rowIndex: index,
+                        expandId: "expandable-row-",
+                        onToggle: (_, rowIndex, isOpen) => {
+                          onCollapse(isOpen, rowIndex);
+                          const expand = [...expandedRows];
+                          expand[index] = isOpen;
+                          setExpandedRows(expand);
+                        },
+                      }
                   }
                 />
                 <CellRenderer
@@ -278,7 +344,9 @@ function DataTable<T>({
                 />
               </Tr>
             ) : (
-              <Tr isExpanded={expandedRows[index - 1] ?? false}>
+              <Tr isExpanded={!!expandedRows[index - 1]}>
+                {/* two blanks: one for the selector column, one for the expand toggle */}
+                {canSelect && <Td />}
                 <Td />
                 <Td colSpan={columns.length}>
                   <ExpandableRowContent>
@@ -357,7 +425,7 @@ export type DataListProps<T> = Omit<
  * @param {DataListProps} props - The properties.
  * @param {string} props.ariaLabelKey - The aria label key i18n key to lookup the label
  * @param {string} props.searchPlaceholderKey - The i18n key to lookup the placeholder for the search box
- * @param {boolean} props.isPaginated - if true, the loader will be called with first, max and search and a pager will be added in the header
+ * @param {boolean} props.isPaginated - if true the the loader will be called with first, max and search and a pager will be added in the header
  * @param {(first?: number, max?: number, search?: string) => Promise<T[]>} props.loader - loader function that will fetch the data to display first, max and search are only applicable when isPaginated = true
  * @param {Field<T>} props.columns - definition of the columns
  * @param {Field<T>} props.detailColumns - definition of the columns expandable columns
@@ -436,7 +504,11 @@ export function KeycloakDataTable<T>({
             data: value,
             disableSelection: disabledRow,
             disableActions: disabledRow,
-            selected: !!selected.find((v) => get(v, "id") === get(value, "id")),
+            selected: !!selected.find((v) => {
+              const recordId = get(value, "id") ?? get(value, "draftRecordId"); // # TIDE IMPLEMENTATION #
+              const selectedId = get(v, "id") ?? get(v, "draftRecordId"); // # TIDE IMPLEMENTATION #
+              return recordId === selectedId;
+            }),
             isOpen: isDetailColumnsEnabled(value) ? false : undefined,
             cells: renderCell(columns, value),
           },
@@ -476,16 +548,16 @@ export function KeycloakDataTable<T>({
       search === "" || isPaginated
         ? undefined
         : convertToColumns(unPaginatedData || [])
-            .filter((row) =>
-              row.cells.some(
-                (cell) =>
-                  cell &&
-                  getNodeText(cell)
-                    .toLowerCase()
-                    .includes(search.toLowerCase()),
-              ),
-            )
-            .slice(first, first + max + 1),
+          .filter((row) =>
+            row.cells.some(
+              (cell) =>
+                cell &&
+                getNodeText(cell)
+                  .toLowerCase()
+                  .includes(search.toLowerCase()),
+            ),
+          )
+          .slice(first, first + max + 1),
     [search, first, max],
   );
 
@@ -621,12 +693,12 @@ export function KeycloakDataTable<T>({
               secondaryActions={
                 !isSearching
                   ? [
-                      {
-                        text: t("clearAllFilters"),
-                        onClick: () => setSearch(""),
-                        type: ButtonVariant.link,
-                      },
-                    ]
+                    {
+                      text: t("clearAllFilters"),
+                      onClick: () => setSearch(""),
+                      type: ButtonVariant.link,
+                    },
+                  ]
                   : []
               }
             />
