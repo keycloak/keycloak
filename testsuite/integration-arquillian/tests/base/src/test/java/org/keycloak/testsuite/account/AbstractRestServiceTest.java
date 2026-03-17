@@ -48,7 +48,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
-    public TokenUtil tokenUtil = new TokenUtil();
+    public TokenUtil tokenUtil = new TokenUtil("test-user@localhost", "password");
 
     @Rule
     public AssertEvents events = new AssertEvents(this);

@@ -1,0 +1,37 @@
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== Stricter access control for managing permission tickets
+
+In order to improve security, the access control for managing permission tickets has been made stricter where
+only users (or service accounts) granted with the `uma-protection` role can manage permission tickets for a given
+resource server. The only exception is the resource server itself, which can manage its permission tickets without the `uma-protection` role.
+
+// ------------------------ Notable changes ------------------------ //
+////
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+
+=== <TODO>
+////
+
+// ------------------------ Deprecated features ------------------------ //
+////
+== Deprecated features
+
+The following sections provide details on deprecated features.
+
+=== <TODO>
+////
+
+// ------------------------ Removed features ------------------------ //
+////
+== Removed features
+
+The following features have been removed from this release.
+
+=== <TODO>
+////

@@ -18,6 +18,7 @@ package org.keycloak.testsuite.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -69,11 +70,15 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.common.util.Encode.encodePathAsIs;
+import static org.keycloak.common.util.Encode.encodePathAsIs;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ResourcesRestServiceTest extends AbstractRestServiceTest {
+
+    @Rule
+    public TokenUtil tokenUtil = new TokenUtil("test-authz-user@localhost", "password");
 
     private AuthzClient authzClient;
     private List<String> userNames = new ArrayList<>(Arrays.asList("alice", "jdoe", "bob"));
@@ -86,13 +91,17 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         super.configureTestRealm(testRealm);
-        RealmRepresentation realmRepresentation = testRealm;
 
-        realmRepresentation.setUserManagedAccessAllowed(true);
+        testRealm.setUserManagedAccessAllowed(true);
 
         testRealm.getUsers().add(createUser("alice", "password"));
         testRealm.getUsers().add(createUser("jdoe", "password"));
         testRealm.getUsers().add(createUser("bob", "password"));
+        testRealm.getUsers().add(UserBuilder.create().username("test-authz-user@localhost").password("password")
+                .addRoles("uma_authorization", "uma_protection")
+                .role("my-resource-server", "uma_protection")
+                .role("account", AccountRoles.MANAGE_ACCOUNT)
+                .build());
 
         ClientRepresentation client = ClientBuilder.create()
                 .clientId("my-resource-server")
@@ -146,7 +155,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 ticket.setResource(resource.getId());
                 ticket.setScopeName(scope);
 
-                authzClient.protection("test-user@localhost", "password").permission().create(ticket);
+                authzClient.protection("test-authz-user@localhost", "password").permission().create(ticket);
             }
         }
     }
@@ -521,12 +530,12 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 PermissionTicketRepresentation ticket = new PermissionTicketRepresentation();
 
                 ticket.setGranted(false);
-                ticket.setOwner("test-user@localhost");
+                ticket.setOwner("test-authz-user@localhost");
                 ticket.setRequesterName(userName);
                 ticket.setResource(resource.getId());
                 ticket.setScopeName(scope);
 
-                authzClient.protection("test-user@localhost", "password").permission().create(ticket);
+                authzClient.protection("test-authz-user@localhost", "password").permission().create(ticket);
             }
         }
 
@@ -585,12 +594,12 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
                 PermissionTicketRepresentation ticket = new PermissionTicketRepresentation();
 
                 ticket.setGranted(false);
-                ticket.setOwner("test-user@localhost");
+                ticket.setOwner("test-authz-user@localhost");
                 ticket.setRequesterName(userName);
                 ticket.setResource(resource.getId());
                 ticket.setScopeName(scope);
 
-                authzClient.protection("test-user@localhost", "password").permission().create(ticket);
+                authzClient.protection("test-authz-user@localhost", "password").permission().create(ticket);
             }
         }
 

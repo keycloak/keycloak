@@ -213,6 +213,7 @@ public class AuthorizationTokenService {
 
             if (identity != null) {
                 event.user(identity.getId());
+                request.getKeycloakSession().getContext().setBearerToken(identity.getAccessToken());
             }
 
             ResourceServer resourceServer = getResourceServer(ticket, request);
