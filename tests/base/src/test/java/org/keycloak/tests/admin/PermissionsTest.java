@@ -65,6 +65,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -475,6 +478,19 @@ public class PermissionsTest extends AbstractPermissionsTest {
         invoke(realm -> realm.flows().getRequiredActions(), clients.get(AdminRoles.QUERY_USERS), true);
         invoke(realm -> clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).users().get(user.getId()).getConfiguredUserStorageCredentialTypes(),
                 clients.get(AdminRoles.VIEW_USERS), true);
+        for (String role : Stream.of(AdminRoles.ALL_REALM_ROLES)
+                .filter(Predicate.not(AdminRoles.VIEW_REALM::equals)
+                .and(Predicate.not(AdminRoles.MANAGE_REALM::equals)
+                .and(Predicate.not(AdminRoles.VIEW_USERS::equals)
+                .and(Predicate.not(AdminRoles.MANAGE_USERS::equals)
+                .and(Predicate.not(AdminRoles.QUERY_USERS::equals)))))).toList()) {
+            invoke(realm -> realm.users().userProfile().getConfiguration(), clients.get(role), false);
+            invoke(realm -> realm.users().userProfile().getMetadata(), clients.get(role), false);
+        }
+        for (String role : Stream.of(AdminRoles.VIEW_REALM, AdminRoles.MANAGE_REALM, AdminRoles.VIEW_USERS, AdminRoles.MANAGE_USERS, AdminRoles.QUERY_USERS).toList()) {
+            invoke(realm -> realm.users().userProfile().getConfiguration(), clients.get(role), true);
+            invoke(realm -> realm.users().userProfile().getMetadata(), clients.get(role), true);
+        }
     }
 
     @Test
