@@ -3,18 +3,16 @@ package org.keycloak.protocol.ssf.transmitter.delivery.push;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.KeycloakSession;
-
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.entity.StringEntity;
-
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.event.token.SecurityEventToken;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
+
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.entity.StringEntity;
+import org.jboss.logging.Logger;
 
 /**
  * Service for delivering events using the PUSH delivery method.

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 /**
  * Device Compliance Change signals that a device's compliance status has changed.
  */
-public class DeviceComplianceChange extends CaepEvent {
+public class CaepDeviceComplianceChange extends CaepEvent {
 
     /**
      * See: https://openid.github.io/sharedsignals/openid-caep-1_0.html#name-device-compliance-change
@@ -26,7 +26,7 @@ public class DeviceComplianceChange extends CaepEvent {
     @JsonProperty("current_status")
     protected ComplianceChange currentStatus;
 
-    public DeviceComplianceChange() {
+    public CaepDeviceComplianceChange() {
         super(TYPE);
     }
 

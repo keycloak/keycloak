@@ -8,11 +8,17 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.models.ClientModel;
+import org.keycloak.protocol.ssf.Ssf;
+import org.keycloak.protocol.ssf.stream.StreamStatus;
+import org.keycloak.protocol.ssf.support.SsfAuthUtil;
+import org.keycloak.protocol.ssf.support.SsfErrorRepresentation;
+import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
+import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.utils.KeycloakSessionUtil;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
-
-import org.keycloak.protocol.ssf.stream.StreamStatus;
-import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
 
 /**
  * Endpoint for managing SSF stream status.
@@ -38,8 +44,18 @@ public class StreamStatusResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getStreamStatus(@QueryParam("stream_id") String streamId) {
 
+        if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_READ)) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+
         if (streamId == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Stream ID is required").build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("stream_error", "Stream ID is required"))
+                    .build();
+        }
+
+        if (!isClientStream(streamId)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         try {
@@ -68,8 +84,18 @@ public class StreamStatusResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateStreamStatus(StreamStatus streamStatus) {
 
+        if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_MANAGE)) {
+            return Response.status(Response.Status.UNAUTHORIZED).build();
+        }
+
         if (streamStatus.getStreamId() == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Stream ID is required").build();
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("stream_error", "Stream ID is required"))
+                    .build();
+        }
+
+        if (!isClientStream(streamStatus.getStreamId())) {
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         try {
@@ -84,5 +110,15 @@ public class StreamStatusResource {
             log.error("Error updating stream status", e);
             return Response.serverError().build();
         }
+    }
+
+    protected boolean isClientStream(String streamId) {
+        ClientModel client = KeycloakSessionUtil.getKeycloakSession().getContext().getClient();
+        String clientStreamId = client.getAttribute(ClientStreamStore.SSF_STREAM_ID_KEY);
+        if (clientStreamId == null || !clientStreamId.equals(streamId)) {
+            log.debugf("Stream access denied. clientId=%s requestedStreamId=%s clientStreamId=%s", client.getClientId(), streamId, clientStreamId);
+            return false;
+        }
+        return true;
     }
 }

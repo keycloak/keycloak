@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * See: https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html#name-stream-updated-event
  */
-public class StreamUpdatedEvent extends StreamEvent {
+public class SsfStreamUpdatedEvent extends SsfStreamEvent {
 
     public static final String TYPE = "https://schemas.openid.net/secevent/ssf/event-type/stream-updated";
 
@@ -25,7 +25,7 @@ public class StreamUpdatedEvent extends StreamEvent {
     @JsonProperty("reason")
     protected String reason;
 
-    public StreamUpdatedEvent() {
+    public SsfStreamUpdatedEvent() {
         super(TYPE);
     }
 

@@ -11,14 +11,14 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
-import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.protocol.ssf.event.InitiatingEntity;
+import org.keycloak.protocol.ssf.event.caep.CaepCredentialChange;
+import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
+import org.keycloak.protocol.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.protocol.ssf.event.subjects.ComplexSubjectId;
 import org.keycloak.protocol.ssf.event.subjects.IssuerSubjectId;
 import org.keycloak.protocol.ssf.event.subjects.OpaqueSubjectId;
-import org.keycloak.protocol.ssf.event.InitiatingEntity;
-import org.keycloak.protocol.ssf.event.caep.CredentialChange;
-import org.keycloak.protocol.ssf.event.caep.SessionRevoked;
-import org.keycloak.protocol.ssf.event.stream.StreamVerificationEvent;
+import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 
 import org.jboss.logging.Logger;
@@ -65,9 +65,9 @@ public class SecurityEventTokenMapper {
 
             // Set events
             Map<String, Object> events = new HashMap<>();
-            StreamVerificationEvent verificationEvent = new StreamVerificationEvent();
+            SsfStreamVerificationEvent verificationEvent = new SsfStreamVerificationEvent();
             verificationEvent.setState(state);
-            events.put(StreamVerificationEvent.TYPE, verificationEvent);
+            events.put(SsfStreamVerificationEvent.TYPE, verificationEvent);
             verificationEventToken.setEvents(events);
 
             return verificationEventToken;
@@ -116,14 +116,14 @@ public class SecurityEventTokenMapper {
 
             // Set events
             Map<String, Object> events = new HashMap<>();
-            SessionRevoked sessionRevokedEvent = new SessionRevoked();
+            CaepSessionRevoked sessionRevokedEvent = new CaepSessionRevoked();
 
             if (reason != null) {
                 sessionRevokedEvent.setReasonAdmin(Map.of("en", reason));
             }
             sessionRevokedEvent.setEventTimestamp(Time.currentTime());
 
-            events.put(SessionRevoked.TYPE, sessionRevokedEvent);
+            events.put(CaepSessionRevoked.TYPE, sessionRevokedEvent);
             eventToken.setEvents(events);
 
             return eventToken;
@@ -155,13 +155,13 @@ public class SecurityEventTokenMapper {
 
             // Set events
             Map<String, Object> events = new HashMap<>();
-            CredentialChange credentialChangeEvent = new CredentialChange();
-            credentialChangeEvent.setChangeType(CredentialChange.ChangeType.UPDATE);
+            CaepCredentialChange credentialChangeEvent = new CaepCredentialChange();
+            credentialChangeEvent.setChangeType(CaepCredentialChange.ChangeType.UPDATE);
             credentialChangeEvent.setEventTimestamp(Time.currentTime());
             credentialChangeEvent.setCredentialType(caepCredentialType);
             credentialChangeEvent.setInitiatingEntity(InitiatingEntity.USER);
 
-            events.put(CredentialChange.TYPE, credentialChangeEvent);
+            events.put(CaepCredentialChange.TYPE, credentialChangeEvent);
             event.setEvents(events);
 
             return event;

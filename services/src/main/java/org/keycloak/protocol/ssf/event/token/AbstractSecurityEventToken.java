@@ -3,17 +3,14 @@ package org.keycloak.protocol.ssf.event.token;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-
 import org.keycloak.TokenCategory;
+import org.keycloak.json.StringOrArrayDeserializer;
+import org.keycloak.json.StringOrArraySerializer;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import org.keycloak.json.StringOrArrayDeserializer;
-import org.keycloak.json.StringOrArraySerializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AbstractSecurityEventToken implements SecurityEventToken {

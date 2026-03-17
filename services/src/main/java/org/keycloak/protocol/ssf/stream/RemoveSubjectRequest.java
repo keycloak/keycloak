@@ -1,8 +1,8 @@
 package org.keycloak.protocol.ssf.stream;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import org.keycloak.protocol.ssf.event.subjects.SubjectId;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class RemoveSubjectRequest {
         /**

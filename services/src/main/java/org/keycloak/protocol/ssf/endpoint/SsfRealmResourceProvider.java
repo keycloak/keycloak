@@ -2,6 +2,7 @@ package org.keycloak.protocol.ssf.endpoint;
 
 import jakarta.ws.rs.Path;
 
+import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.receiver.resources.SsfReceiversResource;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterResource;
 import org.keycloak.services.resource.RealmResourceProvider;
@@ -23,7 +24,7 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
      *
      * @return
      */
-    @Path("/receivers")
+    @Path(Ssf.SSF_RECEIVERS_PATH)
     public SsfReceiversResource receivers() {
         return new SsfReceiversResource();
     }
@@ -35,7 +36,7 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
      *
      * @return
      */
-    @Path("/transmitter")
+    @Path(Ssf.SSF_TRANSMITTER_PATH)
     public SsfTransmitterResource transmitter() {
         return new SsfTransmitterResource();
     }

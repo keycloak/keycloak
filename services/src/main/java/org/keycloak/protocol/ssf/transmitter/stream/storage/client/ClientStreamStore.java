@@ -2,18 +2,21 @@ package org.keycloak.protocol.ssf.transmitter.stream.storage.client;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-
-import org.jboss.logging.Logger;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.Ssf;
-import org.keycloak.protocol.ssf.stream.StreamStatusValue;
 import org.keycloak.protocol.ssf.stream.StreamStatus;
+import org.keycloak.protocol.ssf.stream.StreamStatusValue;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.util.JsonSerialization;
+
+import org.jboss.logging.Logger;
 
 public class ClientStreamStore implements SsfStreamStore {
 
@@ -104,7 +107,7 @@ public class ClientStreamStore implements SsfStreamStore {
     }
 
     @Override
-    public List<StreamConfig> getAllStreams() {
+    public List<StreamConfig> getAvailableStreams() {
         ClientModel client = session.getContext().getClient();
         StreamConfig streamConfig = extractStreamConfig(client);
 
@@ -117,6 +120,29 @@ public class ClientStreamStore implements SsfStreamStore {
         }
 
         return List.of(streamConfig);
+    }
+
+    @Override
+    public List<StreamConfig> findAllEnabledStreams() {
+        RealmModel realm = session.getContext().getRealm();
+        Map<String, String> attributes = Map.of(SSF_ENABLED_KEY, "true");
+        return session.clients()
+                .searchClientsByAttributes(realm, attributes, null, null)
+                .map(this::extractStreamConfig)
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    @Override
+    public StreamConfig findStreamById(String streamId) {
+        RealmModel realm = session.getContext().getRealm();
+        Map<String, String> attributes = Map.of(SSF_STREAM_ID_KEY, streamId);
+        return session.clients()
+                .searchClientsByAttributes(realm, attributes, 0, 1)
+                .map(this::extractStreamConfig)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     @Override

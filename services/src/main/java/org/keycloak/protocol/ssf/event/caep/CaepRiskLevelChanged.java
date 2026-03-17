@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * The Risk Level Change event is employed by the Transmitter to communicate any modifications in a subject's assessed risk level at the time indicated by the event_timestamp field in the Risk Level Change event. The Transmitter may generate this event to indicate:
  */
-public class RiskLevelChanged extends CaepEvent {
+public class CaepRiskLevelChanged extends CaepEvent {
 
     /**
      * See: https://openid.github.io/sharedsignals/openid-caep-1_0.html#section-3.8
@@ -38,7 +38,7 @@ public class RiskLevelChanged extends CaepEvent {
     @JsonProperty("previous_level")
     protected String previousLevel;
 
-    public RiskLevelChanged() {
+    public CaepRiskLevelChanged() {
         super(TYPE);
     }
 

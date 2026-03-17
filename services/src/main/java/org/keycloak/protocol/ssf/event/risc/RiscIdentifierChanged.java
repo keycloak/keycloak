@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * If an identifier used as a username or recovery option is changed, at a provider that is not authoritative over that identifier, then Recovery Information Changed SHOULD be used instead.
  */
-public class IdentifierChanged extends RiscEvent {
+public class RiscIdentifierChanged extends RiscEvent {
 
     /**
      * See: https://openid.net/specs/openid-risc-profile-specification-1_0.html#rfc.section.2.5
@@ -22,7 +22,7 @@ public class IdentifierChanged extends RiscEvent {
     @JsonProperty("new-value")
     private String newValue;
 
-    public IdentifierChanged() {
+    public RiscIdentifierChanged() {
         super(TYPE);
     }
 

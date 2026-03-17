@@ -4,6 +4,8 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ssf.transmitter.SsfScopes;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
@@ -36,7 +38,11 @@ public class SsfRealmResourceProviderFactory implements RealmResourceProviderFac
 
     @Override
     public void postInit(KeycloakSessionFactory keycloakSessionFactory) {
-        // NOOP
+        keycloakSessionFactory.register(event -> {
+            if (event instanceof RealmModel.RealmPostCreateEvent realmPostCreateEvent) {
+                SsfScopes.createDefaultClientScopes(realmPostCreateEvent.getCreatedRealm());
+            }
+        });
     }
 
     @Override

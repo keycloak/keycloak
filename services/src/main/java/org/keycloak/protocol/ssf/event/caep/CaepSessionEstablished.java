@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * </ul>
  * The event_timestamp in this event type specifies the time at which the session was established.
  */
-public class SessionEstablished extends CaepEvent {
+public class CaepSessionEstablished extends CaepEvent {
 
     /**
      * See: https://openid.github.io/sharedsignals/openid-caep-1_0.html#name-session-established
@@ -51,7 +51,7 @@ public class SessionEstablished extends CaepEvent {
     @JsonProperty("ext_id")
     protected String extId;
 
-    public SessionEstablished() {
+    public CaepSessionEstablished() {
         super(TYPE);
     }
 

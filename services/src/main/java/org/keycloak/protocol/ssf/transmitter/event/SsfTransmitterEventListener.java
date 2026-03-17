@@ -1,18 +1,14 @@
 package org.keycloak.protocol.ssf.transmitter.event;
 
-import org.jboss.logging.Logger;
-
-import org.keycloak.Config;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
-import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
+
+import org.jboss.logging.Logger;
 
 /**
  * Maps Keycloak user and admin events to SSF events for delivery.
@@ -107,38 +103,6 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     @Override
     public void close() {
         // No resources to close
-    }
-
-    public static class Factory implements EventListenerProviderFactory {
-
-        private static final String ID = "ssf-events";
-
-        @Override
-        public EventListenerProvider create(KeycloakSession session) {
-           // Create and return the event mapper
-            return new SsfTransmitterEventListener(session);
-        }
-
-
-        @Override
-        public void init(Config.Scope config) {
-            // No initialization needed
-        }
-
-        @Override
-        public void postInit(KeycloakSessionFactory factory) {
-            // NOOP
-        }
-
-        @Override
-        public void close() {
-            // No resources to close
-        }
-
-        @Override
-        public String getId() {
-            return ID;
-        }
     }
 
 }

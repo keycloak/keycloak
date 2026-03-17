@@ -14,8 +14,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.support.SsfAuthUtil;
@@ -23,9 +21,11 @@ import org.keycloak.protocol.ssf.support.SsfErrorRepresentation;
 import org.keycloak.protocol.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
+import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.KeycloakSessionUtil;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 /**
@@ -107,11 +107,15 @@ public class StreamManagementResource {
     }
 
     protected Response getStreams() {
-        List<StreamConfig> streams = streamService.getAllStreams();
+        List<StreamConfig> streams = streamService.getAvailableStreams();
         return Response.ok(streams).build();
     }
 
     protected Response getStreamById(String streamId) {
+        if (!isCurrentClientStream(streamId)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
         StreamConfig stream = streamService.getStream(streamId);
         if (stream != null) {
             return Response.ok(stream).build();
@@ -140,6 +144,10 @@ public class StreamManagementResource {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("stream_error", "Stream ID is required"))
                     .build();
+        }
+
+        if (!isCurrentClientStream(streamConfig.getStreamId())) {
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         try {
@@ -178,6 +186,10 @@ public class StreamManagementResource {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("stream_error", "Stream ID is required"))
                     .build();
+        }
+
+        if (!isCurrentClientStream(streamConfig.getStreamId())) {
+            return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         try {
@@ -222,6 +234,10 @@ public class StreamManagementResource {
                     .build();
         }
 
+        if (!isCurrentClientStream(streamId)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
         try {
             boolean deleted = streamService.deleteStream(streamId);
 
@@ -242,5 +258,22 @@ public class StreamManagementResource {
                     .entity(new SsfErrorRepresentation("stream_error", "Error deleting stream"))
                     .build();
         }
+    }
+
+    /**
+     * Determines if the given stream ID matches the currently authenticated client's stream ID.
+     *
+     * @param streamId The stream ID to be validated against the client's associated stream ID.
+     * @return {@code true} if the given stream ID matches the client's associated stream ID;
+     *         {@code false} otherwise.
+     */
+    protected boolean isCurrentClientStream(String streamId) {
+        ClientModel client = KeycloakSessionUtil.getKeycloakSession().getContext().getClient();
+        String clientStreamId = client.getAttribute(ClientStreamStore.SSF_STREAM_ID_KEY);
+        if (clientStreamId == null || !clientStreamId.equals(streamId)) {
+            log.debugf("Stream access denied. clientId=%s requestedStreamId=%s clientStreamId=%s", client.getClientId(), streamId, clientStreamId);
+            return false;
+        }
+        return true;
     }
 }

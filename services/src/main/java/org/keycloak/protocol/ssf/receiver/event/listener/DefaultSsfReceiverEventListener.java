@@ -10,12 +10,12 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
-import org.keycloak.protocol.ssf.receiver.event.processor.SsfEventContext;
+import org.keycloak.protocol.ssf.event.SsfEvent;
+import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.protocol.ssf.event.subjects.SubjectId;
 import org.keycloak.protocol.ssf.event.subjects.SubjectUserLookup;
-import org.keycloak.protocol.ssf.event.SsfEvent;
-import org.keycloak.protocol.ssf.event.caep.SessionRevoked;
+import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.protocol.ssf.receiver.event.processor.SsfEventContext;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
@@ -45,12 +45,12 @@ public class DefaultSsfReceiverEventListener implements SsfReceiverEventListener
 
     protected void handleSsfEvent(SsfEventContext eventContext, SsfEvent ssfEvent, SubjectId subjectId) {
 
-        if (ssfEvent instanceof SessionRevoked sessionRevoked) {
+        if (ssfEvent instanceof CaepSessionRevoked sessionRevoked) {
             handleSessionRevokedEvent(eventContext, subjectId, sessionRevoked);
         }
     }
 
-    protected void handleSessionRevokedEvent(SsfEventContext eventContext, SubjectId subjectId, SessionRevoked ssfEvent) {
+    protected void handleSessionRevokedEvent(SsfEventContext eventContext, SubjectId subjectId, CaepSessionRevoked ssfEvent) {
 
         RealmModel realm = eventContext.getRealm();
 

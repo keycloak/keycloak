@@ -5,11 +5,11 @@ import org.keycloak.protocol.ssf.transmitter.delivery.SecurityEventTokenDispatch
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataService;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamManagementResource;
-import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamStatusResource;
-import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamVerificationResource;
+import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationService;
+import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
 
 import org.jboss.logging.Logger;
 

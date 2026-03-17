@@ -10,8 +10,9 @@ import java.util.Set;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.ssf.event.caep.CredentialChange;
-import org.keycloak.protocol.ssf.event.caep.SessionRevoked;
+import org.keycloak.protocol.ssf.Ssf;
+import org.keycloak.protocol.ssf.event.caep.CaepCredentialChange;
+import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.protocol.ssf.support.SsfUtil;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 
@@ -56,20 +57,17 @@ public class SsfTransmitterMetadataService {
         metadata.setJwksUri(issuerUrl + "/protocol/openid-connect/certs");
         metadata.setDeliveryMethodSupported(Set.of( //
                 // PUSH
-                "urn:ietf:rfc:8935",
+                Ssf.DELIVERY_METHOD_PUSH_URI,
                 // RISC PUSH URL for apple business manager
-                "https://schemas.openid.net/secevent/risc/delivery-method/push"
+                Ssf.DELIVERY_METHOD_RISC_PUSH_URI
                 // POLL
                 // "urn:ietf:rfc:8936",
         ));
 
         // Set endpoints
-        String ssfBasePath = issuerUrl + "/ssf/tx";
-        metadata.setConfigurationEndpoint(ssfBasePath + "/streams");
-
-        metadata.setStatusEndpoint(ssfBasePath + "/streams/status");
-
-        metadata.setVerificationEndpoint(ssfBasePath + "/verify");
+        metadata.setConfigurationEndpoint(Ssf.streamsEndpoint(issuerUrl));
+        metadata.setStatusEndpoint(Ssf.streamStatusEndpoint(issuerUrl));
+        metadata.setVerificationEndpoint(Ssf.streamVerificationEndpoint(issuerUrl));
 
         // Set authorization schemes
         metadata.setAuthorizationSchemes(createAuthorizationSchemes());
@@ -104,6 +102,6 @@ public class SsfTransmitterMetadataService {
         ClientModel client = session.getContext().getClient();
 
         // TODO compute supported events for current realm
-        return Set.of(CredentialChange.TYPE, SessionRevoked.TYPE);
+        return Set.of(CaepCredentialChange.TYPE, CaepSessionRevoked.TYPE);
     }
 }

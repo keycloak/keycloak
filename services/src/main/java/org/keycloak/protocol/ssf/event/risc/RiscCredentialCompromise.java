@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * A Credential Compromise event signals that the identifier specified in the subject was found to be compromised.
  */
-public class CredentialCompromise extends RiscEvent {
+public class RiscCredentialCompromise extends RiscEvent {
 
     /**
      * See: https://openid.net/specs/openid-risc-profile-specification-1_0.html#rfc.section.2.7
@@ -18,7 +18,7 @@ public class CredentialCompromise extends RiscEvent {
     @JsonProperty("credential_type")
     private String credentialType;
 
-    public CredentialCompromise() {
+    public RiscCredentialCompromise() {
         super(TYPE);
     }
 

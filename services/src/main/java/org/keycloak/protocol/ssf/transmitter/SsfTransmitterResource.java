@@ -1,7 +1,6 @@
 package org.keycloak.protocol.ssf.transmitter;
 
 import jakarta.ws.rs.Path;
-
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 

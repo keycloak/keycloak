@@ -2,11 +2,11 @@ package org.keycloak.protocol.ssf.transmitter.stream;
 
 import java.util.Set;
 
+import org.keycloak.protocol.ssf.stream.StreamStatusValue;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
-import org.keycloak.protocol.ssf.stream.StreamStatusValue;
 
 /**
  * Represents a stream configuration in the SSF transmitter.

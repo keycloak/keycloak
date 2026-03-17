@@ -3,11 +3,8 @@ package org.keycloak.protocol.ssf.receiver.resources;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
-
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import org.jboss.logging.Logger;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -20,6 +17,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 
 /**
  * SsfReceiverAdminResource provides access to SSF Receiver operations.

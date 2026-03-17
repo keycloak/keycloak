@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 /**
  * The Credential Change event signals that a credential was created, changed, revoked or deleted.
  */
-public class CredentialChange extends CaepEvent {
+public class CaepCredentialChange extends CaepEvent {
 
     /**
      * See: https://openid.github.io/sharedsignals/openid-caep-1_0.html#name-credential-change
@@ -68,7 +68,7 @@ public class CredentialChange extends CaepEvent {
     @JsonProperty("fido2_aaguid")
     protected String fido2Aaguid;
 
-    public CredentialChange() {
+    public CaepCredentialChange() {
         super(TYPE);
     }
 

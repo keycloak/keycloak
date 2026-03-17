@@ -2,9 +2,6 @@ package org.keycloak.protocol.ssf.transmitter.delivery;
 
 import java.util.List;
 
-
-import org.jboss.logging.Logger;
-
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.event.token.SecurityEventToken;
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
@@ -14,6 +11,8 @@ import org.keycloak.protocol.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
+
+import org.jboss.logging.Logger;
 
 public class SecurityEventTokenDispatcher {
 
@@ -51,7 +50,7 @@ public class SecurityEventTokenDispatcher {
      */
     public void dispatchEvent(SsfSecurityEventToken eventToken) {
 
-        List<StreamConfig> streams = streamService.getAllStreams();
+        List<StreamConfig> streams = streamService.findAllEnabledStreams();
 
         if (streams.isEmpty()) {
             log.warnf("No streams found. Discarding event %s", eventToken.getJti());
