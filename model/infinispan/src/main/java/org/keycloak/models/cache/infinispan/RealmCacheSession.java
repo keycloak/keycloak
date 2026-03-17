@@ -500,7 +500,7 @@ public class RealmCacheSession implements CacheRealmProvider {
             String clientModelId = cached.getMasterAdminClient();
 
             if (!model.getName().equals(Config.getAdminRealm()) && clientModelId != null) {
-                checkForNewAdminRoleComposites(id, clientModelId, model);
+                checkForNewAdminRoleComposites(clientModelId);
             }
 
             cache.addRevisioned(cached, startupRevision);
@@ -527,7 +527,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     /**
      * The logic here is designed to avoid  additional database lookups and creation of new cache entries
      */
-    private void checkForNewAdminRoleComposites(String id, String clientModelId, RealmModel model) {
+    private void checkForNewAdminRoleComposites(String clientModelId) {
         String adminRoleId = cache.getAdminRoleId();
         if (adminRoleId == null) {
             RealmModel adminRealm = getRealmByName(Config.getAdminRealm());
@@ -558,6 +558,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         if (managedRole != null) {
             testAndClear.accept(managedRole.cached, managedRole::clearCompositeCache);
         }
+        // Double-check that the current entry in the cache is not different from the one that we're using
         CachedRole cachedRole = cache.get(adminRoleId, CachedRole.class);
         if (cachedRole != null && (managedRole == null || managedRole.cached != cachedRole)) {
             testAndClear.accept(cachedRole, cachedRole::clearCompositeCache);
