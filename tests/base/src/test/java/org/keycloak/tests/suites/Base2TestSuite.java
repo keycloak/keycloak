@@ -16,6 +16,7 @@ import org.junit.platform.suite.api.Suite;
         "org.keycloak.tests.keys",
         "org.keycloak.tests.model",
         "org.keycloak.tests.oauth",
+        "org.keycloak.tests.oid4vc",
         "org.keycloak.tests.tracing",
         "org.keycloak.tests.transactions",
         "org.keycloak.tests.welcomepage",
