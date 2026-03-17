@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.models.ModelException;
@@ -149,17 +150,13 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
 
     @Override
     public Schema get(String id) {
-        // TODO: Add `view-realm` role check for schema discovery ??
-        // Currently accessible to any authenticated user with valid bearer token
-        // Should be aligned with other discovery endpoints (ResourceTypes, ServiceProviderConfig)
+        session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
         return schemas.get(id);
     }
 
     @Override
     public Stream<Schema> getAll(SearchRequest searchRequest) {
-        // Per RFC 7644 Section 4, /Schemas is a discovery endpoint that SHALL return all schemas.
-        // Filtering, sorting, and pagination are not supported for discovery endpoints.
-        // The searchRequest parameter is ignored.
+        session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW);
         return schemas.values().stream();
     }
 

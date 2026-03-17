@@ -49,6 +49,12 @@ public class DefaultPermissions implements Permissions {
                     }
                     yield false;
                 }
+                case AdminPermissionsSchema.REALMS_RESOURCE_TYPE -> {
+                    if (AdminPermissionsSchema.VIEW.equals(scope)) {
+                        yield realmAuth.realm().canViewRealm();
+                    }
+                    yield false;
+                }
                 default -> false;
             };
         }

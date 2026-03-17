@@ -69,6 +69,8 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 public class AdminPermissionsSchema extends AuthorizationSchema {
 
+    public static final String REALMS_RESOURCE_TYPE = "Realms";
+
     public static final String CLIENTS_RESOURCE_TYPE = "Clients";
     public static final String GROUPS_RESOURCE_TYPE = "Groups";
     public static final String ROLES_RESOURCE_TYPE = "Roles";
