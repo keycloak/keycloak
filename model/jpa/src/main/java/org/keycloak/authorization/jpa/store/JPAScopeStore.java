@@ -93,7 +93,10 @@ public class JPAScopeStore implements ScopeStore {
         }
 
         ScopeEntity entity = entityManager.find(ScopeEntity.class, id);
-        if (entity == null) return null;
+
+        if (entity == null || !entity.getResourceServer().getId().equals(resourceServer.getId())) {
+            return null;
+        }
 
         return new ScopeAdapter(entity, entityManager, provider.getStoreFactory());
     }

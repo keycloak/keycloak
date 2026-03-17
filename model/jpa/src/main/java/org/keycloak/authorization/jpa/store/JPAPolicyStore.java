@@ -104,7 +104,7 @@ public class JPAPolicyStore implements PolicyStore {
 
         PolicyEntity policyEntity = entityManager.find(PolicyEntity.class, id);
 
-        if (policyEntity == null) {
+        if (policyEntity == null || (resourceServer != null && !policyEntity.getResourceServer().getId().equals(resourceServer.getId()))) {
             return null;
         }
 
