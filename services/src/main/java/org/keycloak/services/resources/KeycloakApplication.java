@@ -131,7 +131,7 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
         keycloakSessionFactory.publish(new PostMigrationEvent(keycloakSessionFactory));
 
         var duration = Duration.ofNanos(System.nanoTime() - startTime);
-        logger.infof("Bootstrap completed in %s seconds", duration.toSeconds());
+        logger.infof("Bootstrap completed in %f seconds", (double) duration.toMillis() / 1000);
     }
 
     protected int getTransactionTimeout(KSF sessionFactory) {
