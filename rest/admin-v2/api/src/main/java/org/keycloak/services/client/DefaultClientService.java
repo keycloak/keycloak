@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -116,19 +117,23 @@ public class DefaultClientService implements ClientService {
     }
 
     private enum CreateOrUpdateStrategy {
-        ONLY_CREATE,
-        PUT,
-        // PATCH is currently separated from PUT only due to validation running before full preparation/defaulting.
-        // Once we validate the fully prepared resource, PUT and PATCH should share the same validation logic.
-        PATCH
+        ONLY_CREATE(CreateClient.class),
+        PUT(PutClient.class),
+        PATCH(PatchClient.class);
+
+        private final Class<?> validationGroup;
+
+        CreateOrUpdateStrategy(Class<?> validationGroup) {
+            this.validationGroup = validationGroup;
+        }
+
+        public Class<?> getValidationGroup() {
+            return validationGroup;
+        }
     }
 
     private CreateOrUpdateResult createOrUpdate(RealmModel realm, String clientId, BaseClientRepresentation client, CreateOrUpdateStrategy strategy) throws ServiceException {
         validateUnknownFields(client);
-
-        if (strategy == CreateOrUpdateStrategy.PUT) {
-            validator.validate(client, PutClient.class);
-        }
 
         boolean created = false;
         ClientModel model;
@@ -139,11 +144,7 @@ public class DefaultClientService implements ClientService {
             if (strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
-
-            // Validate with default group for PUT only
-            if (!strategy.equals(CreateOrUpdateStrategy.PATCH)) {
-                validator.validate(client);
-            }
+            validator.validate(client, strategy.getValidationGroup(), Default.class);
 
             model = mapper.toModel(client, clientResource.viewClientModel());
             var rep = ModelToRepresentation.toRepresentation(model, session);
@@ -154,7 +155,7 @@ public class DefaultClientService implements ClientService {
             }
         } else {
             created = true;
-            validator.validate(client, CreateClient.class, Default.class);
+            validator.validate(client, strategy.getValidationGroup(), Default.class);
 
             // First, create a basic v1 representation to persist the client in the database.
             // We can't use mapper.toModel(client) directly for creation because the "detached model"
@@ -220,7 +221,7 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, JsonNode patch) throws ServiceException {
-        BaseClientRepresentation originalClient = getClient(realm, clientId)
+        Supplier<BaseClientRepresentation> getOriginalClient = () -> getClient(realm, clientId)
                 .orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
 
         BaseClientRepresentation updated;
@@ -231,27 +232,7 @@ public class DefaultClientService implements ClientService {
                         // based on the RFC 7396 JSON Merge Patch should replace the whole entity if the patch is not an object - we can't do it
                         throw new ServiceException("Cannot replace client resource with null", Response.Status.BAD_REQUEST);
                     }
-
-                    // Ensure protocol field is set in patch for polymorphic deserialization.
-                    // This is required as we need to know the specific Client representation type to properly deserialize
-                    // and validate the specific fields for that type.
-                    if (patch.isObject()) {
-                        if (!patch.has("protocol")) {
-                            ((com.fasterxml.jackson.databind.node.ObjectNode) patch).put("protocol", originalClient.getProtocol());
-                        }
-                        if (!patch.has("clientId")) {
-                            // Some validations and logic rely on clientId being present in the representation
-                            ((com.fasterxml.jackson.databind.node.ObjectNode) patch).put("clientId", originalClient.getClientId());
-                        }
-                    }
-                    final BaseClientRepresentation partialRep = MAPPER.treeToValue(patch, BaseClientRepresentation.class);
-                    // Validate the partial representation, i.e. only the fields included in the patch.
-                    // We don't want to validate the whole final representation (after applying the patch) as it may happen
-                    // it contains invalid fields (e.g. updated via a different API version where it was valid), and we
-                    // don't want to fail validation for unrelevant fields that are not even included in the patch.
-                    validator.validate(partialRep, Default.class, PatchClient.class);
-
-                    final ObjectReader objectReader = MAPPER.readerForUpdating(originalClient);
+                    final ObjectReader objectReader = MAPPER.readerForUpdating(getOriginalClient.get());
                     updated = objectReader.readValue(patch);
                 } catch (JsonProcessingException e) {
                     throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);

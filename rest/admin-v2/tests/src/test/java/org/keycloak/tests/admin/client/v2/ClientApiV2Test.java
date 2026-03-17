@@ -35,9 +35,11 @@ import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
@@ -90,24 +92,30 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @InjectRealm(config = NoAccessRealmConfig.class)
     ManagedRealm testRealm;
 
+    @InjectRealm(attachTo = "master", ref = "master")
+    ManagedRealm masterRealm;
+
     @InjectAdminClient(ref = "noAccessClient", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
     Keycloak noAccessAdminClient;
 
+    @InjectClient(realmRef = "master")
+    ManagedClient testClient;
+
     @Test
     public void getClient() throws Exception {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "/account");
+        HttpGet request = new HttpGet(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
-            assertEquals("account", client.getClientId());
+            assertEquals(testClient.getClientId(), client.getClientId());
             assertClientUuid(client);
         }
     }
 
     @Test
     public void jsonPatchClient() throws Exception {
-        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
+        HttpPatch request = new HttpPatch(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_PATCH_JSON);
         try (var response = client.execute(request)) {
@@ -118,7 +126,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void jsonMergePatchClient() throws Exception {
-        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
+        HttpPatch request = new HttpPatch(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
@@ -137,7 +145,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void jsonMergePatchClientInvalid() throws Exception {
-        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
+        HttpPatch request = new HttpPatch(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
@@ -166,7 +174,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void putFailsWithDifferentClientId() throws Exception {
-        HttpPut request = new HttpPut(getClientsApiUrl() + "/account");
+        HttpPut request = new HttpPut(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -448,7 +456,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void authenticationRequired() throws Exception {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "/account");
+        HttpGet request = new HttpGet(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request, noAccessAdminClient);
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
