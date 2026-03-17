@@ -76,11 +76,11 @@ public class PushDeliveryService {
 
                 if (!success) {
                     String responseString = response.asString();
-                    log.warnf("Failed to deliver event to %s. Got status=%s response='%s'",
+                    log.warnf("Failed to deliver event to url %s. Got status=%s response='%s'",
                             eventToken.getJti(), endpointUrl, response.getStatus(), responseString);
                 } else {
-                    log.debugf("Delivery of event %s successful. Got status=%s",
-                            eventToken.getJti(), response.getStatus());
+                    log.debugf("Delivery of event %s to url %s successful. Got status=%s",
+                            eventToken.getJti(), endpointUrl, response.getStatus());
                 }
 
                 return success;

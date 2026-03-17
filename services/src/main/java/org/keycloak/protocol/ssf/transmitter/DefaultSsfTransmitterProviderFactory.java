@@ -30,7 +30,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         var mapper = new SecurityEventTokenMapper(issuerUrl);
         var securityEventTokenEncoder = new SecurityEventTokenEncoder(session);
         var pushDeliveryService = new PushDeliveryService(session);
-        var dispatcher = new SecurityEventTokenDispatcher(streamService, securityEventTokenEncoder, pushDeliveryService);
+        var dispatcher = new SecurityEventTokenDispatcher(session, securityEventTokenEncoder, pushDeliveryService);
         var verificationService = new StreamVerificationService(streamStore, mapper, dispatcher);
 
         return new DefaultSsfTransmitterProvider(session, transmitterService, verificationService, mapper, dispatcher);

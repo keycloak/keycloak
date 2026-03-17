@@ -1,5 +1,9 @@
 package org.keycloak.protocol.ssf.transmitter.event;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.admin.AdminEvent;
@@ -8,13 +12,10 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
-
-import org.jboss.logging.Logger;
-
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
 
-import java.util.List;
+import org.jboss.logging.Logger;
 
 /**
  * Maps Keycloak user and admin events to SSF events for delivery.
@@ -32,41 +33,66 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     @Override
     public void onEvent(Event event) {
 
-        if (shouldIgnoreEvent(event)) {
+        if (shouldIgnoreEvent(event) || !isSupportedEvent(event, null)) {
             return;
         }
 
-        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
+        SsfTransmitterProvider transmitter = Ssf.transmitter();
         if (transmitter == null) {
             return;
         }
 
-        StreamService streamService = Ssf.transmitter().streamService();
-
-        List<StreamConfig> streams = streamService.findAllEnabledStreams();
-
-        if (streams.isEmpty()) {
-            log.warnf("No streams found. Discarding user event %s", event.getId());
+        var streamTokens = generateSecurityTokensForUserEvent(event, transmitter);
+        if (streamTokens == null || streamTokens.isEmpty()) {
             return;
         }
+        dispatchSecurityEventTokens(streamTokens, transmitter);
+    }
+
+    /**
+     * Null means does any stream support this event at all.
+     * @param event
+     * @param stream
+     * @return
+     */
+    public boolean isSupportedEvent(Event event, StreamConfig stream) {
+        // todo read supported events from stream config
+        return switch (event.getType()) {
+            case LOGOUT, UPDATE_CREDENTIAL -> true;
+            default -> false;
+        };
+    }
+
+    protected List<Map.Entry<SsfSecurityEventToken, StreamConfig>> generateSecurityTokensForUserEvent(Event event, SsfTransmitterProvider transmitter) {
+
+        StreamService streamService = transmitter.streamService();
+        List<StreamConfig> streams = streamService.findAllEnabledStreams();
+        if (streams.isEmpty()) {
+            log.warnf("No streams found. Discarding user event %s", event.getId());
+            return List.of();
+        }
+
+        var streamTokens = new ArrayList<Map.Entry<SsfSecurityEventToken, StreamConfig>>();
 
         for (StreamConfig stream : streams) {
-            SsfSecurityEventToken securityEventToken = convertUserEventToSecurityEventToken(event, transmitter, stream);
-            if (securityEventToken == null) {
-                return;
+
+            if (!isSupportedEvent(event, stream)) {
+                continue;
             }
 
-            try {
-                log.debugf("Generated SSF Security Event Token for User Event. jti=%s", securityEventToken.getJti());
-                dispatchSecurityEventToken(securityEventToken, transmitter, stream);
-            } catch (Exception e) {
-                log.warn("Failed to deliver SSF Security Event for User Event", e);
+            SsfSecurityEventToken securityEventToken = convertUserEventToSecurityEventToken(event, transmitter, stream);
+            if (securityEventToken == null) {
+                log.debugf("Could not generate SSF Security Event Token for User Event. id=%s", event.getId());
+                continue;
             }
+            log.debugf("Generated SSF Security Event Token for User Event. jti=%s", securityEventToken.getJti());
+            streamTokens.add(Map.entry(securityEventToken, stream));
         }
+        return streamTokens;
     }
 
     protected void dispatchSecurityEventToken(SsfSecurityEventToken securityEventToken, SsfTransmitterProvider transmitter, StreamConfig stream) {
-        transmitter.securityEventTokenDispatcher().dispatchEvent(securityEventToken);
+        transmitter.securityEventTokenDispatcher().dispatchEvent(securityEventToken, stream);
     }
 
     protected SsfSecurityEventToken convertUserEventToSecurityEventToken(Event event, SsfTransmitterProvider transmitter, StreamConfig stream) {
@@ -91,27 +117,39 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return;
         }
 
+        var streamTokens = generateSecurityEventTokensForAdminEvent(adminEvent, transmitter);
+        if (streamTokens == null || streamTokens.isEmpty()) {
+            return;
+        }
+        dispatchSecurityEventTokens(streamTokens, transmitter);
+    }
+
+    protected void dispatchSecurityEventTokens(List<Map.Entry<SsfSecurityEventToken, StreamConfig>> streamTokens, SsfTransmitterProvider transmitter) {
+        for (var streamToken : streamTokens) {
+            dispatchSecurityEventToken(streamToken.getKey(), transmitter, streamToken.getValue());
+        }
+    }
+
+    protected List<Map.Entry<SsfSecurityEventToken, StreamConfig>> generateSecurityEventTokensForAdminEvent(AdminEvent adminEvent, SsfTransmitterProvider transmitter) {
+
         StreamService streamService = transmitter.streamService();
         List<StreamConfig> streams = streamService.getAvailableStreams();
         if (streams.isEmpty()) {
             log.warnf("No streams found. Discarding admin event %s", adminEvent.getId());
-            return;
+            return List.of();
         }
 
+        var streamTokens = new ArrayList<Map.Entry<SsfSecurityEventToken, StreamConfig>>();
         for (StreamConfig stream : streams) {
-
             SsfSecurityEventToken securityEventToken = convertAdminEventToSecurityEventToken(adminEvent, transmitter, stream);
             if (securityEventToken == null) {
-                return;
+                log.debugf("Could not generate SSF Security Event Token for Admin Event. id=%s", adminEvent.getId());
+                continue;
             }
-
-            log.debugf("Generated SSF Security Event Token for Admin user Event. jti=%s", securityEventToken.getJti());
-            try {
-                dispatchSecurityEventToken(securityEventToken, transmitter, stream);
-            } catch (Exception e) {
-                log.warn("Failed to deliver SSF Security Event for Admin user Event", e);
-            }
+            log.debugf("Generated SSF Security Event Token for Admin Event. jti=%s", securityEventToken.getJti());
+            streamTokens.add(Map.entry(securityEventToken, stream));
         }
+        return streamTokens;
     }
 
     protected SsfSecurityEventToken convertAdminEventToSecurityEventToken(AdminEvent adminEvent, SsfTransmitterProvider transmitter, StreamConfig stream) {
