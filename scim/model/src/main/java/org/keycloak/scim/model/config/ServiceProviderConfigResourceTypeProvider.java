@@ -1,9 +1,14 @@
 package org.keycloak.scim.model.config;
 
 import java.util.List;
+import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
+import org.keycloak.scim.protocol.ForbiddenException;
+import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.config.ServiceProviderConfig;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.BulkSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.FilterSupport;
@@ -12,6 +17,12 @@ import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
 
 public class ServiceProviderConfigResourceTypeProvider implements SingletonResourceTypeProvider<ServiceProviderConfig> {
+
+    private final KeycloakSession session;
+
+    public ServiceProviderConfigResourceTypeProvider(KeycloakSession session) {
+        this.session = session;
+    }
 
     @Override
     public ServiceProviderConfig getSingleton() {
@@ -28,6 +39,14 @@ public class ServiceProviderConfigResourceTypeProvider implements SingletonResou
         config.setFilter(new FilterSupport());
 
         return config;
+    }
+
+    @Override
+    public Stream<ServiceProviderConfig> getAll(SearchRequest searchRequest) {
+        if (!session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
+            throw new ForbiddenException();
+        }
+        return Stream.of(getSingleton());
     }
 
     @Override

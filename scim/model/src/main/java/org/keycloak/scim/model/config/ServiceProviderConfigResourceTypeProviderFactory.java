@@ -7,11 +7,9 @@ import org.keycloak.scim.resource.spi.ScimResourceTypeProviderFactory;
 
 public class ServiceProviderConfigResourceTypeProviderFactory implements ScimResourceTypeProviderFactory<ServiceProviderConfigResourceTypeProvider> {
 
-    public static final ServiceProviderConfigResourceTypeProvider INSTANCE = new ServiceProviderConfigResourceTypeProvider();
-
     @Override
     public ServiceProviderConfigResourceTypeProvider create(KeycloakSession session) {
-        return INSTANCE;
+        return new ServiceProviderConfigResourceTypeProvider(session);
     }
 
     @Override
