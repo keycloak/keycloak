@@ -14,6 +14,7 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -303,6 +304,11 @@ public class RealmConfigBuilder {
 
     public RealmConfigBuilder identityProvider(IdentityProviderRepresentation identityProvider) {
         rep.addIdentityProvider(identityProvider);
+        return this;
+    }
+
+    public RealmConfigBuilder identityProviderMapper(IdentityProviderMapperRepresentation identityProviderMapper) {
+        rep.addIdentityProviderMapper(identityProviderMapper);
         return this;
     }
 

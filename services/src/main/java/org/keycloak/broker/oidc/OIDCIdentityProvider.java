@@ -272,7 +272,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 tokenResponse.setExpiresIn(exp - currentTime);
             }
 
-            return super.buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse);
+            return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -299,7 +299,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 AccessTokenResponse tokenResponse = new AccessTokenResponse();
                 tokenResponse.setExpiresIn(expiration > 0 ? expiration - currentTime : 0);
                 tokenResponse.setToken(accessToken);
-                return super.buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse);
+                return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
             }
 
             AccessTokenResponse newResponse = doTokenRefresh(event, refreshToken);
@@ -309,7 +309,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
             updateUserSessionFromRefresh(tokenUserSession, newResponse, currentTime);
 
-            return super.buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, newResponse);
+            return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, newResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

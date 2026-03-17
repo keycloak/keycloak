@@ -255,7 +255,12 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         UriInfo uriInfo = session.getContext().getUri();
         Response response;
         if (userSession != null) {
-            user = userSession.getUser();
+            // just use the session if the same provider was used to login or exchange
+            String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
+            brokerId = brokerId == null ? userSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
+            if (brokerId == null || !brokerId.equals(getConfig().getAlias())) {
+                return exchangeNotLinkedNoStore(uriInfo, null, userSession, user);
+            }
             response = exchangeSessionToken(uriInfo, null, null, userSession, user);
         } else {
             response = exchangeStoredToken(uriInfo, null, null, userSession, user);
@@ -356,14 +361,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 if (accessToken != null) {
                     AccessTokenResponse tokenResponse = new AccessTokenResponse();
                     tokenResponse.setToken(accessToken);
-                    tokenResponse.setIdToken(null);
-                    tokenResponse.setRefreshToken(null);
-                    tokenResponse.setRefreshExpiresIn(0);
-                    tokenResponse.setExpiresIn(0);
-                    tokenResponse.getOtherClaims().clear();
-                    tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
-                    event.success();
-                    return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+                    return buildTokenResponse(session.getContext().getUri(), event, null, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
                 }
             } else if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedType)) {
                 String idToken = tokenUserSession.getNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
@@ -411,7 +409,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         AccessTokenResponse tokenResponse = new AccessTokenResponse();
         tokenResponse.setToken(accessToken);
-        return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse);
+        return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
     }
 
     protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
@@ -427,26 +425,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
         AccessTokenResponse tokenResponse = new AccessTokenResponse();
         tokenResponse.setToken(accessToken);
-        return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse);
+        return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
     }
-
-    protected Response buildTokenResponse(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, AccessTokenResponse tokenResponse) {
-        tokenResponse.setIdToken(null);
-        tokenResponse.setRefreshToken(null);
-        tokenResponse.setRefreshExpiresIn(0);
-        tokenResponse.getOtherClaims().clear();
-
-        tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
-
-        if (authorizedClient != null) {
-            tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
-        }
-        if (event != null) {
-            event.success();
-        }
-        return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
-    }
-
 
     public BrokeredIdentityContext getFederatedIdentity(String response) {
         String accessToken = extractTokenFromResponse(response, getAccessTokenResponseParameter());
