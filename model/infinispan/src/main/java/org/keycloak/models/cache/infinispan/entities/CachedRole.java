@@ -38,12 +38,12 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
     final protected String name;
     final protected String realm;
     final protected String description;
-    final protected LazyLoader<RoleModel, Set<String>> composites;
+    protected volatile LazyLoader<RoleModel, Set<String>> composites;
     /**
      * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
      * items should be evicted.
      */
-    private Set<String> cachedComposites = new HashSet<>();
+    private volatile Set<String> cachedComposites = new HashSet<>();
     private final LazyLoader<RoleModel, MultivaluedHashMap<String, String>> attributes;
 
     public CachedRole(long revision, RoleModel model, RealmModel realm) {
@@ -51,14 +51,19 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
         description = model.getDescription();
         name = model.getName();
         this.realm = realm.getId();
-        composites = new DefaultLazyLoader<>(roleModel -> roleModel.getCompositesStream().map(RoleModel::getId).collect(Collectors.toSet()), HashSet::new);
+        initComposites();
         attributes = new DefaultLazyLoader<>(roleModel -> new MultivaluedHashMap<>(roleModel.getAttributes()), MultivaluedHashMap::new);
+    }
+
+    private void initComposites() {
+        composites = new DefaultLazyLoader<>(roleModel -> roleModel.getCompositesStream().map(RoleModel::getId).collect(Collectors.toSet()), HashSet::new);
     }
 
     public String getName() {
         return name;
     }
 
+    @Override
     public String getRealm() {
         return realm;
     }
@@ -86,5 +91,10 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
 
     public MultivaluedHashMap<String, String> getAttributes(KeycloakSession session, Supplier<RoleModel> roleModel) {
         return attributes.get(session, roleModel);
+    }
+
+    public void clearCompositeCache() {
+        this.cachedComposites = new HashSet<String>();
+        this.initComposites();
     }
 }

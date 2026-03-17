@@ -261,4 +261,9 @@ public class RoleAdapter implements RoleModel {
         return getId().hashCode();
     }
 
+    protected void clearCompositeCache() {
+        this.composites = null;
+        this.cached.clearCompositeCache();
+    }
+
 }
