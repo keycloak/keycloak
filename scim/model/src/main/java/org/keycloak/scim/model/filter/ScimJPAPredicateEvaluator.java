@@ -18,6 +18,7 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
 
     private final CriteriaBuilder cb;
     private final ScimJPAPredicateProvider predicateProvider;
+    private String parentPath;
 
     @SuppressWarnings("unchecked,rawtypes")
     public ScimJPAPredicateEvaluator(ScimResourceTypeProvider resourceTypeProvider, List schemas, CriteriaBuilder cb, Root<?> root) {
@@ -75,6 +76,9 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
 
     @Override
     public JPAFilterResult visitAtom(ScimFilterParser.AtomContext ctx) {
+        if (ctx.valuePath() != null) {
+            return visit(ctx.valuePath());
+        }
         if (ctx.attributeExpression() != null) {
             return visit(ctx.attributeExpression());
         }
@@ -82,19 +86,33 @@ public class ScimJPAPredicateEvaluator extends ScimFilterParserBaseVisitor<JPAFi
     }
 
     @Override
+    public JPAFilterResult visitValuePath(ScimFilterParser.ValuePathContext ctx) {
+        parentPath = ctx.ATTRPATH().getText();
+        try {
+            return visit(ctx.expression());
+        } finally {
+            parentPath = null;
+        }
+    }
+
+    @Override
     public JPAFilterResult visitPresentExpression(ScimFilterParser.PresentExpressionContext ctx) {
-        String scimAttrPath = ctx.ATTRPATH().getText();
+        String scimAttrPath = resolveAttrPath(ctx.ATTRPATH().getText());
         String operator = ctx.PR().getText().toLowerCase();
         return predicateProvider.createPredicate(scimAttrPath, operator, null);
     }
 
     @Override
     public JPAFilterResult visitComparisonExpression(ScimFilterParser.ComparisonExpressionContext ctx) {
-        String scimAttrPath = ctx.ATTRPATH().getText();
+        String scimAttrPath = resolveAttrPath(ctx.ATTRPATH().getText());
         String operator = ctx.compareOp().getText().toLowerCase();
         String value = extractValue(ctx.compValue());
 
         return predicateProvider.createPredicate(scimAttrPath, operator, value);
+    }
+
+    private String resolveAttrPath(String attrPath) {
+        return parentPath != null ? parentPath + "." + attrPath : attrPath;
     }
 
     private String extractValue(ScimFilterParser.CompValueContext ctx) {
