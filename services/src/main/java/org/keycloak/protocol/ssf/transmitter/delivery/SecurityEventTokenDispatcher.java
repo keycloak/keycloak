@@ -1,7 +1,7 @@
 package org.keycloak.protocol.ssf.transmitter.delivery;
 
-import java.util.List;
-
+import org.keycloak.executors.ExecutorsProvider;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.event.token.SecurityEventToken;
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
@@ -10,7 +10,6 @@ import org.keycloak.protocol.ssf.stream.StreamStatusValue;
 import org.keycloak.protocol.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
-import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
 
 import org.jboss.logging.Logger;
 
@@ -18,14 +17,14 @@ public class SecurityEventTokenDispatcher {
 
     protected static final Logger log = Logger.getLogger(SecurityEventTokenDispatcher.class);
 
-    private final StreamService streamService;
+    private final KeycloakSession session;
     private final SecurityEventTokenEncoder securityEventTokenEncoder;
     private final PushDeliveryService pushDeliveryService;
 
-    public SecurityEventTokenDispatcher(StreamService streamService,
+    public SecurityEventTokenDispatcher(KeycloakSession session,
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService) {
-        this.streamService = streamService;
+        this.session = session;
         this.securityEventTokenEncoder = securityEventTokenEncoder;
         this.pushDeliveryService = pushDeliveryService;
     }
@@ -41,29 +40,6 @@ public class SecurityEventTokenDispatcher {
             return eventToken.getEvents().keySet().iterator().next();
         }
         return null;
-    }
-
-    /**
-     * Delivers an event to all applicable streams.
-     *
-     * @param eventToken The event to deliver
-     */
-    public void dispatchEvent(SsfSecurityEventToken eventToken) {
-
-        List<StreamConfig> streams = streamService.findAllEnabledStreams();
-
-        if (streams.isEmpty()) {
-            log.warnf("No streams found. Discarding event %s", eventToken.getJti());
-            return;
-        }
-
-        try {
-            for (StreamConfig stream : streams) {
-                dispatchEvent(eventToken, stream);
-            }
-        } catch (Exception e) {
-            log.errorf(e, "Error delivering event %s", eventToken.getJti());
-        }
     }
 
     public void dispatchEvent(SsfSecurityEventToken eventToken, StreamConfig stream) {
@@ -98,7 +74,8 @@ public class SecurityEventTokenDispatcher {
                     SecurityEventToken narrowedEventToken = getNarrowedEventToken(eventToken, stream);
 
                     String encodedEvent = securityEventTokenEncoder.encode(narrowedEventToken);
-                    pushDeliveryService.deliverEvent(stream, narrowedEventToken, encodedEvent);
+
+                    deliverEvent(stream, narrowedEventToken, encodedEvent);
                 } catch (Exception e) {
                     log.errorf(e, "Error delivering event via PUSH to stream %s", stream.getStreamId());
                 }
@@ -107,6 +84,14 @@ public class SecurityEventTokenDispatcher {
                 log.warnf("Poll delivery not supported for %s", stream.getStreamId());
             }
         }
+    }
+
+    protected void deliverEvent(StreamConfig stream, SecurityEventToken narrowedEventToken, String encodedEvent) {
+
+        ExecutorsProvider executorsProvider = session.getProvider(ExecutorsProvider.class);
+        var executor = executorsProvider.getExecutor("ssf-push-event-dispatcher");
+        // FIXME use a virtual thread to deliver events via push
+        executor.execute(() -> pushDeliveryService.deliverEvent(stream, narrowedEventToken, encodedEvent));
     }
 
     protected SecurityEventToken getNarrowedEventToken(SsfSecurityEventToken eventToken, StreamConfig stream) {

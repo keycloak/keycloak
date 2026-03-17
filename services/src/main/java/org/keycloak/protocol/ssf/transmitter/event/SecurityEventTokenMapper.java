@@ -188,18 +188,7 @@ public class SecurityEventTokenMapper {
         return credentialType;
     }
 
-    public boolean isSupportedEvent(Event event, StreamConfig stream) {
-        return switch (event.getType()) {
-            case LOGOUT, UPDATE_CREDENTIAL -> true;
-            default -> false;
-        };
-    }
-
     public SsfSecurityEventToken toSecurityEvent(Event event, StreamConfig stream) {
-
-        if (!isSupportedEvent(event, stream)) {
-            return null;
-        }
 
         SsfSecurityEventToken securityEvent = switch (event.getType()) {
 

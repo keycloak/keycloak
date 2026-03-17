@@ -74,7 +74,8 @@ public class StreamService {
         Set<String> audience = streamConfig.getAudience() == null ? new HashSet<>() : new HashSet<>(streamConfig.getAudience());
 
         // TODO shall we really add the audience of the stream?
-        String streamAudience = transmitterService.getTransmitterMetadata().getIssuer() + "/ssf/receivers/" + receiverClientId + "/" + streamConfig.getStreamId();
+        // String streamAudience = transmitterService.getTransmitterMetadata().getIssuer() + "/ssf/receivers/" + receiverClientId + "/" + streamConfig.getStreamId();
+        String streamAudience = receiverClientId + "/" + streamConfig.getStreamId();
         audience.add(streamAudience);
         streamConfig.setAudience(audience);
 
