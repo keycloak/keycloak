@@ -1,11 +1,11 @@
 package org.keycloak.protocol.ssf.transmitter;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ssf.Ssf;
+
+import org.jboss.logging.Logger;
 
 /**
  * Manages SSF client scopes for realms.
