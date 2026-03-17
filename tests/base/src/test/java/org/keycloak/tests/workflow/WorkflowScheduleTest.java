@@ -20,11 +20,13 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 
 import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KeycloakIntegrationTest(config = WorkflowsBlockingServerConfig.class)
 public class WorkflowScheduleTest extends AbstractWorkflowTest {
@@ -56,6 +58,35 @@ public class WorkflowScheduleTest extends AbstractWorkflowTest {
                     assertThat(attributes, notNullValue());
                     assertThat(attributes.get("test"), containsInAnyOrder("test"));
                 });
+    }
+
+    @Test
+    public void testScheduleWithDisabledWorkflow() {
+        UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ADMIN_VIEW);
+        managedRealm.admin().users().userProfile().update(upConfig);
+        WorkflowRepresentation expectedWorkflow = WorkflowRepresentation.withName("myworkflow")
+                .withConfig("enabled", "false")
+                .schedule(WorkflowScheduleRepresentation.create().after("1s").batchSize(10).build())
+                .withSteps(
+                        WorkflowStepRepresentation.create().of(SetUserAttributeStepProviderFactory.ID)
+                                .withConfig("test", "test")
+                                .build()
+                ).build();
+
+        managedRealm.admin().workflows().create(expectedWorkflow).close();
+
+        // wait for 10 seconds to make sure the schedule task would have had time to run
+        // however, the workflow is disabled so no task should have been fired and the attribute should not be set - we expect a timeout exception here
+        assertThrows(ConditionTimeoutException.class, () -> Awaitility.await()
+                .timeout(Duration.ofSeconds(10))
+                .pollInterval(Duration.ofSeconds(1))
+                .untilAsserted(() -> {
+                    UserResource user = managedRealm.admin().users().get(userAlice.getId());
+                    Map<String, List<String>> attributes = user.getUnmanagedAttributes();
+                    assertThat(attributes, notNullValue());
+                    assertThat(attributes.get("test"), containsInAnyOrder("test"));
+                }));
     }
 
     private static class DefaultUserConfig implements UserConfig {
