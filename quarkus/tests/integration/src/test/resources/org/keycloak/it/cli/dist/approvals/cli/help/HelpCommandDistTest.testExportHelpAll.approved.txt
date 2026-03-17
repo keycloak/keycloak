@@ -565,6 +565,13 @@ OpenAPI configuration:
                        available at '/openapi/ui'. Default: false. Available only when OpenAPI
                        Endpoint is enabled.
 
+Server configuration:
+
+--server-async-bootstrap <enabled>
+                     If true, endpoints are opened while the bootstrap runs in the background. If
+                       false, endpoints are opened after bootstrap completes, ensuring the server
+                       is ready to handle requests. Default: true.
+
 Bootstrap Admin:
 
 --bootstrap-admin-client-id <client id>

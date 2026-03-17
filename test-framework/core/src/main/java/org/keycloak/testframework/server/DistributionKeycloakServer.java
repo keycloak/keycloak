@@ -97,6 +97,7 @@ public class DistributionKeycloakServer implements KeycloakServer {
             OutputHandler outputHandler = startKeycloak(args);
 
             waitForStart(outputHandler);
+            ReadinessProbe.waitUntilReady(this);
 
             if (!Environment.isWindows()) {
                 FileUtils.writeToFile(getPidFile(), ProcessUtils.getKeycloakPid(keycloakProcess));

@@ -26,7 +26,6 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.MultiSiteUtils;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.error.KcUnrecognizedPropertyExceptionHandler;
 import org.keycloak.services.error.KeycloakErrorHandler;
@@ -42,7 +41,7 @@ import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.util.ObjectMapperResolver;
 
-public class ResteasyKeycloakApplication extends KeycloakApplication {
+public class ResteasyKeycloakApplication extends KeycloakApplication<ResteasyKeycloakSessionFactory> {
 
     protected Set<Object> singletons = new HashSet<>();
     protected Set<Class<?>> classes = new HashSet<>();
@@ -91,10 +90,13 @@ public class ResteasyKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
-    protected KeycloakSessionFactory createSessionFactory() {
-        ResteasyKeycloakSessionFactory factory = new ResteasyKeycloakSessionFactory();
-        factory.init();
-        return factory;
+    protected ResteasyKeycloakSessionFactory createSessionFactory() {
+        return new ResteasyKeycloakSessionFactory();
+    }
+
+    @Override
+    protected void initKeycloakSessionFactory(ResteasyKeycloakSessionFactory resteasyKeycloakSessionFactory) {
+        resteasyKeycloakSessionFactory.init();
     }
 
     @Override
