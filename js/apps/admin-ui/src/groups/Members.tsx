@@ -201,15 +201,17 @@ export const Members = () => {
                   {t("addMember")}
                 </Button>
               </ToolbarItem>
-              <ToolbarItem>
-                <Checkbox
-                  data-testid="includeSubGroupsCheck"
-                  label={t("includeSubGroups")}
-                  id="kc-include-sub-groups"
-                  isChecked={includeSubGroup}
-                  onChange={() => setIncludeSubGroup(!includeSubGroup)}
-                />
-              </ToolbarItem>
+              {!groups.isOrgGroups() && (
+                <ToolbarItem>
+                  <Checkbox
+                    data-testid="includeSubGroupsCheck"
+                    label={t("includeSubGroups")}
+                    id="kc-include-sub-groups"
+                    isChecked={includeSubGroup}
+                    onChange={() => setIncludeSubGroup(!includeSubGroup)}
+                  />
+                </ToolbarItem>
+              )}
               <ToolbarItem>
                 <Dropdown
                   onOpenChange={(isOpen) => setIsKebabOpen(isOpen)}
@@ -332,12 +334,16 @@ export const Members = () => {
             instructions={isManager ? t("emptyInstructions") : undefined}
             primaryActionText={isManager ? t("addMember") : undefined}
             onPrimaryAction={() => setAddMembers(true)}
-            secondaryActions={[
-              {
-                text: t("includeSubGroups"),
-                onClick: () => setIncludeSubGroup(true),
-              },
-            ]}
+            secondaryActions={
+              !groups.isOrgGroups()
+                ? [
+                    {
+                      text: t("includeSubGroups"),
+                      onClick: () => setIncludeSubGroup(true),
+                    },
+                  ]
+                : []
+            }
           />
         }
       />
