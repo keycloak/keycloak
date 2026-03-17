@@ -38,7 +38,6 @@ import jakarta.ws.rs.core.UriInfo;
 import jakarta.xml.soap.SOAPException;
 import jakarta.xml.soap.SOAPMessage;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.provider.AbstractIdentityProvider;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
@@ -291,7 +290,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
         AccessTokenResponse tokenResponse = new AccessTokenResponse();
         tokenResponse.setToken(Base64.getUrlEncoder().withoutPadding().encodeToString(token.getBytes(GeneralConstants.SAML_CHARSET)));
         tokenResponse.setTokenType(TokenUtil.TOKEN_TYPE_BEARER);
-        return buildTokenResponse(session.getContext().getUri(), null, null, userSession, tokenResponse, OAuth2Constants.SAML2_TOKEN_TYPE);
+        return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
     @Override

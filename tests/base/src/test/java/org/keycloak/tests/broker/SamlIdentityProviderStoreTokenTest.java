@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
@@ -84,7 +83,6 @@ public class SamlIdentityProviderStoreTokenTest extends AbstractIdentityProvider
     @Override
     protected void checkSuccessfulTokenResponse(AccessTokenResponse externalTokens) {
         try {
-            Assertions.assertEquals(OAuth2Constants.SAML2_TOKEN_TYPE, externalTokens.getIssuedTokenType());
             Assertions.assertEquals(TokenUtil.TOKEN_TYPE_BEARER, externalTokens.getTokenType());
             Assertions.assertNotNull(externalTokens.getAccessToken());
             Document assertion = DocumentUtil.getDocument(

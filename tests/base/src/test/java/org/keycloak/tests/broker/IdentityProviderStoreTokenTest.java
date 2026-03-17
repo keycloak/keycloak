@@ -278,7 +278,7 @@ public class IdentityProviderStoreTokenTest extends AbstractIdentityProviderStor
             realm.identityProvider(IdentityProviderBuilder.create()
                     .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
                     .alias(IDP_ALIAS)
-                    .setAttribute("clientId", "test-app")
+                    .setAttribute("clientId", "test-app-external-realm")
                     .setAttribute("clientSecret", "test-secret")
                     .setAttribute(IdentityProviderModel.SYNC_MODE, "IMPORT")
                     .setAttribute(OAuth2IdentityProviderConfig.TOKEN_ENDPOINT_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/openid-connect/token")
