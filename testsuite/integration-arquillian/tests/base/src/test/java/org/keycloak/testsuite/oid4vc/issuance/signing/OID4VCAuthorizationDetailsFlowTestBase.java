@@ -130,8 +130,8 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         assertEquals(HttpStatus.SC_OK, credentialOfferURIResponse.getStatusCode());
         CredentialOfferURI credOfferUri = credentialOfferURIResponse.getCredentialOfferURI();
 
-        // Verify CREDENTIAL_OFFER_REQUEST event was fired
-        events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
+        // Verify VERIFIABLE_CREDENTIAL_CREATE_OFFER event was fired
+        events.expect(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER)
                 .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())

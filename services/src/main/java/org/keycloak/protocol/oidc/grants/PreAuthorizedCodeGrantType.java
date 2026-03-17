@@ -239,7 +239,7 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
 
     @Override
     public EventType getEventType() {
-        return EventType.CODE_TO_TOKEN;
+        return EventType.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT;
     }
 
     /**

@@ -142,7 +142,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
                 .userId(user.getId())
                 .clientId(client.getClientId())
                 .details(GRANT_TYPE, PRE_AUTH_GRANT_TYPE)
-                .type(EventType.CODE_TO_TOKEN);
+                .type(EventType.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT);
 
         // Credential request
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
