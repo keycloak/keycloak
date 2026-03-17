@@ -957,7 +957,9 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
     @Override
     public void preRemove(RealmModel realm, IdentityProviderModel provider) {
-        cache.addInvalidations(InIdentityProviderPredicate.create().provider(provider.getAlias()), invalidations);
+        // Invalidates all user-related cache entries for this realm, including federated identity
+        // lookups, and propagates the invalidation across the cluster.
+        addRealmInvalidation(realm.getId());
         getDelegate().preRemove(realm, provider);
     }
 
