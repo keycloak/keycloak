@@ -1204,6 +1204,9 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         for (String attrName : metadataAttributes) {
             AttributeMetadata attributeAdded = UserProfileUtil.createAttributeMetadata(attrName, metadata, metadataGroup, guiOrder++, getModel().getName());
+
+            attributeAdded.setDefault(true);
+
             if (attributeAdded == null) {
                 guiOrder--;
             } else {
