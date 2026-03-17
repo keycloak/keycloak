@@ -95,11 +95,7 @@ public class SecurityEventTokenDispatcher {
         switch (deliveryMethod) {
             case PUSH, RISC_PUSH -> {
                 try {
-                    SecurityEventToken narrowedEventToken = eventToken;
-
-                    if (stream.getProfile() == null || Ssf.PROFILE_SSE_CAEP.equals(stream.getProfile())) {
-                        narrowedEventToken = SseCaepEventConverter.convert(eventToken);
-                    }
+                    SecurityEventToken narrowedEventToken = getNarrowedEventToken(eventToken, stream);
 
                     String encodedEvent = securityEventTokenEncoder.encode(narrowedEventToken);
                     pushDeliveryService.deliverEvent(stream, narrowedEventToken, encodedEvent);
@@ -111,6 +107,15 @@ public class SecurityEventTokenDispatcher {
                 log.warnf("Poll delivery not supported for %s", stream.getStreamId());
             }
         }
+    }
+
+    protected SecurityEventToken getNarrowedEventToken(SsfSecurityEventToken eventToken, StreamConfig stream) {
+        SecurityEventToken narrowedEventToken = eventToken;
+
+        if (stream.getProfile() == null || Ssf.PROFILE_SSE_CAEP.equals(stream.getProfile())) {
+            narrowedEventToken = SseCaepEventConverter.convert(eventToken);
+        }
+        return narrowedEventToken;
     }
 
     protected boolean isStreamEnabled(StreamConfig stream) {

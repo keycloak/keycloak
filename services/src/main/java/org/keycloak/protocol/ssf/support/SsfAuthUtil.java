@@ -2,13 +2,20 @@ package org.keycloak.protocol.ssf.support;
 
 import java.util.List;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 public class SsfAuthUtil {
 
+    public static final String AUTH_KEY = "auth";
+
+    public static void setAuth(KeycloakSession session, AuthenticationManager.AuthResult auth) {
+        session.setAttribute(AUTH_KEY, auth);
+    }
+
     public static AuthenticationManager.AuthResult getAuthResult() {
-        return (AuthenticationManager.AuthResult)KeycloakSessionUtil.getKeycloakSession().getAttribute("auth");
+        return (AuthenticationManager.AuthResult)KeycloakSessionUtil.getKeycloakSession().getAttribute(AUTH_KEY);
     }
 
     public static boolean isAuthenticated() {

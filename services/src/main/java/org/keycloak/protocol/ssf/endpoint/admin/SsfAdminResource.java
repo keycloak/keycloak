@@ -4,6 +4,7 @@ import jakarta.ws.rs.Path;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.receiver.resources.SsfReceiverAdminResource;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
@@ -35,7 +36,7 @@ public class SsfAdminResource {
      * The endpoint is available via {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/receivers}
      * @return
      */
-    @Path("/receivers")
+    @Path(Ssf.SSF_RECEIVERS_PATH)
     public SsfReceiverAdminResource receiverManagementEndpoint() {
 
         checkReceiverAdminResourceAccess();

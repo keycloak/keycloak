@@ -194,9 +194,25 @@ public class ClientStreamStore implements SsfStreamStore {
         client.setAttribute(SSF_STREAM_ID_KEY, streamConfig.getStreamId());
         client.setAttribute(SSF_ENABLED_KEY, "true");
         client.setAttribute(SSF_PROFILE_KEY, streamConfig.getProfile());
-        client.setAttribute(SSF_VERIFICATION_TRIGGER_KEY, streamConfig.getVerificationTrigger().name());
-        client.setAttribute(SSF_VERIFICATION_DELAY_MILLIS_KEY, streamConfig.getVerificationDelayMillis().toString());
-        client.setAttribute(SSF_STATUS_KEY, streamConfig.getStatus().name());
+
+        StreamConfig.VerificationTrigger verificationTrigger = streamConfig.getVerificationTrigger();
+        if (verificationTrigger == null) {
+            verificationTrigger = StreamConfig.VerificationTrigger.RECEIVER_INITIATED;
+        }
+        client.setAttribute(SSF_VERIFICATION_TRIGGER_KEY, verificationTrigger.name());
+
+        if (StreamConfig.VerificationTrigger.TRANSMITTER_INITIATED.equals(verificationTrigger)) {
+            Integer verificationDelayMillis = streamConfig.getVerificationDelayMillis();
+            if (verificationDelayMillis != null) {
+                client.setAttribute(SSF_VERIFICATION_DELAY_MILLIS_KEY, verificationDelayMillis.toString());
+            }
+        }
+
+        StreamStatusValue status = streamConfig.getStatus();
+        if (status == null) {
+            status = StreamStatusValue.enabled;
+        }
+        client.setAttribute(SSF_STATUS_KEY, status.name());
         client.setAttribute(SSF_STATUS_REASON_KEY, streamConfig.getStatusReason());
         client.setAttribute(SSF_STREAM_CONFIG_KEY, JsonSerialization.valueAsString(streamConfig));
     }

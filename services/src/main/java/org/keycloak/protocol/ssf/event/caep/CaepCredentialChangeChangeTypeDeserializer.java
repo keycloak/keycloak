@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
  * The official change types are create, revoke, update, deleted, but some legacy implementations use created etc.
  * See: https://openid.net/specs/openid-caep-specification-1_0.html#rfc.section.3.3.1
  */
-public class ChangeTypeDeserializer extends JsonDeserializer<CaepCredentialChange.ChangeType> {
+public class CaepCredentialChangeChangeTypeDeserializer extends JsonDeserializer<CaepCredentialChange.ChangeType> {
 
     private static final Map<String, CaepCredentialChange.ChangeType> CHANGE_TYPE_MAP = new HashMap<>();
 

@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Event;
@@ -48,12 +49,7 @@ public class SecurityEventTokenMapper {
      */
     public SsfSecurityEventToken generateVerificationEvent(StreamConfig stream, String state) {
         try {
-            SsfSecurityEventToken verificationEventToken = newSecurityEventToken();
-
-            // Set the SET audience to the stream's audience
-            if (stream.getDelivery() != null && stream.getDelivery().getEndpointUrl() != null) {
-                verificationEventToken.setAud(stream.getAudience().toArray(new String[0]));
-            }
+            SsfSecurityEventToken verificationEventToken = newSecurityEventToken(stream);
 
             // Set transaction ID
             verificationEventToken.setTxn(UUID.randomUUID().toString());
@@ -77,12 +73,18 @@ public class SecurityEventTokenMapper {
         }
     }
 
-    private SsfSecurityEventToken newSecurityEventToken() {
+    protected SsfSecurityEventToken newSecurityEventToken(StreamConfig stream) {
         SsfSecurityEventToken securityEventToken = new SsfSecurityEventToken();
 
-        securityEventToken.setJti(UUID.randomUUID().toString());
+        securityEventToken.setJti(SecretGenerator.getInstance().generateSecureID());
         securityEventToken.setIss(issuer);
         securityEventToken.setIat(Time.currentTime());
+
+        // Set the SET audience to the stream's audience
+        if (stream.getDelivery() != null && stream.getDelivery().getEndpointUrl() != null) {
+            securityEventToken.setAud(stream.getAudience().toArray(new String[0]));
+        }
+
         return securityEventToken;
     }
 
@@ -93,16 +95,17 @@ public class SecurityEventTokenMapper {
      * @param event
      * @param sessionId The ID of the revoked session
      * @param userId    The ID of the user
+     * @param stream
      * @param reason    The reason for the revocation
      * @return The session revoked event as a SecurityEventToken
      */
-    public SsfSecurityEventToken generateSessionRevokedEvent(Event userEvent, String reason) {
+    public SsfSecurityEventToken generateSessionRevokedEvent(Event userEvent, StreamConfig stream, String reason) {
         try {
 
             String sessionId = userEvent.getSessionId();
             String userId = userEvent.getUserId();
 
-            SsfSecurityEventToken eventToken = newSecurityEventToken();
+            SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
             eventToken.setTxn(UUID.randomUUID().toString());
 
             // Set subject ID (complex subject with user and session)
@@ -143,15 +146,16 @@ public class SecurityEventTokenMapper {
      *
      * @param userId         The ID of the user
      * @param credentialType The type of credential that changed
+     * @param stream
      * @return The credential change event as a SecurityEventToken
      */
-    public SsfSecurityEventToken generateCredentialChangeEvent(Event userEvent) {
+    public SsfSecurityEventToken generateCredentialChangeEvent(Event userEvent, StreamConfig stream) {
         try {
 
             String userId = userEvent.getUserId();
             String credentialType = userEvent.getDetails().get("credential_type");
 
-            SsfSecurityEventToken event = newSecurityEventToken();
+            SsfSecurityEventToken event = newSecurityEventToken(stream);
             event.setTxn(UUID.randomUUID().toString());
 
             // Set subject ID
@@ -184,16 +188,16 @@ public class SecurityEventTokenMapper {
         return credentialType;
     }
 
-    public boolean isSupportedEvent(Event event) {
+    public boolean isSupportedEvent(Event event, StreamConfig stream) {
         return switch (event.getType()) {
             case LOGOUT, UPDATE_CREDENTIAL -> true;
             default -> false;
         };
     }
 
-    public SsfSecurityEventToken toSecurityEvent(Event event) {
+    public SsfSecurityEventToken toSecurityEvent(Event event, StreamConfig stream) {
 
-        if (!isSupportedEvent(event)) {
+        if (!isSupportedEvent(event, stream)) {
             return null;
         }
 
@@ -202,31 +206,31 @@ public class SecurityEventTokenMapper {
             case LOGOUT -> {
 
                 // ignore expired session cleanup, we only want to propagate real logouts!
-                if (shouldIgnoreLogout(event)) {
+                if (shouldIgnoreLogout(event, stream)) {
                     yield null;
                 }
 
-                yield generateSessionRevokedEvent(event, "User logout");
+                yield generateSessionRevokedEvent(event, stream, "User logout");
             }
 
             case UPDATE_CREDENTIAL -> {
 
                 // ignore credential changes for credentials that are not used for authentication
-                if (shouldIgnoreCredentialChange(event)) {
+                if (shouldIgnoreCredentialChange(event, stream)) {
                     yield null;
                 }
 
-                yield generateCredentialChangeEvent(event);
+                yield generateCredentialChangeEvent(event, stream);
             }
             // Add more event mappings here as needed
 
             default -> {
 
-                if (shouldIgnoreEvent(event)) {
+                if (shouldIgnoreEvent(event, stream)) {
                     yield null;
                 }
 
-                yield generateSecurityEventFromEvent(event);
+                yield generateSecurityEventFromEvent(event, stream);
             }
         };
         // Map Keycloak events to SSF events
@@ -234,24 +238,24 @@ public class SecurityEventTokenMapper {
         return securityEvent;
     }
 
-    protected boolean shouldIgnoreEvent(Event event) {
+    protected boolean shouldIgnoreEvent(Event event, StreamConfig stream) {
         return false;
     }
 
-    protected boolean shouldIgnoreCredentialChange(Event event) {
+    protected boolean shouldIgnoreCredentialChange(Event event, StreamConfig stream) {
         return false;
     }
 
-    protected boolean shouldIgnoreLogout(Event event) {
+    protected boolean shouldIgnoreLogout(Event event, StreamConfig stream) {
         String reason = event.getDetails().get(Details.REASON);
         return Details.USER_SESSION_EXPIRED_REASON.equals(reason) || Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(reason);
     }
 
-    protected static SsfSecurityEventToken generateSecurityEventFromEvent(Event event) {
+    protected static SsfSecurityEventToken generateSecurityEventFromEvent(Event event, StreamConfig stream) {
         return null;
     }
 
-    public SsfSecurityEventToken toSecurityEvent(AdminEvent adminEvent) {
+    public SsfSecurityEventToken toSecurityEvent(AdminEvent adminEvent, StreamConfig stream) {
 
         String path = adminEvent.getResourcePath();
         Matcher matcher = USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN.matcher(path);
@@ -262,13 +266,13 @@ public class SecurityEventTokenMapper {
                 return null;
             }
 
-            return generateLogoutEventForAdminLogoutAllUserSessions(userId, adminEvent);
+            return generateLogoutEventForAdminLogoutAllUserSessions(userId, adminEvent, stream);
         }
 
         return null;
     }
 
-    protected SsfSecurityEventToken generateLogoutEventForAdminLogoutAllUserSessions(String userId, AdminEvent adminEvent) {
+    protected SsfSecurityEventToken generateLogoutEventForAdminLogoutAllUserSessions(String userId, AdminEvent adminEvent, StreamConfig stream) {
 
         Event event = new Event();
         event.setType(EventType.LOGOUT);
@@ -278,6 +282,6 @@ public class SecurityEventTokenMapper {
         event.getDetails().put("admin", "true");
         event.getDetails().put(Details.REASON, "logout_all_user_sessions");
 
-        return toSecurityEvent(event);
+        return toSecurityEvent(event, stream);
     }
 }

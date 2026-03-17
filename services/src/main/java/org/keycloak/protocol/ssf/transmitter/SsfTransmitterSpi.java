@@ -7,7 +7,7 @@ public class SsfTransmitterSpi implements Spi {
 
     @Override
     public String getName() {
-        return "ssf-tx";
+        return "ssf-transmitter";
     }
 
     @Override
