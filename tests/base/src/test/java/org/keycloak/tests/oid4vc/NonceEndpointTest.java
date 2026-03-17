@@ -16,10 +16,8 @@ import org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandler;
 import org.keycloak.protocol.oid4vc.issuance.keybinding.JwtCNonceHandler;
 import org.keycloak.protocol.oid4vc.model.NonceResponse;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcNonceResponse;
@@ -29,9 +27,6 @@ import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
 public class NonceEndpointTest extends OID4VCIssuerTestBase {
-
-    @InjectEvents
-    private Events events;
 
     @InjectRunOnServer
     private RunOnServerClient runOnServer;

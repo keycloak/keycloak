@@ -13,7 +13,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -35,8 +34,8 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.keys.KeyProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
@@ -91,7 +90,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT
 
 /**
  * Abstract base class for OID4VCI Testing
- *
+ * <p>
  * [TODO] Can the server runtime mode be configured by the testcase?
  * Server-side debugging: KC_TEST_SERVER=embedded
  */
@@ -128,11 +127,11 @@ public abstract class OID4VCIssuerTestBase {
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
 
+    @InjectEvents
+    protected Events events;
+
     @InjectWebDriver
     ManagedWebDriver driver;
-
-    @InjectEvents
-    Events events;
 
     ClientRepresentation client;
 
