@@ -90,13 +90,18 @@ public class SecurityEventTokenMapper {
     /**
      * Generates a session revoked event.
      *
+     * @param event
      * @param sessionId The ID of the revoked session
      * @param userId    The ID of the user
      * @param reason    The reason for the revocation
      * @return The session revoked event as a SecurityEventToken
      */
-    public SsfSecurityEventToken generateSessionRevokedEvent(String sessionId, String userId, String reason) {
+    public SsfSecurityEventToken generateSessionRevokedEvent(Event userEvent, String reason) {
         try {
+
+            String sessionId = userEvent.getSessionId();
+            String userId = userEvent.getUserId();
+
             SsfSecurityEventToken eventToken = newSecurityEventToken();
             eventToken.setTxn(UUID.randomUUID().toString());
 
@@ -140,8 +145,12 @@ public class SecurityEventTokenMapper {
      * @param credentialType The type of credential that changed
      * @return The credential change event as a SecurityEventToken
      */
-    public SsfSecurityEventToken generateCredentialChangeEvent(String userId, String credentialType) {
+    public SsfSecurityEventToken generateCredentialChangeEvent(Event userEvent) {
         try {
+
+            String userId = userEvent.getUserId();
+            String credentialType = userEvent.getDetails().get("credential_type");
+
             SsfSecurityEventToken event = newSecurityEventToken();
             event.setTxn(UUID.randomUUID().toString());
 
@@ -177,7 +186,7 @@ public class SecurityEventTokenMapper {
 
     public boolean isSupportedEvent(Event event) {
         return switch (event.getType()) {
-            case LOGOUT, UPDATE_CREDENTIAL, UPDATE_PASSWORD -> true;
+            case LOGOUT, UPDATE_CREDENTIAL -> true;
             default -> false;
         };
     }
@@ -189,33 +198,57 @@ public class SecurityEventTokenMapper {
         }
 
         SsfSecurityEventToken securityEvent = switch (event.getType()) {
+
             case LOGOUT -> {
 
-                String reason = event.getDetails().get(Details.REASON);
                 // ignore expired session cleanup, we only want to propagate real logouts!
-                if (Details.USER_SESSION_EXPIRED_REASON.equals(reason) || Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(reason)) {
+                if (shouldIgnoreLogout(event)) {
                     yield null;
                 }
 
-                yield generateSessionRevokedEvent(
-                    event.getSessionId(),
-                    event.getUserId(),
-                    "User logout"
-            );
+                yield generateSessionRevokedEvent(event, "User logout");
             }
-            case UPDATE_CREDENTIAL -> generateCredentialChangeEvent(
-                    event.getUserId(),
-                    event.getDetails().get("credential_type")
-            );
-            // Add more event mappings as needed
 
-            default ->
-                // Ignore other events
-                    null;
+            case UPDATE_CREDENTIAL -> {
+
+                // ignore credential changes for credentials that are not used for authentication
+                if (shouldIgnoreCredentialChange(event)) {
+                    yield null;
+                }
+
+                yield generateCredentialChangeEvent(event);
+            }
+            // Add more event mappings here as needed
+
+            default -> {
+
+                if (shouldIgnoreEvent(event)) {
+                    yield null;
+                }
+
+                yield generateSecurityEventFromEvent(event);
+            }
         };
         // Map Keycloak events to SSF events
 
         return securityEvent;
+    }
+
+    protected boolean shouldIgnoreEvent(Event event) {
+        return false;
+    }
+
+    protected boolean shouldIgnoreCredentialChange(Event event) {
+        return false;
+    }
+
+    protected boolean shouldIgnoreLogout(Event event) {
+        String reason = event.getDetails().get(Details.REASON);
+        return Details.USER_SESSION_EXPIRED_REASON.equals(reason) || Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(reason);
+    }
+
+    protected static SsfSecurityEventToken generateSecurityEventFromEvent(Event event) {
+        return null;
     }
 
     public SsfSecurityEventToken toSecurityEvent(AdminEvent adminEvent) {
@@ -223,22 +256,28 @@ public class SecurityEventTokenMapper {
         String path = adminEvent.getResourcePath();
         Matcher matcher = USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN.matcher(path);
         if (matcher.matches()) {
+
             String userId = matcher.group(1);
             if (userId == null) {
                 return null;
             }
 
-            Event event = new Event();
-            event.setType(EventType.LOGOUT);
-            event.setUserId(userId);
-            event.setSessionId("ALL"); // all sessions
-            event.setDetails(new HashMap<>());
-            event.getDetails().put("admin", "true");
-            event.getDetails().put(Details.REASON, "logout_all_user_sessions");
-
-            return toSecurityEvent(event);
+            return generateLogoutEventForAdminLogoutAllUserSessions(userId, adminEvent);
         }
 
         return null;
+    }
+
+    protected SsfSecurityEventToken generateLogoutEventForAdminLogoutAllUserSessions(String userId, AdminEvent adminEvent) {
+
+        Event event = new Event();
+        event.setType(EventType.LOGOUT);
+        event.setUserId(userId);
+        event.setSessionId("ALL"); // all sessions
+        event.setDetails(new HashMap<>());
+        event.getDetails().put("admin", "true");
+        event.getDetails().put(Details.REASON, "logout_all_user_sessions");
+
+        return toSecurityEvent(event);
     }
 }
