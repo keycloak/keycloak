@@ -141,7 +141,7 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
             realmCache.getCache().addRevisioned(cached, realmCache.getStartupRevision());
         }
 
-        return cached.getOrgIds().stream().map(this::getById).findAny().orElse(null);
+        return cached.getOrgIds().stream().map(this::getById).filter(Objects::nonNull).findAny().orElse(null);
     }
 
     @Override
@@ -469,7 +469,10 @@ public class InfinispanOrganizationProvider implements OrganizationProvider {
     }
 
     private String cacheKeyByDomain(String domainName) {
-        return getRealm().getId() + ".org.domain.name." + domainName;
+        if (domainName == null) {
+            throw new IllegalArgumentException("domainName must not be null");
+        }
+        return getRealm().getId() + ".org.domain.name." + domainName.toLowerCase();
     }
 
     private String cacheKeyByMember(UserModel user) {

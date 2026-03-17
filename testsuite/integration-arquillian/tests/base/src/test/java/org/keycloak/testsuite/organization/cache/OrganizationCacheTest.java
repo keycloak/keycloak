@@ -299,7 +299,7 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             final String alias = "org-idp-" + i;
             idpRep.setAlias(alias);
             testRealm().identityProviders().create(idpRep).close();
-            getCleanup().addCleanup(testRealm().identityProviders().get("alias")::remove);
+            getCleanup().addCleanup(testRealm().identityProviders().get(alias)::remove);
         }
 
         String orgaId = testRealm().organizations().list(-1, -1).get(0).getId();
@@ -369,13 +369,14 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
     public void testCacheIDPForLogin() {
         // create 20 providers, and associate 10 of them with an organization.
         for (int i = 0; i < 20; i++) {
+            final String alias = "idp-alias-" + i;
             IdentityProviderRepresentation idpRep = new IdentityProviderRepresentation();
-            idpRep.setAlias("idp-alias-" + i);
+            idpRep.setAlias(alias);
             idpRep.setEnabled((i % 2) == 0); // half of the IDPs will be disabled and won't qualify for login.
             idpRep.setDisplayName("Broker " + i);
             idpRep.setProviderId("keycloak-oidc");
             testRealm().identityProviders().create(idpRep).close();
-            getCleanup().addCleanup(testRealm().identityProviders().get("alias")::remove);
+            getCleanup().addCleanup(testRealm().identityProviders().get(alias)::remove);
         }
 
         String orgaId = testRealm().organizations().list(-1, -1).get(0).getId();
@@ -527,6 +528,52 @@ public class OrganizationCacheTest extends AbstractOrganizationTest {
             assertNotNull(identityProviderListQuery);
             assertEquals(11, identityProviderListQuery.getIDPs(orgaId).size());
 
+        });
+    }
+
+    @Test
+    public void testGetByDomainCaseInsensitiveAndStaleCacheHandling() {
+        final String domainLower = "case.org";
+        final String domainMixed = "CaSe.Org";
+
+        // 1. Create org with lowercase domain
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.create(null, "case-org", "case-org");
+            org.setDomains(Set.of(new OrganizationDomainModel(domainLower)));
+        });
+
+        // 2. Look up by mixed-case domain (simulates login with user@CaSe.Org) to populate the cache
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.getByDomainName(domainMixed);
+            assertNotNull("Mixed-case domain lookup should find the organization", org);
+        });
+
+        // 3. Delete the org
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.getByDomainName(domainLower);
+            assertNotNull(org);
+            orgProvider.remove(org);
+        });
+
+        // 4. Recreate the org with the same domain
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.create(null, "case-org", "case-org");
+            org.setDomains(Set.of(new OrganizationDomainModel(domainLower)));
+        });
+
+        // 5. Look up by mixed-case again (simulates login with user@CaSe.Org after org recreation).
+        // Without the fix, the stale cache entry from step 2 (stored under the mixed-case key)
+        // was not invalidated in step 3 (invalidation only targets the lowercase key), so it
+        // still points to the old deleted org ID. getById returns null for that ID, and
+        // findAny() on a null element throws NPE.
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) session -> {
+            OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+            OrganizationModel org = orgProvider.getByDomainName(domainMixed);
+            assertNotNull("Mixed-case domain lookup should find the recreated organization", org);
         });
     }
 }
