@@ -484,9 +484,10 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     }
 
     private void scheduleWorkflow(Workflow workflow) {
+        // only start the task if the workflow is enabled and has a schedule configured
         String scheduled = workflow.getConfig().getFirst(WorkflowConstants.CONFIG_SCHEDULE_AFTER);
 
-        if (scheduled != null) {
+        if (workflow.isEnabled() && scheduled != null) {
             Duration duration = DurationConverter.parseDuration(scheduled);
             TimerProvider timer = session.getProvider(TimerProvider.class);
             timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ScheduledWorkflowRunner(workflow.getId(), realm.getId()), duration.toMillis()), duration.toMillis());
