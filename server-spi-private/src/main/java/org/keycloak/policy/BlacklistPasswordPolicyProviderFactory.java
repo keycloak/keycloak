@@ -84,6 +84,8 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
     public static final double DEFAULT_FALSE_POSITIVE_PROBABILITY = 0.0001;
 
+    public static final int CHECK_INTERVAL_SECONDS = 60;
+
     public static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
 
     public static final String PASSWORD_BLACKLISTS_FOLDER = "password-blacklists" + File.separator;
@@ -173,9 +175,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
         return blacklistRegistry.computeIfAbsent(listName, (name) -> {
             double fpp = getFalsePositiveProbability();
-            FileBasedPasswordBlacklist pbl = new FileBasedPasswordBlacklist(this.blacklistsBasePath, name, fpp);
-            pbl.lazyInit();
-            return pbl;
+            return new FileBasedPasswordBlacklist(this.blacklistsBasePath, name, fpp, CHECK_INTERVAL_SECONDS * 1000L);
         });
     }
 
@@ -244,22 +244,17 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
         private final double falsePositiveProbability;
 
-        /**
-         * Initialized lazily via {@link #lazyInit()}
-         */
-        private BloomFilter<String> blacklist;
+        private volatile BloomFilter<String> blacklist;
 
-        /**
-         * Creates a new {@link FileBasedPasswordBlacklist} with {@link #DEFAULT_FALSE_POSITIVE_PROBABILITY}.
-         *
-         * @param blacklistBasePath folder containing the blacklists
-         * @param name name of blacklist file
-         */
-        public FileBasedPasswordBlacklist(Path blacklistBasePath, String name) {
-            this(blacklistBasePath, name, DEFAULT_FALSE_POSITIVE_PROBABILITY);
-        }
+        private final long checkIntervalMillis;
 
-        public FileBasedPasswordBlacklist(Path blacklistBasePath, String name, double falsePositiveProbability) {
+        private volatile long lastCheckedMillis;
+
+        private long lastModifiedMillis;
+
+        private long lastSizeBytes;
+
+        public FileBasedPasswordBlacklist(Path blacklistBasePath, String name, double falsePositiveProbability, long checkIntervalMillis) {
 
             if (name.contains("/")) {
                 // disallow '/' to avoid accidental filesystem traversal
@@ -269,10 +264,16 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
             this.name = name;
             this.path = blacklistBasePath.resolve(name);
             this.falsePositiveProbability = falsePositiveProbability;
+            this.checkIntervalMillis = checkIntervalMillis;
 
             if (!Files.exists(this.path)) {
                 throw new IllegalArgumentException("Password blacklist " + name + " not found!");
             }
+
+            this.lastModifiedMillis = path.toFile().lastModified();
+            this.lastSizeBytes = path.toFile().length();
+            this.blacklist = load();
+            this.lastCheckedMillis = System.currentTimeMillis();
         }
 
         public String getName() {
@@ -284,16 +285,36 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
         }
 
         public boolean contains(String password) {
-            return blacklist != null && blacklist.mightContain(password);
+            reloadIfNeeded();
+            return blacklist.mightContain(password);
         }
 
-        void lazyInit() {
-
-            if (blacklist != null) {
+        /**
+         * Check the modification time and file size and reload if it has changed since the last load.
+         * Uses double-checked locking to avoid redundant reloads by concurrent threads.
+         */
+        private void reloadIfNeeded() {
+            long now = System.currentTimeMillis();
+            if (now - lastCheckedMillis < checkIntervalMillis) {
                 return;
             }
-
-            this.blacklist = load();
+            synchronized (this) {
+                if (now - lastCheckedMillis < checkIntervalMillis) {
+                    return;
+                }
+                lastCheckedMillis = now;
+                try {
+                    long currentModified = Files.getLastModifiedTime(path).toMillis();
+                    long currentSize = Files.size(path);
+                    if (currentModified != lastModifiedMillis || currentSize != lastSizeBytes) {
+                        blacklist = load();
+                        lastModifiedMillis = currentModified;
+                        lastSizeBytes = currentSize;
+                    }
+                } catch (Exception e) {
+                    LOG.warnf("Failed to reload blacklist %s, continuing with cached version: %s", name, e.getMessage());
+                }
+            }
         }
 
         /**
