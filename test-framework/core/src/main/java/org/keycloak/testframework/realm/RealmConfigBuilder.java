@@ -458,10 +458,6 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public void verifiableCredentialsEnabled(Boolean verifiableCredentialsEnabled) {
-        rep.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
-    }
-
     public void attribute(String key, String value) {
         if (rep.getAttributes() == null) {
             rep.setAttributes(new HashMap<>());

@@ -25,7 +25,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.CredentialOfferException;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -55,7 +54,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
     @Override
     public CredentialOfferState createCredentialOffer(
-            UserSessionModel userSession,
+            UserModel user,
             String grantType,
             List<String> credentialConfigurationIds,
             String targetClientId,
@@ -68,10 +67,12 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credentialConfigurationIds");
         }
 
+        RealmModel realmModel = this.session.getContext().getRealm();
+
         // Validate the target user
         //
         String targetUserId = Optional.ofNullable(targetUsername)
-                .map(tu -> validateTargetUser(session, userSession, tu))
+                .map(tu -> validateTargetUser(session, realmModel, user, tu))
                 .map(UserModel::getId).orElse(null);
 
         // Create the CredentialsOffer
@@ -82,7 +83,6 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
         // Create the CredentialOfferState
         //
-        RealmModel realmModel = userSession.getRealm();
         CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, credOffersId -> {
             List<OID4VCAuthorizationDetail> authDetails = new ArrayList<>();
             for (String credConfigId : credentialConfigurationIds) {
@@ -109,12 +109,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
 
     // Private ---------------------------------------------------------------------------------------------------------
 
-    private UserModel validateTargetUser(KeycloakSession session, UserSessionModel userSession, String targetUser) {
-        UserModel loginUserModel = userSession.getUser();
-
-        // Verify that the target user exists
-        //
-        RealmModel realmModel = userSession.getRealm();
+    private UserModel validateTargetUser(KeycloakSession session, RealmModel realmModel, UserModel loginUserModel, String targetUser) {
         UserModel targetUserModel = session.users().getUserByUsername(realmModel, targetUser);
         if (targetUserModel == null) {
             throw new CredentialOfferException(Errors.USER_NOT_FOUND, "User not found: " + targetUser);

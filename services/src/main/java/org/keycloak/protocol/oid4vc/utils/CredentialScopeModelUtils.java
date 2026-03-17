@@ -6,10 +6,14 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.util.Strings;
+import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
@@ -86,5 +90,31 @@ public class CredentialScopeModelUtils {
         }
 
         return authDetail;
+    }
+
+    /**
+     * Return display name of the credential according to preferred locale of current user and according to "vc.display" attribute specified for current OID4VCI client
+     * scope. Will fallback to client scope name if client scope does not contain "vc.display" or if "vc.display" is incorrectly formatted
+     *
+     * @param session Keycloak session
+     * @param user user
+     * @param credScope OID4VCI client scope
+     * @return user-friendly name of the VC localized in the preference of the current user
+     */
+    public static String getCredentialDisplayName(KeycloakSession session, UserModel user, CredentialScopeModel credScope) {
+        List<DisplayObject> displayDatas = DisplayObject.parse(credScope);
+        if (displayDatas != null) {
+            String language = session.getContext().resolveLocale(user).getLanguage();
+            String languageCountry = language + "-" + language.toUpperCase();
+            for (DisplayObject displayData : displayDatas) {
+                if (language.equals(displayData.getLocale()) || languageCountry.equals(displayData.getLocale())) {
+                    return displayData.getName();
+                }
+            }
+        }
+
+        // Fallback
+        String display = credScope.getCredentialConfigurationId();
+        return StringUtil.isNotBlank(display) ? display :  credScope.getName();
     }
 }
