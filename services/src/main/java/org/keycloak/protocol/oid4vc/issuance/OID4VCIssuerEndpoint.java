@@ -441,7 +441,7 @@ public class OID4VCIssuerEndpoint {
         RealmModel realmModel = clientModel.getRealm();
 
         EventBuilder eventBuilder = new EventBuilder(realmModel, session, session.getContext().getConnection());
-        eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
+        eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER)
                 .client(clientModel)
                 .user(loginUserModel)
                 .session(userSession.getId())
