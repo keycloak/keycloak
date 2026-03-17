@@ -5,6 +5,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.protocol.ssf.Ssf;
+import org.keycloak.protocol.ssf.support.SsfAuthUtil;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamManagementResource;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamStatusResource;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamVerificationResource;
@@ -39,7 +40,8 @@ public class SsfTransmitterResource {
         if (auth == null) {
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         }
-        session.setAttribute("auth", auth);
+        // make the current authentication available on the session
+        SsfAuthUtil.setAuth(session, auth);
         return auth;
     }
 }

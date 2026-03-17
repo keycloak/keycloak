@@ -7,7 +7,7 @@ import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
 import static org.keycloak.utils.KeycloakSessionUtil.getKeycloakSession;
 
 /**
- * Entry-point to lookup the SsfProvider.
+ * Collection of SSF constants and entry points.
  */
 public class Ssf {
 
@@ -17,19 +17,27 @@ public class Ssf {
 
     public static final String SSF_WELL_KNOWN_METADATA_PATH = ".well-known/ssf-configuration";
 
+    public static final String SSF_REALM_RESOURCE_PATH = "ssf";
+
     public static final String SSF_TRANSMITTER_PATH = "transmitter";
 
     public static final String SSF_RECEIVERS_PATH = "receivers";
 
-    public static final String SSF_TRANSMITTER_BASE_PATH_SUFFIX = "%s/%s".formatted("ssf", SSF_TRANSMITTER_PATH);
+    public static final String SSF_TRANSMITTER_BASE_PATH_SUFFIX = "%s/%s".formatted(SSF_REALM_RESOURCE_PATH, SSF_TRANSMITTER_PATH);
 
     /**
      * NON standard internal marker scope for Apple Business Manager compatibility.
      */
     public static final String SCOPE_APPLE_ABM = SsfScopes.SCOPE_APPLE_ABM;
 
+    /**
+     * Apply standard SSF semantics, default.
+     */
     public static final String PROFILE_STANDARD = "SSF";
 
+    /**
+     * Apply SSE CAEP semantics
+     */
     public static final String PROFILE_SSE_CAEP = "SSE_CAEP";
 
     public static final String APPLICATION_SECEVENT_JWT_TYPE = "application/secevent+jwt";

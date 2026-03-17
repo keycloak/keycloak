@@ -41,7 +41,7 @@ public class CaepCredentialChange extends CaepEvent {
      * delete
      */
     @JsonProperty("change_type")
-    @JsonDeserialize(using = ChangeTypeDeserializer.class)
+    @JsonDeserialize(using = CaepCredentialChangeChangeTypeDeserializer.class)
     protected ChangeType changeType;
 
     /**

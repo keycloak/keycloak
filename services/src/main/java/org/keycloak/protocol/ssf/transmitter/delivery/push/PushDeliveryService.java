@@ -48,7 +48,7 @@ public class PushDeliveryService {
             return false;
         }
 
-        return deliverEvent(endpointUrl, authorizationHeader, eventToken, encodedEvent);
+        return deliverEvent(endpointUrl, authorizationHeader, eventToken, encodedEvent, stream);
     }
 
     /**
@@ -58,14 +58,15 @@ public class PushDeliveryService {
      * @param authorizationHeader The authorization header to use
      * @param eventToken          The event token
      * @param encodedEventToken   The encoded event to deliver
+     * @param stream
      * @return true if the event was delivered successfully, false otherwise
      */
-    protected boolean deliverEvent(String endpointUrl, String authorizationHeader, SecurityEventToken eventToken, String encodedEventToken) {
+    protected boolean deliverEvent(String endpointUrl, String authorizationHeader, SecurityEventToken eventToken, String encodedEventToken, StreamConfig stream) {
         try {
 
             log.debugf("Delivering event %s to %s. EventToken=%s", eventToken.getJti(), endpointUrl, encodedEventToken);
 
-            try (var response = createSimpleHttp(endpointUrl, authorizationHeader)
+            try (var response = createSimpleHttp(endpointUrl, authorizationHeader, stream)
                     .header(HttpHeaders.CONTENT_TYPE, Ssf.APPLICATION_SECEVENT_JWT_TYPE)
                     .entity(new StringEntity(encodedEventToken))
                     .asResponse()) {
@@ -90,10 +91,20 @@ public class PushDeliveryService {
         }
     }
 
-    protected SimpleHttpRequest createSimpleHttp(String endpointUrl, String authorizationHeader) {
+    protected SimpleHttpRequest createSimpleHttp(String endpointUrl, String authorizationHeader, StreamConfig stream) {
+
+        Integer connectRequestTimeout = stream.getPushEndpointConnectTimeoutMillis();
+        if (connectRequestTimeout == null) {
+            connectRequestTimeout = 1000;
+        }
+        Integer socketTimeout = stream.getPushEndpointSocketTimeoutMillis();
+        if (socketTimeout == null) {
+            socketTimeout = 750;
+        }
+
         RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectionRequestTimeout(2000)
-                .setSocketTimeout(3000)
+                .setConnectionRequestTimeout(connectRequestTimeout)
+                .setSocketTimeout(socketTimeout)
                 .build();
         var httpRequest = SimpleHttp.create(session)
                 .withRequestConfig(requestConfig)

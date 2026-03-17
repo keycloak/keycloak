@@ -66,11 +66,12 @@ public class StreamService {
         String iss = transmitterService.getTransmitterMetadata().getIssuer();
         streamConfig.setIssuer(iss);
 
-//        // set current client as audience
+//        // set audience
         ClientModel receiverClient = session.getContext().getClient();
         String receiverClientId = receiverClient.getClientId();
+        // FIXME use proper audience
 //        streamConfiguration.setAudience(Set.of(receiverClientId));
-        Set<String> audience = new HashSet<>(streamConfig.getAudience());
+        Set<String> audience = streamConfig.getAudience() == null ? new HashSet<>() : new HashSet<>(streamConfig.getAudience());
 
         // TODO shall we really add the audience of the stream?
         String streamAudience = transmitterService.getTransmitterMetadata().getIssuer() + "/ssf/receivers/" + receiverClientId + "/" + streamConfig.getStreamId();
@@ -110,6 +111,10 @@ public class StreamService {
 
             if (streamConfig.getVerificationDelayMillis() == null) {
                 streamConfig.setVerificationDelayMillis(Ssf.TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS);
+            }
+        } else {
+            if (streamConfig.getVerificationTrigger() == null) {
+                streamConfig.setVerificationTrigger(StreamConfig.VerificationTrigger.RECEIVER_INITIATED);
             }
         }
 

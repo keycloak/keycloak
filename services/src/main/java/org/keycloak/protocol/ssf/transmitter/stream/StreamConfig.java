@@ -131,6 +131,11 @@ public class StreamConfig {
     @JsonProperty("kc_verification_delay_millis")
     protected Integer verificationDelayMillis;
 
+    @JsonProperty("kc_transmitter_push_connect_timeout_millis")
+    protected Integer pushEndpointConnectTimeoutMillis;
+
+    @JsonProperty("kc_transmitter_push_socket_timeout_millis")
+    protected Integer pushEndpointSocketTimeoutMillis;
 
     public enum VerificationTrigger {
         TRANSMITTER_INITIATED,
@@ -287,5 +292,21 @@ public class StreamConfig {
 
     public void setVerificationDelayMillis(Integer verificationDelayMillis) {
         this.verificationDelayMillis = verificationDelayMillis;
+    }
+
+    public Integer getPushEndpointConnectTimeoutMillis() {
+        return pushEndpointConnectTimeoutMillis;
+    }
+
+    public void setPushEndpointConnectTimeoutMillis(Integer pushEndpointConnectTimeoutMillis) {
+        this.pushEndpointConnectTimeoutMillis = pushEndpointConnectTimeoutMillis;
+    }
+
+    public Integer getPushEndpointSocketTimeoutMillis() {
+        return pushEndpointSocketTimeoutMillis;
+    }
+
+    public void setPushEndpointSocketTimeoutMillis(Integer pushEndpointSocketTimeoutMillis) {
+        this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
     }
 }

@@ -121,6 +121,8 @@ function RealmSettingsGeneralTabForm({
   );
   const isScimApiEnabled = isFeatureEnabled(Feature.ScimApi);
 
+  const isSsfEnabled = isFeatureEnabled(Feature.Ssf);
+
   const setupForm = () => {
     convertToFormValues(realm, setValue);
     setValue(
@@ -341,6 +343,16 @@ function RealmSettingsGeneralTabForm({
                       serverBaseUrl,
                     )}realms/${realmName}/scim/v2`}
                     title={t("SCIM Endpoint")}
+                  />
+                </StackItem>
+              )}
+              {isSsfEnabled && (
+                <StackItem>
+                  <FormattedLink
+                    href={`${addTrailingSlash(
+                      serverBaseUrl,
+                    )}realms/${realmName}/.well-known/ssf-configuration`}
+                    title={t("ssfConfigurationMetadata")}
                   />
                 </StackItem>
               )}
