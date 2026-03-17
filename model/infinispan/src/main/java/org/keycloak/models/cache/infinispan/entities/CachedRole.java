@@ -35,15 +35,17 @@ import org.keycloak.models.cache.infinispan.LazyLoader;
  */
 public class CachedRole extends AbstractRevisioned implements InRealm {
 
+    public record RoleRecord (String id, boolean clientRole, String containerId) {}
+
     final protected String name;
     final protected String realm;
     final protected String description;
-    protected volatile LazyLoader<RoleModel, Set<String>> composites;
+    protected volatile LazyLoader<RoleModel, Set<RoleRecord>> composites;
     /**
      * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
      * items should be evicted.
      */
-    private volatile Set<String> cachedComposites = new HashSet<>();
+    private volatile Set<RoleRecord> cachedComposites = new HashSet<>();
     private final LazyLoader<RoleModel, MultivaluedHashMap<String, String>> attributes;
 
     public CachedRole(long revision, RoleModel model, RealmModel realm) {
@@ -56,7 +58,9 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
     }
 
     private void initComposites() {
-        composites = new DefaultLazyLoader<>(roleModel -> roleModel.getCompositesStream().map(RoleModel::getId).collect(Collectors.toSet()), HashSet::new);
+        composites = new DefaultLazyLoader<>(roleModel -> roleModel.getCompositesStream()
+                .map(r -> new RoleRecord(r.getId(), r.isClientRole(), r.getContainerId())).collect(Collectors.toSet()),
+                HashSet::new);
     }
 
     public String getName() {
@@ -76,7 +80,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
         return !getComposites(session, roleModel).isEmpty();
     }
 
-    public Set<String> getComposites(KeycloakSession session, Supplier<RoleModel> roleModel) {
+    public Set<RoleRecord> getComposites(KeycloakSession session, Supplier<RoleModel> roleModel) {
         cachedComposites = composites.get(session, roleModel);
         return cachedComposites;
     }
@@ -85,7 +89,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
      * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
      * items should be evicted. Will return an empty list if it hasn't been cached yet (and then no invalidation is necessary)
      */
-    public Set<String> getCachedComposites() {
+    public Set<RoleRecord> getCachedComposites() {
         return cachedComposites;
     }
 
@@ -94,7 +98,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
     }
 
     public void clearCompositeCache() {
-        this.cachedComposites = new HashSet<String>();
+        this.cachedComposites = new HashSet<RoleRecord>();
         this.initComposites();
     }
 }

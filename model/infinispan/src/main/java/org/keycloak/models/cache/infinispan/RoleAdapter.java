@@ -32,6 +32,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
+import org.keycloak.models.cache.infinispan.entities.CachedRole.RoleRecord;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
@@ -142,8 +143,8 @@ public class RoleAdapter implements RoleModel {
 
         if (composites == null) {
             composites = new HashSet<>();
-            for (String id : cached.getComposites(session, modelSupplier)) {
-                RoleModel role = realm.getRoleById(id);
+            for (RoleRecord rec : cached.getComposites(session, modelSupplier)) {
+                RoleModel role = realm.getRoleById(rec.id());
                 if (role == null) {
                     // chance that composite role was removed, so invalidate this entry and fallback to delegate
                     getDelegateForUpdate();
@@ -160,7 +161,7 @@ public class RoleAdapter implements RoleModel {
     public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
         if (isUpdated()) return updated.getCompositesStream(search, first, max);
 
-        return cacheSession.getRoleDelegate().getRolesStream(realm, cached.getComposites(session, modelSupplier).stream(), search, first, max);
+        return cacheSession.getRoleDelegate().getRolesStream(realm, cached.getComposites(session, modelSupplier).stream().map(RoleRecord::id), search, first, max);
     }
 
     @Override

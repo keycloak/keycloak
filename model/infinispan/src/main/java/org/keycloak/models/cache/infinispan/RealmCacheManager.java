@@ -43,6 +43,7 @@ public class RealmCacheManager extends CacheManager {
     private static final Logger logger = Logger.getLogger(RealmCacheManager.class);
 
     private final ConcurrentHashMap<String, ReentrantLock> cacheInteractions = new ConcurrentHashMap<>();
+    private volatile String adminRoleId;
 
     @Override
     protected Logger getLogger() {
@@ -153,4 +154,13 @@ public class RealmCacheManager extends CacheManager {
             cacheInteractions.remove(id, lock);
         }
     }
+
+    public String getAdminRoleId() {
+        return adminRoleId;
+    }
+
+    public void setAdminRoleId(String adminRoleId) {
+        this.adminRoleId = adminRoleId;
+    }
+
 }

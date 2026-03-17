@@ -23,6 +23,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -350,9 +352,6 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     protected void runInvalidations() {
-        if (invalidateAdminRole) {
-            registerRoleInvalidation(adminRole.getId(), adminRole.getName(), adminRole.getContainerId());
-        }
         for (String id : invalidations) {
             cache.invalidateObject(id);
         }
@@ -486,10 +485,6 @@ public class RealmCacheSession implements CacheRealmProvider {
         return adapter;
     }
 
-    private boolean invalidateAdminRole;
-    private RealmModel adminRealm;
-    private RoleModel adminRole;
-
     private RealmAdapter prepareCachedRealm(String id, KeycloakSession session) {
         CachedRealm cached = cache.get(id, CachedRealm.class);
         RealmAdapter adapter;
@@ -500,28 +495,14 @@ public class RealmCacheSession implements CacheRealmProvider {
                 return null;
             }
 
-            // to accommodate imports of new realms, check to see if the master admin role is up-to-date
-            if (!invalidateAdminRole && !model.getName().equals(Config.getAdminRealm())
-                    && (adminRole == null || !invalidations.contains(adminRole.getId()))) {
-                if (adminRealm == null) {
-                    adminRealm = getRealmByName(Config.getAdminRealm());
-                }
-                if (adminRealm != null) {
-                    if (adminRole == null) {
-                        adminRole = adminRealm.getRole(AdminRoles.ADMIN);
-                    }
-                    if (adminRole instanceof RoleAdapter ra && !ra.cached.getCachedComposites().isEmpty()) {
-                        ClientModel clientModel = session.clients().getClientByClientId(adminRealm, model.getName() + "-realm");
-                        if (clientModel != null && adminRole.getCompositesStream()
-                                .noneMatch(r -> (r.isClientRole() && r.getContainerId().equals(clientModel.getId())))) {
-                            ra.clearCompositeCache();
-                            invalidateAdminRole = true;
-                        }
-                    }
-                }
+            cached = new CachedRealm(loaded, model);
+
+            String clientModelId = cached.getMasterAdminClient();
+
+            if (!model.getName().equals(Config.getAdminRealm()) && clientModelId != null) {
+                checkForNewAdminRoleComposites(id, clientModelId, model);
             }
 
-            cached = new CachedRealm(loaded, model);
             cache.addRevisioned(cached, startupRevision);
             adapter = new RealmAdapter(session, cached, this);
             CachedRealmModel.RealmCachedEvent event = new CachedRealmModel.RealmCachedEvent() {
@@ -541,6 +522,46 @@ public class RealmCacheSession implements CacheRealmProvider {
             logger.tracev("by id cache hit after locking: {0}", cached.getName());
         }
         return adapter;
+    }
+
+    /**
+     * The logic here is designed to avoid  additional database lookups and creation of new cache entries
+     */
+    private void checkForNewAdminRoleComposites(String id, String clientModelId, RealmModel model) {
+        String adminRoleId = cache.getAdminRoleId();
+        if (adminRoleId == null) {
+            RealmModel adminRealm = getRealmByName(Config.getAdminRealm());
+            if (adminRealm == null) {
+                return;
+            }
+            RoleModel adminRole = getRealmRole(adminRealm, AdminRoles.ADMIN);
+            if (adminRole == null) {
+                return;
+            }
+            cache.setAdminRoleId(adminRole.getId());
+            adminRoleId = adminRole.getId();
+        }
+        Predicate<CachedRole> predicate = role -> !role.getCachedComposites().isEmpty() && role.getCachedComposites().stream()
+                .noneMatch(r -> (r.clientRole() && r.containerId().equals(clientModelId)));
+
+        BiConsumer<CachedRole, Runnable> testAndClear = (role, clear) -> {
+            if (predicate.test(role)) {
+                synchronized (role) {
+                    if (predicate.test(role)) {
+                        clear.run();
+                    }
+                }
+            }
+        };
+
+        RoleAdapter managedRole = this.invalidations.contains(adminRoleId) ? null : this.managedRoles.get(adminRoleId);
+        if (managedRole != null) {
+            testAndClear.accept(managedRole.cached, managedRole::clearCompositeCache);
+        }
+        CachedRole cachedRole = cache.get(adminRoleId, CachedRole.class);
+        if (cachedRole != null && (managedRole == null || managedRole.cached != cachedRole)) {
+            testAndClear.accept(cachedRole, cachedRole::clearCompositeCache);
+        }
     }
 
     @Override
@@ -569,11 +590,9 @@ public class RealmCacheSession implements CacheRealmProvider {
             }
             query = new RealmListQuery(loaded, cacheKey, model.getId());
             cache.addRevisioned(query, startupRevision);
-            return model;
-        } else {
-            String realmId = query.getRealms().iterator().next();
-            return getRealm(realmId);
         }
+        String realmId = query.getRealms().iterator().next();
+        return getRealm(realmId);
     }
 
     static String getRealmByNameCacheKey(String name) {
@@ -767,7 +786,6 @@ public class RealmCacheSession implements CacheRealmProvider {
             query = new RoleListQuery(loaded, cacheKey, realm, ids);
             logger.tracev("adding realm roles cache miss: realm {0} key {1}", realm.getName(), cacheKey);
             cache.addRevisioned(query, startupRevision);
-            return model.stream();
         }
         Set<RoleModel> list = new HashSet<>();
         for (String id : query.getRoles()) {
@@ -802,7 +820,6 @@ public class RealmCacheSession implements CacheRealmProvider {
             query = new RoleListQuery(loaded, cacheKey, client.getRealm(), ids, client.getClientId());
             logger.tracev("adding client roles cache miss: client {0} key {1}", client.getClientId(), cacheKey);
             cache.addRevisioned(query, startupRevision);
-            return model.stream();
         }
         Set<RoleModel> list = new HashSet<>();
         for (String id : query.getRoles()) {
@@ -887,11 +904,6 @@ public class RealmCacheSession implements CacheRealmProvider {
             }
             logger.tracev("adding realm role cache miss: client {0} key {1}", realm.getName(), cacheKey);
             cache.addRevisioned(query, startupRevision);
-            if (model != null) {
-                addCachedRole(realm, loaded, model);
-                return getRoleById(realm, model.getId());
-            }
-            return null;
         }
         String roleId = query.getRole();
         if (roleId == null) {
@@ -929,11 +941,6 @@ public class RealmCacheSession implements CacheRealmProvider {
             }
             logger.tracev("adding client role cache miss: client {0} key {1}", client.getClientId(), cacheKey);
             cache.addRevisioned(query, startupRevision);
-            if (model != null) {
-                addCachedRole(client.getRealm(), loaded, model);
-                return getRoleById(client.getRealm(), model.getId());
-            }
-            return null;
         }
         String roleId = query.getRole();
         if (roleId == null) {
@@ -985,22 +992,16 @@ public class RealmCacheSession implements CacheRealmProvider {
             long loaded = cache.getCurrentRevision(id);
             RoleModel model = getRoleDelegate().getRoleById(realm, id);
             if (model == null) return null;
-            cached = addCachedRole(realm, loaded, model);
+            if (model.isClientRole()) {
+                cached = new CachedClientRole(loaded, model.getContainerId(), model, realm);
+            } else {
+                cached = new CachedRealmRole(loaded, model, realm);
+            }
+            cache.addRevisioned(cached, startupRevision);
         }
         RoleAdapter adapter = new RoleAdapter(cached,this, realm);
         managedRoles.put(id, adapter);
         return adapter;
-    }
-
-    private CachedRole addCachedRole(RealmModel realm, long loaded, RoleModel model) {
-        CachedRole cached;
-        if (model.isClientRole()) {
-            cached = new CachedClientRole(loaded, model.getContainerId(), model, realm);
-        } else {
-            cached = new CachedRealmRole(loaded, model, realm);
-        }
-        cache.addRevisioned(cached, startupRevision);
-        return cached;
     }
 
     @Override
@@ -1367,9 +1368,6 @@ public class RealmCacheSession implements CacheRealmProvider {
             query = new ClientListQuery(loaded, cacheKey, realm, id);
             logger.tracev("adding client by name cache miss: {0}", clientId);
             cache.addRevisioned(query, startupRevision);
-            if (invalidations.contains(model.getId())) {
-                return model;
-            }
         } else {
             id = query.getClients().iterator().next();
         }
