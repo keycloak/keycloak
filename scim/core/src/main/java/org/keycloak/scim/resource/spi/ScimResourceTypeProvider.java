@@ -76,10 +76,10 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      * and should persist the updated resource and return the persisted instance.
      * The returned resource will be used in the response to the client.
      *
-     * @param user the resource to update
+     * @param resource the resource to update
      * @return the updated resource
      */
-    R update(R user);
+    R update(R resource);
 
     /**
      * Retrieves a resource of this type by its identifier. This method is invoked when a client requests a specific resource,

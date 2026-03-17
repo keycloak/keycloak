@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
+import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.config.ServiceProviderConfig;
@@ -41,7 +43,7 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
     }
 
     @Override
-    public ResourceType update(ResourceType user) {
+    public ResourceType update(ResourceType resourceType) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -52,6 +54,9 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
 
     @Override
     public Stream<ResourceType> getAll(SearchRequest searchRequest) {
+        if (!session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
+            throw new ForbiddenException();
+        }
         return session.getKeycloakSessionFactory().getProviderFactoriesStream(ScimResourceTypeProvider.class)
                 .map(ScimResourceTypeProviderFactory.class::cast)
                 .map(this::toRepresentation)
