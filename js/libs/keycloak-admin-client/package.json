@@ -37,7 +37,7 @@
       ]
     },
     "generate:openapi": {
-      "command": "cross-env OPENAPI_FILE=openapi.yaml tsx generate.ts",
+      "command": "cross-env KIOTA_OFFLINE_ENABLED=true KIOTA_CLI_TELEMETRY_OPTOUT=true OPENAPI_FILE=openapi.yaml tsx generate.ts",
       "files": [
         "openapi.yaml"
       ],
