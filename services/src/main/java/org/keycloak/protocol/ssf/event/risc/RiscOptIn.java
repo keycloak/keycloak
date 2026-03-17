@@ -3,14 +3,14 @@ package org.keycloak.protocol.ssf.event.risc;
 /**
  * Opt In signals that the account identified by the subject opted into RISC event exchanges. The account is in the opt-in state.
  */
-public class OptIn extends RiscEvent {
+public class RiscOptIn extends RiscEvent {
 
     /**
      * See: https://openid.net/specs/openid-risc-profile-specification-1_0.html#rfc.section.2.8.1
      */
     public static final String TYPE = "https://schemas.openid.net/secevent/risc/event-type/opt-in";
 
-    public OptIn() {
+    public RiscOptIn() {
         super(TYPE);
     }
 }

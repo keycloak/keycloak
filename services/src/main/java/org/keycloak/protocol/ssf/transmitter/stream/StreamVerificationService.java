@@ -1,12 +1,11 @@
 package org.keycloak.protocol.ssf.transmitter.stream;
 
-import org.jboss.logging.Logger;
-
-import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.protocol.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore;
+
+import org.jboss.logging.Logger;
 
 /**
  * Service for handling SSF stream verification.
@@ -20,10 +19,6 @@ public class StreamVerificationService {
     protected final SecurityEventTokenMapper mapper;
 
     protected final SecurityEventTokenDispatcher dispatcher;
-
-    public StreamVerificationService(SsfStreamStore streamStore, SecurityEventTokenDispatcher dispatcher) {
-        this(streamStore, Ssf.transmitter().securityEventTokenMapper(), dispatcher);
-    }
 
     public StreamVerificationService(SsfStreamStore streamStore,
                                      SecurityEventTokenMapper mapper,
@@ -41,7 +36,7 @@ public class StreamVerificationService {
      */
     public boolean triggerVerification(StreamVerificationRequest verificationRequest) {
         String streamId = verificationRequest.getStreamId();
-        StreamConfig stream = streamStore.getStream(streamId);
+        StreamConfig stream = streamStore.findStreamById(streamId);
         
         if (stream == null) {
             log.warnf("Stream not found for verification. streamId=%s", streamId);

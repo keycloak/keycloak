@@ -38,6 +38,11 @@ public class SsfTransmitterMetadataWellKnownProvider implements WellKnownProvide
         }
 
         @Override
+        public boolean isAvailableViaServerMetadata() {
+            return true;
+        }
+
+        @Override
         public void postInit(KeycloakSessionFactory factory) {
 
         }

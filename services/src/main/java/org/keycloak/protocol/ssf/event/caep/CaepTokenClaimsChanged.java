@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Token Claims Change signals that a claim in a token, identified by the subject claim, has changed.
  */
-public class TokenClaimsChanged extends CaepEvent {
+public class CaepTokenClaimsChanged extends CaepEvent {
 
     /**
      * See: https://openid.github.io/sharedsignals/openid-caep-1_0.html#name-token-claims-change
@@ -20,7 +20,7 @@ public class TokenClaimsChanged extends CaepEvent {
     @JsonProperty("claims")
     protected Map<String, Object> claims;
 
-    public TokenClaimsChanged() {
+    public CaepTokenClaimsChanged() {
         super(TYPE);
     }
 

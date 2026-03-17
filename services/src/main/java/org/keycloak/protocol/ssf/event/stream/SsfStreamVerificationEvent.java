@@ -7,14 +7,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  * See: https://openid.net/specs/openid-sharedsignals-framework-1_0-final.html#name-verification
  */
-public class StreamVerificationEvent extends StreamEvent {
+public class SsfStreamVerificationEvent extends SsfStreamEvent {
 
     public static final String TYPE = "https://schemas.openid.net/secevent/ssf/event-type/verification";
 
     @JsonProperty("state")
     protected String state;
 
-    public StreamVerificationEvent() {
+    public SsfStreamVerificationEvent() {
         super(TYPE);
     }
 

@@ -1,6 +1,7 @@
 package org.keycloak.protocol.ssf;
 
 import org.keycloak.protocol.ssf.receiver.spi.SsfReceiverProvider;
+import org.keycloak.protocol.ssf.transmitter.SsfScopes;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
 
 import static org.keycloak.utils.KeycloakSessionUtil.getKeycloakSession;
@@ -10,14 +11,22 @@ import static org.keycloak.utils.KeycloakSessionUtil.getKeycloakSession;
  */
 public class Ssf {
 
-    public static final String SCOPE_SSF_READ = "ssf.read";
+    public static final String SCOPE_SSF_READ = SsfScopes.SCOPE_SSF_READ;
 
-    public static final String SCOPE_SSF_MANAGE = "ssf.manage";
+    public static final String SCOPE_SSF_MANAGE = SsfScopes.SCOPE_SSF_MANAGE;
+
+    public static final String SSF_WELL_KNOWN_METADATA_PATH = ".well-known/ssf-configuration";
+
+    public static final String SSF_TRANSMITTER_PATH = "transmitter";
+
+    public static final String SSF_RECEIVERS_PATH = "receivers";
+
+    public static final String SSF_TRANSMITTER_BASE_PATH_SUFFIX = "%s/%s".formatted("ssf", SSF_TRANSMITTER_PATH);
 
     /**
      * NON standard internal marker scope for Apple Business Manager compatibility.
      */
-    public static final String SCOPE_APPLE_ABM = "apple-abm";
+    public static final String SCOPE_APPLE_ABM = SsfScopes.SCOPE_APPLE_ABM;
 
     public static final String PROFILE_STANDARD = "SSF";
 
@@ -57,4 +66,21 @@ public class Ssf {
     public static SsfTransmitterProvider transmitter() {
         return getKeycloakSession().getProvider(SsfTransmitterProvider.class);
     }
+
+    public static String getSsfTransmitterBasePath(String issuerUrl) {
+        return issuerUrl + "/" + Ssf.SSF_TRANSMITTER_BASE_PATH_SUFFIX;
+    }
+
+    public static String streamsEndpoint(String issuerUrl) {
+        return Ssf.getSsfTransmitterBasePath(issuerUrl) + "/streams";
+    }
+
+    public static String streamStatusEndpoint(String issuerUrl) {
+        return Ssf.getSsfTransmitterBasePath(issuerUrl) + "/streams/status";
+    }
+
+    public static String streamVerificationEndpoint(String issuerUrl) {
+        return Ssf.getSsfTransmitterBasePath(issuerUrl) + "/verify";
+    }
+
 }

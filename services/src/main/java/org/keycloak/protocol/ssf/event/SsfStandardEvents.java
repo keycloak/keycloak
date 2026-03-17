@@ -6,31 +6,31 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.keycloak.protocol.ssf.event.caep.AssuranceLevelChange;
+import org.keycloak.protocol.ssf.event.caep.CaepAssuranceLevelChange;
 import org.keycloak.protocol.ssf.event.caep.CaepEvent;
-import org.keycloak.protocol.ssf.event.caep.CredentialChange;
-import org.keycloak.protocol.ssf.event.caep.DeviceComplianceChange;
-import org.keycloak.protocol.ssf.event.caep.SessionEstablished;
-import org.keycloak.protocol.ssf.event.caep.SessionPresented;
-import org.keycloak.protocol.ssf.event.caep.SessionRevoked;
-import org.keycloak.protocol.ssf.event.caep.TokenClaimsChanged;
-import org.keycloak.protocol.ssf.event.risc.AccountCredentialChangeRequired;
-import org.keycloak.protocol.ssf.event.risc.AccountDisabled;
-import org.keycloak.protocol.ssf.event.risc.AccountEnabled;
-import org.keycloak.protocol.ssf.event.risc.AccountPurged;
-import org.keycloak.protocol.ssf.event.risc.CredentialCompromise;
-import org.keycloak.protocol.ssf.event.risc.IdentifierChanged;
-import org.keycloak.protocol.ssf.event.risc.IdentifierRecycled;
-import org.keycloak.protocol.ssf.event.risc.OptIn;
-import org.keycloak.protocol.ssf.event.risc.OptOutCancelled;
-import org.keycloak.protocol.ssf.event.risc.OptOutEffective;
-import org.keycloak.protocol.ssf.event.risc.OptOutInitiated;
-import org.keycloak.protocol.ssf.event.risc.RecoveryActivated;
-import org.keycloak.protocol.ssf.event.risc.RecoveryInformationChanged;
+import org.keycloak.protocol.ssf.event.caep.CaepCredentialChange;
+import org.keycloak.protocol.ssf.event.caep.CaepDeviceComplianceChange;
+import org.keycloak.protocol.ssf.event.caep.CaepSessionEstablished;
+import org.keycloak.protocol.ssf.event.caep.CaepSessionPresented;
+import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
+import org.keycloak.protocol.ssf.event.caep.CaepTokenClaimsChanged;
+import org.keycloak.protocol.ssf.event.risc.RiscAccountCredentialChangeRequired;
+import org.keycloak.protocol.ssf.event.risc.RiscAccountDisabled;
+import org.keycloak.protocol.ssf.event.risc.RiscAccountEnabled;
+import org.keycloak.protocol.ssf.event.risc.RiscAccountPurged;
+import org.keycloak.protocol.ssf.event.risc.RiscCredentialCompromise;
+import org.keycloak.protocol.ssf.event.risc.RiscIdentifierChanged;
+import org.keycloak.protocol.ssf.event.risc.RiscIdentifierRecycled;
+import org.keycloak.protocol.ssf.event.risc.RiscOptIn;
+import org.keycloak.protocol.ssf.event.risc.RiscOptOutCancelled;
+import org.keycloak.protocol.ssf.event.risc.RiscOptOutEffective;
+import org.keycloak.protocol.ssf.event.risc.RiscOptOutInitiated;
+import org.keycloak.protocol.ssf.event.risc.RiscRecoveryActivated;
+import org.keycloak.protocol.ssf.event.risc.RiscRecoveryInformationChanged;
 import org.keycloak.protocol.ssf.event.risc.RiscEvent;
-import org.keycloak.protocol.ssf.event.stream.StreamEvent;
-import org.keycloak.protocol.ssf.event.stream.StreamUpdatedEvent;
-import org.keycloak.protocol.ssf.event.stream.StreamVerificationEvent;
+import org.keycloak.protocol.ssf.event.stream.SsfStreamEvent;
+import org.keycloak.protocol.ssf.event.stream.SsfStreamUpdatedEvent;
+import org.keycloak.protocol.ssf.event.stream.SsfStreamVerificationEvent;
 
 /**
  * Registry of Standard SSF Events.
@@ -40,7 +40,7 @@ public class SsfStandardEvents {
     /**
      * Holds all standard SSF Stream events.
      */
-    public static final Map<String, Class<? extends StreamEvent>> STREAM_EVENT_TYPES;
+    public static final Map<String, Class<? extends SsfStreamEvent>> STREAM_EVENT_TYPES;
 
     /**
      * Holds all standard CAEP events.
@@ -52,43 +52,59 @@ public class SsfStandardEvents {
      */
     public static final Map<String, Class<? extends RiscEvent>> RISC_EVENT_TYPES;
 
+    public static final Map<String, Class<? extends SsfEvent>> SIMPLE_EVENT_TYPES_MAP;
+
     static {
-        var ssfStreamEventTypes = new HashMap<String, Class<? extends StreamEvent>>();
+
+        var simpleEventTypesMap = new HashMap<String, Class<? extends SsfEvent>>();
+
+        var ssfStreamEventTypes = new HashMap<String, Class<? extends SsfStreamEvent>>();
         List.of(//
-                new StreamVerificationEvent(), //
-                new StreamUpdatedEvent() //
-        ).forEach(ssfEvent -> ssfStreamEventTypes.put(ssfEvent.getEventType(), ssfEvent.getClass()));
+                new SsfStreamVerificationEvent(), //
+                new SsfStreamUpdatedEvent() //
+        ).forEach(ssfEvent -> {
+            simpleEventTypesMap.put(ssfEvent.getClass().getSimpleName(), ssfEvent.getClass());
+            ssfStreamEventTypes.put(ssfEvent.getEventType(), ssfEvent.getClass());
+        });
         STREAM_EVENT_TYPES = Collections.unmodifiableMap(ssfStreamEventTypes);
 
         var caepEventTypes = new HashMap<String, Class<? extends CaepEvent>>();
         List.of( //
-                new AssuranceLevelChange(), //
-                new CredentialChange(), //
-                new DeviceComplianceChange(), //
-                new SessionEstablished(), //
-                new SessionPresented(), //
-                new SessionRevoked(), //
-                new TokenClaimsChanged() //
-        ).forEach(caepEvent -> caepEventTypes.put(caepEvent.getEventType(), caepEvent.getClass()));
+                new CaepAssuranceLevelChange(), //
+                new CaepCredentialChange(), //
+                new CaepDeviceComplianceChange(), //
+                new CaepSessionEstablished(), //
+                new CaepSessionPresented(), //
+                new CaepSessionRevoked(), //
+                new CaepTokenClaimsChanged() //
+        ).forEach(caepEvent -> {
+            simpleEventTypesMap.put(caepEvent.getClass().getSimpleName(), caepEvent.getClass());
+            caepEventTypes.put(caepEvent.getEventType(), caepEvent.getClass());
+        });
         CAEP_EVENT_TYPES = Collections.unmodifiableMap(caepEventTypes);
 
         var riscEventTypes = new HashMap<String, Class<? extends RiscEvent>>();
         List.of( //
-                new AccountCredentialChangeRequired(), //
-                new AccountDisabled(), //
-                new AccountEnabled(), //
-                new AccountPurged(), //
-                new CredentialCompromise(), //
-                new IdentifierChanged(), //
-                new IdentifierRecycled(), //
-                new OptIn(), //
-                new OptOutInitiated(), //
-                new OptOutCancelled(), //
-                new OptOutEffective(), //
-                new RecoveryActivated(), //
-                new RecoveryInformationChanged() //
-        ).forEach(riscEvent -> riscEventTypes.put(riscEvent.getEventType(), riscEvent.getClass()));
+                new RiscAccountCredentialChangeRequired(), //
+                new RiscAccountDisabled(), //
+                new RiscAccountEnabled(), //
+                new RiscAccountPurged(), //
+                new RiscCredentialCompromise(), //
+                new RiscIdentifierChanged(), //
+                new RiscIdentifierRecycled(), //
+                new RiscOptIn(), //
+                new RiscOptOutInitiated(), //
+                new RiscOptOutCancelled(), //
+                new RiscOptOutEffective(), //
+                new RiscRecoveryActivated(), //
+                new RiscRecoveryInformationChanged() //
+        ).forEach(riscEvent -> {
+            simpleEventTypesMap.put(riscEvent.getClass().getSimpleName(), riscEvent.getClass());
+            riscEventTypes.put(riscEvent.getEventType(), riscEvent.getClass());
+        });
         RISC_EVENT_TYPES = Collections.unmodifiableMap(riscEventTypes);
+
+        SIMPLE_EVENT_TYPES_MAP = Collections.unmodifiableMap(simpleEventTypesMap);
     }
 
     public static Class<? extends SsfEvent> getSecurityEventType(String eventType) {
@@ -109,5 +125,15 @@ public class SsfStandardEvents {
         }
 
         return GenericSsfEvent.class;
+    }
+
+    /**
+     * Resolves the security event type based on the given simple event type string.
+     *
+     * @param eventType the string representation of the event type to be resolved
+     * @return the class of the corresponding {@link SsfEvent}, or null if no matching type is found
+     */
+    public static Class<? extends SsfEvent> resolveSecurityEventType(String eventType) {
+        return SIMPLE_EVENT_TYPES_MAP.get(eventType);
     }
 }

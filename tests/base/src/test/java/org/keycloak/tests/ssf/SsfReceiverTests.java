@@ -26,11 +26,11 @@ import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.protocol.ssf.Ssf;
-import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.protocol.ssf.event.SsfEvent;
+import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.protocol.ssf.event.subjects.EmailSubjectId;
 import org.keycloak.protocol.ssf.event.subjects.SubjectId;
-import org.keycloak.protocol.ssf.event.SsfEvent;
-import org.keycloak.protocol.ssf.event.caep.SessionRevoked;
+import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -204,7 +204,7 @@ public class SsfReceiverTests {
         var testerSubject = new EmailSubjectId();
         testerSubject.setEmail("tester@local.test");
 
-        var sessionRevoked = new SessionRevoked();
+        var sessionRevoked = new CaepSessionRevoked();
         sessionRevoked.setEventTimestamp(System.currentTimeMillis());
 
         var securityEventToken = generateSecurityEventToken(testerSubject, sessionRevoked);

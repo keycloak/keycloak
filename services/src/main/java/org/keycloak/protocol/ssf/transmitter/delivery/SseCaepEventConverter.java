@@ -1,10 +1,12 @@
 package org.keycloak.protocol.ssf.transmitter.delivery;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.keycloak.protocol.ssf.event.token.SseCaepSecurityEventToken;
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SseCaepEventConverter {
 
@@ -19,7 +21,7 @@ public class SseCaepEventConverter {
         Map<String, Object> sseCaepEventData = new HashMap<>();
         for (String eventType : ssfEventToken.getEvents().keySet()) {
 
-            Map<String, Object> eventData = (Map<String, Object>) ssfEventToken.getEvents().get(eventType);
+            Map<String, Object> eventData = new ObjectMapper().convertValue(ssfEventToken.getEvents().get(eventType), Map.class);
             Map<String, Object> adjustedEventData = new HashMap<>();
             adjustedEventData.put("reason_admin", eventData.get("reason_admin"));
             adjustedEventData.put("reason_user", eventData.get("reason_user"));

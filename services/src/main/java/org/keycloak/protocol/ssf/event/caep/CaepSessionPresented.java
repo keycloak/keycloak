@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * <li>Establishing an inventory of live sessions belonging to a user</li>
  * </ul>
  */
-public class SessionPresented extends CaepEvent {
+public class CaepSessionPresented extends CaepEvent {
 
     /**
      * See: https://openid.github.io/sharedsignals/openid-caep-1_0.html#name-session-established
@@ -37,7 +37,7 @@ public class SessionPresented extends CaepEvent {
     @JsonProperty("ext_id")
     protected String extId;
 
-    public SessionPresented() {
+    public CaepSessionPresented() {
         super(TYPE);
     }
 

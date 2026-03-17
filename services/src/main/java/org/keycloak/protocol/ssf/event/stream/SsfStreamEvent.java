@@ -5,9 +5,9 @@ import org.keycloak.protocol.ssf.event.SsfEvent;
 /**
  * Base class for all SSF stream related events.
  */
-public abstract class StreamEvent extends SsfEvent {
+public abstract class SsfStreamEvent extends SsfEvent {
 
-    public StreamEvent(String eventType) {
+    public SsfStreamEvent(String eventType) {
         super(eventType);
     }
 }

@@ -2,6 +2,7 @@ package org.keycloak.protocol.ssf.receiver.spi;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.event.listener.DefaultSsfReceiverEventListener;
 import org.keycloak.protocol.ssf.receiver.event.listener.SsfReceiverEventListener;
 import org.keycloak.protocol.ssf.receiver.event.parser.DefaultSsfSecurityEventTokenParser;
@@ -9,7 +10,6 @@ import org.keycloak.protocol.ssf.receiver.event.parser.SsfSecurityEventTokenPars
 import org.keycloak.protocol.ssf.receiver.event.processor.DefaultSsfEventProcessor;
 import org.keycloak.protocol.ssf.receiver.event.processor.SsfEventContext;
 import org.keycloak.protocol.ssf.receiver.event.processor.SsfEventProcessor;
-import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.transmitter.DefaultSsfTransmitterClient;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
 import org.keycloak.protocol.ssf.receiver.verification.DefaultSsfStreamVerificationStore;

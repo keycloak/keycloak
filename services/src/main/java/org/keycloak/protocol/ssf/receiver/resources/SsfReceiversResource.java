@@ -1,38 +1,35 @@
 package org.keycloak.protocol.ssf.receiver.resources;
 
+import java.security.MessageDigest;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-
 import jakarta.ws.rs.PathParam;
-
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import org.eclipse.microprofile.openapi.annotations.Operation;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
-import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
-
-import org.jboss.logging.Logger;
 
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.event.parser.SecurityEventTokenParsingException;
 import org.keycloak.protocol.ssf.receiver.event.processor.SsfEventContext;
-import org.keycloak.protocol.ssf.receiver.SsfReceiver;
 import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderFactory;
 import org.keycloak.protocol.ssf.receiver.spi.SsfReceiverProvider;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.utils.KeycloakSessionUtil;
 
-import java.security.MessageDigest;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import org.jboss.logging.Logger;
 
 public class SsfReceiversResource {
 

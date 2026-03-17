@@ -16,9 +16,9 @@
  */
 package org.keycloak.protocol.ssf.stream;
 
-import com.fasterxml.jackson.annotation.JsonValue;
-
 import org.keycloak.protocol.ssf.Ssf;
+
+import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum DeliveryMethod {
 

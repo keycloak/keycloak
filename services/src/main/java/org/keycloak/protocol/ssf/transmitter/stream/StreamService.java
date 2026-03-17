@@ -8,8 +8,6 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.common.util.Time;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
@@ -18,14 +16,16 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.SsfException;
-import org.keycloak.protocol.ssf.stream.StreamStatusValue;
 import org.keycloak.protocol.ssf.stream.StreamStatus;
+import org.keycloak.protocol.ssf.stream.StreamStatusValue;
 import org.keycloak.protocol.ssf.support.SsfAuthUtil;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
-import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataService;
 import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
+import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataService;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.utils.KeycloakSessionUtil;
+
+import org.jboss.logging.Logger;
 
 /**
  * Service for managing SSF streams.
@@ -124,8 +124,8 @@ public class StreamService {
     }
 
     protected void checkClient() {
-        List<StreamConfig> allStreams = streamStore.getAllStreams();
-        if (allStreams != null && !allStreams.isEmpty()) {
+        List<StreamConfig> availableStreams = streamStore.getAvailableStreams();
+        if (availableStreams != null && !availableStreams.isEmpty()) {
             throw new DuplicateStreamConfigException("Only one stream per receiver is allowed");
         }
     }
@@ -229,12 +229,31 @@ public class StreamService {
     }
 
     /**
-     * Gets all streams.
+     * Gets all streams for the current client context.
      *
      * @return A list of all stream configurations
      */
-    public List<StreamConfig> getAllStreams() {
-        return streamStore.getAllStreams();
+    public List<StreamConfig> getAvailableStreams() {
+        return streamStore.getAvailableStreams();
+    }
+
+    /**
+     * Gets all enabled streams across all clients in the realm.
+     *
+     * @return A list of all enabled stream configurations
+     */
+    public List<StreamConfig> findAllEnabledStreams() {
+        return streamStore.findAllEnabledStreams();
+    }
+
+    /**
+     * Finds a stream by ID across all clients in the realm.
+     *
+     * @param streamId The stream ID
+     * @return The stream configuration, or null if not found
+     */
+    public StreamConfig findStreamById(String streamId) {
+        return streamStore.findStreamById(streamId);
     }
 
     /**

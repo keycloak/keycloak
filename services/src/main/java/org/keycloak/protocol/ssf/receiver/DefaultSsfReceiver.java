@@ -6,13 +6,14 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.SsfException;
 import org.keycloak.protocol.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig;
 import org.keycloak.protocol.ssf.receiver.spi.SsfReceiverProvider;
 import org.keycloak.protocol.ssf.receiver.transmitter.SsfTransmitterClient;
-import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationState;
 import org.keycloak.protocol.ssf.receiver.verification.SsfStreamVerificationStore;
+import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
 
 import org.jboss.logging.Logger;
 
@@ -72,7 +73,7 @@ public class DefaultSsfReceiver implements SsfReceiver {
             if (!configUrl.endsWith("/")) {
                 configUrl += "/";
             }
-            transmitterConfigUrl = configUrl + ".well-known/ssf-configuration";
+            transmitterConfigUrl = configUrl + Ssf.SSF_WELL_KNOWN_METADATA_PATH;
         }
 
         return transmitterConfigUrl;

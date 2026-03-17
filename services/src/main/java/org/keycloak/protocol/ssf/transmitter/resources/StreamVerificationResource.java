@@ -8,8 +8,6 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -18,8 +16,10 @@ import org.keycloak.protocol.ssf.support.SsfAuthUtil;
 import org.keycloak.protocol.ssf.support.SsfErrorRepresentation;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationService;
+import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.utils.KeycloakSessionUtil;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
 /**
@@ -57,13 +57,22 @@ public class StreamVerificationResource {
             ClientModel client = session.getContext().getClient();
             if (SsfAuthUtil.hasScope(Ssf.SCOPE_APPLE_ABM)) {
                 // Store created streamId in client attributes
-                streamId = client.getAttribute("ssf.streamId");
+                streamId = client.getAttribute(ClientStreamStore.SSF_STREAM_ID_KEY);
                 verificationRequest.setStreamId(streamId);
             }
 
             if (streamId == null) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(new SsfErrorRepresentation("stream_verification_error", "Stream ID is required"))
+                        .build();
+            }
+
+            // Ensure the receiver client can only verify its own stream
+            String clientStreamId = client.getAttribute(ClientStreamStore.SSF_STREAM_ID_KEY);
+            if (clientStreamId == null || !clientStreamId.equals(streamId)) {
+                log.debugf("Stream verification denied. clientId=%s requestedStreamId=%s clientStreamId=%s", client.getClientId(), streamId, clientStreamId);
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(new SsfErrorRepresentation("stream_verification_error", "Stream not found"))
                         .build();
             }
 

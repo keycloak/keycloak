@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 /**
  * The Assurance Level Change event signals that there has been a change in authentication method since the initial user login. This change can be from a weak authentication method to a strong authentication method, or vice versa.
  */
-public class AssuranceLevelChange extends CaepEvent {
+public class CaepAssuranceLevelChange extends CaepEvent {
 
     /**
      * See: https://openid.github.io/sharedsignals/openid-caep-1_0.html#name-assurance-level-change
@@ -38,7 +38,7 @@ public class AssuranceLevelChange extends CaepEvent {
     @JsonProperty("change_direction")
     protected ChangeDirection changeDirection;
 
-    public AssuranceLevelChange() {
+    public CaepAssuranceLevelChange() {
         super(TYPE);
     }
 

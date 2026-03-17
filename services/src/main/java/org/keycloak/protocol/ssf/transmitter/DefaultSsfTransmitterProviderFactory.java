@@ -11,8 +11,8 @@ import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataService;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
-import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationService;
+import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
 
 public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProviderFactory {
 
@@ -31,7 +31,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         var securityEventTokenEncoder = new SecurityEventTokenEncoder(session);
         var pushDeliveryService = new PushDeliveryService(session);
         var dispatcher = new SecurityEventTokenDispatcher(streamService, securityEventTokenEncoder, pushDeliveryService);
-        var verificationService = new StreamVerificationService(streamStore, dispatcher);
+        var verificationService = new StreamVerificationService(streamStore, mapper, dispatcher);
 
         return new DefaultSsfTransmitterProvider(session, transmitterService, verificationService, mapper, dispatcher);
     }

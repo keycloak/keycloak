@@ -1,8 +1,8 @@
 package org.keycloak.protocol.ssf.event.token;
 
-import org.keycloak.Token;
-
 import java.util.Map;
+
+import org.keycloak.Token;
 
 public interface SecurityEventToken extends Token {
 

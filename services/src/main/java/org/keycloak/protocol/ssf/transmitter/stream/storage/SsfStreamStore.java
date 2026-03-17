@@ -1,9 +1,9 @@
 package org.keycloak.protocol.ssf.transmitter.stream.storage;
 
+import java.util.List;
+
 import org.keycloak.protocol.ssf.stream.StreamStatus;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
-
-import java.util.List;
 
 /**
  * Interface for storing and retrieving SSF stream configurations.
@@ -43,11 +43,28 @@ public interface SsfStreamStore {
     StreamConfig getStream(String streamId);
 
     /**
-     * Gets all stream configurations.
+     * Gets all stream configurations for the current client context.
      *
      * @return A list of all stream configurations
      */
-    List<StreamConfig> getAllStreams();
+    List<StreamConfig> getAvailableStreams();
+
+    /**
+     * Gets all enabled stream configurations across all clients in the realm.
+     * This is used when there is no specific client context, e.g., when dispatching events from the event listener.
+     *
+     * @return A list of all enabled stream configurations
+     */
+    List<StreamConfig> findAllEnabledStreams();
+
+    /**
+     * Finds a stream configuration by stream ID across all clients in the realm.
+     * This is used when there is no specific client context.
+     *
+     * @param streamId The stream ID
+     * @return The stream configuration, or null if not found
+     */
+    StreamConfig findStreamById(String streamId);
 
     /**
      * Deletes a stream configuration.
