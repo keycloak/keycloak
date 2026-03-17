@@ -55,7 +55,13 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     public User onCreate(User resource) {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        UserProfile profile = provider.create(UserProfileContext.SCIM, Map.of(UserModel.USERNAME, resource.getUserName()));
+        String userName = resource.getUserName();
+
+        if (userName == null) {
+            throw new ModelValidationException("username is required");
+        }
+
+        UserProfile profile = provider.create(UserProfileContext.SCIM, Map.of(UserModel.USERNAME, userName));
         UserModel model = profile.create(false);
 
         populate(model, resource);

@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.models.ModelValidationException;
@@ -42,9 +41,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     @Override
     public R create(R resource) {
-        KeycloakContext context = session.getContext();
-
-        if (!context.hasPermission(getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+        if (!hasPermission(getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
             throw new ForbiddenException();
         }
 
@@ -55,9 +52,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     public R update(R resource) {
         M model = getModel(resource.getId());
 
-        KeycloakContext context = session.getContext();
-
-        if (!context.hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
             throw new ForbiddenException();
         }
 
@@ -74,13 +69,11 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
             return null;
         }
 
-        R resource = createResourceTypeInstance();
-
-        KeycloakContext context = session.getContext();
-
-        if (!context.hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.VIEW)) {
+        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.VIEW)) {
             throw new ForbiddenException();
         }
+
+        R resource = createResourceTypeInstance();
 
         for (ModelSchema<M, R> schema : schemas) {
             schema.populate(resource, model);
@@ -91,6 +84,10 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     @Override
     public Stream<R> getAll(SearchRequest searchRequest) {
+        if (!canQuery()) {
+            throw new ForbiddenException();
+        }
+
         return getModels(searchRequest).map(m -> {
             try {
                 return get(m.getId());
@@ -103,9 +100,8 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     @Override
     public boolean delete(String id) {
         M model = getModel(id);
-        KeycloakContext context = session.getContext();
 
-        if (!context.hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
             throw new ForbiddenException();
         }
 
@@ -117,9 +113,8 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
         Objects.requireNonNull(existing, "existing cannot be null");
         Objects.requireNonNull(operations, "operations cannot be null");
         M model = getModel(existing.getId());
-        KeycloakContext context = session.getContext();
 
-        if (!context.hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
             throw new ForbiddenException();
         }
 
@@ -186,4 +181,17 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
             throw new RuntimeException("Could not create instance of resource type " + getResourceType(), e);
         }
     }
+
+    private boolean canQuery() {
+        return session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.QUERY);
+    }
+
+    private boolean hasPermission(String realmResourceType, String scope) {
+        return session.getContext().getPermissions().hasPermission(realmResourceType, scope);
+    }
+
+    private boolean hasPermission(M model, String realmResourceType, String scope) {
+        return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope);
+    }
+
 }
