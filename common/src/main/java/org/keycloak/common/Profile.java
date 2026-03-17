@@ -168,7 +168,9 @@ public class Profile {
         @Deprecated
         INSTAGRAM_BROKER("Instagram Identity Broker", Type.DEPRECATED, 1),
 
-        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.EXPERIMENTAL);
+        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.EXPERIMENTAL),
+
+        RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL);
 
         private final Type type;
         private final String label;

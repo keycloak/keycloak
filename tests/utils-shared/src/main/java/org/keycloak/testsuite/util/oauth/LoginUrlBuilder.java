@@ -31,6 +31,11 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
         return this;
     }
 
+    public LoginUrlBuilder resource(String resource) {
+        parameter(OAuth2Constants.RESOURCE, resource);
+        return this;
+    }
+
     public LoginUrlBuilder authorizationDetails(AuthorizationDetailsJSONRepresentation authDetail) {
         parameter(OAuth2Constants.AUTHORIZATION_DETAILS, authDetail != null ? List.of(authDetail) : List.of());
         return this;
@@ -128,6 +133,11 @@ public class LoginUrlBuilder extends AbstractUrlBuilder {
     public AuthorizationEndpointResponse doLogin(String username, String password) {
         open();
         client.fillLoginForm(username, password);
+        return client.parseLoginResponse();
+    }
+
+    public AuthorizationEndpointResponse doLoginWithCookie() {
+        open();
         return client.parseLoginResponse();
     }
 

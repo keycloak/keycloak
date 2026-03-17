@@ -103,6 +103,8 @@ import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.protocol.oidc.token.TokenPostProcessor;
+import org.keycloak.protocol.oidc.token.TokenPostProcessorContext;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.rar.AuthorizationRequestContext;
@@ -304,7 +306,7 @@ public class TokenManager {
 
 
     public AccessTokenResponseBuilder refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient,
-                                            String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, String scopeParameter) throws OAuthErrorException {
+                                            String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, String scopeParameter, String resourceParameter) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
 
         if (realm.isRevokeRefreshToken()) {
@@ -360,6 +362,8 @@ public class TokenManager {
                             .filter(Objects::nonNull)
                             .toArray(ClientModel[]::new));
         }
+
+        validation.clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, resourceParameter);
 
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
             validation.userSession, validation.clientSessionCtx).offlineToken( TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType())).accessToken(validation.newToken);
@@ -1370,7 +1374,14 @@ public class TokenManager {
             return offlineToken;
         }
 
+        private void invokeTokenPostProcessors() {
+            TokenPostProcessorContext context = new TokenPostProcessorContext(refreshToken, accessToken, clientSessionCtx);
+            session.getAllProviders(TokenPostProcessor.class).forEach(processor -> processor.process(context));
+        }
+
         public AccessTokenResponse build() {
+            invokeTokenPostProcessors();
+
             if (response != null) return response;
 
             if (accessToken != null) {
