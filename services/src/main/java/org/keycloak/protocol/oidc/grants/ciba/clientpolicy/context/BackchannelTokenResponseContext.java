@@ -22,13 +22,12 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class BackchannelTokenResponseContext implements ClientPolicyContext, CIBAContext {
+public class BackchannelTokenResponseContext implements CIBAContext {
 
     private final CIBAAuthenticationRequest parsedRequest;
     private final MultivaluedMap<String, String> requestParameters;

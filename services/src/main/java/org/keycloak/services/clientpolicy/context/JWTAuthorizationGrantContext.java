@@ -20,14 +20,13 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
 /**
  *
  * @author rmartinc
  */
-public class JWTAuthorizationGrantContext implements ClientPolicyContext, ClientModelContext, ScopeParameterContext {
+public class JWTAuthorizationGrantContext implements ClientModelContext, ScopeParameterContext {
 
     private final KeycloakSession session;
     private final JWTAuthorizationGrantValidationContext authorizationGrantContext;
