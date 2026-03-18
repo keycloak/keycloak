@@ -35,9 +35,11 @@ import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
@@ -69,6 +71,10 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -86,23 +92,30 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @InjectRealm(config = NoAccessRealmConfig.class)
     ManagedRealm testRealm;
 
+    @InjectRealm(attachTo = "master", ref = "master")
+    ManagedRealm masterRealm;
+
     @InjectAdminClient(ref = "noAccessClient", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
     Keycloak noAccessAdminClient;
 
+    @InjectClient(realmRef = "master")
+    ManagedClient testClient;
+
     @Test
     public void getClient() throws Exception {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "/account");
+        HttpGet request = new HttpGet(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
-            assertEquals("account", client.getClientId());
+            assertEquals(testClient.getClientId(), client.getClientId());
+            assertClientUuid(client);
         }
     }
 
     @Test
     public void jsonPatchClient() throws Exception {
-        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
+        HttpPatch request = new HttpPatch(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_PATCH_JSON);
         try (var response = client.execute(request)) {
@@ -113,7 +126,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void jsonMergePatchClient() throws Exception {
-        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
+        HttpPatch request = new HttpPatch(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
@@ -132,7 +145,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void jsonMergePatchClientInvalid() throws Exception {
-        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
+        HttpPatch request = new HttpPatch(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
@@ -161,7 +174,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void putFailsWithDifferentClientId() throws Exception {
-        HttpPut request = new HttpPut(getClientsApiUrl() + "/account");
+        HttpPut request = new HttpPut(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -192,6 +205,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(201, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals("I'm new", client.getDescription());
+            assertClientUuid(client);
         }
 
         rep.setDescription("I'm updated");
@@ -201,6 +215,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(200, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals("I'm updated", client.getDescription());
+            assertClientUuid(client);
         }
     }
 
@@ -223,6 +238,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertThat(client.getEnabled(),is(true));
             assertThat(client.getClientId(),is("client-123"));
             assertThat(client.getDescription(),is("I'm new"));
+            assertClientUuid(client);
         }
 
         try (var response = client.execute(request)) {
@@ -410,8 +426,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             var violations = body.violations();
-            assertThat(violations.size(), is(1));
-            assertThat(violations.iterator().next(), is("clientId: must not be blank"));
+            assertThat(violations, hasSize(2));
+            assertThat(violations, hasItem("clientId: must not be blank"));
+            assertThat(violations, hasItem("appUrl: must be a valid URL"));
         }
 
         request.setEntity(new StringEntity("""
@@ -439,7 +456,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void authenticationRequired() throws Exception {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "/account");
+        HttpGet request = new HttpGet(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request, noAccessAdminClient);
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
@@ -458,6 +475,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         try (var response = client.execute(request)) {
             assertEquals(201, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            client.setUuid(null); // UUID is generated by server
             assertThat(client, is(rep));
         }
     }
@@ -729,7 +747,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientUpdateFailsWithError(rep, "A redirect URI uses an illegal scheme");
+        assertClientUpdateFailsWithError(rep, "Each redirect URL must be valid");
     }
 
     @Test
@@ -757,7 +775,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientUpdateFailsWithError(rep, "A redirect URI uses an illegal scheme");
+        assertClientUpdateFailsWithError(rep, "Each redirect URL must be valid");
     }
 
     @Test
@@ -786,7 +804,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfig(auth, request, clientId);
         assertThat(createdAuth, notNullValue());
-        assertThat(createdAuth.getSecret(), Matchers.not(emptyOrNullString()));
+        assertThat(createdAuth.getSecret(), not(emptyOrNullString()));
 
         // make sure that the created model was persisted and GET method returns the newly generated secret
         HttpGet getRequest = new HttpGet(getClientApiUrl(clientId));
@@ -795,7 +813,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(200, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals(clientId, client.getClientId());
-            assertThat(client.getAuth().getSecret(), Matchers.not(emptyOrNullString()));
+            assertThat(client.getAuth().getSecret(), not(emptyOrNullString()));
         }
     }
 
@@ -838,7 +856,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(authWithoutSecret, request, clientId);
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
-        assertThat(newlyGeneratedSecret, Matchers.not(emptyOrNullString()));
+        assertThat(newlyGeneratedSecret, not(emptyOrNullString()));
     }
 
     /**
@@ -868,7 +886,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(authWithoutSecret, request, clientId);
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
-        assertThat(newlyGeneratedSecret, Matchers.not(is(createdAuth.getSecret())));
+        assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
     }
 
     /**
@@ -897,7 +915,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(authWithoutSecret, request, clientId);
         assertThat(patchedAuth, notNullValue());
         String newlyGeneratedSecret = patchedAuth.getSecret();
-        assertThat(newlyGeneratedSecret, Matchers.not(is(createdAuth.getSecret())));
+        assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
     }
 
     /**
@@ -1133,6 +1151,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         try (var response = client.execute(deleteRequest)) {
             EntityUtils.consumeQuietly(response.getEntity());
         }
+    }
+
+    private void assertClientUuid(BaseClientRepresentation client) {
+        assertThat(client.getUuid(), matchesPattern("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"));
     }
 
     private OIDCClientRepresentation getTestingFullClientRep() {
