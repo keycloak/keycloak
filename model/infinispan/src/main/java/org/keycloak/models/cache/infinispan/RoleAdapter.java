@@ -32,7 +32,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.cache.infinispan.entities.CachedClientRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRealmRole;
 import org.keycloak.models.cache.infinispan.entities.CachedRole;
-import org.keycloak.models.cache.infinispan.entities.CachedRole.RoleRecord;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
@@ -143,8 +142,8 @@ public class RoleAdapter implements RoleModel {
 
         if (composites == null) {
             composites = new HashSet<>();
-            for (RoleRecord rec : cached.getComposites(session, modelSupplier)) {
-                RoleModel role = realm.getRoleById(rec.id());
+            for (String id : cached.getComposites(session, modelSupplier).ids()) {
+                RoleModel role = realm.getRoleById(id);
                 if (role == null) {
                     // chance that composite role was removed, so invalidate this entry and fallback to delegate
                     getDelegateForUpdate();
@@ -161,7 +160,7 @@ public class RoleAdapter implements RoleModel {
     public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
         if (isUpdated()) return updated.getCompositesStream(search, first, max);
 
-        return cacheSession.getRoleDelegate().getRolesStream(realm, cached.getComposites(session, modelSupplier).stream().map(RoleRecord::id), search, first, max);
+        return cacheSession.getRoleDelegate().getRolesStream(realm, cached.getComposites(session, modelSupplier).ids().stream(), search, first, max);
     }
 
     @Override
@@ -244,7 +243,7 @@ public class RoleAdapter implements RoleModel {
         return cached.getAttributes(session, modelSupplier);
     }
 
-    private RoleModel getRoleModel() {
+    protected RoleModel getRoleModel() {
         return cacheSession.getRoleDelegate().getRoleById(realm, cached.getId());
     }
 
@@ -260,11 +259,6 @@ public class RoleAdapter implements RoleModel {
     @Override
     public int hashCode() {
         return getId().hashCode();
-    }
-
-    protected void clearCompositeCache() {
-        this.composites = null;
-        this.cached.clearCompositeCache();
     }
 
 }
