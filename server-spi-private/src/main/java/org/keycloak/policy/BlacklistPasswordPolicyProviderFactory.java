@@ -299,10 +299,10 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
                 return;
             }
             synchronized (this) {
+                now = System.currentTimeMillis();
                 if (now - lastCheckedMillis < checkIntervalMillis) {
                     return;
                 }
-                lastCheckedMillis = now;
                 try {
                     long currentModified = Files.getLastModifiedTime(path).toMillis();
                     long currentSize = Files.size(path);
@@ -314,6 +314,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
                 } catch (Exception e) {
                     LOG.warnf("Failed to reload blacklist %s, continuing with cached version: %s", name, e.getMessage());
                 }
+                lastCheckedMillis = now;
             }
         }
 
