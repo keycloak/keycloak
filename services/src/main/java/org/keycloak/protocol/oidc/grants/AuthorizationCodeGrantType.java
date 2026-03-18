@@ -276,6 +276,7 @@ public class AuthorizationCodeGrantType extends OAuth2GrantTypeBase {
                     s.getRefreshToken().setAuthorizationDetails(authDetailsResponse);
                 }
             }
+            s.code(codeData);
             return new TokenResponseContext(formParams, parseResult, clientSessionCtx, s);
         });
     }

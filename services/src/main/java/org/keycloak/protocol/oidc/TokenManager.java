@@ -105,6 +105,7 @@ import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.protocol.oidc.token.TokenPostProcessor;
 import org.keycloak.protocol.oidc.token.TokenPostProcessorContext;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.rar.AuthorizationRequestContext;
@@ -391,6 +392,8 @@ public class TokenManager {
         }
 
         storeRefreshTimingInformation(event, refreshToken, validation.newToken);
+
+        responseBuilder.requestRefreshToken(refreshToken);
 
         return responseBuilder;
     }
@@ -1148,6 +1151,9 @@ public class TokenManager {
         UserSessionModel userSession;
         ClientSessionContext clientSessionCtx;
 
+        OAuth2Code code;
+        RefreshToken requestRefreshToken;
+
         AccessToken accessToken;
         RefreshToken refreshToken;
         IDToken idToken;
@@ -1182,6 +1188,16 @@ public class TokenManager {
 
         public IDToken getIdToken() {
             return idToken;
+        }
+
+        public AccessTokenResponseBuilder code(OAuth2Code code) {
+            this.code = code;
+            return this;
+        }
+
+        public AccessTokenResponseBuilder requestRefreshToken(RefreshToken requestRefreshToken) {
+            this.requestRefreshToken = requestRefreshToken;
+            return this;
         }
 
         public AccessTokenResponseBuilder accessToken(AccessToken accessToken) {
@@ -1375,7 +1391,7 @@ public class TokenManager {
         }
 
         private void invokeTokenPostProcessors() {
-            TokenPostProcessorContext context = new TokenPostProcessorContext(refreshToken, accessToken, clientSessionCtx);
+            TokenPostProcessorContext context = new TokenPostProcessorContext(code, requestRefreshToken, refreshToken, accessToken, clientSessionCtx);
             session.getAllProviders(TokenPostProcessor.class).forEach(processor -> processor.process(context));
         }
 
