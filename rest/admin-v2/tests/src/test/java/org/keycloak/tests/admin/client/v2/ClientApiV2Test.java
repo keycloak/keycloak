@@ -85,9 +85,6 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @InjectHttpClient
     CloseableHttpClient client;
 
-    @InjectAdminClient
-    Keycloak adminClient;
-
     @InjectRealm(config = NoAccessRealmConfig.class)
     ManagedRealm testRealm;
 
@@ -986,10 +983,6 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         // not implemented yet
         // rep.setAdditionalFields(Map.of("key1", "val1", "key2", "val2"));
         return rep;
-    }
-
-    private void setAuthHeader(HttpMessage request) {
-        setAuthHeader(request, this.adminClient);
     }
 
     public static class AdminV2Config implements KeycloakServerConfig {
