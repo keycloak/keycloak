@@ -162,7 +162,7 @@ public abstract class OID4VCIssuerTestBase {
         jwtTypeCredentialScope = requireExistingCredentialScope(jwtTypeCredentialScopeName);
         minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
         sdJwtTypeCredentialScope = requireExistingCredentialScope(sdJwtTypeCredentialScopeName);
-        oauth.client(CLIENT_ID, "test-secret");
+        oauth.client(CLIENT_ID, client.getSecret());
         enableVerifiableCredentialEvents(testRealm);
     }
 

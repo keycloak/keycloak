@@ -413,7 +413,7 @@ public class OID4VCBasicWallet {
                 // AuthPageState.LOGIN
                 default -> {
                     client.fillLoginForm(username, password);
-                    return new AuthorizationEndpointResponse(client);
+                    return client.parseLoginResponse();
                 }
             }
         }
