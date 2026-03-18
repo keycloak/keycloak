@@ -3,6 +3,22 @@
 
 This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
 
+= Administration
+
+== Dedicated admin roles for organization management
+
+{project_name} now provides dedicated realm admin roles for managing organizations: `manage-organizations`, `view-organizations`, and `query-organizations`.
+
+Previously, managing organizations required the `manage-realm` role, which grants broad administrative access. The new roles allow administrators to be granted organization-specific permissions without requiring full realm management privileges.
+
+* `manage-organizations` — grants full read and write access to organizations, including creating, updating, and deleting organizations and their members.
+* `view-organizations` — grants read-only access to organizations and their members (also requires `view-users` or Fine-Grained Admin Permissions for user visibility).
+* `query-organizations` — grants the ability to search and list organizations without full view access, consistent with the `query-users` / `query-clients` / `query-groups` pattern.
+
+The `manage-realm` role continues to implicitly grant full organization management access for backward compatibility.
+
+When Fine-Grained Admin Permissions is enabled, organization member queries respect user-level permissions, returning only members the administrator is permitted to view.
+
 == Realm search now matches by display name
 
 When searching for realms in the admin console, the search now also matches against the realm's display name in addition to the realm name.

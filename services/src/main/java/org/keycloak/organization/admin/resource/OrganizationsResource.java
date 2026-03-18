@@ -99,7 +99,7 @@ public class OrganizationsResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Response create(OrganizationRepresentation organization) {
-        auth.realm().requireManageRealm();
+        auth.orgs().requireManage();
         Organizations.checkEnabled(provider);
 
         if (organization == null) {
@@ -141,7 +141,7 @@ public class OrganizationsResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns a paginated list of organizations filtered according to the specified parameters")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
         @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
@@ -153,8 +153,12 @@ public class OrganizationsResource {
             @Parameter(description = "The maximum number of results to be returned - defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
             @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation
     ) {
-        auth.realm().requireManageRealm();
+        auth.orgs().requireQuery();
         Organizations.checkEnabled(provider);
+
+        if (!auth.orgs().canView()) {
+            return Stream.empty();
+        }
 
         // check if are searching orgs by attribute.
         if (StringUtil.isNotBlank(searchQuery)) {
@@ -170,7 +174,7 @@ public class OrganizationsResource {
      */
     @Path("{org-id}")
     public OrganizationResource get(@PathParam("org-id") String orgId) {
-        auth.realm().requireManageRealm();
+        auth.orgs().requireView();
         Organizations.checkEnabled(provider);
 
         if (StringUtil.isBlank(orgId)) {
@@ -185,7 +189,7 @@ public class OrganizationsResource {
 
         session.getContext().setOrganization(organizationModel);
 
-        return new OrganizationResource(session, organizationModel, adminEvent);
+        return new OrganizationResource(session, organizationModel, adminEvent, auth);
     }
 
     /**
@@ -199,13 +203,21 @@ public class OrganizationsResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organizations counts.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
     public long getOrganizationCount(
             @Parameter(description = "A String representing either an organization name or domain") @QueryParam("search") String search,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
             @Parameter(description = "Boolean which defines whether the param 'search' must match exactly or not") @QueryParam("exact") Boolean exact
     ) {
-        auth.realm().requireManageRealm();
+        auth.orgs().requireQuery();
         Organizations.checkEnabled(provider);
+
+        if (!auth.orgs().canView()) {
+            return 0;
+        }
 
         if (StringUtil.isNotBlank(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
@@ -221,17 +233,22 @@ public class OrganizationsResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
     @Operation(summary = "Returns the organizations associated with the user that has the specified id")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
-        @APIResponse(responseCode = "400", description = "Bad Request")
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = OrganizationRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<OrganizationRepresentation> getOrganizations(
             @PathParam("member-id") String memberId,
             @Parameter(description = "if false, return the full representation. Otherwise, only the basic fields are returned.")
             @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation
     ) {
-        auth.realm().requireManageRealm();
+        auth.orgs().requireQuery();
         Organizations.checkEnabled(provider);
 
-        return new OrganizationMemberResource(session, null, adminEvent).getOrganizations(memberId, briefRepresentation);
+        if (!auth.orgs().canView()) {
+            return Stream.empty();
+        }
+
+        return new OrganizationMemberResource(session, null, adminEvent, auth).getOrganizations(memberId, briefRepresentation);
     }
 }
