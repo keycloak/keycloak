@@ -352,6 +352,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
             try {
                 LOG.infof("Loading blacklist start: name=%s path=%s", name, path);
+                long loadStartMillis = System.currentTimeMillis();
 
                 long passwordCount = countPasswordsInBlacklistFile();
                 double fpp = getFalsePositiveProbability();
@@ -364,8 +365,9 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
                 insertPasswordsInto(filter);
 
                 double expectedFfp = filter.expectedFpp();
-                LOG.infof("Loading blacklist finished: name=%s passwords=%s path=%s falsePositiveProbability=%s expectedFalsePositiveProbability=%s",
-                        name, passwordCount, path, fpp, expectedFfp);
+                long loadTimeMillis = System.currentTimeMillis() - loadStartMillis;
+                LOG.infof("Loading blacklist finished: name=%s passwords=%s path=%s falsePositiveProbability=%s expectedFalsePositiveProbability=%s loadTime=%dms",
+                        name, passwordCount, path, fpp, expectedFfp, loadTimeMillis);
 
                 return filter;
             } catch (IOException e) {
