@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * +----------+----------+---------+------------------------------------------------------+
  */
 @KeycloakIntegrationTest(config = VCTestServerConfig.class)
-public class OID4VCAuthorizationCodeOfferTest extends OID4VCIssuerTestBase {
+public class OID4VCAuthCodeOfferTest extends OID4VCIssuerTestBase {
 
     OID4VCBasicWallet wallet;
 
