@@ -43,14 +43,11 @@ public class BoostrapReadyHealthCheck implements AsyncHealthCheck {
         if (bootstrapCompleted) {
             return ready();
         }
-        var builder = builder();
         if (KeycloakApplication.isBootstrapCompleted()) {
-            builder.up();
             bootstrapCompleted = true;
-        } else {
-            builder.down();
-        }
-        return Uni.createFrom().item(builder.build());
+            return ready();
+        } 
+        return Uni.createFrom().item(builder().down().build());
     }
 
     private Uni<HealthCheckResponse> ready() {

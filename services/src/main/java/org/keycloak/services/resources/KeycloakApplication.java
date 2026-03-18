@@ -19,6 +19,7 @@ package org.keycloak.services.resources;
 import java.io.File;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.Application;
@@ -89,11 +90,13 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
         sessionFactory = ksf;
 
         if (supportsAsyncInitialization()) {
-            CompletableFuture.runAsync(() -> runBootstrap(ksf))
+            final var executor = Executors.newSingleThreadExecutor();
+            CompletableFuture.runAsync(() -> runBootstrap(ksf), executor)
                     .exceptionally(throwable -> {
                         exit(throwable);
                         return null;
-                    });
+                    })
+                    .thenRun(executor::shutdown);
             return;
         }
 
