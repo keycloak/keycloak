@@ -22,6 +22,8 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 
+import org.keycloak.representations.idm.EventRepresentation;
+
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -131,9 +133,9 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
-        assertNotNull(accessToken,"No accessToken");
+        assertNotNull(accessToken, "No accessToken");
 
-        assertNull(ctx.getAuthorizedCredentialIdentifier(),"Not expected to have credential identifier");
+        assertNull(ctx.getAuthorizedCredentialIdentifier(), "Not expected to have credential identifier");
 
         String credentialConfigId = ctx.getAuthorizedCredentialConfigurationId();
         assertEquals(minimalJwtTypeCredentialConfigurationIdName, credentialConfigId);

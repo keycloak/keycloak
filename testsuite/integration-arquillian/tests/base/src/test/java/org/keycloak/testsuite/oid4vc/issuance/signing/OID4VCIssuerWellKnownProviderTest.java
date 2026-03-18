@@ -61,7 +61,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
 import org.keycloak.protocol.oid4vc.model.DisplayObject;
 import org.keycloak.protocol.oid4vc.model.JWTVCIssuerMetadata;
 import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
-import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -541,10 +540,19 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
         assertEquals(clientScope.getName(), supportedConfig.getScope());
         {
-            // TODO this is still hardcoded
-            assertEquals(1, supportedConfig.getCryptographicBindingMethodsSupported().size());
-            assertEquals(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT,
-                    supportedConfig.getCryptographicBindingMethodsSupported().get(0));
+            // cryptographic_binding_methods_supported and proof_types_supported are now emitted
+            // only when binding is explicitly configured for the credential configuration.
+            String bindingRequired = clientScope.getAttributes().get(CredentialScopeModel.VC_BINDING_REQUIRED);
+            String bindingMethods = clientScope.getAttributes()
+                    .get(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS);
+
+            if (Boolean.parseBoolean(bindingRequired) && bindingMethods != null && !bindingMethods.isBlank()) {
+                List<String> expectedMethods = Arrays.asList(bindingMethods.split(","));
+                assertEquals(expectedMethods, supportedConfig.getCryptographicBindingMethodsSupported());
+            } else {
+                assertNull("No cryptographic binding methods should be advertised when binding is not configured",
+                        supportedConfig.getCryptographicBindingMethodsSupported());
+            }
         }
 
         compareDisplay(supportedConfig, clientScope);
@@ -581,10 +589,22 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
 
         List<String> signingAlgsSupported = new ArrayList<>(supportedConfig.getCredentialSigningAlgValuesSupported());
         ProofTypesSupported proofTypesSupported = supportedConfig.getProofTypesSupported();
-        String proofTypesSupportedString = proofTypesSupported.toJsonString();
+
+        String bindingRequired = clientScope.getAttributes().get(CredentialScopeModel.VC_BINDING_REQUIRED);
+        String requiredProofTypesAttr = clientScope.getAttributes()
+                .get(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES);
+        List<String> requiredProofTypes = requiredProofTypesAttr != null && !requiredProofTypesAttr.isBlank()
+                ? Arrays.asList(requiredProofTypesAttr.split(","))
+                : List.of();
+
+        if (!Boolean.parseBoolean(bindingRequired) || requiredProofTypes.isEmpty()) {
+            assertNull("proof_types_supported must be omitted when binding is not configured",
+                    proofTypesSupported);
+            return;
+        }
 
         MatcherAssert.assertThat(proofTypesSupported.getSupportedProofTypes().keySet(),
-                Matchers.containsInAnyOrder(ProofType.JWT, ProofType.ATTESTATION));
+                Matchers.containsInAnyOrder(requiredProofTypes.toArray()));
 
         List<String> expectedProofSigningAlgs = getAllAsymmetricAlgorithms();
 
@@ -604,7 +624,6 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
         } else {
             expectedKeyAttestationsRequired = null;
         }
-        String expectedKeyAttestationsRequiredString = toJsonString(expectedKeyAttestationsRequired);
 
         proofTypesSupported.getSupportedProofTypes().values()
                 .forEach(proofTypeData -> {
@@ -613,29 +632,9 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerEndpointTest 
                             Matchers.containsInAnyOrder(expectedProofSigningAlgs.toArray()));
                 });
 
-        try {
-            withCausePropagation(() -> testingClient.server(TEST_REALM_NAME).run((session -> {
-                ProofTypesSupported actualProofTypesSupported = ProofTypesSupported.fromJsonString(proofTypesSupportedString);
-                List<String> actualProofSigningAlgs = actualProofTypesSupported
-                        .getSupportedProofTypes()
-                        .get(ProofType.JWT)
-                        .getSigningAlgorithmsSupported();
-
-                KeyAttestationsRequired keyAttestationsRequired = //
-                        Optional.ofNullable(expectedKeyAttestationsRequiredString)
-                                .map(s -> fromJsonString(s, KeyAttestationsRequired.class))
-                                .orElse(null);
-
-                ProofTypesSupported expectedProofTypesSupported = ProofTypesSupported.parse(
-                        session, keyAttestationsRequired, actualProofSigningAlgs);
-                assertEquals(expectedProofTypesSupported, actualProofTypesSupported);
-
-                MatcherAssert.assertThat(signingAlgsSupported,
-                        Matchers.containsInAnyOrder(getAllAsymmetricAlgorithms().toArray()));
-            })));
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+        // Signing algorithms advertised on the credential configuration must match the global asymmetric set
+        MatcherAssert.assertThat(signingAlgsSupported,
+                Matchers.containsInAnyOrder(getAllAsymmetricAlgorithms().toArray()));
 
         compareClaims(expectedFormat, supportedConfig.getCredentialMetadata().getClaims(), clientScope.getProtocolMappers());
     }

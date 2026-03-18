@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.keycloak.VCFormat;
 import org.keycloak.models.KeycloakSession;
@@ -29,6 +30,7 @@ import org.keycloak.utils.StringUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.jboss.logging.Logger;
 
 /**
  * A supported credential, as used in the Credentials Issuer Metadata in OID4VCI
@@ -36,6 +38,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SupportedCredentialConfiguration {
+
+    private static final Logger LOGGER = Logger.getLogger(SupportedCredentialConfiguration.class);
 
     public static final String DOT_SEPARATOR = ".";
 
@@ -111,19 +115,70 @@ public class SupportedCredentialConfiguration {
         credentialConfiguration.setFormat(format);
 
         KeyAttestationsRequired keyAttestationsRequired = KeyAttestationsRequired.parse(credentialScope);
-        ProofTypesSupported proofTypesSupported = ProofTypesSupported.parse(keycloakSession, keyAttestationsRequired,
-                globalSupportedSigningAlgorithms);
-        credentialConfiguration.setProofTypesSupported(proofTypesSupported);
+        boolean bindingRequired = credentialScope.isBindingRequired();
+        List<String> requiredProofTypes = credentialScope.getRequiredProofTypes();
+        List<String> configuredBindingMethods = credentialScope.getCryptographicBindingMethods();
+
+        // Normalize and validate binding methods and proof types against what the server actually supports.
+        // This prevents unknown values configured via the admin UI or API from leaking into issuer metadata.
+        List<String> allowedBindingMethods = List.of(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        List<String> effectiveBindingMethods = Optional.ofNullable(configuredBindingMethods)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .filter(allowedBindingMethods::contains)
+                .collect(Collectors.toList());
+
+        if (configuredBindingMethods != null && !configuredBindingMethods.isEmpty()
+                && effectiveBindingMethods.isEmpty()) {
+            LOGGER.warnf("All configured cryptographic binding methods %s are unsupported. " +
+                            "This credential configuration will not advertise cryptographic binding in metadata.",
+                    configuredBindingMethods);
+        }
+
+        List<String> allowedProofTypes = List.of(ProofType.JWT, ProofType.ATTESTATION);
+        List<String> effectiveProofTypes = Optional.ofNullable(requiredProofTypes)
+                .orElse(Collections.emptyList())
+                .stream()
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .filter(allowedProofTypes::contains)
+                .collect(Collectors.toList());
+
+        if (requiredProofTypes != null && !requiredProofTypes.isEmpty()
+                && effectiveProofTypes.isEmpty()) {
+            LOGGER.warnf("All configured proof types %s are unsupported. " +
+                            "This credential configuration will not advertise proof_types_supported in metadata.",
+                    requiredProofTypes);
+        }
+
+        // According to OID4VCI Section 12.2.4:
+        // - If cryptographic_binding_methods_supported is present, cryptographic holder binding is REQUIRED.
+        // - If it is absent, binding is NOT required.
+        // - proof_types_supported MUST be present if cryptographic_binding_methods_supported is present.
+        //
+        // We therefore only emit these two metadata fields when:
+        //   - binding has been explicitly marked as required
+        //   - at least one proof type is configured for this credential configuration
+        //   - and at least one cryptographic binding method has been configured
+        if (bindingRequired
+                && !effectiveProofTypes.isEmpty()
+                && !effectiveBindingMethods.isEmpty()) {
+
+            ProofTypesSupported allProofTypes = ProofTypesSupported.parse(keycloakSession, keyAttestationsRequired,
+                    globalSupportedSigningAlgorithms);
+            ProofTypesSupported proofTypesSupported = allProofTypes.filterByTypes(effectiveProofTypes);
+            credentialConfiguration.setProofTypesSupported(proofTypesSupported);
+
+            credentialConfiguration.setCryptographicBindingMethodsSupported(effectiveBindingMethods);
+        }
 
         // Return single configured value for the signature algorithm if any
         String signingAlgSupported = credentialScope.getSigningAlg();
         List<String> signingAlgsSupported = StringUtil.isBlank(signingAlgSupported) ? globalSupportedSigningAlgorithms :
                 Collections.singletonList(signingAlgSupported);
         credentialConfiguration.setCredentialSigningAlgValuesSupported(signingAlgsSupported);
-
-        // TODO resolve value dynamically from provider implementations?
-        String bindingMethodsSupported = CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
-        credentialConfiguration.setCryptographicBindingMethodsSupported(List.of(bindingMethodsSupported));
 
         // Parse credential metadata (includes display and claims)
         CredentialMetadata credentialMetadata = CredentialMetadata.parse(keycloakSession, credentialScope);

@@ -38,6 +38,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCGeneratedIdMapper;
@@ -466,8 +467,7 @@ public abstract class OID4VCIssuerTestBase {
         if (client != null) {
             if (client.getSecret() != null) {
                 oAuthClient.client(client.getClientId(), client.getSecret());
-            }
-            else {
+            } else {
                 oAuthClient.client(client.getClientId());
             }
         }
@@ -508,8 +508,15 @@ public abstract class OID4VCIssuerTestBase {
             realm.name(TEST_REALM_NAME)
                     .eventsEnabled(true)
                     .enabledEventTypes(
+                            EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST.name(),
                             EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name(),
-                            EventType.VERIFIABLE_CREDENTIAL_REQUEST.name()
+                            EventType.VERIFIABLE_CREDENTIAL_REQUEST.name(),
+                            EventType.CODE_TO_TOKEN.name(),
+                            EventType.LOGIN.name(),
+                            EventType.CUSTOM_REQUIRED_ACTION_ERROR.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR.name()
                     );
 
             CryptoIntegration.init(this.getClass().getClassLoader());
@@ -519,7 +526,9 @@ public abstract class OID4VCIssuerTestBase {
             // Allow the default client scopes to be added as well
             realm.attribute(CREATE_DEFAULT_CLIENT_SCOPES, String.valueOf(true));
 
-            realm.addClientScope(createCredentialScope(
+            // Explicitly enable cryptographic binding + proof types for test credential configurations.
+            // The issuer metadata only advertises binding/proofs when it is explicitly configured as required.
+            CredentialScopeRepresentation sdJwtScope = createCredentialScope(
                     sdJwtTypeCredentialScopeName,
                     null,
                     sdJwtTypeCredentialConfigurationIdName,
@@ -527,10 +536,17 @@ public abstract class OID4VCIssuerTestBase {
                     sdJwtCredentialVct,
                     VCFormat.SD_JWT_VC,
                     null,
-                    List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH, OID4VCConstants.KeyAttestationResistanceLevels.MODERATE))
+                    List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH, OID4VCConstants.KeyAttestationResistanceLevels.MODERATE)
             );
+            Map<String, String> sdJwtAttrs = Optional.ofNullable(sdJwtScope.getAttributes()).orElseGet(HashMap::new);
+            sdJwtAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
+            sdJwtAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
+            sdJwtAttrs.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS,
+                    CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+            sdJwtScope.setAttributes(sdJwtAttrs);
+            realm.addClientScope(sdJwtScope);
 
-            realm.addClientScope(createCredentialScope(
+            CredentialScopeRepresentation jwtVcScope = createCredentialScope(
                     jwtTypeCredentialScopeName,
                     ISSUER_DID.toString(),
                     jwtTypeCredentialConfigurationIdName,
@@ -539,12 +555,19 @@ public abstract class OID4VCIssuerTestBase {
                     VCFormat.JWT_VC,
                     TEST_CREDENTIAL_MAPPERS_FILE,
                     Collections.emptyList()
-            ));
+            );
+            Map<String, String> jwtVcAttrs = Optional.ofNullable(jwtVcScope.getAttributes()).orElseGet(HashMap::new);
+            jwtVcAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
+            jwtVcAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt,attestation");
+            jwtVcAttrs.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS,
+                    CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+            jwtVcScope.setAttributes(jwtVcAttrs);
+            realm.addClientScope(jwtVcScope);
 
 
             realm.addClientScope(createCredentialScope(
                     minimalJwtTypeCredentialScopeName,
-                   null,
+                    null,
                     minimalJwtTypeCredentialConfigurationIdName,
                     null,
                     minimalJwtTypeCredentialScopeName,
@@ -555,7 +578,7 @@ public abstract class OID4VCIssuerTestBase {
 
             realm.addUser(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), Collections.emptyMap()));
             realm.addUser(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
-            
+
             return realm;
         }
     }

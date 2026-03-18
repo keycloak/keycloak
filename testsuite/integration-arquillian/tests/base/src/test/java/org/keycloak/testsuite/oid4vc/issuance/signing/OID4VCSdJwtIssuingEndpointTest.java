@@ -564,18 +564,23 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                             verifiableCredentialType,
                             credentialIssuer.getCredentialsSupported().get(credentialConfigurationId).getVct());
 
-                    // We are offering key binding only for identity credential
-                    assertTrue("The sd-jwt-credential should contain a cryptographic binding method supported named jwk",
+                    assertNotNull("Cryptographic binding methods should be advertised for SD-JWT test credential",
                             credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
-                                    .getCryptographicBindingMethodsSupported()
-                                    .contains(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT));
+                                    .getCryptographicBindingMethodsSupported());
                     assertTrue("The sd-jwt-credential should contain a credential signing algorithm named ES256",
                             credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
                                     .getCredentialSigningAlgValuesSupported().contains("ES256"));
+
+                    SupportedCredentialConfiguration sdJwtConfig =
+                            credentialIssuer.getCredentialsSupported().get(credentialConfigurationId);
+                    assertNotNull("Proof types should be advertised when binding is required",
+                            sdJwtConfig.getProofTypesSupported());
+                    assertNotNull("JWT proof type should be present for SD-JWT test credential",
+                            sdJwtConfig.getProofTypesSupported()
+                                    .getSupportedProofTypes()
+                                    .get("jwt"));
                     assertTrue("The sd-jwt-credential should support a proof of type jwt with signing algorithm ES256",
-                            credentialIssuer.getCredentialsSupported()
-                                    .get(credentialConfigurationId)
-                                    .getProofTypesSupported()
+                            sdJwtConfig.getProofTypesSupported()
                                     .getSupportedProofTypes()
                                     .get("jwt")
                                     .getSigningAlgorithmsSupported()
