@@ -27,7 +27,7 @@ The feature `step-up-authentication-saml` extends the step-up authentication to 
 
 = Administration
 
-== Organization group management
+== Organization groups
 
 Organizations now support isolated group hierarchies, allowing each organization to manage its own teams and departments without naming conflicts across the realm. This update includes Identity Provider mappers to automatically assign federated users to organization groups based on external claims. Group membership is automatically included in OIDC tokens and SAML assertions when an organization context is requested.
 
