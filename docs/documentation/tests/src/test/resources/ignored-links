@@ -46,3 +46,4 @@ https://www.keycloak.org/securing-apps/dpop
 https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown
 https://www.keycloak.org/server/db#_secure_the_database_connection
 https://www.keycloak.org/server/logging#customize-service-fields
+https://www.keycloak.org/server/configuration#kcraw-prefix
