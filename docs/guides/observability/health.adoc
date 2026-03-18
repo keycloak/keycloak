@@ -34,12 +34,16 @@ These endpoints respond with HTTP status `200 OK` on success or `503 Service Una
 }
 ----
 
-.Successful response for endpoints with information on the database connection:
+.Successful response for endpoints with additional per-check information:
 [source, json]
 ----
 {
     "status": "UP",
     "checks": [
+        {
+            "name": "Keycloak Initialized",
+            "status": "UP"
+        },
         {
             "name": "Graceful Shutdown",
             "status": "UP"
@@ -126,6 +130,10 @@ The table below shows the available checks.
 
 |Graceful shutdown
 |Will start to return "DOWN" once the pre-shutdown phase started.
+|No
+
+|Keycloak Initialized
+|Returns the status of the server initialization.
 |No
 
 |===
