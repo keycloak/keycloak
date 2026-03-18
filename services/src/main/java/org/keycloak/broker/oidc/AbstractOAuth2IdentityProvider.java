@@ -53,6 +53,7 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
@@ -253,26 +254,29 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
         UriInfo uriInfo = session.getContext().getUri();
-        Response response;
-        if (userSession != null) {
-            // just use the session if the same provider was used to login or exchange
+        Response response = null;
+        if (Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V2) && userSession != null) {
+            // use the session if present
             String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
             brokerId = brokerId == null ? userSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
-            if (brokerId == null || !brokerId.equals(getConfig().getAlias())) {
-                return exchangeNotLinkedNoStore(uriInfo, null, userSession, user);
+            String federatedAccessToken = userSession.getNote(FEDERATED_ACCESS_TOKEN);
+            if (getConfig().getAlias().equals(brokerId) && federatedAccessToken != null) {
+                response = exchangeSessionToken(uriInfo, null, null, userSession, user);
             }
-            response = exchangeSessionToken(uriInfo, null, null, userSession, user);
-        } else {
+        }
+
+        if ((response == null || Response.Status.Family.familyOf(response.getStatus()) != Response.Status.Family.SUCCESSFUL) && Booleans.isTrue(getConfig().isStoreToken())) {
             response = exchangeStoredToken(uriInfo, null, null, userSession, user);
         }
 
-        if (response.getStatus() == Response.Status.OK.getStatusCode() && response.getEntity() instanceof AccessTokenResponse tokenResponse) {
+        if (response != null && Response.Status.Family.familyOf(response.getStatus()) == Response.Status.Family.SUCCESSFUL && response.getEntity() instanceof AccessTokenResponse tokenResponse) {
             tokenResponse.getOtherClaims().remove(OAuth2Constants.ISSUED_TOKEN_TYPE);
             tokenResponse.getOtherClaims().remove(ACCOUNT_LINK_URL);
-            return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
 
-        return response;
+        return response != null
+                ? response
+                : exchangeErrorResponse(uriInfo, null, userSession, "token_expired", "No token stored.");
     }
 
     protected SimpleHttpRequest getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {

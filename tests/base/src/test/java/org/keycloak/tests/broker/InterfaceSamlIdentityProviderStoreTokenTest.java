@@ -1,19 +1,3 @@
-/*
- * Copyright 2026 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.keycloak.tests.broker;
 
 import java.security.PublicKey;
@@ -25,6 +9,7 @@ import java.util.Map;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
+import org.keycloak.common.VerificationException;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -36,18 +21,17 @@ import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
+import org.keycloak.saml.common.exceptions.ConfigurationException;
+import org.keycloak.saml.common.exceptions.ParsingException;
+import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
-import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
@@ -61,27 +45,15 @@ import org.w3c.dom.Document;
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest
-public class SamlIdentityProviderStoreTokenTest extends AbstractIdentityProviderStoreTokenTest {
-
-    @InjectRealm(config = IdpRealmConfig.class)
-    protected ManagedRealm realm;
-
-    @InjectRealm(ref = "external-realm", config = ExternalRealmConfig.class)
-    ManagedRealm externalRealm;
+public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceIdentityProviderStoreTokenTest {
 
     @Override
-    protected ManagedRealm getRealm() {
-        return realm;
+    default boolean isRefreshTokenAllowed() {
+        return false;
     }
 
     @Override
-    protected ManagedRealm getExternalRealm() {
-        return externalRealm;
-    }
-
-    @Override
-    protected void checkSuccessfulTokenResponse(AccessTokenResponse externalTokens) {
+    default void checkSuccessfulTokenResponse(AccessTokenResponse externalTokens) {
         try {
             Assertions.assertEquals(TokenUtil.TOKEN_TYPE_BEARER, externalTokens.getTokenType());
             Assertions.assertNotNull(externalTokens.getAccessToken());
@@ -91,14 +63,14 @@ public class SamlIdentityProviderStoreTokenTest extends AbstractIdentityProvider
             Assertions.assertEquals(JBossSAMLConstants.ASSERTION.get(), assertion.getDocumentElement().getLocalName());
             Assertions.assertTrue(AssertionUtil.isSignedElement(assertion.getDocumentElement()));
 
-            KeysMetadataRepresentation keysMetadata = externalRealm.admin().keys().getKeyMetadata();
+            KeysMetadataRepresentation keysMetadata = getExternalRealm().admin().keys().getKeyMetadata();
             String kid = keysMetadata.getActive().get("RS256");
-            KeyMetadataRepresentation keyMetadata = keysMetadata.getKeys().stream()
+            KeysMetadataRepresentation.KeyMetadataRepresentation keyMetadata = keysMetadata.getKeys().stream()
                     .filter(k -> kid.equals(k.getKid())).findAny().orElse(null);
             PublicKey realmPubKey = KeycloakModelUtils.getPublicKey(keyMetadata.getPublicKey());
 
             SamlProtocolUtils.verifyDocumentSignature(assertion, new HardcodedKeyLocator(realmPubKey));
-        } catch (Exception e) {
+        } catch (VerificationException | ConfigurationException | ParsingException | ProcessingException e) {
             throw new RuntimeException(e);
         }
     }

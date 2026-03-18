@@ -44,6 +44,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.broker.provider.IdentityProviderMapper;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -274,17 +275,25 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
 
         }
-        authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN));
+        if (Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V2)) {
+            // for the moment just add the token in session if V2 enabled
+            authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN));
+        }
     }
 
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
-        final String token = userSession != null
-                ? getFederatedAccessToken(userSession)
-                : identity.getToken();
+        String token = null;
+        if (Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V2)) {
+            token = getFederatedAccessToken(userSession);
+        }
+
+        if (token == null && Booleans.isTrue(getConfig().isStoreToken())) {
+            token = identity.getToken();
+        }
 
         if (token == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            return exchangeErrorResponse(session.getContext().getUri(), null, userSession, "token_expired", "No token stored.");
         }
 
         AccessTokenResponse tokenResponse = new AccessTokenResponse();

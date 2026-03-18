@@ -248,15 +248,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
                 }
 
-                if (newResponse.getExpiresIn() > 0) {
-                    int accessTokenExpiration = currentTime + (int) newResponse.getExpiresIn();
-                    newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
-                }
-
-                if (newResponse.getRefreshToken() == null && tokenResponse.getRefreshToken() != null) {
-                    newResponse.setRefreshToken(tokenResponse.getRefreshToken());
-                    newResponse.setRefreshExpiresIn(tokenResponse.getRefreshExpiresIn());
-                }
+                updateStoredTokenModel(realm, tokenSubject, model, currentTime, newResponse, tokenResponse);
 
                 if (tokenUserSession != null) {
                     String oldToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
@@ -265,8 +257,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     }
                 }
 
-                model.setToken(JsonSerialization.writeValueAsString(newResponse));
-                session.users().updateFederatedIdentity(realm, tokenSubject, model);
                 tokenResponse = newResponse;
             } else if (exp != null) {
                 tokenResponse.setExpiresIn(exp - currentTime);
@@ -280,6 +270,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
+        RealmModel realm = authorizedClient != null ? authorizedClient.getRealm() : session.getContext().getRealm();
         String refreshToken = tokenUserSession.getNote(FEDERATED_REFRESH_TOKEN);
         String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
 
@@ -305,6 +296,14 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             AccessTokenResponse newResponse = doTokenRefresh(event, refreshToken);
             if (newResponse == null) {
                 return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
+            }
+
+            if (Booleans.isTrue(getConfig().isStoreToken())) {
+                FederatedIdentityModel model = session.users().getFederatedIdentity(realm, tokenSubject, getConfig().getAlias());
+                AccessTokenResponse tokenResponse = model.getToken() != null
+                        ? JsonSerialization.readValue(model.getToken(), AccessTokenResponse.class)
+                        : null;
+                updateStoredTokenModel(realm, tokenSubject, model, currentTime, newResponse, tokenResponse);
             }
 
             updateUserSessionFromRefresh(tokenUserSession, newResponse, currentTime);
@@ -333,6 +332,22 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             return null;
         }
         return accessTokenResponse;
+    }
+
+    private void updateStoredTokenModel(RealmModel realm, UserModel user, FederatedIdentityModel model,
+            int currentTime, AccessTokenResponse newResponse, AccessTokenResponse tokenResponse) throws IOException {
+        if (newResponse.getExpiresIn() > 0) {
+            int accessTokenExpiration = currentTime + (int) newResponse.getExpiresIn();
+            newResponse.getOtherClaims().put(ACCESS_TOKEN_EXPIRATION, accessTokenExpiration);
+        }
+
+        if (newResponse.getRefreshToken() == null && tokenResponse != null && tokenResponse.getRefreshToken() != null) {
+            newResponse.setRefreshToken(tokenResponse.getRefreshToken());
+            newResponse.setRefreshExpiresIn(tokenResponse.getRefreshExpiresIn());
+        }
+
+        model.setToken(JsonSerialization.writeValueAsString(newResponse));
+        session.users().updateFederatedIdentity(realm, user, model);
     }
 
     private void updateUserSessionFromRefresh(UserSessionModel tokenUserSession, AccessTokenResponse newResponse, int currentTime) {
