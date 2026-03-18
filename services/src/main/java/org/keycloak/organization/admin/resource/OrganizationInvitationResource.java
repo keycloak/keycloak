@@ -283,13 +283,8 @@ public class OrganizationInvitationResource {
     public OrganizationInvitationRepresentation getInvitation(@PathParam("id") String id) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
-        OrganizationInvitationModel invitation = invitationManager.getById(id);
 
-        if (invitation == null) {
-            throw ErrorResponse.error("Invitation not found", Status.NOT_FOUND);
-        }
-
-        return toRepresentation(invitation);
+        return toRepresentation(verifyInvitationById(invitationManager, id));
     }
 
     @DELETE
@@ -303,10 +298,8 @@ public class OrganizationInvitationResource {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
 
-        if (!invitationManager.remove(id)) {
-            throw ErrorResponse.error("Invitation not found", Status.NOT_FOUND);
-        }
-
+        verifyInvitationById(invitationManager, id);
+        invitationManager.remove(id);
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
 
         return Response.noContent().build();
@@ -322,15 +315,20 @@ public class OrganizationInvitationResource {
     public Response resendInvitation(@PathParam("id") String id) {
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
+
+        OrganizationInvitationModel invitation = verifyInvitationById(invitationManager, id);
+        invitationManager.remove(id);
+        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName());
+    }
+
+    private OrganizationInvitationModel verifyInvitationById(InvitationManager invitationManager, String id) {
         OrganizationInvitationModel invitation = invitationManager.getById(id);
 
-        if (invitation == null) {
+        if (invitation == null || !invitation.getOrganizationId().equals(organization.getId())) {
             throw ErrorResponse.error("Invitation not found", Status.NOT_FOUND);
         }
 
-        invitationManager.remove(id);
-
-        return inviteUser(invitation.getEmail(), invitation.getFirstName(), invitation.getLastName());
+        return invitation;
     }
 
     // Helper method to convert model to representation

@@ -56,7 +56,7 @@ import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.events.EventMatchers;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.TestApp;
@@ -307,11 +307,12 @@ public class ImpersonationTest {
             Assertions.assertTrue(resBody.contains("redirect"));
 
             EventRepresentation event = events.poll();
-            Assertions.assertEquals(event.getType(), EventType.IMPERSONATE.toString());
-            MatcherAssert.assertThat(event.getSessionId(), EventMatchers.isSessionId());
-            Assertions.assertEquals(event.getUserId(), managedUser.getId());
-            Assertions.assertTrue(event.getDetails().values().stream().anyMatch(f -> f.equals(admin)));
-            Assertions.assertTrue(event.getDetails().values().stream().anyMatch(f -> f.equals(adminRealm)));
+            EventAssertion.assertSuccess(event)
+                    .type(EventType.IMPERSONATE)
+                    .sessionId(event.getSessionId())
+                    .userId(managedUser.getId())
+                    .details("impersonator", admin)
+                    .details("impersonator_realm", adminRealm);
 
             String testRealm = managedRealm.getName();
             // Fetch user session notes
@@ -389,8 +390,7 @@ public class ImpersonationTest {
         // - since for master testing event listener is not installed
         if (!realm.equals("master")) {
             EventRepresentation e = events.poll();
-            Assertions.assertEquals(EventType.LOGIN.toString(), e.getType(), "Event type");
-            Assertions.assertEquals(clientId, e.getClientId(), "Client ID");
+            EventAssertion.assertSuccess(e).type(EventType.LOGIN).clientId(e.getClientId());
         }
         return client;
     }

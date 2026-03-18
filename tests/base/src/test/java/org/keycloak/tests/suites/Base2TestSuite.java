@@ -5,6 +5,7 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectPackages({
+        "org.keycloak.tests.broker",
         "org.keycloak.tests.client",
         "org.keycloak.tests.common",
         "org.keycloak.tests.cors",

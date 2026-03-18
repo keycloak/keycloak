@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>keycloak-scim-model</artifactId>
-    <name>Keycloak SCIM Core</name>
+    <name>Keycloak SCIM Model</name>
     <description>
         This module provides a Model API around the SCIM Core Schema(RFC7643)
     </description>

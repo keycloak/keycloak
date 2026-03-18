@@ -15,67 +15,37 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.login;
+package org.keycloak.tests.login;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserManager;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
+import org.keycloak.tests.common.BasicRealmWithUserConfig;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-public class LoginTimeoutValidationTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class LoginTimeoutValidationTest {
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
+    @InjectRealm(config = BasicRealmWithUserConfig.class)
+    ManagedRealm managedRealm;
 
-    }
-
-    
-    @Before
-    public  void before() {
-        testingClient.server().run( session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            session.users().addUser(realm, "user1");
-        });
-    }
-    
-
-    @After
-    public void after() {
-        testingClient.server().run( session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            session.sessions().removeUserSessions(realm);
-            UserModel user1 = session.users().getUserByUsername(realm, "user1");
-
-            UserManager um = new UserManager(session);
-            if (user1 != null) {
-                um.removeUser(realm, user1);
-            }
-        });
-    }
-    
-
-    @Test
-    @ModelTest
+    @TestOnServer
     public  void testIsLoginTimeoutValid(KeycloakSession keycloakSession) {
         
-        RealmModel realm = keycloakSession.realms().getRealmByName("test");
+        RealmModel realm = keycloakSession.realms().getRealmByName("default");
         UserSessionModel userSession =
             keycloakSession.sessions().createUserSession(
                                                  null, realm,
-                                                 keycloakSession.users().getUserByUsername(realm, "user1"),
-                                                 "user1", "127.0.0.1", "form", true, null, null,
+                                                 keycloakSession.users().getUserByUsername(realm, "basic-user"),
+                    "basic-user", "127.0.0.1", "form", true, null, null,
                                                  UserSessionModel.SessionPersistenceState.PERSISTENT);
         ClientModel client = realm.getClientByClientId("account");
         AuthenticationSessionModel authSession = keycloakSession.authenticationSessions().createRootAuthenticationSession(realm)
@@ -88,8 +58,7 @@ public class LoginTimeoutValidationTest extends AbstractTestRealmKeycloakTest {
          */
         int accessCodeLifespanLoginOrig = realm.getAccessCodeLifespanLogin(); // Login timeout
         realm.setAccessCodeLifespanLogin(Integer.MAX_VALUE);
-        Assert.assertTrue("Login validataion with large Login Timeout failed",
-                          clientSessionCode.isActionActive(ClientSessionCode.ActionType.LOGIN));
+        Assertions.assertTrue(clientSessionCode.isActionActive(ClientSessionCode.ActionType.LOGIN), "Login validataion with large Login Timeout failed");
         realm.setAccessCodeLifespanLogin(accessCodeLifespanLoginOrig);
 
         /*
@@ -98,8 +67,7 @@ public class LoginTimeoutValidationTest extends AbstractTestRealmKeycloakTest {
          */
         int accessCodeLifespanUserActionOrig = realm.getAccessCodeLifespanUserAction(); // Login Action timeout
         realm.setAccessCodeLifespanUserAction(Integer.MAX_VALUE);
-        Assert.assertTrue("Login validataion with large Login Action Timeout failed",
-                          clientSessionCode.isActionActive(ClientSessionCode.ActionType.USER));
+        Assertions.assertTrue(clientSessionCode.isActionActive(ClientSessionCode.ActionType.USER), "Login validataion with large Login Action Timeout failed");
         realm.setAccessCodeLifespanUserAction(accessCodeLifespanUserActionOrig);
     }
 }

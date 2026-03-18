@@ -17,7 +17,20 @@
 
 package org.keycloak.testsuite.oidc;
 
+import java.net.URI;
+
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
+import org.keycloak.services.resources.ServerMetadataResource;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
+
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -28,4 +41,21 @@ public class OIDCWellKnownProviderTest extends AbstractWellKnownProviderTest {
         return OIDCWellKnownProviderFactory.PROVIDER_ID;
     }
 
+    /**
+     * Ensures that the OpenID Connect configuration is not exposed by default via the server metadata
+     * root endpoint. This test verifies that accessing the `.well-known/openid-configuration`
+     * endpoint results in an HTTP 404 response, indicating the resource is not available.
+     */
+    @Test
+    public void openIdConfigurationShouldNotBeExposedViaServerMetadataRoot() {
+
+        UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
+        URI serverMetadataWellKnownUri = ServerMetadataResource.wellKnownProviderUrl(builder).build(getWellKnownProviderId(), "test");
+
+        try (Client client = AdminClientUtil.createResteasyClient()) {
+            try (Response response = client.target(serverMetadataWellKnownUri).request().get()) {
+                assertEquals(404, response.getStatus());
+            }
+        }
+    }
 }

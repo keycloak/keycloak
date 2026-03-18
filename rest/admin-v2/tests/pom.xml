@@ -46,6 +46,17 @@
             <artifactId>keycloak-tests-custom-providers</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak.tests</groupId>
+            <artifactId>keycloak-tests-utils</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

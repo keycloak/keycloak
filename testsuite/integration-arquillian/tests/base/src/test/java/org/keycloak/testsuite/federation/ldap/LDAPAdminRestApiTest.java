@@ -59,6 +59,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -259,6 +260,8 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         assertThat(user1.isEnabled(), is(false));
 
         UserResource userResource = testRealm().users().get(newUserId1);
+        user1 = userResource.toRepresentation();
+        assertFalse(user1.isEnabled());
 
         try {
             user1.setFirstName(user1.getFirstName() + " updated");
@@ -281,6 +284,15 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
         user1 = userResource.toRepresentation();
         assertTrue(user1.isEnabled());
         assertEquals("changed", user1.getLastName());
+
+        ldapProvider.getConfig().put(LDAPConstants.CONNECTION_URL, List.of("ldap://invalid"));
+        testRealm().components().component(ldapProvider.getId()).update(ldapProvider);
+        user1 = userResource.toRepresentation();
+        assertFalse(user1.isEnabled());
+        ldapProviderValid.getConfig().put(LDAPConstants.CONNECTION_URL, originalUrl);
+        testRealm().components().component(ldapProviderValid.getId()).update(ldapProviderValid);
+        user1 = userResource.toRepresentation();
+        assertTrue(user1.isEnabled());
     }
 
     @Test

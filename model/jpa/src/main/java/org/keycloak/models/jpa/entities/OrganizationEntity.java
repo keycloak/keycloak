@@ -45,19 +45,7 @@ import org.keycloak.utils.StringUtil;
         @NamedQuery(name="getCount", query="select count(o) from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="deleteOrganizationsByRealm", query="delete from OrganizationEntity o where o.realmId = :realmId"),
         @NamedQuery(name="getInternalOrgGroupsByMember", query="select m.groupId from UserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId where g.type = 1 and m.user.id = :userId"),
-        @NamedQuery(name="getInternalOrgGroupsByFederatedMember", query="select m.groupId from FederatedUserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId where g.type = 1 and m.userId = :userId"),
-        @NamedQuery(name="getOrgGroupsByMember", query="select g.id from UserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId " +
-                "where m.user.id = :userId " +
-                "and g.realm = :realmId " +
-                "and g.type = :type " +
-                "and g.organization.id = :orgId " +
-                "and g.id != :internalOrgGroupId"),
-        @NamedQuery(name="getOrgGroupsByFederatedMember", query="select g.id from FederatedUserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId " +
-                "where m.userId = :userId " +
-                "and g.realm = :realmId " +
-                "and g.type = :type " +
-                "and g.organization.id = :orgId " +
-                "and g.id != :internalOrgGroupId")
+        @NamedQuery(name="getInternalOrgGroupsByFederatedMember", query="select m.groupId from FederatedUserGroupMembershipEntity m join GroupEntity g on g.id = m.groupId where g.type = 1 and m.userId = :userId")
 })
 public class OrganizationEntity {
 

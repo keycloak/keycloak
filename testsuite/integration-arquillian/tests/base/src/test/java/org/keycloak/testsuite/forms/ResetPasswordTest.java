@@ -20,6 +20,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.mail.MessagingException;
@@ -65,6 +66,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
+import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.BrowserTabUtil;
@@ -98,6 +100,7 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -1239,6 +1242,44 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             resetPassword("login-test", password);
         } finally {
             setTimeOffset(0);
+        }
+    }
+
+
+    @Test
+    public void resetPasswordLinkOpenedInNewBrowserWithDifferentLcoales() {
+        // given
+        String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+
+        String origDefaultLocale = realmRep.getDefaultLocale();
+        Set<String> origSupportedLocales = realmRep.getSupportedLocales();
+        try {
+            realmRep.setDefaultLocale("en");
+            realmRep.addSupportedLocales("de");
+            realmRep.addSupportedLocales("it");
+            testRealm().update(realmRep);
+
+            // when
+            driver.navigate().to(resetUri);
+            // then
+            assertThat(PageUtils.getPageTitle(driver), is("Forgot Your Password?"));
+
+            // when
+            driver.manage().deleteAllCookies();
+            driver.navigate().to(resetUri + "?kc_locale=de");
+            // then
+            assertThat(PageUtils.getPageTitle(driver), is("Passwort vergessen?"));
+
+            // when
+            driver.manage().deleteAllCookies();
+            driver.navigate().to(resetUri + "?kc_locale=it");
+            // then
+            assertThat(PageUtils.getPageTitle(driver), is("Password dimenticata?"));
+        } finally {
+            realmRep.setDefaultLocale(origDefaultLocale);
+            realmRep.setSupportedLocales(origSupportedLocales);
+            testRealm().update(realmRep);
         }
     }
 

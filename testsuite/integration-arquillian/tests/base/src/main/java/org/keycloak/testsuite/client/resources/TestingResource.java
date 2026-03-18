@@ -46,6 +46,7 @@ import org.infinispan.commons.time.TimeService;
 import org.jboss.resteasy.reactive.NoCache;
 
 /**
+ * For an implementation see TestingResourceProvider
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 

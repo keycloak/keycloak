@@ -1,5 +1,7 @@
 package org.keycloak.config;
 
+import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,12 +123,113 @@ public class DatabaseOptions {
             .hidden()
             .build();
 
+    public static final Option<String> DB_TLS_MODE = new OptionBuilder<>("db-tls-mode", String.class)
+            .category(OptionCategory.DATABASE)
+            .expectedValues(Arrays.stream(DatabaseTlsMode.values()).map(DatabaseTlsMode::toCliValue).toList())
+            .defaultValue(DatabaseTlsMode.DISABLED.toCliValue())
+            .description("Sets the TLS mode for the database connection. If disabled, it uses the driver's default value. When set to verify-server, it enables encryption and server identity verification. The database server certificate or Certificate Authority (CA) certificate is required.")
+            .build();
+
+    public static final Option<File> DB_TLS_TRUST_STORE_FILE = new OptionBuilder<>("db-tls-trust-store-file", File.class)
+            .category(OptionCategory.DATABASE)
+            .description("The path to the truststore file containing the database server certificates or Certificate Authority (CA) certificates used to verify the database server's identity.")
+            .build();
+
+    public static final Option<String> DB_TLS_TRUST_STORE_PASSWORD = new OptionBuilder<>("db-tls-trust-store-password", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("The password to access the truststore file specified in db-tls-trust-store-file (if required and supported by the JDBC driver).")
+            .build();
+    public static final Option<String> DB_TLS_TRUST_STORE_TYPE = new OptionBuilder<>("db-tls-trust-store-type", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("The type of the truststore file. Common values include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the driver's default.")
+            .build();
+
+    // TLS hidden options, per vendor, to configure TLS in the driver
+    public static final Option<String> DB_ORACLE_TLS_TRANSPORT = new OptionBuilder<>("db-oracle-protocol", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_SSL_SERVER_DN_MATCH = new OptionBuilder<>("db-property-ssl-server-dn-match", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_ENCRYPT = new OptionBuilder<>("db-property-encrypt", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_TRUST_SERVER_CERTIFICATE = new OptionBuilder<>("db-property-trust-server-certificate", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_SSLFACTORY = new OptionBuilder<>("db-property-sslfactory", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_SSLMODE = new OptionBuilder<>("db-property-sslmode", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_SSL_MODE = new OptionBuilder<>("db-property-sslMode", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_SSLROOTCERT = new OptionBuilder<>("db-property-sslrootcert", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_URL = new OptionBuilder<>("db-property-trustCertificateKeyStoreUrl", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_SERVER_SSL_CERT = new OptionBuilder<>("db-property-serverSslCert", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_TRUST_STORE = new OptionBuilder<>("db-property-trustStore", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_ORACLE_TRUST_STORE = new OptionBuilder<>("db-property-javax.net.ssl.trustStore", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_PASSWORD = new OptionBuilder<>("db-property-trustCertificateKeyStorePassword", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_TRUST_STORE_PASSWORD = new OptionBuilder<>("db-property-trustStorePassword", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_ORACLE_TRUST_STORE_PASSWORD = new OptionBuilder<>("db-property-javax.net.ssl.trustStorePassword", String.class)
+            .hidden()
+            .build();
+    public static final Option<String> DB_PROPERTY_ORACLE_TRUST_STORE_TYPE = new OptionBuilder<>("db-property-javax.net.ssl.trustStoreType", String.class)
+            .hidden()
+            .build();
+
+
     public static final Option<String> DB_MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = new OptionBuilder<>("db-mssql-send-string-parameter-as-unicode", String.class)
             .category(OptionCategory.DATABASE)
             .defaultValue("false")
             .hidden()
             .build();
-
+    public static final Option<String> DB_MYSQL_CONNECT_TIMEOUT = new OptionBuilder<>("db-mysql-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10000") // 10 seconds in milliseconds
+            .hidden()
+            .build();
+    public static final Option<String> DB_MARIADB_CONNECT_TIMEOUT = new OptionBuilder<>("db-mariadb-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10000") // 10 seconds in milliseconds
+            .hidden()
+            .build();
+    public static final Option<String> DB_ORACLE_CONNECT_TIMEOUT = new OptionBuilder<>("db-oracle-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10000") // 10 seconds in milliseconds
+            .hidden()
+            .build();
+    public static final Option<String> DB_MSSQL_CONNECT_TIMEOUT = new OptionBuilder<>("db-mssql-login-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10") // 10 seconds, unit is SECONDS
+            .hidden()
+            .build();
+    public static final Option<String> DB_POSTGRES_CONNECT_TIMEOUT = new OptionBuilder<>("db-postgres-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10") // 10 seconds, unit is SECONDS
+            .hidden()
+            .build();
+    public static final Option<String> DB_TIDB_CONNECT_TIMEOUT = new OptionBuilder<>("db-tidb-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .defaultValue("10000") // 10 seconds in milliseconds
+            .hidden()
+            .build();
     public static final class Datasources {
         /**
          * Options that have their sibling for a named datasource
@@ -148,7 +251,27 @@ public class DatabaseOptions {
                 DB_POOL_MIN_SIZE,
                 DB_POOL_MAX_SIZE,
                 DB_SQL_JPA_DEBUG,
-                DB_SQL_LOG_SLOW_QUERIES
+                DB_SQL_LOG_SLOW_QUERIES,
+                DB_TLS_MODE,
+                DB_TLS_TRUST_STORE_FILE,
+                DB_TLS_TRUST_STORE_PASSWORD,
+                DB_TLS_TRUST_STORE_TYPE,
+                DB_PROPERTY_SSLMODE,
+                DB_PROPERTY_SSLFACTORY,
+                DB_PROPERTY_SSL_MODE,
+                DB_PROPERTY_ENCRYPT,
+                DB_PROPERTY_TRUST_SERVER_CERTIFICATE,
+                DB_PROPERTY_SSL_SERVER_DN_MATCH,
+                DB_ORACLE_TLS_TRANSPORT,
+                DB_PROPERTY_SSLROOTCERT,
+                DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_URL,
+                DB_PROPERTY_SERVER_SSL_CERT,
+                DB_PROPERTY_TRUST_STORE,
+                DB_PROPERTY_ORACLE_TRUST_STORE,
+                DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_PASSWORD,
+                DB_PROPERTY_TRUST_STORE_PASSWORD,
+                DB_PROPERTY_ORACLE_TRUST_STORE_PASSWORD,
+                DB_PROPERTY_ORACLE_TRUST_STORE_TYPE
         );
 
         /**
@@ -244,6 +367,19 @@ public class DatabaseOptions {
          */
         public static Optional<String> getNamedKey(Option<?> option, String namedProperty) {
             return getKeyForDatasource(option).map(key -> getWildcardNamedKey(key, namedProperty));
+        }
+    }
+
+    public enum DatabaseTlsMode {
+        DISABLED,
+        VERIFY_SERVER;
+
+        public String toCliValue() {
+            return name().toLowerCase().replace('_', '-');
+        }
+
+        public static DatabaseTlsMode fromCliValue(String value) {
+            return valueOf(value.toUpperCase().replace('-', '_'));
         }
     }
 }

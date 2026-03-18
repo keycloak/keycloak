@@ -8,12 +8,18 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 
+import static org.hamcrest.Matchers.is;
+
 /**
  * Helper to assert login events
  */
 public class EventAssertion {
 
     private final EventRepresentation event;
+
+    private static final String DEFAULT_IP_ADDRESS = "127.0.0.1";
+    private static final String DEFAULT_IP_ADDRESS_V6 = "0:0:0:0:0:0:0:1";
+    private static final String DEFAULT_IP_ADDRESS_V6_SHORT = "::1";
 
     protected EventAssertion(EventRepresentation event) {
         Assertions.assertNotNull(event, "Event was null");
@@ -81,6 +87,17 @@ public class EventAssertion {
      */
     public EventAssertion isCodeId() {
         MatcherAssert.assertThat(event.getDetails().get(Details.CODE_ID), EventMatchers.isCodeId());
+        return this;
+    }
+
+    /**
+     * Assert the event has an ipAddress set
+     * @return
+     */
+    public EventAssertion hasIpAddress() {
+        Assertions.assertNotNull(event.getIpAddress());
+        Assertions.assertFalse(event.getIpAddress().isEmpty());
+        MatcherAssert.assertThat(event.getIpAddress(), Matchers.anyOf(is(DEFAULT_IP_ADDRESS), is(DEFAULT_IP_ADDRESS_V6), is(DEFAULT_IP_ADDRESS_V6_SHORT)));
         return this;
     }
 

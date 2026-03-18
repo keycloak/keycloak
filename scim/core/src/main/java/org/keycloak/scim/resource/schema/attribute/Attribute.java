@@ -24,7 +24,6 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
     private final String alias;
     private Function<Attribute<M, R>, String> modelAttributeResolver;
-    private boolean primary;
     private String type;
     private String mutability;
     private boolean multivalued;
@@ -37,7 +36,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
      * @return the builder
      */
     public static <M extends Model, R extends ResourceTypeRepresentation> Builder<M, R> simple(String name) {
-        return new Builder<>(name, null);
+        return (Builder<M, R>) new Builder<>(name, null).string();
     }
 
     /**
@@ -50,7 +49,9 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
      * @return the builder
      */
     public static <M extends Model, R extends ResourceTypeRepresentation> Builder<M, R> complex(String name, Class<?> complexType) {
-        return new Builder<>(name, complexType);
+        Builder<M, R> builder = new Builder<>(name, complexType);
+        builder.type = "complex";
+        return builder;
     }
 
     private final String name;
@@ -107,14 +108,6 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         this.modelAttributeResolver = resolver;
     }
 
-    public boolean isPrimary() {
-        return primary;
-    }
-
-    private void setPrimary(boolean primary) {
-        this.primary = primary;
-    }
-
     public boolean isTimestamp() {
         return Objects.equals(type, "timestamp");
     }
@@ -125,6 +118,10 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
     private void setType(String type) {
         this.type = type;
+    }
+
+    public String getType() {
+        return type;
     }
 
     private void setMutability(String mutability) {
@@ -186,7 +183,6 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         private BiConsumer<R, ?> representationSetter;
         List<Attribute<M, R>> attributes = new ArrayList<>();
         private Function<Attribute<M, R>, String> modelAttributeResolver;
-        private boolean primary;
         private String type;
         private String mutability;
         private boolean multivalued;
@@ -221,19 +217,11 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             return withAttribute(name, null, modelSetter);
         }
 
-        public Builder<M, R> withAttribute(String name, TriConsumer<M, String, String> modelSetter, boolean primary) {
-            return withAttribute(name, null, modelSetter, primary);
-        }
-
         public Builder<M, R> withAttribute(String name, String alias, TriConsumer<M, String, String> modelSetter) {
-            return withAttribute(name, alias, modelSetter, false);
-        }
-
-        public Builder<M, R> withAttribute(String name, String alias, TriConsumer<M, String, String> modelSetter, boolean primary) {
             String subName = this.name + "." + name;
-            Attribute<M, R> attribute = new Attribute<>(subName, new AttributeMapper<>(modelSetter, new ComplexAttributeSetter<>(this.name, name, complexType)), this.name, alias);
-            attribute.setModelAttributeResolver(modelAttributeResolver);
-            attribute.setPrimary(primary);
+            Attribute<M, R> attribute = assembleAttribute(subName, this.name, alias,
+                    new AttributeMapper<>(modelSetter, new ComplexAttributeSetter<>(this.name, name, complexType)),
+                    modelAttributeResolver, "string", null, false, null);
             attributes.add(attribute);
             return this;
         }
@@ -243,8 +231,8 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             return this;
         }
 
-        public Builder<M, R> primary() {
-            this.primary = true;
+        public Builder<M, R> string() {
+            this.type = "string";
             return this;
         }
 
@@ -264,18 +252,28 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         }
 
         public List<Attribute<M, R>> build() {
-            Attribute<M, R> attribute = new Attribute<>(name, new AttributeMapper<>(modelSetter, representationSetter, modelRemover, modelAdder), this.name);
-            attribute.setModelAttributeResolver(modelAttributeResolver);
-            attribute.setPrimary(primary);
-            attribute.setType(type);
-            attribute.setMutability(mutability);
-            attribute.setMultivalued(multivalued);
-            attribute.setComplexType(complexType);
+            Attribute<M, R> attribute = assembleAttribute(name, null, null,
+                    new AttributeMapper<>(modelSetter, representationSetter, modelRemover, modelAdder),
+                    modelAttributeResolver, type, mutability, multivalued, complexType);
             if (attributes.isEmpty()) {
                 // do not add the root attribute if there are subattributes
                 attributes.add(attribute);
             }
             return attributes;
+        }
+
+        private Attribute<M, R> assembleAttribute(String name, String parentName, String alias,
+                                                   AttributeMapper<M, R> mapper,
+                                                   Function<Attribute<M, R>, String> modelAttributeResolver,
+                                                   String type, String mutability,
+                                                   boolean multivalued, Class<?> complexType) {
+            Attribute<M, R> attribute = new Attribute<>(name, mapper, parentName, alias);
+            attribute.setModelAttributeResolver(modelAttributeResolver);
+            attribute.setType(type);
+            attribute.setMutability(mutability);
+            attribute.setMultivalued(multivalued);
+            attribute.setComplexType(complexType);
+            return attribute;
         }
 
         public Builder<M, R> multivalued() {

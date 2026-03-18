@@ -36,6 +36,7 @@ public class AuthorizationEndpointRequest {
     String responseMode;
     String state;
     String scope;
+    String resource;
     String loginHint;
     String display;
     String prompt;
@@ -91,6 +92,10 @@ public class AuthorizationEndpointRequest {
 
     public String getScope() {
         return scope;
+    }
+
+    public String getResource() {
+        return resource;
     }
 
     public String getLoginHint() {

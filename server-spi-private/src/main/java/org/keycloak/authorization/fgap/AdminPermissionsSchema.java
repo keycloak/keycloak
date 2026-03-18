@@ -77,6 +77,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
     // common scopes
     public static final String MANAGE = "manage";
     public static final String VIEW = "view";
+    public static String QUERY = "query";
 
     // client specific scopes
     public static final String MAP_ROLES = "map-roles";

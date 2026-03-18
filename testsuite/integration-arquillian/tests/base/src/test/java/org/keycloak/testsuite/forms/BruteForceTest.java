@@ -124,6 +124,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         testRealm.setMaxFailureWaitSeconds(100);
         testRealm.setWaitIncrementSeconds(20);
         testRealm.setOtpPolicyCodeReusable(true);
+        testRealm.setMaxSecondaryAuthFailures(10);
 
         RealmRepUtil.findClientByClientId(testRealm, "test-app").setDirectAccessGrantsEnabled(true);
         testRealm.getUsers().add(UserBuilder.create().username("user2").email("user2@localhost").password(generatePassword("user2")).build());
@@ -395,6 +396,46 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         }
 
     }
+
+    @Test
+    public void testGrantPermamentOtpAbsolut() throws Exception {
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
+                .setFailureFactor(120) // more than 100
+                .setQuickLoginCheckMilliSeconds(0L) // allow fail OTP
+                .update()) {
+            // assert that brute force is checking for secondary auth failures
+            Assert.assertTrue(testRealm().toRepresentation().getMaxSecondaryAuthFailures() > 0);
+            { // successful login
+                String totpSecret = totp.generateTOTP("totpSecret");
+                AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
+                Assert.assertNotNull(response.getAccessToken());
+                Assert.assertNull(response.getError());
+                events.clear();
+            }
+            for (int i = 0; i <= testRealm().toRepresentation().getMaxSecondaryAuthFailures(); i++) {
+                AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), null);
+                Assert.assertNull(response.getAccessToken());
+                Assert.assertEquals("invalid_grant", response.getError());
+                Assert.assertEquals("Invalid user credentials", response.getErrorDescription());
+                events.clear();
+            }
+            {
+                String totpSecret = totp.generateTOTP("totpSecret");
+                AccessTokenResponse response = getTestToken(getPassword("test-user@localhost"), totpSecret);
+                assertTokenNull(response);
+                Assert.assertNotNull(response.getError());
+                Assert.assertEquals("invalid_grant", response.getError());
+                Assert.assertEquals("Invalid user credentials", response.getErrorDescription());
+
+                assertUserDisabledReason(BruteForceProtector.DISABLED_BY_PERMANENT_LOCKOUT);
+            }
+        } finally {
+            UserRepresentation user = adminClient.realm("test").users().search("test-user@localhost", 0, 1).get(0);
+            user.setEnabled(true);
+            updateUser(user);
+        }
+    }
+
 
     @Test
     public void testNumberOfFailuresForDisabledUsersWithPasswordGrantType() {
@@ -724,6 +765,17 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
         loginSuccess();
         loginInvalidPassword();
         loginWithTotpFailure();
+        continueLoginWithCorrectTotpExpectFailure();
+    }
+
+    @Test
+    public void testBrowserInvalidTotpAbsolut() {
+        // assert that brute force is checking for secondary auth failures
+        Assert.assertTrue(testRealm().toRepresentation().getMaxSecondaryAuthFailures() > 0);
+        loginWithTotpFailure();
+        for (int i = 0; i < testRealm().toRepresentation().getMaxSecondaryAuthFailures(); i++ ) {
+            continueLoginWithInvalidTotp();
+        }
         continueLoginWithCorrectTotpExpectFailure();
     }
 

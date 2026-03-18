@@ -22,3 +22,4 @@ org.keycloak.services.x509.ApacheProxySslClientCertificateLookupFactory
 org.keycloak.services.x509.NginxProxySslClientCertificateLookupFactory
 org.keycloak.services.x509.Rfc9440ClientCertificateLookupFactory
 org.keycloak.services.x509.TraefikProxySslClientCertificateLookupFactory
+org.keycloak.services.x509.EnvoyProxySslClientCertificateLookupFactory

@@ -1013,6 +1013,8 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
                     assertEquals(110, action.getPriority());
                 } else if (action.getAlias().equals("idp_link")) {
                     assertEquals(120, action.getPriority());
+                } else if (action.getAlias().equals("verifiable_credential_offer")) {
+                    assertEquals(130, action.getPriority());
                 } else {
                     assertEquals(priority, action.getPriority());
                 }

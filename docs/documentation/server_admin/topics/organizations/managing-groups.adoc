@@ -150,10 +150,7 @@ When a user from Organization A's `/Engineering/Backend` group authenticates and
   "organization": {
     "orgA": {
       "id": "f8d3c4e1-...",
-      "groups": [
-        "/Engineering",
-        "/Engineering/Backend"
-      ]
+      "groups": [ "/Engineering/Backend" ]
     }
   }
 }
@@ -210,12 +207,11 @@ If you need a dedicated scope, create one with both the membership and group map
 
 ==== SAML assertion structure
 
-When a user authenticates, the assertion includes attributes for each organization they belong to:
+When a user from Organization A's `/Engineering/Backend` group authenticates, the assertion includes attributes for each organization they belong to:
 
 [source,xml]
 ----
 <Attribute Name="organization.orgA.groups">
-  <AttributeValue>/Engineering</AttributeValue>
   <AttributeValue>/Engineering/Backend</AttributeValue>
 </Attribute>
 ----

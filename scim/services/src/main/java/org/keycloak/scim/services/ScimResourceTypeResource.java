@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
 
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
 import org.keycloak.scim.filter.ScimFilterException;
@@ -36,9 +37,11 @@ import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
+import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.common.Meta;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.theme.Theme;
 import org.keycloak.util.JsonSerialization;
 
@@ -49,11 +52,13 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     private final KeycloakSession session;
     private final ScimResourceTypeProvider<R> resourceTypeProvider;
     private final Class<? extends ResourceTypeRepresentation> resourceTypeClazz;
+    private final AdminEventBuilder adminEvent;
 
-    public ScimResourceTypeResource(KeycloakSession session, ScimResourceTypeProvider<R> resourceTypeProvider) {
+    public ScimResourceTypeResource(KeycloakSession session, ScimResourceTypeProvider<R> resourceTypeProvider, AdminEventBuilder adminEvent) {
         this.session = session;
         this.resourceTypeProvider = resourceTypeProvider;
         this.resourceTypeClazz = resourceTypeProvider.getResourceType();
+        this.adminEvent = adminEvent.resource(resourceTypeProvider.getAdminEventResourceType());
     }
 
     @POST
@@ -67,7 +72,14 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         }
 
         return onPersist(resource, Status.CREATED,
-                (rScimResourceTypeProvider, r) -> resourceTypeProvider.create(r));
+                (rScimResourceTypeProvider, r) -> {
+                    R created = resourceTypeProvider.create(r);
+                    adminEvent.operation(OperationType.CREATE)
+                            .resourcePath(session.getContext().getUri(), created.getId())
+                            .representation(created)
+                            .success();
+                    return created;
+                });
     }
 
     @Path("{id}")
@@ -116,11 +128,12 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
                     .peek(this::setMetadata);
         } catch (ScimFilterException e) {
             return badRequest(e.getMessage(), "invalidFilter");
+        } catch (ForbiddenException fe) {
+            return Response.status(Status.FORBIDDEN).build();
         }
 
         if (resourceTypeProvider instanceof SingletonResourceTypeProvider<R>) {
             return Response.ok().entity(stream
-                            .peek(this::setMetadata)
                             .findAny().orElseThrow(NotFoundException::new))
                     .build();
         }
@@ -141,17 +154,25 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @DELETE
     @Produces(APPLICATION_SCIM_JSON)
     public Response delete(@PathParam("id") String id) {
-        R resource = getResource(id);
+        try {
+            R resource = getResource(id);
 
-        if (resource == null) {
-            return resourceNotFound(id);
+            if (resource == null) {
+                return resourceNotFound(id);
+            }
+
+            if (resourceTypeProvider.delete(id)) {
+                adminEvent.operation(OperationType.DELETE)
+                        .resourcePath(session.getContext().getUri())
+                        .representation(resource)
+                        .success();
+                return Response.noContent().build();
+            }
+
+            return badRequest("Could not delete resource not found with id " + id);
+        } catch (ForbiddenException fe) {
+            return Response.status(Status.FORBIDDEN).build();
         }
-
-        if (resourceTypeProvider.delete(id)) {
-            return Response.noContent().build();
-        }
-
-        return badRequest("Could not delete resource not found with id " + id);
     }
 
     @Path("{id}")
@@ -172,7 +193,14 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         }
 
         return onPersist(resource, Status.OK,
-                (rScimResourceTypeProvider, r) -> resourceTypeProvider.update(r));
+                (rScimResourceTypeProvider, r) -> {
+                    R updated = resourceTypeProvider.update(r);
+                    adminEvent.operation(OperationType.UPDATE)
+                            .resourcePath(session.getContext().getUri())
+                            .representation(updated)
+                            .success();
+                    return updated;
+                });
     }
 
     @Path("{id}")
@@ -186,9 +214,18 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
             return resourceNotFound(id);
         }
 
+        if (!request.getSchemas().contains(Scim.PATCH_OP_CORE_SCHEMA)) {
+            return badRequest("Unsupported patch schema: " + Scim.PATCH_OP_CORE_SCHEMA, "invalidPatch");
+        }
+
         return onPersist(existing, Status.OK, (rScimResourceTypeProvider, r) -> {
             resourceTypeProvider.patch(existing, request.getOperations());
-            return getResource(id);
+            R patched = getResource(id);
+            adminEvent.operation(OperationType.UPDATE)
+                    .resourcePath(session.getContext().getUri())
+                    .representation(patched)
+                    .success();
+            return patched;
         });
     }
 

@@ -132,6 +132,11 @@ public class ClientConfigBuilder {
         return this;
     }
 
+    public ClientConfigBuilder optionalClientScopes(String... optionalClientScopes) {
+        rep.setOptionalClientScopes(Collections.combine(rep.getOptionalClientScopes(), optionalClientScopes));
+        return this;
+    }
+
     public ClientConfigBuilder protocolMappers(List<ProtocolMapperRepresentation> mappers) {
         rep.setProtocolMappers(Collections.combine(rep.getProtocolMappers(), mappers));
         return this;

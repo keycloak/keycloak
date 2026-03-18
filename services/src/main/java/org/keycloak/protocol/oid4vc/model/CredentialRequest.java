@@ -17,12 +17,7 @@
 
 package org.keycloak.protocol.oid4vc.model;
 
-import java.util.Map;
-import java.util.Optional;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -128,23 +123,6 @@ public class CredentialRequest {
     public CredentialRequest setCredentialResponseEncryption(CredentialResponseEncryption credentialResponseEncryption) {
         this.credentialResponseEncryption = credentialResponseEncryption;
         return this;
-    }
-
-    public Optional<CredentialScopeModel> findCredentialScope(KeycloakSession keycloakSession) {
-        Map<String, String> searchAttributeMap =
-                Optional.ofNullable(credentialConfigurationId)
-                        .map(credentialIdentifier -> {
-                            return Map.of(CredentialScopeModel.VC_CONFIGURATION_ID, credentialConfigurationId);
-                        }).orElseGet(() -> {
-                            return Map.of(CredentialScopeModel.VC_IDENTIFIER, credentialIdentifier);
-                        });
-
-        RealmModel currentRealm = keycloakSession.getContext().getRealm();
-        final boolean useOrExpression = false;
-        return keycloakSession.clientScopes()
-                .getClientScopesByAttributes(currentRealm, searchAttributeMap, useOrExpression)
-                .map(CredentialScopeModel::new)
-                .findAny();
     }
 
     @Override

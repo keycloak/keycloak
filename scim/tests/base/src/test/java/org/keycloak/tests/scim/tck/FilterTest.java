@@ -513,6 +513,52 @@ public class FilterTest extends AbstractScimTest {
         assertSingleResult(response, alice.getUserName());
     }
 
+    // Tests for complex attribute (value path) filters
+
+    @Test
+    public void testComplexAttributeFilterByName() {
+        User bob = createUser("bob", "Robert", "Anderson", "bob@keycloak.org", true);
+        createUser("alice", "Alice", "Smith", "alice@keycloak.org", true);
+
+        // value path equivalent of: name.familyName eq "Anderson"
+        String filter = "name[familyName eq \"Anderson\"]";
+        ListResponse<User> response = client.users().getAll(filter);
+        assertSingleResult(response, bob.getUserName());
+
+        // value path equivalent of: name.givenName sw "Rob"
+        filter = "name[givenName sw \"Rob\"]";
+        response = client.users().getAll(filter);
+        assertSingleResult(response, bob.getUserName());
+    }
+
+    @Test
+    public void testComplexAttributeFilterWithLogicalOperators() {
+        User bob = createUser("bob", "Robert", "Anderson", "bob@keycloak.org", true);
+        User alice = createUser("alice", "Alice", "Anderson", "alice@keycloak.org", false);
+
+        // value path with AND: name[familyName eq "Anderson" and givenName eq "Alice"]
+        String filter = "name[familyName eq \"Anderson\" and givenName eq \"Alice\"]";
+        ListResponse<User> response = client.users().getAll(filter);
+        assertSingleResult(response, alice.getUserName());
+
+        // value path with OR: name[givenName eq "Robert" or givenName eq "Alice"]
+        filter = "name[givenName eq \"Robert\" or givenName eq \"Alice\"]";
+        response = client.users().getAll(filter);
+        assertThat(response, is(not(nullValue())));
+        assertThat(response.getTotalResults(), is(2));
+    }
+
+    @Test
+    public void testComplexAttributeCombinedWithRegularFilter() {
+        User bob = createUser("bob", "Robert", "Anderson", "bob@keycloak.org", true);
+        createUser("alice", "Alice", "Anderson", "alice@keycloak.org", false);
+
+        // value path combined with regular filter: name[familyName eq "Anderson"] and active eq true
+        String filter = "name[familyName eq \"Anderson\"] and active eq true";
+        ListResponse<User> response = client.users().getAll(filter);
+        assertSingleResult(response, bob.getUserName());
+    }
+
     // Tests for POST /.search endpoint
 
     @Test

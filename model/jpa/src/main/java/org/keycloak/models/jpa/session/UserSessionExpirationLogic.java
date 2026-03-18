@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
@@ -84,11 +85,11 @@ final class UserSessionExpirationLogic {
         final List<UserSessionAndUser> expiredSessions = new ArrayList<>(batchSize);
 
         runInBatches(sessionFactory,
-                s -> findAndRemoveSessions(s, realmId, batchSize, true, Details.USER_SESSION_EXPIRED_REASON, "findExpiredOfflineUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions),
+                s -> findAndRemoveSessions(s, realmId, batchSize, true, Details.USER_SESSION_EXPIRED_REASON, "(by last refresh)", "findExpiredOfflineUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions),
                 expiredSessions::clear);
 
         runInBatches(sessionFactory,
-                s -> findAndRemoveSessions(s, realmId, batchSize, true, Details.USER_SESSION_EXPIRED_REASON, "findExpiredOfflineUserSessionsCreatedOn", setCreatedOn, expiredSessions),
+                s -> findAndRemoveSessions(s, realmId, batchSize, true, Details.USER_SESSION_EXPIRED_REASON, "(by created on)", "findExpiredOfflineUserSessionsCreatedOn", setCreatedOn, expiredSessions),
                 expiredSessions::clear);
 
 
@@ -124,11 +125,11 @@ final class UserSessionExpirationLogic {
         final List<UserSessionAndUser> expiredSessions = new ArrayList<>(batchSize);
 
         runInBatches(sessionFactory,
-                s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.USER_SESSION_EXPIRED_REASON, "findExpiredRegularUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions),
+                s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.USER_SESSION_EXPIRED_REASON, "(by last refresh)", "findExpiredRegularUserSessionsLastRefresh", setLastSessionRefresh, expiredSessions),
                 expiredSessions::clear);
 
         runInBatches(sessionFactory,
-                s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.USER_SESSION_EXPIRED_REASON, "findExpiredRegularUserSessionsCreatedOn", setCreatedOn, expiredSessions),
+                s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.USER_SESSION_EXPIRED_REASON, "(by created on)", "findExpiredRegularUserSessionsCreatedOn", setCreatedOn, expiredSessions),
                 expiredSessions::clear);
 
         long duration = System.nanoTime() - start;
@@ -197,7 +198,7 @@ final class UserSessionExpirationLogic {
 
         List<UserSessionAndUser> invalidSession = new ArrayList<>();
         runInBatches(sessionFactory,
-                s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.INVALID_USER_SESSION_REMEMBER_ME_REASON, "findInvalidRegularUserSessions", NO_PARAMETERS, invalidSession),
+                s -> findAndRemoveSessions(s, realmId, batchSize, false, Details.INVALID_USER_SESSION_REMEMBER_ME_REASON, "(rememberMe disabled in realm settings)", "findInvalidRegularUserSessions", NO_PARAMETERS, invalidSession),
                 invalidSession::clear);
 
         long duration = System.nanoTime() - start;
@@ -227,7 +228,7 @@ final class UserSessionExpirationLogic {
             int rememberMeUpdateCount = updateRememberMeColumn(em, true, sessionsWithRememberMeCollector.stream().map(UserSessionAndUser::userSessionId).toList());
             logger.debugf("%d sessions with remember me, and %d sessions without remember updated, for realm '%s'", rememberMeUpdateCount, updateCount, realmName);
         } else {
-            int deletedCount = handleResultsToRemove(session, em, realmId, false, Details.INVALID_USER_SESSION_REMEMBER_ME_REASON, sessionsWithRememberMeCollector);
+            int deletedCount = handleResultsToRemove(session, em, realmId, false, Details.INVALID_USER_SESSION_REMEMBER_ME_REASON, "(rememberMe disabled in realm settings)", sessionsWithRememberMeCollector);
             logger.debugf("%d sessions without remember me updated, and %d invalid sessions deleted, for realm '%s'", updateCount, deletedCount, realmName);
         }
 
@@ -244,7 +245,7 @@ final class UserSessionExpirationLogic {
     }
 
     // returns true if it has more rows to check
-    private static boolean findAndRemoveSessions(KeycloakSession session, String realmId, int batchSize, boolean offline, String eventReason, String queryName, Consumer<TypedQuery<Object[]>> queryParameters, List<UserSessionAndUser> expiredSessions) {
+    private static boolean findAndRemoveSessions(KeycloakSession session, String realmId, int batchSize, boolean offline, String eventReason, String detailsForLog, String queryName, Consumer<TypedQuery<Object[]>> queryParameters, List<UserSessionAndUser> expiredSessions) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
         TypedQuery<Object[]> query = em.createNamedQuery(queryName, Object[].class);
@@ -256,14 +257,14 @@ final class UserSessionExpirationLogic {
                 .map(UserSessionAndUser::fromQueryProjection)
                 .forEach(expiredSessions::add);
 
-        handleResultsToRemove(session, em, realmId, offline, eventReason, expiredSessions);
+        handleResultsToRemove(session, em, realmId, offline, eventReason, detailsForLog, expiredSessions);
 
         // This should be safe.
         // If the hits are less than the desired batch size, we should not have expired sessions.
         return expiredSessions.size() >= batchSize;
     }
 
-    private static int handleResultsToRemove(KeycloakSession session, EntityManager em, String realmId, boolean offline, String eventReason, Collection<UserSessionAndUser> expiredSessions) {
+    private static int handleResultsToRemove(KeycloakSession session, EntityManager em, String realmId, boolean offline, String eventReason, String detailsForLog, Collection<UserSessionAndUser> expiredSessions) {
         if (expiredSessions.isEmpty()) {
             return 0;
         }
@@ -288,7 +289,7 @@ final class UserSessionExpirationLogic {
                 .setParameter("offline", offlineStr)
                 .setParameter("userSessionIds", sessionIds)
                 .executeUpdate();
-        logger.debugf("Removed %d user sessions and %d client sessions in realm '%s'", us, cs, realm.getName());
+        logger.debugf("Removed %d user sessions and %d client sessions in realm '%s' %s", us, cs, realm.getName(), Objects.toString(detailsForLog, ""));
         return us;
     }
 

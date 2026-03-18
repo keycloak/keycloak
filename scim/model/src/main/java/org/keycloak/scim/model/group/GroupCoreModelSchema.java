@@ -19,8 +19,18 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     }
 
     @Override
-    public String getName() {
+    public String getId() {
         return Group.SCHEMA;
+    }
+
+    @Override
+    public String getName() {
+        return "Group";
+    }
+
+    @Override
+    public String getDescription() {
+        return getName();
     }
 
     @Override
@@ -47,7 +57,6 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     @Override
     protected Map<String, Attribute<GroupModel, Group>> doGetAttributes() {
         List<Attribute<GroupModel, Group>> attributes = new ArrayList<>(Attribute.<GroupModel, Group>simple("displayName")
-                    .primary()
                     .modelAttributeResolver((attribute) -> {
                         if (attribute.getName().equals("displayName")) {
                             return "name";
@@ -57,13 +66,11 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                     .withModelSetter(GroupModel::setName)
                     .build());
         attributes.addAll(Attribute.<GroupModel, Group>simple("meta.created")
-                .primary()
                 .timestamp()
                 .immutable()
                 .modelAttributeResolver(attribute -> "createdTimestamp")
                 .build());
         attributes.addAll(Attribute.<GroupModel, Group>simple("meta.lastModified")
-                .primary()
                 .timestamp()
                 .modelAttributeResolver(attribute -> "lastModifiedTimestamp")
                 .build());

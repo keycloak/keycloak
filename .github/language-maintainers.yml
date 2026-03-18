@@ -83,6 +83,11 @@ languages:
     maintainers:
       - mathmul
       - SaraPristovnik
+  sv:
+    name: Swedish
+    maintainers:
+      - yeager
+      - haaninjo
   tr:
     name: Turkish
     maintainers:

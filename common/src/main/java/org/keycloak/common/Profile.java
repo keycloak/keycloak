@@ -97,11 +97,11 @@ public class Profile {
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
         STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.PREVIEW, Feature.STEP_UP_AUTHENTICATION),
 
-        CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.PREVIEW),
+        CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.DEFAULT),
 
         SPIFFE("SPIFFE trust relationship provider", Type.PREVIEW),
 
-        KUBERNETES_SERVICE_ACCOUNTS("Kubernetes service accounts trust relationship provider", Type.PREVIEW),
+        KUBERNETES_SERVICE_ACCOUNTS("Kubernetes service accounts trust relationship provider", Type.DEFAULT),
 
         // Check if kerberos is available in underlying JVM and auto-detect if feature should be enabled or disabled by default based on that
         KERBEROS("Kerberos", Type.DEFAULT, 1, () -> KerberosJdkProvider.getProvider().isKerberosAvailable()),
@@ -168,7 +168,9 @@ public class Profile {
         @Deprecated
         INSTAGRAM_BROKER("Instagram Identity Broker", Type.DEPRECATED, 1),
 
-        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.EXPERIMENTAL);
+        SCIM_API("Exposes a SCIM API for managing realm resources on a per-realm basis", Type.EXPERIMENTAL),
+
+        RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL);
 
         private final Type type;
         private final String label;

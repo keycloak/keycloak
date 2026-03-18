@@ -167,6 +167,21 @@ Database:
 --db-pool-min-size <size>
                      The minimal size of the connection pool.
 --db-schema <schema> The database schema to be used.
+--db-tls-mode <mode> Sets the TLS mode for the database connection. If disabled, it uses the
+                       driver's default value. When set to verify-server, it enables encryption and
+                       server identity verification. The database server certificate or Certificate
+                       Authority (CA) certificate is required. Possible values are: disabled,
+                       verify-server. Default: disabled.
+--db-tls-trust-store-file <path>
+                     The path to the truststore file containing the database server certificates or
+                       Certificate Authority (CA) certificates used to verify the database server's
+                       identity.
+--db-tls-trust-store-password <password>
+                     The password to access the truststore file specified in
+                       db-tls-trust-store-file (if required and supported by the JDBC driver).
+--db-tls-trust-store-type <type>
+                     The type of the truststore file. Common values include 'JKS' (Java KeyStore)
+                       and 'PKCS12'. If not specified, it uses the driver's default.
 --db-url <jdbc-url>  The full database JDBC URL. If not provided, a default URL is set based on the
                        selected database vendor. For instance, if using 'postgres', the default
                        JDBC URL would be 'jdbc:postgresql://localhost/keycloak'.
@@ -218,6 +233,24 @@ Database - additional datasources:
                      Used for named <datasource>. The minimal size of the connection pool.
 --db-schema-<datasource> <schema>
                      Used for named <datasource>. The database schema to be used.
+--db-tls-mode-<datasource> <mode>
+                     Used for named <datasource>. Sets the TLS mode for the database connection. If
+                       disabled, it uses the driver's default value. When set to verify-server, it
+                       enables encryption and server identity verification. The database server
+                       certificate or Certificate Authority (CA) certificate is required. Possible
+                       values are: disabled, verify-server. Default: disabled.
+--db-tls-trust-store-file-<datasource> <path>
+                     Used for named <datasource>. The path to the truststore file containing the
+                       database server certificates or Certificate Authority (CA) certificates used
+                       to verify the database server's identity.
+--db-tls-trust-store-password-<datasource> <password>
+                     Used for named <datasource>. The password to access the truststore file
+                       specified in db-tls-trust-store-file (if required and supported by the JDBC
+                       driver).
+--db-tls-trust-store-type-<datasource> <type>
+                     Used for named <datasource>. The type of the truststore file. Common values
+                       include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the
+                       driver's default.
 --db-url-database-<datasource> <dbname>
                      Used for named <datasource>. Sets the database name of the default JDBC URL of
                        the chosen vendor. If the `db-url` option is set, this option is ignored.
@@ -642,6 +675,12 @@ Logging:
                        ipAddress, org, sessionId, authenticationSessionId, authenticationTabId.
                        Default: realmName,clientId,org,sessionId,authenticationSessionId,
                        authenticationTabId. Available only when MDC logging is enabled.
+--log-service-environment <environment>
+                     Set the 'service.environment' field in JSON log entries for all log handlers.
+                       In ECS format, defaults to the Quarkus profile if not set.
+--log-service-name <name>
+                     Set the 'service.name' field in JSON log entries for all log handlers.
+                       Default: keycloak.
 --log-syslog-app-name <name>
                      Set the app name used when formatting the message in RFC5424 format. Default:
                        keycloak. Available only when Syslog is activated.

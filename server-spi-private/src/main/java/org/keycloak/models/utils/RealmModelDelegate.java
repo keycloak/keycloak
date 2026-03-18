@@ -256,6 +256,14 @@ public class RealmModelDelegate implements RealmModel {
         delegate.setFailureFactor(failureFactor);
     }
 
+    public int getMaxSecondaryAuthFailures() {
+        return delegate.getMaxSecondaryAuthFailures();
+    }
+
+    public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+        delegate.setMaxSecondaryAuthFailures(maxSecondaryAuthFailures);
+    }
+
     public boolean isVerifyEmail() {
         return delegate.isVerifyEmail();
     }

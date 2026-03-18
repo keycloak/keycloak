@@ -19,11 +19,12 @@
 
 package org.keycloak.userprofile;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -231,18 +232,25 @@ public final class DefaultUserProfile implements UserProfile {
         }
 
         R rep = createUserRepresentation(full);
-        Map<String, List<String>> readable = attributes.getReadable();
-        Map<String, List<String>> attributesRep = new HashMap<>(readable);
+        Map<String, List<String>> attributesRep;
+
+        if (full) {
+            attributesRep = new HashMap<>(attributes.getReadable());
+            rep.setUserProfileMetadata(createUserProfileMetadata(session, this));
+        } else {
+            attributesRep = new HashMap<>(attributes.getDefaultAttributes());
+        }
 
         // all the attributes here have read access and might be available in the representation
-        for (String name : readable.keySet()) {
-            List<String> values = attributesRep.getOrDefault(name, Collections.emptyList())
-                    .stream().filter(StringUtil::isNotBlank)
-                    .collect(Collectors.toList());
+        Iterator<Entry<String, List<String>>> iterator = attributesRep.entrySet().iterator();
 
-            if (values.isEmpty()) {
-                // make sure empty attributes are not in the representation
-                attributesRep.remove(name);
+        while (iterator.hasNext()) {
+            Entry<String, List<String>> entry = iterator.next();
+            String name = entry.getKey();
+            List<String> values = entry.getValue();
+
+            if (values == null || values.isEmpty()) {
+                iterator.remove();
                 continue;
             }
 
@@ -254,7 +262,7 @@ public final class DefaultUserProfile implements UserProfile {
                 }
 
                 boolean isUnmanagedAttribute = metadata.getAttribute(name).isEmpty();
-                String value = isUnmanagedAttribute ? null : values.stream().findFirst().orElse(null);
+                String value = isUnmanagedAttribute ? null : values.get(0);
 
                 if (UserModel.USERNAME.equals(name)) {
                     rep.setUsername(value);
@@ -267,8 +275,7 @@ public final class DefaultUserProfile implements UserProfile {
                     rep.setLastName(value);
                 }
 
-                // we don't have root attributes as a regular attribute in the representation as they have their own fields
-                attributesRep.remove(name);
+                iterator.remove();
             }
         }
 
@@ -289,7 +296,6 @@ public final class DefaultUserProfile implements UserProfile {
 
         rep.setId(user.getId());
         rep.setAttributes(attributesRep.isEmpty() ? null : attributesRep);
-        rep.setUserProfileMetadata(createUserProfileMetadata(session, this));
 
         return rep;
     }

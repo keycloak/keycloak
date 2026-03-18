@@ -102,7 +102,7 @@ Translations are reviewed in Weblate by language maintainers for their correctne
 1. Check that the changes to the `messages_*.properties` files are syntactically correct.
 2. Do a spot-check with Google Translate or Claude to avoid malicious community translations.
    Claude prompt:
-   > Analyze pull request (URL) and list new or updated translations that significantly deviate from the English message that it translates. 
+   > Analyze pull request (URL) and list new or updated translations that significantly deviate from the English message that it translates. Group results by language, and mention the language maintainers. Prepare the result as Markdown. Skip languages that have no findings.
 3. If the changes are ok, approve the PR and squash-merge it. For pull requests created by Weblate there is no referenced GitHub issue, therefore reference the ID of the pull request in the squash-message.
 4. Once the PR is merged, notify the respective language maintainers via a comment in the pull request that there are changes for their languages.
 

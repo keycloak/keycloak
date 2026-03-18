@@ -82,6 +82,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     public static final String LOGIN_PROTOCOL = Constants.OIDC_PROTOCOL;
     public static final String STATE_PARAM = "state";
     public static final String SCOPE_PARAM = "scope";
+    public static final String RESOURCE_PARAM = OAuth2Constants.RESOURCE;
     public static final String CODE_PARAM = "code";
     public static final String RESPONSE_TYPE_PARAM = "response_type";
     public static final String GRANT_TYPE_PARAM = "grant_type";
@@ -262,6 +263,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 Time.currentTime() + userSession.getRealm().getAccessCodeLifespan(),
                 nonce,
                 authSession.getClientNote(OAuth2Constants.SCOPE),
+                authSession.getClientNote(OAuth2Constants.RESOURCE),
                 authSession.getClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
                 authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),

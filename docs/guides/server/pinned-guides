@@ -1,4 +1,5 @@
 configuration
+supported-configurations
 configuration-production
 bootstrap-admin-recovery
 directory-structure

@@ -103,6 +103,7 @@ import org.keycloak.saml.common.constants.GeneralConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
+import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConstants;
 import org.keycloak.saml.processing.core.saml.v2.util.ArtifactResponseUtil;
@@ -644,10 +645,11 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
-                //Map<String, String> notes = new HashMap<>();
+                final String assertionString = DocumentUtil.getNodeAsString(assertionElement);
                 BrokeredIdentityContext identity = new BrokeredIdentityContext(principal, config);
                 identity.getContextData().put(SAML_LOGIN_RESPONSE, responseType);
                 identity.getContextData().put(SAML_ASSERTION, assertion);
+                identity.getContextData().put(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, assertionString);
                 identity.setAuthenticationSession(authSession);
 
                 identity.setUsername(principal);
@@ -658,7 +660,7 @@ public class SAMLEndpoint {
                 }
 
                 if (Booleans.isTrue(config.isStoreToken())) {
-                    identity.setToken(samlResponse);
+                    identity.setToken(assertionString);
                 }
 
                 ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator)

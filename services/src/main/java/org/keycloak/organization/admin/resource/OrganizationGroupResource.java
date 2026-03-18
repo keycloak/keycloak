@@ -183,10 +183,17 @@ public class OrganizationGroupResource {
             @Parameter(description = "A String representing either an exact group name or a partial name") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether the params \"search\" must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be returned (pagination offset).") @QueryParam("first") @DefaultValue("0") Integer first,
-            @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max) {
+            @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
+            @Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") boolean subGroupsCount) {
 
         return group.getSubGroupsStream(search, exact, first, max)
-                .map(ModelToRepresentation::groupToBriefRepresentation);
+                .map(group -> {
+                    GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(group);
+                    if (subGroupsCount) {
+                        rep.setSubGroupCount(group.getSubGroupsCount());
+                    }
+                    return rep;
+                });
     }
 
     @POST

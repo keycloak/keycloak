@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
@@ -284,6 +285,39 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
         } catch (Exception e) {
             assertThat(e.getMessage(), containsString(Response.Status.NOT_FOUND.toString()));
         }
+    }
+
+    @Test
+    public void testSearchWithPopulateHierarchyExcludesInternalGroup() {
+        // Verify that searching with populateHierarchy=true does not expose
+        // the internal organization root group (named by org UUID)
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create Engineering -> Backend
+        GroupRepresentation engineeringRep = new GroupRepresentation();
+        engineeringRep.setName("Engineering");
+        String engineeringId;
+        try (Response response = orgResource.groups().addTopLevelGroup(engineeringRep)) {
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation backendRep = new GroupRepresentation();
+        backendRep.setName("Backend");
+        try (Response response = orgResource.groups().group(engineeringId).addSubGroup(backendRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        // Search for "Backend" with populateHierarchy=true
+        List<GroupRepresentation> results = orgResource.groups().getAll("Backend", null, false, null, null, true, true, false);
+
+        // Should return Engineering as the root with Backend nested inside
+        assertThat(results, hasSize(1));
+        assertThat(results.get(0).getName(), is("Engineering"));
+        // The root must NOT be the internal org group (UUID-named)
+        assertThat(results.get(0).getName(), is(not(orgRep.getId())));
+        assertThat(results.get(0).getSubGroups(), hasSize(1));
+        assertThat(results.get(0).getSubGroups().get(0).getName(), is("Backend"));
     }
 
     @Test

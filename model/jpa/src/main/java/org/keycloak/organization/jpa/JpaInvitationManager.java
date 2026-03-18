@@ -47,13 +47,7 @@ record JpaInvitationManager(KeycloakSession session, EntityManager em) implement
 
     @Override
     public OrganizationInvitationModel getById(String id) {
-        OrganizationInvitationEntity entity = em.find(OrganizationInvitationEntity.class, id);
-
-        if (entity == null) {
-            return null;
-        }
-
-        return entity;
+        return em.find(OrganizationInvitationEntity.class, id);
     }
 
     @Override

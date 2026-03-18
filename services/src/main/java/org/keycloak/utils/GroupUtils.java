@@ -57,6 +57,17 @@ public class GroupUtils {
             GroupToRepresentationMapper mapper,
             GroupFilter filter,
             boolean subGroupsCount) {
+        return buildGroupHierarchy(session, realm, groups, mapper, filter, subGroupsCount, null);
+    }
+
+    private static Stream<GroupRepresentation> buildGroupHierarchy(
+            KeycloakSession session,
+            RealmModel realm,
+            Stream<GroupModel> groups,
+            GroupToRepresentationMapper mapper,
+            GroupFilter filter,
+            boolean subGroupsCount,
+            String stopAtParentId) {
 
         Map<String, GroupRepresentation> groupIdToGroups = new HashMap<>();
 
@@ -74,7 +85,7 @@ public class GroupUtils {
 
             groupIdToGroups.putIfAbsent(currGroup.getId(), currGroup);
 
-            while (currGroup.getParentId() != null) {
+            while (currGroup.getParentId() != null && !currGroup.getParentId().equals(stopAtParentId)) {
                 GroupModel parentModel = session.groups().getGroupById(realm, currGroup.getParentId());
 
                 // Permission check for parent
@@ -147,8 +158,12 @@ public class GroupUtils {
     /**
      * Simplified version of {@link #populateGroupHierarchyFromSubGroups(KeycloakSession, RealmModel, Stream, boolean, GroupPermissionEvaluator, boolean)}
      * that does not perform permission checks. Suitable for organization groups where access control is handled at the organization level.
+     *
+     * @param stopAtParentId If non-null, the hierarchy walk stops when a group's parentId matches this value,
+     *                       preventing the parent from being included. This is used to exclude the internal
+     *                       organization root group from the hierarchy.
      */
-    public static Stream<GroupRepresentation> populateGroupHierarchyFromSubGroups(KeycloakSession session, RealmModel realm, Stream<GroupModel> groups, boolean full, boolean subGroupsCount) {
+    public static Stream<GroupRepresentation> populateGroupHierarchyFromSubGroups(KeycloakSession session, RealmModel realm, Stream<GroupModel> groups, boolean full, boolean subGroupsCount, String stopAtParentId) {
         return buildGroupHierarchy(
             session,
             realm,
@@ -159,7 +174,8 @@ public class GroupUtils {
                 ModelToRepresentation.groupToBriefRepresentation(group),
             // No filtering - always include all groups
             group -> true,
-            subGroupsCount
+            subGroupsCount,
+            stopAtParentId
         );
     }
 

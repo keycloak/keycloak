@@ -18,7 +18,10 @@
 package org.keycloak.tests.admin.user;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -29,11 +32,13 @@ import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
+import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -41,10 +46,12 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -109,7 +116,7 @@ public class UserProfileTest extends AbstractUserTest {
         user.setEmail("test_email@test.com");
         user.setEnabled(true);
         user.setEmailVerified(true);
-        createUser(user);
+        String id = createUser(user);
 
         UPConfig upConfig = managedRealm.admin().users().userProfile().getConfiguration();
         upConfig.getAttribute(UserModel.FIRST_NAME).setPermissions(new UPAttributePermissions());
@@ -118,6 +125,43 @@ public class UserProfileTest extends AbstractUserTest {
         assertThat(users, hasSize(1));
         user = users.get(0);
         assertThat(user.getFirstName(), is(nullValue()));
+
+        user = managedRealm.admin().users().get(id).toRepresentation();
+        user.setAttributes(Map.of("test", List.of("value")));
+        managedRealm.admin().users().get(id).update(user);
+        assertNull(upConfig.getUnmanagedAttributePolicy());
+        users = managedRealm.admin().users().search(user.getUsername(), null, null, true);
+        assertThat(users, hasSize(1));
+        user = users.get(0);
+        assertThat(user.getAttributes(), is(nullValue()));
+
+        users = managedRealm.admin().users().search(user.getUsername(), null, null, false);
+        assertThat(users, hasSize(1));
+        user = users.get(0);
+        assertThat(user.getAttributes(), is(not(nullValue())));
+        // test is a managed attribute, return it
+        assertTrue(user.getAttributes().containsKey("test"));
+
+        upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+        managedRealm.admin().users().userProfile().update(upConfig);
+        user = managedRealm.admin().users().get(id).toRepresentation();
+        user.getAttributes().put("unmanaged", List.of("value"));
+        managedRealm.admin().users().get(id).update(user);
+        users = managedRealm.admin().users().search(user.getUsername(), null, null, false);
+        assertThat(users, hasSize(1));
+        user = users.get(0);
+        assertThat(user.getFirstName(), is(nullValue()));
+        assertThat(user.getAttributes(), is(not(nullValue())));
+        assertTrue(user.getAttributes().containsKey("test"));
+        assertTrue(user.getAttributes().containsKey("unmanaged"));
+
+        upConfig.setUnmanagedAttributePolicy(null);
+        managedRealm.admin().users().userProfile().update(upConfig);
+        users = managedRealm.admin().users().search(user.getUsername(), null, null, true);
+        assertThat(users, hasSize(1));
+        user = users.get(0);
+        assertThat(user.getFirstName(), is(nullValue()));
+        assertThat(user.getAttributes(), is(nullValue()));
     }
 
     @Test
@@ -171,6 +215,46 @@ public class UserProfileTest extends AbstractUserTest {
             for (UserRepresentation user : result) {
                 assertThat(user.getAttributes(), nullValue());
             }
+        } finally {
+            upConfig.removeAttribute("aName");
+            upResource.update(upConfig);
+        }
+    }
+
+    @Test
+    public void testGetUnmanagedAttributes() {
+        UserProfileResource upResource = managedRealm.admin().users().userProfile();
+        UPConfig upConfig = upResource.getConfiguration();
+        upConfig.addOrReplaceAttribute(createAttributeMetadata("aName"));
+        upResource.update(upConfig);
+
+        try {
+            UsersResource users = managedRealm.admin().users();
+            UserRepresentation user = UserConfigBuilder.create().username("test-user").attribute("aName", "aValue").build();
+            try (Response response = users.create(user)) {
+                user.setId(ApiUtil.getCreatedId(response));
+            }
+            Map<String, List<String>> unmanagedAttributes = users.get(user.getId()).getUnmanagedAttributes();
+            assertTrue(unmanagedAttributes.isEmpty());
+
+            upConfig.setUnmanagedAttributePolicy(UnmanagedAttributePolicy.ENABLED);
+            upResource.update(upConfig);
+            user.getAttributes().put("unmanaged", List.of("value"));
+            users.get(user.getId()).update(user);
+            unmanagedAttributes = users.get(user.getId()).getUnmanagedAttributes();
+            assertThat(unmanagedAttributes.keySet(), hasSize(1));
+            upConfig.removeAttribute("aName");
+            upResource.update(upConfig);
+            unmanagedAttributes = users.get(user.getId()).getUnmanagedAttributes();
+            assertThat(unmanagedAttributes.keySet(), hasSize(2));
+            upConfig.addOrReplaceAttribute(createAttributeMetadata("aName"));
+            upResource.update(upConfig);
+            unmanagedAttributes = users.get(user.getId()).getUnmanagedAttributes();
+            assertThat(unmanagedAttributes.keySet(), hasSize(1));
+            upConfig.getAttribute("aName").setPermissions(new UPAttributePermissions(Set.of("user"), Set.of("user")));
+            upResource.update(upConfig);
+            unmanagedAttributes = users.get(user.getId()).getUnmanagedAttributes();
+            assertThat(unmanagedAttributes.keySet(), hasSize(1));
         } finally {
             upConfig.removeAttribute("aName");
             upResource.update(upConfig);
