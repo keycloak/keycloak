@@ -25,6 +25,6 @@ Read on to learn more about each new feature. If you are upgrading from a previo
 
 <TODO>
 
-= Application Development
+= Extension Development
 
 <TODO>

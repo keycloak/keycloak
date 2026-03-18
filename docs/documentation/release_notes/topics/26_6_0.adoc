@@ -42,6 +42,18 @@ The existing `manage-membership` scope keeps its current behavior for target gro
 
 = Configuring and Running
 
+== Java 25 support
+
+{project_name} now supports running with OpenJDK 25.
+
+== Zero-downtime patch releases enabled by default
+
+Zero-downtime patch releases are now enabled by default. This allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
+
+When using the {project_name} Operator, set the update strategy to `Auto` to benefit from this functionality.
+
+For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
+
 == Graceful shutdown of HTTP stack
 
 To allow for rolling updates for configuration changes or version updates, a graceful shutdown of {project_name} nodes prevents users from seeing error responses when logging in or refreshing their tokens when nodes shut down.
@@ -55,14 +67,6 @@ This is a common setup for example in Kubernetes environments.
 
 Users should adjust those values depending on their proxy setup.
 See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown[Graceful HTTP shutdown] in the reverse proxy guide for more information.
-
-== Zero-downtime patch releases enabled by default
-
-Zero-downtime patch releases are now enabled by default. This allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
-
-When using the {project_name} Operator, set the update strategy to `Auto` to benefit from this functionality.
-
-For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
 
 == Automatic truststore initialization on Kubernetes and OpenShift
 
@@ -88,10 +92,6 @@ If you are using the HTTP Access logging capability, sensitive information is om
 This means that tokens in the 'Authorization' HTTP header and specific sensitive Keycloak cookies are not shown.
 
 For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
-
-== Java 25 support
-
-{project_name} now supports running with OpenJDK 25.
 
 == Configurable Kubernetes Service name and port in the Keycloak Operator
 
@@ -143,7 +143,7 @@ Alternatively, use `telemetry-logs-header-<header>` for OpenTelemetry Logs or `t
 
 For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
 
-= Application Development
+= Extension Development
 
 == Keycloak Test Framework Full Support
 
