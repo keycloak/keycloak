@@ -1,0 +1,5 @@
+{
+  "nonce": "1234567890",
+  "aud": "https://verifier.example.org",
+  "iat": 1702315679
+}

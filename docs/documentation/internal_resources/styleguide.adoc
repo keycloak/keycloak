@@ -1,0 +1,52 @@
+= Documentation Style Guide
+
+== Style Guides to Follow
+
+. IBM Style Guide (printed)
+. This document
+
+Writers will also refer to these:
+. link:https://www.ibm.com/developerworks/library/styleguidelines/[IBM DeveloperWorks Editorial Style Guide]
+. link:http://brand.redhat.com/elements/[RH Corporate]
+
+
+== Style Guidelines
+
+* Use title case for headings.
+** Unsure of the proper capitalization? See link:http://titlecase.com/[http://titlecase.com/]  
+* Write clear, short sentences.
+* Use definite and indefinite articles like _an_ and _the_.
++
+*Incorrect:* Create project. Delete object from editor. +
+*Correct:* Create a project. Delete an object from the editor.
++
+* Start steps with an active verb, such as *Enter*, *Edit*, and *Click*.
+* Start headings with gerunds (verbs that end in -ing), such as *Configuring*, *Creating*, and *Installing*.
+* Use *bold* for GUI items. Match the capitalization you see in the GUI.
+* End entries in bulleted and numbered lists with periods when the entries are complete sentences.
+* Use `$ sudo`, not `#` for superuser terminal commands.
+* Don't use contractions.
++
+*Incorrect:* Don't use contractions. +
+*Correct:* Do not use contractions.
++
+* Use `++_italics_++` for emphasis, not `++*bold*++`.
+* Spell out integers that are less than 10, such as "four", not "4".
+** Always use numerals in ranges, even when either or both of the numbers are less than 10.
+* Do not use Latin abbreviations, such as e.g., etc., and i.e.
+** Instead, use "and so on" when you list a clear sequence of elements, such as "1, 2, 3, and
+so on". Otherwise, rewrite the sentence to replace etc. with something more descriptive, 
+such as "and other output".
+** Instead of i.e. use "that is".
+** Instead of e.g. use "for example" or "such as".
+* Do not use "&" in place of "and".
+* Do not use "and/or".  Pick one.
+  
+
+== See Also
+
+* link:http://asciidoctor.org/docs/asciidoc-syntax-quick-reference/[AsciiDoc Syntax Quick Reference]
+* link:screenshots.adoc[Screenshot Guide]
+* link:terms_conventions.adoc[RH-SSO Terms and Conventions]
+* link:http://ccs-jenkins.gsslab.brq.redhat.com:8080/job/glossary-of-terms-and-conventions-for-product-documentation-branch-master/lastSuccessfulBuild/artifact/index.html[Red Hat Glossary of Terms and Conventions]
+* link:https://mojo.redhat.com/docs/DOC-1136272[Red Hat Style Guide and Writers Checklist]

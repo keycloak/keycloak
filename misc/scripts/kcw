@@ -1,0 +1,161 @@
+#!/bin/bash -e
+
+KC_DIR=~/kc
+
+if [ "$KC_SRC_HOME" != "" ]; then
+  SRC_DIR="$KC_SRC_HOME"
+else
+  SRC_DIR=$(readlink -f "$0" | sed 's|/misc/scripts/kcw||')
+fi
+DL_DIR=~/Downloads
+
+ARGS=""
+
+while [ "$1" != "" ]; do
+	if [ "$1" == "dev" ]; then
+		INSTALL="dev"
+	elif [ "$1" == "dev-build" ]; then
+		INSTALL="dev"
+		BUILD=1
+	elif [ "$1" == "rel" ]; then
+	  	INSTALL=$(curl --silent https://api.github.com/repos/keycloak/keycloak/releases/latest | jq -r .tag_name)
+	elif [[ "$1" =~ "rel=" ]]; then
+		INSTALL=`echo $1 | cut -d '=' -f 2`
+	elif [ "$1" == "nightly" ]; then
+	  	INSTALL="nightly"
+	elif [ "$1" = "help" ]; then
+		echo "Usage: kcw [command] [kc commands]"
+		echo "  dev                 install from local fork"
+		echo "  dev-build           build and install from local fork"
+		echo "  nightly             install nightly release"
+		echo "  rel                 install latest release"
+		echo "  rel[=version]       install specific version"
+		echo ""
+		echo "Environment variables:"
+		echo "  KCW_PROVIDERS       comma separated list of providers to install"
+		echo "  KCW_CONFIGS         comma separated list of config files to install"
+		echo ""
+		echo "Examples:"
+		echo "   Start existing install:    kcw start-dev"
+		echo "   Install nightly and start: kcw nightly start-dev --cluster=none"
+    		exit
+	else
+		ARGS="$ARGS $1"
+	fi
+  
+  shift
+done
+
+echo "###########################################################################################"
+echo "Installing:  $INSTALL"
+echo "Executing:   bin/kc.sh$ARGS"
+echo "###########################################################################################"
+
+if [ "$INSTALL" != "" ]; then
+	# Clean current install
+	PID=$(ps -e -wwf | grep java | grep "$KC_DIR" | awk '{ print $2 }')
+	if [ "$PID" != "" ]; then
+		echo ""	
+		echo "-------------------------------------------------------------------------------------------"
+		echo "Killing existing install"
+		echo "-------------------------------------------------------------------------------------------"
+		kill -9 $PID
+		echo "Killed: $PID"
+	fi
+	if [ -d $KC_DIR ]; then
+		echo ""	
+		echo "-------------------------------------------------------------------------------------------"
+		echo "Deleting existing install"
+		echo "-------------------------------------------------------------------------------------------"
+		rm -rf $KC_DIR
+		echo "Deleted $KC_DIR"
+	fi
+	
+	if [ "$INSTALL" == "dev" ]; then
+		VERSION=$(cat $SRC_DIR/pom.xml | grep '<version>' | head -n 2 | tail -n 1 | cut -d '>' -f 2 | cut -d '<' -f 1)
+		
+		if [ "$BUILD" ]; then
+			echo ""	
+			echo "-------------------------------------------------------------------------------------------"
+			echo "Building"
+			echo "-------------------------------------------------------------------------------------------"
+		
+			#mvn -pl quarkus/dist -am -DskipTests -f $SRC_DIR/pom.xml -T 1C --offline clean install
+			cd $SRC_DIR
+			./mvnw -T 1C -Dmaven.build.cache.enabled=true -DskipTests -DskipTestsuite -DskipExamples -DskipAdapters -DskipDocs install
+		fi
+
+		echo ""
+		echo "-------------------------------------------------------------------------------------------"
+		echo "Installing"
+		echo "-------------------------------------------------------------------------------------------"
+		
+		cd /tmp/
+		unzip -q $SRC_DIR/quarkus/dist/target/keycloak-$VERSION.zip
+		mv keycloak-$VERSION $KC_DIR
+		
+		echo "Built and installed $VERSION from $SRC_DIR"
+	else
+		VERSION=$INSTALL
+		if [ "$INSTALL" == "nightly" ]; then
+            VERSION=999.0.0-SNAPSHOT
+  	    fi
+		
+		echo ""
+		echo "-------------------------------------------------------------------------------------------"
+		echo "Installing"
+		echo "-------------------------------------------------------------------------------------------"
+
+        cd $DL_DIR
+        
+        if [ -f keycloak-$VERSION.zip ]; then
+            if ( ! md5sum keycloak-$VERSION.zip | grep $(wget -q -O - https://github.com/keycloak/keycloak/releases/download/$INSTALL/keycloak-$VERSION.zip.md5) &>/dev/null ); then
+                echo "Checksum doesn't match deleting keycloak-$VERSION.zip"
+                rm keycloak-$VERSION.zip
+            fi
+        fi
+
+		if [ ! -f keycloak-$VERSION.zip ]; then
+      		cd $DL_DIR
+            echo "Downloading keycloak-$VERSION.zip"
+          	wget -q https://github.com/keycloak/keycloak/releases/download/$INSTALL/keycloak-$VERSION.zip
+		fi
+
+		cd /tmp/
+		unzip -q $DL_DIR/keycloak-$VERSION.zip
+		mv keycloak-$VERSION $KC_DIR
+		
+		echo "Installed $VERSION"
+	fi
+fi
+
+if [ "$KCW_PROVIDERS" != "" ]; then
+    for PROVIDER in $(echo "$KCW_PROVIDERS" | tr "," "\n"); do
+      cp "$PROVIDER" $KC_DIR/providers/
+      echo "Installed provider: $PROVIDER"
+    done
+fi
+
+if [ "$KCW_CONFIGS" != "" ]; then
+    for CONFIG in $(echo "$KCW_CONFIGS" | tr "," "\n"); do
+      cp "$CONFIG" $KC_DIR/conf/
+      echo "Installed config file: $CONFIG"
+    done
+fi
+
+if [ "$ARGS" != "" ]; then
+	echo ""
+	echo "-------------------------------------------------------------------------------------------"
+	echo "Running: bin/kc.sh$ARGS"
+	echo "-------------------------------------------------------------------------------------------"
+	
+	export KC_BOOTSTRAP_ADMIN_USERNAME=admin
+	export KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+  export KC_BOOTSTRAP_ADMIN_CLIENT_ID=admin
+	export KC_BOOTSTRAP_ADMIN_CLIENT_SECRET=admin
+
+	cd $KC_DIR/bin
+
+
+	./kc.sh $ARGS
+fi

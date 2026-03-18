@@ -1,0 +1,76 @@
+[[_resource_server_enable_authorization]]
+= Enabling authorization services
+
+You can turn your OIDC client into a resource server and enable fine-grained authorization.
+
+.Procedure
+. In the client settings page, scroll down to the *Capability Config* section.
+. Toggle *Authorization Enabled* to *On*.
+. Click *Save*.
++
+.Enabling authorization services
+image:images/resource-server/client-enable-authz.png[Enabling authorization services]
++
+A new Authorization tab is displayed for this client. Click the *Authorization* tab and a page similar to the following is displayed:
++
+.Resource server settings
+image:images/resource-server/authz-settings.png[alt="Resource server settings"]
+
+The Authorization tab contains additional sub-tabs covering the different steps that you must follow to actually protect your application's resources. Each tab is covered separately by a specific topic in this documentation. But here is a quick description about each one:
+
+* *Settings*
++
+General settings for your resource server. For more details about this page see the xref:resource_server_settings[Resource Server Settings] section.
+
+* *Resource*
++
+From this page, you can manage your application's <<_resource_overview, resources>>.
+
+* *Authorization Scopes*
++
+From this page, you can manage <<_resource_overview, scopes>>.
+
+* *Policies*
++
+From this page, you can manage <<_policy_overview, authorization policies>> and define the conditions that must be met to grant a permission.
+
+* *Permissions*
++
+From this page, you can manage the <<_permission_overview, permissions>> for your protected resources and scopes by linking them with the policies you created.
+
+* *Evaluate*
++
+From this page, you can <<_policy_evaluation_overview, simulate authorization requests>> and view the result of the evaluation of the permissions and authorization policies you have defined.
+
+* *Export Settings*
++
+From this page, you can <<_resource_server_import_config, export>> the authorization settings to a JSON file.
+
+[[resource_server_settings]]
+== Resource server settings
+
+On the Resource Server Settings page, you can configure the policy enforcement mode, allow remote resource management, and export the authorization configuration settings.
+
+* *Policy Enforcement Mode*
++
+Specifies how policies are enforced when processing authorization requests sent to the server.
++
+** *Enforcing*
++
+(default mode) Requests are denied by default even when there is no policy associated with a given resource.
++
+** *Permissive*
++
+Requests are allowed even when there is no policy associated with a given resource.
++
+** *Disabled*
++
+Disables the evaluation of all policies and allows access to all resources.
++
+* *Decision Strategy*
++
+This configuration changes how the policy evaluation engine decides whether or not a resource or scope should be granted based on the outcome from all evaluated permissions. `Affirmative` means that at least one permission must evaluate to a positive decision in order grant access to a resource and its scopes. `Unanimous` means that all permissions must evaluate to a positive decision in order for the final decision to be also positive. As an example, if two permissions for a same resource or scope are in conflict (one of them is granting access and the other is denying access), the permission to the resource or scope will be granted if the chosen strategy is `Affirmative`. Otherwise, a single deny from any permission will also deny access to the resource or scope.
++
+* *Remote Resource Management*
++
+Specifies whether resources can be managed remotely by the resource server. If false, resources can be managed only from the administration console.

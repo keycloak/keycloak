@@ -1,0 +1,35 @@
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+=== The SAML broker and adapter now check the SubjectConfirmationData element for the bearer type
+
+Now {project_name}, when acting as a SAML Service Provider (SP) in identity brokering or in the adapter, validates the `SubjectConfirmationData` for the type `urn:oasis:names:tc:SAML:2.0:cm:bearer` defined in the standard. The elements `NotBefore`, `NotOnOrAfter` and `Recipient`, when present in the assertion, are checked to be in the valid time range and to be the correct destination URI respectively. Previously, similar values were checked for other parts of the SAML response (for example the `Conditions` element or the `destination` attribute).
+
+To prepare for the upgrade, verify that the Identity Provider or adapter configurations allow for a sufficient clock skew for the time attributes.
+
+If you see any issue after the upgrade related to this element, please configure the external IdP to set the correct values for the subject confirmation element.
+
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== More changes for the `server-info` system information
+
+In version 26.4.0, the `server-info` endpoint changed to just return the system information for administrators in the admin realm. Nevertheless, the version property was detected to be needed by some products that interact with {project_name}. Now that property is included for administrators in the realm with permission `manage-realm`.
+
+The workaround of the `view-system` permission is more restricted too. It can only be assigned by administrators in the master realm using link:{adminguide_link}#_fine_grained_permissions[FGAP]. This permission will be deleted in a future version.
+
+=== Maximum inflating size for the SAML redirect binding
+
+Since this release, the {project_name} SAML implementation limits the data that can be inflated through the `REDIRECT` binding. The default maximum size is 128KB, the decompression stops when that value is exceeded and returns an error. The option `spi-login-protocol--saml--max-inflating-size` can be used to increase the default limit.
+
+.Increasing limit to 512KB
+[source,bash]
+----
+bin/kc.[sh|bat] --spi-login-protocol--saml--max-inflating-size=524288
+----
+
+The same restriction is applied for the link:{saml_galleon_layers_link}[{project_name} SAML Galleon feature pack]. Although, in this case, you need to add a system property to the Wildfly/EAP server to change the default maximum size: `-Dorg.keycloak.adapters.saml.maxInflatingSize=524288`.

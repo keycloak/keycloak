@@ -1,0 +1,23 @@
+[id="proc-assigning-role-mappings_{context}"]
+
+= Assigning role mappings
+[role="_abstract"]
+You can assign role mappings to a user through the *Role Mappings* tab for that user.
+
+.Procedure
+. Click *Users* in the menu.
+. Click the user that you want to perform a role mapping on.
+. Click the *Role mappings* tab.
+. Click *Assign role*.
+. Select the role you want to assign to the user from the dialog.
+. Click *Assign*.
+
+.Role mappings
+image:images/user-role-mappings.png[Role mappings]
+
+In the preceding example, we are assigning the composite role *developer* to a user. That role was created in the <<_composite-roles, Composite Roles>> topic.
+
+.Effective role mappings
+image:images/effective-role-mappings.png[Effective role mappings]
+
+When the *developer* role is assigned, the *employee* role associated with the *developer* composite is displayed with *Inherited* "True". *Inherited* roles are the roles explicitly assigned to users and roles that are inherited from composites.

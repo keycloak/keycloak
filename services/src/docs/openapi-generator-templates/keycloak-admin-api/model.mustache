@@ -1,0 +1,27 @@
+[#models]
+== Definitions
+
+{{#models}}
+    {{#model}}
+
+[#{{classname}}]
+=== {{classname}} {{title}}
+
+{{unescapedDescription}}
+
+[.fields-{{classname}}]
+[cols="2,2,1"]
+|===
+| Name| Type| Format
+
+{{#vars}}
+| *{{baseName}}* +
+{{#required}}_required_{{/required}}{{^required}}_optional_{{/required}}
+| {{dataType}} {{#isContainer}} of <<{{complexType}}>>{{/isContainer}}
+| {{{dataFormat}}} {{#isEnum}}enum ({{#_enum}}{{this}}, {{/_enum}}){{/isEnum}}
+
+{{/vars}}
+|===
+
+    {{/model}}
+{{/models}}

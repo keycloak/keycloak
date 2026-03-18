@@ -1,0 +1,55 @@
+[[_service_authorization_api]]
+= Discovering authorization services endpoints and metadata
+
+{project_name} provides a discovery document from which clients can obtain all necessary information to interact with
+{project_name} Authorization Services, including endpoint locations and capabilities.
+
+The discovery document can be obtained from:
+
+[source,bash,subs="attributes+"]
+----
+curl -X GET \
+  http://${host}:${port}{kc_realms_path}/${realm-name}/.well-known/uma2-configuration
+----
+
+Where `${host}:${port}` is the hostname (or IP address) and port where {project_name} is running and `${realm-name}` is the name of
+a realm in {project_name}.
+
+As a result, you should get a response as follows:
+
+[source,json,subs="attributes+"]
+----
+{
+
+    // some claims are expected here
+
+    // these are the main claims in the discovery document about Authorization Services endpoints location
+    "token_endpoint": "http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token",
+    "token_introspection_endpoint": "http://${host}:${port}{kc_realms_path}/${realm-name}/protocol/openid-connect/token/introspect",
+    "resource_registration_endpoint": "http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/resource_set",
+    "permission_endpoint": "http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/permission",
+    "policy_endpoint": "http://${host}:${port}{kc_realms_path}/${realm-name}/authz/protection/uma-policy"
+}
+----
+
+Each of these endpoints expose a specific set of capabilities:
+
+* **token_endpoint**
++
+A OAuth2-compliant Token Endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type. Through this
+endpoint, clients can send authorization requests and obtain an RPT with all permissions granted by {project_name}.
++
+* **token_introspection_endpoint**
++
+A OAuth2-compliant Token Introspection Endpoint which clients can use to query the server to determine the active state of an RPT
+and to determine any other information associated with the token, such as the permissions granted by {project_name}.
++
+* **resource_registration_endpoint**
++
+A UMA-compliant Resource Registration Endpoint which resource servers can use to manage their protected resources and scopes. This endpoint provides
+operations create, read, update and delete resources and scopes in {project_name}.
++
+* **permission_endpoint**
++
+A UMA-compliant Permission Endpoint which resource servers can use to manage permission tickets. This endpoint provides
+operations create, read, update, and delete permission tickets in {project_name}.

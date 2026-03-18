@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+
+<installation xmlns="urn:jboss:galleon:provisioning:3.0">
+    <feature-pack location="org.wildfly:wildfly-ee-galleon-pack:${upstream.wildfly.version}"/>
+    <feature-pack location="org.keycloak:keycloak-saml-adapter-galleon-pack:${project.version}"/>
+</installation>

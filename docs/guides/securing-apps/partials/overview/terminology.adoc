@@ -1,0 +1,14 @@
+== Terminology
+
+These terms are used in this guide:
+
+* `Clients` are entities that interact with {project_name} to authenticate users and obtain tokens. Most often, clients are applications and services acting on behalf of users that provide a single sign-on experience to their users and access other services using the tokens issued by the server. Clients can also be entities only interested in obtaining tokens and acting on their own behalf for accessing other services.
+
+* `Applications` include a wide range of applications that work for specific platforms for each protocol
+
+* `Client adapters` are libraries that make it easy to secure applications and services with {project_name}. They provide a tight integration to the underlying platform and framework. 
+
+* `Creating a client` and `registering a client` are the same action. `Creating a Client` is the term used to create a client by using the Admin Console. `Registering a client` is the term used to register a client by using the {project_name} Client Registration Service.
+
+* `A service account` is a type of client that is able to obtain tokens on its own behalf.
+

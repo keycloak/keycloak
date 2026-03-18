@@ -1,0 +1,11 @@
+.keycloak__scopes_evaluate__clipboard-copy input {
+  display: none;
+}
+
+.keycloak__scopes_evaluate__tabs {
+  padding-top: var(--pf-v5-global--spacer--2xl);
+}
+
+#tabs .pf-v5-c-tabs__list {
+  max-width: 300px;
+}

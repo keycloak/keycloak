@@ -1,0 +1,4 @@
+= Highlights
+
+This release contains some important bug fixes. In addition, We would like to thank https://github.com/leandrobortoli[Leandro José de Bortoli] for his contributions to the
+FAPI related functionalities such as JARM support and improvements in CIBA.

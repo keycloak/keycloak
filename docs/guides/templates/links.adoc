@@ -1,0 +1,6 @@
+<#macro server id anchor="">link:{links_server_${id}_url}<#if anchor != "">#${anchor}</#if>[{links_server_${id}_name}]</#macro>
+<#macro operator id anchor="">link:{links_operator_${id}_url}<#if anchor != "">#${anchor}</#if>[{links_operator_${id}_name}]</#macro>
+<#macro ha id anchor="">link:{links_high-availability_${id}_url}<#if anchor != "">#${anchor}</#if>[{links_high-availability_${id}_name}]</#macro>
+<#macro securingapps id anchor="">link:{links_securing-apps_${id}_url}<#if anchor != "">#${anchor}</#if>[{links_securing-apps_${id}_name}]</#macro>
+<#macro gettingstarted id anchor="">link:{links_getting-started_${id}_url}<#if anchor != "">#${anchor}</#if>[{links_getting-started_${id}_name}]</#macro>
+<#macro observability id anchor="">link:{links_observability_${id}_url}<#if anchor != "">#${anchor}</#if>[{links_observability_${id}_name}]</#macro>

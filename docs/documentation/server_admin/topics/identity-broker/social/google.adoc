@@ -1,0 +1,27 @@
+
+[[_google]]
+==== Google
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the *Add provider* list, select *Google*.
++
+.Add identity provider
+image:images/google-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab open https://console.cloud.google.com/[the Google Cloud Platform console].
+. In the Google dashboard for your Google app, in the Navigation menu on the left side, hover over *APIs & Services* and then click on the *OAuth consent screen* option. Create a consent screen, ensuring that the user type of the consent screen is *External*.
+. In the Google dashboard:
+.. Click the *Credentials* menu.
+.. Click *CREATE CREDENTIALS* - *OAuth Client ID*.
+.. From the *Application type* list, select *Web application*.
+.. Use the *Redirect URI* in your clipboard as the *Authorized redirect URIs*
+.. Click *Create*.
+.. Note *Your Client ID* and *Your Client secret*.
+. In {project_name}, paste the value of the `Your Client ID` into the *Client ID* field.
+. In {project_name}, paste the value of the `Your Client secret` into the *Client Secret* field.
+. Click *Add*
+. Enter the required scopes into the *Default Scopes* field. By default, {project_name} uses the following scopes: *openid* *profile* *email*. See the https://developers.google.com/oauthplayground/[OAuth Playground] for a list of Google scopes.
+. To restrict access to your GSuite organization's members only, enter the G Suite domain into the *Hosted Domain* field.
+. Click *Save*.

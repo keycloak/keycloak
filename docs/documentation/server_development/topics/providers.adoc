@@ -1,0 +1,503 @@
+[[_providers]]
+
+== Service Provider Interfaces (SPI)
+
+{project_name} is designed to cover most use-cases without requiring custom code, but we also want it to be customizable.
+To achieve this {project_name} has a number of Service Provider Interfaces (SPI) for which you can implement your own providers.
+
+[[_implementing_spi]]
+=== Implementing an SPI
+
+To implement an SPI you need to implement its ProviderFactory and Provider interfaces. You also need to create a service configuration file.
+
+For example, to implement the Theme Selector SPI you need to implement ThemeSelectorProviderFactory and ThemeSelectorProvider and also provide the file
+`META-INF/services/org.keycloak.theme.ThemeSelectorProviderFactory`.
+
+Example ThemeSelectorProviderFactory:
+
+[source,java]
+----
+package org.acme.provider;
+
+import ...
+
+public class MyThemeSelectorProviderFactory implements ThemeSelectorProviderFactory {
+
+    @Override
+    public ThemeSelectorProvider create(KeycloakSession session) {
+        return new MyThemeSelectorProvider(session);
+    }
+
+    @Override
+    public void init(Config.Scope config) {
+    }
+
+    @Override
+    public void postInit(KeycloakSessionFactory factory) {
+    }
+
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public String getId() {
+        return "myThemeSelector";
+    }
+}
+----
+
+It is recommended that your provider factory implementation returns unique id by method `getId()`. However
+there can be some exceptions to this rule as mentioned below in the <<_override_builtin_providers,Overriding providers>> section.
+
+NOTE: {project_name} creates a single instance of provider factories which makes it possible to store state for multiple requests.
+Provider instances are created by calling create on the factory for each request so these should be light-weight object.
+
+Example ThemeSelectorProvider:
+
+[source,java]
+----
+package org.acme.provider;
+
+import ...
+
+public class MyThemeSelectorProvider implements ThemeSelectorProvider {
+
+    public MyThemeSelectorProvider(KeycloakSession session) {
+    }
+
+
+    @Override
+    public String getThemeName(Theme.Type type) {
+        return "my-theme";
+    }
+
+    @Override
+    public void close() {
+    }
+}
+----
+
+Example service configuration file (`META-INF/services/org.keycloak.theme.ThemeSelectorProviderFactory`):
+
+[source]
+----
+org.acme.provider.MyThemeSelectorProviderFactory
+----
+
+To configure your provider, see the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] {section}.
+
+For example, to configure a provider you can set options as follows:
+
+[source,bash]
+----
+bin/kc.[sh|bat] --spi-theme-selector--my-theme-selector--enabled=true --spi-theme-selector--my-theme-selector--theme=my-theme
+----
+
+Then you can retrieve the config in the `ProviderFactory` init method:
+
+[source,java]
+----
+public void init(Config.Scope config) {
+    String themeName = config.get("theme");
+}
+----
+
+Your provider can also look up other providers if needed. For example:
+
+[source,java]
+----
+public class MyThemeSelectorProvider implements ThemeSelectorProvider {
+
+    private KeycloakSession session;
+
+    public MyThemeSelectorProvider(KeycloakSession session) {
+        this.session = session;
+    }
+
+    @Override
+    public String getThemeName(Theme.Type type) {
+        return session.getContext().getRealm().getLoginTheme();
+    }
+}
+----
+
+The pom.xml file for your SPI requires a `dependencyManagement` section with an import reference to the {project_name} version that is intended for the SPI. In this example, replace the occurrence of `VERSION` with {project_versionMvn}, which is the current version of {project_name}.
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.example</groupId>
+  <artifactId>test-lib</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.keycloak</groupId>
+        <artifactId>keycloak-parent</artifactId>
+        <version>VERSION</version> <!--1-->
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-model-jpa</artifactId>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+</project>
+----
+<1> Replace `VERSION` with the current version of {project_name}
+
+[[_override_builtin_providers]]
+==== Override built-in providers
+
+As mentioned above, it is recommended that your `ProviderFactory` implementations use unique ID. However at the same time, it can be useful to override one of the {project_name} built-in providers.
+The recommended way for this is still ProviderFactory implementation with unique ID and then for instance set the default provider as
+specified in the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] {section}. On the other hand, this may not be always possible.
+
+For instance when you need some customizations to default OpenID Connect protocol behaviour and you want to override
+default {project_name} implementation of `OIDCLoginProtocolFactory` you need to preserve same providerId. As for example admin console, OIDC protocol well-known endpoint and various other things rely on
+the ID of the protocol factory being `openid-connect`.
+
+For this case, it is highly recommended to implement method `order()` of your custom implementation and make sure that it has higher order than the built-in implementation.
+
+[source,java]
+----
+public class CustomOIDCLoginProtocolFactory extends OIDCLoginProtocolFactory {
+
+    // Some customizations here
+
+    @Override
+    public int order() {
+        return 1;
+    }
+}
+----
+
+In case of multiple implementations with same provider ID, only the one with highest order will be used by {project_name} runtime.
+
+[[_providers_admin_console]]
+==== Show info from your SPI implementation in the Admin Console
+
+Sometimes it is useful to show additional info about your Provider to a {project_name} administrator. You can show provider build time information (for example, version of
+custom provider currently installed), current configuration of the provider (e.g. url of remote system your provider talks to) or some operational info
+(average time of response from remote system your provider talks to). {project_name} Admin Console provides Server Info page to show this kind of information.
+
+To show info from your provider it is enough to implement `org.keycloak.provider.ServerInfoAwareProviderFactory` interface in your `ProviderFactory`.
+
+Example implementation for `MyThemeSelectorProviderFactory` from previous example:
+
+[source,java]
+----
+package org.acme.provider;
+
+import ...
+
+public class MyThemeSelectorProviderFactory implements ThemeSelectorProviderFactory, ServerInfoAwareProviderFactory {
+    ...
+
+    @Override
+    public Map<String, String> getOperationalInfo() {
+        Map<String, String> ret = new LinkedHashMap<>();
+        ret.put("theme-name", "my-theme");
+        return ret;
+    }
+}
+----
+
+[[_use_available_providers]]
+=== Use available providers
+
+In your provider implementation, you can use other providers available in {project_name}. The existing providers can be typically retrieved with the
+usage of the `KeycloakSession`, which is available to your provider as described in the section <<_implementing_spi,Implementing an SPI>>.
+
+{project_name} has two provider types:
+
+* *Single-implementation provider types* - There can be only a single active implementation of the particular provider type in {project_name} runtime.
++
+For example `HostnameProvider` specifies the hostname to be used by {project_name} and that is shared for the whole {project_name} server.
+Hence there can be only single implementation of this provider active for the {project_name} server. If there are multiple provider implementations available to the server runtime,
+one of them needs to be specified as the default one.
+
+For example such as:
+[source,bash]
+----
+bin/kc.[sh|bat] build --spi-hostname--provider=default
+----
+
+The value `default` used as the value of `default-provider` must match the ID returned by the `ProviderFactory.getId()` of the particular provider factory implementation.
+In the code, you can obtain the provider such as `keycloakSession.getProvider(HostnameProvider.class)`
+
+* *Multiple implementation provider types* - Those are provider types, that allow multiple implementations available and working together
+in the {project_name} runtime.
++
+For example `EventListener` provider allows to have multiple implementations available and registered, which means
+that particular event can be sent to all the listeners (jboss-logging, sysout etc). In the code, you can obtain a specified instance of the provider
+for example such as `session.getProvider(EventListener.class, "jboss-logging")` . You need to specify `provider_id` of the provider as the second argument
+as there can be multiple instances of this provider type as described above.
++
+The provider ID must match the ID returned by the `ProviderFactory.getId()` of the
+particular provider factory implementation. Some provider types can be retrieved with the usage of `ComponentModel` as the second argument and some (for example `Authenticator`) even
+need to be retrieved with the usage of `KeycloakSessionFactory`. It is not recommended to implement your own providers this way as it may be deprecated in the future.
+
+=== Registering provider implementations
+
+Providers are registered with the server by simply copying the JAR file to the `providers` directory.
+
+If your provider needs additional dependencies not already provided by Keycloak copy these to the `providers` directory.
+
+After registering new providers or dependencies Keycloak needs to be re-built with a non-optimized start or the `kc.[sh|bat] build` command.
+
+[NOTE]
+====
+Provider JARs are not loaded in isolated classloaders, so do not include resources or classes in your provider JARs that conflict with built-in resources or classes.
+In particular the inclusion of an application.properties file or overriding the commons-lang3 dependency will cause auto-build to fail if the provider JAR is removed.
+If you have included conflicting classes, you may see a split package warning in the start log for the server. Unfortunately not all built-in lib jars are checked by the split package warning logic,
+so you'll need to check the lib directory JARs before bundling or including a transitive dependency. Should there be a conflict, that can be resolved by removing or repackaging the offending classes.
+
+There is no warning if you have conflicting resource files. You should either ensure that your JAR's resource files have path names that contain something unique to that provider,
+or you can check for the existence of `some.file` in the JAR contents under the `"install root"/lib/lib/main` directory with something like:
+
+[source,bash]
+----
+find . -type f -name "*.jar" -exec unzip -l {} \; | grep some.file
+----
+
+If you find that your server will not start due to a `NoSuchFileException` error related to a removed provider JAR, then run:
+
+[source,bash]
+----
+./kc.sh -Dquarkus.launch.rebuild=true --help
+----
+
+This will force Quarkus to rebuild the classloading related index files. From there you should be able to perform a non-optimized start or build without an exception.
+====
+
+
+==== Disabling a provider
+
+You can disable a provider by setting the enabled attribute for the provider to false.
+For example to disable the Infinispan user cache provider use:
+
+[source,bash]
+----
+bin/kc.[sh|bat] build --spi-user-cache--infinispan--enabled=false
+----
+
+[[_script_providers]]
+=== JavaScript providers
+
+:tech_feature_name: Scripts
+:tech_feature_id: scripts
+include::./templates/techpreview.adoc[]
+
+{project_name} has the ability to execute scripts during runtime in order to allow administrators to customize specific functionalities:
+
+* Authenticator
+* JavaScript Policy
+* OpenID Connect Protocol Mapper
+* SAML Protocol Mapper
+
+==== Authenticator
+
+Authentication scripts must provide at least one of the following functions:
+`authenticate(..)`, which is called from `Authenticator#authenticate(AuthenticationFlowContext)`
+`action(..)`, which is called from `Authenticator#action(AuthenticationFlowContext)`
+
+Custom `Authenticator` should at least provide the `authenticate(..)` function.
+You can use the `javax.script.Bindings` script within the code.
+
+`script`::
+the `ScriptModel` to access script metadata
+`realm`::
+the `RealmModel`
+`user`::
+the current `UserModel`. Note that `user` is available when your script authenticator is configured in the authentication flow in a way that is triggered after
+another authenticator succeeded in establishing user identity and set the user into the authentication session.
+`session`::
+the active `KeycloakSession`
+`authenticationSession`::
+the current `AuthenticationSessionModel`
+`httpRequest`::
+the current `org.jboss.resteasy.spi.HttpRequest`
+`LOG`::
+a `org.jboss.logging.Logger` scoped to `ScriptBasedAuthenticator`
+
+NOTE: You can extract additional context information from the `context` argument passed to the `authenticate(context)` `action(context)` function.
+
+[source,javascript]
+----
+AuthenticationFlowError = Java.type("org.keycloak.authentication.AuthenticationFlowError");
+
+function authenticate(context) {
+
+  LOG.info(script.name + " --> trace auth for: " + user.username);
+
+  if (   user.username === "tester"
+      && user.getAttribute("someAttribute")
+      && user.getAttribute("someAttribute").contains("someValue")) {
+
+      context.failure(AuthenticationFlowError.INVALID_USER);
+      return;
+  }
+
+  context.success();
+}
+----
+
+===== Where to add script authenticator
+
+A possible use of script authenticator is to do some checks at the end of the authentication. Note that if you want
+your script authenticator to be always triggered (even for instance during SSO re-authentication with the identity cookie), you may need to add it as REQUIRED at the end
+of the authentication flow and encapsulate the existing authenticators into a separate REQUIRED authentication subflow. This need is because the REQUIRED and ALTERNATIVE executions
+should not be at the same level. For example, the authentication flow configuration should appear as follows:
+[source]
+----
+- User-authentication-subflow REQUIRED
+-- Cookie ALTERNATIVE
+-- Identity-provider-redirect ALTERNATIVE
+...
+- Your-Script-Authenticator REQUIRED
+----
+
+==== OpenID Connect Protocol Mapper
+
+OpenID Connect Protocol Mapper scripts are javascript script that allow you
+to change the content of the ID Token and/or the Access Token.
+
+You can use the `javax.script.Bindings` script within the code.
+
+`user`::
+the current `UserModel`
+`realm`::
+the `RealmModel`
+`token`::
+the current `IDToken`. It is available only if the mapper is configured for the ID token.
+`tokenResponse`::
+the current `AccessTokenResponse`. It is available only if the mapper is configured for the Access token.
+`userSession`::
+the active `UserSessionModel`
+`keycloakSession`::
+the active `KeycloakSession`
+
+The exports of the script will be used as the value of the token claim.
+
+[source,javascript]
+----
+// prints can be used to log information for debug purpose.
+print("STARTING CUSTOM MAPPER");
+
+var inputRequest = keycloakSession.getContext().getHttpRequest();
+var params = inputRequest.getDecodedFormParameters();
+var output = params.getFirst("user_input");
+exports = output;
+----
+
+The above script allows to retrieve a `user_input` from the authorization request.
+This will be available to map in the `Token Claim Name` configured in the mapper.
+
+
+==== Create a JAR with the scripts to deploy
+
+NOTE: JAR files are regular ZIP files with a `.jar` extension.
+
+In order to make your scripts available to {project_name} you need to deploy them to the server. For that, you should create
+a `JAR` file with the following structure:
+
+[source]
+----
+META-INF/keycloak-scripts.json
+
+my-script-authenticator.js
+my-script-policy.js
+my-script-mapper.js
+----
+
+The `META-INF/keycloak-scripts.json` is a file descriptor that provides metadata information about the scripts you want to deploy. It is a JSON file with the following structure:
+
+[source,json]
+----
+{
+    "authenticators": [
+        {
+            "name": "My Authenticator",
+            "fileName": "my-script-authenticator.js",
+            "description": "My Authenticator from a JS file"
+        }
+    ],
+    "policies": [
+        {
+            "name": "My Policy",
+            "fileName": "my-script-policy.js",
+            "description": "My Policy from a JS file"
+        }
+    ],
+    "mappers": [
+        {
+            "name": "My Mapper",
+            "fileName": "my-script-mapper.js",
+            "description": "My Mapper from a JS file"
+        }
+    ],
+    "saml-mappers": [
+        {
+            "name": "My Mapper",
+            "fileName": "my-script-mapper.js",
+            "description": "My Mapper from a JS file"
+        }
+    ]
+}
+----
+
+This file should reference the different types of script providers that you want to deploy:
+
+* `authenticators`
++
+For OpenID Connect Script Authenticators. You can have one or multiple authenticators in the same JAR file
++
+* `policies`
++
+For JavaScript Policies when using {project_name} Authorization Services. You can have one or multiple policies in the same JAR file
++
+* `mappers`
++
+For OpenID Connect Script Protocol Mappers. You can have one or multiple mappers in the same JAR file
++
+* `saml-mappers`
++
+For SAML Script Protocol Mappers. You can have one or multiple mappers in the same JAR file
+
+For each script file in your `JAR` file, you need a corresponding entry in `META-INF/keycloak-scripts.json` that maps your scripts files to a specific provider type. For that you should provide the following properties for each entry:
+
+* `name`
++
+A friendly name that will be used to show the scripts through the {project_name} Administration Console. If not provided, the name
+of the script file will be used instead
++
+* `description`
++
+An optional text that better describes the intend of the script file
++
+* `fileName`
++
+The name of the script file. This property is *mandatory* and should map to a file within the JAR.
+
+==== Deploy the script JAR
+
+Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `providers/` directory, then run `bin/kc.[sh|bat] build`.
+
+=== Available SPIs
+
+If you want to see list of all available SPIs at runtime, you can check `Provider Info` page in Admin Console as described in <<_providers_admin_console,Admin Console>> section.

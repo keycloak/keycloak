@@ -1,0 +1,22 @@
+[[_service_protection_api]]
+= Protection API
+
+The Protection API provides a UMA-compliant set of endpoints providing:
+
+* *Resource Management*
++
+With this endpoint, resource servers can manage their resources remotely and enable <<_enforcer_overview, policy enforcers>> to query the server for the resources that need protection.
+
+* *Permission Management*
++
+In the UMA protocol, resource servers access this endpoint to create permission tickets. {project_name} also provides
+endpoints to manage the state of permissions and query permissions.
+
+* *Policy API*
++
+{project_name} leverages the UMA Protection API to allow resource servers to manage permissions for their users. In addition
+to the Resource and Permission APIs, {project_name} provides a Policy API from where permissions can be set to resources by resource
+servers on behalf of their users.
+
+An important requirement for this API is that _only_ resource servers are allowed to access its endpoints using a special OAuth2 access token called a protection API token (PAT).
+In UMA, a PAT is a token with the scope *uma_protection*.

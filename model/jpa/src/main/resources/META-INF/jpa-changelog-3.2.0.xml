@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <!--
+        NOTE that there was an older version of this file containing a bug.
+        The first changeset fixes this bug for those who were able to
+        lucky enough to apply it. 
+        The second changeset is the fixed original changeset.
+    -->
+    
+    <changeSet author="keycloak" id="3.2.0-fix">
+        <validCheckSum>7:550300617e3b59e8af3a6294df8248a3</validCheckSum>
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <changeSetExecuted id="3.2.0" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
+            <not>
+                <dbms type="mssql"/>
+            </not>
+        </preConditions>
+        
+        <addNotNullConstraint tableName="CLIENT_INITIAL_ACCESS" columnName="REALM_ID" columnDataType="VARCHAR(36)" />
+    </changeSet>
+
+    <changeSet author="keycloak" id="3.2.0-fix-with-keycloak-5416">
+        <validCheckSum>7:e3a9482b8931481dc2772a5c07c44f17</validCheckSum>
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <changeSetExecuted id="3.2.0" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
+            <dbms type="mssql"/>
+        </preConditions>
+
+        <dropIndex indexName="IDX_CLIENT_INIT_ACC_REALM" tableName="CLIENT_INITIAL_ACCESS"/>
+        <addNotNullConstraint tableName="CLIENT_INITIAL_ACCESS" columnName="REALM_ID" columnDataType="VARCHAR(36)" />
+        <createIndex indexName="IDX_CLIENT_INIT_ACC_REALM" tableName="CLIENT_INITIAL_ACCESS">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+    </changeSet>
+    
+    <changeSet author="hmlnarik" id="3.2.0-fix-offline-sessions">
+        <validCheckSum>7:72b07d85a2677cb257edb02b408f332d</validCheckSum>
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <changeSetExecuted id="3.2.0-fixed" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
+            </not>
+            <not>
+                <changeSetExecuted id="3.2.0" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
+            </not>
+        </preConditions>
+        
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.RemoveDuplicateOfflineSessions" />
+    </changeSet>
+
+    <changeSet author="keycloak" id="3.2.0-fixed">
+        <validCheckSum>7:a72a7858967bd414835d19e04d880312</validCheckSum>
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <changeSetExecuted id="3.2.0" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
+            </not>
+        </preConditions>
+        
+        <addColumn tableName="REALM">
+            <column name="DOCKER_AUTH_FLOW" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <dropPrimaryKey constraintName="CONSTRAINT_OFFL_CL_SES_PK2" tableName="OFFLINE_CLIENT_SESSION" />
+        <dropColumn tableName="OFFLINE_CLIENT_SESSION" columnName="CLIENT_SESSION_ID" />
+        <addPrimaryKey columnNames="USER_SESSION_ID,CLIENT_ID, OFFLINE_FLAG" constraintName="CONSTRAINT_OFFL_CL_SES_PK3" tableName="OFFLINE_CLIENT_SESSION"/>
+
+        <createTable tableName="CLIENT_INITIAL_ACCESS">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="TIMESTAMP" type="INT"/>
+            <column name="EXPIRATION" type="INT"/>
+            <column name="COUNT" type="INT"/>
+            <column name="REMAINING_COUNT" type="INT"/>
+        </createTable>
+
+        <addPrimaryKey columnNames="ID" constraintName="CNSTR_CLIENT_INIT_ACC_PK" tableName="CLIENT_INITIAL_ACCESS"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="CLIENT_INITIAL_ACCESS" constraintName="FK_CLIENT_INIT_ACC_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+
+        <createIndex indexName="IDX_ASSOC_POL_ASSOC_POL_ID" tableName="ASSOCIATED_POLICY">
+            <column name="ASSOCIATED_POLICY_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_AUTH_EXEC_REALM_FLOW" tableName="AUTHENTICATION_EXECUTION">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="FLOW_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_AUTH_EXEC_FLOW" tableName="AUTHENTICATION_EXECUTION">
+            <column name="FLOW_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_AUTH_FLOW_REALM" tableName="AUTHENTICATION_FLOW">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_AUTH_CONFIG_REALM" tableName="AUTHENTICATOR_CONFIG">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CLIENT_CLIENT_TEMPL_ID" tableName="CLIENT">
+            <column name="CLIENT_TEMPLATE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CLIENT_DEF_ROLES_CLIENT" tableName="CLIENT_DEFAULT_ROLES">
+            <column name="CLIENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CLIENT_ID_PROV_MAP_CLIENT" tableName="CLIENT_IDENTITY_PROV_MAPPING">
+            <column name="CLIENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CLIENT_SESSION_SESSION" tableName="CLIENT_SESSION">
+            <column name="SESSION_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_COMPONENT_REALM" tableName="COMPONENT">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_COMPO_CONFIG_COMPO" tableName="COMPONENT_CONFIG">
+            <column name="COMPONENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_COMPOSITE" tableName="COMPOSITE_ROLE">
+            <column name="COMPOSITE" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_COMPOSITE_CHILD" tableName="COMPOSITE_ROLE">
+            <column name="CHILD_ROLE" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_CREDENTIAL_ATTR_CRED" tableName="CREDENTIAL_ATTRIBUTE">
+            <column name="CREDENTIAL_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_FED_CRED_ATTR_CRED" tableName="FED_CREDENTIAL_ATTRIBUTE">
+            <column name="CREDENTIAL_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_GROUP_ATTR_GROUP" tableName="GROUP_ATTRIBUTE">
+            <column name="GROUP_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_GROUP_ROLE_MAPP_GROUP" tableName="GROUP_ROLE_MAPPING">
+            <column name="GROUP_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_IDENT_PROV_REALM" tableName="IDENTITY_PROVIDER">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_ID_PROV_MAPP_REALM" tableName="IDENTITY_PROVIDER_MAPPER">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_KEYCLOAK_ROLE_CLIENT" tableName="KEYCLOAK_ROLE">
+            <column name="CLIENT" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_KEYCLOAK_ROLE_REALM" tableName="KEYCLOAK_ROLE">
+            <column name="REALM" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_PROTOCOL_MAPPER_CLIENT" tableName="PROTOCOL_MAPPER">
+            <column name="CLIENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_PROTO_MAPP_CLIENT_TEMPL" tableName="PROTOCOL_MAPPER">
+            <column name="CLIENT_TEMPLATE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_REALM_MASTER_ADM_CLI" tableName="REALM">
+            <column name="MASTER_ADMIN_CLIENT" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_REALM_ATTR_REALM" tableName="REALM_ATTRIBUTE">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_REALM_DEF_GRP_REALM" tableName="REALM_DEFAULT_GROUPS">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_REALM_DEF_ROLES_REALM" tableName="REALM_DEFAULT_ROLES">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_REALM_EVT_TYPES_REALM" tableName="REALM_ENABLED_EVENT_TYPES">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_REALM_EVT_LIST_REALM" tableName="REALM_EVENTS_LISTENERS">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_REALM_SUPP_LOCAL_REALM" tableName="REALM_SUPPORTED_LOCALES">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_REDIR_URI_CLIENT" tableName="REDIRECT_URIS">
+            <column name="CLIENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_REQ_ACT_PROV_REALM" tableName="REQUIRED_ACTION_PROVIDER">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_RES_POLICY_POLICY" tableName="RESOURCE_POLICY">
+            <column name="POLICY_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_RES_SCOPE_SCOPE" tableName="RESOURCE_SCOPE">
+            <column name="SCOPE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_RES_SERV_POL_RES_SERV" tableName="RESOURCE_SERVER_POLICY">
+            <column name="RESOURCE_SERVER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_RES_SRV_RES_RES_SRV" tableName="RESOURCE_SERVER_RESOURCE">
+            <column name="RESOURCE_SERVER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_RES_SRV_SCOPE_RES_SRV" tableName="RESOURCE_SERVER_SCOPE">
+            <column name="RESOURCE_SERVER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_SCOPE_MAPPING_ROLE" tableName="SCOPE_MAPPING">
+            <column name="ROLE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_SCOPE_POLICY_POLICY" tableName="SCOPE_POLICY">
+            <column name="POLICY_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_TEMPL_SCOPE_MAPP_ROLE" tableName="TEMPLATE_SCOPE_MAPPING">
+            <column name="ROLE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_USR_FED_MAP_FED_PRV" tableName="USER_FEDERATION_MAPPER">
+            <column name="FEDERATION_PROVIDER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_USR_FED_MAP_REALM" tableName="USER_FEDERATION_MAPPER">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_USR_FED_PRV_REALM" tableName="USER_FEDERATION_PROVIDER">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+        <createIndex indexName="IDX_WEB_ORIG_CLIENT" tableName="WEB_ORIGINS">
+            <column name="CLIENT_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <createIndex indexName="IDX_CLIENT_INIT_ACC_REALM" tableName="CLIENT_INITIAL_ACCESS">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+        </createIndex>
+     </changeSet>
+</databaseChangeLog>

@@ -1,0 +1,3 @@
+collections:
+  - name: amazon.aws
+    version: 6.0.0

@@ -1,0 +1,24 @@
+
+[[_github]]
+
+==== GitHub
+
+To log in with GitHub, perform the following procedure.
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the *Add provider* list, select *Github*.
++
+.Add identity provider
+image:images/github-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app[create an OAuth app] or https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps[create an GitHub app]. Note that only GitHub apps can refresh tokens, while OAuth apps cannot refresh tokens.
+.. Enter the value of *Redirect URI* into the *Authorization callback URL* field when creating the app.
+.. Note the *Client ID* and *Client secret* on the management page of your OAUTH app.
+. In {project_name}, paste the value of the `Client ID` into the *Client ID* field.
+. In {project_name}, paste the value of the `Client secret` into the *Client Secret* field.
+. Enable *JSON Format* to retrieve the external IDP Tokens in JSON format.
+Note that this is also required for tokens to be refreshed.
+. Click *Add*.
+
