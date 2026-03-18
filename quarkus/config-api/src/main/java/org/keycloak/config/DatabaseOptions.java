@@ -123,6 +123,16 @@ public class DatabaseOptions {
             .hidden()
             .build();
 
+    public static final Option<String> DB_CONNECT_TIMEOUT = new OptionBuilder<>("db-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("Sets the default database connection timeout. " +
+                    "The value is applied to the JDBC driver (vendor-specific property) and also sets " +
+                    "'quarkus.datasource.jdbc.login-timeout'. " +
+                    "If the timeout is already set explicitly in 'db-url' or 'db-url-properties', it is not overridden. " +
+                    DURATION_DESCRIPTION)
+            .defaultValue("10")
+            .build();
+
     public static final Option<String> DB_TLS_MODE = new OptionBuilder<>("db-tls-mode", String.class)
             .category(OptionCategory.DATABASE)
             .expectedValues(Arrays.stream(DatabaseTlsMode.values()).map(DatabaseTlsMode::toCliValue).toList())

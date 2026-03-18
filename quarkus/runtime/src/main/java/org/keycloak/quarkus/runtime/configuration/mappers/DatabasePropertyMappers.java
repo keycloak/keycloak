@@ -1,5 +1,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -10,11 +11,13 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.CachingOptions.Stack;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
+import org.keycloak.config.OptionsUtil;
 import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
 import org.keycloak.quarkus.runtime.cli.Picocli;
@@ -67,6 +70,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
     private static final String POSTGRES_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
     private static final String TIDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
+    public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
+    //quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout"
 
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
@@ -106,28 +111,52 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
                         .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
                         .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(JDBC_LOGIN_TIMEOUT)
+                        .validator(DatabasePropertyMappers::validateConnectTimeout)
+                        .transformer((value, context) -> String.valueOf(DurationConverter.parseDuration(value).getSeconds()))
+                        .paramLabel("timeout")
+                        .build(),
                 fromOption(DatabaseOptions.DB_MYSQL_CONNECT_TIMEOUT)
                         .to(MYSQL_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> value == null ? null
+                                : String.valueOf(DurationConverter.parseDuration(value).toMillis()))
                         .isEnabled(DatabasePropertyMappers::isMysqlConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_MARIADB_CONNECT_TIMEOUT)
                         .to(MARIADB_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> value == null ? null
+                                : String.valueOf(DurationConverter.parseDuration(value).toMillis()))
                         .isEnabled(DatabasePropertyMappers::isMariadbConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_ORACLE_CONNECT_TIMEOUT)
                         .to(ORACLEDB_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> value == null ? null
+                                : String.valueOf(DurationConverter.parseDuration(value).toMillis()))
                         .isEnabled(DatabasePropertyMappers::isOracleConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_MSSQL_CONNECT_TIMEOUT)
                         .to(MSSQL_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> value == null ? null
+                                : String.valueOf(DurationConverter.parseDuration(value).getSeconds()))
                         .isEnabled(DatabasePropertyMappers::isMssqlLoginTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_POSTGRES_CONNECT_TIMEOUT)
                         .to(POSTGRES_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> value == null ? null
+                                : String.valueOf(DurationConverter.parseDuration(value).getSeconds()))
                         .isEnabled(DatabasePropertyMappers::isPostgresConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_TIDB_CONNECT_TIMEOUT)
                         .to(TIDB_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> value == null ? null
+                                : String.valueOf(DurationConverter.parseDuration(value).toMillis()))
                         .isEnabled(DatabasePropertyMappers::isTidbConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
@@ -619,6 +648,19 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 getNamedKey(DB_TLS_TRUST_STORE_FILE, datasource);
         return option.map(Configuration::getKcConfigValue)
                 .map(ConfigValue::getValue);
+    }
+
+    private static void validateConnectTimeout(String value) {
+        try {
+            Duration duration = DurationConverter.parseDuration(value);
+            if (duration == null || duration.isNegative() || duration.isZero()) {
+                throw new PropertyException("Invalid duration '%s' for option '%s'. Duration must be positive."
+                        .formatted(value, DatabaseOptions.DB_CONNECT_TIMEOUT.getKey()));
+            }
+        } catch (IllegalArgumentException e) {
+            throw new PropertyException("Invalid duration format '%s' for option '%s'. %s"
+                    .formatted(value, DatabaseOptions.DB_CONNECT_TIMEOUT.getKey(), OptionsUtil.DURATION_DESCRIPTION));
+        }
     }
 
 }
