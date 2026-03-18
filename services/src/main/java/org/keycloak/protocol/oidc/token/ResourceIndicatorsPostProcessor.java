@@ -22,42 +22,47 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
     @Override
     public void process(TokenPostProcessorContext context) {
         String requestedResource = context.clientSessionCtx().getAttribute(OAuth2Constants.RESOURCE, String.class);
-        if (requestedResource == null) {
+        String grantType = context.clientSessionCtx().getAttribute(Constants.GRANT_TYPE, String.class);
+
+        boolean originalResourceParamRequired = false;
+        String originalResourceParam = null;
+        if (OAuth2Constants.AUTHORIZATION_CODE.equals(grantType)) {
+            originalResourceParam = context.code().getResource();
+            originalResourceParamRequired = true;
+        } else if (OAuth2Constants.REFRESH_TOKEN.equals(grantType)) {
+            originalResourceParam = (String) context.requestRefreshToken().getOtherClaims().get(OAuth2Constants.RESOURCE);
+            originalResourceParamRequired = true;
+        }
+
+        if (originalResourceParam == null && requestedResource == null) {
             return;
         }
 
-        String grantType = context.clientSessionCtx().getAttribute(Constants.GRANT_TYPE, String.class);
-
-        if (grantType.equals(OAuth2Constants.REFRESH_TOKEN)) {
-            if (isClientUrn(requestedResource)) {
-                if (findAudienceByClientUrn(requestedResource, context.refreshToken().getOriginalAudience()) == null) {
-                    throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ERROR_NOT_MATCHING);
-                }
-            } else {
-                if (find(requestedResource, context.refreshToken().getOriginalAudience()) == null) {
-                    throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ERROR_NOT_MATCHING);
-                }
-            }
-        } else {
-            String audienceToSet;
-
-            String originalResourceParam = context.clientSessionCtx().getClientSession().getNote(OAuth2Constants.RESOURCE);
-            if (originalResourceParam != null && !originalResourceParam.equals(requestedResource)) {
+        if (originalResourceParamRequired) {
+            if (originalResourceParam == null) {
                 throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ERROR_NOT_MATCHING);
             }
 
-            if (isClientUrn(requestedResource)) {
-                audienceToSet = findAudienceByClientUrn(requestedResource, context.accessToken().getAudience());
-            } else {
-                audienceToSet = findAudienceByClientAttribute(requestedResource, context.accessToken().getAudience());
+            if (requestedResource == null) {
+                requestedResource = originalResourceParam;
+            } else if (!requestedResource.equals(originalResourceParam)){
+                throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ERROR_NOT_MATCHING);
             }
-
-            if (audienceToSet == null) {
-                throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ERROR_INVALID_RESOURCE);
-            }
-
-            context.accessToken().audience(audienceToSet);
         }
+
+        String audienceToSet;
+        if (isClientUrn(requestedResource)) {
+            audienceToSet = findAudienceByClientUrn(requestedResource, context.accessToken().getAudience());
+        } else {
+            audienceToSet = findAudienceByClientAttribute(requestedResource, context.accessToken().getAudience());
+        }
+
+        if (audienceToSet == null) {
+            throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ERROR_INVALID_RESOURCE);
+        }
+
+        context.refreshToken().getOtherClaims().put(OAuth2Constants.RESOURCE, requestedResource);
+        context.accessToken().audience(audienceToSet);
     }
 
     private boolean isClientUrn(String resource) {
@@ -74,7 +79,7 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
             ClientModel client = session.clients().getClientByClientId(session.getContext().getRealm(), a);
             if (client != null) {
                 String clientResourceUrl = client.getAttribute(CLIENT_RESOURCE_URL_ATTRIBUTE);
-                if (clientResourceUrl.equals(resource)) {
+                if (resource.equals(clientResourceUrl)) {
                     return resource;
                 }
             }
