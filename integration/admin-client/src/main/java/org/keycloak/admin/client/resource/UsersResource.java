@@ -360,4 +360,33 @@ public interface UsersResource {
     @Path("profile")
     UserProfileResource userProfile();
 
+    /**
+     * Search for users by both a general search term and attribute-based query.
+     *
+     * <p>This combines the {@code search} parameter (matches username, email, first/last name)
+     * with the {@code q} parameter (attribute-based filter in {@code key:value} format),
+     * allowing callers to narrow results by both criteria simultaneously.</p>
+     *
+     * @param search         a value to search across username, email, first name, and last name
+     * @param searchQuery    a list of user attribute filters in {@code key:value} format,
+     *                       e.g. {@code locale:en department:engineering}
+     * @param firstResult    the position of the first result to retrieve
+     * @param maxResults     the maximum number of results to retrieve
+     * @param enabled        only return enabled or disabled users
+     * @param briefRepresentation Only return basic information (only guaranteed to return id, username,
+     *        created, first and last name, email, enabled state, email verification state, federation
+     *        link, and access. Note that it means that namely user attributes, required actions, and
+     *        not before are not returned.)
+     * @return a list of {@link UserRepresentation}
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    List<UserRepresentation> searchByAttributes(@QueryParam("search") String search,
+                                                @QueryParam("q") String searchQuery,
+                                                @QueryParam("first") Integer firstResult,
+                                                @QueryParam("max") Integer maxResults,
+                                                @QueryParam("enabled") Boolean enabled,
+                                                @QueryParam("briefRepresentation") Boolean briefRepresentation);
+
 }
