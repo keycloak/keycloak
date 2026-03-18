@@ -24,6 +24,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -32,6 +34,8 @@ import java.util.function.Supplier;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
@@ -219,6 +223,29 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
         }
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
+
+        DecimalFormat df = new DecimalFormat();
+        df.setMaximumFractionDigits(Integer.MAX_VALUE);
+
+        builder.property()
+                .name(BLACKLISTS_FALSE_POSITIVE_PROBABILITY_PROPERTY)
+                .type("string")
+                .helpText("False positive probability of the bloom filter to reject a valid password.")
+                .defaultValue(df.format(DEFAULT_FALSE_POSITIVE_PROBABILITY))
+                .add();
+
+        builder.property()
+                .name(CHECK_INTERVAL_SECONDS_PROPERTY)
+                .type("string")
+                .helpText("Interval in number of seconds when the server should check the password file for changes and reload it. Set to 0 to disable reloading.")
+                .defaultValue(DEFAULT_CHECK_INTERVAL_SECONDS)
+                .add();
+
+        return builder.build();
+    }
 
     /**
      * A {@link PasswordBlacklist} describes a list of too easy to guess
