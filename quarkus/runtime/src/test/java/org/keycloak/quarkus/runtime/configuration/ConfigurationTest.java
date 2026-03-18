@@ -855,7 +855,6 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         config = createConfigFromCliArguments("--db=mysql", "--db-connect-timeout=30s");
         assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.MYSQL_CONNECT_TIMEOUT).getValue());
         assertEquals("30", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
-
         ConfigArgsConfigSource.setCliArgs("--db=mariadb");
         config = createConfig();
         assertTrue(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
@@ -918,4 +917,3 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("30", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
     }
     }
-
