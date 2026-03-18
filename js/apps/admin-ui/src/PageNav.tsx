@@ -90,6 +90,7 @@ export const PageNav = () => {
     "query-groups",
     "query-users",
     "query-clients",
+    "query-organizations",
     "view-events",
   );
 

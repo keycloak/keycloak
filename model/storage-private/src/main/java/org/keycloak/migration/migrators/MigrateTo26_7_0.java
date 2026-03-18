@@ -5,10 +5,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.Config;
 import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.AdminRoles;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
 public class MigrateTo26_7_0 extends RealmMigration {
@@ -23,6 +28,11 @@ public class MigrateTo26_7_0 extends RealmMigration {
 
     @Override
     public void migrateRealm(KeycloakSession session, RealmModel realm) {
+        updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(realm);
+        addOrganizationAdminRoles(realm);
+    }
+
+    private void updatePasswordAfterEmailVerificationDuringRegistrationOfUsers(RealmModel realm) {
         Map<String, RequiredActionProviderModel> reqActionsByAlias = new HashMap<>();
         List<Integer> reqActionPriorities = new ArrayList<>();
         realm.getRequiredActionProvidersStream().forEach((reqAction) -> {
@@ -69,5 +79,25 @@ public class MigrateTo26_7_0 extends RealmMigration {
 
         // Should not happen
         return reqActionPriorities.get(reqActionPriorities.size() - 1) + 1;
+    }
+
+    private void addOrganizationAdminRoles(RealmModel realm) {
+        MigrationUtils.addAdminRole(realm, AdminRoles.VIEW_ORGANIZATIONS);
+        MigrationUtils.addAdminRole(realm, AdminRoles.MANAGE_ORGANIZATIONS);
+        MigrationUtils.addAdminRole(realm, AdminRoles.QUERY_ORGANIZATIONS);
+
+        addQueryCompositeRoles(realm.getMasterAdminClient());
+        if (!realm.getName().equals(Config.getAdminRealm())) {
+            addQueryCompositeRoles(realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID));
+        }
+    }
+
+    private void addQueryCompositeRoles(ClientModel client) {
+        if (client == null) return;
+        RoleModel viewOrganizations = client.getRole(AdminRoles.VIEW_ORGANIZATIONS);
+        RoleModel queryOrganizations = client.getRole(AdminRoles.QUERY_ORGANIZATIONS);
+        if (viewOrganizations != null && queryOrganizations != null && !viewOrganizations.hasRole(queryOrganizations)) {
+            viewOrganizations.addCompositeRole(queryOrganizations);
+        }
     }
 }

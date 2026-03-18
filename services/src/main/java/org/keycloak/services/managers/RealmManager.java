@@ -243,12 +243,15 @@ public class RealmManager {
         RoleModel queryClients = realmAccess.getRole(AdminRoles.QUERY_CLIENTS);
         RoleModel queryUsers = realmAccess.getRole(AdminRoles.QUERY_USERS);
         RoleModel queryGroups = realmAccess.getRole(AdminRoles.QUERY_GROUPS);
+        RoleModel queryOrganizations = realmAccess.getRole(AdminRoles.QUERY_ORGANIZATIONS);
 
         RoleModel viewClients = realmAccess.getRole(AdminRoles.VIEW_CLIENTS);
         viewClients.addCompositeRole(queryClients);
         RoleModel viewUsers = realmAccess.getRole(AdminRoles.VIEW_USERS);
         viewUsers.addCompositeRole(queryUsers);
         viewUsers.addCompositeRole(queryGroups);
+        RoleModel viewOrganizations = realmAccess.getRole(AdminRoles.VIEW_ORGANIZATIONS);
+        viewOrganizations.addCompositeRole(queryOrganizations);
     }
 
     public String getRealmAdminClientId(RealmModel realm) {

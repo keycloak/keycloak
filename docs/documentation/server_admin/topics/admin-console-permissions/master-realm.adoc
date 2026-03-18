@@ -36,16 +36,19 @@ The roles available are:
 * manage-clients
 * manage-events
 * manage-identity-providers
+* manage-organizations
 * manage-realm
 * manage-users
 * query-clients
 * query-groups
+* query-organizations
 * query-realms
 * query-users
 * view-authorization
 * view-clients
 * view-events
 * view-identity-providers
+* view-organizations
 * view-realm
 * view-users
 

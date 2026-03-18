@@ -52,6 +52,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
 
@@ -73,13 +74,15 @@ public class OrganizationGroupsResource {
     private final OrganizationProvider organizationProvider;
     private final OrganizationModel organization;
     private final AdminEventBuilder adminEvent;
+    private final AdminPermissionEvaluator auth;
 
-    public OrganizationGroupsResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent) {
+    public OrganizationGroupsResource(KeycloakSession session, OrganizationModel organization, AdminEventBuilder adminEvent, AdminPermissionEvaluator auth) {
         this.realm = session == null ? null : session.getContext().getRealm();
         this.session = session;
         this.organizationProvider = session == null ? null : session.getProvider(OrganizationProvider.class);
         this.organization = organization;
         this.adminEvent = adminEvent.resource(ResourceType.ORGANIZATION_GROUP);
+        this.auth = auth;
     }
 
     @POST
@@ -93,10 +96,12 @@ public class OrganizationGroupsResource {
         @APIResponse(responseCode = "201", description = "Created"),
         @APIResponse(responseCode = "204", description = "No Content - Group moved to top-level"),
         @APIResponse(responseCode = "400", description = "Bad Request"),
+        @APIResponse(responseCode = "403", description = "Forbidden"),
         @APIResponse(responseCode = "404", description = "Not Found - Group does not exist"),
         @APIResponse(responseCode = "409", description = "Conflict")
     })
     public Response addTopLevelGroup(GroupRepresentation rep) {
+        auth.orgs().requireManage();
         try {
             String groupName = rep.getName();
 
@@ -179,7 +184,8 @@ public class OrganizationGroupsResource {
                 "When `q` parameter is provided, groups are searched by attributes. " +
                 "If neither parameter is provided, top-level groups are returned.")
     @APIResponses(value = {
-        @APIResponse(responseCode = "200", description = "OK")
+        @APIResponse(responseCode = "200", description = "OK"),
+        @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Stream<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                  @QueryParam("q") String searchQuery,
@@ -254,6 +260,6 @@ public class OrganizationGroupsResource {
             throw ErrorResponse.error("Group does not belong to the organization", Status.BAD_REQUEST);
         }
 
-        return new OrganizationGroupResource(session, organizationProvider, organization, group, adminEvent);
+        return new OrganizationGroupResource(session, organizationProvider, organization, group, adminEvent, auth);
     }
 }
