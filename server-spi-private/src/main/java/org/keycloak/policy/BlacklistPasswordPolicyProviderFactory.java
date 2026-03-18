@@ -82,9 +82,11 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
     public static final String BLACKLISTS_FALSE_POSITIVE_PROBABILITY_PROPERTY = "falsePositiveProbability";
 
+    public static final String CHECK_INTERVAL_SECONDS_PROPERTY = "checkIntervalSeconds";
+
     public static final double DEFAULT_FALSE_POSITIVE_PROBABILITY = 0.0001;
 
-    public static final int CHECK_INTERVAL_SECONDS = 60;
+    public static final int DEFAULT_CHECK_INTERVAL_SECONDS = 60;
 
     public static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
 
@@ -175,7 +177,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
         return blacklistRegistry.computeIfAbsent(listName, (name) -> {
             double fpp = getFalsePositiveProbability();
-            return new FileBasedPasswordBlacklist(this.blacklistsBasePath, name, fpp, CHECK_INTERVAL_SECONDS * 1000L);
+            return new FileBasedPasswordBlacklist(this.blacklistsBasePath, name, fpp, getCheckIntervalSeconds() * 1000L);
         });
     }
 
@@ -197,6 +199,26 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
             return DEFAULT_FALSE_POSITIVE_PROBABILITY;
         }
     }
+
+    protected int getCheckIntervalSeconds() {
+
+        if (config == null) {
+            return DEFAULT_CHECK_INTERVAL_SECONDS;
+        }
+
+        String checkIntervalString = config.get(CHECK_INTERVAL_SECONDS_PROPERTY);
+        if (checkIntervalString == null) {
+            return DEFAULT_CHECK_INTERVAL_SECONDS;
+        }
+
+        try {
+            return Integer.parseInt(checkIntervalString);
+        } catch (NumberFormatException nfe) {
+            LOG.warnf("Could not parse check interval seconds from string %s", checkIntervalString);
+            return DEFAULT_CHECK_INTERVAL_SECONDS;
+        }
+    }
+
 
     /**
      * A {@link PasswordBlacklist} describes a list of too easy to guess
@@ -294,6 +316,9 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
          * Uses double-checked locking to avoid redundant reloads by concurrent threads.
          */
         private void reloadIfNeeded() {
+            if (checkIntervalMillis == 0) {
+                return;
+            }
             long now = System.currentTimeMillis();
             if (now - lastCheckedMillis < checkIntervalMillis) {
                 return;
