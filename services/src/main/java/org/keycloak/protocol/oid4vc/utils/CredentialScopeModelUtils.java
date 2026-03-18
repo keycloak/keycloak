@@ -39,7 +39,7 @@ public class CredentialScopeModelUtils {
                 .toList();
         if (credScopes.size() > 1) {
             List<String> clientScopeNames = credScopes.stream().map(ClientScopeModel::getName).toList();
-            log.warnf("Multiple client scopes found for credential configuration '%s' in realm '%s'. Please make sure that vc.credential_configuration_id is unique across client scopes. Found client scopes: %s",
+            log.warnf("Multiple client scopes found for credential configuration '%s' in realm '%s': %s",
                     credConfigId, realmModel.getName(), clientScopeNames);
             return null;
         } else if (credScopes.isEmpty()) {
@@ -62,15 +62,11 @@ public class CredentialScopeModelUtils {
                 .toList();
         if (credScopes.size() > 1) {
             List<String> clientScopeNames = credScopes.stream().map(ClientScopeModel::getName).toList();
-            log.warnf("Multiple client scopes found for scope '%s' in realm '%s'. Please make sure that vc.scope is unique across client scopes. Found client scopes: %s",
+            log.warnf("Multiple client scopes found for scope '%s' in realm '%s': %s",
                     scope, realmModel.getName(), clientScopeNames);
             return null;
-        } else if (credScopes.isEmpty()) {
-            log.warnf("No client scopes found for scope '%s' in realm '%s'", scope, realmModel.getName());
-            return null;
-        } else {
-            return credScopes.get(0);
         }
+        return !credScopes.isEmpty() ? credScopes.get(0) : null;
     }
 
     public static OID4VCAuthorizationDetail buildOID4VCAuthorizationDetail(CredentialScopeModel credScope, String credOffersId) {
