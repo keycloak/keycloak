@@ -301,7 +301,7 @@ public class ClientResource {
 
             ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
             ClientSecretRotationContext secretRotationContext = new ClientSecretRotationContext(
-                representation, client, client.getSecret());
+                representation, client, client.getSecret(), auth.adminAuth());
 
             String secret = KeycloakModelUtils.generateSecret(client);
 
