@@ -14,8 +14,6 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.testframework.ui.annotations.InjectWebDriver;
-import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
@@ -36,9 +34,6 @@ public class ResourceIndicatorsTest {
 
     @InjectOAuthClient(config = OAuthClientConfig.class)
     OAuthClient oauth;
-
-    @InjectWebDriver
-    ManagedWebDriver driver;
 
     @TestSetup
     public void loginUser() {
@@ -90,7 +85,7 @@ public class ResourceIndicatorsTest {
 
     @Test
     public void testAuthzDifferentResource() {
-        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("urn:client:theservice2").doLoginWithCookie();
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("urn:client:otherservice").doLoginWithCookie();
         Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
 
         AccessTokenResponse accessTokenResponse = oauth.accessTokenRequest(authorizationEndpointResponse.getCode()).resource("urn:client:theservice").send();
@@ -120,7 +115,7 @@ public class ResourceIndicatorsTest {
         AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").resource("https://theservice").send();
         Assertions.assertTrue(tokenResponse.isSuccess());
 
-        AccessTokenResponse refreshResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).resource("https://theservice").send();
+        AccessTokenResponse refreshResponse = oauth.refreshRequest(tokenResponse.getRefreshToken()).resource("https://otherservice").send();
         assertErrorResponse(refreshResponse,  INVALID_TARGET, ERROR_NOT_MATCHING);
     }
 
@@ -131,7 +126,16 @@ public class ResourceIndicatorsTest {
             realm.addClient("theservice").attribute("resource_url", "https://theservice");
             realm.clientRoles("theservice", "myrole");
 
-            realm.addUser("user").firstName("user").lastName("user").password("pass").email("the@email.localhost").clientRoles("theservice", "myrole");
+            realm.addClient("otherservice").attribute("resource_url", "https://otherservice");
+            realm.clientRoles("otherservice", "myrole");
+
+            realm.addClient("serviceWithoutResource");
+            realm.clientRoles("serviceWithoutResource", "myrole");
+
+            realm.addUser("user").firstName("user").lastName("user").password("pass").email("the@email.localhost")
+                    .clientRoles("theservice", "myrole")
+                    .clientRoles("otherservice", "myrole")
+                    .clientRoles("serviceWithoutResource", "myrole");
 
             return realm;
         }

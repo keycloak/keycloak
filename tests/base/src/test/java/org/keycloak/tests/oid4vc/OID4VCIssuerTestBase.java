@@ -50,6 +50,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
@@ -156,6 +157,16 @@ public abstract class OID4VCIssuerTestBase {
         minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
         sdJwtTypeCredentialScope = requireExistingCredentialScope(sdJwtTypeCredentialScopeName);
         oauth.client(OID4VCI_CLIENT_ID, "test-secret");
+        enableVerifiableCredentialEvents(testRealm);
+    }
+
+    public static void enableVerifiableCredentialEvents(ManagedRealm realm) {
+        RealmEventsConfigRepresentation realmEventsConfig = realm.admin().getRealmEventsConfig();
+        List<String> enabledEventTypes = realmEventsConfig.getEnabledEventTypes();
+        if (!enabledEventTypes.contains(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name())) {
+            enabledEventTypes.add(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name());
+            realm.admin().updateRealmEventsConfig(realmEventsConfig);
+        }
     }
 
     public static CredentialScopeRepresentation createCredentialScope(
@@ -506,18 +517,7 @@ public abstract class OID4VCIssuerTestBase {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name(TEST_REALM_NAME)
-                    .eventsEnabled(true)
-                    .enabledEventTypes(
-                            EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER.name(),
-                            EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST.name(),
-                            EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name(),
-                            EventType.VERIFIABLE_CREDENTIAL_REQUEST.name(),
-                            EventType.CODE_TO_TOKEN.name(),
-                            EventType.LOGIN.name(),
-                            EventType.CUSTOM_REQUIRED_ACTION_ERROR.name(),
-                            EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR.name(),
-                            EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR.name()
-                    );
+                    .eventsEnabled(true);
 
             CryptoIntegration.init(this.getClass().getClassLoader());
             realm.verifiableCredentialsEnabled(true);

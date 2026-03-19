@@ -107,6 +107,9 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
+      - name: Check base testsuites
+        run: tests/base/check-base-suites.sh
+
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
 

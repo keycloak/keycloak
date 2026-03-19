@@ -6,7 +6,11 @@ import java.util.Set;
 
 import jakarta.validation.constraints.NotBlank;
 
+import org.keycloak.representations.admin.v2.validation.ClientUuidProvider;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
+import org.keycloak.representations.admin.v2.validation.PatchClient;
+import org.keycloak.representations.admin.v2.validation.PutClient;
+import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
@@ -25,6 +29,7 @@ import org.hibernate.validator.constraints.URL;
     @JsonSubTypes.Type(value = OIDCClientRepresentation.class, name = OIDCClientRepresentation.PROTOCOL),
     @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = SAMLClientRepresentation.PROTOCOL)
 })
+@UuidUnmodified(aliasProvider = ClientUuidProvider.class, groups = {PutClient.class, PatchClient.class})
 public abstract class BaseClientRepresentation extends BaseRepresentation {
     public static final String DISCRIMINATOR_FIELD = "protocol";
 
@@ -122,11 +127,12 @@ public abstract class BaseClientRepresentation extends BaseRepresentation {
         if (!(o instanceof BaseClientRepresentation that)) {
             return false;
         }
+        if (!super.equals(o)) return false;
         return Objects.equals(clientId, that.clientId) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(enabled, that.enabled) && Objects.equals(appUrl, that.appUrl) && Objects.equals(redirectUris, that.redirectUris) && Objects.equals(roles, that.roles) && Objects.equals(additionalFields, that.additionalFields);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(clientId, displayName, description, enabled, appUrl, redirectUris, roles, additionalFields);
+        return Objects.hash(super.hashCode(), clientId, displayName, description, enabled, appUrl, redirectUris, roles, additionalFields);
     }
 }

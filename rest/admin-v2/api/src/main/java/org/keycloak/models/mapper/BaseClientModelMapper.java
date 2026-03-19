@@ -25,6 +25,7 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
 
         T rep = createClientRepresentation();
 
+        rep.setUuid(model.getId());
         rep.setEnabled(model.isEnabled());
         rep.setClientId(model.getClientId());
         rep.setDescription(model.getDescription());

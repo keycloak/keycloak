@@ -1,4 +1,30 @@
 // Release notes should contain only headline-worthy new features,
 // assuming that people who migrate will read the upgrading guide anyway.
 
-= <TODO>
+This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
+
+<TODO>
+
+Read on to learn more about each new feature. If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[review also the changes listed in the upgrading guide].
+
+// use sections aligned with the different Guides
+
+= Security and Standards
+
+<TODO>
+
+= Administration
+
+<TODO>
+
+= Configuring and Running
+
+<TODO>
+
+= Observability
+
+<TODO>
+
+= Extension Development
+
+<TODO>
