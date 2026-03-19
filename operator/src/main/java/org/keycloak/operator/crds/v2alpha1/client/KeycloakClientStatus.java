@@ -25,13 +25,23 @@ import io.sundr.builder.annotations.Buildable;
 
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder", lazyCollectionInitEnabled = false)
 public class KeycloakClientStatus {
+
+    private String uuid;
     
     private Long observedGeneration;
     
     private String hash;
 
     private List<KeycloakClientStatusCondition> conditions = new ArrayList<KeycloakClientStatusCondition>();
-    
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     // TODO: will the id or anything else be generated such that it needs to be in the status
     
     public Long getObservedGeneration() {
@@ -57,19 +67,20 @@ public class KeycloakClientStatus {
     public void setHash(String hash) {
         this.hash = hash;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         KeycloakClientStatus status = (KeycloakClientStatus) o;
         return Objects.equals(getConditions(), status.getConditions())
+                && Objects.equals(getUuid(), status.getUuid())
                 && Objects.equals(getHash(), status.getHash())
                 && Objects.equals(getObservedGeneration(), status.getObservedGeneration());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getConditions(), getHash(), getObservedGeneration());
+        return Objects.hash(getConditions(), getUuid(), getHash(), getObservedGeneration());
     }
 }
