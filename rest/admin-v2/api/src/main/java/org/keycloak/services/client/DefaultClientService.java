@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
+import jakarta.validation.groups.Default;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -26,7 +27,8 @@ import org.keycloak.models.mapper.ClientModelMapper;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
-import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
+import org.keycloak.representations.admin.v2.validation.CreateClient;
+import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -115,19 +117,23 @@ public class DefaultClientService implements ClientService {
     }
 
     private enum CreateOrUpdateStrategy {
-        ONLY_CREATE,
-        PUT,
-        // PATCH is currently separated from PUT only due to validation running before full preparation/defaulting.
-        // Once we validate the fully prepared resource, PUT and PATCH should share the same validation logic.
-        PATCH
+        ONLY_CREATE(CreateClient.class),
+        PUT(PutClient.class),
+        PATCH(PatchClient.class);
+
+        private final Class<?> validationGroup;
+
+        CreateOrUpdateStrategy(Class<?> validationGroup) {
+            this.validationGroup = validationGroup;
+        }
+
+        public Class<?> getValidationGroup() {
+            return validationGroup;
+        }
     }
 
     private CreateOrUpdateResult createOrUpdate(RealmModel realm, String clientId, BaseClientRepresentation client, CreateOrUpdateStrategy strategy) throws ServiceException {
         validateUnknownFields(client);
-
-        if (strategy == CreateOrUpdateStrategy.PUT) {
-            validator.validate(client, PutClient.class);
-        }
 
         boolean created = false;
         ClientModel model;
@@ -138,6 +144,8 @@ public class DefaultClientService implements ClientService {
             if (strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
+            validator.validate(client, strategy.getValidationGroup(), Default.class);
+
             model = mapper.toModel(client, clientResource.viewClientModel());
             var rep = ModelToRepresentation.toRepresentation(model, session);
 
@@ -147,7 +155,7 @@ public class DefaultClientService implements ClientService {
             }
         } else {
             created = true;
-            validator.validate(client, CreateClientDefault.class);
+            validator.validate(client, strategy.getValidationGroup(), Default.class);
 
             // First, create a basic v1 representation to persist the client in the database.
             // We can't use mapper.toModel(client) directly for creation because the "detached model"

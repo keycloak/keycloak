@@ -1,69 +1,52 @@
 // Release notes should contain only headline-worthy new features,
 // assuming that people who migrate will read the upgrading guide anyway.
 
-= Keycloak Test Framework Full Support
+This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
 
-The Keycloak Test Framework, based on JUnit6, is now fully supported.
+<TODO>
 
-It replaces the previous solution built on top of Arquillian and JUnit4.
-Behind the scenes the framework handles the lifecycle of Keycloak, the database, and any injected resources such as realms and clients.
+Read on to learn more about each new feature. If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[review also the changes listed in the upgrading guide].
 
-Tests simply declare what they want, including specific configuration, and the framework takes care of the rest.
+= Security and Standards
 
-For more information, see https://github.com/keycloak/keycloak/tree/main/test-framework#readme[Keycloak Test Framework]
+== JWT Authorization Grant promoted to supported
 
-= Sensitive Keycloak information is not displayed in the HTTP Access log
+In this release, the JWT Authorization Grant (https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523]) feature is promoted from preview to default. This grant allows using external signed JWT assertions to request OAuth 2.0 access tokens. See the link:{securing_apps_base_link}/jwt-authorization-grant[JWT Authorization Grant guide] for additional details.
 
-If you are using the HTTP Access logging capability, sensitive information is omitted.
-It means that tokens in the 'Authorization' HTTP header and specific sensitive Keycloak cookies are not shown.
+== Federated client authentication promoted to supported
 
-For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
+Federated client authentication is now promoted to supported, including support for client assertions issued by
+external OpenID Connect identity providers and Kubernetes Service Accounts.
 
-= HTTP access logs in a dedicated file
+Since the OAuth SPIFFE Client Authentication specification is still in draft status, this feature remains a preview
+feature in Keycloak.
 
-HTTP access logs can now be written to a dedicated file, separate from the server logs.
-This makes it easier to process and archive access logs independently for security auditing and compliance monitoring.
+== Step-up authentication for SAML (preview)
 
-For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
+The feature `step-up-authentication-saml` extends the step-up authentication to include the SAML protocol and clients. This feature is in preview mode. Additional information is available in the link:{adminguide_link}#_step-up-authentication-saml[{adminguide_name}].
 
-= Telemetry configuration via Keycloak CR
+= Administration
 
-{project_name} now supports configuring the OpenTelemetry properties via Keycloak CR when using Operator.
-These properties are shared among the available OpenTelemetry components - logs, metrics, and traces.
-
-For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
-
-= Graceful shutdown of HTTP stack
-
-To allow for rolling updates for configuration changes or version updates, a graceful shutdown of {project_name} nodes prevents users seeing error responses when logging in or refreshing their tokens when nodes shut down.
-
-Starting with this version, {project_name} supports a graceful shutdown of the HTTP stack.
-This includes delaying a shutdown after receiving a termination signal, connection draining for HTTP/1.1 and HTTP/2 connections during that period, and a shutdown timeout to finish ongoing requests.
-
-The defaults are a shutdown delay and a shutdown timeout of one second each.
-This should be a good fit for setups where the reverse proxy is using TLS edge termination or re-encrypt, and the reverse proxy is notified about the Keycloak node shutting down at the same time as the Keycloak node.
-This is a common setup for example in Kubernetes environments.
-
-Users should adjust those values depending on their proxy setup.
-See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown[Graceful HTTP shutdown] in the reverse proxy guide for more information.
-
-= Custom request headers for OpenTelemetry
-
-It is now possible to set request headers for exporting telemetry via OpenTelemetry Protocol (OTLP).
-It is mainly useful for providing tokens in the request.
-
-You can specify these headers via the general parent option `telemetry-header-<header>` wildcard option, accepting any custom header name.
-Or you can use the `telemetry-logs-header-<header>` for OpenTelemetry Logs, or `telemetry-metrics-header-<header>` for OpenTelemetry Metrics.
-
-For more details, see the  link:{telemetryguide_link}[{telemetryguide_name}] guide.
-
-= Organization groups
+== Organization groups
 
 Organizations now support isolated group hierarchies, allowing each organization to manage its own teams and departments without naming conflicts across the realm. This update includes Identity Provider mappers to automatically assign federated users to organization groups based on external claims. Group membership is automatically included in OIDC tokens and SAML assertions when an organization context is requested.
 
 For more details, see the link:{adminguide_link}#pass:a[_managing_groups_][Managing organization groups] guide.
 
-= Zero-downtime patch releases enabled by default
+== New Groups scope for user membership changes
+
+Fine-Grained Admin Permissions (FGAP) now includes a new `Groups` scope: `manage-membership-of-members`.
+
+This scope is now used as the group-side bridge for evaluating user-side `manage-group-membership` permissions based on a user's current group memberships.
+The existing `manage-membership` scope keeps its current behavior for target group membership management operations.
+
+= Configuring and Running
+
+== Java 25 support
+
+{project_name} now supports running with OpenJDK 25.
+
+== Zero-downtime patch releases enabled by default
 
 Zero-downtime patch releases are now enabled by default. This allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
 
@@ -71,11 +54,21 @@ When using the {project_name} Operator, set the update strategy to `Auto` to ben
 
 For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
 
-= Step-up authentication for SAML (preview)
+== Graceful shutdown of HTTP stack
 
-The feature `step-up-authentication-saml` extends the step-up authentication to include the SAML protocol and clients. This feature is in preview mode. Additional information is available in the link:{adminguide_link}#_step-up-authentication-saml[{adminguide_name}].
+To allow for rolling updates for configuration changes or version updates, a graceful shutdown of {project_name} nodes prevents users from seeing error responses when logging in or refreshing their tokens when nodes shut down.
 
-= Automatic truststore initialization on Kubernetes and OpenShift
+Starting with this version, {project_name} supports a graceful shutdown of the HTTP stack.
+This includes delaying a shutdown after receiving a termination signal, connection draining for HTTP/1.1 and HTTP/2 connections during that period, and a shutdown timeout to finish ongoing requests.
+
+The defaults are a shutdown delay and a shutdown timeout of one second each.
+This should be a good fit for setups where the reverse proxy is using TLS edge termination or re-encryption, and the reverse proxy is notified about the Keycloak node shutting down at the same time as the Keycloak node.
+This is a common setup for example in Kubernetes environments.
+
+Users should adjust those values depending on their proxy setup.
+See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown[Graceful HTTP shutdown] in the reverse proxy guide for more information.
+
+== Automatic truststore initialization on Kubernetes and OpenShift
 
 {project_name} now automatically discovers and trusts cluster certificate authorities when running on Kubernetes or OpenShift, without requiring the Operator to preconfigure the truststore.
 
@@ -88,16 +81,19 @@ This behavior is enabled by default and can be controlled with the server option
 
 Most deployments do not require any action. If you relied on the Operator to manage these truststore entries previously, the server now performs the same function directly.
 
-= Client certificate lookup providers for Traefik and Envoy
+== Client certificate lookup providers for Traefik and Envoy
 
-You can now use a new client certificate lookup providers for Traefik and Envoy proxies.
-For details, navigate to link:{server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup[Enabling Client Certificate Lookup] section of the documentation.
+You can now use new client certificate lookup providers for Traefik and Envoy proxies.
+For details, see the link:{server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup[Enabling Client Certificate Lookup] section of the documentation.
 
-= Java 25 support
+== Sensitive Keycloak information is not displayed in the HTTP Access log
 
-{project_name} now supports running with JRE 25.
+If you are using the HTTP Access logging capability, sensitive information is omitted.
+This means that tokens in the 'Authorization' HTTP header and specific sensitive Keycloak cookies are not shown.
 
-= Configurable Kubernetes Service name and port in the Keycloak Operator
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
+
+== Configurable Kubernetes Service name and port in the Keycloak Operator
 
 The {project_name} Operator now supports overriding the name and port of the Kubernetes Service it creates for a Keycloak deployment.
 
@@ -107,7 +103,7 @@ configure these independently.
 
 For more details, see the https://www.keycloak.org/operator/advanced-configuration[Advanced configuration] guide.
 
-= Configurable log file rotation
+== Configurable log file rotation
 
 It is now possible to configure log file rotation when using {project_name}'s built-in file logging handler.
 This includes a simple option to fully disable log rotation, which is useful when using an external log rotation solution such as `logrotate`.
@@ -121,21 +117,42 @@ bin/kc.sh start --log="console,file" --log-file-rotation-enabled=false
 
 For more information, see the https://www.keycloak.org/server/logging/file[File logging] guide.
 
-= Fine-Grained Admin Permissions new Groups scope for user membership changes
+== HTTP access logs in a dedicated file
 
-Fine-Grained Admin Permissions (FGAP) now includes a new `Groups` scope: `manage-membership-of-members`.
+HTTP access logs can now be written to a dedicated file, separate from the server logs.
+This makes it easier to process and archive access logs independently for security auditing and compliance monitoring.
 
-This scope is now used as the group-side bridge for evaluating user-side `manage-group-membership` permissions based on a user's current group memberships.
-The existing `manage-membership` scope keeps its current behavior for target group membership management operations.
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
 
-= JWT Authorization Grant promoted to supported
+= Observability
 
-In this release, the JWT Authorization Grant (https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523]) feature is promoted from preview to default. This grant allows to use an external signed JWT assertions to request OAuth 2.0 access tokens. See the link:{securing_apps_base_link}/jwt-authorization-grant[JWT Authorization Grant guide] for additional details.
+== Telemetry configuration via Keycloak CR
 
-= Federated client authentication promoted to supported
+{project_name} now supports configuring the OpenTelemetry properties via Keycloak CR when using the Operator.
+These properties are shared among the available OpenTelemetry components - logs, metrics, and traces.
 
-Federated client authentication is now promoted to supported, including support for client assertions issued by
-external OpenID Connect identity providers and Kubernetes Service Accounts.
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
 
-Since the OAuth SPIFFE Client Authentication specification is still in a draft status this feature remains a preview
-feature in Keycloak.
+== Custom request headers for OpenTelemetry
+
+It is now possible to set request headers for exporting telemetry via OpenTelemetry Protocol (OTLP).
+This is mainly useful for providing tokens in the request.
+
+You can specify these headers via the `telemetry-header-<header>` wildcard option, which accepts any custom header name.
+Alternatively, use `telemetry-logs-header-<header>` for OpenTelemetry Logs or `telemetry-metrics-header-<header>` for OpenTelemetry Metrics.
+
+For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+= Extension Development
+
+== Keycloak Test Framework Full Support
+
+The Keycloak Test Framework, based on JUnit 6, is now fully supported.
+
+It replaces the previous solution built on top of Arquillian and JUnit 4.
+Behind the scenes, the framework handles the lifecycle of Keycloak, the database, and any injected resources such as realms and clients.
+
+Tests simply declare what they want, including specific configuration, and the framework takes care of the rest.
+
+For more information, see https://github.com/keycloak/keycloak/tree/main/test-framework#readme[Keycloak Test Framework].
+

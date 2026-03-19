@@ -13,9 +13,9 @@ import {
 } from "../../utils/table.ts";
 import {
   addMember,
+  assertIncludeSubGroupUsersNotVisible,
   goToMembersTab,
   leaveGroup,
-  toggleIncludeSubGroupUsers,
 } from "../../groups/members.ts";
 import { goToChildGroupsTab } from "../../groups/util.ts";
 import { goToOrgGroupsTab } from "../groups.ts";
@@ -86,29 +86,12 @@ test.describe.serial("Org Group Members", () => {
     await assertNotificationMessage(page, "1 user added to the group");
   });
 
-  // Skipped: org groups do not populate subGroupCount on the group representation,
-  // so the includeSubGroups toggle in Members.tsx never fetches sub-group members.
-  // Hopefully, fixed by #47133.
-  test.skip("Show members with sub-group users", async ({ page }) => {
-    await assertRowExists(page, users[0].username, true);
-    await assertRowExists(page, users[3].username, true);
-
-    await toggleIncludeSubGroupUsers(page);
-
-    for (const user of users) {
-      await assertRowExists(page, user.username, true);
-    }
-
-    await goToChildGroupsTab(page);
-    await clickTableRowItem(page, predefinedGroups[1]);
-    await goToMembersTab(page);
-    await assertRowExists(page, users[1].username, true);
-    await assertRowExists(page, users[4].username, true);
-
-    await goToChildGroupsTab(page);
-    await clickTableRowItem(page, predefinedGroups[2]);
-    await goToMembersTab(page);
-    await assertRowExists(page, users[2].username, true);
+  // The "Include sub-group users" feature is not supported for org groups (#47055).
+  // Verify the checkbox is not shown.
+  test("Include sub-group users checkbox is not shown for org groups", async ({
+    page,
+  }) => {
+    await assertIncludeSubGroupUsersNotVisible(page);
   });
 
   test("Add member from empty state", async ({ page }) => {

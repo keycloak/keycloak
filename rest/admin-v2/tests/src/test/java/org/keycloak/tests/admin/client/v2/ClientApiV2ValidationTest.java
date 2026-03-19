@@ -22,6 +22,7 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
+import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -44,6 +45,7 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
@@ -438,6 +440,224 @@ public class ClientApiV2ValidationTest {
             EntityUtils.consumeQuietly(response.getEntity());
         }
     }
+
+    // ===========================================
+    // UUID field validation tests
+    // ===========================================
+
+    @Test
+    public void createClientWithUuidPassesValidation() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        final String uuid = "550e8400-e29b-41d4-a716-446655440000";
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-with-uuid",
+                    "uuid": "%s",
+                    "enabled": true
+                }
+                """.formatted(uuid)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(201));
+
+            var rep = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            assertThat(rep.getUuid(), not(is(uuid)));
+        }
+    }
+
+
+    @Test
+    public void updateClientWithUuidFailsValidation() throws Exception {
+        // First create a client without UUID
+        HttpPost createRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(createRequest);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        createRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-client-for-update",
+                    "enabled": true
+                }
+                """));
+
+        String actualUuid;
+        try (var createResponse = client.execute(createRequest)) {
+            assertThat(createResponse.getStatusLine().getStatusCode(), is(201));
+            OIDCClientRepresentation rep = mapper.createParser(createResponse.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            actualUuid = rep.getUuid();
+        }
+
+        // Try to update the client with a UUID (should fail)
+        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-client-for-update");
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        updateRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-client-for-update",
+                    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                    "enabled": true
+                }
+                """));
+
+        try (var response = client.execute(updateRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("uuid: UUID is server-managed and must not be user-specified"));
+        }
+
+        // Update the client with the same UUID (should succeed)
+        updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-client-for-update");
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        updateRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-client-for-update",
+                    "uuid": "%s",
+                    "enabled": true
+                }
+                """.formatted(actualUuid)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
+        }
+    }
+
+    @Test
+    public void createClientViaPutFailsUuidValidation() throws Exception {
+        // First create a client without UUID
+        HttpPost createRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(createRequest);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        createRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "some-other-client",
+                    "enabled": true
+                }
+                """));
+
+        String existingUuid;
+        try (var createResponse = client.execute(createRequest)) {
+            assertThat(createResponse.getStatusLine().getStatusCode(), is(201));
+            OIDCClientRepresentation rep = mapper.createParser(createResponse.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            existingUuid = rep.getUuid();
+        }
+
+        // Try to create client with a used UUID (should fail)
+        HttpPut updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-client-for-create-via-put");
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        updateRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-client-for-create-via-put",
+                    "uuid": "%s",
+                    "enabled": true
+                }
+                """.formatted(existingUuid)));
+
+        try (var response = client.execute(updateRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("uuid: UUID is server-managed and must not be user-specified"));
+        }
+
+        // Try to create client with a different UUID (should pass)
+        updateRequest = new HttpPut(HOSTNAME_LOCAL_ADMIN + "/test-client-for-create-via-put");
+        setAuthHeader(updateRequest);
+        updateRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        updateRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-client-for-create-via-put",
+                    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                    "enabled": true
+                }
+                """));
+
+        try (var response = client.execute(updateRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(201));
+            var rep = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            assertThat(rep.getUuid(), not(is(existingUuid)));
+            assertThat(rep.getUuid(), not(is("550e8400-e29b-41d4-a716-446655440000")));
+        }
+    }
+
+    @Test
+    public void patchClientWithUuidFailsValidation() throws Exception {
+        // First create a client without UUID
+        HttpPost createRequest = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(createRequest);
+        createRequest.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        createRequest.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-client-for-patch",
+                    "enabled": true
+                }
+                """));
+
+        String actualUuid;
+        try (var createResponse = client.execute(createRequest)) {
+            assertThat(createResponse.getStatusLine().getStatusCode(), is(201));
+            OIDCClientRepresentation rep = mapper.createParser(createResponse.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            actualUuid = rep.getUuid();
+        }
+
+        // Try to patch the client with a UUID (should fail)
+        var patchRequest = new org.apache.http.client.methods.HttpPatch(HOSTNAME_LOCAL_ADMIN + "/test-client-for-patch");
+        setAuthHeader(patchRequest);
+        patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, "application/merge-patch+json");
+
+        patchRequest.setEntity(new StringEntity("""
+                {
+                    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+                    "displayName": "Updated Name"
+                }
+                """));
+
+        try (var response = client.execute(patchRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("uuid: UUID is server-managed and must not be user-specified"));
+        }
+
+        // Patch the client with the same UUID (should succeed)
+        patchRequest = new org.apache.http.client.methods.HttpPatch(HOSTNAME_LOCAL_ADMIN + "/test-client-for-patch");
+        setAuthHeader(patchRequest);
+        patchRequest.setHeader(HttpHeaders.CONTENT_TYPE, "application/merge-patch+json");
+
+        patchRequest.setEntity(new StringEntity("""
+                {
+                    "uuid": "%s",
+                    "displayName": "Updated Name"
+                }
+                """.formatted(actualUuid)));
+
+        try (var response = client.execute(patchRequest)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(200));
+        }
+    }
+
 
     // ===========================================
     // Valid client creation (positive test)
