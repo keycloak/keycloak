@@ -1,6 +1,6 @@
 package org.keycloak.representations.admin.v2.validation;
 
-import org.keycloak.representations.admin.v2.BaseRepresentation;
+import org.keycloak.representations.admin.v2.RepresentationWithUuid;
 import org.keycloak.validation.jakarta.ValidationContext;
 
 /**
@@ -11,5 +11,5 @@ import org.keycloak.validation.jakarta.ValidationContext;
  */
 public interface UuidProvider {
     boolean uuidExists(ValidationContext context, String uuid);
-    String getPersistedUuid(ValidationContext context, BaseRepresentation representation);
+    String getPersistedUuid(ValidationContext context, RepresentationWithUuid representation);
 }

@@ -3,7 +3,7 @@ package org.keycloak.representations.admin.v2.validation;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-import org.keycloak.representations.admin.v2.BaseRepresentation;
+import org.keycloak.representations.admin.v2.RepresentationWithUuid;
 import org.keycloak.validation.jakarta.ValidationContext;
 
 /**
@@ -17,21 +17,21 @@ import org.keycloak.validation.jakarta.ValidationContext;
  *
  * @author Vaclav Muzikar <vmuzikar@ibm.com>
  */
-public class UuidUnmodifiedValidator implements ConstraintValidator<UuidUnmodified, BaseRepresentation> {
+public class UuidUnmodifiedValidator implements ConstraintValidator<UuidUnmodified, RepresentationWithUuid> {
 
     private UuidProvider uuidProvider;
 
     @Override
     public void initialize(UuidUnmodified constraintAnnotation) {
         try {
-            uuidProvider = constraintAnnotation.aliasProvider().getDeclaredConstructor().newInstance();
+            uuidProvider = constraintAnnotation.uuidProvider().getDeclaredConstructor().newInstance();
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Failed to instantiate UUID provider: " + constraintAnnotation.aliasProvider().getName(), e);
+            throw new RuntimeException("Failed to instantiate UUID provider: " + constraintAnnotation.uuidProvider().getName(), e);
         }
     }
 
     @Override
-    public boolean isValid(BaseRepresentation representation, ConstraintValidatorContext context) {
+    public boolean isValid(RepresentationWithUuid representation, ConstraintValidatorContext context) {
         String providedUuid = representation.getUuid();
         if (providedUuid == null || providedUuid.isEmpty()) { // no UUID provided, so nothing to validate
             return true;
