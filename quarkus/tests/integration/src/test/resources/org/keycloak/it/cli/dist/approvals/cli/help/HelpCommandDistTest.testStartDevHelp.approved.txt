@@ -78,12 +78,9 @@ Database:
                        are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
                        Default: dev-file.
 --db-connect-timeout <timeout>
-                     Sets the default database connection timeout. The value is applied to the JDBC
-                       driver (vendor-specific property) and also sets 'quarkus.datasource.jdbc.
-                       login-timeout'. If the timeout is already set explicitly in 'db-url' or
-                       'db-url-properties', it is not overridden. May be an ISO 8601 duration
-                       value, an integer number of seconds, or an integer followed by one of [ms,
-                       h, m, s, d]. Default: 10.
+                     Sets the JDBC driver connection timeout and login timeout. May be an ISO 8601
+                       duration value, an integer number of seconds, or an integer followed by one
+                       of [ms, h, m, s, d]. Default: 10s.
 --db-debug-jpql <true|false>
                      Add JPQL information as comments to SQL statements to debug JPA SQL statement
                        generation. Default: false.
