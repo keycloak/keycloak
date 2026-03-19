@@ -1,5 +1,7 @@
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
+import java.util.Map;
+
 import org.keycloak.operator.crds.v2alpha1.CRDUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
@@ -28,6 +30,12 @@ public class ServiceMonitorSpec {
     @Default(DEFAULT_SCRAPE_TIMEOUT)
     private String scrapeTimeout = DEFAULT_SCRAPE_TIMEOUT;
 
+    @JsonPropertyDescription("Annotations to be appended to the Service object")
+    private Map<String, String> annotations;
+
+    @JsonPropertyDescription("Labels to be appended to the Service object")
+    private Map<String, String> labels;
+
     public boolean isEnabled() {
         return enabled;
     }
@@ -50,6 +58,22 @@ public class ServiceMonitorSpec {
 
     public void setScrapeTimeout(String scrapeTimeout) {
         this.scrapeTimeout = scrapeTimeout;
+    }
+
+    public Map<String, String> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(Map<String, String> annotations) {
+        this.annotations = annotations;
+    }
+
+    public Map<String, String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(Map<String, String> labels) {
+        this.labels = labels;
     }
 
     public static ServiceMonitorSpec get(Keycloak keycloak) {
