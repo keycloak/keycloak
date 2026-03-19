@@ -285,13 +285,15 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     private List<String> getGrantTypesSupported() {
 
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
-        List<String> supportedGrantTypes = new ArrayList<>(sessionFactory.getProviderFactoriesStream(OAuth2GrantType.class)
-                .map(ProviderFactory::getId)
-                .toList());
+        Stream<String> providerFactoryStream = sessionFactory
+                .getProviderFactoriesStream(OAuth2GrantType.class)
+                .map(ProviderFactory::getId);
 
         // Implicit not available as OAuth2GrantType implementation, but should be included.
         // It is served from OIDC authentication endpoint directly
-        supportedGrantTypes.add(OAuth2Constants.IMPLICIT);
+        List<String> supportedGrantTypes = Stream.concat(providerFactoryStream, Stream.of(OAuth2Constants.IMPLICIT))
+                .sorted().toList();
+
         return supportedGrantTypes;
     }
 

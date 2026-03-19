@@ -58,8 +58,8 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
     @Test
     public void testPreAuthorizedCodeValidAfterOfferConsumed() {
 
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
-        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+        String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
+        final String credentialConfigurationId = jwtTypeCredentialScope.getAttributes()
                 .get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
         // 1. Fetch the Offer URI
@@ -112,10 +112,10 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
 
     @Test
     public void testCredentialIssuancePreAuth() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialClientScope.getName());
+        String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
 
         // 1. Retrieving the credential-offer-uri
-        final String credentialConfigurationId = jwtTypeCredentialClientScope.getAttributes()
+        final String credentialConfigurationId = jwtTypeCredentialScope.getAttributes()
                 .get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
         CredentialOfferURI credOfferUri = oauth.oid4vc()
@@ -180,10 +180,9 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
                     try {
                         requestCredentialWithIdentifier(
                                 theToken,
-                                credentialIssuer.getCredentialEndpoint(),
                                 credentialIdentifier,
                                 new CredentialResponseHandler(),
-                                jwtTypeCredentialClientScope
+                                jwtTypeCredentialScope
                         );
                     } catch (IOException e) {
                         fail("Was not able to get the credential.");

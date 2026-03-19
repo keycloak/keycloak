@@ -349,7 +349,7 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Creates a Pre-Authorized offer that is bound to the calling user.
+     * Creates an authorization code grant offer that is bound to the calling user.
      */
     public Response createCredentialOffer(String credConfigId) {
         return createCredentialOffer(credConfigId, false, null);

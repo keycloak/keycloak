@@ -67,7 +67,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         boolean preAuthorized = PRE_AUTH_GRANT_TYPE.equals(grantType);
         if (preAuthorized && !Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_PREAUTH_CODE)) {
             throw new CredentialOfferException(Errors.INVALID_REQUEST,
-                    "OID4VCI pre-authorized code grant offers not enabled. Requires --feature=oid4vc_vci_preauth_code");
+                    "OID4VCI pre-authorized code grant offers not enabled. Requires --feature=oid4vc-vci-preauth-code");
         }
 
         // Ensure at least one credential_configuration_id
