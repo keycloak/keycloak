@@ -265,7 +265,9 @@ This use case can be replaced by refresh token grant.
 * The `subject_token` sent to the token exchange endpoint must have the requester client set as an audience in the `aud` claim. Otherwise, the request would be rejected. The only exception is, if client
 exchanges his own token, which was issued to it. Exchanging to itself might be useful to downscope/upscope the token or filter unneeded token audiences and so on.
 
-* Sender-constrained tokens (as defined in RFC 7800) cannot be used as `subject_token`. This includes DPoP-bound tokens and X.509 certificate-bound tokens. Standard Token Exchange only accepts Bearer access tokens as subject tokens. If you provide a sender-constrained token, the request will be rejected with an `invalid_request` error. However, you can obtain DPoP-bound tokens as **output** from token exchange by including a valid DPoP proof in the request. For more details, see <@links.securingapps id="dpop" />.
+* Sender-constrained tokens (as defined in RFC 7800) can be used as `subject_token` only when the requesting client is the same client that the token was originally issued for.
+The client must also provide valid proof of possession: a DPoP proof for DPoP-bound tokens, or the matching client certificate for mTLS-bound tokens.
+If the client does not match or the proof is missing/invalid, the request is rejected. For more details on DPoP, see <@links.securingapps id="dpop" />.
 
 * Consents - If the requester client has *Consent required* enabled, the token exchange is allowed only if the user is already granted consent to all requested scopes
 
