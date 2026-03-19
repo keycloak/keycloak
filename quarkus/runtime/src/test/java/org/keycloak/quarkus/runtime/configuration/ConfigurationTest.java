@@ -882,7 +882,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db=postgres");
         config = createConfig();
         assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
-        assertEquals("10", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+        assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
 
         // PostgreSQL: connectTimeout already set in db-url-properties -> disabled
