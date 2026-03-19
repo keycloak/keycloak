@@ -30,11 +30,13 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.utils.StringUtil;
 
+import io.quarkus.arc.Arc;
 import io.quarkus.runtime.Quarkus;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
@@ -43,10 +45,11 @@ import org.jboss.logging.Logger;
 
 import static org.keycloak.common.util.Environment.isDevMode;
 import static org.keycloak.common.util.Environment.isNonServerMode;
+import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 
 @ApplicationPath("/")
 @Blocking
-public class QuarkusKeycloakApplication extends KeycloakApplication<QuarkusKeycloakSessionFactory> {
+public class QuarkusKeycloakApplication extends KeycloakApplication {
 
     private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
@@ -75,13 +78,8 @@ public class QuarkusKeycloakApplication extends KeycloakApplication<QuarkusKeycl
     }
 
     @Override
-    public QuarkusKeycloakSessionFactory createSessionFactory() {
-        return QuarkusKeycloakSessionFactory.getInstance();
-    }
-
-    @Override
-    protected void initKeycloakSessionFactory(QuarkusKeycloakSessionFactory quarkusKeycloakSessionFactory) {
-        quarkusKeycloakSessionFactory.init();
+    public DefaultKeycloakSessionFactory createSessionFactory() {
+        return Arc.container().instance(QuarkusKeycloakSessionFactory.class).get();
     }
 
     @Override
@@ -116,11 +114,11 @@ public class QuarkusKeycloakApplication extends KeycloakApplication<QuarkusKeycl
                 .map(Boolean::parseBoolean)
                 .orElse(Boolean.TRUE);
         // skip async bootstrap in dev and non-server mode
-        return !isDevMode() && !isNonServerMode() && asyncBootstrap;
+        return !isDevMode() && !isNonServerMode() && !isTestLaunchMode() && asyncBootstrap;
     }
 
     @Override
-    protected int getTransactionTimeout(QuarkusKeycloakSessionFactory sessionFactory) {
+    protected int getTransactionTimeout(DefaultKeycloakSessionFactory sessionFactory) {
         return ((QuarkusJpaConnectionProviderFactory) sessionFactory.getProviderFactory(JpaConnectionProvider.class)).getMigrationTransactionTimeout();
     }
 
