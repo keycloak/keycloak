@@ -107,7 +107,7 @@ spec:
       memory: "1024M"
   db:
     vendor: postgres
-    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak?sslmode=verify-full&sslfactory=org.postgresql.ssl.DefaultJavaSSLFactory # <1>
+    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak # <1>
     poolMinSize: 15 # <2>
     poolInitialSize: 15
     poolMaxSize: 15
@@ -163,6 +163,8 @@ spec:
       # end::keycloak-ispn[]
 
       value: software.amazon.jdbc.Driver
+    - name: db-tls-mode
+      value: verify-server
   http:
     tlsSecret: keycloak-tls-secret
   instances: 1
@@ -179,7 +181,7 @@ spec:
     podTemplate:
       metadata:
         annotations:
-          checksum/config: fb7f978be22beed7f21f50fcaaa4d99f0938297281d6d76563012ae1b1a2e8d9-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+          checksum/config: 9a64736b87fb375f9d49ccd588c92d7ceca493d025339a849ef7000135147efc-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
       spec:
         containers:
           - env:
