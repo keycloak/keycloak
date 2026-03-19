@@ -227,6 +227,100 @@ public class ClientApiV2ValidationTest {
     }
 
     // ===========================================
+    // Parameterized URL tests
+    // ===========================================
+
+    @Test
+    public void createClientWithParameterizedAppUrlSucceeds() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-parameterized-appurl",
+                    "appUrl": "http://{host}/app",
+                    "enabled": true
+                }
+                """));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(201));
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+    }
+
+    @Test
+    public void createClientWithParameterizedRedirectUriSucceeds() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-parameterized-redirect",
+                    "redirectUris": ["http://{host}/callback", "http://localhost:3000/{tenant}/auth"],
+                    "enabled": true
+                }
+                """));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(201));
+            EntityUtils.consumeQuietly(response.getEntity());
+        }
+    }
+
+    @Test
+    public void createClientWithUnbalancedBracketsInAppUrlFails() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-unbalanced-appurl",
+                    "appUrl": "http://}{example/app",
+                    "enabled": true
+                }
+                """));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("appUrl: must be a valid URL"));
+        }
+    }
+
+    @Test
+    public void createClientWithUnbalancedBracketsInRedirectUriFails() throws Exception {
+        HttpPost request = new HttpPost(HOSTNAME_LOCAL_ADMIN);
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "openid-connect",
+                    "clientId": "test-unbalanced-redirect",
+                    "redirectUris": ["http://valid.com", "http://}invalid{/callback"],
+                    "enabled": true
+                }
+                """));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: Each redirect URL must be valid"));
+        }
+    }
+
+    // ===========================================
     // Collection element validation tests
     // ===========================================
 

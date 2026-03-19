@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 
 import org.keycloak.representations.admin.v2.validation.ClientUuidProvider;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
+import org.keycloak.representations.admin.v2.validation.ParameterizedURL;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
@@ -17,7 +18,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
-import org.hibernate.validator.constraints.URL;
 
 @Schema(description = "Base client representation with common properties for all client types")
 @JsonTypeInfo(
@@ -50,13 +50,13 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
     @JsonPropertyDescription("Whether this client is enabled")
     private Boolean enabled;
 
-    @URL
+    @ParameterizedURL
     @JsonPropertyDescription("URL to the application's homepage that is represented by this client")
     private String appUrl;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("URIs that the browser can redirect to after login")
-    private Set<@NotBlank @URL(message = "Each redirect URL must be valid") String> redirectUris = new LinkedHashSet<>();
+    private Set<@NotBlank @ParameterizedURL(message = "Each redirect URL must be valid") String> redirectUris = new LinkedHashSet<>();
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Roles associated with this client")
