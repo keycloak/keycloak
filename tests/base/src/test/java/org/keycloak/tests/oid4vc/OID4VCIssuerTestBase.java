@@ -23,6 +23,8 @@ import java.util.UUID;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -112,9 +114,9 @@ public abstract class OID4VCIssuerTestBase {
     static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
     static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
 
-    CredentialScopeRepresentation minimalJwtTypeCredentialScope;
-    CredentialScopeRepresentation jwtTypeCredentialScope;
-    CredentialScopeRepresentation sdJwtTypeCredentialScope;
+    protected CredentialScopeRepresentation jwtTypeCredentialScope;
+    protected CredentialScopeRepresentation minimalJwtTypeCredentialScope;
+    protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
 
     @InjectRealm(config = VCTestRealmConfig.class)
     ManagedRealm testRealm;
@@ -145,6 +147,34 @@ public abstract class OID4VCIssuerTestBase {
         UPConfig upConfig = realmResource.users().userProfile().getConfiguration();
         upConfig.setUnmanagedAttributePolicy(UPConfig.UnmanagedAttributePolicy.ADMIN_EDIT);
         realmResource.users().userProfile().update(upConfig);
+
+        RealmRepresentation realm = realmResource.toRepresentation();
+        realm.setVerifiableCredentialsEnabled(shouldEnableOid4vci(realm));
+        realmResource.update(realm);
+
+        jwtTypeCredentialScope = requireExistingCredentialScope(jwtTypeCredentialScopeName);
+        minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
+        sdJwtTypeCredentialScope = requireExistingCredentialScope(sdJwtTypeCredentialScopeName);
+
+        // Update the test clients
+        //
+        ClientsResource clientsResource = realmResource.clients();
+        for (String cid : List.of(OID4VCI_CLIENT_ID)) {
+            ClientRepresentation clientRep = clientsResource.findByClientId(cid).get(0);
+            ClientResource clientResource = clientsResource.get(clientRep.getId());
+
+            // Enable OID4VCI
+            setOid4vciEnabled(clientRep, shouldEnableOid4vci(clientRep));
+            clientResource.update(clientRep);
+
+            // Assign optional client scopes
+            clientResource.addOptionalClientScope(jwtTypeCredentialScope.getId());
+            clientResource.addOptionalClientScope(minimalJwtTypeCredentialScope.getId());
+            clientResource.addOptionalClientScope(sdJwtTypeCredentialScope.getId());
+        }
+
+        // Fetch the test client
+        client = clientsResource.findByClientId(OID4VCI_CLIENT_ID).get(0);
 
         AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsParser());
     }
@@ -477,8 +507,7 @@ public abstract class OID4VCIssuerTestBase {
         if (client != null) {
             if (client.getSecret() != null) {
                 oAuthClient.client(client.getClientId(), client.getSecret());
-            }
-            else {
+            } else {
                 oAuthClient.client(client.getClientId());
             }
         }
@@ -503,7 +532,7 @@ public abstract class OID4VCIssuerTestBase {
 
     // Config ----------------------------------------------------------------------------------------------------------
 
-    static class VCTestServerConfig implements KeycloakServerConfig {
+    public static class VCTestServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.OID4VC_VCI);
@@ -517,13 +546,28 @@ public abstract class OID4VCIssuerTestBase {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name(TEST_REALM_NAME)
-                    .eventsEnabled(true);
+                    .eventsEnabled(true)
+                    .enabledEventTypes(
+                            EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT_ERROR.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_REQUEST.name(),
+                            EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR.name(),
+                            EventType.CODE_TO_TOKEN.name(),
+                            EventType.LOGIN.name(),
+                            EventType.CUSTOM_REQUIRED_ACTION_ERROR.name()
+                    );
+
+            realm.eventsListeners("jboss-logging");
 
             CryptoIntegration.init(this.getClass().getClassLoader());
             realm.verifiableCredentialsEnabled(true);
             realm.addRole(CREDENTIAL_OFFER_CREATE);
 
-            // Allow the default client scopes to be added as well
             realm.attribute(CREATE_DEFAULT_CLIENT_SCOPES, String.valueOf(true));
 
             realm.addClientScope(createCredentialScope(
@@ -548,10 +592,9 @@ public abstract class OID4VCIssuerTestBase {
                     Collections.emptyList()
             ));
 
-
             realm.addClientScope(createCredentialScope(
                     minimalJwtTypeCredentialScopeName,
-                   null,
+                    null,
                     minimalJwtTypeCredentialConfigurationIdName,
                     null,
                     minimalJwtTypeCredentialScopeName,
@@ -562,7 +605,7 @@ public abstract class OID4VCIssuerTestBase {
 
             realm.addUser(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), Collections.emptyMap()));
             realm.addUser(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
-            
+
             return realm;
         }
     }
@@ -595,5 +638,13 @@ public abstract class OID4VCIssuerTestBase {
     boolean isOid4vciEnabled(ClientRepresentation client) {
         Map<String, String> attributes = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
         return Boolean.parseBoolean(attributes.get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
+    }
+
+    protected void setOid4vciEnabled(ClientRepresentation testClient, boolean enabled) {
+        ClientResource clientResource = testRealm.admin().clients().get(testClient.getId());
+        Map<String, String> attributes = Optional.ofNullable(testClient.getAttributes()).orElse(new HashMap<>());
+        attributes.put(OID4VCI_ENABLED_ATTRIBUTE_KEY, String.valueOf(enabled));
+        testClient.setAttributes(attributes);
+        clientResource.update(testClient);
     }
 }
