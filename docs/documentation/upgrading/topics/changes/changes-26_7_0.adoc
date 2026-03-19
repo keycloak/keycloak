@@ -89,3 +89,11 @@ exceeds 255 characters, it will be truncated during migration.
 DPoP (Demonstrating Proof of Possession) is no longer supported for implicit and hybrid flows. If a client has the *Require DPoP bound tokens* option enabled, authorization requests using implicit or hybrid response types will be rejected with an error.
 
 This change improves security by preventing the use of DPoP with flows that issue access tokens in the front channel, where the sender-constrained token model cannot be properly enforced.
+
+=== Token Exchange with Sender-constrained tokens allowed for scope changes
+
+Standard Token Exchange now accepts sender-constrained tokens when a client is requesting an exchange of their own token.
+This change allows token audience changes and up/down scoping and is applicable to both DPoP-bound tokens and X.509 certificate-bound tokens (mTLS).
+
+If you attempt to exchange a sender-constrained token using a different client, the request will be rejected with an `invalid_request` error.
+For more details, see the link:{securing_apps_token_exchange_link}[Token Exchange] guide.

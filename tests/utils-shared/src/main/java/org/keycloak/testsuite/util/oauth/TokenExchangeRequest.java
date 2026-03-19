@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.util.TokenUtil;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 
@@ -44,6 +45,11 @@ public class TokenExchangeRequest extends AbstractHttpPostRequest<TokenExchangeR
 
     public TokenExchangeRequest audience(String... audience) {
         this.audience = Arrays.stream(audience).toList();
+        return this;
+    }
+
+    public TokenExchangeRequest dpopProof(String dpopProof) {
+        header(TokenUtil.TOKEN_TYPE_DPOP, dpopProof);
         return this;
     }
 
