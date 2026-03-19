@@ -165,7 +165,8 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     protected CloseableHttpClient httpClient;
     protected ClientRepresentation client;
 
-    record OAuth2CodeEntry(String key, OAuth2Code code) {}
+    record OAuth2CodeEntry(String key, OAuth2Code code) {
+    }
 
     protected boolean shouldEnableOid4vci(RealmRepresentation testRealm) {
         return true;

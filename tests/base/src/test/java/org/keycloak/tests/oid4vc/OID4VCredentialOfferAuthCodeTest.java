@@ -2,14 +2,20 @@ package org.keycloak.tests.oid4vc;
 
 import java.net.URI;
 import java.util.List;
+import java.util.function.BiFunction;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
+import org.keycloak.protocol.oid4vc.clientpolicy.PredicateCredentialClientPolicy;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -24,10 +30,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CODE_LIFESPAN_S;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.PROMPT_VALUE_LOGIN;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -59,6 +67,17 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
     @AfterEach
     void afterEach() {
         wallet.logout();
+    }
+
+    @Test
+    public void testRealmSetup() {
+        ClientProfilesRepresentation clientProfiles = testRealm.admin().clientPoliciesProfilesResource().getProfiles(true);
+        assertEquals(1, clientProfiles.getProfiles().size());
+        assertEquals("oid4vci-client-profile", clientProfiles.getProfiles().get(0).getName());
+
+        ClientPoliciesRepresentation clientPolicies = testRealm.admin().clientPoliciesPoliciesResource().getPolicies();
+        assertEquals(1, clientPolicies.getPolicies().size());
+        assertEquals("oid4vci-offer-required", clientPolicies.getPolicies().get(0).getName());
     }
 
     @Test
@@ -131,6 +150,82 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
+    }
+
+    @Test
+    public void testNoOffer_Scope_RequireOfferPolicy() {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        PredicateCredentialClientPolicy offerRequiredPolicy = VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
+
+        BiFunction<Boolean, Boolean, Boolean> runner = (policyEnabled, scopeEnabled) -> {
+
+            // Set client policy 'oid4vci-offer-required'
+            //
+            ClientPoliciesPoliciesResource clientPoliciesResource = testRealm.admin().clientPoliciesPoliciesResource();
+            ClientPoliciesRepresentation policies = clientPoliciesResource.getPolicies();
+            ClientPolicyRepresentation clientPolicy = policies.getPolicies().stream()
+                    .filter(cp -> cp.getName().equals(offerRequiredPolicy.getName()))
+                    .findFirst().orElseThrow();
+            Boolean wasPolicyEnabled = clientPolicy.isEnabled();
+            clientPolicy.setEnabled(policyEnabled);
+            clientPoliciesResource.updatePolicies(policies);
+
+            // Set client scope attribute 'vc.policy.offer.required'
+            //
+            var credScope = ctx.getCredentialScope();
+            Boolean wasScopeEnabled = credScope.getCredentialPolicyValue(offerRequiredPolicy);
+            credScope.setCredentialPolicyValue(offerRequiredPolicy, scopeEnabled);
+            updateCredentialScope(credScope);
+
+            try {
+                // Send AuthorizationRequest
+                //
+                AuthorizationEndpointResponse authResponse = wallet
+                        .authorizationRequest()
+                        .scope(ctx.getCredScopeName())
+                        .send(ctx.getHolder(), "password");
+                String authCode = authResponse.getCode();
+                assertNotNull(authCode, "No authCode");
+
+                // Build and send AccessTokenRequest
+                //
+                AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode).send();
+
+                if (policyEnabled || scopeEnabled) {
+                    AssertionError error = assertThrows(AssertionError.class,
+                            () -> wallet.validateHolderAccessToken(ctx, tokenResponse));
+                    assertTrue(error.getMessage().contains("Authorization request rejected by policy oid4vci-offer-required for scope jwt-credential"), error.getMessage());
+                    return false;
+                } else {
+                    String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
+                    assertNotNull(accessToken, "No accessToken");
+
+                    String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
+                    assertNotNull(authorizedIdentifier,"No authorized credential identifier");
+
+                    CredentialResponse credentialResponse = wallet.credentialRequest(ctx, accessToken).credentialIdentifier(authorizedIdentifier).send().getCredentialResponse();
+                    assertFalse(credentialResponse.getCredentials().isEmpty(), "Credentials expected");
+                    return true;
+                }
+            } finally {
+                clientPolicy.setEnabled(wasPolicyEnabled);
+                clientPoliciesResource.updatePolicies(policies);
+
+                credScope.setCredentialPolicyValue(offerRequiredPolicy, wasScopeEnabled);
+                updateCredentialScope(credScope);
+
+                wallet.logout(ctx.getHolder());
+            }
+        };
+
+        // Verification matrix (policyEnabled, scopeEnabled) - We use an OR condition
+        //
+        assertTrue(runner.apply(false, false), "Offer not required");
+        assertFalse(runner.apply(false, true), "Offer required");
+        assertFalse(runner.apply(true, false), "Offer required");
+        assertFalse(runner.apply(true, true), "Offer required");
     }
 
     @Test

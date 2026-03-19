@@ -35,11 +35,13 @@ import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.util.Strings;
 
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
+import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.buildOID4VCAuthorizationDetail;
+import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId;
 
 /**
  * Default implementation of {@link CredentialOfferProvider}.
@@ -61,7 +63,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             List<String> credentialConfigurationIds,
             String targetClientId,
             String targetUsername,
-            Integer expireAt) {
+            Integer expireAt) throws ClientPolicyException {
 
         // Checks whether `--feature=oid4vc_vci_preauth_code` is enabled
         //
@@ -96,12 +98,12 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         CredentialOfferState offerState = new CredentialOfferState(credOffer, targetClientId, targetUserId, expireAt, credOffersId -> {
             List<OID4VCAuthorizationDetail> authDetails = new ArrayList<>();
             for (String credConfigId : credentialConfigurationIds) {
-                CredentialScopeModel credScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
+                CredentialScopeModel credScope = findCredentialScopeModelByConfigurationId(
                         realmModel, () -> session.clientScopes().getClientScopesStream(realmModel), credConfigId);
                 if (credScope == null) {
                     throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credential scope model for: " + credConfigId);
                 }
-                authDetails.add(CredentialScopeModelUtils.buildOID4VCAuthorizationDetail(credScope, credOffersId));
+                authDetails.add(buildOID4VCAuthorizationDetail(credScope, credOffersId));
             }
             return authDetails;
         });
