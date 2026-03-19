@@ -24,16 +24,20 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.events.Errors;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicyContext;
+import org.keycloak.protocol.oid4vc.clientpolicy.PredicateCredentialClientPolicy;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
@@ -41,6 +45,8 @@ import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Strings;
 
@@ -49,6 +55,7 @@ import org.jboss.logging.Logger;
 import static org.keycloak.OAuth2Constants.ISSUER_STATE;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
+import static org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicies.VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIALS_OFFER_ID_ATTR;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByName;
@@ -232,6 +239,10 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         OID4VCAuthorizationDetail responseAuthDetail = generateResponseAuthorizationDetails(credScope, null);
         responseAuthDetail.setClaims(requestAuthDetail.getClaims());
 
+        // Check Credential Client Policies
+        //
+        checkClientPolicies(credScope, offerState);
+
         return responseAuthDetail;
     }
 
@@ -263,6 +274,10 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
                 //
                 OID4VCAuthorizationDetail authDetail = generateResponseAuthorizationDetails(credScope, null);
                 authorizationDetails.add(authDetail);
+
+                // Check Credential Client Policies
+                //
+                checkClientPolicies(credScope, offerState);
             }
         }
 
@@ -351,5 +366,34 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         }
 
         return offerState;
+    }
+
+    private void checkClientPolicies(CredentialScopeModel credScope, CredentialOfferState offerState) throws InvalidAuthorizationDetailsException {
+
+        var context = new CredentialClientPolicyContext(ClientPolicyEvent.AUTHORIZATION_REQUEST)
+                .setCredentialScopeModel(credScope)
+                .setCredentialOfferState(offerState);
+
+        try {
+            session.clientPolicy().triggerOnEvent(context);
+
+            // The executor is not called when the policy is disabled or not installed at all
+            //
+            if (!context.isEvaluatedOnEvent()) {
+
+                // Required by scope when property is defined and true
+                // See default value on the policy definition
+                PredicateCredentialClientPolicy offerRequiredPolicy = VC_POLICY_CREDENTIAL_OFFER_REQUIRED;
+                boolean requiredByScope = offerRequiredPolicy.validate(new CredentialScopeRepresentation(credScope));
+
+                if (requiredByScope && offerState == null) {
+                    throw new ClientPolicyException(Errors.NOT_ALLOWED,
+                            "Authorization request rejected by policy " + offerRequiredPolicy.getName() + " for scope " + credScope.getName());
+                }
+            }
+
+        } catch (ClientPolicyException ex) {
+            throw new InvalidAuthorizationDetailsException(ex.getErrorDetail());
+        }
     }
 }

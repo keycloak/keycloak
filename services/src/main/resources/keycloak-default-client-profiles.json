@@ -564,6 +564,16 @@
           "configuration": {}
         }
       ]
+    },
+    {
+      "name": "oid4vci-client-profile",
+      "description": "Client profile, which enforces various policies on oid4vci clients.",
+      "executors": [
+        {
+          "executor": "oid4vci-policy-executor",
+          "configuration": {}
+        }
+      ]
     }
   ]
 }

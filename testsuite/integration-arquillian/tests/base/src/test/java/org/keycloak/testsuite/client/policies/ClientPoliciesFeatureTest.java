@@ -18,9 +18,11 @@
 
 package org.keycloak.testsuite.client.policies;
 
+import java.util.List;
 import java.util.Set;
 
-import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.admin.client.resource.ClientPoliciesPoliciesResource;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionSpi;
@@ -40,10 +42,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test class is for enabling and disabling client policies by feature mechanism.
- * 
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class ClientPoliciesFeatureTest extends AbstractTestRealmKeycloakTest  {
+public class ClientPoliciesFeatureTest extends AbstractTestRealmKeycloakTest {
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -64,8 +66,11 @@ public class ClientPoliciesFeatureTest extends AbstractTestRealmKeycloakTest  {
     // Check if the feature really works
     private void checkIfFeatureWorks(boolean shouldWork) {
         try {
-            ClientPoliciesRepresentation clientPolicies = managedRealm.admin().clientPoliciesPoliciesResource().getPolicies();
-            Assertions.assertTrue(clientPolicies.getPolicies().isEmpty());
+            ClientPoliciesPoliciesResource policiesResource = managedRealm.admin().clientPoliciesPoliciesResource();
+            List<ClientPolicyRepresentation> clientPolicies = policiesResource.getPolicies().getPolicies();
+            Assertions.assertEquals(2, clientPolicies.size());
+            Assertions.assertEquals("oid4vci-offer-required", clientPolicies.get(0).getName());
+            Assertions.assertEquals("oid4vci-offer-preauth-allowed", clientPolicies.get(1).getName());
             if (!shouldWork)
                 fail("Feature is available, but at this moment should be disabled");
 
