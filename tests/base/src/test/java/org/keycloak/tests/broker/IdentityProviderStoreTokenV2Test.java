@@ -14,6 +14,11 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+
+import org.junit.jupiter.api.Assertions;
 
 /**
  *
@@ -76,6 +81,18 @@ public class IdentityProviderStoreTokenV2Test implements InterfaceIdentityProvid
     @Override
     public OAuthClient getOauthClientExternal() {
         return oauthExternal;
+    }
+
+    @Override
+    public void checkSuccessfulTokenResponse(AbstractHttpResponse response) {
+        Assertions.assertInstanceOf(AccessTokenResponse.class, response);
+        AccessTokenResponse externalTokens = (AccessTokenResponse) response;
+        Assertions.assertNotNull(externalTokens.getAccessToken());
+        Assertions.assertNull(externalTokens.getRefreshToken());
+        Assertions.assertNull(externalTokens.getIdToken());
+        UserInfoResponse userInfoResponse = getOauthClientExternal().userInfoRequest(externalTokens.getAccessToken()).send();
+        Assertions.assertEquals(200, userInfoResponse.getStatusCode());
+        Assertions.assertNotNull(userInfoResponse.getUserInfo().getPreferredUsername());
     }
 
     static class IdentityBrokeringAPIV2ServerConfig implements KeycloakServerConfig {

@@ -537,12 +537,20 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
 
             UserAuthenticationIdentityProvider<?> identityProvider = getIdentityProvider(session, providerAlias);
             IdentityProviderModel identityProviderConfig = getIdentityProviderConfig(providerAlias);
-            UserSessionUtil.UserSessionValidationResult userSessionValidation = UserSessionUtil.findValidSessionForAccessToken(session, realmModel, token, clientModel, (invalidUserSession -> {}));
-            UserSessionModel userSession = userSessionValidation.getUserSession();
 
             String oldToken = identity.getToken();
             try {
-                Response response = corsResponse(identityProvider.retrieveToken(session, identity, userSession, user), clientModel);
+                Response response;
+                if (isBrokerAuthorized) {
+                    // use old method for V1
+                    response = corsResponse(identityProvider.retrieveToken(session, identity), clientModel);
+                } else {
+                    // user new method for V2
+                    UserSessionModel userSession = UserSessionUtil.findValidSessionForAccessToken(
+                            session, realmModel, token, clientModel, (invalidUserSession -> {}))
+                            .getUserSession();
+                    response = corsResponse(identityProvider.retrieveToken(session, identity, userSession, user), clientModel);
+                }
                 this.event.success();
                 return response;
             } catch (WebApplicationException e) {

@@ -16,6 +16,15 @@
  */
 package org.keycloak.tests.broker;
 
+import java.security.PublicKey;
+
+import org.keycloak.common.VerificationException;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.saml.SamlProtocolUtils;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.rotation.HardcodedKeyLocator;
+import org.keycloak.saml.SAMLRequestParser;
+import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -25,6 +34,10 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
+import org.keycloak.testsuite.util.oauth.PlainStringResponse;
+
+import org.junit.jupiter.api.Assertions;
 
 /**
  *
@@ -71,5 +84,30 @@ public class SamlIdentityProviderStoreTokenV1Test implements InterfaceIdentityPr
     @Override
     public RunOnServerClient getRunOnServer() {
         return runOnServer;
+    }
+
+    @Override
+    public AbstractHttpResponse doFetchExternalIdpToken(String token) {
+        return getOAuthClient().doFetchExternalIdpTokenString(IDP_ALIAS, token);
+    }
+
+    @Override
+    public void checkSuccessfulTokenResponse(AbstractHttpResponse response) {
+        Assertions.assertInstanceOf(PlainStringResponse.class, response);
+        PlainStringResponse plainStringResponse = (PlainStringResponse) response;
+        SAMLDocumentHolder holder = SAMLRequestParser.parseResponsePostBinding(plainStringResponse.getResponse());
+        Assertions.assertNotNull(holder);
+
+        KeysMetadataRepresentation keysMetadata = getExternalRealm().admin().keys().getKeyMetadata();
+        String kid = keysMetadata.getActive().get("RS256");
+        KeysMetadataRepresentation.KeyMetadataRepresentation keyMetadata = keysMetadata.getKeys().stream()
+                .filter(k -> kid.equals(k.getKid())).findAny().orElse(null);
+        PublicKey realmPubKey = KeycloakModelUtils.getPublicKey(keyMetadata.getPublicKey());
+
+        try {
+            SamlProtocolUtils.verifyDocumentSignature(holder.getSamlDocument(), new HardcodedKeyLocator(realmPubKey));
+        } catch (VerificationException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

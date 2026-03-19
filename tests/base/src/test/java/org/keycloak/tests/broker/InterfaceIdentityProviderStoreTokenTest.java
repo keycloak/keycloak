@@ -8,6 +8,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.AfterEach;
@@ -29,7 +30,8 @@ public interface InterfaceIdentityProviderStoreTokenTest {
     OAuthClient getOAuthClient();
     LoginPage getLoginPage();
     RunOnServerClient getRunOnServer();
-    void checkSuccessfulTokenResponse(AccessTokenResponse externalTokens);
+    AbstractHttpResponse doFetchExternalIdpToken(String token);
+    void checkSuccessfulTokenResponse(AbstractHttpResponse response);
     boolean isIdentityBrokeringAPIV1();
     boolean isRefreshTokenAllowed();
 
@@ -65,7 +67,7 @@ public interface InterfaceIdentityProviderStoreTokenTest {
         AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertTrue(tokenResponse.isSuccess());
 
-        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, tokenResponse.getAccessToken());
+        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(tokenResponse.getAccessToken());
         Assertions.assertTrue(externalTokens.isSuccess());
         checkSuccessfulTokenResponse(externalTokens);
     }
@@ -84,7 +86,7 @@ public interface InterfaceIdentityProviderStoreTokenTest {
             idp.setEnabled(false);
         });
 
-        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(502, externalTokens.getStatusCode());
     }
 
@@ -102,7 +104,7 @@ public interface InterfaceIdentityProviderStoreTokenTest {
             user.setEnabled(false);
         });
 
-        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(400, externalTokens.getStatusCode());
     }
 }

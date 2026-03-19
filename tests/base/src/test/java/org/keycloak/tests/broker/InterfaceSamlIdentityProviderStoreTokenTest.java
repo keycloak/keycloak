@@ -1,7 +1,5 @@
 package org.keycloak.tests.broker;
 
-import java.security.PublicKey;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,37 +7,20 @@ import java.util.Map;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
-import org.keycloak.common.VerificationException;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.saml.SignatureAlgorithm;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.exceptions.ConfigurationException;
-import org.keycloak.saml.common.exceptions.ParsingException;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.common.util.DocumentUtil;
-import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.util.TokenUtil;
-
-import org.junit.jupiter.api.Assertions;
-import org.w3c.dom.Document;
 
 /**
  *
@@ -50,29 +31,6 @@ public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceId
     @Override
     default boolean isRefreshTokenAllowed() {
         return false;
-    }
-
-    @Override
-    default void checkSuccessfulTokenResponse(AccessTokenResponse externalTokens) {
-        try {
-            Assertions.assertEquals(TokenUtil.TOKEN_TYPE_BEARER, externalTokens.getTokenType());
-            Assertions.assertNotNull(externalTokens.getAccessToken());
-            Document assertion = DocumentUtil.getDocument(
-                    new String(Base64.getUrlDecoder().decode(externalTokens.getAccessToken()), GeneralConstants.SAML_CHARSET));
-            Assertions.assertEquals(JBossSAMLConstants.ASSERTION.getNsUri().get(), assertion.getDocumentElement().getNamespaceURI());
-            Assertions.assertEquals(JBossSAMLConstants.ASSERTION.get(), assertion.getDocumentElement().getLocalName());
-            Assertions.assertTrue(AssertionUtil.isSignedElement(assertion.getDocumentElement()));
-
-            KeysMetadataRepresentation keysMetadata = getExternalRealm().admin().keys().getKeyMetadata();
-            String kid = keysMetadata.getActive().get("RS256");
-            KeysMetadataRepresentation.KeyMetadataRepresentation keyMetadata = keysMetadata.getKeys().stream()
-                    .filter(k -> kid.equals(k.getKid())).findAny().orElse(null);
-            PublicKey realmPubKey = KeycloakModelUtils.getPublicKey(keyMetadata.getPublicKey());
-
-            SamlProtocolUtils.verifyDocumentSignature(assertion, new HardcodedKeyLocator(realmPubKey));
-        } catch (VerificationException | ConfigurationException | ParsingException | ProcessingException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static class IdpRealmConfig implements RealmConfig {
@@ -93,6 +51,8 @@ public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceId
                     .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())
                     .setAttribute(SAMLIdentityProviderConfig.SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.name())
                     .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString())
+                    .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, Boolean.TRUE.toString())
+                    .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, Boolean.TRUE.toString())
                     .setAttribute(IdentityProviderModel.METADATA_DESCRIPTOR_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/saml/descriptor")
                     .storeToken(true)
                     .addReadTokenRoleOnCreate(true)

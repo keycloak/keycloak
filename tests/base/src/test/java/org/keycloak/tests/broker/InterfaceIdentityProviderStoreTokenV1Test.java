@@ -8,6 +8,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
@@ -39,7 +40,7 @@ public interface InterfaceIdentityProviderStoreTokenV1Test extends InterfaceIden
         Assertions.assertTrue(internalTokens.isSuccess());
 
         //user without the role tries to read the stored token
-        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(403, externalTokens.getStatusCode());
 
         AccountHelper.logout(realm.admin(), "testuser");
@@ -59,9 +60,8 @@ public interface InterfaceIdentityProviderStoreTokenV1Test extends InterfaceIden
         internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertTrue(internalTokens.isSuccess());
 
-        externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(200, externalTokens.getStatusCode());
-        Assertions.assertNotNull(externalTokens.getAccessToken());
         checkSuccessfulTokenResponse(externalTokens);
     }
 }

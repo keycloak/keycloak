@@ -44,7 +44,6 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.IdentityProviderDataMarshaller;
 import org.keycloak.broker.provider.IdentityProviderMapper;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -275,16 +274,20 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             authSession.setUserSessionNote(SAMLEndpoint.SAML_FEDERATED_SESSION_INDEX, authn.getSessionIndex());
 
         }
-        if (Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V2)) {
-            // for the moment just add the token in session if V2 enabled
+        if (context.getContextData().containsKey(FEDERATED_ACCESS_TOKEN)) {
             authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, (String) context.getContextData().get(FEDERATED_ACCESS_TOKEN));
         }
     }
 
     @Override
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+        return Response.ok(identity.getToken()).type(MediaType.TEXT_PLAIN_TYPE).build();
+    }
+
+    @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
         String token = null;
-        if (Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V2)) {
+        if (userSession != null) {
             token = getFederatedAccessToken(userSession);
         }
 

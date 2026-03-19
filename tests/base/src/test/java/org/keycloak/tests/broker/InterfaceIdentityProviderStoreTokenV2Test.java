@@ -14,6 +14,7 @@ import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
+import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
@@ -30,6 +31,11 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
     @Override
     default boolean isIdentityBrokeringAPIV1() {
         return false;
+    }
+
+    @Override
+    default AbstractHttpResponse doFetchExternalIdpToken(String token) {
+        return getOAuthClient().doFetchExternalIdpToken(IDP_ALIAS, token);
     }
 
     @Test
@@ -100,7 +106,7 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
         //Ensure that the token is null in the db
         Assertions.assertNull(oldTokenFromDatabase);
 
-        if (!isIdentityBrokeringAPIV1() && isRefreshTokenAllowed()) {
+        if (isRefreshTokenAllowed()) {
             // now test extra refresh of the token in session
             getTimeOffSet().set(externalTokens.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
 

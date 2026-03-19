@@ -53,7 +53,6 @@ import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.common.ClientConnection;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
@@ -92,6 +91,7 @@ import org.keycloak.protocol.oidc.endpoints.TokenIntrospectionEndpoint;
 import org.keycloak.protocol.oidc.utils.PkceUtils;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ErrorResponseException;
@@ -252,31 +252,85 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     @Override
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity) {
+        try {
+            if (identity.getToken().startsWith("{")) {
+                OAuthResponse previousResponse = JsonSerialization.readValue(identity.getToken(), OAuthResponse.class);
+                Long exp = previousResponse.getAccessTokenExpiration();
+                if (needsRefresh(exp) && previousResponse.getRefreshToken() != null) {
+                    OAuthResponse newResponse = refreshToken(previousResponse, session);
+                    if (newResponse.getExpiresIn() != null && newResponse.getExpiresIn() > 0) {
+                        long accessTokenExpiration = Time.currentTime() + newResponse.getExpiresIn();
+                        newResponse.setAccessTokenExpiration(accessTokenExpiration);
+                    }
+                    identity.setToken(JsonSerialization.writeValueAsString(newResponse));
+                }
+            }
+        } catch (IOException e) {
+            ErrorRepresentation error = new ErrorRepresentation();
+            error.setErrorMessage("Unable to refresh token");
+            throw new WebApplicationException("Unable to refresh token", e,
+                    Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+        }
+        return Response.ok(identity.getToken()).type(MediaType.APPLICATION_JSON).build();
+    }
+
+    private boolean needsRefresh(Long exp) {
+        return exp != null && exp != 0 && exp < Time.currentTime() + getConfig().getMinValidityToken();
+    }
+
+    private OAuthResponse refreshToken(OAuthResponse previousResponse, KeycloakSession session) throws IOException {
+        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+            SimpleHttpRequest refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
+            try (SimpleHttpResponse refreshTokenResponse = refreshTokenRequest.asResponse()) {
+                String response = refreshTokenResponse.asString();
+                if (response.contains("error")) {
+                    ErrorRepresentation error = new ErrorRepresentation();
+                    error.setErrorMessage("Unable to refresh token");
+                    throw new WebApplicationException("Received and response code " + refreshTokenResponse.getStatus() +
+                                                      " with a response '" + refreshTokenResponse.asString() + "'",
+                            Response.status(Response.Status.BAD_GATEWAY).entity(error).type(MediaType.APPLICATION_JSON).build());
+                }
+                OAuthResponse newResponse = JsonSerialization.readValue(response, OAuthResponse.class);
+
+                if (newResponse.getRefreshToken() == null && previousResponse.getRefreshToken() != null) {
+                    newResponse.setRefreshToken(previousResponse.getRefreshToken());
+                    newResponse.setRefreshExpiresIn(previousResponse.getRefreshExpiresIn());
+                }
+                if (newResponse.getIdToken() == null && previousResponse.getIdToken() != null) {
+                    newResponse.setIdToken(previousResponse.getIdToken());
+                }
+                return newResponse;
+            }
+        }
+    }
+
+    @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
         UriInfo uriInfo = session.getContext().getUri();
         Response response = null;
-        if (Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V2) && userSession != null) {
-            // use the session if present
+        if (userSession != null) {
+            // use the session if present, only in V2
             String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
             brokerId = brokerId == null ? userSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
             String federatedAccessToken = userSession.getNote(FEDERATED_ACCESS_TOKEN);
             if (getConfig().getAlias().equals(brokerId) && federatedAccessToken != null) {
                 response = exchangeSessionToken(uriInfo, null, null, userSession, user);
+                if (Response.Status.Family.familyOf(response.getStatus()) == Response.Status.Family.SUCCESSFUL) {
+                    return response;
+                }
             }
         }
 
-        if ((response == null || Response.Status.Family.familyOf(response.getStatus()) != Response.Status.Family.SUCCESSFUL) && Booleans.isTrue(getConfig().isStoreToken())) {
+        if (Booleans.isTrue(getConfig().isStoreToken())) {
             response = exchangeStoredToken(uriInfo, null, null, userSession, user);
         }
 
-        if (response != null && Response.Status.Family.familyOf(response.getStatus()) == Response.Status.Family.SUCCESSFUL && response.getEntity() instanceof AccessTokenResponse tokenResponse) {
-            tokenResponse.getOtherClaims().remove(OAuth2Constants.ISSUED_TOKEN_TYPE);
-            tokenResponse.getOtherClaims().remove(ACCOUNT_LINK_URL);
+        if (response == null) {
+            return exchangeErrorResponse(uriInfo, null, userSession, "token_expired", "No token stored.");
         }
 
-        return response != null
-                ? response
-                : exchangeErrorResponse(uriInfo, null, userSession, "token_expired", "No token stored.");
+        return response;
     }
 
     protected SimpleHttpRequest getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {

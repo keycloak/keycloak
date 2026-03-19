@@ -29,6 +29,11 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
+
+import org.junit.jupiter.api.Assertions;
 
 @KeycloakIntegrationTest
 public class IdentityProviderStoreTokenV1Test implements InterfaceIdentityProviderStoreTokenV1Test, InterfaceOIDCIdentityProviderStoreTokenTest {
@@ -87,5 +92,22 @@ public class IdentityProviderStoreTokenV1Test implements InterfaceIdentityProvid
     @Override
     public OAuthClient getOauthClientExternal() {
         return oauthExternal;
+    }
+
+    @Override
+    public AbstractHttpResponse doFetchExternalIdpToken(String token) {
+        return getOAuthClient().doFetchExternalIdpToken(IDP_ALIAS, token);
+    }
+
+    @Override
+    public void checkSuccessfulTokenResponse(AbstractHttpResponse response) {
+        Assertions.assertInstanceOf(AccessTokenResponse.class, response);
+        AccessTokenResponse externalTokens = (AccessTokenResponse) response;
+        Assertions.assertNotNull(externalTokens.getAccessToken());
+        Assertions.assertNotNull(externalTokens.getRefreshToken());
+        Assertions.assertNotNull(externalTokens.getIdToken());
+        UserInfoResponse userInfoResponse = getOauthClientExternal().userInfoRequest(externalTokens.getAccessToken()).send();
+        Assertions.assertEquals(200, userInfoResponse.getStatusCode());
+        Assertions.assertNotNull(userInfoResponse.getUserInfo().getPreferredUsername());
     }
 }

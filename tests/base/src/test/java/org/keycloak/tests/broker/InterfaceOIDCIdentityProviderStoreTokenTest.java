@@ -20,7 +20,6 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -37,14 +36,6 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
     @Override
     default boolean isRefreshTokenAllowed() {
         return true;
-    }
-
-    @Override
-    default void checkSuccessfulTokenResponse(AccessTokenResponse externalTokens) {
-        Assertions.assertNotNull(externalTokens.getAccessToken());
-        UserInfoResponse userInfoResponse = getOauthClientExternal().userInfoRequest(externalTokens.getAccessToken()).send();
-        Assertions.assertEquals(200, userInfoResponse.getStatusCode());
-        Assertions.assertNotNull(userInfoResponse.getUserInfo().getPreferredUsername());
     }
 
     @Test
@@ -79,8 +70,6 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
 
         // Check that we now have a different access and refresh token
         Assertions.assertNotEquals(externalTokens.getAccessToken(), externalTokens2.getAccessToken());
-        Assertions.assertNull(externalTokens.getRefreshToken());
-        Assertions.assertNull(externalTokens2.getRefreshToken());
 
         String newTokenFromDatabase = getRunOnServer().fetch(session -> {
             RealmModel r = session.realms().getRealmByName(realmName);
@@ -119,7 +108,7 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
         internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
         Assertions.assertEquals(200, internalTokens.getStatusCode());
         AccessTokenResponse error = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
-        Assertions.assertEquals(400, error.getStatusCode());
+        Assertions.assertFalse(error.isSuccess());
 
         logout();
 
