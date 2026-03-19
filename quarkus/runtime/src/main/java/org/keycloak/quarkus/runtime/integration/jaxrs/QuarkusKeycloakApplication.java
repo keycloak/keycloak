@@ -21,9 +21,9 @@ import jakarta.enterprise.event.Observes;
 import jakarta.ws.rs.ApplicationPath;
 
 import org.keycloak.config.BootstrapAdminOptions;
+import org.keycloak.config.ServerOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
@@ -41,9 +41,12 @@ import io.quarkus.runtime.StartupEvent;
 import io.smallrye.common.annotation.Blocking;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.common.util.Environment.isDevMode;
+import static org.keycloak.common.util.Environment.isNonServerMode;
+
 @ApplicationPath("/")
 @Blocking
-public class QuarkusKeycloakApplication extends KeycloakApplication {
+public class QuarkusKeycloakApplication extends KeycloakApplication<QuarkusKeycloakSessionFactory> {
 
     private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
@@ -72,10 +75,13 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
-    public KeycloakSessionFactory createSessionFactory() {
-        QuarkusKeycloakSessionFactory instance = QuarkusKeycloakSessionFactory.getInstance();
-        instance.init();
-        return instance;
+    public QuarkusKeycloakSessionFactory createSessionFactory() {
+        return QuarkusKeycloakSessionFactory.getInstance();
+    }
+
+    @Override
+    protected void initKeycloakSessionFactory(QuarkusKeycloakSessionFactory quarkusKeycloakSessionFactory) {
+        quarkusKeycloakSessionFactory.init();
     }
 
     @Override
@@ -105,7 +111,16 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
-    protected int getTransactionTimeout(KeycloakSessionFactory sessionFactory) {
+    protected boolean supportsAsyncInitialization() {
+        var asyncBootstrap = Configuration.getOptionalKcValue(ServerOptions.SERVER_ASYNC_BOOTSTRAP)
+                .map(Boolean::parseBoolean)
+                .orElse(Boolean.TRUE);
+        // skip async bootstrap in dev and non-server mode
+        return !isDevMode() && !isNonServerMode() && asyncBootstrap;
+    }
+
+    @Override
+    protected int getTransactionTimeout(QuarkusKeycloakSessionFactory sessionFactory) {
         return ((QuarkusJpaConnectionProviderFactory) sessionFactory.getProviderFactory(JpaConnectionProvider.class)).getMigrationTransactionTimeout();
     }
 

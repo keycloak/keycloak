@@ -83,7 +83,7 @@ public class HealthDistTest {
                 .statusCode(200);
         when().get("/health/ready").then()
                 .statusCode(200)
-                .body("checks.size()", equalTo(3));
+                .body("checks.size()", equalTo(4));
         when().get("/lb-check").then()
                 .statusCode(404);
     }
