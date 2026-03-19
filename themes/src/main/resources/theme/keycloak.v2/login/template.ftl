@@ -242,6 +242,16 @@
           </form>
         </#if>
 
+        <#if switchOrganizationEnabled?? && switchOrganizationEnabled>
+          <form id="kc-switch-organization-form" action="${url.loginAction}" method="post" novalidate="novalidate">
+              <input type="hidden" name="switchOrganization" value="true"/>
+              <a id="switch-organization" href="javascript:document.forms['kc-switch-organization-form'].requestSubmit()"
+                  class="${properties.kcButtonSecondaryClass} ${properties.kcButtonBlockClass} ${properties.kcMarginTopClass}">
+                    ${msg("doSwitchOrganization")}
+              </a>
+          </form>
+        </#if>
+
           <div class="${properties.kcLoginMainFooter!}">
               <#nested "socialProviders">
 
