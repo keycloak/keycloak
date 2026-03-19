@@ -260,11 +260,6 @@ As part of this change, the database configuration documentation has been update
 The previously documented `utf8mb3` (or `utf8`) character set has been removed from the documentation due to its limitations in storing certain Unicode characters.
 * Previously recommended JDBC driver settings for Oracle, MySQL, and MariaDB have been removed from the documentation, as current versions of these databases use appropriate default values.
 
-=== Automatic database connection timeout defaults
-
-To improve failover behavior and startup resilience during network issues, {project_name} now sets a default database connection timeout of 10 seconds.
-See https://www.keycloak.org/server/db[Configuring the database] for the list of databases, and on how to change this default.
-
 === New CLI options for database TLS configuration
 
 New CLI options are now available to configure TLS encryption for database connections in a vendor-independent way:
@@ -283,18 +278,10 @@ As an alternative to specifying a truststore file with `db-tls-trust-store-file`
 
 See the https://www.keycloak.org/server/db#_secure_the_database_connection[Secure the database connection] section of the database guide for more details and examples.
 
-=== New `--db-connect-timeout` option for database connection timeout
+=== New `--db-connect-timeout` option for database connection and login timeout
 
-A new CLI option `--db-connect-timeout` has been introduced to configure the database connection timeout from a single place across all supported database vendors.
-
-Previously, the connection timeout could only be configured vendor-specifically via `db-url` or `db-url-properties`, using different property names and units per driver.
-
-The new option:
-
-* Translates the value to the correct vendor-specific JDBC driver property (in milliseconds or seconds depending on the driver).
-* Also sets `quarkus.datasource.jdbc.login-timeout` at the Quarkus pool level.
-* Defaults to `10s` (10 seconds), consistent with the previous per-driver defaults.
-* Does not override a timeout already set explicitly in `db-url` or `db-url-properties`.
+A new CLI option `--db-connect-timeout` sets the JDBC driver connection timeout and login timeout.
+It defaults to `10s` to improve failover behavior and startup resilience during network issues.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
@@ -332,4 +319,4 @@ In the current version {project_name} will log a warning if the database is not 
 
 The following features have been removed from this release.
 
-=== <TODO>
+=== <TODO

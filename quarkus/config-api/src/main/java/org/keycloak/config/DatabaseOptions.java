@@ -125,12 +125,8 @@ public class DatabaseOptions {
 
     public static final Option<String> DB_CONNECT_TIMEOUT = new OptionBuilder<>("db-connect-timeout", String.class)
             .category(OptionCategory.DATABASE)
-            .description("Sets the default database connection timeout. " +
-                    "The value is applied to the JDBC driver (vendor-specific property) and also sets " +
-                    "'quarkus.datasource.jdbc.login-timeout'. " +
-                    "If the timeout is already set explicitly in 'db-url' or 'db-url-properties', it is not overridden. " +
-                    DURATION_DESCRIPTION)
-            .defaultValue("10")
+            .description("Sets the JDBC driver connection timeout and login timeout. " + DURATION_DESCRIPTION)
+            .defaultValue("10s")
             .build();
 
     public static final Option<String> DB_TLS_MODE = new OptionBuilder<>("db-tls-mode", String.class)
@@ -203,8 +199,6 @@ public class DatabaseOptions {
     public static final Option<String> DB_PROPERTY_ORACLE_TRUST_STORE_TYPE = new OptionBuilder<>("db-property-javax.net.ssl.trustStoreType", String.class)
             .hidden()
             .build();
-
-
     public static final Option<String> DB_MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = new OptionBuilder<>("db-mssql-send-string-parameter-as-unicode", String.class)
             .category(OptionCategory.DATABASE)
             .defaultValue("false")

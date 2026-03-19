@@ -281,57 +281,14 @@ For example:
 
 <@kc.start parameters="--db mssql --db-url-properties=';sendStringParametersAsUnicode=true'"/>
 
-== Automatic database connection timeout
+== Database connection and login timeout
 
 When {project_name} connects to the database, network problems can occur, especially during failovers or switchovers.
-To improve resilience and ensure faster recovery, {project_name} automatically sets a default connection timeout of 10 seconds for all supported database vendors when using the standard JDBC driver.
-
-This timeout is controlled by a single CLI option:
+To improve failover behavior and startup resilience during network issues, {project_name} sets a default connection timeout of 10s for all supported database vendors when using the standard JDBC driver.
 
 `db-connect-timeout`::
-Sets the connection timeout for the database.
-The value is translated to the vendor-specific JDBC driver property (in milliseconds or seconds depending on the vendor) and also sets the Quarkus pool-level login timeout (`quarkus.datasource.jdbc.login-timeout`).
-Default: `10s` (10 seconds).
-
-The following table shows how the value is translated per vendor:
-
-[%autowidth]
-|===
-|Database |JDBC driver property |Unit
-
-|MySQL
-|`connectTimeout`
-|milliseconds
-
-|MariaDB
-|`connectTimeout`
-|milliseconds
-
-|TiDB
-|`connectTimeout`
-|milliseconds
-
-|Oracle Database
-|`oracle.net.CONNECT_TIMEOUT`
-|milliseconds
-
-|PostgreSQL
-|`connectTimeout`
-|seconds
-
-|Microsoft SQL Server
-|`loginTimeout`
-|seconds
-
-|===
-
-In addition, {project_name} always sets `quarkus.datasource.jdbc.login-timeout` (in seconds) to the same value, regardless of the database vendor.
-
-{project_name} applies these defaults automatically, but only when all the following conditions are met:
-
-* The database vendor is configured via `--db`.
-* {project_name} is using the standard JDBC driver for that vendor.
-* The timeout property has not already been set explicitly by the user in `db-url` or `db-url-properties`.
+Sets the JDBC driver connection timeout and login timeout.
+Default: `10s`.
 
 == Preparing for PostgreSQL
 
