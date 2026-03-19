@@ -53,6 +53,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -118,13 +119,6 @@ public abstract class OID4VCIssuerTestBase {
     public static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
     public static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
 
-    protected CredentialScopeRepresentation minimalJwtTypeCredentialScope;
-    protected CredentialScopeRepresentation jwtTypeCredentialScope;
-    protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
-
-    protected String clientId = "test-app";
-    protected ClientRepresentation client;
-
     @InjectRealm(config = VCTestRealmConfig.class)
     protected ManagedRealm testRealm;
 
@@ -149,6 +143,13 @@ public abstract class OID4VCIssuerTestBase {
     @InjectKeycloakUrls
     protected KeycloakUrls keycloakUrls;
 
+    protected CredentialScopeRepresentation minimalJwtTypeCredentialScope;
+    protected CredentialScopeRepresentation jwtTypeCredentialScope;
+    protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
+
+    protected String clientId = "test-app";
+    protected ClientRepresentation client;
+
     @TestSetup
     public void configureTestRealm() {
         RealmResource realmResource = testRealm.admin();
@@ -162,10 +163,12 @@ public abstract class OID4VCIssuerTestBase {
     @BeforeEach
     void beforeEachInternal() {
         client = managedClient.admin().toRepresentation();
+
         jwtTypeCredentialScope = requireExistingCredentialScope(jwtTypeCredentialScopeName);
         minimalJwtTypeCredentialScope = requireExistingCredentialScope(minimalJwtTypeCredentialScopeName);
         sdJwtTypeCredentialScope = requireExistingCredentialScope(sdJwtTypeCredentialScopeName);
-        oauth.client(OID4VCI_CLIENT_ID, "test-secret");
+
+        oauth.client(client.getClientId(), client.getSecret());
         enableVerifiableCredentialEvents(testRealm);
     }
 
@@ -290,6 +293,28 @@ public abstract class OID4VCIssuerTestBase {
             throw new IllegalStateException(tokenResponse.getErrorDescription());
         }
         return tokenResponse;
+    }
+
+    protected String getRealmAttribute(String key) {
+        RealmRepresentation realm = testRealm.admin().toRepresentation();
+        Map<String, String> attributes = realm.getAttributesOrEmpty();
+        return attributes.get(key);
+    }
+
+    protected void setRealmAttributes(Map<String, String> extraAttributes) {
+        RealmResource realmResource = testRealm.admin();
+        RealmRepresentation realm = realmResource.toRepresentation();
+        Map<String, String> attributes = realm.getAttributesOrEmpty();
+        attributes.putAll(extraAttributes);
+        realm.setAttributes(attributes);
+        realmResource.update(realm);
+    }
+
+    protected void setVerifiableCredentialsEnabled(boolean enabled) {
+        RealmResource realmResource = testRealm.admin();
+        RealmRepresentation realm = realmResource.toRepresentation();
+        realm.setVerifiableCredentialsEnabled(enabled);
+        realmResource.update(realm);
     }
 
     protected CredentialScopeRepresentation requireExistingCredentialScope(String scopeName) {
