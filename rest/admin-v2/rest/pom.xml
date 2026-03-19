@@ -83,7 +83,7 @@
                 <executions>
                     <execution>
                         <id>copy-openapi-to-jar</id>
-                        <phase>prepare-package</phase>
+                        <phase>process-classes</phase>
                         <goals>
                             <goal>copy-resources</goal>
                         </goals>

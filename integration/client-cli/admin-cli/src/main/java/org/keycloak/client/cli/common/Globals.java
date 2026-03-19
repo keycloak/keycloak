@@ -58,6 +58,7 @@ public class Globals {
         cmd.setExecutionExceptionHandler(new ExecutionExceptionHandler());
         cmd.setParameterExceptionHandler(new ShortErrorMessageHandler());
         cmd.setErr(errorWriter);
+        rootCommand.configureCommandLine(cmd);
 
         return cmd;
     }
