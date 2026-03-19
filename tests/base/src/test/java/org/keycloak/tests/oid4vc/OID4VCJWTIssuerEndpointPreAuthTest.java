@@ -56,61 +56,6 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
     }
 
     @Test
-    public void testPreAuthorizedCodeValidAfterOfferConsumed() {
-
-        String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
-        final String credentialConfigurationId = jwtTypeCredentialScope.getAttributes()
-                .get(CredentialScopeModel.VC_CONFIGURATION_ID);
-
-        // 1. Fetch the Offer URI
-        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
-                .credentialOfferUriRequest(credentialConfigurationId)
-                .preAuthorized(true)
-                .targetUser("john")
-                .bearerToken(token)
-                .send()
-                .getCredentialOfferURI();
-
-        assertNotNull(credentialOfferURI, "Credential offer URI should not be null");
-        String nonce = credentialOfferURI.getNonce();
-        assertNotNull(nonce, "Nonce should not be null");
-
-        // 2. Fetch the Offer JSON (this removes the nonce entry for replay protection)
-        CredentialsOffer credentialsOffer = oauth.oid4vc()
-                .credentialOfferRequest(nonce)
-                .bearerToken(token)
-                .send()
-                .getCredentialsOffer();
-
-        assertNotNull(credentialsOffer, "Credential offer should not be null");
-
-        String preAuthorizedCode = credentialsOffer.getPreAuthorizedCode();
-        assertNotNull(preAuthorizedCode, "Pre-authorized code value should not be null");
-
-        // 3. Immediately perform the Token Request (Pre-Authorized Code Grant) using the valid code
-        CredentialIssuer credentialIssuer = oauth.oid4vc()
-                .issuerMetadataRequest()
-                .endpoint(credentialsOffer.getIssuerMetadataUrl())
-                .send()
-                .getMetadata();
-
-        OIDCConfigurationRepresentation openidConfig = oauth.wellknownRequest()
-                .url(credentialIssuer.getAuthorizationServers().get(0))
-                .send()
-                .getOidcConfiguration();
-
-        assertNotNull(openidConfig.getTokenEndpoint(), "Token endpoint should be present");
-
-        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
-                .preAuthorizedCodeGrantRequest(preAuthorizedCode)
-                .send();
-
-        assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode(), "Token request should succeed even after nonce is removed for replay protection");
-        assertNotNull(accessTokenResponse.getAccessToken(), "Access token should be present");
-        assertFalse(accessTokenResponse.getAccessToken().isEmpty(), "Access token should not be empty");
-    }
-
-    @Test
     public void testCredentialIssuancePreAuth() {
         String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
 
@@ -190,5 +135,60 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
                         throw new RuntimeException(e);
                     }
                 });
+    }
+
+    @Test
+    public void testPreAuthorizedCodeValidAfterOfferConsumed() {
+
+        String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
+        final String credentialConfigurationId = jwtTypeCredentialScope.getAttributes()
+                .get(CredentialScopeModel.VC_CONFIGURATION_ID);
+
+        // 1. Fetch the Offer URI
+        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
+                .credentialOfferUriRequest(credentialConfigurationId)
+                .preAuthorized(true)
+                .targetUser("john")
+                .bearerToken(token)
+                .send()
+                .getCredentialOfferURI();
+
+        assertNotNull(credentialOfferURI, "Credential offer URI should not be null");
+        String nonce = credentialOfferURI.getNonce();
+        assertNotNull(nonce, "Nonce should not be null");
+
+        // 2. Fetch the Offer JSON (this removes the nonce entry for replay protection)
+        CredentialsOffer credentialsOffer = oauth.oid4vc()
+                .credentialOfferRequest(nonce)
+                .bearerToken(token)
+                .send()
+                .getCredentialsOffer();
+
+        assertNotNull(credentialsOffer, "Credential offer should not be null");
+
+        String preAuthorizedCode = credentialsOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthorizedCode, "Pre-authorized code value should not be null");
+
+        // 3. Immediately perform the Token Request (Pre-Authorized Code Grant) using the valid code
+        CredentialIssuer credentialIssuer = oauth.oid4vc()
+                .issuerMetadataRequest()
+                .endpoint(credentialsOffer.getIssuerMetadataUrl())
+                .send()
+                .getMetadata();
+
+        OIDCConfigurationRepresentation openidConfig = oauth.wellknownRequest()
+                .url(credentialIssuer.getAuthorizationServers().get(0))
+                .send()
+                .getOidcConfiguration();
+
+        assertNotNull(openidConfig.getTokenEndpoint(), "Token endpoint should be present");
+
+        AccessTokenResponse accessTokenResponse = oauth.oid4vc()
+                .preAuthorizedCodeGrantRequest(preAuthorizedCode)
+                .send();
+
+        assertEquals(HttpStatus.SC_OK, accessTokenResponse.getStatusCode(), "Token request should succeed even after nonce is removed for replay protection");
+        assertNotNull(accessTokenResponse.getAccessToken(), "Access token should be present");
+        assertFalse(accessTokenResponse.getAccessToken().isEmpty(), "Access token should not be empty");
     }
 }
