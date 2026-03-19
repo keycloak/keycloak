@@ -64,7 +64,6 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
-    // Shared constant for drivers that use "connectTimeout" as the JDBC property name (MySQL, MariaDB, PostgreSQL, TiDB)
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
     public static final String ORACLEDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT";
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
@@ -375,7 +374,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     }
 
     private static String durationToSeconds(String value) {
-        return String.valueOf(DurationConverter.parseDuration(value).getSeconds());
+        return String.valueOf(DurationConverter.parseDuration(value).toSeconds());
     }
 
     /**
