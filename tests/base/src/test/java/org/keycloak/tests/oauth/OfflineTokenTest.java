@@ -25,8 +25,6 @@ import java.util.Objects;
 
 import jakarta.ws.rs.NotFoundException;
 
-import org.junit.jupiter.api.AfterEach;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.Keycloak;
@@ -93,13 +91,14 @@ import org.keycloak.testsuite.util.oauth.LogoutResponse;
 import org.keycloak.util.TokenUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.tests.utils.Assert.assertExpiration;
-import static org.keycloak.tests.utils.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.findRealmRoleByName;
+import static org.keycloak.tests.utils.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.tests.utils.admin.AdminApiUtil.findUserByUsernameId;
 
 import static org.hamcrest.MatcherAssert.assertThat;
