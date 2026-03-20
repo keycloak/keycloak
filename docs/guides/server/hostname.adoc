@@ -8,8 +8,6 @@ summary="Configure the frontend and backchannel endpoints exposed by {project_na
 includedOptions="hostname hostname-* proxy"
 deniedCategories="hostname_v1">
 
-== The importance of setting the hostname option
-
 By default, {project_name} mandates the configuration of the `hostname` option and does not dynamically resolve URLs. This is a security measure.
 
 {project_name} freely discloses its own URLs, for instance through the OIDC Discovery endpoint, or as part of the password reset link in an email. If the hostname was dynamically interpreted from a hostname header, it could provide a potential attacker with an opportunity to manipulate a URL in the email, redirect a user to the attacker's fake domain, and steal sensitive data such as action tokens, passwords, etc.
