@@ -1,3 +1,5 @@
+:_mod-docs-content-type: CONCEPT
+
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
