@@ -14,11 +14,13 @@ public class Context {
 
     private final Options options;
     private final Features features;
+    private final ProtocolMappers protocolMappers;
     private final List<Guide> guides;
 
     public Context(Path srcPath) throws IOException {
         this.options = new Options();
         this.features = new Features();
+        this.protocolMappers = new ProtocolMappers(srcPath.getParent().getParent().getParent());
         this.guides = new LinkedList<>();
 
         Path partials = srcPath.resolve("partials");
@@ -79,6 +81,10 @@ public class Context {
 
     public Features getFeatures() {
         return features;
+    }
+
+    public ProtocolMappers getProtocolMappers() {
+        return protocolMappers;
     }
 
     public List<Guide> getGuides() {
