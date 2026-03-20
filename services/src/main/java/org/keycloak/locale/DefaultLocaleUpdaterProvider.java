@@ -41,6 +41,7 @@ public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
     public void updateUsersLocale(UserModel user, String locale) {
         final String previousLocale = user.getFirstAttribute("locale");
         if (!locale.equals(previousLocale)) {
+            updateLocaleCookie(locale);
             try {
                 EventBuilder event = new EventBuilder(session.getContext().getRealm(), session, session.getContext().getConnection())
                         .event(EventType.UPDATE_PROFILE)
@@ -49,7 +50,7 @@ public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
                         .detail(Details.PREF_PREVIOUS + UserModel.LOCALE, previousLocale)
                         .detail(Details.PREF_UPDATED + UserModel.LOCALE, locale);
                 user.setSingleAttribute(UserModel.LOCALE, locale);
-                updateLocaleCookie(locale);
+
                 event.success();
             } catch (ReadOnlyException e) {
                 logger.debug("Attempt to store 'locale' attribute to read only user model. Ignoring exception", e);
