@@ -11,7 +11,7 @@ This {section} explains how to configure the {project_name} server to store data
 
 == Supported databases
 
-The server has built-in support for different databases. You can query the available databases by viewing the expected values for the `db` configuration option. The following table lists the supported databases and their tested versions.
+The server has built-in support for different databases. You can query the available databases by viewing the expected values for the `db` configuration option. The following table lists the supported databases and their tested versions.  Whichever database you choose, configuring a redundant database is recommended to protect against database instability or failure.
 
 <@databases.supportedDatabases detailed=true/>
 
