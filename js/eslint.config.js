@@ -1,4 +1,5 @@
 // @ts-check
+import { defineConfig } from "eslint/config";
 import { fixupPluginRules } from "@eslint/compat";
 import { FlatCompat } from "@eslint/eslintrc";
 import eslint from "@eslint/js";
@@ -14,7 +15,7 @@ const compat = new FlatCompat({
   baseDirectory: import.meta.dirname,
 });
 
-export default tseslint.config(
+export default defineConfig(
   {
     ignores: [
       "**/dist/",
@@ -150,5 +151,9 @@ export default tseslint.config(
     rules: {
       "@typescript-eslint/no-empty-object-type": "off",
     },
+  },
+  {
+    files: ["apps/account-ui-lit/**/*.js", "eslint.config.js"],
+    extends: [tseslint.configs.disableTypeChecked],
   },
 );
