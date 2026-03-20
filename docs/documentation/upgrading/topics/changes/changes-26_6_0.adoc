@@ -77,6 +77,13 @@ For more information about brokering, see link:{developerguide_link}#_identity_b
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== Endpoints are opened while Keycloak is initializing
+
+By default, {project_name} now opens its HTTP(S) and Management ports while initialization is still in progress.
+If you use a proxy or load balancer, configure an HTTP health check with the path `/health/ready` to ensure traffic is only routed to the server once it is fully ready.
+
+If this behavior is not desired or an HTTP health check is not possible, start {project_name} with `--server-async-bootstrap=false` to revert to the previous behavior where ports are opened only after initialization completes.
+
 === Dev Mode defaults to localhost
 
 When running the server in dev mode on a platform other than Windows Subsystem For Linux, the `http-host` setting will default to localhost.
@@ -246,11 +253,6 @@ As part of this change, the database configuration documentation has been update
 The previously documented `utf8mb3` (or `utf8`) character set has been removed from the documentation due to its limitations in storing certain Unicode characters.
 * Previously recommended JDBC driver settings for Oracle, MySQL, and MariaDB have been removed from the documentation, as current versions of these databases use appropriate default values.
 
-=== Automatic database connection timeout defaults
-
-To improve failover behavior and startup resilience during network issues, {project_name} now sets a default database connection timeout of 10 seconds.
-See https://www.keycloak.org/server/db[Configuring the database] for the list of databases, and on how to change this default.
-
 === New CLI options for database TLS configuration
 
 New CLI options are now available to configure TLS encryption for database connections in a vendor-independent way:
@@ -268,6 +270,11 @@ These options replace the need to configure vendor-specific JDBC properties manu
 As an alternative to specifying a truststore file with `db-tls-trust-store-file`, you can use `--truststore-paths` to add the certificate to the Java truststore.
 
 See the https://www.keycloak.org/server/db#_secure_the_database_connection[Secure the database connection] section of the database guide for more details and examples.
+
+=== New `--db-connect-timeout` option for database connection and login timeout
+
+A new CLI option `--db-connect-timeout` sets the JDBC driver connection timeout and login timeout.
+It defaults to `10s` to improve failover behavior and startup resilience during network issues.
 
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features

@@ -30,8 +30,10 @@ import java.util.stream.StreamSupport;
 import org.keycloak.Config;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.HttpPropertyMappers;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
@@ -326,7 +328,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-url=jdbc:postgresql://localhost/keycloak", "--db-username=postgres");
         SmallRyeConfig config = createConfig();
         assertEquals("org.hibernate.dialect.PostgreSQLDialect",
-            config.getConfigValue("kc.db-dialect").getValue());
+                config.getConfigValue("kc.db-dialect").getValue());
         assertEquals("jdbc:postgresql://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("postgresql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
         assertEquals("postgres", config.getConfigValue("quarkus.datasource.username").getValue());
@@ -370,6 +372,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("jdbc:mariadb://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("mariadb", config.getConfigValue("quarkus.datasource.db-kind").getValue());
     }
+
     @Test
     public void testDatabaseProperties() {
         System.setProperty("kc.db-url-properties", ";;test=test;test1=test1");
@@ -455,7 +458,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testNestedDatabaseProperties() {
         SmallRyeConfig config = createConfig();
-        assertEquals("jdbc:h2:file:"+Environment.getHomeDir().orElseThrow()+"/data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
+        assertEquals("jdbc:h2:file:" + Environment.getHomeDir().orElseThrow() + "/data/keycloakdb", config.getConfigValue("quarkus.datasource.foo").getValue());
 
         Assert.assertEquals("foo-def-suffix", config.getConfigValue("quarkus.datasource.bar").getValue());
 
@@ -598,7 +601,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testKeystoreConfigSourcePropertyMapping() {
         SmallRyeConfig config = createConfig();
-        assertEquals(config.getConfigValue("smallrye.config.source.keystore.kc-default.password").getValue(),config.getConfigValue("kc.config-keystore-password").getValue());
+        assertEquals(config.getConfigValue("smallrye.config.source.keystore.kc-default.password").getValue(), config.getConfigValue("kc.config-keystore-password").getValue());
         // Properties are loaded from the file - secret can be obtained only if the mapping works correctly
         ConfigValue secret = config.getConfigValue("my.secret");
         assertEquals("secret", secret.getValue());
@@ -653,8 +656,8 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     public void testCacheMaxCount() {
         int maxCount = 500;
         Set<String> maxCountCaches = Stream.of(CachingOptions.LOCAL_MAX_COUNT_CACHES, CachingOptions.CLUSTERED_MAX_COUNT_CACHES)
-              .flatMap(Arrays::stream)
-              .collect(Collectors.toSet());
+                .flatMap(Arrays::stream)
+                .collect(Collectors.toSet());
 
         StringBuilder sb = new StringBuilder();
         for (String cache : maxCountCaches) {
@@ -775,14 +778,12 @@ public class ConfigurationTest extends AbstractConfigurationTest {
                                                 String trustStoreTypeProperty) {
         var config = createConfigFromCliArguments("--db=" + dbKind, "--db-url-host=myhost", "--db-tls-mode=disabled");
 
-
         assertEquals(dbUrl, config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertNullAllAdditionalJdbcProperty(config, null, tlsJdbcProperties.keySet());
         assertNullAllAdditionalJdbcProperty(config, null, withJavaTrustStoreJdbcProperties.keySet());
         assertNullAdditionalJdbcProperty(config, null, truststoreFileProperty);
         assertNullAdditionalJdbcProperty(config, null, trustStorePasswordProperty);
         assertNullAdditionalJdbcProperty(config, null, trustStoreTypeProperty);
-
 
         // oracle has a different protocol for TLS
         if ("oracle".equals(dbKind)) {
@@ -838,51 +839,68 @@ public class ConfigurationTest extends AbstractConfigurationTest {
 
     @Test
     public void testDefaultDatabaseConnectTimeouts() {
-
+        //MySQL:
         ConfigArgsConfigSource.setCliArgs("--db=mysql");
         SmallRyeConfig config = createConfig();
         assertTrue(DatabasePropertyMappers.isMysqlConnectTimeoutEnabled());
-        assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.MYSQL_CONNECT_TIMEOUT).getValue());
-
-        ConfigArgsConfigSource.setCliArgs("--db=mysql", "--db-url-properties=?connectTimeout=5000");
-        config = createConfig();
+        assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+        assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        createConfigFromCliArguments("--db=mysql", "--db-url-properties=?connectTimeout=5000");
+        assertFalse(DatabasePropertyMappers.isMysqlConnectTimeoutEnabled());
+        createConfigFromCliArguments("--db=mysql", "--db-url=jdbc:mysql://localhost:3306/keycloak?connectTimeout=5000");
         assertFalse(DatabasePropertyMappers.isMysqlConnectTimeoutEnabled());
 
-        ConfigArgsConfigSource.setCliArgs("--db=mysql", "--db-url=jdbc:mysql://localhost:3306/keycloak?connectTimeout=5000");
-        config = createConfig();
-        assertFalse(DatabasePropertyMappers.isMysqlConnectTimeoutEnabled());
+        config = createConfigFromCliArguments("--db=mysql", "--db-connect-timeout=30s");
+        assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+        assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
 
+        // MariaDB:
         ConfigArgsConfigSource.setCliArgs("--db=mariadb");
         config = createConfig();
         assertTrue(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
-        assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.MARIADB_CONNECT_TIMEOUT).getValue());
+        assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+        assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=mariadb", "--db-url=jdbc:mariadb://localhost:3306/keycloak?connectTimeout=5000");
         config = createConfig();
         assertFalse(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
 
-        // MariaDB: connectTimeout
         ConfigArgsConfigSource.setCliArgs("--db=mariadb", "--db-url-properties=?connectTimeout=5000");
         config = createConfig();
         assertFalse(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
 
+        ConfigArgsConfigSource.setCliArgs("--db=mariadb", "--db-connect-timeout=30s");
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
+        assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+        assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+
+        // Oracle:
         ConfigArgsConfigSource.setCliArgs("--db=oracle");
         config = createConfig();
         assertTrue(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
         assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=oracle", "--db-url-properties=?oracle.net.CONNECT_TIMEOUT=5000");
         config = createConfig();
         assertFalse(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
-
         ConfigArgsConfigSource.setCliArgs("--db=oracle", "--db-url=jdbc:oracle:thin:@//localhost:1521/keycloak?oracle.net.CONNECT_TIMEOUT=5000");
         config = createConfig();
         assertFalse(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
 
+        ConfigArgsConfigSource.setCliArgs("--db=oracle", "--db-connect-timeout=30s");
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
+        assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
+        assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+
+        // MSSQL:
         ConfigArgsConfigSource.setCliArgs("--db=mssql");
         config = createConfig();
         assertTrue(DatabasePropertyMappers.isMssqlLoginTimeoutEnabled());
         assertEquals("10", config.getConfigValue(DatabasePropertyMappers.MSSQL_CONNECT_TIMEOUT).getValue());
+        assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-url-properties=;loginTimeout=20");
         config = createConfig();
@@ -891,5 +909,47 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-url=jdbc:sqlserver://localhost:1433;databaseName=keycloak;loginTimeout=20");
         config = createConfig();
         assertFalse(DatabasePropertyMappers.isMssqlLoginTimeoutEnabled());
+        ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-connect-timeout=30s");
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isMssqlLoginTimeoutEnabled());
+        assertEquals("30", config.getConfigValue(DatabasePropertyMappers.MSSQL_CONNECT_TIMEOUT).getValue());
+        assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+
+        // PostgreSQL:
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres");
+        createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+        assertEquals("10", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+        assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-url-properties=?connectTimeout=5");
+        createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        assertFalse(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?connectTimeout=5");
+        createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        assertFalse(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
+        createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        assertFalse(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-connect-timeout=30s");
+        createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+        assertEquals("30", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+        assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
     }
 }
