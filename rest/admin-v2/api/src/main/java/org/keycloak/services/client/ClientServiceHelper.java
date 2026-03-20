@@ -18,7 +18,7 @@ public class ClientServiceHelper {
     private static final Logger log = Logger.getLogger(ClientServiceHelper.class);
 
     public static boolean isLegacyClientServiceEnabled() {
-        return Boolean.parseBoolean(System.getProperty("kc.admin-v2.client-service.legacy.enabled", "true"));
+        return Boolean.parseBoolean(System.getProperty("kc.admin-v2.client-service.legacy.enabled", "false"));
     }
 
     public static ClientService getClientService(@Nonnull KeycloakSession session,
@@ -26,10 +26,10 @@ public class ClientServiceHelper {
                                                  @Nonnull AdminPermissionEvaluator permissions,
                                                  @Nonnull RealmAdminResource realmAdminResource) {
         if (isLegacyClientServiceEnabled()) {
-            return new DefaultClientService(session, realm, permissions, realmAdminResource);
+            return new LegacyClientService(session, realm, permissions, realmAdminResource);
         } else {
             log.debug("New ClientService is used");
-            return new NewClientService(session, realm, permissions, realmAdminResource);
+            return new DefaultClientService(session, realm, permissions, realmAdminResource);
         }
     }
 
