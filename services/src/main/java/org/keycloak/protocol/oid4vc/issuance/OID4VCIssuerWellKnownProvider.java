@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Collection;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.NotFoundException;
@@ -30,6 +31,9 @@ import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
+import org.keycloak.authentication.ClientAuthenticator;
+import org.keycloak.authentication.ClientAuthenticatorFactory;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.crypto.CryptoUtils;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -154,8 +158,23 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
                 .setAuthorizationServers(List.of(getIssuer(context)))
                 .setCredentialResponseEncryption(responseEnc)
                 .setCredentialRequestEncryption(requestEnc)
-                .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession));
+                .setBatchCredentialIssuance(getBatchCredentialIssuance(keycloakSession))
+                .setTokenEndpointAuthMethodsSupported(getClientAuthMethodsSupported(keycloakSession));
     }
+
+    private List<String> getClientAuthMethodsSupported(KeycloakSession session) {
+        List<String> methods = session.getKeycloakSessionFactory().getProviderFactoriesStream(ClientAuthenticator.class)
+                .map(ClientAuthenticatorFactory.class::cast)
+                .map(caf -> caf.getProtocolAuthenticatorMethods(OIDCLoginProtocol.LOGIN_PROTOCOL))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+        
+        if (!methods.contains("attest_jwt_client_auth")) {
+            methods.add("attest_jwt_client_auth");
+        }
+        return methods;
+    }
+
 
     public Object getMetadataResponse(CredentialIssuer issuer, KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();

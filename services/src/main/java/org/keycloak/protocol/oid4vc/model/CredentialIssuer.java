@@ -62,6 +62,9 @@ public class CredentialIssuer {
     @JsonProperty("credential_request_encryption")
     private CredentialRequestEncryptionMetadata credentialRequestEncryption;
 
+    @JsonProperty("token_endpoint_auth_methods_supported")
+    private List<String> tokenEndpointAuthMethodsSupported;
+
     public String getCredentialIssuer() {
         return credentialIssuer;
     }
@@ -153,6 +156,15 @@ public class CredentialIssuer {
 
     public CredentialIssuer setCredentialRequestEncryption(CredentialRequestEncryptionMetadata credentialRequestEncryption) {
         this.credentialRequestEncryption = credentialRequestEncryption;
+        return this;
+    }
+
+    public List<String> getTokenEndpointAuthMethodsSupported() {
+        return tokenEndpointAuthMethodsSupported;
+    }
+
+    public CredentialIssuer setTokenEndpointAuthMethodsSupported(List<String> tokenEndpointAuthMethodsSupported) {
+        this.tokenEndpointAuthMethodsSupported = tokenEndpointAuthMethodsSupported;
         return this;
     }
 
