@@ -471,28 +471,32 @@ export const CapabilityConfig = ({
               stringify
             />
           )}
-          <DefaultSwitchControl
-            name={convertAttributeNameToForm<FormFields>(
-              "attributes.external.token.enabled",
-            )}
-            label={t("externalTokenEnabled")}
-            labelIcon={t("externalTokenEnabledHelp")}
-            stringify
-          />
-          {showIdentityProviders &&
-            externalTokenEnabled?.toString() === "true" && (
-              <IdentityProviderSelect
+          {isFeatureEnabled(Feature.IdentityBrokeringAPIV2) && (
+            <>
+              <DefaultSwitchControl
                 name={convertAttributeNameToForm<FormFields>(
-                  "attributes.external.token.idp",
+                  "attributes.external.token.enabled",
                 )}
-                label={t("externalTokenIdp")}
-                helpText={t("externalTokenIdpHelp")}
-                convertToName={convertAttributeNameToForm}
-                identityProviderType={IdentityProviderType.ANY}
-                realmOnly
+                label={t("externalTokenEnabled")}
+                labelIcon={t("externalTokenEnabledHelp")}
                 stringify
               />
-            )}
+              {showIdentityProviders &&
+                externalTokenEnabled?.toString() === "true" && (
+                  <IdentityProviderSelect
+                    name={convertAttributeNameToForm<FormFields>(
+                      "attributes.external.token.idp",
+                    )}
+                    label={t("externalTokenIdp")}
+                    helpText={t("externalTokenIdpHelp")}
+                    convertToName={convertAttributeNameToForm}
+                    identityProviderType={IdentityProviderType.ANY}
+                    realmOnly
+                    stringify
+                  />
+                )}
+            </>
+          )}
         </>
       )}
       {protocol === "saml" && (

@@ -53,14 +53,6 @@ In order to improve security, the access control for managing permission tickets
 only users (or service accounts) granted with the `uma-protection` role can manage permission tickets for a given
 resource server. The only exception is the resource server itself, which can manage its permission tickets without the `uma-protection` role.
 
-=== SAML token for Identity Brokering APIs changed to JSON
-
-When {project_name} delegates the authentication to an Identity Provider, the brokering APIs can be called to retrieve the token received from the external IdP. In turn, that token can be used to get extra information for the user or to directly invoke endpoints on the external provider.
-
-While for the OpenID Connect brokers, the token was the JSON token endpoint response; for SAML brokers, the stored token was the SAML response but in raw mode. That means that the token was different depending the binding used (`POST`, `REDIRECT`...), the assertion could be encrypted and so on and so forth. Since this version, the token returned for SAML providers is also a common JSON response in which the `access_token` member is the base64url-encoded SAML 2.0 assertion. This way, the response is aligned with the OIDC providers and with the majority of standards, for example link:https://datatracker.ietf.org/doc/html/rfc8693[OAuth 2.0 Token Exchange (RFC8693)] or link:https://datatracker.ietf.org/doc/html/rfc7522[Security Assertion Markup Language (SAML) 2.0 Profile for OAuth 2.0 Client Authentication and Authorization Grants (RFC7522)].
-
-For more information about brokering, see link:{developerguide_link}#_identity_brokering_apis[Identity Brokering APIs].
-
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
 
