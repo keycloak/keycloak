@@ -22,6 +22,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
+import java.security.SecureRandom;
 
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.KeycloakSession;
@@ -44,6 +45,8 @@ import org.jboss.logging.Logger;
 public class TimeClaimNormalizer {
 
     private static final Logger logger = Logger.getLogger(TimeClaimNormalizer.class);
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public enum Strategy {
         OFF,
@@ -95,7 +98,7 @@ public class TimeClaimNormalizer {
     }
 
     private Instant randomize(Instant original) {
-        long randomOffset = (long) (Math.random() * (randomizeWindowSeconds + 1));
+        long randomOffset = (long) (SECURE_RANDOM.nextDouble() * (randomizeWindowSeconds + 1));
         return original.minusSeconds(randomOffset);
     }
 

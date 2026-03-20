@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
+import java.security.SecureRandom;
 
 import jakarta.annotation.Nullable;
 
@@ -65,6 +65,8 @@ public class JwtCNonceHandler implements CNonceHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtCNonceHandler.class);
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private final KeycloakSession keycloakSession;
 
     private final KeyWrapper signingKey;
@@ -83,7 +85,7 @@ public class JwtCNonceHandler implements CNonceHandler {
         audiences = Optional.ofNullable(audiences).orElseGet(Collections::emptyList);
         final long nowSeconds = Time.currentTime();
         final long expiresAt = nowSeconds + nonceLifetimeSeconds;
-        final int nonceLength = NONCE_DEFAULT_LENGTH + new Random().nextInt(NONCE_LENGTH_RANDOM_OFFSET);
+        final int nonceLength = NONCE_DEFAULT_LENGTH + SECURE_RANDOM.nextInt(NONCE_LENGTH_RANDOM_OFFSET);
         // this generated value itself is basically just a salt-value for the generated token, which itself is the nonce.
         final String strongSalt = Base64.getEncoder().encodeToString(RandomSecret.createRandomSecret(nonceLength));
 
