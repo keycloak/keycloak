@@ -74,10 +74,10 @@ In prior releases the introduction of a first-class option with a default would 
 For example, `spi-truststore--file--hostname-verification-policy` was marked as deprecated after the introduction of `tls-hostname-verifier`. However since
 `tls-hostname-verifier` included a default, direct usage of `spi-truststore--file--hostname-verification-policy` was no longer considered.
 
-To ensure that the further introduction of new first-class options do not immediately break existing configurations, the logic for determining the value of a second-class option
+To ensure that the further introduction of new first-class options does not immediately break existing configurations, the logic for determining the value of a second-class option
 will now consider the direct usage of the second-class value ahead of a default, or derived default, from the first-class option.
 
-Please review the server startup to see if there are any warning around the continued usage of second-class options, and update them accordingly. 
+Please review the server startup to see if there are any warnings about the continued usage of second-class options, and update them accordingly. 
 
 === New option for transaction timeout
 
