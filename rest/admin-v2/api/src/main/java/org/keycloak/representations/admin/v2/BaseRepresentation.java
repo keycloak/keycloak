@@ -2,6 +2,7 @@ package org.keycloak.representations.admin.v2;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -27,5 +28,18 @@ public class BaseRepresentation {
 
     public void setAdditionalFields(Map<String, Object> additionalFields) {
         this.additionalFields = additionalFields;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof BaseRepresentation that)) {
+            return false;
+        }
+        return Objects.equals(additionalFields, that.additionalFields);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(additionalFields);
     }
 }

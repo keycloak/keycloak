@@ -141,11 +141,11 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
             return false;
         }
         if (!super.equals(o)) return false;
-        return Objects.equals(clientId, that.clientId) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(enabled, that.enabled) && Objects.equals(appUrl, that.appUrl) && Objects.equals(redirectUris, that.redirectUris) && Objects.equals(roles, that.roles) && Objects.equals(additionalFields, that.additionalFields);
+        return Objects.equals(clientId, that.clientId) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(enabled, that.enabled) && Objects.equals(appUrl, that.appUrl) && Objects.equals(redirectUris, that.redirectUris) && Objects.equals(roles, that.roles);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), clientId, displayName, description, enabled, appUrl, redirectUris, roles, additionalFields);
+        return Objects.hash(super.hashCode(), clientId, displayName, description, enabled, appUrl, redirectUris, roles);
     }
 }
