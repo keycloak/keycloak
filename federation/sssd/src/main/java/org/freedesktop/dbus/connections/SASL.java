@@ -22,7 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.Set;
 
 import com.sun.security.auth.module.UnixSystem;
@@ -393,15 +393,16 @@ public class SASL {
                     }
                 case AUTH_SHA:
                     String context = COOKIE_CONTEXT;
-                    long id = System.currentTimeMillis();
+                    SecureRandom secureRandom = new SecureRandom();
+                    long id = Math.abs(secureRandom.nextLong());
                     byte[] buf = new byte[8];
                     Message.marshallintBig(id, buf, 0, 8);
                     challenge = stupidlyEncode(md.digest(buf));
-                    Random r = new Random();
-                    r.nextBytes(buf);
+                    secureRandom.nextBytes(buf);
                     cookie = stupidlyEncode(md.digest(buf));
                     try {
-                        addCookie(context, "" + id, id / 1000, cookie);
+                        long timestamp = System.currentTimeMillis() / 1000;
+                        addCookie(context, "" + id, timestamp, cookie);
                     } catch (IOException _ex) {
                         logger.error("Error authenticating using cookie", _ex);
                         return SaslResult.ERROR;
