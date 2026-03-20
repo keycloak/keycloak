@@ -7,15 +7,13 @@
 title="Using custom {project_name} images"
 summary="Customize and optimize the {project_name} container.">
 
-== {project_name} custom image with the Operator
-
 With the Keycloak Custom Resource (CR), you can specify a custom container image for the {project_name} server.
 
 [NOTE]
 To ensure full compatibility of Operator and Operand,
 make sure that the version of {project_name} release used in the custom image is aligned with the version of the operator.
 
-=== Best practice
+== Best practice
 
 When using the default {project_name} image, the server will perform a costly re-augmentation every time a Pod starts.
 To avoid this delay, you can provide a custom image with the augmentation built-in from the build time of the image.
@@ -26,7 +24,7 @@ WARNING: When using the optimized custom image, `health-enabled` and `metrics-en
 
 For instructions on how to build such an image, see <@links.server id="containers"/>.
 
-=== Providing a custom {project_name} image
+== Providing a custom {project_name} image
 
 To provide a custom image, you define the `image` field in the Keycloak CR as shown in this example:
 
@@ -50,7 +48,7 @@ NOTE: With custom images, every build time option passed either through a dedica
 NOTE: The Operator is *unaware* of any configuration options that are specified in a custom image.
 Use the Keycloak CR for any configuration that requires Operator awareness, namely the TLS and HTTP(S) settings reflected when configuring services and probes.
 
-=== Non-optimized custom image
+== Non-optimized custom image
 
 While it is considered a best practice to use a pre-augmented image, if you want to use a non-optimized custom image or build time properties with an augmented image that is still possible. You just need set the `startOptimized` field to `false` as shown in this example:
 

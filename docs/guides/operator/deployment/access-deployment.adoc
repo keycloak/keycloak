@@ -1,0 +1,129 @@
+= Accessing the {project_name} deployment
+
+The {project_name} deployment can be exposed through a basic Ingress accessible through the provided hostname.
+
+On installations with multiple default IngressClass instances
+or when running on OpenShift 4.12+ you should provide an ingressClassName by setting `ingress` spec with `className` property to the desired class name:
+
+Edit YAML file `example-kc.yaml`:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+    ...
+    ingress:
+      className: openshift-default
+----
+
+NOTE: The operator annotates the Ingress to match expectations for TLS passthrough or TLS termination on OpenShift with the default IngressClass. 
+See below for more on TLS termination. 
+
+== Proxy modes with the basic Ingress
+
+The operator annotates the Ingress to match expectations for TLS termination or passthrough on OpenShift with the default IngressClass. 
+For this reason TLS reencryption is not yet considered supported by basic Ingress, but you may be able to specify the `tlsSecret` on both the `http` and `ingress` specs as a starting point.
+You should double check the requirements of your IngressClass and platform to see if additional Ingress or Service annotations are needed in your desired scenario.
+
+TLS passthrough is shown in the preceding `example-kc` example. It is enabled when you associate a `tlsSecret` with the `http` configuration and leave Ingress enabled without specifying a `tlsSecret` on it. 
+
+TLS termination, or edge mode, is enabled by associating a `tlsSecret` with the `ingress` spec and by enabling HTTP access.
+ 
+Example TLS Termination YAML:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  instances: 1
+  db:
+    vendor: postgres
+    host: postgres-db
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  http:
+    httpEnabled: true
+  ingress:
+    tlsSecret: example-tls-secret
+  hostname:
+    hostname: test.keycloak.org
+  proxy:
+    headers: xforwarded # double check your reverse proxy sets and overwrites the X-Forwarded-* headers
+----
+
+== Custom Access
+
+If the default ingress does not fit your use case, disable it by setting `ingress` spec with `enabled` property to `false` value:
+
+Edit YAML file `example-kc.yaml`:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+    ...
+    ingress:
+      enabled: false
+----
+
+Apply the changes:
+
+[source,bash]
+----
+kubectl apply -f example-kc.yaml
+----
+You can then provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`. For example, on OpenShift you are not allowed to use wildcard certificates on passthrough Routes with HTTP/2 enabled. A Keycloak CR on OpenShift with TLS enabled using a wildcard certificate with the default IngressClass creates such a Route. In this case, you must disable the built-in ingress with `.spec.ingress.enabled: false`. Access may then be provided by creating a reencrypt Route instead:
+
+[source,yaml]
+----
+$ oc create route reencrypt --service=<keycloak-cr-name>-service --cert=<configured-certificate> --key=<certificate-key> --dest-ca-cert=<ca-certificate> --ca-cert=<ca-certificate> --hostname=<hostname>
+----
+
+For debugging and development purposes, consider directly connecting to the {project_name} service using a port forward. For example, enter this command:
+
+[source,bash]
+----
+kubectl port-forward service/example-kc-service 8443:8443
+----
+
+== Configuring the reverse proxy settings matching your Ingress Controller
+
+The Operator supports configuring which of the reverse proxy headers should be accepted by server, which includes
+`Forwarded` and `X-Forwarded-*` headers.
+
+If you Ingress implementation sets and overwrites either `Forwarded` or `X-Forwarded-*` headers, you can reflect that
+in the Keycloak CR as follows:
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  proxy:
+    headers: forwarded|xforwarded
+----
+NOTE: If the `proxy.headers` field is not specified, the Operator falls back to legacy behaviour by implicitly setting
+`proxy=passthrough` by default. This results in deprecation warnings in the server log. This fallback will be removed
+in a future release.
+
+WARNING: When using the `proxy.headers` field, make sure your Ingress properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your Ingress Controller. Consider configuring it for
+either reencrypt or edge TLS termination as passthrough TLS doesn't allow the Ingress to modify the requests headers.
+Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+
+For more details refer to the <@links.server id="reverseproxy"/> guide.
+

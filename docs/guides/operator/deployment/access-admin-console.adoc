@@ -1,0 +1,21 @@
+= Accessing the Admin Console
+
+When deploying {project_name}, the operator generates an arbitrary initial admin `username` and `password` and stores those credentials as a basic-auth Secret object in the same namespace as the CR.
+
+[WARNING]
+====
+Change the default admin credentials and enable MFA in {project_name} before going to production.
+====
+
+To fetch the initial admin credentials, you have to read and decode the Secret.
+The Secret name is derived from the Keycloak CR name plus the fixed suffix `-initial-admin`.
+To get the username and password for the `example-kc` CR, enter the following commands:
+
+[source,bash]
+----
+kubectl get secret example-kc-initial-admin -o jsonpath='{.data.username}' | base64 --decode
+kubectl get secret example-kc-initial-admin -o jsonpath='{.data.password}' | base64 --decode
+----
+
+You can use those credentials to access the Admin Console or the Admin REST API.
+

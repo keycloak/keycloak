@@ -1,0 +1,55 @@
+= Truststores
+
+If you need to provide trusted certificates, the Keycloak CR provides a top level feature for configuring the server's truststore as discussed in <@links.server id="keycloak-truststore"/>.
+
+Use the truststores stanza of the Keycloak spec to specify Secrets or ConfigMaps containing PEM encoded files, or PKCS12 files with extension `.p12`, `.pfx`, or `.pkcs12`, for example:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  truststores:
+    my-truststore:
+      secret:
+        name: my-secret
+----
+
+Where the contents of my-secret could be a PEM file, for example:
+
+[source,yaml]
+------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-secret
+stringData:
+  cert.pem: |
+    -----BEGIN CERTIFICATE-----
+    ...
+------
+
+When running on a Kubernetes or OpenShift environment, the server automatically includes well-known locations of trusted certificates if they are present:
+`/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` and `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt`.
+
+This behavior is now implemented by the server and enabled by default. You can disable it using server options in the Keycloak CR `additionalOptions`, for example:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  additionalOptions:
+    - name: truststore-kubernetes-enabled
+      value: "false"
+----
+
+To prevent the service account token from being mounted in the pod, set `automountServiceAccountToken` to `false` in the Keycloak CR spec.
+This also disables the Kubernetes CA truststore auto-discovery described above.
+This option cannot be `false` if you plan to use an external Infinispan cluster, the Kubernetes service accounts identity provider, or any custom provider logic that expects to implicitly use the Kubernetes API.
+

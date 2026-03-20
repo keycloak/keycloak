@@ -1,0 +1,105 @@
+= Preparing for deployment
+
+Once the {project_name} Operator is installed and running in the cluster namespace, you can set up the other deployment prerequisites.
+
+* Database
+* Hostname
+* TLS Certificate and associated keys
+
+== Database
+
+A database should be available and accessible from the cluster namespace where {project_name} is installed.
+For a list of supported databases, see <@links.server id="db"/>.
+The {project_name} Operator does not manage the database and you need to provision it yourself. Consider verifying your cloud provider offering or using a database operator.
+
+For development purposes, you can use an ephemeral PostgreSQL pod installation. To provision it, follow the approach below:
+
+Create YAML file `example-postgres.yaml`:
+[source,yaml]
+----
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgresql-db
+spec:
+  serviceName: postgresql-db-service
+  selector:
+    matchLabels:
+      app: postgresql-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgresql-db
+    spec:
+      containers:
+        - name: postgresql-db
+          image: postgres:15
+          volumeMounts:
+            - mountPath: /data
+              name: cache-volume
+          env:
+            - name: POSTGRES_USER
+              value: testuser
+            - name: POSTGRES_PASSWORD
+              value: testpassword
+            - name: PGDATA
+              value: /data/pgdata
+            - name: POSTGRES_DB
+              value: keycloak
+      volumes:
+        - name: cache-volume
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-db
+spec:
+  selector:
+    app: postgresql-db
+  type: LoadBalancer
+  ports:
+  - port: 5432
+    targetPort: 5432
+----
+
+Apply the changes:
+
+[source,bash]
+----
+kubectl apply -f example-postgres.yaml
+----
+
+== Hostname
+
+For a production ready installation, you need a hostname that can be used to contact {project_name}.
+See <@links.server id="hostname"/> for the available configurations.
+
+For development purposes, this {section} will use `test.keycloak.org`.
+
+When running on OpenShift, with ingress enabled, and with the spec.ingress.classname set to openshift-default, you may leave the spec.hostname.hostname unpopulated in the Keycloak CR.
+The operator will assign a default hostname to the stored version of the CR similar to what would be created by an OpenShift Route without an explicit host - that is ingress-namespace.appsDomain
+If the appsDomain changes, or should you need a different hostname for any reason, then update the Keycloak CR.
+
+NOTE: If you set the `hostname-admin`, or the deprecated `hostname-admin-url`, even if you enable ingress, no ingress will be created specifically for admin access.
+Admin access via a separate hostname is generally expected to have access restrictions, which are not currently expressible via the Keycloak CR.
+Also the default ingress does not prevent accessing admin endpoints, so you may not want to enable ingress handling via the Keycloak CR at all when you have a separate hostname for admin endpoints.
+
+== TLS Certificate and key
+
+See your Certification Authority to obtain the certificate and the key.
+
+For development purposes, you can enter this command to obtain a self-signed certificate:
+
+[source,bash]
+----
+openssl req -subj '/CN=test.keycloak.org/O=Test Keycloak./C=US' -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out certificate.pem
+----
+
+You should install it in the cluster namespace as a Secret by entering this command:
+
+[source,bash]
+----
+kubectl create secret tls example-tls-secret --cert certificate.pem --key key.pem
+----
