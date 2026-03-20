@@ -1,7 +1,7 @@
 package org.keycloak.tests.oid4vc;
 
-import java.time.Duration;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;

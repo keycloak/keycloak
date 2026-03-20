@@ -15,40 +15,38 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.oid4vc;
+package org.keycloak.tests.oid4vc.preauth;
 
 import java.net.URI;
 import java.util.List;
 
 import org.keycloak.TokenVerifier;
-import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
-import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerConfig;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
+import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
  * An external wallet would generally not be trusted to keep the client_secret
  * oid4vci clients should be configured as public with pkce enabled
  */
-@KeycloakIntegrationTest(config = VCTestServerConfig.class)
-public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
+public class OID4VCPublicClientPreAuthTest extends OID4VCIssuerTestBase {
 
     OID4VCBasicWallet wallet;
 
@@ -66,34 +64,20 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testCredentialFromPublicClient() throws Exception {
+    public void testCredentialFromPreAuthCode() throws Exception {
 
         var ctx = new OID4VCTestContext(pubClient, jwtTypeCredentialScope);
 
-        PkceGenerator pkce = PkceGenerator.s256();
-
-        CredentialIssuer issuerMetadata = wallet.getIssuerMetadata(ctx);
-
-        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-        authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialConfigurationId(ctx.credConfigId);
-        authDetail.setLocations(List.of(issuerMetadata.getCredentialIssuer()));
-
-        // Send AuthorizationRequest
+        // Create Pre-Authorized CredentialOffer
         //
-        AuthorizationEndpointResponse authResponse = wallet
-                .authorizationRequest()
-                .scope(ctx.credScopeName)
-                .authorizationDetails(authDetail)
-                .codeChallenge(pkce)
-                .send(ctx.holder, "password");
-        String authCode = authResponse.getCode();
+        CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.holder);
+        String preAuthCode = credOffer.getPreAuthorizedCode();
 
-        // Build and send AccessTokenRequest
+        // Redeem Pre-Authorized Code for AccessToken
         //
-        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
-                .codeVerifier(pkce)
-                .send();
+        AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode).send();
+        assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
+
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
         assertNotNull(accessToken, "No accessToken");
 
@@ -107,22 +91,6 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.holder, credResponse);
-    }
-
-    @Test
-    public void testAuthorizationRequestNoPkce() throws Exception {
-
-        var ctx = new OID4VCTestContext(pubClient, jwtTypeCredentialScope);
-
-        // Send AuthorizationRequest
-        //
-        AuthorizationEndpointResponse authResponse = wallet
-                .authorizationRequest()
-                .scope(ctx.credScopeName)
-                .send(ctx.holder, "password");
-
-        assertEquals("invalid_request", authResponse.getError());
-        assertEquals("Missing parameter: code_challenge_method", authResponse.getErrorDescription());
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
