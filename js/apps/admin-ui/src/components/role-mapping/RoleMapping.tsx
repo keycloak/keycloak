@@ -24,8 +24,8 @@ import {
   AddRoleMappingModal,
   FilterType,
 } from "./AddRoleMappingModal";
-import { deleteMapping, getEffectiveRoles, getMapping } from "./queries";
-import { getEffectiveClientRoles } from "./resource";
+import { deleteMapping, getMapping } from "./queries";
+import { getAllEffectiveRoles } from "./resource";
 
 import "./role-mapping.css";
 
@@ -112,28 +112,20 @@ export const RoleMapping = ({
   };
 
   const loader = async () => {
-    let effectiveRoles: Row[] = [];
-    let effectiveClientRoles: Row[] = [];
+    let allEffectiveRoles: Row[] = [];
 
     if (!hide) {
-      effectiveRoles = await getEffectiveRoles(adminClient, type, id);
+      const effectiveRoles = await getAllEffectiveRoles(adminClient, {
+        type,
+        id,
+      });
 
-      effectiveClientRoles = (
-        await getEffectiveClientRoles(adminClient, {
-          type,
-          id,
-        })
-      ).map((e) => ({
-        client: { clientId: e.client, id: e.clientId },
-        role: { id: e.id, name: e.role, description: e.description },
+      allEffectiveRoles = effectiveRoles.map((e) => ({
+        ...(e.clientRole && e.client && e.clientId
+          ? { client: { clientId: e.client, id: e.clientId } }
+          : {}),
+        role: { id: e.id, name: e.name, description: e.description },
       }));
-
-      effectiveRoles = effectiveRoles.filter(
-        (role) =>
-          !effectiveClientRoles.some(
-            (clientRole) => clientRole.role.id === role.role.id,
-          ),
-      );
     }
 
     const roles = await getMapping(adminClient, type, id);
@@ -151,7 +143,7 @@ export const RoleMapping = ({
     return [
       ...mapRoles(
         [...clientMapping, ...realmRolesMapping],
-        [...effectiveClientRoles, ...effectiveRoles],
+        allEffectiveRoles,
         hide,
       ),
     ];
