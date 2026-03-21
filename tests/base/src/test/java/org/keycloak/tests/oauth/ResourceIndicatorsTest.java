@@ -42,6 +42,30 @@ public class ResourceIndicatorsTest {
     }
 
     @Test
+    public void testAuthzInvalidResourceRelative() {
+        // Test with a relative URI (triggers !uri.isAbsolute() check)
+        AuthorizationEndpointResponse response = oauth.loginForm()
+                .resource("/relative-path")
+                .doLoginWithCookie();
+        
+        Assertions.assertTrue(response.isRedirected());
+        Assertions.assertEquals(INVALID_TARGET, response.getError());
+        Assertions.assertEquals("Invalid resource parameter", response.getErrorDescription());
+    }
+
+    @Test
+    public void testAuthzInvalidResourceWithFragment() {
+        // Test with a fragment (triggers uri.getRawFragment() != null check)
+        AuthorizationEndpointResponse response = oauth.loginForm()
+                .resource("https://theservice#fragment")
+                .doLoginWithCookie();
+        
+        Assertions.assertTrue(response.isRedirected());
+        Assertions.assertEquals(INVALID_TARGET, response.getError());
+        Assertions.assertEquals("Invalid resource parameter", response.getErrorDescription());
+    }
+
+    @Test
     public void testValidResourceByClientUrn() {
         AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").resource("urn:client:theservice").send();
         assertValidResponse(tokenResponse, "theservice");
