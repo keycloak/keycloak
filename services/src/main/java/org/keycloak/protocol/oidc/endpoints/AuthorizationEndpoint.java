@@ -21,6 +21,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import jakarta.ws.rs.core.MultivaluedMap;
+import org.keycloak.OAuthErrorException;
+import jakarta.ws.rs.core.Response;
+import java.net.URI;
+import java.net.URISyntaxException;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -192,6 +198,9 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             return redirectErrorToClient(parsedResponseMode, ex.getError(), ex.getErrorDescription());
         }
+
+        Response resourceError = checkResourceParameter();
+        if (resourceError != null) return resourceError;
 
         // If DPoP Proof existed with PAR request, its public key needs to be matched with the one with Token Request afterward
         String dpopJkt = session.getAttribute(PAR_DPOP_PROOF_JKT, String.class);
@@ -456,5 +465,25 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         paramAction.accept(OIDCLoginProtocol.RESOURCE_PARAM, request.getResource());
         paramAction.accept(OIDCLoginProtocol.STATE_PARAM, request.getState());
         paramAction.accept(OIDCLoginProtocol.DPOP_JKT, request.getDpopJkt());
+    }
+    private Response checkResourceParameter() {
+        if (Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS)) {
+            MultivaluedMap<String, String> queryParams = session.getContext().getUri().getQueryParameters();
+            List<String> resources = queryParams.get(OIDCLoginProtocol.RESOURCE_PARAM);
+
+            if (resources == null || resources.isEmpty()) return null;
+
+            for (String r : resources) {
+                try {
+                    URI uri = new URI(r);
+                    if (!uri.isAbsolute() || uri.getRawFragment() != null) {
+                        return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_TARGET, "Invalid resource parameter");
+                    }
+                } catch (URISyntaxException e) {
+                    return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_TARGET, "Malformed resource parameter");
+                }
+            }
+        }
+        return null;
     }
 }
