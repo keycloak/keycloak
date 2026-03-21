@@ -21,6 +21,10 @@ import java.io.IOException;
 import java.util.Map;
 import javax.xml.namespace.QName;
 
+import org.keycloak.common.Profile;
+import org.keycloak.events.Errors;
+import org.keycloak.OAuthErrorException;
+
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.OPTIONS;
 import jakarta.ws.rs.POST;
@@ -137,6 +141,14 @@ public class TokenEndpoint {
                 && !grantType.equals(PRE_AUTH_GRANT_TYPE)) {
             checkClient();
             checkParameterDuplicated();
+        }
+
+        // Reject 'resource' parameter if feature is disabled
+        String resource = formParams.getFirst(OIDCLoginProtocol.RESOURCE_PARAM);
+        if (resource != null && !Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS)) {
+            event.detail(Details.REASON, "resource_indicators_disabled");
+            event.error(Errors.INVALID_REQUEST);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "resource parameter not supported", Response.Status.BAD_REQUEST);
         }
 
         /*

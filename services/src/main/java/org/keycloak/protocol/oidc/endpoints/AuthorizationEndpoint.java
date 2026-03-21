@@ -16,6 +16,7 @@
  */
 
 package org.keycloak.protocol.oidc.endpoints;
+import org.keycloak.OAuthErrorException;
 
 import java.util.List;
 import java.util.Map;
@@ -191,6 +192,13 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             checker.checkPKCEParams();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             return redirectErrorToClient(parsedResponseMode, ex.getError(), ex.getErrorDescription());
+        }
+
+        // Reject 'resource' parameter if feature is disabled
+        if (request.getResource() != null && !Profile.isFeatureEnabled(Profile.Feature.RESOURCE_INDICATORS)) {
+            event.detail(Details.REASON, "resource_indicators_disabled");
+            event.error(Errors.INVALID_REQUEST);
+            return redirectErrorToClient(parsedResponseMode, OAuthErrorException.INVALID_REQUEST, "resource parameter not supported");
         }
 
         // If DPoP Proof existed with PAR request, its public key needs to be matched with the one with Token Request afterward
