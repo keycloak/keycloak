@@ -21,7 +21,8 @@ Notable changes where an internal behavior changed to prevent common misconfigur
 
 === OpenTelemetry span attributes location changed
 
-In previous releases, certain OpenTelemetry span attributes such as `kc.realmName` and `kc.clientId` were incorrectly appearing on parent HTTP request spans due to a context leak bug. This bug has been fixed, and span attributes are now correctly set only on child spans where the information is actually known. Monitoring tools that relied on filtering parent HTTP spans by these attributes will need to query the appropriate child spans instead.
+In previous releases, certain OpenTelemetry span attributes such as `kc.realmName` and `kc.clientId` appeared on parent HTTP request spans.
+Span attributes are now set only on child spans where the information is actually known. Monitoring tools that relied on filtering parent HTTP spans by these attributes will need to query the appropriate child spans instead.
 
 === Different credentials of a user need to have different names
 
