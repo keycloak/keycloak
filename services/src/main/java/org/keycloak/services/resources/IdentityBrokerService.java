@@ -1134,6 +1134,11 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     private void updateFederatedIdentity(BrokeredIdentityContext context, UserModel federatedUser) {
         FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, context.getIdpConfig().getAlias());
 
+        if (federatedIdentityModel == null) {
+            logger.warnf("Could not find federated identity for provider '%s' and user '%s' during update.", context.getIdpConfig().getAlias(), federatedUser.getUsername());
+            return;
+        }
+
         if (context.getIdpConfig().getSyncMode() == IdentityProviderSyncMode.FORCE) {
             setBasicUserAttributes(context, federatedUser);
 
