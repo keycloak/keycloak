@@ -43,28 +43,15 @@ public class OID4VCIWellKnownProviderTest extends OID4VCIssuerTestBase {
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
-    boolean configuredAlready;
-
     @TestSetup
     public void configureTestRealm() {
+        super.configureTestRealm();
 
-        // When named differently this method is called before OID4VCIssuerTestBase.configureTestRealm()
-        // When named the same name, it is called twice (i.e. does not override)
-        //
-        // [TODO] IntegrationTest sub class @TestSetup called before super class
-        // https://github.com/keycloak/keycloak/issues/46667
-
-        if (!configuredAlready) {
-            super.configureTestRealm();
-
-            ComponentsResource components = testRealm.admin().components();
-            components.add(getRsaKeyProvider(getRsaKey_Default())).close();
-            components.add(getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100)).close();
-            components.add(getAesKeyProvider(A128KW, "aes-enc", "ENC", "aes-generated")).close();
-            components.add(getAesKeyProvider(Algorithm.HS256, "aes-sig", "SIG", "hmac-generated")).close();
-
-            configuredAlready = true;
-        }
+        ComponentsResource components = testRealm.admin().components();
+        components.add(getRsaKeyProvider(getRsaKey_Default())).close();
+        components.add(getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100)).close();
+        components.add(getAesKeyProvider(A128KW, "aes-enc", "ENC", "aes-generated")).close();
+        components.add(getAesKeyProvider(Algorithm.HS256, "aes-sig", "SIG", "hmac-generated")).close();
     }
 
     @Test

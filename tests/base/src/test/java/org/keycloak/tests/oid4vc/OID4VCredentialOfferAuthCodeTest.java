@@ -10,7 +10,6 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sdjwt.IssuerSignedJWT;
 import org.keycloak.sdjwt.vp.SdJwtVP;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -48,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * +----------+----------+---------+------------------------------------------------------+
  */
 @KeycloakIntegrationTest(config = VCTestServerConfig.class)
-public class OID4VCAuthCodeOfferTest extends OID4VCIssuerTestBase {
+public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
     OID4VCBasicWallet wallet;
 
@@ -63,14 +62,7 @@ public class OID4VCAuthCodeOfferTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testRealmSetup() {
-        RealmRepresentation realmRep = testRealm.admin().toRepresentation();
-        assertEquals(shouldEnableOid4vci(realmRep), realmRep.isVerifiableCredentialsEnabled());
-        assertEquals(shouldEnableOid4vci(client), isOid4vciEnabled(client));
-    }
-
-    @Test
-    public void testWithoutOffer_Scope() throws Exception {
+    public void testNoOffer_Scope() throws Exception {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 
@@ -102,7 +94,7 @@ public class OID4VCAuthCodeOfferTest extends OID4VCIssuerTestBase {
     }
 
     @Test
-    public void testWithoutOffer_Scope_AuthDetails() throws Exception {
+    public void testNoOffer_Scope_AuthDetails() throws Exception {
 
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 

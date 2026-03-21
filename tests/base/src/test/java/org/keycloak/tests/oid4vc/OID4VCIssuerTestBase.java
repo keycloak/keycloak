@@ -23,6 +23,8 @@ import java.util.UUID;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -50,7 +52,6 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -112,32 +113,32 @@ public abstract class OID4VCIssuerTestBase {
     public static final String minimalJwtTypeCredentialScopeName = "vc-with-minimal-config";
     public static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
 
-    @InjectRealm(config = VCTestRealmConfig.class)
-    protected ManagedRealm testRealm;
-
-    @InjectClient(ref = "oid4vci-client", config = OID4VCIClient.class)
-    ManagedClient managedClient;
-
-    @InjectOAuthClient
-    protected OAuthClient oauth;
-
-    @InjectTimeOffSet
-    TimeOffSet timeOffSet;
-
-    @InjectEvents
-    protected Events events;
-
-    @InjectWebDriver
-    ManagedWebDriver driver;
-
-    @InjectAdminClient
-    Keycloak keycloak;
-
     protected CredentialScopeRepresentation minimalJwtTypeCredentialScope;
     protected CredentialScopeRepresentation jwtTypeCredentialScope;
     protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
 
     protected ClientRepresentation client;
+
+    @InjectRealm(config = VCTestRealmConfig.class)
+    protected ManagedRealm testRealm;
+
+    @InjectClient(ref = "oid4vci-client", config = OID4VCIClient.class)
+    protected ManagedClient managedClient;
+
+    @InjectOAuthClient
+    protected OAuthClient oauth;
+
+    @InjectTimeOffSet
+    protected TimeOffSet timeOffSet;
+
+    @InjectEvents
+    protected Events events;
+
+    @InjectWebDriver
+    protected ManagedWebDriver driver;
+
+    @InjectAdminClient
+    protected Keycloak keycloak;
 
     @TestSetup
     public void configureTestRealm() {
@@ -159,29 +160,7 @@ public abstract class OID4VCIssuerTestBase {
         enableVerifiableCredentialEvents(testRealm);
     }
 
-    public static void enableVerifiableCredentialEvents(ManagedRealm realm) {
-        RealmEventsConfigRepresentation realmEventsConfig = realm.admin().getRealmEventsConfig();
-        List<String> enabledEventTypes = realmEventsConfig.getEnabledEventTypes();
-        if (!enabledEventTypes.contains(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name())) {
-            enabledEventTypes.add(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name());
-            realm.admin().updateRealmEventsConfig(realmEventsConfig);
-        }
-    }
-
-    boolean shouldEnableOid4vci(RealmRepresentation realm) {
-        return true;
-    }
-
-    boolean shouldEnableOid4vci(ClientRepresentation client) {
-        return true;
-    }
-
-    boolean isOid4vciEnabled(ClientRepresentation client) {
-        Map<String, String> attributes = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
-        return Boolean.parseBoolean(attributes.get(OID4VCI_ENABLED_ATTRIBUTE_KEY));
-    }
-
-    CredentialScopeRepresentation getExistingCredentialScope(String scopeName) {
+    protected CredentialScopeRepresentation getExistingCredentialScope(String scopeName) {
         return testRealm.admin().clientScopes().findAll().stream()
                 .filter(it -> scopeName.equals(it.getName()))
                 .map(CredentialScopeRepresentation::new)
@@ -189,7 +168,7 @@ public abstract class OID4VCIssuerTestBase {
                 .orElse(null);
     }
 
-    KeyWrapper getRsaKey(KeyUse keyUse, String algorithm, String keyName) {
+    protected KeyWrapper getRsaKey(KeyUse keyUse, String algorithm, String keyName) {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
             kpg.initialize(2048);
@@ -209,20 +188,20 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    ComponentRepresentation getRsaKeyProvider(KeyWrapper keyWrapper) {
+    protected ComponentRepresentation getRsaKeyProvider(KeyWrapper keyWrapper) {
         return createRsaKeyProviderComponent(keyWrapper, "rsa-key-provider", 0);
     }
 
-    ComponentRepresentation getRsaEncKeyProvider(String algorithm, String keyName, int priority) {
+    protected ComponentRepresentation getRsaEncKeyProvider(String algorithm, String keyName, int priority) {
         KeyWrapper keyWrapper = getRsaKey(KeyUse.ENC, algorithm, keyName);
         return createRsaKeyProviderComponent(keyWrapper, keyName, priority);
     }
 
-    KeyWrapper getRsaKey_Default() {
+    protected KeyWrapper getRsaKey_Default() {
         return getRsaKey(KeyUse.SIG, "RS256", null);
     }
 
-    ComponentRepresentation getAesKeyProvider(String algorithm, String keyName, String keyUse, String providerId) {
+    protected ComponentRepresentation getAesKeyProvider(String algorithm, String keyName, String keyUse, String providerId) {
         // Generate a random AES key (default length: 256 bits)
         byte[] secret = SecretGenerator.getInstance().randomBytes(32); // 32 bytes = 256 bits
         String secretBase64 = Base64.getEncoder().encodeToString(secret);
@@ -245,23 +224,23 @@ public abstract class OID4VCIssuerTestBase {
         return component;
     }
 
-    String getBearerToken(OAuthClient oauthClient) {
+    protected String getBearerToken(OAuthClient oauthClient) {
         return getBearerToken(oauthClient, null);
     }
 
-    String getBearerToken(OAuthClient oauthClient, ClientRepresentation client) {
+    protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client) {
         return getBearerToken(oauthClient, client, null);
     }
 
-    String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String scope) {
+    protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String scope) {
         return getBearerToken(oauthClient, client, "john", scope);
     }
 
-    String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String username, String scope) {
+    protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String username, String scope) {
         return getBearerTokenCodeFlow(oauthClient, client, username, scope).getAccessToken();
     }
 
-    AccessTokenResponse getBearerTokenCodeFlow(OAuthClient oauthClient, ClientRepresentation client, String username, String scope) {
+    protected AccessTokenResponse getBearerTokenCodeFlow(OAuthClient oauthClient, ClientRepresentation client, String username, String scope) {
         var authCode = getAuthorizationCode(oauthClient, client, username, scope);
         return oauthClient.accessTokenRequest(authCode).send();
     }
@@ -287,7 +266,7 @@ public abstract class OID4VCIssuerTestBase {
         return authorizationEndpointResponse;
     }
 
-    AccessTokenResponse getBearerToken(OAuthClient oauthClient, String authCode, OID4VCAuthorizationDetail... authDetail) {
+    protected AccessTokenResponse getBearerToken(OAuthClient oauthClient, String authCode, OID4VCAuthorizationDetail... authDetail) {
         AccessTokenRequest accessTokenRequest = oauthClient.accessTokenRequest(authCode);
         if (authDetail != null && authDetail.length > 0) {
             accessTokenRequest.authorizationDetails(Arrays.asList(authDetail));
@@ -299,9 +278,15 @@ public abstract class OID4VCIssuerTestBase {
         return tokenResponse;
     }
 
-    CredentialScopeRepresentation requireExistingCredentialScope(String scopeName) {
+    protected CredentialScopeRepresentation requireExistingCredentialScope(String scopeName) {
         return Optional.ofNullable(getExistingCredentialScope(scopeName))
                 .orElseThrow(() -> new IllegalStateException("No such credential scope: " + scopeName));
+    }
+
+    protected void updateCredentialScope(CredentialScopeRepresentation clientScope) {
+        ClientScopesResource clientScopesResource = testRealm.admin().clientScopes();
+        ClientScopeResource clientScopeResource = clientScopesResource.get(clientScope.getId());
+        clientScopeResource.update(clientScope);
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
@@ -329,6 +314,15 @@ public abstract class OID4VCIssuerTestBase {
         return component;
     }
 
+    private void enableVerifiableCredentialEvents(ManagedRealm realm) {
+        RealmEventsConfigRepresentation realmEventsConfig = realm.admin().getRealmEventsConfig();
+        List<String> enabledEventTypes = realmEventsConfig.getEnabledEventTypes();
+        if (!enabledEventTypes.contains(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name())) {
+            enabledEventTypes.add(EventType.VERIFIABLE_CREDENTIAL_NONCE_REQUEST.name());
+            realm.admin().updateRealmEventsConfig(realmEventsConfig);
+        }
+    }
+
     // Static Config and RunOnServer Helpers ---------------------------------------------------------------------------
 
     public static class VCTestServerConfig implements KeycloakServerConfig {
@@ -338,7 +332,7 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    static class VCTestServerWithPreAuthCodeEnabled implements KeycloakServerConfig {
+    public static class VCTestServerWithPreAuthCodeEnabled implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_PREAUTH_CODE);
@@ -397,7 +391,7 @@ public abstract class OID4VCIssuerTestBase {
 
             realm.addUser(getUserRepresentation("John Doe", Map.of("did", "did:key:1234"), List.of(CREDENTIAL_OFFER_CREATE.getName()), Collections.emptyMap()));
             realm.addUser(getUserRepresentation("Alice Wonderland", Map.of("did", "did:key:5678"), List.of(), Map.of()));
-            
+
             return realm;
         }
 
@@ -494,7 +488,7 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    static class OID4VCIClient implements ClientConfig {
+    public static class OID4VCIClient implements ClientConfig {
 
         @Override
         public ClientConfigBuilder configure(ClientConfigBuilder client) {
@@ -511,7 +505,7 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    static class ProtocolMapperUtils {
+    public static class ProtocolMapperUtils {
 
         static ProtocolMapperRepresentation getIssuedAtTimeMapper(String subjectProperty, String truncateToTimeUnit, String valueSource) {
             ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
@@ -596,7 +590,7 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    protected static class StaticTimeProvider implements TimeProvider {
+    public static class StaticTimeProvider implements TimeProvider {
         private final int currentTimeInS;
 
         public StaticTimeProvider(int currentTimeInS) {

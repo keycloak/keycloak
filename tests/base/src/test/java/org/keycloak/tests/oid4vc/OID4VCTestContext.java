@@ -33,15 +33,16 @@ public class OID4VCTestContext {
     static final AttachmentKey<AccessTokenResponse> ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(AccessTokenResponse.class);
     static final AttachmentKey<CredentialResponse> CREDENTIAL_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(CredentialResponse.class);
 
-    ClientRepresentation client;
-    String clientId;
-    String issuer;      // Issuing username (i.e. agent who creates credential offers)
-    String holder;      // Holder who requests the credential
-    String credConfigId;
-    String credScopeName;
-    CredentialScopeRepresentation credentialScope;
+    public String clientId;
+    public String issuer;      // Issuing username (i.e. agent who creates credential offers)
+    public String holder;      // Holder who requests the credential
+    public String credConfigId;
+    public String credScopeName;
 
-    Map<AttachmentKey<?>, Object> attachments = new HashMap<>();
+    public ClientRepresentation client;
+    public CredentialScopeRepresentation credentialScope;
+
+    private final Map<AttachmentKey<?>, Object> attachments = new HashMap<>();
 
     public OID4VCTestContext(ClientRepresentation client, CredentialScopeRepresentation credentialScope) {
         this.client = client;
