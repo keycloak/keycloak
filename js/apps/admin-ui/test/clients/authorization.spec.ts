@@ -6,17 +6,24 @@ import {
   assertAxeViolations,
   assertNotificationMessage,
 } from "../utils/masthead.ts";
+import { confirmModal } from "../utils/modal.ts";
 import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import {
   assertRowExists,
+  clickRowKebabItem,
   clickTableRowItem,
   searchItem,
 } from "../utils/table.ts";
 import {
   assertClipboardHasText,
   assertDownload,
+  assertEmptyStateNotVisible,
+  assertTableIsPopulated,
+  assertResource,
+  assertRowNotVisible,
   clickAuthenticationSaveButton,
   clickCopyButton,
+  clickNextPage,
   createAuthorizationScope,
   createPermission,
   createPolicy,
@@ -87,6 +94,44 @@ test.describe.serial("Client authentication subtab", () => {
     await clickSaveButton(page);
 
     await assertNotificationMessage(page, "Resource successfully updated");
+  });
+
+  test("Should navigate to previous page when last resource on current page is deleted", async ({
+    page,
+  }) => {
+    for (let i = 0; i < 15; i++) {
+      const paddedIndex = i.toString().padStart(2, "0");
+      await adminClient.createResource(clientId, {
+        name: `Z Paginated Resource ${paddedIndex}`,
+      });
+    }
+
+    try {
+      await goToResourcesSubTab(page);
+      await assertTableIsPopulated(page);
+
+      await clickNextPage(page);
+      await assertResource(page, "Z Paginated Resource 10");
+
+      for (let i = 10; i < 15; i++) {
+        const paddedIndex = i.toString().padStart(2, "0");
+        const resourceName = `Z Paginated Resource ${paddedIndex}`;
+
+        await clickRowKebabItem(page, resourceName, "Delete");
+        await confirmModal(page);
+        await assertRowNotVisible(page, resourceName);
+      }
+
+      await assertEmptyStateNotVisible(page);
+      await assertTableIsPopulated(page);
+    } finally {
+      for (let i = 0; i < 15; i++) {
+        const paddedIndex = i.toString().padStart(2, "0");
+        await adminClient.deleteResource(clientId, {
+          name: `Z Paginated Resource ${paddedIndex}`,
+        });
+      }
+    }
   });
 
   test("Should create a scope", async ({ page }) => {
