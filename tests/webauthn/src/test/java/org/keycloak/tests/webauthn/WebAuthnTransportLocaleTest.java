@@ -24,20 +24,17 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
-import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
-import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.tests.webauthn.page.WebAuthnLoginPage;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 import org.slf4j.Logger;
@@ -48,7 +45,6 @@ import static org.keycloak.tests.webauthn.authenticators.DefaultVirtualAuthOptio
 import static org.keycloak.tests.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_INTERNAL;
 import static org.keycloak.tests.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_NFC;
 import static org.keycloak.tests.webauthn.authenticators.DefaultVirtualAuthOptions.DEFAULT_USB;
-import static org.keycloak.testsuite.util.FlowUtil.inCurrentRealm;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -61,10 +57,7 @@ public class WebAuthnTransportLocaleTest extends AbstractWebAuthnVirtualTest {
 
     private static final Logger log = LoggerFactory.getLogger(WebAuthnTransportLocaleTest.class);
 
-    @InjectRunOnServer(realmRef = "webauthn")
-    RunOnServerClient runOnServer;
-
-    @org.junit.jupiter.api.BeforeEach
+    @BeforeEach
     public void setupLocale() {
         // Clear cookies to reset locale from any previous test
         driver.driver().manage().deleteAllCookies();
@@ -255,17 +248,7 @@ public class WebAuthnTransportLocaleTest extends AbstractWebAuthnVirtualTest {
     }
 
     private void addWebAuthnCredential(String label) {
-        // Temporarily switch to a simple password-only flow to avoid WebAuthn authentication
-        // This allows adding multiple credentials without being prompted to authenticate with existing ones
-        runOnServer.run(session -> inCurrentRealm(session).copyBrowserFlow("temp-password-flow"));
-        runOnServer.run(session -> inCurrentRealm(session)
-                .selectFlow("temp-password-flow")
-                .inForms(forms -> forms
-                        .clear()
-                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID)
-                )
-                .defineAsBrowserFlow()
-        );
+        managedRealm.updateWithCleanup(r -> r.browserFlow(DefaultAuthenticationFlows.BROWSER_FLOW));
 
         // Add WebAuthn required action to the existing user
         UserResource user = userResource();
@@ -297,15 +280,6 @@ public class WebAuthnTransportLocaleTest extends AbstractWebAuthnVirtualTest {
     }
 
     private void setUpWebAuthnFlow() {
-        runOnServer.run(session -> inCurrentRealm(session).copyBrowserFlow("webAuthnFlow"));
-        runOnServer.run(session -> inCurrentRealm(session)
-                .selectFlow("webAuthnFlow")
-                .inForms(forms -> forms
-                        .clear()
-                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernamePasswordFormFactory.PROVIDER_ID)
-                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, WebAuthnAuthenticatorFactory.PROVIDER_ID)
-                )
-                .defineAsBrowserFlow()
-        );
+        managedRealm.updateWithCleanup(r -> r.browserFlow("browser-webauthn"));
     }
 }
