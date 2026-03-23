@@ -19,6 +19,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.hamcrest.Matchers;
@@ -39,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class UserAttributesTest extends AbstractUserTest {
 
     @Test
+    @DatabaseTest
     public void countByAttribute() {
         createUsers();
 
@@ -66,6 +68,7 @@ public class UserAttributesTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void attributes() {
         UserRepresentation user1 = new UserRepresentation();
         user1.setUsername("user1");
