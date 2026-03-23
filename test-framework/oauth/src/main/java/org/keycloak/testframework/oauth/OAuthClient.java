@@ -10,7 +10,6 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClientConfig;
 
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.PageFactory;
 
 /**
@@ -50,14 +49,6 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     public ClientRegistration clientRegistration() {
         return ClientRegistration.create().httpClient(httpClient().get()).url(baseUrl, config.getRealm()).build();
-    }
-
-    /**
-     * Expose the underlying Selenium WebDriver used by this OAuth client.
-     * Useful for advanced test flows (e.g. inspecting current URL, page source, or data-page-id).
-     */
-    public WebDriver getDriver() {
-        return driver;
     }
 
     public void close() {

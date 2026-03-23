@@ -17,8 +17,6 @@
 
 package org.keycloak.tests.oid4vc;
 
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -46,14 +44,12 @@ import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.EventMatchers;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
-import org.keycloak.util.JsonSerialization;
 
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
@@ -114,23 +110,6 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
      */
     protected abstract String getExpectedClaimPath();
 
-    private void clearLoginState() {
-        try {
-            new OID4VCBasicWallet(keycloak, oauth).logout("john");
-        } catch (Exception e) {
-            log.warn("Failed to logout test user before authorization-details flow", e);
-        }
-
-        if (oauth.getDriver() != null) {
-            try {
-                oauth.getDriver().manage().deleteAllCookies();
-                oauth.getDriver().navigate().to("about:blank");
-            } catch (Exception e) {
-                log.warn("Failed to cleanup browser state before authorization-details flow", e);
-            }
-        }
-    }
-
     protected Oid4vcTestContext prepareOid4vcTestContext(String token) throws Exception {
         Oid4vcTestContext ctx = new Oid4vcTestContext();
 
@@ -182,127 +161,6 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         ctx.openidConfig = openIDProviderConfigurationResponse.getOidcConfiguration();
 
         return ctx;
-    }
-
-    @Test
-    public void testAuthorizationCodeFlowWithAuthorizationDetails() throws Exception {
-
-        Oid4vcTestContext ctx = new Oid4vcTestContext();
-
-        clearLoginState();
-
-        // Get issuer metadata
-        CredentialIssuerMetadataResponse issuerMetadataResponse = oauth.oid4vc().issuerMetadataRequest().send();
-        assertEquals(HttpStatus.SC_OK, issuerMetadataResponse.getStatusCode());
-        ctx.credentialIssuer = issuerMetadataResponse.getMetadata();
-
-        // Get credential_configuration_id
-        ClientScopeRepresentation credClientScope = getCredentialClientScope();
-        String credConfigId = credClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
-
-        // Build authorization_details
-        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-        authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialConfigurationId(credConfigId);
-        authDetail.setLocations(List.of(ctx.credentialIssuer.getCredentialIssuer()));
-
-        String authDetailsJson = JsonSerialization.valueAsString(List.of(authDetail));
-        String authDetailsEncoded = URLEncoder.encode(authDetailsJson, Charset.defaultCharset());
-
-        // [TODO #44320] Requires Credential scope in AuthorizationRequest although already given in AuthorizationDetails
-        AuthorizationEndpointResponse authEndpointResponse = oauth.loginForm()
-                .scope(credClientScope.getName())
-                .param("authorization_details", authDetailsEncoded)
-                .doLogin("john", "password");
-
-        String authCode = authEndpointResponse.getCode();
-        assertNotNull(authCode, "No authorization code");
-
-        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authCode)
-                .authorizationDetails(List.of(authDetail))
-                .send();
-        assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
-
-        String accessToken = tokenResponse.getAccessToken();
-
-        String credentialIdentifier;
-        String credentialConfigurationId;
-        OID4VCAuthorizationDetail authDetailResponse;
-
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-        assertNotNull(authDetailsResponse, "authorization_details should be present in the response");
-        assertEquals(1, authDetailsResponse.size(),
-                "Should have authorization_details for each credential configuration in the offer");
-
-        authDetailResponse = authDetailsResponse.get(0);
-        assertNotNull(authDetailResponse.getCredentialIdentifiers(), "Credential identifiers should be present");
-        assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
-
-        credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
-        assertNotNull(credentialIdentifier, "Credential identifier should not be null");
-
-        credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
-        assertNotNull(credentialConfigurationId, "Credential configuration id should not be null");
-
-        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
-                .credentialIdentifier(credentialIdentifier)
-                .bearerToken(accessToken)
-                .send();
-
-        // Parse the credential response
-        CredentialResponse parsedResponse = credentialResponse.getCredentialResponse();
-        assertNotNull(parsedResponse, "Credential response should not be null");
-        assertNotNull(parsedResponse.getCredentials(), "Credentials should be present");
-        assertEquals(1, parsedResponse.getCredentials().size(), "Should have exactly one credential");
-
-        // Step 3: Verify that the issued credential structure is valid
-        CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
-        assertNotNull(credentialWrapper, "Credential wrapper should not be null");
-
-        // The credential is stored as Object, so we need to cast it
-        Object credentialObj = credentialWrapper.getCredential();
-        assertNotNull(credentialObj, "Credential object should not be null");
-
-        // Verify the credential structure based on format
-        verifyCredentialStructure(credentialObj);
-    }
-
-    @Test
-    public void testAuthorizationCodeFlowWithCredentialIdentifier() throws Exception {
-
-        Oid4vcTestContext ctx = new Oid4vcTestContext();
-
-        // Get issuer metadata
-        CredentialIssuerMetadataResponse issuerMetadataResponse = oauth.oid4vc().issuerMetadataRequest().send();
-        assertEquals(HttpStatus.SC_OK, issuerMetadataResponse.getStatusCode());
-        ctx.credentialIssuer = issuerMetadataResponse.getMetadata();
-
-        // Get credential_configuration_id
-        ClientScopeRepresentation credClientScope = getCredentialClientScope();
-
-        // Build authorization_details
-        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-        authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialIdentifiers(List.of("credential_identifiers_not_allowed_here"));
-        authDetail.setLocations(List.of(ctx.credentialIssuer.getCredentialIssuer()));
-
-        String authDetailsJson = JsonSerialization.valueAsString(List.of(authDetail));
-        String authDetailsEncoded = URLEncoder.encode(authDetailsJson, Charset.defaultCharset());
-
-        // [TODO #44320] Requires Credential scope in AuthorizationRequest although already given in AuthorizationDetails
-        AuthorizationEndpointResponse authEndpointResponse = oauth.loginForm()
-                .scope(credClientScope.getName())
-                .param("authorization_details", authDetailsEncoded)
-                .doLogin("john", "password");
-
-        String authCode = authEndpointResponse.getCode();
-        assertNotNull(authCode, "No authorization code");
-
-        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authCode)
-                .authorizationDetails(List.of(authDetail))
-                .send();
-        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
-        assertTrue(tokenResponse.getErrorDescription().contains("credential_identifiers not allowed"));
     }
 
     @Test
