@@ -1,6 +1,6 @@
 ### Basics
 
-Check the [MIGRATING_TESTS guide](./MIGRATING_TESTS.md) first if you have not already done so.
+Check the [MIGRATING_TESTS guide](MIGRATING_TESTS.md) first if you have not already done so.
 
 When migrating tests use the remote server mode as this will make it much quicker to run tests than having to start/stop
 Keycloak when you run the test from the IDE.

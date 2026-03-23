@@ -20,6 +20,7 @@ package org.keycloak.tests.transactions;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @KeycloakIntegrationTest
+@DatabaseTest
 public class TransactionsTest {
 
     @InjectRunOnServer

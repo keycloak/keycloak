@@ -2,7 +2,7 @@
 <#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
-title="Securing applications with DPoP"
+title="Securing applications with Demonstrating Proof-of-Possession (DPoP)"
 priority=150
 summary="Guide for securing applications with DPoP using Keycloak">
 

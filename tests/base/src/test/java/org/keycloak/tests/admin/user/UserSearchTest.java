@@ -20,6 +20,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.userprofile.DefaultAttributes;
 import org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator;
 
@@ -78,6 +79,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByEmail() {
         createUsers();
 
@@ -99,6 +101,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByUsername() {
         createUsers();
 
@@ -110,6 +113,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByAttribute() {
         createUsers();
 
@@ -131,6 +135,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByMultipleAttributes() {
         createUsers();
 
@@ -151,6 +156,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByAttributesWithPagination() {
         createUsers();
 
@@ -164,6 +170,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void storeAndReadUserWithLongAttributeValue() {
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
 
@@ -187,6 +194,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByLongAttributes() {
         // random string with suffix that makes it case-sensitive and distinct
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES) - 1, true, true) + "u";
@@ -312,6 +320,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchWithFilters() {
         createUser();
 
@@ -365,6 +374,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByIdp() {
         // Add user without IDP
         createUser();
@@ -480,6 +490,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchById() {
         List<String> userIds = createUsers();
         String expectedUserId = userIds.get(0);
@@ -508,6 +519,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void infixSearch() {
         List<String> userIds = createUsers();
 
@@ -543,6 +555,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void prefixSearch() {
         List<String> userIds = createUsers();
 
@@ -610,6 +623,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void wildcardSearch() {
         UserProfileResource upResource = managedRealm.admin().users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
@@ -635,6 +649,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void sqlWildcardEscaping() {
         // Test underscore character doesn't act as SQL wildcard
         createUser("john_doe", "john_doe@test.com");
@@ -672,6 +687,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void exactSearch() {
         List<String> userIds = createUsers();
 

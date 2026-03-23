@@ -39,6 +39,7 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -108,6 +109,7 @@ public class UserProfileTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearchBasedOnUserProfileSettings() {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("test_username");

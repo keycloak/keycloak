@@ -30,6 +30,7 @@ import org.keycloak.operator.Utils;
 import org.keycloak.operator.controllers.KeycloakClientBaseController;
 import org.keycloak.operator.controllers.KeycloakOIDCClientController;
 import org.keycloak.operator.controllers.KeycloakSAMLClientController;
+import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatus;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClient;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakOIDCClientBuilder;
@@ -57,6 +58,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 @Tag(BaseOperatorTest.SLOW)
@@ -112,10 +115,12 @@ public class KeycloakClientTest extends BaseOperatorTest {
                         .noneMatch(c -> Boolean.TRUE.equals(c.getStatus())
                                 && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())));
 
-        // TODO: a success or ready status?
-
         try (var adminClient = KeycloakClientBaseController.getAdminClient(k8sclient, kc, addressOverride)) {
             Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().anyMatch(cr -> cr.getClientId().equals(clientName)));
+
+            KeycloakClientStatus status = k8sclient.resource(client).get().getStatus();
+            String clientUuid = adminClient.realm("master").clients().findByClientId(clientName).get(0).getId();
+            assertThat(status.getUuid(), is(clientUuid));
 
             k8sclient.resource(client).withTimeout(10, TimeUnit.SECONDS).delete();
 
@@ -168,10 +173,12 @@ public class KeycloakClientTest extends BaseOperatorTest {
                         .noneMatch(c -> Boolean.TRUE.equals(c.getStatus())
                                 && KeycloakClientStatusCondition.HAS_ERRORS.equals(c.getType())));
 
-        // TODO: a success or ready status?
-
         try (var adminClient = KeycloakClientBaseController.getAdminClient(k8sclient, kc, addressOverride)) {
             Awaitility.await().until(() -> adminClient.realm("master").clients().findAll().stream().anyMatch(cr -> cr.getClientId().equals(clientName)));
+
+            KeycloakClientStatus status = k8sclient.resource(client).get().getStatus();
+            String clientUuid = adminClient.realm("master").clients().findByClientId(clientName).get(0).getId();
+            assertThat(status.getUuid(), is(clientUuid));
 
             k8sclient.resource(client).withTimeout(10, TimeUnit.SECONDS).delete();
 

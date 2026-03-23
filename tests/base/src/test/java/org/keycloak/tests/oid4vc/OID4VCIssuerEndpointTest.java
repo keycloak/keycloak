@@ -20,7 +20,6 @@ package org.keycloak.tests.oid4vc;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +64,6 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -85,17 +83,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.validate.validators.PatternValidator;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.logging.Logger;
-import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VC;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
@@ -116,21 +104,10 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
 
-    private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerEndpointTest.class);
-
-    protected static final TimeProvider TIME_PROVIDER = new StaticTimeProvider(1000);
-
-    protected ClientScopeRepresentation sdJwtTypeCredentialClientScope;
-    protected ClientScopeRepresentation jwtTypeCredentialClientScope;
-    protected ClientScopeRepresentation minimalJwtTypeCredentialClientScope;
-
-    protected CloseableHttpClient httpClient;
-    protected ClientRepresentation client;
+    static final TimeProvider TIME_PROVIDER = new OID4VCIssuerTestBase.StaticTimeProvider(1000);
 
     @InjectKeycloakUrls
     KeycloakUrls keycloakUrls;
-
-    record OAuth2CodeEntry(String key, OAuth2Code code) {}
 
     @Override
     public void configureTestRealm() {
@@ -139,69 +116,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
         ComponentsResource components = testRealm.admin().components();
         components.add(getRsaKeyProvider(getRsaKey_Default())).close();
         components.add(getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100)).close();
-        components.add(getUserProfileProvider());
-    }
-
-    @BeforeEach
-    public void setup() {
-        httpClient = HttpClientBuilder.create().build();
-        client = requireExistingClient(OID4VCI_CLIENT_ID);
-        sdJwtTypeCredentialClientScope = requireExistingClientScope(sdJwtTypeCredentialScopeName);
-        jwtTypeCredentialClientScope = requireExistingClientScope(jwtTypeCredentialScopeName);
-        minimalJwtTypeCredentialClientScope = requireExistingClientScope(minimalJwtTypeCredentialScopeName);
-    }
-
-    protected static OAuth2CodeEntry prepareSessionCode(
-            KeycloakSession session,
-            AppAuthManager.BearerTokenAuthenticator authenticator,
-            String note) {
-
-        AuthenticationManager.AuthResult authResult = authenticator.authenticate();
-        UserSessionModel userSessionModel = authResult.session();
-        AuthenticatedClientSessionModel authenticatedClientSessionModel =
-                userSessionModel.getAuthenticatedClientSessionByClient(authResult.client().getId());
-
-        OAuth2Code oauth2Code = new OAuth2Code(
-                SecretGenerator.getInstance().randomString(),
-                Time.currentTime() + 6000,
-                SecretGenerator.getInstance().randomString(),
-                CREDENTIAL_OFFER_URI_CODE_SCOPE,
-                authenticatedClientSessionModel.getUserSession().getId()
-        );
-
-        String nonce = OAuth2CodeParser.persistCode(session, authenticatedClientSessionModel, oauth2Code);
-        authenticatedClientSessionModel.setNote(nonce, note);
-
-        return new OAuth2CodeEntry(nonce, oauth2Code);
-    }
-
-    protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
-            KeycloakSession session,
-            AppAuthManager.BearerTokenAuthenticator authenticator) {
-
-        JwtCredentialBuilder jwtCredentialBuilder = new JwtCredentialBuilder(TIME_PROVIDER, session);
-        SdJwtCredentialBuilder sdJwtCredentialBuilder = new SdJwtCredentialBuilder();
-
-        Map<String, CredentialBuilder> credentialBuilders = Map.of(
-                jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
-                sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder
-        );
-
-        return prepareIssuerEndpoint(session, authenticator, credentialBuilders);
-    }
-
-    protected static OID4VCIssuerEndpoint prepareIssuerEndpoint(
-            KeycloakSession session,
-            AppAuthManager.BearerTokenAuthenticator authenticator,
-            Map<String, CredentialBuilder> credentialBuilders) {
-
-        return new OID4VCIssuerEndpoint(
-                session,
-                credentialBuilders,
-                authenticator,
-                TIME_PROVIDER,
-                30
-        );
+        components.add(getUserProfileProvider()).close();
     }
 
     protected ClientScopeRepresentation createOptionalClientScope(
@@ -261,14 +176,59 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
 
         List<ProtocolMapperRepresentation> protocolMappers;
         if (protocolMapperReferenceFile == null) {
-            protocolMappers = getProtocolMappers(scopeName);
+            protocolMappers = ProtocolMapperUtils.getProtocolMappers(scopeName);
         } else {
             protocolMappers = resolveProtocolMappers(protocolMapperReferenceFile);
-            protocolMappers.add(getStaticClaimMapper(scopeName));
+            protocolMappers.add(ProtocolMapperUtils.getStaticClaimMapper(scopeName));
         }
 
         clientScope.setProtocolMappers(protocolMappers);
         return clientScope;
+    }
+
+    protected String getBasePath(String realm) {
+        return getRealmPath(realm) + "/protocol/oid4vc/";
+    }
+
+    protected String getRealmPath(String realm) {
+        return keycloakUrls.getBaseUrl() + "/realms/" + realm;
+    }
+
+    protected String getRealmMetadataPath(String realm) {
+        return keycloakUrls.getBaseUrl() + "/.well-known/openid-credential-issuer/realms/" + realm;
+    }
+
+    protected CredentialIssuer getCredentialIssuerMetadata() {
+        CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc().doIssuerMetadataRequest();
+        return metadataResponse.getMetadata();
+    }
+
+    protected ComponentRepresentation getUserProfileProvider() {
+        // Add the User DID attribute, with the same logic as in DeclarativeUserProfileProviderFactory
+        UPConfig profileConfig = UPConfigUtils.parseSystemDefaultConfig();
+
+        if (profileConfig.getAttribute(UserModel.DID) == null) {
+            UPAttribute attr = new UPAttribute(UserModel.DID);
+            attr.setDisplayName("${did}");
+            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
+            attr.setValidations(Map.of(
+                    PatternValidator.ID, Map.of(
+                            "pattern", "^did:.+:.+$",
+                            "error-message", "Value must start with 'did:scheme:'"
+                    )
+            ));
+            profileConfig.addOrReplaceAttribute(attr);
+        }
+
+        ComponentRepresentation componentRepresentation = new ComponentRepresentation();
+        componentRepresentation.setId(UUID.randomUUID().toString());
+        componentRepresentation.setProviderId("declarative-user-profile");
+        componentRepresentation.setProviderType(UserProfileProvider.class.getName());
+        componentRepresentation.setConfig(new MultivaluedHashMap<>(
+                Map.of(UP_COMPONENT_CONFIG_KEY, List.of(JsonSerialization.valueAsString(profileConfig)))
+        ));
+
+        return componentRepresentation;
     }
 
     protected ClientScopeRepresentation registerOptionalClientScope(ClientScopeRepresentation clientScope) {
@@ -281,21 +241,24 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
         return clientScope;
     }
 
-    protected ClientRepresentation requireExistingClient(String clientId) {
-        return testRealm.admin().clients().findByClientId(clientId).stream()
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("No such client: " + clientId));
+    protected void requestCredentialWithIdentifier(
+            String token,
+            String credentialIdentifier,
+            CredentialResponseHandler responseHandler,
+            ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
+
+        CredentialResponse credentialResponse = oauth.oid4vc()
+                .credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .bearerToken(token)
+                .send()
+                .getCredentialResponse();
+
+        // Use response handler to customize checks based on formats.
+        responseHandler.handleCredentialResponse(credentialResponse, expectedClientScope);
     }
 
-    protected ClientScopeRepresentation requireExistingClientScope(String scopeName) {
-        // Check if the client scope already exists
-        return testRealm.admin().clientScopes().findAll().stream()
-                .filter(scope -> scope.getName().equals(scopeName))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("No such client scope: " + scopeName));
-    }
-
-    public static List<ProtocolMapperRepresentation> resolveProtocolMappers(String protocolMapperReferenceFile) {
+    protected List<ProtocolMapperRepresentation> resolveProtocolMappers(String protocolMapperReferenceFile) {
         if (protocolMapperReferenceFile == null) {
             return null;
         }
@@ -414,78 +377,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
         }
     }
 
-    protected String getBasePath(String realm) {
-        return getRealmPath(realm) + "/protocol/oid4vc/";
-    }
-
-    protected String getRealmPath(String realm) {
-        return keycloakUrls.getBaseUrl() + "/realms/" + realm;
-    }
-
-    protected String getRealmMetadataPath(String realm) {
-        return keycloakUrls.getBaseUrl() + "/.well-known/openid-credential-issuer/realms/" + realm;
-    }
-
-    protected void requestCredentialWithIdentifier(
-            String token,
-            String credentialEndpoint,
-            String credentialIdentifier,
-            CredentialResponseHandler responseHandler,
-            ClientScopeRepresentation expectedClientScope) throws IOException, VerificationException {
-
-        CredentialRequest request = new CredentialRequest();
-        request.setCredentialIdentifier(credentialIdentifier);
-
-        StringEntity stringEntity = new StringEntity(JsonSerialization.writeValueAsString(request), ContentType.APPLICATION_JSON);
-
-        HttpPost postCredential = new HttpPost(credentialEndpoint);
-        postCredential.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
-        postCredential.setEntity(stringEntity);
-
-        CredentialResponse credentialResponse;
-        try (CloseableHttpResponse credentialRequestResponse = httpClient.execute(postCredential)) {
-            assertEquals(HttpStatus.SC_OK, credentialRequestResponse.getStatusLine().getStatusCode());
-            String s = IOUtils.toString(credentialRequestResponse.getEntity().getContent(), StandardCharsets.UTF_8);
-            credentialResponse = JsonSerialization.readValue(s, CredentialResponse.class);
-        }
-
-        // Use response handler to customize checks based on formats.
-        responseHandler.handleCredentialResponse(credentialResponse, expectedClientScope);
-    }
-
-    public CredentialIssuer getCredentialIssuerMetadata() {
-        CredentialIssuerMetadataResponse metadataResponse = oauth.oid4vc().doIssuerMetadataRequest();
-        return metadataResponse.getMetadata();
-    }
-
-    private ComponentRepresentation getUserProfileProvider() {
-        // Add the User DID attribute, with the same logic as in DeclarativeUserProfileProviderFactory
-        UPConfig profileConfig = UPConfigUtils.parseSystemDefaultConfig();
-
-        if (profileConfig.getAttribute(UserModel.DID) == null) {
-            UPAttribute attr = new UPAttribute(UserModel.DID);
-            attr.setDisplayName("${did}");
-            attr.setPermissions(new UPAttributePermissions(Set.of(ROLE_ADMIN, ROLE_USER), Set.of(ROLE_ADMIN, ROLE_USER)));
-            attr.setValidations(Map.of(
-                    PatternValidator.ID, Map.of(
-                            "pattern", "^did:.+:.+$",
-                            "error-message", "Value must start with 'did:scheme:'"
-                    )
-            ));
-            profileConfig.addOrReplaceAttribute(attr);
-        }
-
-        ComponentRepresentation componentRepresentation = new ComponentRepresentation();
-        componentRepresentation.setId(UUID.randomUUID().toString());
-        componentRepresentation.setProviderId("declarative-user-profile");
-        componentRepresentation.setProviderType(UserProfileProvider.class.getName());
-        componentRepresentation.setConfig(new MultivaluedHashMap<>(
-                Map.of(UP_COMPONENT_CONFIG_KEY, List.of(JsonSerialization.valueAsString(profileConfig)))
-        ));
-
-        return componentRepresentation;
-    }
-
     protected void withCausePropagation(Runnable r) throws Throwable {
         try {
             r.run();
@@ -497,7 +388,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
         }
     }
 
-    protected static class CredentialResponseHandler {
+    protected class CredentialResponseHandler {
         final Logger log = Logger.getLogger(OID4VCIssuerEndpointTest.class);
 
         protected void handleCredentialResponse(CredentialResponse credentialResponse, ClientScopeRepresentation clientScope) throws VerificationException {
@@ -552,5 +443,63 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
 
             assertFalse(subClaims.containsKey("AnotherCredentialType"), "Unexpected other claim");
         }
+    }
+
+    // Static RunOnServer Utils
+
+    record OAuth2CodeEntry(String key, OAuth2Code code) {}
+
+
+    static OID4VCIssuerEndpoint prepareIssuerEndpoint(
+            KeycloakSession session,
+            AppAuthManager.BearerTokenAuthenticator authenticator) {
+
+        JwtCredentialBuilder jwtCredentialBuilder = new JwtCredentialBuilder(TIME_PROVIDER, session);
+        SdJwtCredentialBuilder sdJwtCredentialBuilder = new SdJwtCredentialBuilder();
+
+        Map<String, CredentialBuilder> credentialBuilders = Map.of(
+                jwtCredentialBuilder.getSupportedFormat(), jwtCredentialBuilder,
+                sdJwtCredentialBuilder.getSupportedFormat(), sdJwtCredentialBuilder
+        );
+
+        return prepareIssuerEndpoint(session, authenticator, credentialBuilders);
+    }
+
+    static OID4VCIssuerEndpoint prepareIssuerEndpoint(
+            KeycloakSession session,
+            AppAuthManager.BearerTokenAuthenticator authenticator,
+            Map<String, CredentialBuilder> credentialBuilders) {
+
+        return new OID4VCIssuerEndpoint(
+                session,
+                credentialBuilders,
+                authenticator,
+                TIME_PROVIDER,
+                30
+        );
+    }
+
+    static OAuth2CodeEntry prepareSessionCode(
+            KeycloakSession session,
+            AppAuthManager.BearerTokenAuthenticator authenticator,
+            String note) {
+
+        AuthenticationManager.AuthResult authResult = authenticator.authenticate();
+        UserSessionModel userSessionModel = authResult.session();
+        AuthenticatedClientSessionModel authenticatedClientSessionModel =
+                userSessionModel.getAuthenticatedClientSessionByClient(authResult.client().getId());
+
+        OAuth2Code oauth2Code = new OAuth2Code(
+                SecretGenerator.getInstance().randomString(),
+                Time.currentTime() + 6000,
+                SecretGenerator.getInstance().randomString(),
+                CREDENTIAL_OFFER_URI_CODE_SCOPE,
+                authenticatedClientSessionModel.getUserSession().getId()
+        );
+
+        String nonce = OAuth2CodeParser.persistCode(session, authenticatedClientSessionModel, oauth2Code);
+        authenticatedClientSessionModel.setNote(nonce, note);
+
+        return new OID4VCIssuerEndpointTest.OAuth2CodeEntry(nonce, oauth2Code);
     }
 }

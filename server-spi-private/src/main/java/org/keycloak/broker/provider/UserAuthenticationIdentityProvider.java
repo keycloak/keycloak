@@ -87,10 +87,23 @@ public interface UserAuthenticationIdentityProvider<C extends IdentityProviderMo
 
     /**
      * <p>Returns a {@link jakarta.ws.rs.core.Response} containing the token previously stored during the authentication process for a
-     * specific user.</p>
+     * specific user. Deprecated method used for Identity Brokering API V1 that only uses the database.</p>
      *
+     * @param session
+     * @param identity
+     * @return
+     */
+    @Deprecated
+    Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity);
+
+    /**
+     * <p>Returns a {@link jakarta.ws.rs.core.Response} containing the token previously stored during the authentication process for a
+     * specific user. This method looks in the user session and in the database if not present.</p>
+     *
+     * @param session
      * @param identity
      * @param userSession
+     * @param user
      * @return
      */
     Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user);

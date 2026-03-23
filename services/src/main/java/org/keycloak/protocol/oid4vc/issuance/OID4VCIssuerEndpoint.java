@@ -349,10 +349,10 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Creates a Pre-Authorized offer that is bound to the calling user.
+     * Creates an authorization code grant offer that is bound to the calling user.
      */
     public Response createCredentialOffer(String credConfigId) {
-        return createCredentialOffer(credConfigId, true, null);
+        return createCredentialOffer(credConfigId, false, null);
     }
 
     /**
@@ -402,7 +402,7 @@ public class OID4VCIssuerEndpoint {
      * | Type    | Mime-Type        | Notes                                     |
      * +---------+------------------+-------------------------------------------+
      * | uri     | application/json | JSON document that contains the offer uri |
-     * | uri+qr  | application/json | Same as 'uri' plus url encoded qr-code    |
+     * | uri_qr  | application/json | Same as 'uri' plus url encoded qr-code    |
      * | qr      | image/png        | Credential offer encoded as qr-code image |
      * +---------+------------------+---------+---------------------------------+
      * </p>
@@ -416,7 +416,7 @@ public class OID4VCIssuerEndpoint {
      * @param credentialConfigurationId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized
      * @param targetUser    The username that the offer is authorized for
-     * @param expiresAt      The date/time when the offer expires (in Unix timestamp seconds)
+     * @param expiresAt     The date/time when the offer expires (in Unix timestamp seconds)
      * @param responseType  The response type, which can be 'uri', 'qr' or 'uri+qr'
      * @param width         The width of the QR code image
      * @param height        The height of the QR code image
@@ -426,7 +426,7 @@ public class OID4VCIssuerEndpoint {
     @Path(CREATE_CREDENTIAL_OFFER_PATH)
     public Response createCredentialOffer(
             @QueryParam("credential_configuration_id") String credentialConfigurationId,
-            @QueryParam("pre_authorized") @DefaultValue("true") Boolean preAuthorized,
+            @QueryParam("pre_authorized") @DefaultValue("false") Boolean preAuthorized,
             @QueryParam("target_user") String targetUser,
             @QueryParam("expire") Integer expiresAt,
             @QueryParam("type") @DefaultValue("uri") OfferResponseType responseType,

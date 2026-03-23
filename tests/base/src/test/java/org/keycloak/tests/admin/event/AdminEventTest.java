@@ -52,6 +52,7 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.util.JsonSerialization;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -71,6 +72,7 @@ import static org.hamcrest.Matchers.is;
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 @KeycloakIntegrationTest
+@DatabaseTest
 public class AdminEventTest {
 
     @InjectRealm(attachTo = "master", ref = "master")

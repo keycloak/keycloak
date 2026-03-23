@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
-import org.keycloak.representations.admin.v2.BaseRepresentation;
+import org.keycloak.representations.admin.v2.RepresentationWithUuid;
 import org.keycloak.validation.jakarta.ValidationContext;
 
 /**
@@ -17,7 +17,7 @@ public class ClientUuidProvider implements UuidProvider {
     }
 
     @Override
-    public String getPersistedUuid(ValidationContext context, BaseRepresentation representation) {
+    public String getPersistedUuid(ValidationContext context, RepresentationWithUuid representation) {
         String clientId = ((BaseClientRepresentation) representation).getClientId();
         return Optional.ofNullable(context.realm().getClientByClientId(clientId)).map(ClientModel::getId).orElse(null);
     }
