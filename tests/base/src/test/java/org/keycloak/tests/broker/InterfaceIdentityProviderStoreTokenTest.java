@@ -87,7 +87,7 @@ public interface InterfaceIdentityProviderStoreTokenTest {
         });
 
         AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
-        Assertions.assertEquals(502, externalTokens.getStatusCode());
+        Assertions.assertFalse(externalTokens.isSuccess());
     }
 
     @Test

@@ -244,6 +244,10 @@ public abstract class AbstractOAuthClient<T> {
         }.send();
     }
 
+    public AccessTokenResponse doFetchExternalIdpTokenPost(String providerAlias, String accessToken) {
+        return new FetchExternalIdpTokenPostRequest(providerAlias, accessToken, this).send();
+    }
+
     public CibaClient ciba() {
         return new CibaClient(this);
     }

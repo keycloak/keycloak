@@ -1,5 +1,6 @@
 package org.keycloak.tests.broker;
 
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
@@ -7,6 +8,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.JpaRealmProviderFactory;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
@@ -35,7 +37,69 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
 
     @Override
     default AbstractHttpResponse doFetchExternalIdpToken(String token) {
-        return getOAuthClient().doFetchExternalIdpToken(IDP_ALIAS, token);
+        return getOAuthClient().doFetchExternalIdpTokenPost(IDP_ALIAS, token);
+    }
+
+    @Test
+    default void testIdentityBrokeringAPIV1Disabled() {
+        OAuthClient oauth = getOAuthClient();
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        AbstractHttpResponse externalTokens = oauth.doFetchExternalIdpTokenString(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertFalse(externalTokens.isSuccess());
+    }
+
+    @Test
+    default void testPublicClient() {
+        ManagedRealm realm = getRealm();
+        OAuthClient oauth = getOAuthClient();
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(realm.admin(), "test-app");
+        ClientRepresentation clientRep = clientResource.toRepresentation();
+        realm.cleanup().add(r -> {
+            clientRep.setPublicClient(false);
+            clientResource.update(clientRep);
+        });
+        clientRep.setPublicClient(true);
+        clientResource.update(clientRep);
+        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
+        Assertions.assertEquals(403, externalTokens.getStatusCode());
+        Assertions.assertEquals(OAuthErrorException.INVALID_CLIENT, ((AccessTokenResponse) externalTokens).getError());
+    }
+
+    @Test
+    default void testDifferentAudience() {
+        ManagedRealm realm = getRealm();
+        OAuthClient oauth = getOAuthClient();
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        realm.admin().clients().create(ClientConfigBuilder.create()
+                .clientId("test-app-other")
+                .attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.TRUE.toString())
+                .attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, IDP_ALIAS)
+                .secret("test-secret")
+                .build());
+        realm.cleanup().add(r -> oauth.client("test-app", "test-secret"));
+        AccessTokenResponse externalTokens = oauth.client("test-app-other", "test-secret").doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertEquals(403, externalTokens.getStatusCode());
+        Assertions.assertEquals(OAuthErrorException.UNAUTHORIZED_CLIENT, externalTokens.getError());
+        Assertions.assertEquals("Client is not within the token audience", externalTokens.getErrorDescription());
     }
 
     @Test
@@ -50,7 +114,7 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
         Assertions.assertTrue(tokenResponse.isSuccess());
 
         // external access enabled initially
-        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, tokenResponse.getAccessToken());
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, tokenResponse.getAccessToken());
         Assertions.assertTrue(tokenResponse.isSuccess());
         checkSuccessfulTokenResponse(externalTokens);
 
@@ -58,22 +122,22 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
         ClientResource clientResource = AdminApiUtil.findClientByClientId(realm.admin(), "test-app");
         ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
         client.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.FALSE.toString()));
-        externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, tokenResponse.getAccessToken());
+        externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, tokenResponse.getAccessToken());
         Assertions.assertEquals(403, externalTokens.getStatusCode());
 
         // external access disabled but idp selected
         client.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.FALSE.toString()).attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, IDP_ALIAS));
-        externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, tokenResponse.getAccessToken());
+        externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, tokenResponse.getAccessToken());
         Assertions.assertEquals(403, externalTokens.getStatusCode());
 
         // external access enabled but idp different
         client.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.TRUE.toString()).attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, "other-idp"));
-        externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, tokenResponse.getAccessToken());
+        externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, tokenResponse.getAccessToken());
         Assertions.assertEquals(403, externalTokens.getStatusCode());
 
         // enable again
         client.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, Boolean.TRUE.toString()).attribute(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP, IDP_ALIAS));
-        externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, tokenResponse.getAccessToken());
+        externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, tokenResponse.getAccessToken());
         Assertions.assertTrue(tokenResponse.isSuccess());
         checkSuccessfulTokenResponse(externalTokens);
     }
@@ -92,7 +156,7 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
         AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertTrue(internalTokens.isSuccess());
 
-        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
         Assertions.assertTrue(externalTokens.isSuccess());
         checkSuccessfulTokenResponse(externalTokens);
 
@@ -112,7 +176,7 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
 
             internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
             Assertions.assertEquals(200, internalTokens.getStatusCode());
-            AccessTokenResponse externalTokens2 = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+            AccessTokenResponse externalTokens2 = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
             Assertions.assertEquals(200, externalTokens2.getStatusCode());
 
             // Check that we now have a different access and refresh token

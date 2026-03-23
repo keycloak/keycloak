@@ -19,6 +19,7 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
@@ -49,7 +50,7 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
         AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertTrue(internalTokens.isSuccess());
 
-        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(200, externalTokens.getStatusCode());
         checkSuccessfulTokenResponse(externalTokens);
 
@@ -60,16 +61,17 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
             return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(r, user, IDP_ALIAS).getToken();
         }, String.class);
 
-        getTimeOffSet().set(externalTokens.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
+        getTimeOffSet().set(((AccessTokenResponse) externalTokens).getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
 
         internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
         Assertions.assertEquals(200, internalTokens.getStatusCode());
-        AccessTokenResponse externalTokens2 = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        AbstractHttpResponse externalTokens2 = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(200, externalTokens2.getStatusCode());
         checkSuccessfulTokenResponse(externalTokens);
 
         // Check that we now have a different access and refresh token
-        Assertions.assertNotEquals(externalTokens.getAccessToken(), externalTokens2.getAccessToken());
+        Assertions.assertNotEquals(((AccessTokenResponse) externalTokens).getAccessToken(),
+                ((AccessTokenResponse) externalTokens2).getAccessToken());
 
         String newTokenFromDatabase = getRunOnServer().fetch(session -> {
             RealmModel r = session.realms().getRealmByName(realmName);
@@ -94,11 +96,11 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
         AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertTrue(internalTokens.isSuccess());
 
-        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(200, externalTokens.getStatusCode());
         checkSuccessfulTokenResponse(externalTokens);
 
-        getTimeOffSet().set(externalTokens.getExpiresIn() + 10);
+        getTimeOffSet().set(((AccessTokenResponse) externalTokens).getExpiresIn() + 10);
 
         IdentityProviderResource resource = realm.admin().identityProviders().get(IDP_ALIAS);
         IdentityProviderRepresentation idp = resource.toRepresentation();
@@ -107,7 +109,7 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
 
         internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
         Assertions.assertEquals(200, internalTokens.getStatusCode());
-        AccessTokenResponse error = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        AbstractHttpResponse error = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertFalse(error.isSuccess());
 
         logout();
@@ -142,19 +144,20 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
         Assertions.assertTrue(internalTokensPasswordGrant.isSuccess());
 
         //external token from direct grant
-        AccessTokenResponse externalTokensPasswordGrant = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokensPasswordGrant.getAccessToken());
+        AbstractHttpResponse externalTokensPasswordGrant = doFetchExternalIdpToken(internalTokensPasswordGrant.getAccessToken());
         Assertions.assertEquals(200, externalTokensPasswordGrant.getStatusCode());
 
-        getTimeOffSet().set(externalTokensPasswordGrant.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
+        getTimeOffSet().set(((AccessTokenResponse) externalTokensPasswordGrant).getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
 
         //test refresh with external token from direct grant
         internalTokensPasswordGrant = oauth.doRefreshTokenRequest(internalTokensPasswordGrant.getRefreshToken());
         Assertions.assertEquals(200, internalTokensPasswordGrant.getStatusCode());
-        AccessTokenResponse externalTokensPasswordGrant2 = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+        AbstractHttpResponse externalTokensPasswordGrant2 = doFetchExternalIdpToken(internalTokens.getAccessToken());
         Assertions.assertEquals(200, externalTokensPasswordGrant2.getStatusCode());
 
         // Check that now we have a different token
-        Assertions.assertNotEquals(externalTokensPasswordGrant.getAccessToken(), externalTokensPasswordGrant2.getAccessToken());
+        Assertions.assertNotEquals(((AccessTokenResponse) externalTokensPasswordGrant).getAccessToken(),
+                ((AccessTokenResponse) externalTokensPasswordGrant2).getAccessToken());
 
         if (!isIdentityBrokeringAPIV1()) {
             //disable the store token
@@ -163,11 +166,11 @@ public interface InterfaceOIDCIdentityProviderStoreTokenTest extends InterfaceId
             });
 
             //success because external token are in the user session after the broker login
-            AccessTokenResponse externalTokens = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokens.getAccessToken());
+            AbstractHttpResponse externalTokens = doFetchExternalIdpToken(internalTokens.getAccessToken());
             Assertions.assertEquals(200, externalTokens.getStatusCode());
 
             //fail because external token are not in the user session
-            externalTokensPasswordGrant = oauth.doFetchExternalIdpToken(IDP_ALIAS, internalTokensPasswordGrant.getAccessToken());
+            externalTokensPasswordGrant = doFetchExternalIdpToken(internalTokensPasswordGrant.getAccessToken());
             Assertions.assertEquals(400, externalTokensPasswordGrant.getStatusCode());
         }
 
