@@ -121,8 +121,8 @@ public class OfflineTokenTest {
     private static final String OFFLINE_CLIENT_APP_URI = "http://localhost:8080/offline-client";
     private static final String SERVICE_ACCOUNT_USER_ID = KeycloakModelUtils.generateId();
     private static final String TEST_APP_REDIRECT_URI = "http://localhost:8080/auth/realms/test/app/auth";
-    private static String userId;
-    private static String serviceAccountUserId;
+    private String userId;
+    private String serviceAccountUserId;
 
     @InjectRealm(config = OfflineTokenTest.OfflineTokenRealmConfig.class)
     ManagedRealm realm;
@@ -163,8 +163,8 @@ public class OfflineTokenTest {
         // Force server-side logout
         try {
             adminClient.realm("test").logoutAll();
-        } catch (Exception e) {
-            // Ignore
+        } catch (NotFoundException e) {
+            // Expected behavior on the first run if the realm/sessions don't exist yet. Safe to ignore.
         }
 
         // Clear browser state
