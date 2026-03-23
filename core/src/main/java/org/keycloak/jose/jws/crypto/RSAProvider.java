@@ -41,8 +41,14 @@ public class RSAProvider implements SignatureProvider {
                 return "SHA384withRSA";
             case RS512:
                 return "SHA512withRSA";
+            case PS256:
+                return "SHA256withRSAandMGF1";
+            case PS384:
+                return "SHA384withRSAandMGF1";
+            case PS512:
+                return "SHA512withRSAandMGF1";
             default:
-                throw new IllegalArgumentException("Not an RSA Algorithm");
+                throw new IllegalArgumentException("Not a supported RSA Algorithm: " + alg);
         }
     }
 
