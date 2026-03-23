@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -78,6 +79,16 @@ public class ImportDistTest {
 
     @Test
     void testImportNewRealm(KeycloakDistribution dist) throws IOException {
+        dist.setEnvVar("MY_SECRET", "admin123");
+
+        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+        CLIResult result = rawDist.run("bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET");
+
+        assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
+
+        rawDist.setManualStop(true);
+        result = rawDist.run("start-dev", "--db-url-properties=;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE");
+
         File file = new File("target/realm.json");
 
         RealmRepresentation newRealm=new RealmRepresentation();
@@ -90,20 +101,14 @@ public class ImportDistTest {
             mapper.writeValue(fos, newRealm);
         }
 
-        var cliResult = dist.run("import", "--file=" + file.getAbsolutePath());
+        CLIResult adminResult = rawDist.kcadm("get", "realms", "--server", "http://localhost:8080", "--realm", "master", "--client", "admin", "--secret", "admin123");
+        assertEquals(0, adminResult.exitCode());
+        assertFalse(adminResult.getOutput().contains("anotherRealm"));
+
+        var cliResult = rawDist.kc("import", "--db-url-properties=;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=TRUE", "--file=" + file.getAbsolutePath());
         cliResult.assertMessage("Realm 'anotherRealm' imported");
 
-        dist.setEnvVar("MY_SECRET", "admin123");
-
-        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
-        CLIResult result = rawDist.run("bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET");
-
-        assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
-
-        rawDist.setManualStop(true);
-        rawDist.run("start-dev");
-
-        CLIResult adminResult = rawDist.kcadm("get", "realms", "--server", "http://localhost:8080", "--realm", "master", "--client", "admin", "--secret", "admin123");
+        adminResult = rawDist.kcadm("get", "realms", "--server", "http://localhost:8080", "--realm", "master", "--client", "admin", "--secret", "admin123");
 
         assertEquals(0, adminResult.exitCode());
         assertTrue(adminResult.getOutput().contains("anotherRealm"));

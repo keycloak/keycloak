@@ -17,10 +17,10 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
@@ -35,15 +35,17 @@ import org.keycloak.models.cache.infinispan.LazyLoader;
  */
 public class CachedRole extends AbstractRevisioned implements InRealm {
 
+    public record CompositeRolesRecord (Set<String> clientContainerIds, Set<String> ids) {}
+
     final protected String name;
     final protected String realm;
     final protected String description;
-    final protected LazyLoader<RoleModel, Set<String>> composites;
+    final protected LazyLoader<RoleModel, CompositeRolesRecord> composites;
     /**
      * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
      * items should be evicted.
      */
-    private Set<String> cachedComposites = new HashSet<>();
+    private volatile CompositeRolesRecord cachedComposites = new CompositeRolesRecord(Set.of(), Set.of());
     private final LazyLoader<RoleModel, MultivaluedHashMap<String, String>> attributes;
 
     public CachedRole(long revision, RoleModel model, RealmModel realm) {
@@ -51,7 +53,17 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
         description = model.getDescription();
         name = model.getName();
         this.realm = realm.getId();
-        composites = new DefaultLazyLoader<>(roleModel -> roleModel.getCompositesStream().map(RoleModel::getId).collect(Collectors.toSet()), HashSet::new);
+        composites = new DefaultLazyLoader<>(roleModel -> {
+            Set<String> ids = new HashSet<>();
+            Set<String> clientContainerIds = new HashSet<>();
+            roleModel.getCompositesStream().forEach(r -> {
+                ids.add(r.getId());
+                if (r.isClientRole()) {
+                    clientContainerIds.add(r.getContainerId());
+                }
+            });
+            return new CompositeRolesRecord(Collections.unmodifiableSet(clientContainerIds), Collections.unmodifiableSet(ids));
+        }, null);
         attributes = new DefaultLazyLoader<>(roleModel -> new MultivaluedHashMap<>(roleModel.getAttributes()), MultivaluedHashMap::new);
     }
 
@@ -59,6 +71,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
         return name;
     }
 
+    @Override
     public String getRealm() {
         return realm;
     }
@@ -68,10 +81,10 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
     }
 
     public boolean isComposite(KeycloakSession session, Supplier<RoleModel> roleModel) {
-        return !getComposites(session, roleModel).isEmpty();
+        return !getComposites(session, roleModel).ids().isEmpty();
     }
 
-    public Set<String> getComposites(KeycloakSession session, Supplier<RoleModel> roleModel) {
+    public CompositeRolesRecord getComposites(KeycloakSession session, Supplier<RoleModel> roleModel) {
         cachedComposites = composites.get(session, roleModel);
         return cachedComposites;
     }
@@ -80,7 +93,7 @@ public class CachedRole extends AbstractRevisioned implements InRealm {
      * Use this so the cache invalidation can retrieve any previously cached role mappings to determine if this
      * items should be evicted. Will return an empty list if it hasn't been cached yet (and then no invalidation is necessary)
      */
-    public Set<String> getCachedComposites() {
+    public CompositeRolesRecord getCachedComposites() {
         return cachedComposites;
     }
 
