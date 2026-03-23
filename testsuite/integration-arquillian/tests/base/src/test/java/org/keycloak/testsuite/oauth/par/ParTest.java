@@ -50,6 +50,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.RefreshToken;
@@ -66,6 +67,7 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -76,12 +78,15 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.ParRequest;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.JsonSerialization;
 
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
+import static org.keycloak.OAuthErrorException.INVALID_GRANT;
+import static org.junit.Assert.assertNotNull;
 public class ParTest extends AbstractClientPoliciesTest {
 
     // defined in testrealm.json
@@ -289,6 +294,52 @@ public class ParTest extends AbstractClientPoliciesTest {
             assertEquals(400, refreshResponse.getStatusCode());
 
         } finally {
+            restoreParRealmSettings();
+        }
+    }
+
+
+    // Test manually created PAR request cannot be used to obtain OAuth2 code
+    @Test
+    public void testParDoNotClashWithAuthorizationCode() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // Step 1 - Login as regular user and obtain sessionId
+            oauth.doLogin(TEST_USER2_NAME, TEST_USER2_PASSWORD);
+            AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
+            String sessionId = authzResponse.getSessionState();
+            String code = authzResponse.getCode();
+            assertNotNull(sessionId);
+            assertNotNull(code);
+
+            // Step 2: PAR request with some custom injected parameters
+            ParRequest pReq = new ParRequest(oauth) {
+
+                @Override
+                protected void initRequest() {
+                    super.initRequest();
+                    parameter(OAuth2Code.ID_NOTE, "some-id");
+                    parameter(OAuth2Code.USER_SESSION_ID_NOTE, sessionId);
+                    parameter(OAuth2Code.EXPIRATION_NOTE, String.valueOf(Time.currentTime() + 9999));
+                }
+            };
+            ParResponse pResp = pReq.send();
+            assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+
+            // Step 3: Attempt to exchange code for token with the "fake code" from PAR
+            String parId = requestUri.substring(requestUri.lastIndexOf(":" ) + 1);
+            String clientUUID = ApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId()).toRepresentation().getId();
+            String fakeCode = parId + "." + sessionId + "." + clientUUID;
+            AccessTokenResponse response = oauth.doAccessTokenRequest(fakeCode);
+            assertEquals(400, response.getStatusCode());
+            assertEquals(INVALID_GRANT, response.getError());
+        } finally {
+            // Logout
+            AccountHelper.logout(adminClient.realm(oauth.getRealm()), TEST_USER2_NAME);
             restoreParRealmSettings();
         }
     }
