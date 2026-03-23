@@ -338,6 +338,9 @@ public class UpdateCommandDistTest {
         m.put("version", majorMinorOf(org.infinispan.commons.util.Version.getVersion()));
         m.put("jgroupsVersion", majorMinorOf(org.jgroups.Version.printVersion()));
         m.put(CONFIG, CONFIG_FILE_NOT_FOUND);
+        m.put("actionTokensOwners", "2");
+        m.put("loginFailuresOwners", "2");
+        m.put("authenticationSessionsOwners", "2");
         return m;
     }
 }
