@@ -40,6 +40,22 @@ public abstract class TestRewrite {
         content.add(line, updated);
     }
 
+    public void removeLine(String lineContent) {
+        int line = findLine(lineContent);
+        if (line != -1) {
+            content.remove(line);
+        }
+    }
+
+    public void removeAll(String lineContent) {
+        for (int i = 0; i < content.size(); i++) {
+            String l = content.get(i);
+            if (l.trim().contains(lineContent)) {
+                content.remove(i);
+            }
+        }
+    }
+
     public void addImport(String clazzName) {
         String add = "import " + clazzName + ";";
 

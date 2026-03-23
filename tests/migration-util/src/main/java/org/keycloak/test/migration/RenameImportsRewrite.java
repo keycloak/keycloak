@@ -9,7 +9,7 @@ public class RenameImportsRewrite extends TestRewrite {
             "org.keycloak.testsuite.Assert", "org.keycloak.tests.utils.Assert",
             "org.junit.Test", "org.junit.jupiter.api.Test",
             "org.keycloak.testsuite.util.AdminEventPaths", "org.keycloak.tests.utils.admin.AdminEventPaths",
-            "org.keycloak.testsuite.admin.ApiUtil", "org.keycloak.testframework.util.ApiUtil"
+            "org.keycloak.testsuite.admin.ApiUtil", "org.keycloak.tests.utils.admin.AdminApiUtil"
     );
 
     Map<String, String> STATIC_IMPORTS = Map.of(

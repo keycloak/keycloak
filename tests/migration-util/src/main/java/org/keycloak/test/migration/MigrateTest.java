@@ -5,17 +5,14 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static java.lang.Thread.sleep;
 
 public class MigrateTest {
 
@@ -28,12 +25,20 @@ public class MigrateTest {
             UpdateAssertsRewrite.class,
             AddManagedResourcesRewrite.class,
             AdminEventAssertRewrite.class,
+            EventAssertRewrite.class,
+            OAuthClientRewrite.class,
+            RunOnServerRewrite.class,
+            WebDriverRewrite.class,
+            PageObjectRewrite.class,
             BeforeRewrite.class,
+            AfterRewrite.class,
+            RemoveOldImportsAndData.class,
             CommonStatementsRewrite.class);
 
     Path rootPath = getRootPath();
     Path oldTestsuitePath = rootPath.resolve("testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite").toAbsolutePath();
     Path newBaseTestPath = rootPath.resolve("tests/base/src/test/java/org/keycloak/tests").toAbsolutePath();
+    Path newWebAuthnTestPath = rootPath.resolve("tests/webauthn/src/test/java/org/keycloak/tests/webauthn").toAbsolutePath();
 
     public static void main(String[] args) throws Exception {
         MigrateTest migrateTest = new MigrateTest();
@@ -55,6 +60,7 @@ public class MigrateTest {
         System.out.println("Root:           " + rootPath);
         System.out.println("Old tests:      " + oldTestsuitePath);
         System.out.println("Migrated tests: " + newBaseTestPath);
+        System.out.println("Migrated WebAuthn tests: " + newWebAuthnTestPath);
         System.out.println();
         System.out.println("Migrating test: " + testPath);
         System.out.println("To:             " + destinationPath);
@@ -116,8 +122,8 @@ public class MigrateTest {
             throw new RuntimeException("Test file not found");
         }
 
-        if (!destinationPath.startsWith(newBaseTestPath.toString())) {
-            throw new RuntimeException("Can only migrate tests to " + newBaseTestPath);
+        if (!destinationPath.startsWith(newBaseTestPath.toString()) && !destinationPath.startsWith(newWebAuthnTestPath.toString())) {
+            throw new RuntimeException("Can only migrate tests to " + newBaseTestPath + "or to " + newBaseTestPath);
         }
 
         Path destinationDir = destinationPath.resolve("..");
@@ -128,7 +134,8 @@ public class MigrateTest {
     }
 
     private Path getDestination(Path testPath) {
-        return Path.of(testPath.toString().replace(oldTestsuitePath.toString(), newBaseTestPath.toString()));
+        return Path.of(testPath.toString().replace(oldTestsuitePath.toString(),
+                testPath.toString().contains("/webauthn") ? newWebAuthnTestPath.toString() : newBaseTestPath.toString()));
     }
 
     private List<String> readFileToList(Path path) throws IOException {
