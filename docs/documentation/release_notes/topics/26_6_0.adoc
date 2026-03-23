@@ -73,7 +73,7 @@ Thank you to https://github.com/tsaarni[Tero Saarni] for contributing this chang
 
 Zero-downtime patch allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
 
-This is releases are now enabled by default.
+In this release zero-downtime patch is promoted to supported and enabled by default.
 When using the {project_name} Operator, set the update strategy to `Auto` to benefit from this functionality.
 
 For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
