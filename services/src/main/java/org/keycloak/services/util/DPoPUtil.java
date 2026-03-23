@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -194,7 +195,12 @@ public class DPoPUtil {
         if (jwk == null) {
             throw new VerificationException("No JWK in DPoP header");
         } else {
-            key = JWKSUtils.getKeyWrapper(jwk);
+            try {
+              key = JWKSUtils.getKeyWrapper(jwk);
+              Objects.requireNonNull(key);
+            } catch (Exception e){
+                throw new VerificationException("Unsupported or invalid JWK");
+            }
             if (key == null) {
                 throw new VerificationException("Unsupported key type in DPoP header");
             }

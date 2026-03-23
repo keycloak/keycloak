@@ -182,6 +182,7 @@
         <jmeter.version>2.10</jmeter.version>
         <junit.version>4.13.2</junit.version>
         <picketlink.version>2.7.0.Final</picketlink.version>
+        <mockito.version>5.21.0</mockito.version>
         <!-- Needs to be aligned with Quarkus, handled in quarkus/set-quarkus-version.sh script -->
         <version.surefire.plugin>3.5.4</version.surefire.plugin>
         <xml-apis.version>1.4.01</xml-apis.version>

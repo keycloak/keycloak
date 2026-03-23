@@ -126,6 +126,7 @@ public class JWKSUtils {
         if (parser.isKeyTypeSupported(jwk.getKeyType())) {
             return wrap(jwk, parser, skipPublicKey);
         } else {
+            logger.info(String.format("Unsupported key type '%s'.", jwk.getKeyType()));
             return null;
         }
     }
