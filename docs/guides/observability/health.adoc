@@ -88,6 +88,13 @@ curl --head -fsS http://localhost:9000/health/ready
 
 If the command returns with status 0, then {project_name} is `+live+` or `+ready+`, depending on which endpoint you called. Otherwise there is a problem.
 
+If HTTPS is configured for the default {project_name} server, no content appears from this command. Use this command instead:
+
+[source,bash]
+----
+curl --head -fsS https://localhost:9000/health/ready
+----
+
 === Kubernetes
 
 Define a https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#http-probes[HTTP Probe] so that Kubernetes may externally monitor the health endpoints. Do not use a liveness command.
