@@ -17,11 +17,21 @@
 
 package org.keycloak.protocol.oidc.par.endpoints;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import org.keycloak.events.Details;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
@@ -39,20 +49,10 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.utils.ProfileHelper;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.REQUEST_URI_PARAM;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * Pushed Authorization Request endpoint
@@ -61,8 +61,9 @@ public class ParEndpoint extends AbstractParEndpoint {
 
     public static final String PAR_CREATED_TIME = "par.created.time";
     public static final String PAR_DPOP_PROOF_JKT = "par.dpop.proof.jkt";
-    private static final String REQUEST_URI_PREFIX = "urn:ietf:params:oauth:request_uri:";
+    public static final String REQUEST_URI_PREFIX = "urn:ietf:params:oauth:request_uri:";
     public static final int REQUEST_URI_PREFIX_LENGTH = REQUEST_URI_PREFIX.length();
+    public static final String CACHE_KEY_PREFIX = "par:";
 
     private final HttpRequest httpRequest;
 
@@ -163,7 +164,7 @@ public class ParEndpoint extends AbstractParEndpoint {
 
         Map<String, String> params = new HashMap<>();
 
-        String key = UUID.randomUUID().toString();
+        String key = SecretGenerator.getInstance().generateSecureID();
         String requestUri = REQUEST_URI_PREFIX + key;
 
         int expiresIn = realm.getParPolicy().getRequestUriLifespan();
@@ -178,7 +179,7 @@ public class ParEndpoint extends AbstractParEndpoint {
         }
 
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
-        singleUseStore.put(key, expiresIn, params);
+        singleUseStore.put(CACHE_KEY_PREFIX + key, expiresIn, params);
 
         ParResponse parResponse = new ParResponse(requestUri, expiresIn);
 

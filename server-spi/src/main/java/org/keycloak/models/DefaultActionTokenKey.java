@@ -17,13 +17,15 @@
 package org.keycloak.models;
 
 import org.keycloak.common.util.Base64;
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
+import java.util.regex.Pattern;
+
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.representations.JsonWebToken;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
  *
@@ -46,7 +48,7 @@ public class DefaultActionTokenKey extends JsonWebToken implements SingleUseObje
         this.subject = userId;
         this.type = actionId;
         this.exp = Long.valueOf(absoluteExpirationInSecs);
-        this.actionVerificationNonce = actionVerificationNonce == null ? UUID.randomUUID() : actionVerificationNonce;
+        this.actionVerificationNonce = actionVerificationNonce == null ? SecretGenerator.getInstance().generateSecureUUID() : actionVerificationNonce;
     }
 
     @JsonIgnore

@@ -2,6 +2,7 @@ package org.keycloak.common.util;
 
 import java.security.SecureRandom;
 import java.util.Random;
+import java.util.UUID;
 
 public class SecretGenerator {
 
@@ -29,6 +30,10 @@ public class SecretGenerator {
 
     public static SecretGenerator getInstance() {
         return instance;
+    }
+
+    public String generateSecureID() {
+        return generateSecureUUID().toString();
     }
 
     public String randomString() {
@@ -68,6 +73,27 @@ public class SecretGenerator {
         byte[] buf = new byte[length];
         random.get().nextBytes(buf);
         return buf;
+    }
+
+    /**
+     * Returns a pseudo-UUID where all bits are random to have a maximum entropy.
+     *
+     * @return UUID with all bits random
+     */
+    public UUID generateSecureUUID() {
+        byte[] data = randomBytes(16);
+        return new UUID(toLong(data, 0), toLong(data, 8));
+    }
+
+    private static long toLong(byte[] data, int offset) {
+        return  ((data[offset] & 0xFFL) << 56) |
+                ((data[offset + 1] & 0xFFL) << 48) |
+                ((data[offset + 2] & 0xFFL) << 40) |
+                ((data[offset + 3] & 0xFFL) << 32) |
+                ((data[offset + 4] & 0xFFL) << 24) |
+                ((data[offset + 5] & 0xFFL) << 16) |
+                ((data[offset + 6] & 0xFFL) <<  8) |
+                ((data[offset + 7] & 0xFFL)) ;
     }
 
 }
