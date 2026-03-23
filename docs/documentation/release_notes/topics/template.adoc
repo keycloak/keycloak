@@ -13,6 +13,19 @@ Read on to learn more about each new feature. If you are upgrading from a previo
 
 <TODO>
 
+////
+
+== <Heading describing the new feature> (optional wih preview or supported status)
+
+<Optional but recommended: Short introduction to the topic, assuming that the reader doesn't know about the feature yet and explain how the can be used. This adds the necessary context for the following paragraph.>
+
+<Describe what's new in this release, and if it preview or supported>
+
+<Optional but recommended: Link to additional docs that have been added and allow for further reading>
+
+////
+
+
 = Administration
 
 <TODO>
