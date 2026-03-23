@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.oid4vc.issuance.signing;
+package org.keycloak.tests.oid4vc.preauth;
 
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * JWT-specific authorization_details tests for pre-authorized_code grant.
  */
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
-public class OID4VCJwtAuthorizationDetailsFlowTest extends OID4VCAuthorizationDetailsFlowTestBase {
+public class OID4VCJwtAuthorizationDetailsFlowPreAuthTest extends OID4VCAuthorizationDetailsFlowTestBase {
 
     @Override
     protected String getCredentialFormat() {
