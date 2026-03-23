@@ -10,12 +10,14 @@ import org.keycloak.testframework.database.PostgresTestDatabase;
 import org.keycloak.testframework.database.TestDatabase;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 
 @KeycloakIntegrationTest(config = CaseSensitiveSchemaTest.CaseSensitiveServerConfig.class)
 // Remotely running databases do not support running SQL init scripts.
 // MSSQL does not support setting the default schema per session
 // TiDb does not support setting the default schema per session.
 @DisabledForDatabases({ "remote", "mssql", "tidb" })
+@DatabaseTest
 public class CaseSensitiveSchemaTest extends AbstractDBSchemaTest {
 
     @InjectTestDatabase(config = CaseSensitiveDatabaseConfig.class)

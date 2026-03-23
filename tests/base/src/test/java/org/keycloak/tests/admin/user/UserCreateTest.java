@@ -43,6 +43,7 @@ import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.providers.federation.DummyUserFederationProviderFactory;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.util.JsonSerialization;
@@ -68,6 +69,7 @@ public class UserCreateTest extends AbstractUserTest {
     AdminClientFactory clientFactory;
 
     @Test
+    @DatabaseTest
     public void verifyCreateUser() {
         createUser();
     }
@@ -100,6 +102,7 @@ public class UserCreateTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void createDuplicatedUser1() {
         createUser();
 
@@ -388,6 +391,7 @@ public class UserCreateTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void createUserWithFederationLink() {
 
         // add a dummy federation provider

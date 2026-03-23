@@ -65,6 +65,7 @@ import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -228,6 +229,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     }
 
     @Test
+    @DatabaseTest
     public void concurrentLoginMultipleUsers() throws Throwable {
         LOGGER.info("*********************************************");
         long start = System.currentTimeMillis();

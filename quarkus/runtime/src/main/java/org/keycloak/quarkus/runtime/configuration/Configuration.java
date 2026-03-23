@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Properties;
 
 import org.keycloak.config.Option;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.utils.StringUtil;
 
 import io.quarkus.runtime.configuration.ConfigUtils;
@@ -50,9 +51,16 @@ public final class Configuration {
         return getOptionalBooleanValue(NS_KEYCLOAK_PREFIX + option.getKey()).orElse(false);
     }
 
+    /**
+     * Return true if the value is not derived (meaning that the config source name is set)
+     * and the config source is something that a user can change the values in
+     */
     public static boolean isUserModifiable(ConfigValue configValue) {
-        // for now we won't validate these as it's not expected for the user to specify options from a source below our properties
-        return configValue.getConfigSourceName() != null && configValue.getConfigSourceOrdinal() >= KeycloakPropertiesConfigSource.PROPERTIES_FILE_ORDINAL;
+        return configValue.getConfigSourceName() != null && !isDefault(configValue);
+    }
+
+    public static boolean isDefault(ConfigValue configValue) {
+        return configValue.getConfigSourceOrdinal() <= PropertyMapper.DEFAULT_VALUE_ORDINAL;
     }
 
     public static boolean isSet(Option<?> option) {

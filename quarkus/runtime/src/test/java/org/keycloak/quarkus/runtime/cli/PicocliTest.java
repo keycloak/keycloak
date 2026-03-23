@@ -756,7 +756,26 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void derivedPropertyUsage() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=localhost", "--spi-hostname-v2-hostname=second-class");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getOutString(), containsString("Please use the first-class option `kc.hostname` instead of `kc.spi-hostname-v2-hostname`"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("With the first-class option `kc.hostname` set, you should remove the usage of `kc.spi-hostname-v2-hostname`"));
+    }
+
+    @Test
+    public void quarkusPropertyInQuarkusPropertiesWarning() {
+        putEnvVar("QUARKUS_HTTP_PORT", "9090");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                containsString("Please use the first-class option `kc.http-port` instead of `quarkus.http.port`"));
+    }
+
+    @Test
+    public void quarkusPropertyInQuarkusPropertiesWarningWhenKcOptionSet() {
+        putEnvVar("QUARKUS_HTTP_PORT", "9090");
+        // When kc.http-port is explicitly set, should still warn about quarkus.http.port
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-port=7070");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                containsString("With the first-class option `kc.http-port` set, you should remove the usage of `quarkus.http.port`"));
     }
 
     @Test

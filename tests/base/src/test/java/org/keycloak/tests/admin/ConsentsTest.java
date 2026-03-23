@@ -60,6 +60,7 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.page.ConsentPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -132,6 +133,7 @@ public class ConsentsTest {
     private static final String CLIENT_SECRET = "secret";
 
     @Test
+    @DatabaseTest
     public void testConsents() {
         consumerRealmOAuth.openLoginForm();
 

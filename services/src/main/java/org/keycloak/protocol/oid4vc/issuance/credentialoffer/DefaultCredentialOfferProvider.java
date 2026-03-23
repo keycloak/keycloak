@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
@@ -61,6 +62,14 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             String targetUsername,
             Integer expireAt) {
 
+        // Checks whether `--feature=oid4vc_vci_preauth_code` is enabled
+        //
+        boolean preAuthorized = PRE_AUTH_GRANT_TYPE.equals(grantType);
+        if (preAuthorized && !Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_PREAUTH_CODE)) {
+            throw new CredentialOfferException(Errors.INVALID_REQUEST,
+                    "OID4VCI pre-authorized code grant offers not enabled. Requires --feature=oid4vc-vci-preauth-code");
+        }
+
         // Ensure at least one credential_configuration_id
         //
         if (credentialConfigurationIds == null || credentialConfigurationIds.isEmpty()) {
@@ -96,7 +105,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
             return authDetails;
         });
 
-        if (PRE_AUTH_GRANT_TYPE.equals(grantType)) {
+        if (preAuthorized) {
             String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
             credOffer.addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
         } else {

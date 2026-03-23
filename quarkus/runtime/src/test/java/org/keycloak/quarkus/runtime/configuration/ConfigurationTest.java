@@ -714,6 +714,25 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testQuarkusPropertyTakesPrecedenceOverDefault() {
+        putEnvVar("QUARKUS_HTTP_PORT", "9090");
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertEquals("9090", config.getConfigValue("quarkus.http.port").getValue());
+        // the kc.http-port still returns the default since no kc.* option was explicitly set
+        assertEquals("8080", config.getConfigValue("kc.http-port").getValue());
+    }
+
+    @Test
+    public void testKcPropertyTakesPrecedenceOverQuarkusProperty() {
+        // Explicitly setting kc.http-port should override the quarkus.properties value (9090)
+        ConfigArgsConfigSource.setCliArgs("--http-port=7070");
+        SmallRyeConfig config = createConfig();
+        assertEquals("7070", config.getConfigValue("quarkus.http.port").getValue());
+        assertEquals("7070", config.getConfigValue("kc.http-port").getValue());
+    }
+
+    @Test
     public void testPostgresTLSOptions() {
         doDatabaseTlsOptionTest("postgres",
                 "jdbc:postgresql://myhost:5432/keycloak",

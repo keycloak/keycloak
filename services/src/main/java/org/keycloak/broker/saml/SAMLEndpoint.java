@@ -54,6 +54,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -645,11 +646,9 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
-                final String assertionString = DocumentUtil.getNodeAsString(assertionElement);
                 BrokeredIdentityContext identity = new BrokeredIdentityContext(principal, config);
                 identity.getContextData().put(SAML_LOGIN_RESPONSE, responseType);
                 identity.getContextData().put(SAML_ASSERTION, assertion);
-                identity.getContextData().put(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, assertionString);
                 identity.setAuthenticationSession(authSession);
 
                 identity.setUsername(principal);
@@ -659,8 +658,15 @@ public class SAMLEndpoint {
                     identity.setEmail(subjectNameID.getValue());
                 }
 
-                if (Booleans.isTrue(config.isStoreToken())) {
-                    identity.setToken(assertionString);
+                // set the token in session and model depending the brokering api version
+                if (Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V2)) {
+                    final String assertionString = DocumentUtil.getNodeAsString(assertionElement);
+                    identity.getContextData().put(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, assertionString);
+                    if (Booleans.isTrue(config.isStoreToken())) {
+                        identity.setToken(assertionString);
+                    }
+                } else if (Booleans.isTrue(config.isStoreToken())) {
+                    identity.setToken(samlResponse);
                 }
 
                 ConditionsValidator.Builder cvb = new ConditionsValidator.Builder(assertion.getID(), assertion.getConditions(), destinationValidator)

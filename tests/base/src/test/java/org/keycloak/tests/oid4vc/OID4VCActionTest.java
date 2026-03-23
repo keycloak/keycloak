@@ -37,12 +37,10 @@ import static org.keycloak.events.Errors.REJECTED_BY_USER;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.MISSING_CREDENTIAL_CONFIG;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION;
-import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
@@ -64,13 +62,12 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         user.admin().logout();
     }
 
-
-    private String getKcActionParameter(String credentialConfigId, boolean preAuthorized) {
+    static String getKcActionParameter(String clientId, String credentialConfigId, boolean preAuthorized) {
         try {
             VerifiableCredentialOfferAction.CredentialOfferActionConfig cfg = new VerifiableCredentialOfferAction.CredentialOfferActionConfig();
             cfg.setCredentialConfigurationId(credentialConfigId);
-            cfg.setClientId(client.getClientId());
             cfg.setPreAuthorized(preAuthorized);
+            cfg.setClientId(clientId);
             String cfgAsString = cfg.asEncodedParameter();
             return VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID + ":" + cfgAsString;
         } catch (IOException ioe) {
@@ -79,90 +76,16 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         }
     }
 
-
-    // Test successful scenario. Client redirects to Keycloak OIDC authentication request with "kc_action" parameter pointing to the
-    // credential-offer, which should be created on Keycloak side. Upon successful authentication of the user, the credential-offer page is displayed
-    // from where user can scan QR-code to his wallet and retrieve OID4 VC. Wallet uses "pre-authorization code"
-    @Test
-    public void testCredentialOfferAIASuccess_preAuthorizedCode() throws Exception {
-        // Login as user. Check required-action displayed
-        oauth.client(client.getClientId(), "test-secret");
-        oauth.loginForm()
-                .kcAction(getKcActionParameter(minimalJwtTypeCredentialConfigurationIdName, true))
-                .open();
-        oauth.fillLoginForm(user.getUsername(), "password");
-
-        credentialOfferPage.assertCurrent();
-        String credentialOfferUri = credentialOfferPage.getCredentialOfferUri();
-
-        EventAssertion.assertSuccess(events.poll())
-                .userId(user.getId())
-                .details(Details.CREDENTIAL_TYPE, minimalJwtTypeCredentialConfigurationIdName)
-                .details(Details.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED, String.valueOf(true))
-                .details(Details.VERIFIABLE_CREDENTIAL_TARGET_USER_ID, user.getId())
-                .details(Details.VERIFIABLE_CREDENTIAL_TARGET_CLIENT_ID, client.getClientId())
-                .type(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER);
-
-        // Refresh screen. Should be still same credential-offer as before and test that there are not new events
-        driver.navigate().refresh();
-        credentialOfferPage.assertCurrent();
-        assertEquals(credentialOfferUri, credentialOfferPage.getCredentialOfferUri());
-
-        String credentialOfferNonce = getNonceFromCredentialOfferUri(credentialOfferUri);
-
-        // Pre-authorized code flow with credential exchange
-        CredentialOfferResponse credentialOfferResponse = oauth.oid4vc().credentialOfferRequest(credentialOfferNonce)
-                .send();
-        assertEquals(HttpStatus.SC_OK, credentialOfferResponse.getStatusCode());
-        CredentialsOffer credOffer = credentialOfferResponse.getCredentialsOffer();
-
-        EventAssertion.assertSuccess(events.poll())
-                .userId(user.getId())
-                .details(Details.CREDENTIAL_TYPE, minimalJwtTypeCredentialConfigurationIdName)
-                .type(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST);
-
-        String preAuthCode = credOffer.getPreAuthorizedCode();
-        assertNotNull(preAuthCode);
-        assertNull(credOffer.getIssuerState());
-
-        // Redeem Pre-Authorized Code for AccessToken
-        //
-        AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode).send();
-        assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
-
-        String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
-        assertNotNull(accessToken,"No accessToken");
-
-        assertNull(ctx.getAuthorizedCredentialIdentifier(),"Not expected to have credential identifier");
-
-        String credentialConfigId = ctx.getAuthorizedCredentialConfigurationId();
-        assertEquals(minimalJwtTypeCredentialConfigurationIdName, credentialConfigId);
-
-        EventAssertion.assertSuccess(events.poll())
-                .userId(user.getId())
-                .clientId(client.getClientId())
-                .details(GRANT_TYPE, PRE_AUTH_GRANT_TYPE)
-                .type(EventType.VERIFIABLE_CREDENTIAL_PRE_AUTHORIZED_GRANT);
-
-        // Credential request
-        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
-                .credentialConfigurationId(credentialConfigId)
-                .send().getCredentialResponse();
-
-        EventAssertion.assertSuccess(events.poll())
-                .userId(user.getId())
-                .clientId(client.getClientId())
-                .details(Details.CREDENTIAL_TYPE, minimalJwtTypeCredentialConfigurationIdName)
-                .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST);
-
-        verifyCredentialResponse(credResponse);
-
-        // Continue browser login inside the browser
-        credentialOfferPage.clickContinueButton();
-        String code = oauth.parseLoginResponse().getCode();
-        assertNotNull(code, "Authorization code should not be null");
+    static String getNonceFromCredentialOfferUri(String credentialOfferUri) {
+        return credentialOfferUri.substring(credentialOfferUri.lastIndexOf("/") + 1);
     }
 
+    static void verifyVCActionCredentialResponse(CredentialResponse credResponse) {
+        CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
+        assertNotNull(credentialObj, "The first credential in the array should not be null");
+        IssuerSignedJWT issuerSignedJWT = SdJwtVP.of(credentialObj.getCredential().toString()).getIssuerSignedJWT();
+        assertEquals(minimalJwtTypeCredentialScopeName, issuerSignedJWT.getPayload().get(CLAIM_NAME_VCT).asText());
+    }
 
     // Test successful scenario with wallet using "authorization code" grant
     @Test
@@ -170,7 +93,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         // Login as user. Check required-action displayed
         oauth.client(client.getClientId(), "test-secret");
         oauth.loginForm()
-                .kcAction(getKcActionParameter(minimalJwtTypeCredentialConfigurationIdName, false))
+                .kcAction(getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, false))
                 .open();
         oauth.fillLoginForm(user.getUsername(), "password");
 
@@ -249,7 +172,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
                 .details(Details.CREDENTIAL_TYPE, minimalJwtTypeCredentialConfigurationIdName)
                 .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST);
 
-        verifyCredentialResponse(credResponse);
+        verifyVCActionCredentialResponse(credResponse);
     }
 
 
@@ -259,7 +182,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         // Login as user. Check required-action displayed
         oauth.client(client.getClientId(), "test-secret");
         oauth.loginForm()
-                .kcAction(getKcActionParameter(minimalJwtTypeCredentialConfigurationIdName, false))
+                .kcAction(getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, false))
                 .open();
         oauth.fillLoginForm(user.getUsername(), "password");
 
@@ -289,18 +212,6 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
                 .type(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR);
     }
 
-    private String getNonceFromCredentialOfferUri(String credentialOfferUri) {
-        return credentialOfferUri.substring(credentialOfferUri.lastIndexOf("/") + 1);
-    }
-
-    private void verifyCredentialResponse(CredentialResponse credResponse) {
-        CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
-        assertNotNull(credentialObj, "The first credential in the array should not be null");
-        IssuerSignedJWT issuerSignedJWT = SdJwtVP.of(credentialObj.getCredential().toString()).getIssuerSignedJWT();
-        assertEquals(minimalJwtTypeCredentialScopeName, issuerSignedJWT.getPayload().get(CLAIM_NAME_VCT).asText());
-    }
-
-
     // Test for some error scenarios (incorrect values of "kc_action" referencing non-existent client scope etc).
     @Test
     public void testCredentialOfferErrors() {
@@ -323,7 +234,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
 
         // Test kc_action_parameter referencing incorrect credentialConfig
         oauth.loginForm()
-                .kcAction(getKcActionParameter("unknown-config-id", false))
+                .kcAction(getKcActionParameter(client.getClientId(), "unknown-config-id", false))
                 .open();
         authzCodeResponse = new AuthorizationEndpointResponse(oauth);
         assertNotNull(authzCodeResponse.getCode());

@@ -49,6 +49,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 @EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
+@EnableFeature(value = Profile.Feature.OID4VC_VCI_PREAUTH_CODE, skipRestart = true)
 public class PreAuthorizedGrantTest extends AbstractTestRealmKeycloakTest {
 
     private CloseableHttpClient httpClient;

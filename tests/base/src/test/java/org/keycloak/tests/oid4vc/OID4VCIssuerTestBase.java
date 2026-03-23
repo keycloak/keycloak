@@ -76,6 +76,7 @@ import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.util.AuthorizationDetailsParser;
 import org.keycloak.util.JsonSerialization;
 
@@ -112,13 +113,13 @@ public abstract class OID4VCIssuerTestBase {
     public static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
 
     @InjectRealm(config = VCTestRealmConfig.class)
-    ManagedRealm testRealm;
+    protected ManagedRealm testRealm;
 
     @InjectClient(ref = "oid4vci-client", config = OID4VCIClient.class)
     ManagedClient managedClient;
 
     @InjectOAuthClient
-    OAuthClient oauth;
+    protected OAuthClient oauth;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
@@ -265,7 +266,12 @@ public abstract class OID4VCIssuerTestBase {
         return oauthClient.accessTokenRequest(authCode).send();
     }
 
-    String getAuthorizationCode(OAuthClient oAuthClient, ClientRepresentation client, String username, String scope) {
+    protected String getAuthorizationCode(OAuthClient oAuthClient, ClientRepresentation client, String username, String scope) {
+        var authorizationEndpointResponse = getAuthorizationResponse(oAuthClient, client, username, scope);
+        return authorizationEndpointResponse.getCode();
+    }
+
+    protected AuthorizationEndpointResponse getAuthorizationResponse(OAuthClient oAuthClient, ClientRepresentation client, String username, String scope) {
         if (client != null) {
             if (client.getSecret() != null) {
                 oAuthClient.client(client.getClientId(), client.getSecret());
@@ -278,7 +284,7 @@ public abstract class OID4VCIssuerTestBase {
             oAuthClient.scope(scope);
         }
         var authorizationEndpointResponse = oAuthClient.doLogin(username, "password");
-        return authorizationEndpointResponse.getCode();
+        return authorizationEndpointResponse;
     }
 
     AccessTokenResponse getBearerToken(OAuthClient oauthClient, String authCode, OID4VCAuthorizationDetail... authDetail) {
@@ -325,14 +331,21 @@ public abstract class OID4VCIssuerTestBase {
 
     // Static Config and RunOnServer Helpers ---------------------------------------------------------------------------
 
-    static class VCTestServerConfig implements KeycloakServerConfig {
+    public static class VCTestServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.OID4VC_VCI);
         }
     }
 
-    static class VCTestRealmConfig implements RealmConfig {
+    static class VCTestServerWithPreAuthCodeEnabled implements KeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            return config.features(Profile.Feature.OID4VC_VCI, Profile.Feature.OID4VC_VCI_PREAUTH_CODE);
+        }
+    }
+
+    public static class VCTestRealmConfig implements RealmConfig {
 
         public static final String TEST_REALM_NAME = "test";
 
@@ -583,7 +596,7 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    static class StaticTimeProvider implements TimeProvider {
+    protected static class StaticTimeProvider implements TimeProvider {
         private final int currentTimeInS;
 
         public StaticTimeProvider(int currentTimeInS) {
