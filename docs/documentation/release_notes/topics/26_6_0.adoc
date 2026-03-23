@@ -9,17 +9,25 @@ Read on to learn more about each new feature. If you are upgrading from a previo
 
 = Security and Standards
 
-== JWT Authorization Grant promoted to supported
+== JWT Authorization Grant (supported)
 
-In this release, the JWT Authorization Grant (https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523]) feature is promoted from preview to default. This grant allows using external signed JWT assertions to request OAuth 2.0 access tokens. See the link:{securing_apps_base_link}/jwt-authorization-grant[JWT Authorization Grant guide] for additional details.
+JWT Authorization Grant (https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523]) is designed to implement external-to-internal token exchange use cases. This grant allows using externally signed JWT assertions to request OAuth 2.0 access tokens.
 
-== Federated client authentication promoted to supported
+In this release, JWT Authorization Grant is promoted from preview to supported. See the link:{securing_apps_base_link}/jwt-authorization-grant[JWT Authorization Grant guide] for additional details.
 
-Federated client authentication is now promoted to supported, including support for client assertions issued by
-external OpenID Connect identity providers and Kubernetes Service Accounts.
+== Federated client authentication (supported)
 
-Since the OAuth SPIFFE Client Authentication specification is still in draft status, this feature remains a preview
-feature in Keycloak.
+Federated client authentication allows clients to leverage existing credentials once a trust relationship with another issuer exists. It eliminates the need to assign and manage individual secrets for each client in {project_name}.
+
+Federated client authentication is now promoted to supported, including support for client assertions issued by external OpenID Connect identity providers and Kubernetes Service Accounts.
+
+Since the OAuth SPIFFE Client Authentication specification is still in draft status, this feature remains a preview feature in {project_name}.
+
+== New guide about Demonstrating Proof-of-Possession (DPoP)
+
+A new guide for OAuth 2.0 Demonstrating Proof-of-Possession (DPoP) in the {securing_apps_name} provides information on how to mitigate the risk of stolen tokens by making tokens sender-constrained.
+
+See https://www.keycloak.org/nightly/securing-apps/dpop[Securing applications with DPoP] for more details.
 
 == Step-up authentication for SAML (preview)
 
@@ -40,19 +48,55 @@ Fine-Grained Admin Permissions (FGAP) now includes a new `Groups` scope: `manage
 This scope is now used as the group-side bridge for evaluating user-side `manage-group-membership` permissions based on a user's current group memberships.
 The existing `manage-membership` scope keeps its current behavior for target group membership management operations.
 
+== Looking up client secrets via the Vault SPI
+
+Secrets for clients can now be managed and looked up by the Vault SPI.
+
+Thank you to https://github.com/tsaarni[Tero Saarni] for contributing this change.
+
+== Forcing password change for LDAP users
+
+There is now initial support for LDAP password policy control.
+The support is limited to prompting users to update their password when the LDAP server indicates that the password must be changed.
+Previously, {project_name} let the user in and ignored the mandatory password reset.
+There is a new optional setting "`Enable LDAP password policy`" in the LDAP advanced settings to enable this.
+
+Thank you to https://github.com/tsaarni[Tero Saarni] for contributing this change.
+
 = Configuring and Running
 
 == Java 25 support
 
 {project_name} now supports running with OpenJDK 25.
 
-== Zero-downtime patch releases enabled by default
+== Zero-downtime patch releases (supported)
 
-Zero-downtime patch releases are now enabled by default. This allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
+Zero-downtime patch allows you to perform rolling updates when upgrading to a newer patch version within the same `major.minor` release stream without service downtime.
 
+In this release zero-downtime patch is promoted to supported and enabled by default.
 When using the {project_name} Operator, set the update strategy to `Auto` to benefit from this functionality.
 
 For more details on the Operator configuration, see the https://www.keycloak.org/operator/rolling-updates[Avoiding downtime with rolling updates] guide.
+
+== Installation instructions for CloudNativePG
+
+For those running {project_name} on Kubernetes, there is now a guide on how to deploy a PostgreSQL database on Kubernetes by leveraging the CloudNativePG Operator and how to connect {project_name} to the database.
+
+See https://www.keycloak.org/nightly/high-availability/single-cluster/deploy-cnpg[Deploying CloudNativePG in multiple availability zones] in the {highavailabilityguide_name} for details.
+
+== Simplified database operations
+
+Several new command line options simplify the database operations for {project_name} and removes the need to use to raw JDBC connection options:
+
+* Configure TLS for the database connection.
+* Database connection timeouts.
+* Transaction timeouts with production ready defaults.
+
+It also verifies the correct UTF-8 character encoding of the database at startup and prints a warning if this is not the case.
+
+When running on orchestrators like Kubernetes, the startup and liveness probe return UP during database migrations, simplifying upgrades by removing the need to adjust the probes during upgrades.
+
+See the migration guide for additional details on each aspect.
 
 == Graceful shutdown of HTTP stack
 
@@ -67,6 +111,12 @@ This is a common setup for example in Kubernetes environments.
 
 Users should adjust those values depending on their proxy setup.
 See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown[Graceful HTTP shutdown] in the reverse proxy guide for more information.
+
+== Automatic reload of lists with disallowed passwords
+
+When a list of disallowed passwords (also known as blacklist) changes, it is automatically reloaded. This avoids the need a server restart when the list changes.
+
+Thank you to https://github.com/tsaarni[Tero Saarni] for contributing this change.
 
 == Automatic truststore initialization on Kubernetes and OpenShift
 
@@ -86,13 +136,6 @@ Most deployments do not require any action. If you relied on the Operator to man
 You can now use new client certificate lookup providers for Traefik and Envoy proxies.
 For details, see the link:{server_guide_base_link}/reverseproxy#_enabling_client_certificate_lookup[Enabling Client Certificate Lookup] section of the documentation.
 
-== Sensitive Keycloak information is not displayed in the HTTP Access log
-
-If you are using the HTTP Access logging capability, sensitive information is omitted.
-This means that tokens in the 'Authorization' HTTP header and specific sensitive Keycloak cookies are not shown.
-
-For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
-
 == Configurable Kubernetes Service name and port in the Keycloak Operator
 
 The {project_name} Operator now supports overriding the name and port of the Kubernetes Service it creates for a Keycloak deployment.
@@ -102,6 +145,13 @@ You can now use the `spec.http.serviceName`, `spec.http.serviceHttpsPort`, and `
 configure these independently.
 
 For more details, see the https://www.keycloak.org/operator/advanced-configuration[Advanced configuration] guide.
+
+== Sensitive Keycloak information is not displayed in the HTTP Access log
+
+If you are using the HTTP Access logging capability, sensitive information is omitted.
+This means that tokens in the 'Authorization' HTTP header and specific sensitive Keycloak cookies are not shown.
+
+For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
 
 == Configurable log file rotation
 
@@ -124,6 +174,17 @@ This makes it easier to process and archive access logs independently for securi
 
 For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
 
+== New and updated translations
+
+New translations for Indonesian and Armenian were added. A warm welcome to the new language maintainers for these languages!
+There are also new language maintainers for the Swedish translation who translated all remaining message keys for this language, thank you so much!
+
+Follow the translation progress on the https://www.keycloak.org/translations[translation status page], help translating, and read in the translation guide on how to add additional languages.
+
+== Right-to-left language support in the Account UI
+
+Support for right-to-left (RTL) languages was added in the Login UI, Admin UI and email templates several releases ago already. This release adds an initial RTL-support to the Account UI, which completes this effort.
+
 = Observability
 
 == Telemetry configuration via Keycloak CR
@@ -142,6 +203,12 @@ You can specify these headers via the `telemetry-header-<header>` wildcard optio
 Alternatively, use `telemetry-logs-header-<header>` for OpenTelemetry Logs or `telemetry-metrics-header-<header>` for OpenTelemetry Metrics.
 
 For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
+
+== Service Monitor annotations and labels via Keycloak CR
+
+It is now possible to configure service monitor labels and annotations via Keycloak CR when using the Operator.
+
+For more details, see the link: https://www.keycloak.org/operator/advanced-configuration#_servicemonitor[Advanced Configuration Operator] guide
 
 = Extension Development
 

@@ -47,6 +47,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 
@@ -59,6 +60,7 @@ import org.junit.jupiter.api.Test;
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
 @KeycloakIntegrationTest
+@DatabaseTest
 public class GroupMappersTest extends AbstractGroupTest {
 
     @InjectRealm(config = GroupMappersTestRealmConfig.class)

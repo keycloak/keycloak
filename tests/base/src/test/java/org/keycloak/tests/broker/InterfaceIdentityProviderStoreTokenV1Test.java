@@ -26,6 +26,20 @@ public interface InterfaceIdentityProviderStoreTokenV1Test extends InterfaceIden
     }
 
     @Test
+    default void testIdentityBrokeringAPIV2Disabled() {
+        OAuthClient oauth = getOAuthClient();
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertFalse(externalTokens.isSuccess());
+    }
+
+    @Test
     default void testOIDCIdentityProviderStoreTokenManualRoleGrant() {
         ManagedRealm realm = getRealm();
         OAuthClient oauth = getOAuthClient();

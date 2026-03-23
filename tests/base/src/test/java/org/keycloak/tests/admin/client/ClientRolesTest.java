@@ -49,6 +49,7 @@ import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
@@ -105,6 +106,7 @@ public class ClientRolesTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddRole() {
         RoleRepresentation role1 = RoleConfigBuilder.create()
                 .name("role1")
@@ -137,6 +139,7 @@ public class ClientRolesTest {
     }
 
     @Test
+    @DatabaseTest
     public void testRemoveRole() {
         RoleRepresentation role2 = makeRole("role2");
         rolesRsc.create(role2);
@@ -149,6 +152,7 @@ public class ClientRolesTest {
     }
 
     @Test
+    @DatabaseTest
     public void testComposites() {
         RoleRepresentation roleA = makeRole("role-a");
         rolesRsc.create(roleA);
@@ -194,6 +198,7 @@ public class ClientRolesTest {
 
 
     @Test
+    @DatabaseTest
     public void testCompositeRolesSearch() {
         // Create main-role we will work on
         RoleRepresentation mainRole = makeRole("main-role");
@@ -284,6 +289,7 @@ public class ClientRolesTest {
     }
 
     @Test
+    @DatabaseTest
     public void testSearchForRoles() {
         for (int i = 0; i < 15; i++) {
             String roleName = "role" + i;
@@ -316,6 +322,7 @@ public class ClientRolesTest {
     }
 
     @Test
+    @DatabaseTest
     public void testPaginationRoles() {
         for (int i = 0; i < 15; i++) {
             String roleName = "role" + i;

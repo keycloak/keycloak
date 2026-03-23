@@ -57,6 +57,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.hamcrest.MatcherAssert;
@@ -144,6 +145,7 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddRemoveFlow() {
 
         // test that built-in flow cannot be deleted
@@ -376,6 +378,7 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testCopyFlow() {
 
         HashMap<String, Object> params = new HashMap<>();
@@ -433,6 +436,7 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     // KEYCLOAK-2580
     public void addExecutionFlow() {
         HashMap<String, Object> params = new HashMap<>();
@@ -535,6 +539,7 @@ public class FlowTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void editExecutionFlowTest() {
         HashMap<String, Object> params = new HashMap<>();
         List<AuthenticationExecutionInfoRepresentation> executionReps;

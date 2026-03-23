@@ -5,11 +5,13 @@ import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 @KeycloakIntegrationTest
+@DatabaseTest
 public class DbTest {
 
     @InjectRunOnServer
