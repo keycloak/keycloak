@@ -658,7 +658,7 @@ You can configure the `interval` and `scrapeTimeout` fields and also `annotation
 [source,yaml]
 ----
 apiVersion: k8s.keycloak.org/v2alpha1
-kind: Keycloak`
+kind: Keycloak
 metadata:
   name: example-kc
 spec:
@@ -673,7 +673,7 @@ spec:
       annotation2: annotation-value2
 ----
 
-NOTE: You can use service monitor labels to determine which prometheus instance will scrape metrics from {project_name}.
+NOTE: You can use service monitor labels to determine which Prometheus instance will scrape metrics from {project_name}.
 
 ==== Disable ServiceMonitor creation
 You can prevent the Operator from creating a ServiceMonitor by configuring the Keycloak CR as follows:
