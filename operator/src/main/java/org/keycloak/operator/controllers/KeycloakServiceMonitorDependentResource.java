@@ -1,6 +1,9 @@
 package org.keycloak.operator.controllers;
 
 import java.net.HttpURLConnection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
@@ -95,11 +98,19 @@ public class KeycloakServiceMonitorDependentResource extends CRUDKubernetesDepen
         var endpoint = managementEndpoint(primary, context, false);
         var meta = primary.getMetadata();
         var spec = ServiceMonitorSpec.get(primary);
+
+        Map<String,String> allLabels = Utils.allInstanceLabels(primary);
+        var optionalSpec = Optional.ofNullable(spec);
+        optionalSpec.map(ServiceMonitorSpec::getLabels).ifPresent(allLabels::putAll);
+
+        Map<String,String> annotations = optionalSpec.map(ServiceMonitorSpec::getAnnotations).orElse(new HashMap<>());
+
         return new ServiceMonitorBuilder()
               .withNewMetadata()
                 .withName(meta.getName())
                 .withNamespace(meta.getNamespace())
-                .withLabels(Utils.allInstanceLabels(primary))
+                .withLabels(allLabels)
+                .withAnnotations(annotations)
               .endMetadata()
               .withNewSpec()
                 .withNewNamespaceSelector()
