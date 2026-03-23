@@ -57,6 +57,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
         }
 
         String scopeParameter = getRequestedScopes();
+        String resourceParameter = formParams.getFirst(OAuth2Constants.RESOURCE);
 
         try {
             session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams, client));
@@ -72,7 +73,7 @@ public class RefreshTokenGrantType extends OAuth2GrantTypeBase {
         AccessTokenResponse res;
         try {
             // KEYCLOAK-6771 Certificate Bound Token
-            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request, scopeParameter);
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request, scopeParameter, resourceParameter);
 
             checkAndBindMtlsHoKToken(responseBuilder, clientConfig.isUseRefreshToken());
 

@@ -65,19 +65,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCKeyAttestationTest.class);
 
-    private static final TimeProvider TIME_PROVIDER = new TimeProvider() {
-        private final int currentTimeInS = 1000;
-
-        @Override
-        public int currentTimeSeconds() {
-            return currentTimeInS;
-        }
-
-        @Override
-        public long currentTimeMillis() {
-            return currentTimeInS * 1000L;
-        }
-    };
+    private static final TimeProvider TIME_PROVIDER = new OID4VCIssuerTestBase.StaticTimeProvider(1000);
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;

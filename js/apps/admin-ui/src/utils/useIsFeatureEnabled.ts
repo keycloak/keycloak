@@ -22,6 +22,7 @@ export enum Feature {
   Workflows = "WORKFLOWS",
   StepUpAuthenticationSaml = "STEP_UP_AUTHENTICATION_SAML",
   ScimApi = "SCIM_API",
+  IdentityBrokeringAPIV2 = "IDENTITY_BROKERING_API_V2",
 }
 
 export default function useIsFeatureEnabled() {

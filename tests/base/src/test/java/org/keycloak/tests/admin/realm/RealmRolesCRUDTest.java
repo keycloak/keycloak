@@ -23,6 +23,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
@@ -41,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest
+@DatabaseTest
 public class RealmRolesCRUDTest extends AbstractRealmRolesTest {
 
     @InjectClient(ref = "client-a", attachTo = "client-a")

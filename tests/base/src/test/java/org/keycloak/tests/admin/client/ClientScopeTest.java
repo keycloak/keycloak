@@ -53,6 +53,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 import org.keycloak.tests.utils.matchers.Matchers;
 
@@ -112,6 +113,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddDuplicatedClientScope() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("scope1");
@@ -142,6 +144,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testRemoveClientScope() {
         // Create scope1
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
@@ -181,6 +184,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
 
     @Test
+    @DatabaseTest
     public void testUpdateScopeScope() {
         // Test creating
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
@@ -225,6 +229,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testRenameScope() {
         // Create two scopes
         ClientScopeRepresentation scope1Rep = new ClientScopeRepresentation();
@@ -251,6 +256,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
 
     @Test
+    @DatabaseTest
     public void testScopes() {
         RoleRepresentation realmCompositeRole = createRealmRoleWithCleanup("realm-composite");
         RoleRepresentation realmChildRole = createRealmRoleWithCleanup("realm-child");
@@ -442,6 +448,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
     }
 
     @Test
+    @DatabaseTest
     public void testRemoveClientScopeInUse() {
         // Add client scope
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
@@ -619,6 +626,7 @@ public class ClientScopeTest extends AbstractClientScopeTest {
 
     // KEYCLOAK-5863
     @Test
+    @DatabaseTest
     public void testUpdateProtocolMappers() {
         ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
         scopeRep.setName("testUpdateProtocolMappers");

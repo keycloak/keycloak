@@ -14,6 +14,7 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -306,6 +307,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder identityProviderMapper(IdentityProviderMapperRepresentation identityProviderMapper) {
+        rep.addIdentityProviderMapper(identityProviderMapper);
+        return this;
+    }
+
     public RealmConfigBuilder setRememberMe(boolean enabled) {
         rep.setRememberMe(enabled);
         return this;
@@ -456,10 +462,6 @@ public class RealmConfigBuilder {
     public RealmConfigBuilder scimEnabled(boolean enabled) {
         rep.setScimApiEnabled(enabled);
         return this;
-    }
-
-    public void verifiableCredentialsEnabled(Boolean verifiableCredentialsEnabled) {
-        rep.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
     }
 
     public void attribute(String key, String value) {

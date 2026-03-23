@@ -21,7 +21,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@KeycloakIntegrationTest(config = ClientAuthIdpServerConfig.class)
+@KeycloakIntegrationTest
 public class FederatedClientAuthFromKeycloakTest {
 
     private static final String IDP_ALIAS = "keycloak-idp";

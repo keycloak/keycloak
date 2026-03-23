@@ -31,6 +31,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -55,7 +56,7 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
             return;
         }
         context.getAuthenticationSession().setAuthNote(AuthenticationManager.PASSWORD_VALIDATED, "true");
-        context.success();
+        context.success(PasswordCredentialModel.TYPE);
     }
 
     @Override
@@ -86,7 +87,7 @@ public class ValidatePassword extends AbstractDirectGrantAuthenticator {
 
     @Override
     public String getReferenceCategory() {
-        return null;
+        return PasswordCredentialModel.TYPE;
     }
 
     @Override

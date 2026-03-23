@@ -47,6 +47,7 @@ import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.tests.common.TestRealmUserConfig;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -76,6 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Test for the scenarios related to refresh-token and involving userSession and clientSession timeouts (idle-timeout, max session timeout etc).
  */
 @KeycloakIntegrationTest
+@DatabaseTest
 public class RefreshTokenTimeoutsTest {
 
     @InjectOAuthClient

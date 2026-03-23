@@ -33,6 +33,7 @@ import org.keycloak.testframework.realm.UserConfig;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.LoginPage;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.AccountHelper;
 
@@ -63,6 +64,7 @@ public class SessionTest {
     LoginPage loginPage;
 
     @Test
+    @DatabaseTest
     public void testGetAppSessionCount() {
         ClientResource accountClient = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
         int sessionCount = accountClient.getApplicationSessionCount().get("count");
@@ -82,6 +84,7 @@ public class SessionTest {
     }
 
     @Test
+    @DatabaseTest
     public void testGetUserSessions() {
         ClientResource account = AdminApiUtil.findClientByClientId(managedRealm.admin(), "test-app");
 

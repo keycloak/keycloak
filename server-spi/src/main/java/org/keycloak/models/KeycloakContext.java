@@ -132,7 +132,9 @@ public interface KeycloakContext {
      */
     UserModel getUser();
 
-    boolean hasPermission(String realmResourceType, String scope);
-
-    boolean hasPermission(Model model, String realmResourceType, String scope);
+    /**
+     * Returns the permissions evaluator that can be used to check if the current user has permissions to perform an action on realm resources.
+     * @return the permissions evaluator
+     */
+    Permissions getPermissions();
 }

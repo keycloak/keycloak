@@ -19,6 +19,7 @@ import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.GroupConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Test;
@@ -94,6 +95,7 @@ public class UserGroupTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void groupMembershipPaginated() {
         String userId = createUser(UserConfigBuilder.create().username("user-a").build());
 
@@ -111,6 +113,7 @@ public class UserGroupTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void groupMembershipSearch() {
         String userId = createUser(UserConfigBuilder.create().username("user-b").build());
 
@@ -144,6 +147,7 @@ public class UserGroupTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void createUserWithGroups() {
         String username = "user-with-groups";
         String groupToBeAdded = "test-group";

@@ -41,6 +41,7 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
@@ -82,6 +83,7 @@ public class InitialAccessTokenResourceTest {
     }
 
     @Test
+    @DatabaseTest
     public void testInitialAccessTokens() {
         ClientInitialAccessCreatePresentation rep = new ClientInitialAccessCreatePresentation();
         rep.setCount(2);

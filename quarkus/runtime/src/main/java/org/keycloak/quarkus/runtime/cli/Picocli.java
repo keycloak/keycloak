@@ -268,14 +268,13 @@ public class Picocli {
             // first validate the advertised property names
             // - this allows for efficient resolution of wildcard values and checking spi options
             Configuration.getPropertyNames().forEach(name -> {
-                if (!name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
-                    return; // there are canonical mappings to kc. values - no need to consider alternative forms
-                }
-                if (!options.includeRuntime) {
-                    checkRuntimeSpiOptions(name, ignoredRunTime);
-                }
-                if (PropertyMappers.isMaybeSpiBuildTimeProperty(name)) {
-                    ambiguousSpi.add(name);
+                if (name.startsWith(PropertyMappers.KC_SPI_PREFIX)) {
+                    if (!options.includeRuntime) {
+                        checkRuntimeSpiOptions(name, ignoredRunTime);
+                    }
+                    if (PropertyMappers.isMaybeSpiBuildTimeProperty(name)) {
+                        ambiguousSpi.add(name);
+                    }
                 }
                 PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
                 if (mapper == null) {
@@ -288,8 +287,10 @@ public class Picocli {
                         secondClassOptions.put(name, forKey.getFrom());
                     }
                 }
-                if (!mapper.hasWildcard()) {
-                    return; // non-wildcard options will be validated in the next pass
+                if (!mapper.hasWildcard() // non-wildcard options will be validated in the next pass
+                        // validate only canonical mappings to kc. values - no need to consider alternative forms
+                        || !name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+                    return; 
                 }
                 validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
                         deprecatedInUse, missingOption, disabledMappers.contains(mapper), forKey, unnecessary);
@@ -335,7 +336,11 @@ public class Picocli {
                 warn("The following SPI options are using the legacy format and are not being treated as build time options. Please use the new format with the appropriate -- separators to resolve this ambiguity: " + String.join("\n", ambiguousSpi));
             }
             secondClassOptions.forEach((key, firstClass) -> {
-                warn("Please use the first-class option `%s` instead of `%s`".formatted(firstClass, key));
+                if (Configuration.getConfigValue(firstClass).getConfigSourceName() != null) {
+                    warn("With the first-class option `%s` set, you should remove the usage of `%s`".formatted(firstClass, key));
+                } else {
+                    warn("Please use the first-class option `%s` instead of `%s`".formatted(firstClass, key));
+                }
             });
             if (!unnecessary.isEmpty()) {
                 info("The following options were specified, but are typically not relevant for this command: " + String.join("\n", unnecessary));
@@ -444,9 +449,6 @@ public class Picocli {
     }
 
     private static void checkRuntimeSpiOptions(String key, final List<String> ignoredRunTime) {
-        if (!key.startsWith(PropertyMappers.KC_SPI_PREFIX)) {
-            return;
-        }
         boolean buildTimeOption = PropertyMappers.isSpiBuildTimeProperty(key);
 
         if (!buildTimeOption) {
