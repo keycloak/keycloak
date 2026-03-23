@@ -113,13 +113,13 @@ public abstract class OID4VCIssuerTestBase {
     public static final String minimalJwtTypeCredentialConfigurationIdName = "vc-with-minimal-config-id";
 
     @InjectRealm(config = VCTestRealmConfig.class)
-    ManagedRealm testRealm;
+    protected ManagedRealm testRealm;
 
     @InjectClient(ref = "oid4vci-client", config = OID4VCIClient.class)
     ManagedClient managedClient;
 
     @InjectOAuthClient
-    OAuthClient oauth;
+    protected OAuthClient oauth;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
@@ -331,7 +331,7 @@ public abstract class OID4VCIssuerTestBase {
 
     // Static Config and RunOnServer Helpers ---------------------------------------------------------------------------
 
-    static class VCTestServerConfig implements KeycloakServerConfig {
+    public static class VCTestServerConfig implements KeycloakServerConfig {
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
             return config.features(Profile.Feature.OID4VC_VCI);
@@ -345,7 +345,7 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    static class VCTestRealmConfig implements RealmConfig {
+    public static class VCTestRealmConfig implements RealmConfig {
 
         public static final String TEST_REALM_NAME = "test";
 
@@ -596,7 +596,7 @@ public abstract class OID4VCIssuerTestBase {
         }
     }
 
-    static class StaticTimeProvider implements TimeProvider {
+    protected static class StaticTimeProvider implements TimeProvider {
         private final int currentTimeInS;
 
         public StaticTimeProvider(int currentTimeInS) {
