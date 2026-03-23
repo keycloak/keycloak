@@ -218,6 +218,8 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         // So back button doesn't work
         CacheControlUtil.noBackButtonCacheControlHeader(session);
 
+        LocaleUtil.processLocaleParam(session, realm, authenticationSession);
+
         // Add support for Initiating User Registration via OpenID Connect 1.0 via prompt=create
         // see: https://openid.net/specs/openid-connect-prompt-create-1_0.html#section-4.1
         if (OIDCLoginProtocol.PROMPT_VALUE_CREATE.equals(params.getFirst(OAuth2Constants.PROMPT))) {
@@ -413,7 +415,6 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         AuthenticationProcessor processor = createProcessor(authenticationSession, flowId, LoginActionsService.REGISTRATION_PATH);
         authenticationSession.setClientNote(APP_INITIATED_FLOW, LoginActionsService.REGISTRATION_PATH);
-        LocaleUtil.processLocaleParam(session, realm, authenticationSession);
 
         return processor.authenticate();
     }
