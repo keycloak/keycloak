@@ -673,8 +673,8 @@ public class OID4VCIssuerEndpoint {
     @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     @Path(CREDENTIAL_PATH)
     public Response requestCredential(String requestPayload) {
-        RealmModel realmModel = session.getContext().getRealm();
-        EventBuilder eventBuilder = new EventBuilder(realmModel, session, session.getContext().getConnection());
+        RealmModel realm = session.getContext().getRealm();
+        EventBuilder eventBuilder = new EventBuilder(realm, session, session.getContext().getConnection());
         eventBuilder.event(EventType.VERIFIABLE_CREDENTIAL_REQUEST);
 
         checkIsOid4vciEnabled(eventBuilder);
@@ -905,7 +905,7 @@ public class OID4VCIssuerEndpoint {
         // Find credential client scope by requested/authorized credential_configuration_id
         //
         CredentialScopeModel authorizedCredentialScope = CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId(
-                realmModel, () -> clientModel.getClientScopes(false).values().stream(), authorizedCredentialConfigurationId);
+                realm, () -> clientModel.getClientScopes(false).values().stream(), authorizedCredentialConfigurationId);
 
         if (authorizedCredentialScope == null) {
             var errorMessage = String.format("Credential client scope not found: %s", authorizedCredentialConfigurationId);
