@@ -18,6 +18,7 @@ import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
+import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
@@ -116,11 +117,11 @@ public class SpiffeClientAuthTest extends AbstractBaseClientAuthTest {
         return realm;
     }
 
-    public static class SpiffeServerConfig extends ClientAuthIdpServerConfig {
+    public static class SpiffeServerConfig implements KeycloakServerConfig {
 
         @Override
         public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return super.configure(config).features(Profile.Feature.SPIFFE);
+            return config.features(Profile.Feature.SPIFFE);
         }
     }
 

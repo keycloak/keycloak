@@ -21,6 +21,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -49,11 +50,16 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         RealmModel realm = session.getContext().getRealm();
         GroupModel model = session.groups().createGroup(realm, group.getDisplayName());
         populate(model, group);
+        group.setCreatedTimestamp(model.getCreatedTimestamp());
+        group.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
         return group;
     }
 
     @Override
     protected Group onUpdate(GroupModel model, Group resource) {
+        model.setLastModifiedTimestamp(Time.currentTimeMillis());
+        resource.setCreatedTimestamp(model.getCreatedTimestamp());
+        resource.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
         return resource;
     }
 
@@ -137,7 +143,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         List<Predicate> predicates = new ArrayList<>();
 
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(getSchemas(), cb, root);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply realm restriction and group type restrictions

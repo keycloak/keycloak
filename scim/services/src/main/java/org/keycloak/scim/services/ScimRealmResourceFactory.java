@@ -11,6 +11,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 
@@ -28,7 +29,7 @@ public class ScimRealmResourceFactory implements RealmResourceProviderFactory, E
                     Token bearerToken = session.getContext().getBearerToken();
 
                     if (bearerToken == null) {
-                        return Response.status(Status.UNAUTHORIZED).build();
+                        throw new ErrorResponseException(Response.status(Status.UNAUTHORIZED).build());
                     }
 
                     return new ScimRealmResource(session);
@@ -46,7 +47,6 @@ public class ScimRealmResourceFactory implements RealmResourceProviderFactory, E
 
     @Override
     public void init(Scope config) {
-        config.toString();
     }
 
     @Override

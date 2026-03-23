@@ -61,7 +61,7 @@ public class PreAuthorizedCodeGrantTypeFactory implements OAuth2GrantTypeFactory
 
     @Override
     public boolean isSupported(Config.Scope config) {
-        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI);
+        return Profile.isFeatureEnabled(Profile.Feature.OID4VC_VCI_PREAUTH_CODE);
     }
 
 }

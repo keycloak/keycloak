@@ -62,6 +62,7 @@ import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import com.fasterxml.jackson.core.JsonEncoding;
@@ -213,7 +214,7 @@ public class ExportUtils {
 
         // Finally users if needed
         if (options.isUsersIncluded()) {
-            List<UserRepresentation> users = session.users().searchForUserStream(realm, Collections.emptyMap())
+            List<UserRepresentation> users = UserStoragePrivateUtil.userLocalStorage(session).searchForUserStream(realm, Collections.emptyMap())
                     .map(user -> exportUser(session, realm, user, options, internal))
                     .collect(Collectors.toList());
 

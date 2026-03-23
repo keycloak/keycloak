@@ -105,11 +105,11 @@ public class PartitionManager {
       }
 
       public void partition() {
-         log.trace("Partition forming");
+         log.info("Partition forming");
          disableDiscovery();
          installNewView();
          assertPartitionFormed();
-         log.trace("New views installed");
+         log.info("New views installed");
       }
 
       private void disableDiscovery() {
@@ -159,7 +159,9 @@ public class PartitionManager {
          try {
             Thread.sleep(10);
          } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
+            log.error("Interrupted.");
+            return allMembers;
          }
 
          MergeView mv = new MergeView(view1.get(0).getAddress(), viewId.incrementAndGet(), allAddresses, allViews);
@@ -209,11 +211,12 @@ public class PartitionManager {
       }
 
       public void merge(Partition partition) {
+         log.infof("Merging partition. %s and %s", this, partition);
          observeMembers(partition);
          partition.observeMembers(this);
          ArrayList<JChannel> view1 = new ArrayList<>(channels);
          ArrayList<JChannel> view2 = new ArrayList<>(partition.channels);
-         partition.channels.stream().filter(c -> !channels.contains(c)).forEach(c -> channels.add(c));
+         partition.channels.stream().filter(c -> !channels.contains(c)).forEach(channels::add);
          installMergeView(view1, view2);
          enableDiscovery();
          waitForPartitionToForm();
@@ -235,7 +238,7 @@ public class PartitionManager {
                throw new RuntimeException(e);
             }
          });
-         log.trace("Discovery started.");
+         log.info("Discovery started.");
       }
 
       private void observeMembers(Partition partition) {

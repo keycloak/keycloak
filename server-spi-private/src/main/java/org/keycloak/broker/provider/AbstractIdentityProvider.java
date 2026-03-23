@@ -27,8 +27,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -37,6 +39,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 
@@ -113,8 +116,12 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         Map<String, String> error = new HashMap<>();
         error.put("error", errorCode);
         error.put("error_description", reason);
-        String accountLinkUrl = getLinkingUrl(uriInfo, authorizedClient, tokenUserSession);
-        if (accountLinkUrl != null) error.put(ACCOUNT_LINK_URL, accountLinkUrl);
+        if (authorizedClient != null) {
+            String accountLinkUrl = getLinkingUrl(uriInfo, authorizedClient, tokenUserSession);
+            if (accountLinkUrl != null) {
+                error.put(ACCOUNT_LINK_URL, accountLinkUrl);
+            }
+        }
         return Response.status(400).entity(error).type(MediaType.APPLICATION_JSON_TYPE).build();
     }
 
@@ -223,4 +230,29 @@ public abstract class AbstractIdentityProvider<C extends IdentityProviderModel> 
         return new DefaultDataMarshaller();
     }
 
+    protected String getFederatedAccessToken(UserSessionModel userSession) {
+        // return the FEDERATED_ACCESS_TOKEN but just if logged in using this identity provider
+        if (getConfig().getAlias().equals(userSession.getNote(Details.IDENTITY_PROVIDER))) {
+             return userSession.getNote(FEDERATED_ACCESS_TOKEN);
+        }
+        return null;
+    }
+
+    protected Response buildTokenResponse(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient,
+            UserSessionModel tokenUserSession, AccessTokenResponse tokenResponse, String issuedTokenType) {
+        tokenResponse.setIdToken(null);
+        tokenResponse.setRefreshToken(null);
+        tokenResponse.setRefreshExpiresIn(0);
+        tokenResponse.getOtherClaims().clear();
+
+        tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, issuedTokenType);
+
+        if (authorizedClient != null) {
+            tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
+        }
+        if (event != null) {
+            event.success();
+        }
+        return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+    }
 }

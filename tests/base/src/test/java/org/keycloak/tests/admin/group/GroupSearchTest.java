@@ -418,6 +418,40 @@ public class GroupSearchTest extends AbstractGroupTest {
         testParentAndChildGroup("parent/slash", "child/slash");
     }
 
+    @Test
+    public void sqlWildcardEscaping() {
+        // Test underscore in group names doesn't act as SQL wildcard
+        createGroup(managedRealm, GroupConfigBuilder.create().name("test_group").build());
+        createGroup(managedRealm, GroupConfigBuilder.create().name("testagroup").build());
+        createGroup(managedRealm, GroupConfigBuilder.create().name("testbgroup").build());
+
+        GroupsResource groupsResource = managedRealm.admin().groups();
+        List<GroupRepresentation> groups;
+
+        // Underscore should match literally, not as wildcard
+        groups = groupsResource.groups("test_", false, 0, 20, false);
+        assertEquals(1, groups.size());
+        assertEquals("test_group", groups.get(0).getName());
+
+        // Test percent character doesn't act as SQL wildcard
+        createGroup(managedRealm, GroupConfigBuilder.create().name("50%").build());
+        createGroup(managedRealm, GroupConfigBuilder.create().name("500").build());
+        createGroup(managedRealm, GroupConfigBuilder.create().name("50abc").build());
+
+        groups = groupsResource.groups("50%", false, 0, 20, false);
+        assertEquals(1, groups.size());
+        assertEquals("50%", groups.get(0).getName());
+
+        // Test exact match with SQL wildcards
+        groups = groupsResource.groups("test_group", true, 0, 20, false);
+        assertEquals(1, groups.size());
+        assertEquals("test_group", groups.get(0).getName());
+
+        groups = groupsResource.groups("50%", true, 0, 20, false);
+        assertEquals(1, groups.size());
+        assertEquals("50%", groups.get(0).getName());
+    }
+
     private static class GroupSearchTestRealmConfig implements RealmConfig {
 
         @Override

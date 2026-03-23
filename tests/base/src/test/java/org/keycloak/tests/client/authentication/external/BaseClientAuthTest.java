@@ -19,7 +19,7 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@KeycloakIntegrationTest(config = ClientAuthIdpServerConfig.class)
+@KeycloakIntegrationTest
 public class BaseClientAuthTest extends AbstractBaseClientAuthTest {
 
     private static final String IDP_ALIAS = "external-idp";

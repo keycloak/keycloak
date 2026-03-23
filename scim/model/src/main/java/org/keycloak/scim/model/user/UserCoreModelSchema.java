@@ -32,17 +32,25 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     }
 
     @Override
+    public String getName() {
+        return "User";
+    }
+
+    @Override
+    public String getDescription() {
+        return "User Account";
+    }
+
+    @Override
     protected Map<String, Attribute<UserModel, User>> doGetAttributes() {
         List<Attribute<UserModel, User>> attributes = new ArrayList<>();
 
         attributes.addAll(Attribute.<UserModel, User>simple("userName")
                 .modelAttributeResolver(this::createModelAttributeResolver)
-                .primary()
                 .withModelSetter(UserModel::setSingleAttribute)
                 .build());
         attributes.addAll(Attribute.<UserModel, User>complex("emails", Email.class)
                 .modelAttributeResolver(this::createModelAttributeResolver)
-                .primary()
                 .multivalued()
                 .withModelSetter((TriConsumer<UserModel, String, Set<Email>>) (model, name, values) -> {
                     for (Email value : values) {
@@ -67,9 +75,9 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .build());
         attributes.addAll(Attribute.<UserModel, User>complex("name", Name.class)
                 .modelAttributeResolver(this::createModelAttributeResolver)
-                .withAttribute("givenName", UserModel::setSingleAttribute, true)
+                .withAttribute("givenName", UserModel::setSingleAttribute)
                 .withAttribute("formatted", UserModel::setSingleAttribute)
-                .withAttribute("familyName", UserModel::setSingleAttribute, true)
+                .withAttribute("familyName", UserModel::setSingleAttribute)
                 .withAttribute("middleName", UserModel::setSingleAttribute)
                 .withAttribute("honorificPrefix", UserModel::setSingleAttribute)
                 .withAttribute("honorificSuffix", UserModel::setSingleAttribute)
@@ -112,7 +120,6 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .build());
         attributes.addAll(Attribute.<UserModel, User>simple("active")
                 .modelAttributeResolver(this::createModelAttributeResolver)
-                .primary()
                 .bool()
                 .withModelSetter(
                         (model, name, value) -> model.setEnabled(Boolean.parseBoolean(Optional.ofNullable(value).orElse("").toString()))
@@ -120,10 +127,13 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 )
                 .build());
         attributes.addAll(Attribute.<UserModel, User>simple("meta.created")
-                .primary()
                 .timestamp()
                 .immutable()
                 .modelAttributeResolver(this::createModelAttributeResolver)
+                .build());
+        attributes.addAll(Attribute.<UserModel, User>simple("meta.lastModified")
+                .timestamp()
+                .modelAttributeResolver(attribute -> "lastModifiedTimestamp")
                 .build());
         attributes.addAll(Attribute.<UserModel, User>complex("groups", GroupMembership.class)
                 .modelAttributeResolver(Attribute::getName)
@@ -196,5 +206,18 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .build());
 
         return attributes.stream().collect(Collectors.toMap(Attribute::getName, Function.identity()));
+    }
+
+    @Override
+    public void populate(User resource, UserModel model) {
+        super.populate(resource, model);
+        Long createdTimestamp = model.getCreatedTimestamp();
+        if (createdTimestamp != null) {
+            resource.setCreatedTimestamp(createdTimestamp);
+        }
+        Long lastModified = model.getLastModifiedTimestamp();
+        if (lastModified != null) {
+            resource.setLastModifiedTimestamp(lastModified);
+        }
     }
 }

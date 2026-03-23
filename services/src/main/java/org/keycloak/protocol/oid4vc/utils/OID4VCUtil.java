@@ -1,54 +1,29 @@
 package org.keycloak.protocol.oid4vc.utils;
 
-import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
-import org.keycloak.models.ClientScopeModel;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.utils.StringUtil;
+import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 
-import org.jboss.logging.Logger;
-
-import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_PATH;
 
 public class OID4VCUtil {
-
-    private static final Logger logger = Logger.getLogger(OID4VCUtil.class);
 
     private OID4VCUtil() {
     }
 
     /**
-     * Find OID4VCI client scope by credential config ID
-     *
      * @param session Keycloak session
-     * @param realmModel realm
-     * @param credentialConfigId credential configuration ID
-     * @return Found OID4VCI client scope
+     * @param nonce nonce, which is part of the credential offer URI
+     * @return Credential offer as URI, which can be shared with the wallet
      */
-    public static ClientScopeModel getClientScopeByCredentialConfigId(KeycloakSession session, RealmModel realmModel, String credentialConfigId) {
-        if (StringUtil.isBlank(credentialConfigId)) {
-            return null;
-        }
-
-        List<ClientScopeModel> clientScopes = session.clientScopes()
-                .getClientScopesByProtocol(realmModel, OID4VC_PROTOCOL)
-                .filter(it -> credentialConfigId.equals(it.getAttribute(VC_CONFIGURATION_ID)))
-                .toList();
-        if (clientScopes.size() > 1) {
-            List<String> clientScopeNames = clientScopes.stream()
-                    .map(ClientScopeModel::getName)
-                    .toList();
-            logger.warnf("Multiple client scopes find with credential config ID '%s' in the realm '%s'. Please make sure that credential-config-id is unique across client scopes. Found client scopes: %s",
-                    credentialConfigId, realmModel.getName(), clientScopeNames);
-            return null;
-        } else if (clientScopes.isEmpty()) {
-            logger.warnf("No client scopes find with credential config ID '%s' in the realm '%s'",
-                    credentialConfigId, realmModel.getName());
-            return null;
-        } else {
-            return clientScopes.get(0);
-        }
+    public static String getOfferAsUri(KeycloakSession session, String nonce) {
+        String offerUri = KeycloakUriBuilder.fromUri(
+                OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()) + "/protocol/{protocol}/{credentialOfferPath}/{nonce}")
+                .buildAsString(OID4VCLoginProtocolFactory.PROTOCOL_ID, CREDENTIAL_OFFER_PATH, nonce);
+        return "openid-credential-offer://?credential_offer_uri=" + URLEncoder.encode(offerUri, StandardCharsets.UTF_8);
     }
 }

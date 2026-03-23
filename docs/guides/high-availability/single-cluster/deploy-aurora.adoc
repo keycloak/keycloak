@@ -25,8 +25,8 @@ Now that an Aurora database has been established and linked with all of your ROS
 
 . Ensure that the Secrets referenced by `spec.db.usernameSecret` and `spec.db.passwordSecret` contain usernames and passwords defined when creating Aurora.
 
-</@tmpl.guide>
-
 == Next steps
 
 After successful deployment of the Aurora database continue with <@links.ha id="single-cluster-deploy-keycloak" />
+
+</@tmpl.guide>

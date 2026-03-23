@@ -33,7 +33,7 @@ import {
   DefaultValueType,
 } from "./PatternflyVars";
 import { PreviewWindow } from "./PreviewWindow";
-import { ThemeRealmRepresentation } from "./ThemesTab";
+import { ThemeRealmRepresentation } from "./QuickTheme";
 import { UploadJar } from "./UploadJar";
 import { DefaultColorAccordion } from "./DefaultColorAccordion";
 import { ColorControl } from "./ColorControl";

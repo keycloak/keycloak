@@ -11,7 +11,9 @@
 package org.keycloak.tests.scim.tck;
 
 import org.keycloak.scim.client.ScimClient;
+import org.keycloak.testframework.annotations.InjectAdminEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.events.AdminEvents;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 
@@ -22,4 +24,7 @@ public abstract class AbstractScimTest {
 
     @InjectScimClient
     ScimClient client;
+
+    @InjectAdminEvents
+    AdminEvents adminEvents;
 }

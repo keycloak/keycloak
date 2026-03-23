@@ -16,31 +16,13 @@
  */
 package org.keycloak.tests.oid4vc;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
-import java.util.Base64;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 import org.keycloak.admin.client.resource.ComponentsResource;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyUse;
-import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.keys.KeyProvider;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryptionMetadata;
-import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
@@ -98,101 +80,5 @@ public class OID4VCIWellKnownProviderTest extends OID4VCIssuerTestBase {
             assertTrue(algValuesSupported.contains(RSA_OAEP), "The default algorithm for asymmetric encryption should be available as well.");
             assertTrue(algValuesSupported.contains(RSA_OAEP_256), "The algorithm of the configured asymmetric encryption key should be provided.");
         });
-    }
-
-    ComponentRepresentation getAesKeyProvider(String algorithm, String keyName, String keyUse, String providerId) {
-        // Generate a random AES key (default length: 256 bits)
-        byte[] secret = SecretGenerator.getInstance().randomBytes(32); // 32 bytes = 256 bits
-
-        String secretBase64 = Base64.getEncoder().encodeToString(secret);
-
-        ComponentRepresentation component = new ComponentRepresentation();
-        component.setProviderType(KeyProvider.class.getName());
-        component.setName(keyName);
-        component.setId(UUID.randomUUID().toString());
-        component.setProviderId(providerId);
-
-        component.setConfig(new MultivaluedHashMap<>(
-                Map.of(
-                        "secret", List.of(secretBase64),
-                        "active", List.of("true"),
-                        "priority", List.of(String.valueOf(100)),
-                        "enabled", List.of("true"),
-                        "algorithm", List.of(algorithm),
-                        "keyUse", List.of(keyUse) // encryption usage
-                )
-        ));
-        return component;
-    }
-
-    ComponentRepresentation getRsaKeyProvider(KeyWrapper keyWrapper) {
-        ComponentRepresentation component = new ComponentRepresentation();
-        component.setProviderType(KeyProvider.class.getName());
-        component.setName("rsa-key-provider");
-        component.setId(UUID.randomUUID().toString());
-        component.setProviderId("rsa");
-
-        Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(
-                new KeyPair((PublicKey) keyWrapper.getPublicKey(), (PrivateKey) keyWrapper.getPrivateKey()), "TestKey");
-
-        component.setConfig(new MultivaluedHashMap<>(
-                Map.of(
-                        "privateKey", List.of(PemUtils.encodeKey(keyWrapper.getPrivateKey())),
-                        "certificate", List.of(PemUtils.encodeCertificate(certificate)),
-                        "active", List.of("true"),
-                        "priority", List.of("0"),
-                        "enabled", List.of("true"),
-                        "algorithm", List.of(keyWrapper.getAlgorithm()),
-                        "keyUse", List.of(keyWrapper.getUse().name())
-                )
-        ));
-        return component;
-    }
-
-    ComponentRepresentation getRsaEncKeyProvider(String algorithm, String keyName, int priority) {
-        ComponentRepresentation component = new ComponentRepresentation();
-        component.setProviderType(KeyProvider.class.getName());
-        component.setName(keyName);
-        component.setId(UUID.randomUUID().toString());
-        component.setProviderId("rsa");
-
-        KeyWrapper keyWrapper = getRsaKey(KeyUse.ENC, algorithm, keyName);
-        Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(
-                new KeyPair((PublicKey) keyWrapper.getPublicKey(), (PrivateKey) keyWrapper.getPrivateKey()), "TestKey");
-
-        component.setConfig(new MultivaluedHashMap<>(
-                Map.of(
-                        "privateKey", List.of(PemUtils.encodeKey(keyWrapper.getPrivateKey())),
-                        "certificate", List.of(PemUtils.encodeCertificate(certificate)),
-                        "active", List.of("true"),
-                        "priority", List.of(String.valueOf(priority)),
-                        "enabled", List.of("true"),
-                        "algorithm", List.of(algorithm),
-                        "keyUse", List.of(KeyUse.ENC.name())
-                )
-        ));
-        return component;
-    }
-
-    KeyWrapper getRsaKey_Default() {
-        return getRsaKey(KeyUse.SIG, "RS256", null);
-    }
-
-    KeyWrapper getRsaKey(KeyUse keyUse, String algorithm, String keyName) {
-        try {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-            kpg.initialize(2048);
-            var keyPair = kpg.generateKeyPair();
-            KeyWrapper kw = new KeyWrapper();
-            kw.setPrivateKey(keyPair.getPrivate());
-            kw.setPublicKey(keyPair.getPublic());
-            kw.setUse(keyUse);
-            kw.setKid(keyName != null ? keyName : KeyUtils.createKeyId(keyPair.getPublic()));
-            kw.setType("RSA");
-            kw.setAlgorithm(algorithm);
-            return kw;
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

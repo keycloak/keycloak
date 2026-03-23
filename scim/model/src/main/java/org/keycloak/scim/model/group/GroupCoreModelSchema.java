@@ -1,6 +1,7 @@
 package org.keycloak.scim.model.group;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -18,8 +19,18 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     }
 
     @Override
-    public String getName() {
+    public String getId() {
         return Group.SCHEMA;
+    }
+
+    @Override
+    public String getName() {
+        return "Group";
+    }
+
+    @Override
+    public String getDescription() {
+        return getName();
     }
 
     @Override
@@ -45,8 +56,7 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
 
     @Override
     protected Map<String, Attribute<GroupModel, Group>> doGetAttributes() {
-        return new ArrayList<>((Attribute.<GroupModel, Group>simple("displayName")
-                    .primary()
+        List<Attribute<GroupModel, Group>> attributes = new ArrayList<>(Attribute.<GroupModel, Group>simple("displayName")
                     .modelAttributeResolver((attribute) -> {
                         if (attribute.getName().equals("displayName")) {
                             return "name";
@@ -54,6 +64,29 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
                         return null;
                     })
                     .withModelSetter(GroupModel::setName)
-                    .build())).stream().collect(Collectors.toMap(Attribute::getName, Function.identity()));
+                    .build());
+        attributes.addAll(Attribute.<GroupModel, Group>simple("meta.created")
+                .timestamp()
+                .immutable()
+                .modelAttributeResolver(attribute -> "createdTimestamp")
+                .build());
+        attributes.addAll(Attribute.<GroupModel, Group>simple("meta.lastModified")
+                .timestamp()
+                .modelAttributeResolver(attribute -> "lastModifiedTimestamp")
+                .build());
+        return attributes.stream().collect(Collectors.toMap(Attribute::getName, Function.identity()));
+    }
+
+    @Override
+    public void populate(Group resource, GroupModel model) {
+        super.populate(resource, model);
+        Long createdTimestamp = model.getCreatedTimestamp();
+        if (createdTimestamp != null) {
+            resource.setCreatedTimestamp(createdTimestamp);
+        }
+        Long lastModified = model.getLastModifiedTimestamp();
+        if (lastModified != null) {
+            resource.setLastModifiedTimestamp(lastModified);
+        }
     }
 }

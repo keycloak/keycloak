@@ -203,6 +203,9 @@ The server supports some of the most commons TLS termination proxies such as:
 
 |rfc9440
 |Proxies that are compliant to link:https://datatracker.ietf.org/doc/rfc9440/[RFC 9440]
+
+|envoy
+|Envoy
 |===
 
 To configure how client certificates are retrieved from the requests you need to:
@@ -224,7 +227,7 @@ Common options for configuring providers are:
 
 |ssl-client-cert
 | The name of the header holding the client certificate
-| all but `traefik`, optional for `rfc9440`
+| all but `traefik` and `envoy`, optional for `rfc9440`
 
 |ssl-cert-chain-prefix
 | The prefix of the headers holding additional certificates in the chain and used to retrieve individual
@@ -234,7 +237,7 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 
 |certificate-chain-length
 | The maximum length of the certificate chain beyond the client certificate
-| all (defaults to 1)
+| all but `envoy` (defaults to 1)
 
 |===
 
@@ -289,6 +292,11 @@ Traefik sends the client certificate and any intermediate CA certificates as PEM
 The `traefik` provider parses all certificates from this header.
 
 Other than possibly changing the `certificate-chain-length`, you do not need to configure additional options for the `traefik` provider.
+
+=== Configuring the Envoy provider
+
+The Envoy provider will automatically retrieve the client certificate and optional certificate chain from the `x-forwarded-client-cert` header.
+You do not need to configure additional options for the `envoy` provider.
 
 [[graceful-http-shutdown]]
 == Graceful HTTP shutdown
@@ -394,24 +402,15 @@ Calculation:
 
 For production with TLS passthrough:
 
-[source,bash]
-----
 <@kc.start parameters="--shutdown-delay=30s --shutdown-timeout=1s"/>
-----
 
 For load balancers that poll readiness:
 
-[source,bash]
-----
 <@kc.start parameters="--shutdown-delay=16s --shutdown-timeout=1s"/>
-----
 
 For test environments:
 
-[source,bash]
-----
 <@kc.start parameters="--shutdown-delay=0s --shutdown-timeout=500ms"/>
-----
 
 [NOTE]
 ====

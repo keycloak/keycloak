@@ -16,22 +16,19 @@
  */
 package org.keycloak.protocol.oid4vc.issuance.credentialoffer;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.Provider;
 
 public interface CredentialOfferStorage extends Provider {
 
-    void putOfferState(KeycloakSession session, CredentialOfferState entry);
+    void putOfferState(CredentialOfferState entry);
 
-    CredentialOfferState findOfferStateByNonce(KeycloakSession session, String nonce);
+    CredentialOfferState getOfferStateById(String offerId);
 
-    CredentialOfferState findOfferStateByCode(KeycloakSession session, String code);
+    CredentialOfferState getOfferStateByNonce(String nonce);
 
-    CredentialOfferState findOfferStateByCredentialId(KeycloakSession session, String credId);
+    CredentialOfferState getOfferStateByPreAuthCode(String code);
 
-    void replaceOfferState(KeycloakSession session, CredentialOfferState entry);
-
-    void removeOfferState(KeycloakSession session, CredentialOfferState entry);
+    void removeOfferState(CredentialOfferState entry);
 
     @Override
     default void close() {

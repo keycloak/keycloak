@@ -44,13 +44,13 @@ public class OID4VCGrantFeatureTest extends AbstractFeatureStateTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
+    @EnableFeature(value = Profile.Feature.OID4VC_VCI_PREAUTH_CODE, skipRestart = true)
     public void featureEnabled() {
         testFeatureAvailability(true);
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
+    @DisableFeature(value = Profile.Feature.OID4VC_VCI_PREAUTH_CODE, skipRestart = true)
     public void featureDisabled() {
         testFeatureAvailability(false);
     }

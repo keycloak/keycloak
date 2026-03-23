@@ -1,6 +1,7 @@
 package org.keycloak.testframework.oauth;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
@@ -17,13 +18,19 @@ import org.openqa.selenium.support.PageFactory;
 public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
 
     private final ManagedWebDriver managedWebDriver;
+    private final ClientResource clientResource;
 
-    public OAuthClient(String baseUrl, CloseableHttpClient httpClient, ManagedWebDriver managedWebDriver) {
+    public OAuthClient(String baseUrl, CloseableHttpClient httpClient, ManagedWebDriver managedWebDriver, ClientResource clientResource) {
         super(baseUrl, httpClient, managedWebDriver.driver());
         this.managedWebDriver = managedWebDriver;
+        this.clientResource = clientResource;
 
         config = new OAuthClientConfig()
                 .responseType(OAuth2Constants.CODE);
+    }
+
+    public OAuthClient(String baseUrl, CloseableHttpClient httpClient, ManagedWebDriver managedWebDriver) {
+        this(baseUrl, httpClient, managedWebDriver, null);
     }
 
     @Override
@@ -45,6 +52,9 @@ public class OAuthClient extends AbstractOAuthClient<OAuthClient> {
     }
 
     public void close() {
+        if (clientResource != null) {
+            clientResource.remove();
+        }
     }
 
 }

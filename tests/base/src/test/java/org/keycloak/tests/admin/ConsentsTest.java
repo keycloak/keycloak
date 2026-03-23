@@ -41,7 +41,7 @@ import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectUser;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.events.EventMatchers;
+import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
@@ -64,7 +64,6 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.hamcrest.MatcherAssert;
 import org.jboss.logging.Logger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -212,9 +211,8 @@ public class ConsentsTest {
         RealmRepresentation providerRealmRep = providerRealm.admin().toRepresentation();
         providerRealmRep.setAccountTheme("keycloak");
         providerRealm.admin().update(providerRealmRep);
-        providerRealm.admin().clients().create(ClientConfigBuilder.create().clientId("test-app").redirectUris("*").publicClient(true).webOrigins("*").build());
 
-        ClientRepresentation providerAccountRep = providerRealm.admin().clients().findByClientId("test-app").get(0);
+        ClientRepresentation providerAccountRep = providerRealm.admin().clients().findByClientId("test-app-provider").get(0);
 
         // add offline_scope to default account-console client scope
         ClientScopeRepresentation offlineAccessScope = providerRealm.admin().getDefaultOptionalClientScopes().stream()
@@ -262,7 +260,7 @@ public class ConsentsTest {
     @Test
     public void testConsentCancel() {
         // setup account client to require consent
-        ClientResource accountClient = findClientByClientId(providerRealm.admin(), "test-app");
+        ClientResource accountClient = findClientByClientId(providerRealm.admin(), "test-app-provider");
 
         ClientRepresentation clientRepresentation = accountClient.toRepresentation();
         clientRepresentation.setConsentRequired(true);
@@ -299,22 +297,17 @@ public class ConsentsTest {
         assertTrue(driver.page().getPageSource().contains("Happy days"), "Test user should be successfully logged in.");
 
         EventRepresentation loginEvent = userRealmEvents.poll();
-        Assertions.assertNotNull(loginEvent);
-        Assertions.assertEquals(userFromUserRealm.getId(), loginEvent.getUserId());
-        Assertions.assertEquals(EventType.LOGIN.toString(), loginEvent.getType());
-        loginEvent.getDetails().forEach((key, value) -> {
-            switch (key) {
-                case Details.CODE_ID -> MatcherAssert.assertThat(value, EventMatchers.isCodeId());
-                case Details.USERNAME -> Assertions.assertEquals(userFromUserRealm.getUsername(), value);
-                case Details.CONSENT -> Assertions.assertEquals(Details.CONSENT_VALUE_NO_CONSENT_REQUIRED, value);
-                case Details.REDIRECT_URI -> Assertions.assertEquals("http://127.0.0.1:8500/callback/oauth", value);
-            }
-        });
+        EventAssertion.assertSuccess(loginEvent).type(EventType.LOGIN)
+                .userId(userFromUserRealm.getId())
+                .isCodeId()
+                .details(Details.USERNAME, userFromUserRealm.getUsername())
+                .details(Details.CONSENT, Details.CONSENT_VALUE_NO_CONSENT_REQUIRED)
+                .details(Details.REDIRECT_URI, "http://127.0.0.1:8500/callback/oauth");
 
         userRealm.updateWithCleanup(r -> r.enabledEventTypes("REFRESH_TOKEN_ERROR"));
         String sessionId = loginEvent.getSessionId();
 
-        ClientRepresentation clientRepresentation = userRealm.admin().clients().findByClientId("test-app").get(0);
+        ClientRepresentation clientRepresentation = userRealm.admin().clients().findByClientId("test-app-user").get(0);
         try {
             clientRepresentation.setConsentRequired(true);
             userRealm.admin().clients().get(clientRepresentation.getId()).update(clientRepresentation);
@@ -327,13 +320,13 @@ public class ConsentsTest {
             Assertions.assertEquals(OAuthErrorException.INVALID_SCOPE, refreshTokenResponse.getError());
             Assertions.assertEquals("Client no longer has requested consent from user", refreshTokenResponse.getErrorDescription());
 
-            EventRepresentation refreshEvent = userRealmEvents.poll();
-            Assertions.assertNotNull(refreshEvent);
-            Assertions.assertNull(refreshEvent.getUserId());
-            Assertions.assertEquals(EventType.REFRESH_TOKEN_ERROR.toString(), refreshEvent.getType());
             Assertions.assertNull(refreshTokenResponse.getRefreshToken());
-            Assertions.assertEquals(sessionId, refreshEvent.getSessionId());
-            Assertions.assertEquals(Errors.INVALID_TOKEN, refreshEvent.getError());
+
+            EventRepresentation refreshEvent = userRealmEvents.poll();
+            EventAssertion.assertError(refreshEvent).type(EventType.REFRESH_TOKEN_ERROR)
+                    .userId(null)
+                    .sessionId(sessionId)
+                    .error(Errors.INVALID_TOKEN);
         } finally {
             clientRepresentation.setConsentRequired(false);
             userRealm.admin().clients().get(clientRepresentation.getId()).update(clientRepresentation);
@@ -345,7 +338,7 @@ public class ConsentsTest {
     @Test
     public void testConsentWithAdditionalClientAttributes() {
         // setup account client to require consent
-        ClientResource accountClient = findClientByClientId(providerRealm.admin(), "test-app");
+        ClientResource accountClient = findClientByClientId(providerRealm.admin(), "test-app-provider");
 
         ClientRepresentation clientRepresentation = accountClient.toRepresentation();
         clientRepresentation.setConsentRequired(true);

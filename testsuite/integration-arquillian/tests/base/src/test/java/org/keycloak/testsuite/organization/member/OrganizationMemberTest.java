@@ -24,13 +24,16 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.OrganizationMemberResource;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.models.Constants;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -49,6 +52,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import org.hamcrest.Matchers;
@@ -135,6 +139,25 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertEquals(2, actual.size());
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(expected.getId()::equals));
         assertTrue(actual.stream().map(OrganizationRepresentation::getId).anyMatch(orgB.getId()::equals));
+    }
+
+    @Test
+    public void testGetMemberOrganizationRequiresMembershipInCurrentOrganization() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationRepresentation orgB = createOrganization("orgb");
+        OrganizationResource organizationB = testRealm().organizations().get(orgB.getId());
+        UserRepresentation member = addMember(organizationB);
+
+        try {
+            organization.members().member(member.getId()).getOrganizations(true);
+            fail("should not resolve organizations for a user that is not a member of the current organization");
+        } catch (NotFoundException expected) {
+        }
+
+        List<OrganizationRepresentation> actual = testRealm().organizations().members().getOrganizations(member.getId(), true);
+        assertNotNull(actual);
+        assertEquals(1, actual.size());
+        assertEquals(orgB.getId(), actual.get(0).getId());
     }
 
     @Test
@@ -428,6 +451,55 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testSearchMembersWithSqlWildcards() {
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        // Create members with SQL wildcard characters in various fields
+        UserRepresentation user1 = addMember(organization, "john_doe@test.org", "John", "Doe");
+        UserRepresentation user2 = addMember(organization, "johnadoe@test.org", "Johna", "Doe");
+        UserRepresentation user3 = addMember(organization, "johnbdoe@test.org", "Johnb", "Doe");
+
+        // Search with underscore in username - should match literally, not as wildcard
+        List<MemberRepresentation> members = organization.members().search("john_", false, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getUsername(), is(equalTo("john_doe@test.org")));
+
+        // Search with percent character - should match literally, not as wildcard
+        UserRepresentation user4 = addMember(organization, "fifty", "50%@test.org", "Fifty", "Percent", true);
+        UserRepresentation user5 = addMember(organization, "500@test.org", "Five", "Hundred");
+        UserRepresentation user6 = addMember(organization, "50abc@test.org", "Fiftyabc", "Test");
+
+        members = organization.members().search("50%", false, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getEmail(), is(equalTo("50%@test.org")));
+
+        // Test exact search with SQL wildcards
+        members = organization.members().search("john_doe@test.org", true, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getUsername(), is(equalTo("john_doe@test.org")));
+
+        members = organization.members().search("50%@test.org", true, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getEmail(), is(equalTo("50%@test.org")));
+
+        // Test search by email with underscore
+        UserRepresentation user7 = addMember(organization, "testfn", "test_fn@test.org", "TestName", "LastName", true);
+        UserRepresentation user8 = addMember(organization, "testafn", "testafn@test.org", "TestaName", "LastName", true);
+
+        members = organization.members().search("test_", false, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getEmail(), is(equalTo("test_fn@test.org")));
+
+        // Test search by email with both percent and underscore
+        UserRepresentation user9 = addMember(organization, "testpercent", "50%_test@test.org", "FirstName", "Last", true);
+        UserRepresentation user10 = addMember(organization, "testatest", "50atest@test.org", "FirstName", "Last", true);
+
+        members = organization.members().search("50%_", false, null, null);
+        assertThat(members, hasSize(1));
+        assertThat(members.get(0).getEmail(), is(equalTo("50%_test@test.org")));
+    }
+
+    @Test
     public void testAddMemberFromDifferentRealm() {
         String orgId = createOrganization().getId();
 
@@ -635,6 +707,38 @@ public class OrganizationMemberTest extends AbstractOrganizationTest {
         assertNotNull("Full representation should include attributes", fullOrgsGlobal.get(0).getAttributes());
         assertTrue("Full representation should include the test attribute", 
                 fullOrgsGlobal.get(0).getAttributes().containsKey("testAttribute"));
+    }
+
+    @Test
+    public void testGetMemberOrganizationsForbiddenForNonAdminUser() throws Exception {
+        // create 2 orgs
+        OrganizationRepresentation orgA = createOrganization("orga");
+        OrganizationRepresentation orgB = createOrganization("orgb");
+
+        // create userA and add as member of both orgs
+        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
+        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        UserRepresentation userA = addMember(orgAResource, "usera@orga.org");
+        orgBResource.members().addMember(userA.getId()).close();
+
+        // create userB (non-admin user)
+        UserRepresentation userB = UserBuilder.create()
+                .username("userb")
+                .password("password")
+                .enabled(true)
+                .build();
+        try (Response response = testRealm().users().create(userB)) {
+            userB.setId(ApiUtil.getCreatedId(response));
+        }
+        getCleanup().addCleanup(() -> testRealm().users().get(userB.getId()).remove());
+
+        // send request as userB to OrganizationsResource.getOrganizations with member-id = userA
+        try (Keycloak userBClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                TEST_REALM_NAME, "userb", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            userBClient.realm(TEST_REALM_NAME).organizations().members().getOrganizations(userA.getId(), true);
+            fail("Expected ForbiddenException");
+        } catch (ForbiddenException expected) {
+        }
     }
 
     private void loginViaNonOrgIdP(String idpAlias) {

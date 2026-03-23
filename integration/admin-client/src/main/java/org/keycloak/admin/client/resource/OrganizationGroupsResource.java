@@ -53,6 +53,19 @@ public interface OrganizationGroupsResource {
     );
 
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> getAll(
+            @QueryParam("search") String search,
+            @QueryParam("q") String searchQuery,
+            @QueryParam("exact") Boolean exact,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max,
+            @QueryParam("briefRepresentation") boolean briefRepresentation,
+            @QueryParam("populateHierarchy") boolean populateHierarchy,
+            @QueryParam("subGroupsCount") boolean subGroupsCount
+    );
+
+    @GET
     @Path("group-by-path/{path: .*}")
     @Produces(MediaType.APPLICATION_JSON)
     GroupRepresentation getGroupByPath(

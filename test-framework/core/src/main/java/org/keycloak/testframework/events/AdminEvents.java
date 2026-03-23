@@ -34,6 +34,11 @@ public class AdminEvents extends AbstractEvents<AdminEventRepresentation> {
     }
 
     @Override
+    protected long getTime(AdminEventRepresentation rep) {
+        return rep.getTime();
+    }
+
+    @Override
     protected void clearServerEvents() {
         realm.admin().clearAdminEvents();
     }

@@ -210,7 +210,8 @@ public final class Database {
                 "oracle.jdbc.driver.OracleDriver",
                 "org.hibernate.dialect.OracleDialect",
                 // default URL looks like this: "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:${kc.db-url-port:1521}/${kc.db-url-database:keycloak}"
-                (namedProperty, alias) -> "jdbc:oracle:thin:@//%s:%s/%s".formatted(
+                (namedProperty, alias) -> "jdbc:oracle:thin:%s//%s:%s/%s".formatted(
+                        getProperty(DatabaseOptions.DB_ORACLE_TLS_TRANSPORT, namedProperty, "@"),
                         getProperty(DatabaseOptions.DB_URL_HOST, namedProperty, "localhost"),
                         getProperty(DatabaseOptions.DB_URL_PORT, namedProperty, "1521"),
                         getProperty(DatabaseOptions.DB_URL_DATABASE, namedProperty, "keycloak")),

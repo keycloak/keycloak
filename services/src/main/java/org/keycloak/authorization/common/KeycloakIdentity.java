@@ -26,8 +26,11 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.attribute.Attributes;
 import org.keycloak.authorization.identity.Identity;
+import org.keycloak.authorization.store.ResourceServerStore;
+import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.authorization.util.Tokens;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -258,7 +261,14 @@ public class KeycloakIdentity implements Identity {
                 throw new IllegalArgumentException("User from token not found");
             }
 
-            this.resourceServer = clientUser != null && userSession.getId().equals(clientUser.getId());
+            if (clientUser != null && userSession.getId().equals(clientUser.getId())) {
+                AuthorizationProvider provider = keycloakSession.getProvider(AuthorizationProvider.class);
+                StoreFactory storeFactory = provider.getStoreFactory();
+                ResourceServerStore resourceServerStore = storeFactory.getResourceServerStore();
+                this.resourceServer = resourceServerStore.findByClient(clientModel) != null;
+            } else {
+                this.resourceServer = false;
+            }
 
             if (resourceServer) {
                 this.id = clientModel.getId();

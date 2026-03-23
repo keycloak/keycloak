@@ -34,7 +34,7 @@ public class ServiceProviderConfigTest extends AbstractScimTest {
         assertFalse(changePassword.getSupported());
         Supported patch = config.getPatch();
         assertNotNull(patch);
-        assertFalse(patch.getSupported());
+        assertTrue(patch.getSupported());
         List<AuthenticationScheme> authenticationSchemes = config.getAuthenticationSchemes();
         assertNotNull(authenticationSchemes);
         // TODO: support at least bearer token authentication scheme

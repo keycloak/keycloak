@@ -20,8 +20,18 @@ public final class UserEnterpriseModelSchema extends AbstractUserModelSchema {
     }
 
     @Override
-    public String getName() {
+    public String getId() {
         return ENTERPRISE_USER_SCHEMA;
+    }
+
+    @Override
+    public String getName() {
+        return "EnterpriseUser";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Enterprise User";
     }
 
     @Override

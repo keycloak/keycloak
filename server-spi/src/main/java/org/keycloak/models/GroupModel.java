@@ -201,6 +201,27 @@ public interface GroupModel extends RoleMapperModel, Model {
 
     Comparator<GroupModel> COMPARE_BY_NAME = Comparator.comparing(GroupModel::getName);
 
+    /**
+     * Get timestamp of group creation. May be null for groups created before this feature introduction.
+     */
+    default Long getCreatedTimestamp() {
+        return null;
+    }
+
+    default void setCreatedTimestamp(Long timestamp) {
+    }
+
+    /**
+     * Get timestamp of last group modification. May be null for groups that have not been modified
+     * since this feature was introduced.
+     */
+    default Long getLastModifiedTimestamp() {
+        return null;
+    }
+
+    default void setLastModifiedTimestamp(Long timestamp) {
+    }
+
     String getId();
 
     String getName();

@@ -38,16 +38,16 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         SET, ADD, REMOVE
     }
 
-    private final String name;
+    private final String id;
     private Map<String, Attribute<M, R>> attributes;
 
-    protected AbstractModelSchema(String name) {
-        this.name = name;
+    protected AbstractModelSchema(String id) {
+        this.id = id;
     }
 
     @Override
-    public String getName() {
-        return name;
+    public String getId() {
+        return id;
     }
 
     @Override
@@ -177,14 +177,14 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
                 if (attributeName.indexOf('.') > 0) {
                     attributeName = attributeName.substring(attributeName.indexOf('.') + 1);
                     List<String> paths = new ArrayList<>();
-                    paths.add(getName());
+                    paths.add(getId());
                     paths.addAll(List.of(attributeName.split("\\.")));
                     value = getJsonValue(objectNode, paths);
                 }
             }
 
             if (value == null) {
-                JsonNode schemaExtension = objectNode.get(getName());
+                JsonNode schemaExtension = objectNode.get(getId());
                 value = getJsonValue(schemaExtension, attribute.getName());
             }
 
@@ -228,7 +228,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
 
             Object value = getAttributeValue(model, name);
             attribute.set(resource, value);
-            resource.addSchema(this.name);
+            resource.addSchema(this.id);
         }
     }
 
@@ -245,8 +245,8 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
             return attribute;
         }
 
-        if (!isCore() && scimName.startsWith(getName())) {
-            scimName = scimName.substring(getName().length() + 1);
+        if (!isCore() && scimName.startsWith(getId())) {
+            scimName = scimName.substring(getId().length() + 1);
         }
 
         for (Entry<String, Attribute<M, R>> entry : getAttributes().entrySet()) {
@@ -289,15 +289,15 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
                     if (attr != null) {
                         // found sub-attribute withing the path
                         attributes.put(attr, property.getValue());
-                    } else if (isCore() && getName().equals(path)) {
+                    } else if (isCore() && getId().equals(path)) {
                         // if core schema, resolve all its attributes based on the properties of the value JSON node
                         attributes.putAll(resolveAttributes(property.getKey(), property.getValue()));
                     } else {
                         // fallback to resolve the attribute from an extension schema
                         String name = property.getKey();
 
-                        if (!name.startsWith(getName())) {
-                            name = getName() + ":" + name;
+                        if (!name.startsWith(getId())) {
+                            name = getId() + ":" + name;
                         }
 
                         attributes.putAll(resolveAttributes(name, property.getValue()));
@@ -337,12 +337,12 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
             String parent = attr.getParentName();
 
             if (parent != null) {
-                paths.add(getName() + attr.getName().replace(parent + ".", ":"));
-                paths.add(getName() + attr.getName().replace(parent, ""));
+                paths.add(getId() + attr.getName().replace(parent + ".", ":"));
+                paths.add(getId() + attr.getName().replace(parent, ""));
             }
 
             if (attr.getAlias() != null) {
-                paths.add(getName() + ":" + attr.getAlias());
+                paths.add(getId() + ":" + attr.getAlias());
             }
         }
 

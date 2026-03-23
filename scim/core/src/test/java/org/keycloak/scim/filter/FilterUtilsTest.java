@@ -206,4 +206,51 @@ public class FilterUtilsTest {
         assertDoesNotThrow(() -> FilterUtils.parseFilter(
             "meta.lastModified le \"2024-12-31T23:59:59Z\""));
     }
+
+    @Test
+    public void testValuePathSimple() {
+        // Simple value path with single condition
+        assertDoesNotThrow(() -> FilterUtils.parseFilter("name[familyName eq \"Silva\"]"));
+        assertDoesNotThrow(() -> FilterUtils.parseFilter("emails[value co \"example.com\"]"));
+        assertDoesNotThrow(() -> FilterUtils.parseFilter("emails[type pr]"));
+    }
+
+    @Test
+    public void testValuePathWithLogicalOperators() {
+        // Value path with AND
+        assertDoesNotThrow(() -> FilterUtils.parseFilter(
+            "name[familyName eq \"Silva\" and givenName sw \"Jo\"]"));
+
+        // Value path with OR
+        assertDoesNotThrow(() -> FilterUtils.parseFilter(
+            "emails[type eq \"work\" or type eq \"home\"]"));
+
+        // Value path with NOT
+        assertDoesNotThrow(() -> FilterUtils.parseFilter(
+            "emails[not (type eq \"work\")]"));
+    }
+
+    @Test
+    public void testValuePathCombinedWithRegularFilters() {
+        // Value path combined with regular attribute expressions
+        assertDoesNotThrow(() -> FilterUtils.parseFilter(
+            "name[familyName eq \"Silva\"] and active eq true"));
+
+        assertDoesNotThrow(() -> FilterUtils.parseFilter(
+            "userName sw \"J\" or emails[type eq \"work\" and value co \"example.com\"]"));
+    }
+
+    @Test
+    public void testValuePathWithParentheses() {
+        // Parentheses inside value path
+        assertDoesNotThrow(() -> FilterUtils.parseFilter(
+            "emails[(type eq \"work\" or type eq \"home\") and value co \"example\"]"));
+    }
+
+    @Test
+    public void testValuePathWithSchemaPrefix() {
+        // Value path with schema-prefixed parent attribute
+        assertDoesNotThrow(() -> FilterUtils.parseFilter(
+            "urn:ietf:params:scim:schemas:core:2.0:User:name[familyName eq \"Silva\"]"));
+    }
 }

@@ -30,6 +30,7 @@ public class RemoteKeycloakServer implements KeycloakServer {
             }
             waitForStartup();
         }
+        ReadinessProbe.waitUntilReady(this);
     }
 
     @Override

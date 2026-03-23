@@ -117,8 +117,8 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         assertNotNull("Credential offer URI should not be null", offerUri.getIssuer());
         assertNotNull("Nonce should not be null", offerUri.getNonce());
 
-        // Verify CREDENTIAL_OFFER_REQUEST event was fired
-        events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST)
+        // Verify VERIFIABLE_CREDENTIAL_CREATE_OFFER event was fired
+        events.expect(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER)
                 .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())
@@ -307,8 +307,8 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
         // Should return 400 Bad Request
         assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatusCode());
 
-        // Verify VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR event was fired
-        events.expect(EventType.VERIFIABLE_CREDENTIAL_OFFER_REQUEST_ERROR)
+        // Verify VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR event was fired
+        events.expect(EventType.VERIFIABLE_CREDENTIAL_CREATE_OFFER_ERROR)
                 .client(clientId)
                 .user(AssertEvents.isUUID())
                 .session(AssertEvents.isSessionId())
@@ -332,8 +332,8 @@ public class OID4VCCredentialOfferCorsTest extends OID4VCIssuerEndpointTest {
             CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
             // Create offer with expiration time just 1 second in the past
             // This ensures it's still findable in storage but marked as expired
-            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() - 1);
-            offerStorage.putOfferState(session, offerState);
+            CredentialOfferState offerState = new CredentialOfferState(credOffer, null, null, Time.currentTime() - 1, null);
+            offerStorage.putOfferState(offerState);
             session.getTransactionManager().commit();
             return offerState.getNonce();
         });

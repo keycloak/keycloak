@@ -3,10 +3,12 @@ package org.keycloak.scim.model.config;
 import java.util.List;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.models.Model;
 import org.keycloak.scim.resource.config.ServiceProviderConfig;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.BulkSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.FilterSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.Supported;
+import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
 
 public class ServiceProviderConfigResourceTypeProvider implements SingletonResourceTypeProvider<ServiceProviderConfig> {
@@ -17,7 +19,7 @@ public class ServiceProviderConfigResourceTypeProvider implements SingletonResou
 
         config.setId("");
         config.setBulk(new BulkSupport());
-        config.setPatch(Supported.FALSE);
+        config.setPatch(Supported.TRUE);
         config.setEtag(Supported.FALSE);
         config.setAuthenticationSchemes(List.of());
         config.setChangePassword(Supported.FALSE);
@@ -36,5 +38,10 @@ public class ServiceProviderConfigResourceTypeProvider implements SingletonResou
     @Override
     public String getSchema() {
         return ServiceProviderConfig.SCHEMA;
+    }
+
+    @Override
+    public <M extends Model> List<ModelSchema<M, ServiceProviderConfig>> getSchemas() {
+        return List.of();
     }
 }

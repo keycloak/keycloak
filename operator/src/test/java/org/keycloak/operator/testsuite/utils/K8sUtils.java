@@ -181,7 +181,7 @@ public final class K8sUtils {
     private static void createCurlContainer(PodBuilder builder) {
         builder.withNewSpec()
                 .addNewContainer()
-                .withImage("curlimages/curl:8.1.2")
+                .withImage("quay.io/curl/curl:8.1.2")
                 .withCommand("sh")
                 .withName("curl")
                 .withStdin()

@@ -46,8 +46,8 @@
 
         <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
 
-        <quarkus.version>3.32.2</quarkus.version>
-        <quarkus.build.version>3.32.2</quarkus.build.version>
+        <quarkus.version>3.33.0.CR1</quarkus.version>
+        <quarkus.build.version>3.33.0.CR1</quarkus.build.version>
         <jboss-logging-annotations.version>3.0.4.Final</jboss-logging-annotations.version> <!-- keep in sync with the version used by quarkus -->
 
         <project.build-time>${timestamp}</project.build-time>
@@ -88,8 +88,8 @@
         <hibernate-orm.plugin.version>6.2.13.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.13.Final</hibernate.c3p0.version>
         <microprofile-metrics-api.version>5.1.2</microprofile-metrics-api.version>
-        <infinispan.version>16.0.7</infinispan.version>
-        <protostream.version>6.0.4</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
+        <infinispan.version>16.0.8</infinispan.version>
+        <protostream.version>6.0.6</protostream.version> <!-- For the annotation processor: keep in sync with the version shipped with Infinispan -->
         <protostream.plugin.version>${protostream.version}</protostream.plugin.version>
 
         <!--JAKARTA-->
@@ -155,6 +155,9 @@
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>17.5</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.5.6</aws-jdbc-wrapper.version>
+        <cnpg.major-minor-version>1.28</cnpg.major-minor-version>
+        <cnpg.patch-version>1</cnpg.patch-version>
+        <cnpg.version>${cnpg.major-minor-version}.${cnpg.patch-version}</cnpg.version>
         <postgresql-jdbc.version>42.7.10</postgresql-jdbc.version>
         <mariadb.version>11.8</mariadb.version>
         <mariadb.container>mirror.gcr.io/mariadb:${mariadb.version}</mariadb.container>

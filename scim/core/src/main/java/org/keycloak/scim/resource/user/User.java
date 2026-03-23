@@ -56,9 +56,6 @@ public class User extends ResourceTypeRepresentation {
     @JsonProperty("active")
     private Boolean active;
 
-    @JsonProperty("password")
-    private String password;
-
     @JsonProperty("emails")
     private List<Email> emails;
 
@@ -176,14 +173,6 @@ public class User extends ResourceTypeRepresentation {
 
     public void setActive(Boolean active) {
         this.active = active;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public List<Email> getEmails() {

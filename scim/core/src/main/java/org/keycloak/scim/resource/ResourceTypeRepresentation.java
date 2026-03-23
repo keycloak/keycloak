@@ -29,7 +29,10 @@ public abstract class ResourceTypeRepresentation {
     private Meta meta;
 
     @JsonIgnore
-    private long createdTimestamp;
+    private Long createdTimestamp;
+
+    @JsonIgnore
+    private Long lastModifiedTimestamp;
 
     public Set<String> getSchemas() {
         if (schemas == null) {
@@ -71,12 +74,20 @@ public abstract class ResourceTypeRepresentation {
         return Optional.ofNullable(getSchemas()).orElse(Set.of()).contains(schema);
     }
 
-    public void setCreatedTimestamp(long createdTimestamp) {
+    public void setCreatedTimestamp(Long createdTimestamp) {
         this.createdTimestamp = createdTimestamp;
     }
 
-    public long getCreatedTimestamp() {
+    public Long getCreatedTimestamp() {
         return createdTimestamp;
+    }
+
+    public void setLastModifiedTimestamp(Long lastModifiedTimestamp) {
+        this.lastModifiedTimestamp = lastModifiedTimestamp;
+    }
+
+    public Long getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
     }
 
     public void addSchema(String schema) {

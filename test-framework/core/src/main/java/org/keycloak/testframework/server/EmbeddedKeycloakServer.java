@@ -22,6 +22,7 @@ public class EmbeddedKeycloakServer implements KeycloakServer {
         }
 
         keycloak = builder.start(keycloakServerConfigBuilder.toArgs());
+        ReadinessProbe.waitUntilReady(this);
     }
 
     @Override

@@ -439,6 +439,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             configureBrowserFlowWithRecoveryAuthnCodes(testingClient, 0);
             RealmRepresentation rep = testRealm().toRepresentation();
             rep.setBruteForceProtected(true);
+            rep.setMaxSecondaryAuthFailures(100);
             testRealm().update(rep);
 
             List<String> generatedRecoveryAuthnCodes = createRecoveryAuthnCodesForUser();
@@ -465,6 +466,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         } finally {
             RealmRepresentation rep = testRealm().toRepresentation();
             rep.setBruteForceProtected(false);
+            rep.setMaxSecondaryAuthFailures(0);
             testRealm().update(rep);
             // Revert copy of browser flow to original to keep clean slate after this test
             BrowserFlowTest.revertFlows(testRealm(), BROWSER_FLOW_WITH_RECOVERY_AUTHN_CODES);

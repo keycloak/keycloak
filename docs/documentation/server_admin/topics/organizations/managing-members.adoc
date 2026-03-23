@@ -199,6 +199,36 @@ that user is managed or unmanaged member, respectively.
 
 For more details, see <<_managed_unmanaged_members_,Managed and unmanaged members>>.
 
+== Viewing organization group memberships
+
+You can view which organization groups a member belongs to directly from the member's context menu.
+
+.Procedure
+
+. To view group memberships from the *Members* tab:
+.. Navigate to your organization.
+.. Click the *Members* tab.
+.. Locate the member.
+.. Click the kebab menu (⋮) next to the member.
+.. Select *Show organization group memberships*.
+. To view group memberships from a specific group:
+.. Navigate to your organization.
+.. Click the *Groups* tab.
+.. Select the group.
+.. Click the *Members* tab.
+.. Locate the member.
+.. Click the kebab menu (⋮) next to the member.
+.. Select *Show memberships*.
+. To view group memberships from the user's detail page:
+.. Click *Users* in the menu.
+.. Select the user.
+.. Click the *Organizations* tab.
+.. Locate the organization.
+.. Click the kebab menu (⋮) next to the organization.
+.. Select *Show organization group memberships*.
+
+This displays all groups from the specific organization the member is currently assigned to.
+
 == Support for federated members
 
 Users coming from federated providers can also be added as members of an organization. The only exceptions are the users from LDAP providers with *import mode disabled*. Organization members are added to an internal group that is not synchronized with external providers, so even if the LDAP provider has a group mapper with mode LDAP_ONLY it won't be possible for the non-imported users to be added as members of an organization because that membership won't be synced with the LDAP server.

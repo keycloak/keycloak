@@ -19,6 +19,12 @@ public class KeycloakSAMLClientRepresentation extends SAMLClientRepresentation {
 
     @JsonIgnore
     @Override
+    public String getUuid() {
+        return super.getUuid();
+    }
+
+    @JsonIgnore
+    @Override
     public String getClientId() {
         return super.getClientId();
     }

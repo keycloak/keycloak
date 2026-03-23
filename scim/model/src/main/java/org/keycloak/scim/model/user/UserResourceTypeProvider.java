@@ -3,16 +3,21 @@ package org.keycloak.scim.model.user;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.authorization.fgap.evaluation.partial.PartialEvaluationStorageProvider;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
@@ -21,11 +26,14 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.jpa.UserAdapter;
 import org.keycloak.models.jpa.entities.UserEntity;
+import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.scim.filter.FilterUtils;
 import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.filter.ScimFilterParser.FilterContext;
+import org.keycloak.scim.model.filter.ScimAttributeJpaExpressionResolver;
 import org.keycloak.scim.model.filter.ScimJPAPredicateEvaluator;
 import org.keycloak.scim.protocol.request.SearchRequest;
+import org.keycloak.scim.resource.schema.attribute.Attribute;
 import org.keycloak.scim.resource.spi.AbstractScimResourceTypeProvider;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.userprofile.UserProfile;
@@ -38,7 +46,7 @@ import org.keycloak.utils.StringUtil;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
-public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<UserModel, User> {
+public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<UserModel, User> implements ScimAttributeJpaExpressionResolver {
 
     public UserResourceTypeProvider(KeycloakSession session) {
         super(session, new UserCoreModelSchema(session), List.of(new UserEnterpriseModelSchema(session)));
@@ -47,7 +55,13 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
     @Override
     public User onCreate(User resource) {
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
-        UserProfile profile = provider.create(UserProfileContext.SCIM, Map.of(UserModel.USERNAME, resource.getUserName()));
+        String userName = resource.getUserName();
+
+        if (userName == null) {
+            throw new ModelValidationException("username is required");
+        }
+
+        UserProfile profile = provider.create(UserProfileContext.SCIM, Map.of(UserModel.USERNAME, userName));
         UserModel model = profile.create(false);
 
         populate(model, resource);
@@ -58,6 +72,9 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         } catch (ValidationException ve) {
             throw handleValidationException(ve);
         }
+
+        resource.setCreatedTimestamp(model.getCreatedTimestamp());
+        resource.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
 
         return resource;
     }
@@ -71,6 +88,10 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         } catch (ValidationException ve) {
             throw handleValidationException(ve);
         }
+
+        model.setLastModifiedTimestamp(Time.currentTimeMillis());
+        resource.setCreatedTimestamp(model.getCreatedTimestamp());
+        resource.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
 
         return resource;
     }
@@ -172,7 +193,7 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         List<Predicate> predicates = new ArrayList<>();
 
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(getSchemas(), cb, root);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply service account restriction
@@ -186,5 +207,15 @@ public class UserResourceTypeProvider extends AbstractScimResourceTypeProvider<U
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.USERS, (PartialEvaluationStorageProvider) userProvider, realm, cb, query, root));
 
         return predicates;
+    }
+
+    @Override
+    public Expression<?> getAttributeExpression(Attribute<?, ?> attribute, CriteriaBuilder cb, Root<?> root, BiFunction<Class<?>, Supplier<Join<?, ?>>, Join<?, ?>> joinResolver) {
+        if ("groups".equals(attribute.getName())) {
+            Join<?, ?> join = joinResolver.apply(UserGroupMembershipEntity.class, () -> root.join(UserGroupMembershipEntity.class));
+            join.on(cb.equal(root.get("id"), join.get("user").get("id")));
+            return join.get("groupId");
+        }
+        return null;
     }
 }

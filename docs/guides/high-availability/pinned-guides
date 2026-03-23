@@ -6,6 +6,7 @@ single-cluster/concepts-database-connections
 single-cluster/concepts-threads
 single-cluster/concepts-memory-and-cpu-sizing
 single-cluster/deploy-aurora
+single-cluster/deploy-cnpg
 single-cluster/deploy-keycloak
 multi-cluster/introduction
 multi-cluster/concepts

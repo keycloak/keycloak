@@ -23,7 +23,14 @@ notExpression
 
 atom
     : LPAREN expression RPAREN
+    | valuePath
     | attributeExpression
+    ;
+
+// Value path for complex attribute filtering (RFC 7644 §3.4.2.2)
+// e.g., name[familyName eq "Smith" and givenName sw "Jo"]
+valuePath
+    : ATTRPATH LBRACKET expression RBRACKET
     ;
 
 // Attribute comparison expressions

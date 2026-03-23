@@ -107,7 +107,7 @@ public class AttackDetectionResourceTest {
     }
 
     private void assertBruteForce(Map<String, Object> status, Integer expectedNumFailures, Integer expectedNumTemporaryLockouts, Boolean expectedFailure, Boolean expectedDisabled) {
-        assertEquals(6, status.size());
+        assertEquals(7, status.size());
         assertEquals(expectedNumFailures, status.get("numFailures"));
         assertEquals(expectedNumTemporaryLockouts, status.get("numTemporaryLockouts"));
         assertEquals(expectedDisabled, status.get("disabled"));

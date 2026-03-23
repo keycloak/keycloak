@@ -61,8 +61,8 @@ fragment ALPHA : [a-zA-Z];
 fragment DOT : '.';
 fragment COLON : ':';
 fragment SLASHSLASH : '//';
-fragment LBRACKET : '[';
-fragment RBRACKET : ']';
+LBRACKET : '[';
+RBRACKET : ']';
 
 // Whitespace
 WS : [ \t\r\n]+ -> skip;

@@ -18,11 +18,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 public interface ModelSchema<M extends Model, R extends ResourceTypeRepresentation> {
 
     /**
-     * The name of the schema. It is used to identify the schema and to associate it with a resource type.
+     * The id of the schema. It is used to identify the schema and to associate it with a resource type.
      *
-     * @return the name of the schema
+     * @return the id of the schema
      */
+    String getId();
+
     String getName();
+
+    String getDescription();
 
     /**
      * Returns the attributes defined by this schema. The key of the map is the name of the attribute and the value is

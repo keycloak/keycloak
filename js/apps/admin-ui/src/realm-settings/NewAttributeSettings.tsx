@@ -132,7 +132,7 @@ export default function NewAttributeSettings() {
   const { adminClient } = useAdminClient();
   const { realm: realmName, attributeName } = useParams<AttributeParams>();
   const form = useForm<UserProfileAttributeFormFields>();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const [config, setConfig] = useState<UserProfileConfig | null>(null);
@@ -278,6 +278,7 @@ export default function NewAttributeSettings() {
               translation: formFields.translation,
             },
           });
+          await i18n.reloadResources();
         } catch (error) {
           addError(t("errorSavingTranslations"), error);
         }

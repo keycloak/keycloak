@@ -90,6 +90,7 @@ import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
@@ -132,6 +133,8 @@ import org.keycloak.utils.MediaType;
 import org.jboss.resteasy.reactive.NoCache;
 
 import static java.util.Objects.requireNonNull;
+
+import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -1123,19 +1126,29 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @GET
     @Path("/pre-authorized-code")
     @NoCache
-    public String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expiration) {
+    public String getPreAuthorizedCode(@QueryParam("realm") final String realmName, @QueryParam("userSessionId") final String userSessionId, @QueryParam("clientId") final String clientId, @QueryParam("expiration") final int expireAt) {
         RealmModel realm = getRealmByName(realmName);
         UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
+
+        String credConfigId = "oid4vc_natural_person_sd";
 
         String code = "urn:oid4vci:code:" + UUID.randomUUID();
         CredentialsOffer credOffer = new CredentialsOffer()
                 .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
-                .setCredentialConfigurationIds(List.of("oid4vc_natural_person_sd"))
+                .setCredentialConfigurationIds(List.of(credConfigId))
                 .addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
 
-        String userId = userSession.getUser().getId();
+        String targetUserId = userSession.getUser().getId();
+        CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, targetUserId, expireAt, credOfferId -> {
+            OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+            authDetail.setType(OPENID_CREDENTIAL);
+            authDetail.setCredentialConfigurationId(credConfigId);
+            authDetail.setCredentialsOfferId(credOfferId);
+            return List.of(authDetail);
+        });
+
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        offerStorage.putOfferState(session, new CredentialOfferState(credOffer, clientId, userId, expiration));
+        offerStorage.putOfferState( offerState);
 
         return code;
     }
@@ -1145,7 +1158,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @NoCache
     public String getTxCode(@QueryParam("pre-auth-code") final String preAuthCode) {
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        var offerState = offerStorage.findOfferStateByCode(session, preAuthCode);
+        var offerState = offerStorage.getOfferStateByPreAuthCode( preAuthCode);
         return Optional.ofNullable(offerState).map(CredentialOfferState::getTxCode).orElse(null);
     }
 
