@@ -13,7 +13,7 @@ Read on to learn more about each new feature. If you are upgrading from a previo
 
 JWT Authorization Grant (https://datatracker.ietf.org/doc/html/rfc7523[RFC 7523]) is designed to implement external-to-internal token exchange use cases. This grant allows using externally signed JWT assertions to request OAuth 2.0 access tokens.
 
-In this release, JWT Authorization Grant is promoted from preview to default. See the link:{securing_apps_base_link}/jwt-authorization-grant[JWT Authorization Grant guide] for additional details.
+In this release, JWT Authorization Grant is promoted from preview to supported. See the link:{securing_apps_base_link}/jwt-authorization-grant[JWT Authorization Grant guide] for additional details.
 
 == Federated client authentication (supported)
 
