@@ -37,6 +37,7 @@ public class OASModelFilter implements OASFilter {
 
     private final Logger log = Logger.getLogger(OASModelFilter.class);
     private final Map<String, ClassInfo> simpleNameToClassInfoMap = new HashMap<>();
+    private final ValidationAnnotationScanner validationScanner = new ValidationAnnotationScanner();
 
     public static final String REF_PREFIX = "#/components/schemas/";
 
@@ -285,16 +286,58 @@ public class OASModelFilter implements OASFilter {
             if (schema.getProperties() != null) {
                 ClassInfo classInfo = simpleNameToClassInfoMap.get(schemaName);
                 if (classInfo == null) {
-                    log.debugf("No Java class found for schema '%s' — property descriptions from  the '%s' annotation will not be added", schemaName, JsonPropertyDescription.class.getName());
+                    log.debugf("No Java class found for schema '%s' — property descriptions from the '%s' annotation will not be added", schemaName, JsonPropertyDescription.class.getName());
                 } else {
+                    // Get class-level validation descriptions (e.g., @UuidUnmodified, @ClientSecretNotBlank)
+                    Map<String, String> classLevelValidations = validationScanner.buildClassLevelDescriptions(classInfo);
+
                     schema.getProperties().forEach((propertyName, propertySchema) -> {
+                        // First, ensure we have the base description from @JsonPropertyDescription
                         if (isNullOrEmpty(propertySchema.getDescription())) {
                             propertySchema.setDescription(findJsonPropertyDescription(classInfo, propertyName));
+                        }
+
+                        // Add machine-readable validation schema properties
+                        validationScanner.applySchemaProperties(classInfo, propertyName, propertySchema);
+
+                        // Build validation description from field-level annotations
+                        String fieldValidation = validationScanner.buildDescription(classInfo, propertyName);
+
+                        // Check for class-level validation that affects this field
+                        String classValidation = classLevelValidations.get(propertyName);
+
+                        // Combine field and class validations
+                        String combinedValidation = combineValidations(fieldValidation, classValidation);
+
+                        // Append validation description if any
+                        if (combinedValidation != null) {
+                            String existingDesc = propertySchema.getDescription();
+                            String newDesc = isNullOrEmpty(existingDesc)
+                                    ? "Validation: " + combinedValidation
+                                    : existingDesc + ". Validation: " + combinedValidation;
+                            propertySchema.setDescription(newDesc);
+                            log.debugf("Added validation description to '%s.%s': %s", schemaName, propertyName, combinedValidation);
                         }
                     });
                 }
             }
         });
+    }
+
+    /**
+     * Combines field-level and class-level validation descriptions.
+     */
+    private String combineValidations(String fieldValidation, String classValidation) {
+        if (fieldValidation == null && classValidation == null) {
+            return null;
+        }
+        if (fieldValidation == null) {
+            return classValidation;
+        }
+        if (classValidation == null) {
+            return fieldValidation;
+        }
+        return fieldValidation + "; " + classValidation;
     }
 
     private String findJsonPropertyDescription(ClassInfo classInfo, String fieldName) {
