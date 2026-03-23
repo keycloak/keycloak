@@ -130,13 +130,12 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
             if (!(o instanceof Auth auth)) {
                 return false;
             }
-            if (!super.equals(o)) return false;
             return Objects.equals(method, auth.method) && Objects.equals(secret, auth.secret) && Objects.equals(certificate, auth.certificate);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(super.hashCode(), method, secret, certificate);
+            return Objects.hash(method, secret, certificate);
         }
     }
 

@@ -29,6 +29,10 @@ Database:
                        deprecated, you should explicitly specify the db instead. Possible values
                        are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres, tidb.
                        Default: dev-file.
+--db-connect-timeout <timeout>
+                     Sets the JDBC driver connection timeout and login timeout. May be an ISO 8601
+                       duration value, an integer number of seconds, or an integer followed by one
+                       of [ms, h, m, s, d]. Default: 10s.
 --db-debug-jpql <true|false>
                      Add JPQL information as comments to SQL statements to debug JPA SQL statement
                        generation. Default: false.
@@ -269,6 +273,13 @@ Import:
 --override <true|false>
                      Set if existing data should be overwritten. If set to false, data will be
                        ignored. Default: true.
+
+Server configuration:
+
+--server-async-bootstrap <enabled>
+                     If true, endpoints are opened while the bootstrap runs in the background. If
+                       false, endpoints are opened after bootstrap completes, ensuring the server
+                       is ready to handle requests. Default: true.
 
 Bootstrap Admin:
 

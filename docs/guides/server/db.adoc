@@ -281,77 +281,14 @@ For example:
 
 <@kc.start parameters="--db mssql --db-url-properties=';sendStringParametersAsUnicode=true'"/>
 
-== Automatic database connection timeout
+== Database connection and login timeout
 
 When {project_name} connects to the database, network problems can occur, especially during failovers or switchovers.
-To improve resilience and ensure faster recovery, {project_name} automatically sets a default connection timeout of 10 seconds for selected database vendors when using the standard JDBC driver.
+To improve failover behavior and startup resilience during network issues, {project_name} sets a default connection timeout of 10s for all supported database vendors when using the standard JDBC driver.
 
-The following table lists the affected vendors, the JDBC driver property used, and the default value applied by {project_name}:
-
-[%autowidth]
-|===
-|Database |JDBC driver property |Default value |Unit
-
-|MySQL
-|`connectTimeout`
-|`10000`
-|milliseconds
-
-|MariaDB
-|`connectTimeout`
-|`10000`
-|milliseconds
-
-|PostgreSQL
-|`connectTimeout`
-|`10`
-|seconds
-
-|Oracle Database
-|`oracle.net.CONNECT_TIMEOUT`
-|`10000`
-|milliseconds
-
-|Microsoft SQL Server
-|`loginTimeout`
-|`10`
-|seconds
-
-|===
-
-{project_name} applies these defaults automatically, but only when all of the following conditions are met:
-
-* The database vendor is configured via `--db`.
-* {project_name} is using the standard JDBC driver for that vendor.
-* The timeout property has not already been set explicitly by the user in `db-url` or `db-url-properties`.
-
-=== Overriding the default connection timeout
-
-To use a different connection timeout, set the relevant JDBC driver property explicitly via `db-url` or `db-url-properties`.
-
-For MySQL:
-
-<@kc.start parameters="--db mysql --db-url-properties='?connectTimeout=30000'"/>
-
-For MariaDB:
-
-<@kc.start parameters="--db mariadb --db-url-properties='?connectTimeout=30000'"/>
-
-For Microsoft SQL Server:
-
-<@kc.start parameters="--db mssql --db-url-properties=';loginTimeout=20'"/>
-
-For PostgreSQL:
-
-<@kc.start parameters="--db postgres --db-url-properties='?connectTimeout=30'"/>
-
-[NOTE]
-====
-When using `db-url-properties`, prepend the correct delimiter for your vendor's JDBC URL format:
-
-* PostgreSQL, MySQL, and MariaDB: use `?` as the first property delimiter, or `&` for subsequent properties.
-* Microsoft SQL Server: use `;` as the property delimiter.
-====
+`db-connect-timeout`::
+Sets the JDBC driver connection timeout and login timeout.
+Default: `10s`.
 
 == Preparing for PostgreSQL
 

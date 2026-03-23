@@ -26,9 +26,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
@@ -44,12 +41,10 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.EventMatchers;
 import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
@@ -65,7 +60,6 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
@@ -81,21 +75,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Base class for authorization details flow tests.
  * Contains common test logic that can be reused by JWT and SD-JWT specific test classes.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
 public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssuerTestBase {
-
-    @InjectKeycloakUrls
-    KeycloakUrls keycloakUrls;
-
-    @BeforeEach
-    public void enableDirectAccessGrants() {
-        RealmResource realm = testRealm.admin();
-        ClientsResource clients = realm.clients();
-        ClientRepresentation clientRep = clients.findByClientId(OID4VCI_CLIENT_ID).get(0);
-        ClientResource clientResource = clients.get(clientRep.getId());
-        clientRep.setDirectAccessGrantsEnabled(true);
-        clientResource.update(clientRep);
-    }
 
     protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String scopeName) {
         AccessTokenResponse tokenResponse = oauthClient

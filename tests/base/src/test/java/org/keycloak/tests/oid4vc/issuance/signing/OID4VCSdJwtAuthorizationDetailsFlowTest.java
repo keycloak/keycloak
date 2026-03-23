@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * SD-JWT-specific authorization details flow tests.
  * Extends the base class to inherit common test logic while providing SD-JWT-specific implementations.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
 public class OID4VCSdJwtAuthorizationDetailsFlowTest extends OID4VCAuthorizationDetailsFlowTestBase {
 
     @Override

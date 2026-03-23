@@ -61,6 +61,7 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 
 public class PropertyMapper<T> {
 
+    public static final int DEFAULT_VALUE_ORDINAL = 251; // keycloak defaults are logically higher than classpath entries
     protected final Option<T> option;
     private final String to;
     private Function<AbstractCommand, Boolean> enabled;
@@ -117,12 +118,18 @@ public class PropertyMapper<T> {
      * <p>
      * In preference order we are looking for:
      * <pre>
-     *  [ {@link #from} ] ---> [ {@link #mapFrom} ] ---> [ {@link #getDefaultValue()} ] ---> [ {@link #to} ]
-     * (explicit)     (derived)           (fallback)         (fallback)
+     *  [ {@link #from} ] ---> [ {@link #mapFrom} ] ---> [ {@link #getDefaultValue()} ]
+     * (explicit)      (derived)           (fallback)
      * </pre>
      * <p>
      *
-     * <b>2. Transform found value</b>
+     * <b>2. Use to</b>
+     * <p>
+     * If we are looking for the `to` value, and no value was found from step 1 or it is effectively a default value,
+     * then use the `to` value if it was set by the user.
+     * <p>
+     *
+     * <b>3. Transform found value</b>
      * <p>
      * If we found a value for the attribute name, it needs to be transformed via {@link #transformValue} method. How to transform it?
      * <ul>
@@ -130,6 +137,10 @@ public class PropertyMapper<T> {
      *   <li>If the value contains an expression, expand it using SmallRye logic
      *   <li>Finally the returned {@link ConfigValue} is made to match what was requested - with the name, value, rawValue, and ordinal set appropriately.
      * </ul>
+     *
+     * <b>4. Use to</b>
+     * <p>
+     * If no value is found or mapped, return the `to` value.
      */
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
         String from = getFrom();
@@ -138,6 +149,7 @@ public class PropertyMapper<T> {
         // we don't want the NestedPropertyMappingInterceptor to restart the chain here, so we force a proceed
         // this ensures that mapFrom transformers, and regular transformers are applied exclusively - not chained
         ConfigValue config = convertValue(NestedPropertyMappingInterceptor.proceed(context, from));
+        Optional<ConfigValue> directValue = null;
 
         boolean parentValue = false;
         if (mapFrom != null && (config == null || config.getValue() == null)) {
@@ -148,12 +160,21 @@ public class PropertyMapper<T> {
             parentValue = true;
         }
 
+        // instead of using a default or mapping from a default, check if the value is already set and use that instead
+        // a warning should be emitted about this in picocli
+        if (!name.equals(from) && (config == null || config.getValue() == null || (parentValue && Configuration.isDefault(config)))) {
+            directValue = Optional.ofNullable(context.proceed(name));
+            if (directValue.filter(c -> c.getValue() != null && Configuration.isUserModifiable(c)).isPresent()) {
+                return directValue.get();
+            }
+        }
+
         if (config != null && config.getValue() != null) {
             config = transformValue(name, config, context, parentValue);
         } else {
             String defaultValue = this.option.getDefaultValue().map(Option::getDefaultValueString).orElse(null);
             config = transformValue(name, new ConfigValueBuilder().withName(name)
-                    .withValue(defaultValue).withRawValue(defaultValue).build(),
+                    .withValue(defaultValue).withRawValue(defaultValue).withConfigSourceOrdinal(DEFAULT_VALUE_ORDINAL).build(),
                     context, false);
         }
 
@@ -162,6 +183,9 @@ public class PropertyMapper<T> {
         }
 
         // now try any defaults from quarkus
+        if (directValue != null) {
+            return directValue.orElse(null);
+        }
         return context.proceed(name);
     }
 

@@ -1,23 +1,5 @@
-/*
- * Copyright 2026 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.keycloak.tests.broker;
 
-import java.security.PublicKey;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,80 +9,28 @@ import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
-import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.protocol.saml.mappers.AttributeStatementHelper;
 import org.keycloak.protocol.saml.mappers.UserAttributeStatementMapper;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
-import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.saml.SignatureAlgorithm;
-import org.keycloak.saml.common.constants.GeneralConstants;
-import org.keycloak.saml.common.constants.JBossSAMLConstants;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
-import org.keycloak.saml.common.util.DocumentUtil;
-import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
-import org.keycloak.testframework.annotations.InjectRealm;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
-import org.keycloak.util.TokenUtil;
-
-import org.junit.jupiter.api.Assertions;
-import org.w3c.dom.Document;
 
 /**
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest
-public class SamlIdentityProviderStoreTokenTest extends AbstractIdentityProviderStoreTokenTest {
-
-    @InjectRealm(config = IdpRealmConfig.class)
-    protected ManagedRealm realm;
-
-    @InjectRealm(ref = "external-realm", config = ExternalRealmConfig.class)
-    ManagedRealm externalRealm;
+public interface InterfaceSamlIdentityProviderStoreTokenTest extends InterfaceIdentityProviderStoreTokenTest {
 
     @Override
-    protected ManagedRealm getRealm() {
-        return realm;
-    }
-
-    @Override
-    protected ManagedRealm getExternalRealm() {
-        return externalRealm;
-    }
-
-    @Override
-    protected void checkSuccessfulTokenResponse(AccessTokenResponse externalTokens) {
-        try {
-            Assertions.assertEquals(TokenUtil.TOKEN_TYPE_BEARER, externalTokens.getTokenType());
-            Assertions.assertNotNull(externalTokens.getAccessToken());
-            Document assertion = DocumentUtil.getDocument(
-                    new String(Base64.getUrlDecoder().decode(externalTokens.getAccessToken()), GeneralConstants.SAML_CHARSET));
-            Assertions.assertEquals(JBossSAMLConstants.ASSERTION.getNsUri().get(), assertion.getDocumentElement().getNamespaceURI());
-            Assertions.assertEquals(JBossSAMLConstants.ASSERTION.get(), assertion.getDocumentElement().getLocalName());
-            Assertions.assertTrue(AssertionUtil.isSignedElement(assertion.getDocumentElement()));
-
-            KeysMetadataRepresentation keysMetadata = externalRealm.admin().keys().getKeyMetadata();
-            String kid = keysMetadata.getActive().get("RS256");
-            KeyMetadataRepresentation keyMetadata = keysMetadata.getKeys().stream()
-                    .filter(k -> kid.equals(k.getKid())).findAny().orElse(null);
-            PublicKey realmPubKey = KeycloakModelUtils.getPublicKey(keyMetadata.getPublicKey());
-
-            SamlProtocolUtils.verifyDocumentSignature(assertion, new HardcodedKeyLocator(realmPubKey));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    default boolean isRefreshTokenAllowed() {
+        return false;
     }
 
     public static class IdpRealmConfig implements RealmConfig {
@@ -121,6 +51,8 @@ public class SamlIdentityProviderStoreTokenTest extends AbstractIdentityProvider
                     .setAttribute(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())
                     .setAttribute(SAMLIdentityProviderConfig.SIGNATURE_ALGORITHM, SignatureAlgorithm.RSA_SHA256.name())
                     .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, Boolean.TRUE.toString())
+                    .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, Boolean.TRUE.toString())
+                    .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, Boolean.TRUE.toString())
                     .setAttribute(IdentityProviderModel.METADATA_DESCRIPTOR_URL, "http://localhost:8080/realms/" + EXTERNAL_REALM_NAME + "/protocol/saml/descriptor")
                     .storeToken(true)
                     .addReadTokenRoleOnCreate(true)

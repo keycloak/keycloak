@@ -123,6 +123,12 @@ public class DatabaseOptions {
             .hidden()
             .build();
 
+    public static final Option<String> DB_CONNECT_TIMEOUT = new OptionBuilder<>("db-connect-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("Sets the JDBC driver connection timeout and login timeout. " + DURATION_DESCRIPTION)
+            .defaultValue("10s")
+            .build();
+
     public static final Option<String> DB_TLS_MODE = new OptionBuilder<>("db-tls-mode", String.class)
             .category(OptionCategory.DATABASE)
             .expectedValues(Arrays.stream(DatabaseTlsMode.values()).map(DatabaseTlsMode::toCliValue).toList())
@@ -193,8 +199,6 @@ public class DatabaseOptions {
     public static final Option<String> DB_PROPERTY_ORACLE_TRUST_STORE_TYPE = new OptionBuilder<>("db-property-javax.net.ssl.trustStoreType", String.class)
             .hidden()
             .build();
-
-
     public static final Option<String> DB_MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = new OptionBuilder<>("db-mssql-send-string-parameter-as-unicode", String.class)
             .category(OptionCategory.DATABASE)
             .defaultValue("false")
@@ -202,32 +206,26 @@ public class DatabaseOptions {
             .build();
     public static final Option<String> DB_MYSQL_CONNECT_TIMEOUT = new OptionBuilder<>("db-mysql-connect-timeout", String.class)
             .category(OptionCategory.DATABASE)
-            .defaultValue("10000") // 10 seconds in milliseconds
             .hidden()
             .build();
     public static final Option<String> DB_MARIADB_CONNECT_TIMEOUT = new OptionBuilder<>("db-mariadb-connect-timeout", String.class)
             .category(OptionCategory.DATABASE)
-            .defaultValue("10000") // 10 seconds in milliseconds
             .hidden()
             .build();
     public static final Option<String> DB_ORACLE_CONNECT_TIMEOUT = new OptionBuilder<>("db-oracle-connect-timeout", String.class)
             .category(OptionCategory.DATABASE)
-            .defaultValue("10000") // 10 seconds in milliseconds
             .hidden()
             .build();
     public static final Option<String> DB_MSSQL_CONNECT_TIMEOUT = new OptionBuilder<>("db-mssql-login-timeout", String.class)
             .category(OptionCategory.DATABASE)
-            .defaultValue("10") // 10 seconds, unit is SECONDS
             .hidden()
             .build();
     public static final Option<String> DB_POSTGRES_CONNECT_TIMEOUT = new OptionBuilder<>("db-postgres-connect-timeout", String.class)
             .category(OptionCategory.DATABASE)
-            .defaultValue("10") // 10 seconds, unit is SECONDS
             .hidden()
             .build();
     public static final Option<String> DB_TIDB_CONNECT_TIMEOUT = new OptionBuilder<>("db-tidb-connect-timeout", String.class)
             .category(OptionCategory.DATABASE)
-            .defaultValue("10000") // 10 seconds in milliseconds
             .hidden()
             .build();
     public static final class Datasources {

@@ -52,6 +52,20 @@ By default, there is no limit set.
 Set the option `http-max-queued-requests` to limit the number of queued requests to a given threshold matching your environment.
 Any request that exceeds this limit would return with an immediate `503 Server not Available` response.
 
+== Server bootstrap behavior
+
+Server initialization, such as database migrations, may take a significant amount of time to complete.
+By default, {project_name} opens its HTTP(S) and Management endpoints while initialization is still in progress in the background.
+This allows the startup and liveness probes to report UP early, preventing orchestrators like Kubernetes from killing the container during a long-running migration, while the readiness probe reports DOWN until initialization completes.
+
+If you run {project_name} behind a proxy or load balancer, configure an HTTP health check with the path `/health/ready` to ensure traffic is routed only to instances that have completed initialization.
+
+If an HTTP health check is not possible, or you prefer the server to accept connections only after initialization completes, start {project_name} with the following option:
+
+<@kc.start parameters="--server-async-bootstrap=false"/>
+
+With this setting, {project_name} opens its endpoints only after the bootstrap is complete and the server is ready to handle requests.
+
 == Production grade database
 The database used by {project_name} is crucial for the overall performance, availability, reliability and integrity of {project_name}. For details on how to configure a supported database, see <@links.server id="db"/>.
 
