@@ -50,10 +50,12 @@ public class ValidationAnnotationScanner {
     private static final DotName UUID_UNMODIFIED = DotName.createSimple("org.keycloak.representations.admin.v2.validation.UuidUnmodified");
     private static final DotName CLIENT_SECRET_NOT_BLANK = DotName.createSimple("org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank");
 
-    // Validation groups
-    private static final DotName CREATE_CLIENT = DotName.createSimple("org.keycloak.representations.admin.v2.validation.CreateClient");
-    private static final DotName PUT_CLIENT = DotName.createSimple("org.keycloak.representations.admin.v2.validation.PutClient");
-    private static final DotName PATCH_CLIENT = DotName.createSimple("org.keycloak.representations.admin.v2.validation.PatchClient");
+    // Validation group operation prefixes mapped to their human-readable context
+    private static final Map<String, String> OPERATION_PREFIXES = Map.of(
+            "Create", "on create",
+            "Put", "on update",
+            "Patch", "on patch"
+    );
 
     /**
      * Applies machine-readable validation schema properties based on validation annotations.
@@ -417,13 +419,10 @@ public class ValidationAnnotationScanner {
 
         List<String> contexts = new ArrayList<>();
         for (Type group : groups) {
-            DotName groupName = group.name();
-            if (CREATE_CLIENT.equals(groupName)) {
-                contexts.add("on create");
-            } else if (PUT_CLIENT.equals(groupName)) {
-                contexts.add("on update");
-            } else if (PATCH_CLIENT.equals(groupName)) {
-                contexts.add("on patch");
+            String simpleName = group.name().local();
+            String context = getOperationContext(simpleName);
+            if (context != null) {
+                contexts.add(context);
             }
         }
 
@@ -432,6 +431,15 @@ public class ValidationAnnotationScanner {
         }
 
         return String.join("/", contexts) + ": ";
+    }
+
+    private String getOperationContext(String groupSimpleName) {
+        for (Map.Entry<String, String> entry : OPERATION_PREFIXES.entrySet()) {
+            if (groupSimpleName.startsWith(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     private AnnotationInstance getFieldAnnotation(FieldInfo field, DotName annotationName) {
