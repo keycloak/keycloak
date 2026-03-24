@@ -111,24 +111,32 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel model, UserSessionModel userSession, KeycloakSession session, ClientSessionContext clientSessionCtx) {
-        // First, try to resolve from requested scopes (respects token refresh)
-        List<OrganizationModel> organizations = resolveFromRequestedScopes(session, userSession, clientSessionCtx).toList();
+        String orgId;
+        KeycloakContext context = session.getContext();
+        OrganizationModel organization = context.getOrganization();
 
-        // If no organizations found from scopes, fall back to stored session note
-        if (organizations.isEmpty()) {
-            String orgId = clientSessionCtx.getClientSession().getNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
-            if (orgId != null) {
-                OrganizationModel org = session.getProvider(OrganizationProvider.class).getById(orgId);
-                if (org != null) {
-                    organizations = List.of(org);
-                }
-            }
+        if (organization != null) {
+            orgId = organization.getId();
+        } else {
+            orgId = clientSessionCtx.getClientSession().getNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
         }
 
-        KeycloakContext context = session.getContext();
+        List<OrganizationModel> organizations;
+
+        if (orgId == null) {
+            organizations = resolveFromRequestedScopes(session, userSession, clientSessionCtx).toList();
+        } else {
+            organizations = List.of(session.getProvider(OrganizationProvider.class).getById(orgId));
+        }
+
         RealmModel realm = context.getRealm();
         ProtocolMapperModel effectiveModel = getEffectiveModel(session, realm, model);
         UserModel user = userSession.getUser();
+
+        if (organizations.size() == 1) {
+            context.setOrganization(organizations.get(0));
+        }
+
         Object claim = resolveValue(effectiveModel, user, organizations);
 
         if (claim == null) {

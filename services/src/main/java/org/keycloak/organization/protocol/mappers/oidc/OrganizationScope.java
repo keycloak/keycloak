@@ -76,7 +76,7 @@ public enum OrganizationScope {
                 }
                 
                 // Reject ANY scope requests - they require user selection which isn't available during refresh
-                if (currentScope != null && currentScope.name().equals("ANY")) {
+                if (isAnyScope(currentScope)) {
                     return null;
                 }
                 
@@ -122,7 +122,7 @@ public enum OrganizationScope {
                 // Handle the case where current is ANY scope ("organization") and previous is a SINGLE scope ("organization:foo")
                 // When the current scope is just "organization" and the previous scope has a specific org like "organization:foo",
                 // we should preserve the specific organization from the previous scope
-                if (currentScope != null && currentScope.valueMatcher.test("")) {
+                if (isAnyScope(currentScope)) {
                     return previous;
                 }
 
@@ -180,6 +180,19 @@ public enum OrganizationScope {
     private static final String UNSUPPORTED_ORGANIZATION_SCOPES_ATTRIBUTE = "kc.org.client.scope.unsupported";
     private static final Pattern SCOPE_PATTERN = Pattern.compile("(.*)" + VALUE_SEPARATOR + "(.*)");
     private static final String EMPTY_SCOPE = "";
+
+    /**
+     * Checks if the given scope is {@link OrganizationScope#ANY}.
+     *
+     * <p>This method exists because {@code ALL} and {@code SINGLE} are declared before {@code ANY} in this enum.
+     * Referencing {@code OrganizationScope.ANY} directly inside their initializer lambdas causes a
+     * "Cannot refer to enum constant before its definition" compile error. Routing through this static method
+     * (defined after all constants) avoids the forward-reference restriction.
+     */
+    private static boolean isAnyScope(OrganizationScope scope) {
+        return OrganizationScope.ANY.equals(scope);
+    }
+
 
     /**
      * <p>Resolves the value of the scope from its raw format. For instance, {@code organization:<value>} will resolve to {@code <value>}.

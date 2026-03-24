@@ -56,12 +56,11 @@ import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -255,8 +254,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         loginPage.loginUsername(member.getEmail());
         loginPage.login(memberPassword);
 
-        String transformedScope = "organization:orga";
-        assertScopeAndClaims(transformedScope, orgA);
+        assertScopeAndClaims(orgScope, orgA);
     }
 
     @Test
@@ -274,7 +272,6 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
         selectOrganizationPage.selectOrganization(orgB.getAlias());
-        String transformedScope = "organization:orgb";
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
         assertThat(response.getScope(), containsString("organization"));
@@ -427,10 +424,9 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
             loginPage.open(bc.consumerRealmName());
             loginPage.loginUsername(member.getEmail());
             selectOrganizationPage.selectOrganization(orgA.getAlias());
-            String tab1TransformedScope = "organization:orga";
             loginPage.login(memberPassword);
             AccessTokenResponse response = assertSuccessfulCodeGrant(oauth);
-            assertThat(response.getScope(), containsString(tab1TransformedScope));
+            assertThat(response.getScope(), containsString("organization"));
             String tab1RefreshToken = response.getRefreshToken();
 
             //second tab - select orgB
@@ -438,15 +434,14 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
             assertThat(tabUtil.getCountOfTabs(), is(2));
             selectOrganizationPage.isCurrent();
             selectOrganizationPage.selectOrganization(orgB.getAlias());
-            String tab2TransformedScope = "organization:orgb";
             response = assertSuccessfulCodeGrant(oauth);
-            assertThat(response.getScope(), containsString(tab2TransformedScope));
+            assertThat(response.getScope(), containsString("organization"));
             String tab2RefreshToken = response.getRefreshToken();
 
             //refresh first tab - ensure still orgA
             tabUtil.switchToTab(0);
             response = oauth.doRefreshTokenRequest(tab1RefreshToken);
-            assertThat(response.getScope(), containsString(tab1TransformedScope));
+            assertThat(response.getScope(), containsString("organization"));
             AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
             List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
             assertThat(organizations.size(), is(1));
@@ -455,7 +450,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
             //refresh second tab - ensure still orgB
             tabUtil.switchToTab(1);
             response = oauth.doRefreshTokenRequest(tab2RefreshToken);
-            assertThat(response.getScope(), containsString(tab2TransformedScope));
+            assertThat(response.getScope(), containsString("organization"));
             accessToken = oauth.verifyToken(response.getAccessToken());
             organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
             assertThat(organizations.size(), is(1));
@@ -606,30 +601,22 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
         selectOrganizationPage.selectOrganization(orgB.getAlias());
-        String transformedScope = "organization:orgb";
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertThat(accessToken.getScope(), containsString(transformedScope));
+        assertThat(accessToken.getScope(), containsString("organization"));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertEquals( 1, organizations.toArray().length);
         assertThat(organizations.contains(orgB.getAlias()), is(true));
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-        assertThat(refreshToken.getScope(), containsString(transformedScope));
+        assertThat(refreshToken.getScope(), containsString("organization"));
 
-        //previous:(ANY -> SINGLE:orgb) -> current:(SINGLE:orgb) == SINGLE:orgb
-        String orgScope = "organization:orgb";
-        oauth.scope(orgScope);
+        //previous:(ANY -> SINGLE:orgb) -> current:(SINGLE:orgb) == SINGLE:orgb -> cannot change user selection
+        oauth.scope("organization:orgb");
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-        assertThat(response.getScope(), containsString(orgScope));
-        accessToken = oauth.verifyToken(response.getAccessToken());
-        assertThat(accessToken.getScope(), containsString(orgScope));
-        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
-        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
-        assertEquals( 1, organizations.toArray().length);
-        assertThat(organizations.contains(orgB.getAlias()), is(true));
+        assertThat(response.getScope(), not(containsString("organization")));
     }
 
     @Test
@@ -647,18 +634,17 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
         selectOrganizationPage.selectOrganization(orgB.getAlias());
-        String transformedScope = "organization:orgb";
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertThat(accessToken.getScope(), containsString(transformedScope));
+        assertThat(accessToken.getScope(), containsString("organization"));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertEquals( 1, organizations.toArray().length);
         assertThat(organizations.contains(orgB.getAlias()), is(true));
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-        assertThat(refreshToken.getScope(), containsString(transformedScope));
+        assertThat(refreshToken.getScope(), containsString("organization"));
 
         //previous:(ANY -> SINGLE:orgb) -> current:(SINGLE:orga) == not allowed
         String orgScope = "organization:orga";
@@ -682,18 +668,17 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgA.getAlias()));
         assertTrue(selectOrganizationPage.isOrganizationButtonPresent(orgB.getAlias()));
         selectOrganizationPage.selectOrganization(orgB.getAlias());
-        String transformedScope = "organization:orgb";
         loginPage.login(memberPassword);
         AccessTokenResponse response = assertSuccessfulCodeGrant();
         assertThat(response.getScope(), containsString("organization"));
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertThat(accessToken.getScope(), containsString(transformedScope));
+        assertThat(accessToken.getScope(), containsString("organization"));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertEquals( 1, organizations.toArray().length);
         assertThat(organizations.contains(orgB.getAlias()), is(true));
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-        assertThat(refreshToken.getScope(), containsString(transformedScope));
+        assertThat(refreshToken.getScope(), containsString("organization"));
 
         //previous:(ANY -> SINGLE:orgb) -> current:(ALL) == SINGLE:orgb
         String allOrgsScope = "organization:*";
@@ -701,7 +686,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertThat(response.getScope(), not(containsString(allOrgsScope)));
         accessToken = oauth.verifyToken(response.getAccessToken());
-        assertThat(accessToken.getScope(), containsString(transformedScope));
+        assertThat(accessToken.getScope(), containsString("organization"));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertEquals( 1, organizations.toArray().length);
@@ -710,7 +695,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
     @Test
     public void testIncludeOrganizationAttributes() throws Exception {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource organization = testRealm().organizations().get(orgRep.getId());
         addMember(organization);
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.TRUE.toString());
 
@@ -735,6 +721,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(organizations.keySet(), hasItem(organizationName));
         assertThat(organizations.get(organizationName).keySet(), hasItem("key"));
         assertThat(organizations.get(organizationName).get("key"), containsInAnyOrder("value1", "value2"));
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertThat(refreshToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), is(orgRep.getAlias()));
 
         setMapperConfig(OrganizationMembershipMapper.ADD_ORGANIZATION_ATTRIBUTES, Boolean.FALSE.toString());
         setMapperConfig(OIDCAttributeMapperHelper.JSON_TYPE, "JSON");
@@ -744,6 +732,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         organizations = (Map<String, Map<String, List<String>>>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
         assertThat(organizations.keySet(), hasItem(organizationName));
         assertThat(organizations.get(organizationName).keySet().isEmpty(), is(true));
+        refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertThat(refreshToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), is(orgRep.getAlias()));
     }
 
     @Test

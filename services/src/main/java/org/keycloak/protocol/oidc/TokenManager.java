@@ -78,6 +78,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -90,8 +91,10 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
@@ -230,6 +233,8 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
         }
 
+        validateOrganization(session, oldToken, user);
+
         try {
             TokenVerifier.createWithoutSignature(oldToken)
                     .withChecks(NotBeforeCheck.forModel(client), NotBeforeCheck.forModel(session, realm, user))
@@ -335,7 +340,6 @@ public class TokenManager {
                     .filter(Objects::nonNull)
                     .collect(Collectors.joining(" "));
         }
-
 
         TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope);
         session.getContext().setUserSession(validation.userSession);
@@ -1668,4 +1672,18 @@ public class TokenManager {
         return Optional.ofNullable(refreshToken.getOtherClaims().get(Constants.REUSE_ID)).map(String::valueOf).orElse("");
     }
 
+    private void validateOrganization(KeycloakSession session, RefreshToken refreshToken, UserModel user) throws OAuthErrorException {
+        Object orgAlias = refreshToken.getOtherClaims().get(ORGANIZATION);
+
+        if (orgAlias != null) {
+            OrganizationProvider provider = Organizations.getProvider(session);
+            OrganizationModel organization = provider.getByAlias(orgAlias.toString());
+
+            if (organization == null || !organization.isEnabled() || !organization.isMember(user)) {
+                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid organization", "Invalid organization");
+            }
+
+            session.getContext().setOrganization(organization);
+        }
+    }
 }
