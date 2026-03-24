@@ -1,6 +1,5 @@
 package org.keycloak.admin.internal.openapi;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,16 +17,17 @@ import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
 /**
- * Scans Jakarta Validation annotations on representation classes and applies them to OpenAPI schemas.
+ * Builds human-readable validation descriptions for OpenAPI schemas based on validation annotations.
  * <p>
- * This scanner provides two types of validation exposure:
+ * SmallRye OpenAPI's built-in {@code BeanValidationScanner} handles machine-readable schema properties
+ * (like {@code minLength}, {@code pattern}, {@code minimum}) for standard Jakarta Validation annotations.
+ * This scanner complements it by:
  * <ul>
- *   <li><b>Machine-readable</b>: Schema properties like {@code minLength}, {@code format}, {@code pattern}</li>
- *   <li><b>Human-readable</b>: Validation descriptions appended to field descriptions</li>
+ *   <li>Building human-readable validation descriptions for field documentation</li>
+ *   <li>Handling Hibernate Validator's {@code @URL} annotation (not supported by SmallRye)</li>
+ *   <li>Handling custom Keycloak validation annotations</li>
+ *   <li>Adding validation group context (e.g., "on create:", "on update:")</li>
  * </ul>
- * <p>
- * Supports standard Jakarta Validation annotations, Hibernate Validator annotations,
- * custom Keycloak validation annotations, and validation groups.
  */
 public class ValidationAnnotationScanner {
 
@@ -43,7 +43,7 @@ public class ValidationAnnotationScanner {
     private static final DotName MAX = DotName.createSimple("jakarta.validation.constraints.Max");
     private static final DotName VALID = DotName.createSimple("jakarta.validation.Valid");
 
-    // Hibernate Validator annotations
+    // Hibernate Validator annotations (not supported by SmallRye's BeanValidationScanner)
     private static final DotName URL = DotName.createSimple("org.hibernate.validator.constraints.URL");
 
     // Custom validation annotations
@@ -58,8 +58,8 @@ public class ValidationAnnotationScanner {
     );
 
     /**
-     * Applies machine-readable validation schema properties based on validation annotations.
-     * These properties can be used by OpenAPI client generators for client-side validation.
+     * Applies schema properties for annotations not handled by SmallRye's BeanValidationScanner.
+     * Currently only handles Hibernate Validator's {@code @URL} annotation.
      *
      * @param classInfo the class containing the field
      * @param fieldName the name of the field
@@ -71,58 +71,13 @@ public class ValidationAnnotationScanner {
             return;
         }
 
-        // @NotBlank implies minLength: 1 for strings (only for field-level, not type args)
-        AnnotationInstance notBlank = getFieldAnnotation(field, NOT_BLANK);
-        if (notBlank != null && propertySchema.getMinLength() == null) {
-            propertySchema.setMinLength(1);
-        }
-
-        // @NotEmpty implies minItems: 1 for arrays/collections
-        AnnotationInstance notEmpty = getFieldAnnotation(field, NOT_EMPTY);
-        if (notEmpty != null && propertySchema.getMinItems() == null) {
-            propertySchema.setMinItems(1);
-        }
-
-        // @URL implies format: uri
+        // @URL implies format: uri (not handled by SmallRye)
         AnnotationInstance url = getFieldAnnotation(field, URL);
         if (url != null && propertySchema.getFormat() == null) {
             propertySchema.setFormat("uri");
         }
 
-        // @Size constraints
-        AnnotationInstance size = getFieldAnnotation(field, SIZE);
-        if (size != null) {
-            applySizeConstraints(field, size, propertySchema);
-        }
-
-        // @Pattern constraints
-        AnnotationInstance pattern = getFieldAnnotation(field, PATTERN);
-        if (pattern != null && propertySchema.getPattern() == null) {
-            AnnotationValue regexp = pattern.value("regexp");
-            if (regexp != null) {
-                propertySchema.setPattern(regexp.asString());
-            }
-        }
-
-        // @Min constraints
-        AnnotationInstance min = getFieldAnnotation(field, MIN);
-        if (min != null && propertySchema.getMinimum() == null) {
-            AnnotationValue value = min.value();
-            if (value != null) {
-                propertySchema.setMinimum(new BigDecimal(value.asLong()));
-            }
-        }
-
-        // @Max constraints
-        AnnotationInstance max = getFieldAnnotation(field, MAX);
-        if (max != null && propertySchema.getMaximum() == null) {
-            AnnotationValue value = max.value();
-            if (value != null) {
-                propertySchema.setMaximum(new BigDecimal(value.asLong()));
-            }
-        }
-
-        // Apply type argument constraints to items schema (for arrays)
+        // Apply @URL to type arguments (e.g., Set<@URL String>)
         applyTypeArgumentSchemaProperties(field, propertySchema);
     }
 
@@ -260,32 +215,6 @@ public class ValidationAnnotationScanner {
         return fieldDescriptions;
     }
 
-    private void applySizeConstraints(FieldInfo field, AnnotationInstance size, Schema propertySchema) {
-        AnnotationValue minValue = size.value("min");
-        AnnotationValue maxValue = size.value("max");
-
-        // For strings: minLength/maxLength, for arrays: minItems/maxItems
-        Type fieldType = field.type();
-        boolean isCollection = fieldType.kind() == Type.Kind.PARAMETERIZED_TYPE ||
-                fieldType.kind() == Type.Kind.ARRAY;
-
-        if (isCollection) {
-            if (minValue != null && minValue.asInt() > 0 && propertySchema.getMinItems() == null) {
-                propertySchema.setMinItems(minValue.asInt());
-            }
-            if (maxValue != null && maxValue.asInt() < Integer.MAX_VALUE && propertySchema.getMaxItems() == null) {
-                propertySchema.setMaxItems(maxValue.asInt());
-            }
-        } else {
-            if (minValue != null && minValue.asInt() > 0 && propertySchema.getMinLength() == null) {
-                propertySchema.setMinLength(minValue.asInt());
-            }
-            if (maxValue != null && maxValue.asInt() < Integer.MAX_VALUE && propertySchema.getMaxLength() == null) {
-                propertySchema.setMaxLength(maxValue.asInt());
-            }
-        }
-    }
-
     private String buildSizeDescription(AnnotationInstance size) {
         AnnotationValue minValue = size.value("min");
         AnnotationValue maxValue = size.value("max");
@@ -302,6 +231,10 @@ public class ValidationAnnotationScanner {
         return null;
     }
 
+    /**
+     * Applies @URL format to items schema for parameterized types (e.g., Set&lt;@URL String&gt;).
+     * Other type argument annotations are handled by SmallRye's BeanValidationScanner.
+     */
     private void applyTypeArgumentSchemaProperties(FieldInfo field, Schema propertySchema) {
         Type fieldType = field.type();
         if (fieldType.kind() != Type.Kind.PARAMETERIZED_TYPE) {
@@ -320,26 +253,9 @@ public class ValidationAnnotationScanner {
 
         for (Type typeArg : typeArgs) {
             for (AnnotationInstance annotation : typeArg.annotations()) {
-                DotName annotationName = annotation.name();
-
-                if (NOT_BLANK.equals(annotationName) && itemsSchema.getMinLength() == null) {
-                    itemsSchema.setMinLength(1);
-                } else if (URL.equals(annotationName) && itemsSchema.getFormat() == null) {
+                // Only handle @URL - SmallRye handles the rest
+                if (URL.equals(annotation.name()) && itemsSchema.getFormat() == null) {
                     itemsSchema.setFormat("uri");
-                } else if (SIZE.equals(annotationName)) {
-                    AnnotationValue minValue = annotation.value("min");
-                    AnnotationValue maxValue = annotation.value("max");
-                    if (minValue != null && minValue.asInt() > 0 && itemsSchema.getMinLength() == null) {
-                        itemsSchema.setMinLength(minValue.asInt());
-                    }
-                    if (maxValue != null && maxValue.asInt() < Integer.MAX_VALUE && itemsSchema.getMaxLength() == null) {
-                        itemsSchema.setMaxLength(maxValue.asInt());
-                    }
-                } else if (PATTERN.equals(annotationName) && itemsSchema.getPattern() == null) {
-                    AnnotationValue regexp = annotation.value("regexp");
-                    if (regexp != null) {
-                        itemsSchema.setPattern(regexp.asString());
-                    }
                 }
             }
         }

@@ -19,7 +19,6 @@ package org.keycloak.admin.internal.openapi;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigDecimal;
 import java.util.Set;
 
 import jakarta.validation.constraints.Max;
@@ -32,6 +31,7 @@ import jakarta.validation.constraints.Size;
 
 import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.hibernate.validator.constraints.URL;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.Indexer;
@@ -43,6 +43,19 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Tests for {@link ValidationAnnotationScanner}.
+ * <p>
+ * Note: Standard Jakarta Validation annotations ({@code @NotBlank}, {@code @Size}, {@code @Pattern}, etc.)
+ * are handled by SmallRye OpenAPI's built-in {@code BeanValidationScanner} for schema properties.
+ * This scanner only handles:
+ * <ul>
+ *   <li>Human-readable validation descriptions</li>
+ *   <li>{@code @URL} annotation (not supported by SmallRye)</li>
+ *   <li>Custom Keycloak validation annotations</li>
+ *   <li>Validation group context</li>
+ * </ul>
+ */
 public class ValidationAnnotationScannerTest {
 
     private ValidationAnnotationScanner scanner;
@@ -61,64 +74,24 @@ public class ValidationAnnotationScannerTest {
     }
 
     @Test
-    public void applySchemaProperties_notBlankSetsMinLength() {
+    public void applySchemaProperties_urlSetsFormatUri() {
         ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
         Schema schema = OASFactory.createSchema();
 
-        scanner.applySchemaProperties(classInfo, "notBlankField", schema);
+        scanner.applySchemaProperties(classInfo, "urlField", schema);
 
-        assertEquals(Integer.valueOf(1), schema.getMinLength());
+        assertEquals("uri", schema.getFormat());
     }
 
     @Test
-    public void applySchemaProperties_notEmptySetsMinItems() {
+    public void applySchemaProperties_urlDoesNotOverwriteExistingFormat() {
         ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
         Schema schema = OASFactory.createSchema();
+        schema.setFormat("custom-format");
 
-        scanner.applySchemaProperties(classInfo, "notEmptyList", schema);
+        scanner.applySchemaProperties(classInfo, "urlField", schema);
 
-        assertEquals(Integer.valueOf(1), schema.getMinItems());
-    }
-
-    @Test
-    public void applySchemaProperties_sizeConstraintsOnString() {
-        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
-        Schema schema = OASFactory.createSchema();
-
-        scanner.applySchemaProperties(classInfo, "sizedString", schema);
-
-        assertEquals(Integer.valueOf(5), schema.getMinLength());
-        assertEquals(Integer.valueOf(100), schema.getMaxLength());
-    }
-
-    @Test
-    public void applySchemaProperties_patternSetsRegex() {
-        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
-        Schema schema = OASFactory.createSchema();
-
-        scanner.applySchemaProperties(classInfo, "patternField", schema);
-
-        assertEquals("[a-z]+", schema.getPattern());
-    }
-
-    @Test
-    public void applySchemaProperties_minConstraint() {
-        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
-        Schema schema = OASFactory.createSchema();
-
-        scanner.applySchemaProperties(classInfo, "minValue", schema);
-
-        assertEquals(new BigDecimal(10), schema.getMinimum());
-    }
-
-    @Test
-    public void applySchemaProperties_maxConstraint() {
-        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
-        Schema schema = OASFactory.createSchema();
-
-        scanner.applySchemaProperties(classInfo, "maxValue", schema);
-
-        assertEquals(new BigDecimal(1000), schema.getMaximum());
+        assertEquals("custom-format", schema.getFormat());
     }
 
     @Test
@@ -166,6 +139,15 @@ public class ValidationAnnotationScannerTest {
 
         assertTrue(minDescription.contains("minimum value 10"));
         assertTrue(maxDescription.contains("maximum value 1000"));
+    }
+
+    @Test
+    public void buildDescription_urlConstraint() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+
+        String description = scanner.buildDescription(classInfo, "urlField");
+
+        assertTrue(description.contains("must be a valid URL"));
     }
 
     @Test
@@ -264,6 +246,9 @@ public class ValidationAnnotationScannerTest {
 
         @Max(1000)
         private Integer maxValue;
+
+        @URL
+        private String urlField;
 
         private String noConstraints;
     }
