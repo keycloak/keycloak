@@ -125,7 +125,7 @@ public class JWTAuthorizationGrantType extends OAuth2GrantTypeBase {
             String scopeParam = getRequestedScopes();
 
             try {
-                session.clientPolicy().triggerOnEvent(new JWTAuthorizationGrantContext(context.getSession(), authorizationGrantContext, identityProviderModel));
+                session.clientPolicy().triggerOnEvent(new JWTAuthorizationGrantContext(context.getSession(), authorizationGrantContext, identityProviderModel.getAlias()));
             } catch (ClientPolicyException cpe) {
                 event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
                 event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());

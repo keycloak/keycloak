@@ -1,10 +1,18 @@
 package org.keycloak.tests.broker;
 
+
+import java.util.List;
+
 import org.keycloak.common.Profile;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.services.clientpolicy.condition.IdentityProviderConditionFactory;
+import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ClientPolicyBuilder;
+import org.keycloak.testframework.realm.ClientProfileBuilder;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -19,6 +27,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  *
@@ -93,6 +102,47 @@ public class IdentityProviderStoreTokenV2Test implements InterfaceIdentityProvid
         UserInfoResponse userInfoResponse = getOauthClientExternal().userInfoRequest(externalTokens.getAccessToken()).send();
         Assertions.assertEquals(200, userInfoResponse.getStatusCode());
         Assertions.assertNotNull(userInfoResponse.getUserInfo().getPreferredUsername());
+    }
+
+    @Test
+    public void testClientPoliciesWithIDPCondition() {
+        realm.updateClientProfile(List.of(ClientProfileBuilder.create()
+                .name("executor")
+                .description("executor description")
+                .executor(RejectRequestExecutorFactory.PROVIDER_ID, null)
+                .build()));
+
+        realm.updateClientPolicy(List.of(ClientPolicyBuilder.create()
+                .name("policy")
+                .description("description of policy")
+                .condition(IdentityProviderConditionFactory.PROVIDER_ID, ClientPolicyBuilder.identityProviderConditionConfiguration(true, "allowed-idp"))
+                .profile("executor")
+                .build()));
+
+        OAuthClient oauth = getOAuthClient();
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(tokenResponse.isSuccess());
+
+        AbstractHttpResponse externalTokens = doFetchExternalIdpToken(tokenResponse.getAccessToken());
+        Assertions.assertEquals(400, externalTokens.getStatusCode());
+        Assertions.assertEquals("Request not allowed", externalTokens.getErrorDescription());
+
+        //update without cleanup
+        ClientPoliciesRepresentation policiesToUpdate = realm.admin().clientPoliciesPoliciesResource().getPolicies();
+        policiesToUpdate.setPolicies(List.of(ClientPolicyBuilder.create()
+                .name("policy")
+                .description("description of policy")
+                .condition(IdentityProviderConditionFactory.PROVIDER_ID, ClientPolicyBuilder.identityProviderConditionConfiguration(true, IDP_ALIAS))
+                .profile("executor")
+                .build()));
+        realm.admin().clientPoliciesPoliciesResource().updatePolicies(policiesToUpdate);
+
+        externalTokens = doFetchExternalIdpToken(tokenResponse.getAccessToken());
+        Assertions.assertTrue(externalTokens.isSuccess());
+        checkSuccessfulTokenResponse(externalTokens);
     }
 
     static class IdentityBrokeringAPIV2ServerConfig implements KeycloakServerConfig {

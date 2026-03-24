@@ -114,6 +114,8 @@ import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.IdentityBrokeringAPIContext;
 import org.keycloak.services.cors.Cors;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
@@ -574,6 +576,17 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
         UserSessionModel userSession = UserSessionUtil.findValidSessionForAccessToken(
                 session, realmModel, token, authResult.client(), (invalidUserSession -> {}))
                 .getUserSession();
+
+        //client policies
+        try {
+            session.clientPolicy().triggerOnEvent(new IdentityBrokeringAPIContext(session, authResult.token(), client, identityProvider.getConfig().getAlias()));
+        } catch (ClientPolicyException cpe) {
+            event.detail(Details.REASON, Details.CLIENT_POLICY_ERROR);
+            event.detail(Details.CLIENT_POLICY_ERROR, cpe.getError());
+            event.detail(Details.CLIENT_POLICY_ERROR_DETAIL, cpe.getErrorDetail());
+            event.error(cpe.getError());
+            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+        }
 
         // now it is OK to retrieve the token from the session or the database
         try {
