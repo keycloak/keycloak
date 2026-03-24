@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.keycloak.common.Profile;
-import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.Errors;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -29,10 +28,12 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.CredentialOfferException;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.PreAuthCodeHandler;
 import org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
 import org.keycloak.util.Strings;
@@ -106,7 +107,7 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         });
 
         if (preAuthorized) {
-            String code = "urn:oid4vci:code:" + SecretGenerator.getInstance().randomString(64);
+            String code = createPreAuthorizedCode(offerState);
             credOffer.addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
         } else {
             IssuerState issuerState = new IssuerState().setCredentialsOfferId(offerState.getCredentialsOfferId());
@@ -145,5 +146,21 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
         }
 
         return targetUserModel;
+    }
+
+    /**
+     * Creates a pre-authorized code associated with credential offer state.
+     */
+    private String createPreAuthorizedCode(CredentialOfferState offerState) {
+        PreAuthCodeHandler preAuthCodeHandler = session.getProvider(PreAuthCodeHandler.class);
+        if (preAuthCodeHandler == null) {
+            throw new IllegalStateException("No PreAuthCodeHandler provider available");
+        }
+
+        // A PreAuthCodeCtx prevents accidental leaking of sensitive information.
+        // For instance, transactions codes must never leak into the pre-auth code.
+        PreAuthCodeCtx ctx = new PreAuthCodeCtx(offerState);
+
+        return preAuthCodeHandler.createPreAuthCode(ctx);
     }
 }

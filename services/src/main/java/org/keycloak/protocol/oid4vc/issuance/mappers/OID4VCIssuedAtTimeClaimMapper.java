@@ -34,8 +34,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialSubject;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 /**
  * Map issuance date to the credential, under the default claim name "iat"
@@ -62,7 +61,7 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
     public static final String VALUE_SOURCE = "valueSource";
 
     private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = new ArrayList<>();
-    private static final Logger log = LoggerFactory.getLogger(OID4VCIssuedAtTimeClaimMapper.class);
+    private static final Logger log = Logger.getLogger(OID4VCIssuedAtTimeClaimMapper.class);
 
     static {
         ProviderConfigProperty subjectPropertyNameConfig = new ProviderConfigProperty();
@@ -112,7 +111,7 @@ public class OID4VCIssuedAtTimeClaimMapper extends OID4VCMapper {
         List<String> attributePath = getMetadataAttributePath();
         String propertyName = attributePath.get(attributePath.size() - 1);
         if (propertyName == null) {
-            log.error("Invalid configuration: missing config-property '{}' for mapper '{}' of type '{}'. Mapper is ignored.",
+            log.errorf("Invalid configuration: missing config-property '%s' for mapper '%s' of type '%s'. Mapper is ignored.",
                       CLAIM_NAME,
                       mapperModel.getName(),
                       MAPPER_ID);

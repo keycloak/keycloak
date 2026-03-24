@@ -609,7 +609,7 @@ public class OID4VCIssuerEndpoint {
 
         // Remove the nonce entry atomically for replay protection
         // This prevents the same offer URL from being accessed multiple times
-        // while keeping pre-authorized code and credential identifier entries available
+        // while keeping offerId entries available
         Map<String, String> removed = session.singleUseObjects().remove(nonce);
         if (removed == null) {
             var errorMessage = "Credential offer not found or already consumed";

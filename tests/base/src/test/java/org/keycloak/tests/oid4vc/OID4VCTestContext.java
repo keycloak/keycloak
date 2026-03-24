@@ -54,6 +54,14 @@ public class OID4VCTestContext {
         this.credConfigId = credentialScope.getCredentialConfigurationId();
     }
 
+    public String getHolder() {
+        return holder;
+    }
+
+    public CredentialScopeRepresentation getCredentialScope() {
+        return credentialScope;
+    }
+
     public List<String> getAuthorizedCredentialIdentifiers() {
         OID4VCAuthorizationDetail tokenAuthDetails = getOID4VCAuthorizationDetail();
         return Optional.ofNullable(tokenAuthDetails)
