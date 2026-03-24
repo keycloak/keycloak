@@ -17,7 +17,7 @@ import { Link } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import type { Row } from "../clients/scopes/ClientScopes";
 import { getProtocolName } from "../clients/utils";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { getErrorMessage, useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
   AllClientScopeType,
   AllClientScopes,
@@ -166,10 +166,10 @@ export default function ClientScopesSection() {
           for (const scope of selectedScopes) {
             try {
               await removeScope(adminClient, scope);
-            } catch (error: any) {
+            } catch (error) {
               console.warn(
                 "could not remove scope",
-                error.response?.data?.errorMessage || error,
+                getErrorMessage(error),
               );
             }
             await adminClient.clientScopes.del({ id: scope.id! });
