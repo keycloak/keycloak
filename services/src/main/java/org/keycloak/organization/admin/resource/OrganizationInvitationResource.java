@@ -148,6 +148,10 @@ public class OrganizationInvitationResource {
             throw ErrorResponse.error("User does not exist", Status.BAD_REQUEST);
         }
 
+        if (StringUtil.isBlank(user.getEmail())) {
+            throw ErrorResponse.error("User does not have an email address", Status.BAD_REQUEST);
+        }
+
         return sendInvitation(user);
     }
 
