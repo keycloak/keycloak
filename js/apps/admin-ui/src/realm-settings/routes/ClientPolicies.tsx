@@ -15,9 +15,9 @@ const RealmSettingsSection = lazy(() => import("../RealmSettingsSection"));
 export const ClientPoliciesRoute: AppRouteObject = {
   path: "/:realm/realm-settings/client-policies/:tab",
   element: <RealmSettingsSection />,
-  breadcrumb: (t) => t("clientPolicies"),
   handle: {
     access: "view-realm",
+    breadcrumb: (t) => t("clientPolicies"),
   },
 };
 

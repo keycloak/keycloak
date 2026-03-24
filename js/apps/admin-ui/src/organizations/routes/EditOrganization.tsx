@@ -22,9 +22,9 @@ const DetailOrganization = lazy(() => import("../DetailOrganization"));
 export const EditOrganizationRoute: AppRouteObject = {
   path: "/:realm/organizations/:id/:tab/*",
   element: <DetailOrganization />,
-  breadcrumb: (t) => t("organizationDetails"),
   handle: {
     access: "manage-users",
+    breadcrumb: (t) => t("organizationDetails"),
   },
 };
 

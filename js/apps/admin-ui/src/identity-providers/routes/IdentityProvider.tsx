@@ -21,9 +21,9 @@ const DetailSettings = lazy(() => import("../add/DetailSettings"));
 export const IdentityProviderRoute: AppRouteObject = {
   path: "/:realm/identity-providers/:providerId/:alias/:tab",
   element: <DetailSettings />,
-  breadcrumb: (t) => t("providerDetails"),
   handle: {
     access: "view-identity-providers",
+    breadcrumb: (t) => t("providerDetails"),
   },
 };
 
