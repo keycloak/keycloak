@@ -309,8 +309,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
         UriInfo uriInfo = session.getContext().getUri();
         Response response = null;
-        if (userSession != null) {
-            // use the session if present, only in V2
+        if (userSession != null && getConfig().isStoreTokenInSession()) {
+            // use the session if present and configured to be used, only in V2
             String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
             brokerId = brokerId == null ? userSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
             String federatedAccessToken = userSession.getNote(FEDERATED_ACCESS_TOKEN);
@@ -1096,12 +1096,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     @Override
     public void exchangeExternalComplete(UserSessionModel userSession, BrokeredIdentityContext context, MultivaluedMap<String, String> params) {
-        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ACCESS_TOKEN))
-            userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
-        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN))
-            userSession.setNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
-        userSession.setNote(OIDCIdentityProvider.EXCHANGE_PROVIDER, getConfig().getAlias());
-
+        if (getConfig().isStoreTokenInSession()) {
+            if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ACCESS_TOKEN)) {
+                userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+            }
+            if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN)) {
+                userSession.setNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+            }
+            userSession.setNote(OIDCIdentityProvider.EXCHANGE_PROVIDER, getConfig().getAlias());
+        }
     }
 
     @Override
