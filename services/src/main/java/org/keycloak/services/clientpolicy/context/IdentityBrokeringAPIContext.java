@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Red Hat, Inc. and/or its affiliates
+ * Copyright 2026 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,42 +18,36 @@ package org.keycloak.services.clientpolicy.context;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.oidc.JWTAuthorizationGrantValidationContext;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
-/**
- *
- * @author rmartinc
- */
-public class JWTAuthorizationGrantContext implements ClientModelContext, ScopeParameterContext, IdentityProviderContext {
+public class IdentityBrokeringAPIContext implements ClientModelContext, ScopeParameterContext, IdentityProviderContext {
 
     private final KeycloakSession session;
-    private final JWTAuthorizationGrantValidationContext authorizationGrantContext;
+    private final AccessToken accessToken;
+    private final ClientModel client;
     private final String identityProviderAlias;
 
-    public JWTAuthorizationGrantContext(KeycloakSession session, JWTAuthorizationGrantValidationContext authorizationGrantContext, String identityProviderAlias) {
+    public IdentityBrokeringAPIContext(KeycloakSession session, AccessToken accessToken, ClientModel client, String identityProviderAlias) {
         this.session = session;
-        this.authorizationGrantContext = authorizationGrantContext;
+        this.accessToken = accessToken;
+        this.client = client;
         this.identityProviderAlias = identityProviderAlias;
     }
 
     @Override
     public ClientPolicyEvent getEvent() {
-        return ClientPolicyEvent.JWT_AUTHORIZATION_GRANT;
-    }
-
-    public JWTAuthorizationGrantValidationContext getAuthorizationGrantContext() {
-        return authorizationGrantContext;
+        return ClientPolicyEvent.IDENTITY_BROKERING_API;
     }
 
     @Override
     public ClientModel getClient() {
-        return session.getContext().getClient();
+        return client;
     }
 
     @Override
     public String getScopeParameter() {
-        return getAuthorizationGrantContext().getScopeParam();
+        return accessToken.getScope();
     }
 
     @Override
