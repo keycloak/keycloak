@@ -405,12 +405,12 @@ public class OID4VCBasicWallet {
             return this;
         }
 
-        public void open() {
+        public void openLoginForm() {
             loginForm.open();
         }
 
         public AuthorizationEndpointResponse send(String username, String password) {
-            loginForm.open();
+            openLoginForm();
             client.fillLoginForm(username, password);
             return client.parseLoginResponse();
         }

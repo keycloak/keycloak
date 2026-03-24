@@ -350,7 +350,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         wallet.authorizationRequest()
                 .scope(ctx.getCredScopeName())
                 .authorizationDetails(authDetailWithMandatory)
-                .open();
+                .openLoginForm();
         
         AuthorizationEndpointResponse secondAuthResponse = oauth.parseLoginResponse();
         String secondCode = secondAuthResponse.getCode();
