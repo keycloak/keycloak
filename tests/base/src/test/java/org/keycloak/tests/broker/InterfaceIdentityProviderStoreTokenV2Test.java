@@ -2,12 +2,15 @@ package org.keycloak.tests.broker;
 
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.broker.provider.UserAuthenticationIdentityProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.jpa.JpaRealmProviderFactory;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.realm.ClientConfig;
@@ -148,6 +151,7 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
         OAuthClient oauth = getOAuthClient();
         realm.updateIdentityProvider(IDP_ALIAS, idp -> {
             idp.setStoreToken(false);
+            idp.getConfig().put(IdentityProviderModel.STORE_TOKEN_IN_SESSION, Boolean.TRUE.toString());
         });
 
         oauth.openLoginForm();
@@ -155,20 +159,18 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
 
         AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
         Assertions.assertTrue(internalTokens.isSuccess());
+        AccessToken accessToken = oauth.parseToken(internalTokens.getAccessToken(), AccessToken.class);
 
         AccessTokenResponse externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
         Assertions.assertTrue(externalTokens.isSuccess());
         checkSuccessfulTokenResponse(externalTokens);
 
-        String realmName = realm.getName();
-        String oldTokenFromDatabase = getRunOnServer().fetch(session -> {
-            RealmModel r = session.realms().getRealmByName(realmName);
-            UserModel user = session.users().getUserByUsername(r, "testuser");
-            return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(r, user, IDP_ALIAS).getToken();
-        }, String.class);
+        String oldTokenFromDatabase = getTokenFromDatabase(realm.getName());
 
         //Ensure that the token is null in the db
         Assertions.assertNull(oldTokenFromDatabase);
+        // ensure the token is saved in the session
+        Assertions.assertNotNull(getTokenFromSession(realm.getName(), accessToken.getSessionId()));
 
         if (isRefreshTokenAllowed()) {
             // now test extra refresh of the token in session
@@ -178,23 +180,158 @@ public interface InterfaceIdentityProviderStoreTokenV2Test extends InterfaceIden
             Assertions.assertEquals(200, internalTokens.getStatusCode());
             AccessTokenResponse externalTokens2 = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
             Assertions.assertEquals(200, externalTokens2.getStatusCode());
+            checkSuccessfulTokenResponse(externalTokens2);
 
-            // Check that we now have a different access and refresh token
+            // Check that we now have a different access token
             Assertions.assertNotEquals(externalTokens.getAccessToken(), externalTokens2.getAccessToken());
-            Assertions.assertNull(externalTokens.getRefreshToken());
-            Assertions.assertNull(externalTokens2.getRefreshToken());
-
-            String newTokenFromDatabase = getRunOnServer().fetch(session -> {
-                RealmModel r = session.realms().getRealmByName(realmName);
-                UserModel user = session.users().getUserByUsername(r, "testuser");
-                return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(r, user, IDP_ALIAS).getToken();
-            }, String.class);
 
             // Ensure that the new token is null in the db
-            Assertions.assertNull(newTokenFromDatabase);
+            Assertions.assertNull(getTokenFromDatabase(realm.getName()));
+            // ensure the token is saved in the session
+            Assertions.assertNotNull(getTokenFromSession(realm.getName(), accessToken.getSessionId()));
 
             getTimeOffSet().set(0);
         }
+    }
+
+    @Test
+    default void testStoreTokenInSessionDisabled() {
+        ManagedRealm realm = getRealm();
+        OAuthClient oauth = getOAuthClient();
+        realm.updateIdentityProvider(IDP_ALIAS, idp -> {
+            idp.setStoreToken(true);
+            idp.getConfig().put(IdentityProviderModel.STORE_TOKEN_IN_SESSION, Boolean.FALSE.toString());
+        });
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        AccessToken accessToken = oauth.parseToken(internalTokens.getAccessToken(), AccessToken.class);
+        Assertions.assertTrue(internalTokens.isSuccess());
+
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertEquals(200, externalTokens.getStatusCode());
+        checkSuccessfulTokenResponse(externalTokens);
+
+        // ensure the token is in database
+        Assertions.assertNotNull(getTokenFromDatabase(realm.getName()));
+
+        // ensure the token is not saved in the session
+        Assertions.assertNull(getTokenFromSession(realm.getName(), accessToken.getSessionId()));
+
+        if (isRefreshTokenAllowed()) {
+            // now test extra refresh of the token in session
+            getTimeOffSet().set(externalTokens.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
+
+            internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
+            Assertions.assertEquals(200, internalTokens.getStatusCode());
+            AccessTokenResponse externalTokens2 = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+            Assertions.assertEquals(200, externalTokens2.getStatusCode());
+            checkSuccessfulTokenResponse(externalTokens2);
+
+            // Check that we now have a different access token
+            Assertions.assertNotEquals(externalTokens.getAccessToken(), externalTokens2.getAccessToken());
+
+            // ensure the token is in database
+            Assertions.assertNotNull(getTokenFromDatabase(realm.getName()));
+            // ensure the token is not saved in the session
+            Assertions.assertNull(getTokenFromSession(realm.getName(), accessToken.getSessionId()));
+
+            getTimeOffSet().set(0);
+        }
+    }
+
+    @Test
+    default void testStoreTokenAllDisabled() {
+        ManagedRealm realm = getRealm();
+        OAuthClient oauth = getOAuthClient();
+        realm.updateIdentityProvider(IDP_ALIAS, idp -> {
+            idp.setStoreToken(false);
+            idp.getConfig().put(IdentityProviderModel.STORE_TOKEN_IN_SESSION, Boolean.FALSE.toString());
+        });
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+        AccessToken accessToken = oauth.parseToken(internalTokens.getAccessToken(), AccessToken.class);
+
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertEquals(400, externalTokens.getStatusCode());
+        Assertions.assertEquals("token_expired", externalTokens.getError());
+        Assertions.assertEquals("No token stored.", externalTokens.getErrorDescription());
+
+        // ensure the token is not in database
+        Assertions.assertNull(getTokenFromDatabase(realm.getName()));
+        // ensure the token is not saved in the session
+        Assertions.assertNull(getTokenFromSession(realm.getName(), accessToken.getSessionId()));
+    }
+
+    @Test
+    default void testStoreTokenAllEnabled() {
+        ManagedRealm realm = getRealm();
+        OAuthClient oauth = getOAuthClient();
+        realm.updateIdentityProvider(IDP_ALIAS, idp -> {
+            idp.setStoreToken(true);
+            idp.getConfig().put(IdentityProviderModel.STORE_TOKEN_IN_SESSION, Boolean.TRUE.toString());
+        });
+
+        oauth.openLoginForm();
+        loginWithIdP();
+
+        AccessTokenResponse internalTokens = oauth.doAccessTokenRequest(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(internalTokens.isSuccess());
+        AccessToken accessToken = oauth.parseToken(internalTokens.getAccessToken(), AccessToken.class);
+
+        AccessTokenResponse externalTokens = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+        Assertions.assertTrue(externalTokens.isSuccess());
+        checkSuccessfulTokenResponse(externalTokens);
+
+        String oldTokenFromDatabase = getTokenFromDatabase(realm.getName());
+
+        //Ensure that the token is present in the db
+        Assertions.assertNotNull(oldTokenFromDatabase);
+        // ensure the token is saved in the session
+        Assertions.assertNotNull(getTokenFromSession(realm.getName(), accessToken.getSessionId()));
+
+        if (isRefreshTokenAllowed()) {
+            // now test extra refresh of the token in session
+            getTimeOffSet().set(externalTokens.getExpiresIn() - IdentityProviderModel.DEFAULT_MIN_VALIDITY_TOKEN + 1);
+
+            internalTokens = oauth.doRefreshTokenRequest(internalTokens.getRefreshToken());
+            Assertions.assertEquals(200, internalTokens.getStatusCode());
+            AccessTokenResponse externalTokens2 = oauth.doFetchExternalIdpTokenPost(IDP_ALIAS, internalTokens.getAccessToken());
+            Assertions.assertEquals(200, externalTokens2.getStatusCode());
+            checkSuccessfulTokenResponse(externalTokens2);
+
+            // Check that we now have a different access token
+            Assertions.assertNotEquals(externalTokens.getAccessToken(), externalTokens2.getAccessToken());
+
+            // Ensure that the new token is null in the db
+            Assertions.assertNotNull(getTokenFromDatabase(realm.getName()));
+            // ensure the token is saved in the session
+            Assertions.assertNotNull(getTokenFromSession(realm.getName(), accessToken.getSessionId()));
+
+            getTimeOffSet().set(0);
+        }
+    }
+
+    default String getTokenFromDatabase(String realmName) {
+        return getRunOnServer().fetch(session -> {
+             RealmModel r = session.realms().getRealmByName(realmName);
+             UserModel user = session.users().getUserByUsername(r, "testuser");
+             return session.getProvider(UserProvider.class, JpaRealmProviderFactory.PROVIDER_ID).getFederatedIdentity(r, user, IDP_ALIAS).getToken();
+         }, String.class);
+    }
+
+    default String getTokenFromSession(String realmName, String sessionId) {
+        return getRunOnServer().fetch(session -> {
+            RealmModel r = session.realms().getRealmByName(realmName);
+            UserSessionModel userSession = session.sessions().getUserSession(r, sessionId);
+            return userSession.getNote(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN);
+        }, String.class);
     }
 
     static class ExternalClientConfig implements ClientConfig {

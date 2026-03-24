@@ -661,7 +661,9 @@ public class SAMLEndpoint {
                 // set the token in session and model depending the brokering api version
                 if (Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V2)) {
                     final String assertionString = DocumentUtil.getNodeAsString(assertionElement);
-                    identity.getContextData().put(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, assertionString);
+                    if (config.isStoreTokenInSession()) {
+                        identity.getContextData().put(UserAuthenticationIdentityProvider.FEDERATED_ACCESS_TOKEN, assertionString);
+                    }
                     if (Booleans.isTrue(config.isStoreToken())) {
                         identity.setToken(assertionString);
                     }

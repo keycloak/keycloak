@@ -16,6 +16,7 @@
  */
 package org.keycloak.broker.saml;
 
+import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.dom.saml.v2.protocol.AuthnContextComparisonType;
 import org.keycloak.models.IdentityProviderModel;
@@ -473,5 +474,12 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
         if (JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get().equals(getNameIDPolicyFormat()) && SamlPrincipalType.SUBJECT == getPrincipalType())
             throw new IllegalArgumentException("Can not have Transient NameID Policy Format together with SUBJECT Principal Type");
 
+    }
+
+    @Override
+    public boolean isStoreTokenInSession() {
+        // for saml is false by default
+        return Profile.isFeatureEnabled(Profile.Feature.IDENTITY_BROKERING_API_V2)
+                & Boolean.parseBoolean(getConfig().get(STORE_TOKEN_IN_SESSION));
     }
 }

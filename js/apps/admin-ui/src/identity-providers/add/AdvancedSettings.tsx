@@ -146,6 +146,14 @@ export const AdvancedSettings = ({
       {!isOIDC && !isSAML && !isOAuth2 && (
         <TextField field="config.defaultScope" label="scopes" />
       )}
+      {isFeatureEnabled(Feature.IdentityBrokeringAPIV2) && (
+        <SwitchField
+          field="config.storeTokenInSession"
+          label="storeTokenInSession"
+          fieldType="boolean"
+          defaultValue={!isSAML}
+        />
+      )}
       <SwitchField field="storeToken" label="storeTokens" fieldType="boolean" />
       {(isSAML || isOIDC || isOAuth2) && (
         <SwitchField

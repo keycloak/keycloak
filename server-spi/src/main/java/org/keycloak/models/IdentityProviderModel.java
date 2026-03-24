@@ -59,7 +59,8 @@ public class IdentityProviderModel implements Serializable {
     public static final String SYNC_MODE = "syncMode";
     public static final String MIN_VALIDITY_TOKEN = "minValidityToken";
     public static final String FEDERATED_CLIENT_ASSERTION_MAX_EXPIRATION = "fedClientAssertionMaxExp";
-	public static final String SHOW_IN_ACCOUNT_CONSOLE = "showInAccountConsole";
+    public static final String SHOW_IN_ACCOUNT_CONSOLE = "showInAccountConsole";
+    public static final String STORE_TOKEN_IN_SESSION = "storeTokenInSession";
     public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
 
     private String internalId;
@@ -166,6 +167,17 @@ public class IdentityProviderModel implements Serializable {
 
     public Boolean isStoreToken() {
         return this.storeToken;
+    }
+
+    public boolean isStoreTokenInSession() {
+        String isStoreTokenInSession = getConfig().get(STORE_TOKEN_IN_SESSION);
+        return Profile.isFeatureEnabled(Feature.IDENTITY_BROKERING_API_V2) && isStoreTokenInSession != null
+                ? Boolean.parseBoolean(isStoreTokenInSession)
+                : true; // true by default for backwards compatibility
+    }
+
+    public void setStoreTokenInSession(boolean storeToken) {
+        setBooleanConfig(STORE_TOKEN_IN_SESSION, storeToken);
     }
 
     public void setStoreToken(Boolean storeToken) {
