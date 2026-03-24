@@ -67,7 +67,7 @@ It is possible to enable the health checks using the build time option `health-e
 
 <@kc.build parameters="--health-enabled=true"/>
 
-By default, no check is returned from the health endpoints.
+Once the health endpoint is enabled, async startup is enabled by default as well where the HTTP ports open while the boostrap is in progress. See <@links.server id="configuration-production" anchor="server-boostrap-behavior" /> for more details.
 
 == Using the health checks
 

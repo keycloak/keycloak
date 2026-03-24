@@ -21,6 +21,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.ws.rs.ApplicationPath;
 
 import org.keycloak.config.BootstrapAdminOptions;
+import org.keycloak.config.HealthOptions;
 import org.keycloak.config.ServerOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -116,7 +117,13 @@ public class QuarkusKeycloakApplication extends KeycloakApplication<QuarkusKeycl
                 .map(Boolean::parseBoolean)
                 .orElse(Boolean.TRUE);
         // skip async bootstrap in dev and non-server mode
-        return !isDevMode() && !isNonServerMode() && asyncBootstrap;
+        return !isDevMode() && !isNonServerMode() && isHealthEnabled() && asyncBootstrap;
+    }
+
+    private boolean isHealthEnabled() {
+        return Configuration.getOptionalKcValue(HealthOptions.HEALTH_ENABLED.getKey())
+                .map(Boolean::parseBoolean)
+                .orElse(Boolean.FALSE);
     }
 
     @Override

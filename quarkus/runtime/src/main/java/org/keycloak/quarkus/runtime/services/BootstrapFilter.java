@@ -8,6 +8,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.services.resources.KeycloakApplication;
 
+import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.ServerRequestFilter;
 
 /**
@@ -15,9 +16,11 @@ import org.jboss.resteasy.reactive.server.ServerRequestFilter;
  */
 @ApplicationScoped
 public class BootstrapFilter {
+    private static final Logger LOG = Logger.getLogger(BootstrapFilter.class);
 
     private final long startup;
     private boolean ready;
+    private volatile boolean warningLogged;
 
     public BootstrapFilter() {
         startup = System.currentTimeMillis();
@@ -34,6 +37,16 @@ public class BootstrapFilter {
             ready = true;
             return null;
         }
+        if (!warningLogged) {
+            synchronized (this) {
+                if (!warningLogged) {
+                    // Log the warning at most once, so admins knows that they should do something before some client complains
+                    LOG.warn("Request received during bootstrapping, returning a 503 error. Use the readiness health endpoint to ensure the service is ready before forwarding requests to the service.");
+                }
+                warningLogged = true;
+            }
+        }
+
         // Implement a back-off to wait as long as the current start-up took, but then retry at least once per minute
         long retry = Math.min(Math.max((System.currentTimeMillis() - startup) / 1000, 1), 60);
         // Return 503 Service Unavailable
