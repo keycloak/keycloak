@@ -84,6 +84,10 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
             return invalidOrganizationResponse(tokenContext, token);
         }
 
+        if (!organization.isEnabled()) {
+            return disabledOrganizationResponse(tokenContext, token);
+        }
+
         InvitationManager invitationManager = orgProvider.getInvitationManager();
         OrganizationInvitationModel invitation = invitationManager.getById(token.getId());
         AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
@@ -119,6 +123,10 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
 
         if (organization == null) {
             return invalidOrganizationResponse(tokenContext, token);
+        }
+
+        if (!organization.isEnabled()) {
+            return disabledOrganizationResponse(tokenContext, token);
         }
 
         if (organization.isMember(user)) {
@@ -203,6 +211,23 @@ public class InviteOrgActionTokenHandler extends AbstractActionTokenHandler<Invi
                 .setAuthenticationSession(authSession)
                 .setAttribute("messageHeader", Messages.EXPIRED_ACTION)
                 .setInfo(Messages.ORG_NOT_FOUND, token.getOrgId())
+                .createInfoPage();
+    }
+
+    private Response disabledOrganizationResponse(ActionTokenContext<InviteOrgActionToken> tokenContext, InviteOrgActionToken token) {
+        EventBuilder event = tokenContext.getEvent();
+        KeycloakSession session = tokenContext.getSession();
+        AuthenticationSessionModel authSession = tokenContext.getAuthenticationSession();
+
+        event.detail(Details.TOKEN_ID, token.getId())
+                .detail(Details.EMAIL, token.getEmail())
+                .detail(Details.ORG_ID, token.getOrgId())
+                .error(Errors.ORG_DISABLED);
+        return session.getProvider(LoginFormsProvider.class)
+                .setStatus(Status.BAD_REQUEST)
+                .setAuthenticationSession(authSession)
+                .setAttribute("messageHeader", Messages.STALE_INVITE_ORG_LINK)
+                .setInfo(Messages.ORG_DISABLED)
                 .createInfoPage();
     }
 

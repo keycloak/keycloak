@@ -546,6 +546,48 @@ public class OrganizationInvitationLinkTest extends AbstractOrganizationTest {
     }
 
     @Test
+    public void testAcceptInvitationLinkAfterOrgDisabled() throws IOException, MessagingException {
+        UserRepresentation user = createUser("invited", "invited@myemail.com");
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+
+        organization.members().inviteExistingUser(user.getId()).close();
+
+        String link = getInvitationLinkFromEmail(user.getFirstName(), user.getLastName());
+
+        // Disable the organization after the invitation was sent
+        try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
+            driver.navigate().to(link);
+            assertThat(infoPage.isCurrent(), is(true));
+            assertThat(infoPage.getInfo(), containsString("The organization is not available at this time and cannot accept new members."));
+
+            // User should not be added to organization
+            List<MemberRepresentation> members = organization.members().search(user.getEmail(), Boolean.TRUE, null, null);
+            assertThat(members, empty());
+        }
+
+        // After re-enabling, the link should work again
+        acceptInvitation(organization, user);
+    }
+
+    @Test
+    public void testNewUserRegistrationAfterOrgDisabled() throws IOException, MessagingException {
+        String email = "inviteduser@email";
+
+        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
+        organization.members().inviteUser(email, "Homer", "Simpson").close();
+
+        String link = getInvitationLinkFromEmail();
+
+        // Disable the organization after the invitation was sent
+        try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
+            driver.navigate().to(link);
+            // Registration page should show error about disabled org
+            assertThat(driver.getPageSource(), containsString("The organization is not available at this time and cannot accept new members."));
+        }
+    }
+
+    @Test
     public void testInvitationLinkAfterInvitationDeleted() throws IOException, MessagingException {
         String email = "inviteduser@email";
 
