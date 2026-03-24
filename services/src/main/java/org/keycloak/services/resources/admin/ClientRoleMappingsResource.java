@@ -17,7 +17,6 @@
 package org.keycloak.services.resources.admin;
 
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -133,13 +132,11 @@ public class ClientRoleMappingsResource {
         Function<RoleModel, RoleRepresentation> toBriefRepresentation = briefRepresentation
                 ? ModelToRepresentation::toBriefRepresentation : ModelToRepresentation::toRepresentation;
 
-        // Pre-compute the user's full effective role set once via BFS expansion,
-        // then filter by client. This avoids the O(C*M*D) cost of calling
-        // user.hasRole() per client role which recursively expands composites
-        // without memoization for each of the C client roles.
-        Set<RoleModel> directRoles = user.getRoleMappingsStream().collect(Collectors.toSet());
-        Set<RoleModel> effectiveRoles = RoleUtils.expandCompositeRoles(directRoles);
-        return effectiveRoles.stream()
+        // Pre-compute the full effective role set once (direct + group-inherited
+        // roles for users, direct only for groups), then filter by client.
+        // This avoids the O(C*M*D) cost of calling user.hasRole() per client
+        // role, which recursively expands composites without memoization.
+        return RoleUtils.getDeepRoleMappings(user).stream()
                 .filter(r -> r.isClientRole() && r.getContainerId().equals(client.getId()))
                 .map(toBriefRepresentation);
     }
