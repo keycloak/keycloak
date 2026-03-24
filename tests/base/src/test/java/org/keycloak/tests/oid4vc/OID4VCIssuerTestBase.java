@@ -24,6 +24,8 @@ import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -168,6 +170,7 @@ public abstract class OID4VCIssuerTestBase {
 
     @BeforeEach
     void beforeEachBase() {
+
         client = managedClient.admin().toRepresentation();
         pubClient = managedPublicClient.admin().toRepresentation();
 
@@ -188,7 +191,7 @@ public abstract class OID4VCIssuerTestBase {
         driver.open("about:blank");
     }
 
-    protected CredentialScopeRepresentation getExistingCredentialScope(String scopeName) {
+    protected CredentialScopeRepresentation getCredentialScopeByName(String scopeName) {
         return testRealm.admin().clientScopes().findAll().stream()
                 .filter(it -> scopeName.equals(it.getName()))
                 .map(CredentialScopeRepresentation::new)
@@ -334,8 +337,21 @@ public abstract class OID4VCIssuerTestBase {
     }
 
     protected CredentialScopeRepresentation requireExistingCredentialScope(String scopeName) {
-        return Optional.ofNullable(getExistingCredentialScope(scopeName))
+        return Optional.ofNullable(getCredentialScopeByName(scopeName))
                 .orElseThrow(() -> new IllegalStateException("No such credential scope: " + scopeName));
+    }
+
+    protected void setCredentialScopeAttributes(ClientScopeRepresentation credScope, Map<String, String> attrUpdate) {
+        ClientScopeResource clientScopeResource = testRealm.admin().clientScopes().get(credScope.getId());
+        credScope = clientScopeResource.toRepresentation();
+        credScope.getAttributes().putAll(attrUpdate);
+        clientScopeResource.update(credScope);
+    }
+
+    protected void updateCredentialScope(CredentialScopeRepresentation clientScope) {
+        ClientScopesResource clientScopesResource = testRealm.admin().clientScopes();
+        ClientScopeResource clientScopeResource = clientScopesResource.get(clientScope.getId());
+        clientScopeResource.update(clientScope);
     }
 
     // Private ---------------------------------------------------------------------------------------------------------

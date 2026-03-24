@@ -1483,9 +1483,9 @@ public class TokenManager {
             res.setScope(responseScope);
             event.detail(Details.SCOPE, responseScope);
 
-            List<AuthorizationDetailsJSONRepresentation> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
-            if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
-                res.setAuthorizationDetails(authDetailsResponse);
+            List<AuthorizationDetailsJSONRepresentation> authDetails = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+            if (authDetails != null && !authDetails.isEmpty()) {
+                res.setAuthorizationDetails(authDetails);
             }
 
             response = res;

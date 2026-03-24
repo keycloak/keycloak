@@ -185,6 +185,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         try {
             checker.checkParRequired();
             checker.checkInvalidRequestMessage();
+            checker.checkAuthorizationDetails();
             checker.checkOIDCRequest();
             checker.checkValidScope();
             checker.checkValidResource();

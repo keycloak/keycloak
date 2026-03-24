@@ -27,6 +27,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.CredentialOfferException;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.PreAuthCodeHandler;
 import org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant;
@@ -101,7 +102,8 @@ class DefaultCredentialOfferProvider implements CredentialOfferProvider {
                 if (credScope == null) {
                     throw new CredentialOfferException(Errors.INVALID_REQUEST, "No credential scope model for: " + credConfigId);
                 }
-                authDetails.add(CredentialScopeModelUtils.buildOID4VCAuthorizationDetail(credScope, credOffersId));
+                OID4VCAuthorizationDetailsProcessor authDetailsProcessor = new OID4VCAuthorizationDetailsProcessor(session);
+                authDetails.add(authDetailsProcessor.generateResponseAuthorizationDetails(credScope, credOffersId));
             }
             return authDetails;
         });

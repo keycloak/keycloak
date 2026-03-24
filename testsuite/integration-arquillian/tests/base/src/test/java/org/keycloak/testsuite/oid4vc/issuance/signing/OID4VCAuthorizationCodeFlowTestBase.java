@@ -841,14 +841,16 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
     }
 
     /**
-     * Test that credential request with unknown credential_configuration_id fails.
+     * Test that credential request with credential_configuration_id fails.
      */
     @Test
-    public void testCredentialRequestWithUnknownCredentialConfigurationId() throws Exception {
+    public void testCredentialRequestWithCredentialConfigurationId() throws Exception {
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
         // Perform successful authorization code flow to get token
         AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
+        List<OID4VCAuthorizationDetail> authDetails = tokenResponse.getOID4VCAuthorizationDetails();
+        assertEquals("Expected one OID4VCAuthorizationDetail", 1, authDetails.size());
 
         // Clear events before credential request
         events.clear();
@@ -857,15 +859,15 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Server now requires credential_identifier when authorization_details are present,
         // so this request is treated as an invalid credential request.
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
-                .credentialConfigurationId("unknown-credential-config-id")
+                .credentialConfigurationId(authDetails.get(0).getCredentialConfigurationId())
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
-        assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue(), credentialResponse.getError());
+        assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credentialResponse.getError());
 
-        // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
-        expectCredentialRequestError(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue()).assertEvent();
+        // Verify INVALID_CREDENTIAL_REQUEST event was fired
+        expectCredentialRequestError(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue()).assertEvent();
     }
 
     /**

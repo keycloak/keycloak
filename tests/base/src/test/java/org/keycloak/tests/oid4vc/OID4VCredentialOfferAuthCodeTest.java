@@ -151,7 +151,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         assertNotNull(accessToken, "No accessToken");
 
         String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier, "No authorized credential identifier");
+        assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
 
         // Send the CredentialRequest
         //
@@ -191,7 +191,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         assertNotNull(accessToken1, "No accessToken");
 
         String authorizedIdentifier1 = ctx1.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier1, "No authorized credential identifier");
+        assertNotNull(authorizedIdentifier1, "Has authorized credential identifier");
 
         // Delete cookies to avoid automatic SSO login
         driver.cookies().deleteAll();
@@ -222,8 +222,8 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         String accessToken2 = wallet.validateHolderAccessToken(ctx2, tokenResponse2);
         assertNotNull(accessToken2, "No accessToken");
 
-        String authorizedCredConfigId2 = ctx2.getAuthorizedCredentialConfigurationId();
-        assertNotNull(authorizedCredConfigId2, "No authorized credential identifier");
+        String authorizedIdentifier2 = ctx2.getAuthorizedCredentialIdentifier();
+        assertNotNull(authorizedIdentifier2, "Has authorized credential identifier");
 
         // Send the CredentialRequest1 with first access-token. Ensure credential successfully obtained
         //
@@ -237,7 +237,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         // Send the CredentialRequest2 with 2nd access-token. Ensure credential successfully obtained for the correct VC type
         //
         CredentialResponse credResponse2 = wallet.credentialRequest(ctx2, accessToken2)
-                .credentialConfigurationId(authorizedCredConfigId2)
+                .credentialIdentifier(authorizedIdentifier2)
                 .send().getCredentialResponse();
 
         CredentialResponse.Credential credentialObj = credResponse2.getCredentials().get(0);
@@ -276,7 +276,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         assertNotNull(accessToken, "No accessToken");
 
         String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier, "No authorized credential identifier");
+        assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
 
         // Move time forward to make sure offer is expired
         timeOffSet.set(DEFAULT_CODE_LIFESPAN_S + 10);
@@ -319,7 +319,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         assertNotNull(accessToken, "No accessToken");
 
         String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier, "No authorized credential identifier");
+        assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
 
         // Send the CredentialRequest
         //

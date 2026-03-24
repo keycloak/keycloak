@@ -37,15 +37,16 @@ import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oid4vc.utils.ClaimsPathPointer;
-import org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils;
 import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessor;
 import org.keycloak.protocol.oidc.rar.InvalidAuthorizationDetailsException;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
+import org.keycloak.util.Strings;
 
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.ISSUER_STATE;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIALS_OFFER_ID_ATTR;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByConfigurationId;
 import static org.keycloak.protocol.oid4vc.utils.CredentialScopeModelUtils.findCredentialScopeModelByName;
@@ -53,6 +54,7 @@ import static org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint.LOGIN_S
 
 public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetailsProcessor<OID4VCAuthorizationDetail> {
     private static final Logger logger = Logger.getLogger(OID4VCAuthorizationDetailsProcessor.class);
+
     private final KeycloakSession session;
 
     public OID4VCAuthorizationDetailsProcessor(KeycloakSession session) {
@@ -230,7 +232,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         if (credScope == null)
             throw getInvalidRequestException("Cannot find or access client scope for credential_configuration_id: " + requestedCredentialConfigurationId);
 
-        OID4VCAuthorizationDetail responseAuthDetail = CredentialScopeModelUtils.buildOID4VCAuthorizationDetail(credScope, null);
+        OID4VCAuthorizationDetail responseAuthDetail = generateResponseAuthorizationDetails(credScope, null);
         responseAuthDetail.setClaims(requestAuthDetail.getClaims());
 
         return responseAuthDetail;
@@ -262,7 +264,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
                 // Generate `authorization_details` for the AccessToken Response
                 // This is the same logic as we use when a credential offer is created
                 //
-                OID4VCAuthorizationDetail authDetail = CredentialScopeModelUtils.buildOID4VCAuthorizationDetail(credScope, null);
+                OID4VCAuthorizationDetail authDetail = generateResponseAuthorizationDetails(credScope, null);
                 authorizationDetails.add(authDetail);
             }
         }
@@ -294,6 +296,34 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
     @Override
     public void close() {
         // No cleanup needed
+    }
+
+    public OID4VCAuthorizationDetail generateResponseAuthorizationDetails(CredentialScopeModel credScope, String credOffersId) {
+
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setCredentialsOfferId(credOffersId);
+        authDetail.setType(OPENID_CREDENTIAL);
+
+        String credConfigId = Optional.ofNullable(credScope.getCredentialConfigurationId())
+                .orElseThrow(() -> new IllegalStateException("No " + VC_CONFIGURATION_ID + " in client scope: " + credScope.getName()));
+
+        authDetail.setCredentialConfigurationId(credConfigId);
+
+        // The AccessToken Response should have authorization_details when ...
+        //
+        //  * provided in Authorization Request
+        //  * provided in AccessToken Request
+        //  * defined credential identifiers
+        //
+        // https://gitlab.com/openid/conformance-suite/-/work_items/1724
+
+        String credIdentifier = credScope.getCredentialIdentifier();
+        if (Strings.isEmpty(credIdentifier)) {
+            credIdentifier = credConfigId + "_0000";
+        }
+        authDetail.setCredentialIdentifiers(List.of(credIdentifier));
+
+        return authDetail;
     }
 
     // Private ---------------------------------------------------------------------------------------------------------

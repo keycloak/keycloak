@@ -767,7 +767,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         EventAssertion.assertError(events.poll())
                 .type(EventType.VERIFIABLE_CREDENTIAL_REQUEST_ERROR)
                 .error(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue())
-                .details(Details.REASON, "Credential configuration id 'unknown-credential-config-id' not found in authorization_details. The credential_configuration_id must match the one from the authorization_details in the access token.");
+                .details(Details.REASON, "Credential configuration 'unknown-credential-config-id' not found in authorization_details");
     }
 
     /** A credential request using a credential_identifier from a different flow must fail. */
