@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.tests.oid4vc;
+package org.keycloak.tests.oid4vc.preauth;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,10 +39,10 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.EventMatchers;
 import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.OpenIDProviderConfigurationResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
@@ -71,7 +71,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Base class for authorization details flow tests.
  * Contains common test logic that can be reused by JWT and SD-JWT specific test classes.
  */
-@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
 public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssuerTestBase {
 
     protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String scopeName) {

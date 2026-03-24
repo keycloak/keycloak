@@ -127,19 +127,19 @@ public abstract class OID4VCIssuerTestBase {
     ManagedClient managedClient;
 
     @InjectOAuthClient
-    OAuthClient oauth;
+    protected OAuthClient oauth;
 
     @InjectTimeOffSet
-    TimeOffSet timeOffSet;
+    protected TimeOffSet timeOffSet;
 
     @InjectEvents
     protected Events events;
 
     @InjectWebDriver
-    ManagedWebDriver driver;
+    protected ManagedWebDriver driver;
 
     @InjectAdminClient
-    Keycloak keycloak;
+    protected Keycloak keycloak;
 
     @InjectKeycloakUrls
     protected KeycloakUrls keycloakUrls;

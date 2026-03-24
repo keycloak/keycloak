@@ -1,4 +1,4 @@
-package org.keycloak.tests.oid4vc;
+package org.keycloak.tests.oid4vc.issuance.signing;
 
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
@@ -9,6 +9,8 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;

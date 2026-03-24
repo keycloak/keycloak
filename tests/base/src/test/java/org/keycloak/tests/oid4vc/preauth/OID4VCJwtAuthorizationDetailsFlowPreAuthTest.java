@@ -19,7 +19,6 @@ package org.keycloak.tests.oid4vc.preauth;
 
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.tests.oid4vc.OID4VCAuthorizationDetailsFlowTestBase;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
