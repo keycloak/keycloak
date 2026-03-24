@@ -120,7 +120,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   // Filter only active keys suitable for signing credentials AND using asymmetric algorithms
   const keyOptions = useMemo(() => {
     const options = [{ key: "", value: t("useDefaultKey") }];
-    if (realmKeys && realmKeys.length > 0) {
+    if (realmKeys.length > 0) {
       const keyOptions = realmKeys
         .filter(
           (key) =>
@@ -456,7 +456,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                 </HelperText>
               </FormHelperText>
             )}
-            {realmKeys && realmKeys.length > 0 && (
+            {realmKeys.length > 0 && (
               <SelectControl
                 id="kc-signing-key-id"
                 name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(

@@ -171,7 +171,7 @@ export const GroupsModal = ({
         );
 
         const clientRolesPayload: RoleMappingPayload[] =
-          clientRoleMappings?.flatMap((clientRoleMapping) =>
+          clientRoleMappings.flatMap((clientRoleMapping) =>
             clientRoleMapping.roles.map((role) => ({
               id: role.id!,
               name: role.name!,

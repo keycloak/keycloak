@@ -196,14 +196,16 @@ export default function EditUser() {
             (field, params) => {
               if (field.startsWith("attributes.")) {
                 const attributeName = field.substring("attributes.".length);
-                let isUnmanagedAttribute = false;
-                (data.unmanagedAttributes as KeyValueType[]).forEach(
+                const unmanagedAttrs =
+                  data.unmanagedAttributes as KeyValueType[];
+                const isUnmanagedAttribute = unmanagedAttrs.some(
                   (attr, index) => {
                     if (attr.key === attributeName) {
                       unmanagedAttributeErrors[index] = params;
                       someUnmanagedAttributeError = true;
-                      isUnmanagedAttribute = true;
+                      return true;
                     }
+                    return false;
                   },
                 );
                 if (!isUnmanagedAttribute) {
@@ -215,6 +217,7 @@ export default function EditUser() {
             },
             ((key, param) => t(key as string, param as any)) as TFunction,
           );
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- mutated in callback above
           if (someUnmanagedAttributeError) {
             form.setError(
               "unmanagedAttributes",

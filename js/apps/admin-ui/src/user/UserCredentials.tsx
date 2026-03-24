@@ -21,7 +21,6 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { toUpperCase } from "../util";
 import { FederatedUserLink } from "./FederatedUserLink";
@@ -382,10 +381,6 @@ export const UserCredentials = ({ user, setUser }: UserCredentialsProps) => {
     },
     [key],
   );
-
-  if (!credentialTypes) {
-    return <KeycloakSpinner />;
-  }
 
   const hasCredentialTypes = credentialTypes.length > 0;
   const noCredentials = groupedUserCredentials.length === 0;

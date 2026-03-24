@@ -137,18 +137,16 @@ export const NewPermissionPolicyDialog = ({
   }, [policyTypeSelector, reset, form]);
 
   const save = async (policy: Policy) => {
-    const { groups, roles, policies, clients, ...rest } = policy;
+    const { groups, roles, policies, ...rest } = policy;
 
     const cleanedPolicy = {
       ...rest,
       ...(groups && groups.length > 0 && { groups }),
       ...(roles && roles.length > 0 && { roles }),
       ...(policies && policies.length > 0 && { policies }),
-      ...(clients && clients.length > 0 && { clients }),
       ...(rest.type === "group" &&
         (!groups || groups.length === 0) && { groups: [] }),
-      ...(rest.type === "client" &&
-        (!clients || clients.length === 0) && { clients: [] }),
+      ...(rest.type === "client" && { clients: [] }),
     };
 
     try {
@@ -192,7 +190,7 @@ export const NewPermissionPolicyDialog = ({
             rules={{ required: t("required") }}
           />
           <TextControl name="description" label={t("description")} />
-          {providers && providers.length > 0 && (
+          {providers.length > 0 && (
             <SelectControl
               name="type"
               label={t("policyType")}
@@ -218,7 +216,7 @@ export const NewPermissionPolicyDialog = ({
               type="submit"
               data-testid="save"
               isDisabled={
-                policies?.length === 0 && policyTypeSelector === "aggregate"
+                policies.length === 0 && policyTypeSelector === "aggregate"
               }
             >
               {t("save")}

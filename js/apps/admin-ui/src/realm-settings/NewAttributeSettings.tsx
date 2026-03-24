@@ -269,19 +269,17 @@ export default function NewAttributeSettings() {
         realm: realmName,
       });
 
-      if (formFields.translation) {
-        try {
-          await saveTranslations({
-            adminClient,
-            realmName,
-            translationsData: {
-              translation: formFields.translation,
-            },
-          });
-          await i18n.reloadResources();
-        } catch (error) {
-          addError(t("errorSavingTranslations"), error);
-        }
+      try {
+        await saveTranslations({
+          adminClient,
+          realmName,
+          translationsData: {
+            translation: formFields.translation,
+          },
+        });
+        await i18n.reloadResources();
+      } catch (error) {
+        addError(t("errorSavingTranslations"), error);
       }
       navigate(toUserProfile({ realm: realmName, tab: "attributes" }));
 

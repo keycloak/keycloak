@@ -81,7 +81,7 @@ export const AddTranslationsDialog = ({
         .filter((l) =>
           localeToDisplayName(l, whoAmI.locale)
             ?.toLocaleLowerCase(realm?.defaultLocale)
-            ?.includes(filter.toLocaleLowerCase(realm?.defaultLocale)),
+            .includes(filter.toLocaleLowerCase(realm?.defaultLocale)),
         )
         .slice(first, first + max + 1);
 

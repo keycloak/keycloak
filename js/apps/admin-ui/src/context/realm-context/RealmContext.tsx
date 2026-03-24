@@ -32,7 +32,7 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
     useState<RealmRepresentation>();
 
   const locationRealm = useHash();
-  const realm = locationRealm?.split("/")[1] ?? environment.realm;
+  const realm = locationRealm.split("/")[1] ?? environment.realm;
 
   // Configure admin client to use selected realm when it changes.
   useEffect(() => {

@@ -82,12 +82,12 @@ export default function PolicyDetails() {
       if (policyId) {
         const result = await Promise.all([
           adminClient.clients.findOnePolicyWithType({
-            id: permissionClientId ?? id,
+            id: permissionClientId,
             type: policyType!,
             policyId,
           }) as PolicyRepresentation | undefined,
           adminClient.clients.getAssociatedPolicies({
-            id: permissionClientId ?? id,
+            id: permissionClientId,
             permissionId: policyId,
           }),
         ]);

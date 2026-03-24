@@ -135,7 +135,7 @@ function RealmSettingsGeneralTabForm({
 
       if (isStepUpAuthenticationSaml && realm.attributes?.["acr.uri.map"]) {
         const acrUriMap = JSON.parse(realm.attributes["acr.uri.map"]);
-        acrLoaMap.forEach((row) => (row.uri = acrUriMap?.[row?.acr]));
+        acrLoaMap.forEach((row) => (row.uri = acrUriMap?.[row.acr]));
       }
 
       setValue(

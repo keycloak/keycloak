@@ -34,7 +34,7 @@ export const ResourceType = ({
   const normalizedResourceType = resourceType.toLowerCase();
 
   const [isSpecificResources, setIsSpecificResources] = useState(
-    resourceIds?.some((id) => id !== resourceType) || !withEnforceAccessTo,
+    resourceIds.some((id) => id !== resourceType) || !withEnforceAccessTo,
   );
 
   function getComponentType() {

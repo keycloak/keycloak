@@ -197,7 +197,7 @@ export const UserSelect = ({
                           setInputValue("");
                           setSearch("");
                           field.onChange([]);
-                          textInputRef?.current?.focus();
+                          textInputRef.current?.focus();
                         }}
                         aria-label="Clear input value"
                       >

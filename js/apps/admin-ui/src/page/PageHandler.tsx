@@ -57,13 +57,11 @@ export const PageHandler = ({
   );
 
   const onSubmit = async (component: ComponentRepresentation) => {
-    if (component.config || params) {
-      component.config = Object.assign(component.config || {}, params);
-      Object.entries(component.config).forEach(
-        ([key, value]) =>
-          (component.config![key] = Array.isArray(value) ? value : [value]),
-      );
-    }
+    component.config = Object.assign(component.config || {}, params);
+    Object.entries(component.config).forEach(
+      ([key, value]) =>
+        (component.config![key] = Array.isArray(value) ? value : [value]),
+    );
     try {
       const updatedComponent = {
         ...component,

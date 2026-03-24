@@ -115,12 +115,12 @@ const Dashboard = () => {
   );
 
   const disabledFeatures = useMemo(
-    () => sortedFeatures.filter((f) => !f.enabled) || [],
+    () => sortedFeatures.filter((f) => !f.enabled),
     [serverInfo.features],
   );
 
   const enabledFeatures = useMemo(
-    () => sortedFeatures.filter((f) => f.enabled) || [],
+    () => sortedFeatures.filter((f) => f.enabled),
     [serverInfo.features],
   );
 

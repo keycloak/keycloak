@@ -101,7 +101,7 @@ const PermissionEvaluateContent = ({ client }: Props) => {
 
     const formValues = getValues();
     const getSingleValue = (source: string | string[]) => {
-      return Array.isArray(source) ? source?.[0] : source;
+      return Array.isArray(source) ? source[0] : source;
     };
 
     const getResourceName = (resourceType: string) => {
@@ -192,17 +192,15 @@ const PermissionEvaluateContent = ({ client }: Props) => {
                     }}
                     options={resourceTypes.map((resource) => resource.type!)}
                   />
-                  {ResourceTypeComponent && (
-                    <ResourceTypeComponent
-                      name={selectedResourceType?.toLowerCase()}
-                      label={t(`${selectedResourceType}`)}
-                      helpText={t(`select${selectedResourceType}`)}
-                      defaultValue={[]}
-                      variant="typeahead"
-                      isRequired
-                      isRadio
-                    />
-                  )}
+                  <ResourceTypeComponent
+                    name={selectedResourceType?.toLowerCase()}
+                    label={t(`${selectedResourceType}`)}
+                    helpText={t(`select${selectedResourceType}`)}
+                    defaultValue={[]}
+                    variant="typeahead"
+                    isRequired
+                    isRadio
+                  />
                   <SelectControl
                     name="authScopes"
                     label={t("authScope")}

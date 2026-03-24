@@ -247,7 +247,7 @@ export default function PermissionConfigurationDetails() {
             <NameDescription clientId={permissionClientId} />
             <ScopePicker
               clientId={permissionClientId}
-              resourceTypeScopes={resourceTypeScopes ?? []}
+              resourceTypeScopes={resourceTypeScopes}
             />
             <ResourceType resourceType={resourceType} />
             <AssignedPolicies
