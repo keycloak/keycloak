@@ -420,6 +420,43 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
         }
     }
+    @Test
+    public void testRealmLimitExceededWithMultipleClientsAndClientLimitHigherDirectGrantFlow() throws Exception {
+        try {
+            // Set behavior to terminate oldest session with Realm limit: 3, Client limit: 10
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "3");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "10");
+
+            // Login 2 times to direct-grant-1, Login 1 time to direct-grant-2 (total 3 sessions - at realm limit)
+            AccessTokenResponse response = oauth.client("direct-grant-1", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+            response = oauth.client("direct-grant-1", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+            response = oauth.client("direct-grant-2", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            // Verify we have 3 sessions total
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 3));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-1", 2));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
+
+            // Try to login again to direct-grant-2 (4th session - exceeds realm limit)
+            response = oauth.client("direct-grant-2", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            // Verify we still have 3 sessions total (oldest was removed)
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 3));
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
+    }
 
     @Test
     public void testRealmSessionCountExceededAndOldestSessionRemovedDirectGrantFlow() throws Exception {

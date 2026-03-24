@@ -84,16 +84,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
                 logger.infof("Too many session in this realm for the current user. Session count: %s", userSessionCountForRealm);
                 String eventDetails = String.format("Realm session limit exceeded. Realm: %s, Realm limit: %s. Session count: %s, User id: %s",
                         context.getRealm().getName(), userRealmLimit, userSessionCountForRealm, context.getUser().getId());
-
-                var removedClientSessions = handleLimitExceeded(context, userSessionsForClient, eventDetails, userClientLimit);
-                if (exceedsLimit(userSessionCountForRealm - removedClientSessions.size(), userRealmLimit))
-                {
-                    List<UserSessionModel> remainingSessionsToBeRemoved = userSessionsForRealm
-                            .stream()
-                            .filter(userSessionModel -> !removedClientSessions.contains(userSessionModel))
-                            .collect(Collectors.toList());
-                    handleLimitExceeded(context, remainingSessionsToBeRemoved, eventDetails, userRealmLimit);
-                }
+                handleLimitExceeded(context, userSessionsForRealm, eventDetails, userRealmLimit);
             } // otherwise if the user is still allowed to create a new session in the realm, check if this applies for this specific client as well.
             else if (newClientSession && exceedsLimit(userSessionCountForClient, userClientLimit)) {
                 logger.infof("Too many sessions related to the current client for this user. Session count: %s", userSessionCountForClient);
