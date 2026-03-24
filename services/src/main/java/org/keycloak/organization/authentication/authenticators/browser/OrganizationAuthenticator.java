@@ -350,7 +350,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
                 });
 
         if (domainMatch) {
-            form.addError(new FormMessage("Your email domain matches the " + organization.getName() + " organization but you don't have an account yet."));
+            form.addError(new FormMessage("Your email domain matches an organization but you don't have an account yet."));
         }
 
         // user is null, setup webauthn data if enabled
