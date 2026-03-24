@@ -59,7 +59,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
-import io.quarkus.dev.console.QuarkusConsole;
+import io.quarkus.dev.console.TerminalUtils;
 import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.mutiny.tuples.Functions.TriConsumer;
@@ -106,7 +106,7 @@ public class Picocli {
     private Set<String> duplicatedOptionsNames = new HashSet<String>();
 
     public static boolean hasColorSupport() {
-        return QuarkusConsole.hasColorSupport();
+        return TerminalUtils.hasColorSupport();
     }
 
     public Ansi getColorMode() {
@@ -290,7 +290,7 @@ public class Picocli {
                 if (!mapper.hasWildcard() // non-wildcard options will be validated in the next pass
                         // validate only canonical mappings to kc. values - no need to consider alternative forms
                         || !name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
-                    return; 
+                    return;
                 }
                 validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
                         deprecatedInUse, missingOption, disabledMappers.contains(mapper), forKey, unnecessary);
@@ -738,6 +738,9 @@ public class Picocli {
                     .validate(false);
 
             for (PropertyMapper<?> mapper : entry.getValue()) {
+                if (mapper.getOption().isSynthetic()) {
+                    continue;
+                }
                 String name = mapper.getCliFormat();
 
                 boolean hidden = mapper.isHidden() || ac.isHiddenCategory(mapper.getCategory())

@@ -36,7 +36,6 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.config.WildcardOptionsUtil;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.ShortErrorMessageHandler;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
@@ -148,7 +147,10 @@ public class PropertyMapper<T> {
         // try to obtain the value for the property we want to map first
         // we don't want the NestedPropertyMappingInterceptor to restart the chain here, so we force a proceed
         // this ensures that mapFrom transformers, and regular transformers are applied exclusively - not chained
-        ConfigValue config = convertValue(NestedPropertyMappingInterceptor.proceed(context, from));
+        ConfigValue config = null;
+        if (!option.isSynthetic()) {
+            config = convertValue(NestedPropertyMappingInterceptor.proceed(context, from));
+        }
         Optional<ConfigValue> directValue = null;
 
         boolean parentValue = false;
@@ -584,8 +586,12 @@ public class PropertyMapper<T> {
             if (paramLabel == null && Boolean.class.equals(option.getType())) {
                 paramLabel = Boolean.TRUE + "|" + Boolean.FALSE;
             }
+            Option<T> opt = option;
+            if (Objects.equals(option.getKey(), mapFrom)) {
+                opt = option.toBuilder().synthetic().build();
+            }
             if (option.getKey().contains(WildcardOptionsUtil.WILDCARD_START)) {
-                return new WildcardPropertyMapper<>(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
+                return new WildcardPropertyMapper<>(opt, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);
             }
             if (wildcardKeysTransformer != null || wildcardMapFrom != null) {
                 throw new AssertionError("Wildcard operations not expected with non-wildcard mapper");
@@ -593,24 +599,12 @@ public class PropertyMapper<T> {
             if (!option.isBuildTime() && to != null && PropertyMappers.isSpiBuildTimeProperty(to, true)) {
                 throw new AssertionError("A runtime option should not map to a build time spi option");
             }
-            return new PropertyMapper<>(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null);
+            return new PropertyMapper<>(opt, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null);
         }
     }
 
     public static <T> PropertyMapper.Builder<T> fromOption(Option<T> opt) {
         return new PropertyMapper.Builder<>(opt);
-    }
-
-    /**
-     * Create a property mapper that get value from the parent option
-     */
-    public static <T> PropertyMapper.Builder<T> fromParentOption(Option<T> parentOption) {
-        final var option = new OptionBuilder<>(parentOption.getKey() + KeycloakModelUtils.generateId(), parentOption.getType())
-                .buildTime(parentOption.isBuildTime())
-                .hidden()
-                .build();
-        return new Builder<>(option)
-                .mapFrom(parentOption);
     }
 
     /**
@@ -622,11 +616,11 @@ public class PropertyMapper<T> {
     public static PropertyMapper.Builder<Boolean> fromFeature(Profile.Feature feature) {
         final var option = new OptionBuilder<>(feature.getKey() + "-hidden-mapper", Boolean.class)
                 .buildTime(true)
-                .hidden()
+                .defaultValue(Boolean.TRUE)
+                .synthetic()
                 .build();
         return new Builder<>(option)
-                .isEnabled(() -> Profile.isFeatureEnabled(feature))
-                .transformer((v, ctx) -> Boolean.TRUE.toString()); // we know the feature is enabled due to .isEnabled()
+                .isEnabled(() -> Profile.isFeatureEnabled(feature));
     }
 
     public void validate(ConfigValue value) {

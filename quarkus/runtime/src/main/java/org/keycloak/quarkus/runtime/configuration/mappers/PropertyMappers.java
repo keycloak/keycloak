@@ -363,7 +363,10 @@ public final class PropertyMappers {
         }
 
         private static void handleMapper(PropertyMapper<?> mapper, BiConsumer<String, PropertyMapper<?>> operation) {
-            operation.accept(mapper.getFrom(), mapper);
+            // skip accounting for the from if it is a synthetic option
+            if (!mapper.getOption().isSynthetic()) {
+                operation.accept(mapper.getFrom(), mapper);
+            }
             if (!mapper.getFrom().equals(mapper.getTo())) {
                 String to = mapper.getTo();
                 operation.accept(to, mapper);
@@ -374,6 +377,8 @@ public final class PropertyMappers {
                     String legacyTo = mapper.getTo().replace("--", "-");
                     operation.accept(legacyTo, mapper);
                 }
+            } else if (mapper.getOption().isSynthetic()) {
+                throw new IllegalStateException("Synthetic options must map to a value");
             }
         }
     }
