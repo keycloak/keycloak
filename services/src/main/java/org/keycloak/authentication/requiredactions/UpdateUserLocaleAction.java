@@ -29,7 +29,10 @@ public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredA
             if (userLocale != null) {
                 LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
                 updater.updateLocaleCookie(userLocale);
-            } 
+            } else {
+                LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
+                updater.expireLocaleCookie();
+            }
         }
     }
 

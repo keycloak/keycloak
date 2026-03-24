@@ -53,7 +53,7 @@ public class DefaultLocaleUpdaterProvider implements LocaleUpdaterProvider {
             } catch (ReadOnlyException e) {
                 logger.debug("Attempt to store 'locale' attribute to read only user model. Ignoring exception", e);
             }
-            updateLocaleCookie(locale);
+             updateLocaleCookie(locale);
         }
         logger.debugv("Setting locale for user {0} to {1}", user.getUsername(), locale);
     }
