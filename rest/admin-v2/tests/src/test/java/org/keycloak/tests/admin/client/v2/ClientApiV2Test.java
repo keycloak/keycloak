@@ -371,6 +371,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         try (var response = adminClient.clients(testRealm.getName()).v2().createClient(rep);) {
             assertEquals(201, response.getStatus());
             OIDCClientRepresentation client = response.readEntity(OIDCClientRepresentation.class);
+            rep.setUuid(client.getUuid()); // needed for the use of equals()
             assertThat(client, is(rep));
         }
     }
