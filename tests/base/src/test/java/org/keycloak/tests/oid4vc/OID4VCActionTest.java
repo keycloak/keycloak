@@ -62,7 +62,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         user.admin().logout();
     }
 
-    static String getKcActionParameter(String clientId, String credentialConfigId, boolean preAuthorized) {
+    public static String getKcActionParameter(String clientId, String credentialConfigId, boolean preAuthorized) {
         try {
             VerifiableCredentialOfferAction.CredentialOfferActionConfig cfg = new VerifiableCredentialOfferAction.CredentialOfferActionConfig();
             cfg.setCredentialConfigurationId(credentialConfigId);
@@ -76,11 +76,11 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         }
     }
 
-    static String getNonceFromCredentialOfferUri(String credentialOfferUri) {
+    public static String getNonceFromCredentialOfferUri(String credentialOfferUri) {
         return credentialOfferUri.substring(credentialOfferUri.lastIndexOf("/") + 1);
     }
 
-    static void verifyVCActionCredentialResponse(CredentialResponse credResponse) {
+    public static void verifyVCActionCredentialResponse(CredentialResponse credResponse) {
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
         IssuerSignedJWT issuerSignedJWT = SdJwtVP.of(credentialObj.getCredential().toString()).getIssuerSignedJWT();

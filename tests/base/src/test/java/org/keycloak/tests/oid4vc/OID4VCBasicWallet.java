@@ -1,5 +1,6 @@
 package org.keycloak.tests.oid4vc;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -13,6 +14,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
@@ -74,7 +76,7 @@ public class OID4VCBasicWallet {
 
     // Composite Actions -----------------------------------------------------------------------------------------------
 
-    public CredentialsOffer createAuthCodeCredentialOffer(OID4VCTestContext ctx, String targetUser) throws Exception {
+    public CredentialsOffer createAuthCodeCredentialOffer(OID4VCTestContext ctx, String targetUser) {
 
         // Get Issuer AccessToken
         //
@@ -110,7 +112,7 @@ public class OID4VCBasicWallet {
         return credOffer;
     }
 
-    public CredentialsOffer createPreAuthCredentialOffer(OID4VCTestContext ctx, String targetUser) throws Exception {
+    public CredentialsOffer createPreAuthCredentialOffer(OID4VCTestContext ctx, String targetUser) {
 
         // Get Issuer AccessToken
         //
@@ -269,10 +271,17 @@ public class OID4VCBasicWallet {
             AccessTokenResponse tokenResponse,
             List<String> includeScopes, List<String> excludeScopes,
             List<String> includeRoles, List<String> excludeRoles
-    ) throws Exception {
+    ) {
 
         String accessToken = tokenResponse.getAccessToken();
-        JsonWebToken jwt = JsonSerialization.readValue(new JWSInput(accessToken).getContent(), JsonWebToken.class);
+
+        JsonWebToken jwt;
+        try {
+            jwt = JsonSerialization.readValue(new JWSInput(accessToken).getContent(), JsonWebToken.class);
+        } catch (IOException | JWSInputException ex) {
+            throw new IllegalStateException(ex);
+        }
+
         List<String> wasScopes = Arrays.stream(((String) jwt.getOtherClaims().get("scope")).split("\\s")).toList();
         includeScopes.forEach(it -> assertTrue(wasScopes.contains(it), "Missing scope: " + it));
         excludeScopes.forEach(it -> assertFalse(wasScopes.contains(it), "Invalid scope: " + it));
@@ -297,7 +306,7 @@ public class OID4VCBasicWallet {
         return accessToken;
     }
 
-    public String validateHolderAccessToken(OID4VCTestContext ctx, AccessTokenResponse tokenResponse) throws Exception {
+    public String validateHolderAccessToken(OID4VCTestContext ctx, AccessTokenResponse tokenResponse) {
 
         // Check that we can extract the AccessToken
         if (!tokenResponse.isSuccess()) {
@@ -314,7 +323,14 @@ public class OID4VCBasicWallet {
 
         // Extract authorization_details from AccessToken (JWT)
         //
-        JsonWebToken jwt = new JWSInput(tokenResponse.getAccessToken()).readJsonContent(JsonWebToken.class);
+
+        JsonWebToken jwt;
+        try {
+            jwt = new JWSInput(tokenResponse.getAccessToken()).readJsonContent(JsonWebToken.class);
+        } catch (JWSInputException ex) {
+            throw new IllegalStateException(ex);
+        }
+
         Object authDetailsClaim = jwt.getOtherClaims().get(AUTHORIZATION_DETAILS);
         String authDetailsJson = Optional.ofNullable(authDetailsClaim)
                 .map(JsonSerialization::valueAsString)

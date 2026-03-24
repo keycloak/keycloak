@@ -204,6 +204,12 @@ Alternatively, use `telemetry-logs-header-<header>` for OpenTelemetry Logs or `t
 
 For more details, see the link:{telemetryguide_link}[{telemetryguide_name}] guide.
 
+== Service Monitor annotations and labels via Keycloak CR
+
+It is now possible to configure service monitor labels and annotations via Keycloak CR when using the Operator.
+
+For more details, see the link: https://www.keycloak.org/operator/advanced-configuration#_servicemonitor[Advanced Configuration Operator] guide
+
 = Extension Development
 
 == Keycloak Test Framework Full Support

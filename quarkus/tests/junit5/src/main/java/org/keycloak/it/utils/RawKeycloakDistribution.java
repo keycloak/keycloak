@@ -134,14 +134,26 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         return this;
     }
 
+    public CLIResult kc(String... arguments) throws IOException {
+        return kc(Arrays.asList(arguments));
+    }
+
+    public CLIResult kc(List<String> arguments) throws IOException {
+        return invoke(SCRIPT_CMD, arguments);
+    }
+
     public CLIResult kcadm(String... arguments) throws IOException {
     	return kcadm(Arrays.asList(arguments));
     }
 
     public CLIResult kcadm(List<String> arguments) throws IOException {
+        return invoke(SCRIPT_KCADM_CMD, arguments);
+    }
+
+    private CLIResult invoke(String script, List<String> arguments) throws IOException {
         List<String> allArgs = new ArrayList<>();
 
-        invoke(allArgs, SCRIPT_KCADM_CMD);
+        invoke(allArgs, script);
 
         if (this.isDebug()) {
             allArgs.add("-x");
@@ -159,12 +171,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         builder.environment().putAll(envVars);
 
-        Process kcadm = builder.start();
+        Process proc = builder.start();
 
         DefaultOutputConsumer outputConsumer = new DefaultOutputConsumer();
-        readOutput(kcadm, outputConsumer);
+        readOutput(proc, outputConsumer);
 
-        int exitValue = kcadm.exitValue();
+        int exitValue = proc.exitValue();
 
         return CLIResult.create(outputConsumer.getStdOut(), outputConsumer.getErrOut(), exitValue);
     }
@@ -257,7 +269,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         if (descendants.isEmpty()) {
             return;
         }
-        
+
         LOG.debugf("Found %d descendant processes to terminate", descendants.size());
         CompletableFuture<?> allProcesses = CompletableFuture.completedFuture(null);
 
@@ -498,7 +510,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     private Path inDistZipDirectory(File distFile) throws Exception{
-      
+
         try (ZipFile zipFile = new ZipFile(distFile)) {
             Optional<? extends ZipEntry> e = zipFile.stream().filter(ZipEntry::isDirectory).findFirst();
             if (e.isPresent()) {

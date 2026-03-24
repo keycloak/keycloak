@@ -463,7 +463,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
 
     await expect(page.getByTestId(OID4VCI_FIELDS.ISSUER_DID)).toHaveValue("");
-    await expect(page.locator(OID4VCI_FIELDS.SIGNING_ALGORITHM)).toHaveText("");
+    await expect(page.locator(OID4VCI_FIELDS.SIGNING_ALGORITHM)).toContainText(
+      "Use default algorithm",
+    );
     await expect(page.locator(OID4VCI_FIELDS.HASH_ALGORITHM)).toContainText(
       "sha-256",
     );

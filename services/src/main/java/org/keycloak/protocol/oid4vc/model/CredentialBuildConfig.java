@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
@@ -92,8 +94,19 @@ public class CredentialBuildConfig {
         final String credentialIssuer = Optional.ofNullable(credentialModel.getIssuerDid()).orElse(
                 OID4VCIssuerWellKnownProvider.getIssuer(keycloakSession.getContext()));
 
-        String modelSigningAlg = credentialModel.getSigningAlg();
-        String signingAlg = StringUtil.isNotBlank(modelSigningAlg) ? modelSigningAlg : credentialConfiguration.getCredentialSigningAlgValuesSupported().get(0);
+
+        String signingAlg = Constants.DEFAULT_SIGNATURE_ALGORITHM;
+        if (StringUtil.isNotBlank(credentialModel.getSigningKeyId())) {
+            signingAlg = keycloakSession.keys()
+                    .getKeysStream(keycloakSession.getContext().getRealm())
+                    .filter(key-> key.getKid().equals(credentialModel.getSigningKeyId()))
+                    .findAny()
+                    .map(KeyWrapper::getAlgorithm)
+                    .orElse(Constants.DEFAULT_SIGNATURE_ALGORITHM);
+        }
+        else if (StringUtil.isNotBlank(credentialModel.getSigningAlg())) {
+            signingAlg = credentialModel.getSigningAlg();
+        }
 
         return new CredentialBuildConfig().setCredentialIssuer(credentialIssuer)
                                           .setCredentialConfigId(credentialConfiguration.getId())
