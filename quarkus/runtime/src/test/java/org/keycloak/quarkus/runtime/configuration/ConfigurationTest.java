@@ -433,6 +433,9 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         // sendStringParametersAsUnicode already present in db-url -> disabled
         config = createConfigFromCliArguments("--db=mssql", "--db-url=jdbc:sqlserver://localhost:1433;databaseName=keycloak;sendStringParametersAsUnicode=false");
         assertFalse(DatabasePropertyMappers.isMssqlSendStringParametersAsUnicode());
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false)
+                .noneMatch(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE::equals));
+        assertNull(config.getConfigValue(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE).getValue());
 
         // other db vendor -> disabled (already covered implicitly but good to be explicit)
         config = createConfigFromCliArguments("--db=postgres");

@@ -48,6 +48,7 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropert
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public final class DatabasePropertyMappers implements PropertyMapperGrouping {
+    private static final Option<String> SYNTHETIC_RUNTIME_DB_OPTION = DB.toBuilder().synthetic().buildTime(false).build();
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
@@ -90,7 +91,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .to(PG_TARGET_SERVER_TYPE)
                         .isEnabled(DatabasePropertyMappers::isPostgresqlTargetServerTypeEnabled)
                         .build(),
-                fromOption(DB).mapFrom(DB, (name, value, context) -> "false")
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
                         .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
                         .build(),
@@ -231,7 +232,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
 
                 // PostgreSQL
                 setTlsJdbcProperty("sslmode", Map.of(Database.Vendor.POSTGRES, "verify-full")),
-                fromOption(DB)
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION)
                         .mapFrom(DB)
                         .transformer(DatabasePropertyMappers::computePostgresSSLFactory)
                         .to("quarkus.datasource.jdbc.additional-jdbc-properties.sslfactory")
@@ -530,7 +531,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     }
 
     private static PropertyMapper<?> setTlsJdbcProperty(String jdbcPropertyKey, Map<Database.Vendor, String> vendorValues) {
-        return fromOption(DB)
+        return fromOption(SYNTHETIC_RUNTIME_DB_OPTION)
                 .mapFrom(DB)
                 .transformer((name, value, context) -> computeTlsProperty(vendorValues, name, value, jdbcPropertyKey))
                 .to("quarkus.datasource.jdbc.additional-jdbc-properties." + jdbcPropertyKey)
