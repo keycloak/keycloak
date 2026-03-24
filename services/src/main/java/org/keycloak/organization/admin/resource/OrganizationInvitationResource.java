@@ -94,6 +94,10 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteUser(String email, String firstName, String lastName) {
+        if (!organization.isEnabled()) {
+            throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
+        }
+
         if (StringUtil.isBlank(email)) {
             throw ErrorResponse.error("Email is required to invite a member", Status.BAD_REQUEST);
         }
@@ -138,6 +142,10 @@ public class OrganizationInvitationResource {
     }
 
     public Response inviteExistingUser(String id) {
+        if (!organization.isEnabled()) {
+            throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
+        }
+
         if (StringUtil.isBlank(id)) {
             throw new BadRequestException("To invite a member you need to provide the user id");
         }
@@ -317,6 +325,10 @@ public class OrganizationInvitationResource {
         @APIResponse(responseCode = "404", description = "Not Found")
     })
     public Response resendInvitation(@PathParam("id") String id) {
+        if (!organization.isEnabled()) {
+            throw ErrorResponse.error("Organization is disabled", Status.BAD_REQUEST);
+        }
+
         OrganizationProvider provider = session.getProvider(OrganizationProvider.class);
         InvitationManager invitationManager = provider.getInvitationManager();
 
