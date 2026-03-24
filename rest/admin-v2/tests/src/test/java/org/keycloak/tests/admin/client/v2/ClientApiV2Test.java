@@ -100,6 +100,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @InjectClient(realmRef = "master")
     ManagedClient testClient;
 
+    @InjectClient(realmRef = "master")
+    ManagedClient patchTestClient;
+
     @Test
     public void getClient() {
         var client = adminClient.clients(testRealm.getName()).v2().client("account").getClient();
@@ -121,7 +124,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     public void jsonMergePatchClient() {
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("I'm also a description");
-        BaseClientRepresentation baseRep = adminClient.clients(testRealm.getName()).v2().client("account").patchClient(mapper.valueToTree(patch));
+        BaseClientRepresentation baseRep = adminClient.clients(masterRealm.getName()).v2().client(patchTestClient.getClientId()).patchClient(mapper.valueToTree(patch));
         assertEquals("I'm also a description", baseRep.getDescription());
     }
 
