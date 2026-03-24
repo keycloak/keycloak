@@ -131,7 +131,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assert.assertEquals("Your email domain matches the neworg organization but you don't have an account yet.", loginPage.getError());
+        Assert.assertEquals("Your email domain matches an organization but you don't have an account yet.", loginPage.getError());
         Assert.assertTrue(loginPage.isUsernameInputPresent());
         Assert.assertFalse(loginPage.isPasswordInputPresent());
         Assert.assertTrue(loginPage.isSocialButtonPresent(idpRep.getAlias()));
@@ -150,7 +150,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         openIdentityFirstLoginPage("user@neworg.org", false, null, false, false);
 
-        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the neworg organization but you don't have an account yet."));
+        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
         Assert.assertTrue(loginPage.isUsernameInputPresent());
         Assert.assertFalse(loginPage.isPasswordInputPresent());
         // self-registration link shown because there is no public broker and user can choose to register
@@ -733,7 +733,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         openIdentityFirstLoginPage(bc.getUserEmail(), false, idp.getAlias(), false, false);
 
         Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + organizationName + " organization but you don't have an account yet."));
+        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
         Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
 
         idp.getConfig().put(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE, ANY_DOMAIN);
@@ -742,7 +742,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         openIdentityFirstLoginPage(bc.getUserEmail(), false, idp.getAlias(), false, false);
 
         Assert.assertFalse(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + organizationName + " organization but you don't have an account yet."));
+        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
         Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
     }
 
@@ -765,13 +765,13 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("user@org-0.org");
-        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + org0Name + " organization but you don't have an account yet."));
+        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
         Assert.assertTrue(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
         Assert.assertFalse(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
 
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername("user@org-1.org");
-        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches the " + org1Name + " organization but you don't have an account yet."));
+        Assert.assertTrue(driver.getPageSource().contains("Your email domain matches an organization but you don't have an account yet."));
         Assert.assertTrue(loginPage.isSocialButtonPresent(org1Broker.getAlias()));
         Assert.assertFalse(loginPage.isSocialButtonPresent(org0Broker.getAlias()));
     }
