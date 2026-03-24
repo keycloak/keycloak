@@ -23,7 +23,6 @@ oidc,6
 organization,3
 policy,6
 providers,4
-runonserver,6
 saml,6
 script,6
 session,6
