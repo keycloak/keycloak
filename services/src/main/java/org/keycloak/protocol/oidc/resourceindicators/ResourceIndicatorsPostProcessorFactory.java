@@ -1,8 +1,10 @@
-package org.keycloak.protocol.oidc.token;
+package org.keycloak.protocol.oidc.resourceindicators;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.token.TokenPostProcessor;
+import org.keycloak.protocol.oidc.token.TokenPostProcessorFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 public class ResourceIndicatorsPostProcessorFactory implements TokenPostProcessorFactory, EnvironmentDependentProviderFactory {

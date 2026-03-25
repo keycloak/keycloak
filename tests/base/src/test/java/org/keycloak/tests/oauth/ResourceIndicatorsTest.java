@@ -23,8 +23,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OAuthErrorException.INVALID_TARGET;
-import static org.keycloak.protocol.oidc.token.ResourceIndicatorsPostProcessor.ERROR_INVALID_RESOURCE;
-import static org.keycloak.protocol.oidc.token.ResourceIndicatorsPostProcessor.ERROR_NOT_MATCHING;
+import static org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants.ERROR_INVALID_RESOURCE;
+import static org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants.ERROR_NOT_MATCHING;
 
 @KeycloakIntegrationTest(config = ResourceIndicatorsTest.ResourceIndicatorServerConfig.class)
 public class ResourceIndicatorsTest {
@@ -63,6 +63,20 @@ public class ResourceIndicatorsTest {
     public void testInvalidResourceByUrl() {
         AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").resource("https://theservice2").send();
         assertErrorResponse(tokenResponse, INVALID_TARGET, ERROR_INVALID_RESOURCE);
+    }
+
+    @Test
+    public void testInvalidResourceSyntax() {
+        AccessTokenResponse tokenResponse = oauth.passwordGrantRequest("user", "pass").resource("/theservice2").send();
+        assertErrorResponse(tokenResponse, INVALID_TARGET, ERROR_INVALID_RESOURCE);
+    }
+
+    @Test
+    public void testAuthzInvalidResourceParam() {
+        AuthorizationEndpointResponse authorizationEndpointResponse = oauth.loginForm().resource("/invalid").doLoginWithCookie();
+        Assertions.assertTrue(authorizationEndpointResponse.isRedirected());
+        Assertions.assertEquals(authorizationEndpointResponse.getError(), INVALID_TARGET);
+        Assertions.assertEquals(authorizationEndpointResponse.getErrorDescription(), ERROR_INVALID_RESOURCE);
     }
 
     @Test
