@@ -23,6 +23,7 @@ import java.util.UUID;
 import org.keycloak.OID4VCConstants;
 import org.keycloak.VCFormat;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -57,6 +58,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.events.Events;
@@ -73,6 +75,7 @@ import org.keycloak.testframework.remote.timeoffset.InjectTimeOffSet;
 import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectWebDriver;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
@@ -139,6 +142,9 @@ public abstract class OID4VCIssuerTestBase {
 
     @InjectAdminClient
     protected Keycloak keycloak;
+
+    @InjectKeycloakUrls
+    protected KeycloakUrls keycloakUrls;
 
     @TestSetup
     public void configureTestRealm() {
@@ -254,8 +260,7 @@ public abstract class OID4VCIssuerTestBase {
         if (client != null) {
             if (client.getSecret() != null) {
                 oAuthClient.client(client.getClientId(), client.getSecret());
-            }
-            else {
+            } else {
                 oAuthClient.client(client.getClientId());
             }
         }
@@ -348,11 +353,12 @@ public abstract class OID4VCIssuerTestBase {
             realm.name(TEST_REALM_NAME)
                     .eventsEnabled(true);
 
+            realm.eventsListeners("jboss-logging");
+
             CryptoIntegration.init(this.getClass().getClassLoader());
             realm.verifiableCredentialsEnabled(true);
             realm.addRole(CREDENTIAL_OFFER_CREATE);
 
-            // Allow the default client scopes to be added as well
             realm.attribute(CREATE_DEFAULT_CLIENT_SCOPES, String.valueOf(true));
 
             realm.addClientScope(createCredentialScope(
@@ -377,10 +383,9 @@ public abstract class OID4VCIssuerTestBase {
                     Collections.emptyList()
             ));
 
-
             realm.addClientScope(createCredentialScope(
                     minimalJwtTypeCredentialScopeName,
-                   null,
+                    null,
                     minimalJwtTypeCredentialConfigurationIdName,
                     null,
                     minimalJwtTypeCredentialScopeName,
@@ -606,5 +611,13 @@ public abstract class OID4VCIssuerTestBase {
         public long currentTimeMillis() {
             return currentTimeInS * 1000L;
         }
+    }
+
+    protected void setOid4vciEnabled(ClientRepresentation testClient, boolean enabled) {
+        ClientResource clientResource = testRealm.admin().clients().get(testClient.getId());
+        Map<String, String> attributes = Optional.ofNullable(testClient.getAttributes()).orElse(new HashMap<>());
+        attributes.put(OID4VCI_ENABLED_ATTRIBUTE_KEY, String.valueOf(enabled));
+        testClient.setAttributes(attributes);
+        clientResource.update(testClient);
     }
 }

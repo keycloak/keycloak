@@ -15,21 +15,21 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oid4vc.issuance.signing;
+package org.keycloak.tests.oid4vc.preauth;
 
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * JWT-specific authorization details flow tests.
- * Extends the base class to inherit common test logic while providing JWT-specific implementations.
- *
- * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
+ * JWT-specific authorization_details tests for pre-authorized_code grant.
  */
-public class OID4VCJwtAuthorizationDetailsFlowTest extends OID4VCAuthorizationDetailsFlowTestBase {
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
+public class OID4VCJwtAuthorizationDetailsFlowPreAuthTest extends OID4VCAuthorizationDetailsFlowPreAuthTestBase {
 
     @Override
     protected String getCredentialFormat() {
@@ -38,7 +38,7 @@ public class OID4VCJwtAuthorizationDetailsFlowTest extends OID4VCAuthorizationDe
 
     @Override
     protected ClientScopeRepresentation getCredentialClientScope() {
-        return jwtTypeCredentialClientScope;
+        return jwtTypeCredentialScope;
     }
 
     @Override
@@ -48,14 +48,14 @@ public class OID4VCJwtAuthorizationDetailsFlowTest extends OID4VCAuthorizationDe
 
     @Override
     protected void verifyCredentialStructure(Object credentialObj) {
-        assertNotNull("Credential object should not be null", credentialObj);
+        assertNotNull(credentialObj, "Credential object should not be null");
 
         // For JWT VC, the credential should be a string
-        assertTrue("JWT credential should be a string", credentialObj instanceof String);
+        assertTrue(credentialObj instanceof String, "JWT credential should be a string");
         String jwtString = (String) credentialObj;
-        assertFalse("JWT credential should not be empty", jwtString.isEmpty());
+        assertFalse(jwtString.isEmpty(), "JWT credential should not be empty");
 
         // Verify it looks like a JWT (contains dots)
-        assertTrue("JWT should contain dots", jwtString.contains("."));
+        assertTrue(jwtString.contains("."), "JWT should contain dots");
     }
 }

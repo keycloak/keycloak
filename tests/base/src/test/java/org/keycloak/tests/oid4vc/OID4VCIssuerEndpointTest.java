@@ -72,9 +72,7 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServerException;
-import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.util.ApiUtil;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
 import org.keycloak.userprofile.UserProfileProvider;
@@ -105,9 +103,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
 
     static final TimeProvider TIME_PROVIDER = new OID4VCIssuerTestBase.StaticTimeProvider(1000);
-
-    @InjectKeycloakUrls
-    KeycloakUrls keycloakUrls;
 
     @Override
     public void configureTestRealm() {

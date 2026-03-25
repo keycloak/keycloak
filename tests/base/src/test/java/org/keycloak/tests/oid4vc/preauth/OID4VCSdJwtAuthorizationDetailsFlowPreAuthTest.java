@@ -15,23 +15,23 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.oid4vc.issuance.signing;
+package org.keycloak.tests.oid4vc.preauth;
 
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 
 import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * SD-JWT-specific authorization details flow tests.
- * Extends the base class to inherit common test logic while providing SD-JWT-specific implementations.
- *
- * @author <a href="mailto:Forkim.Akwichek@adorsys.com">Forkim Akwichek</a>
+ * SD-JWT-specific authorization_details tests for pre-authorized_code grant.
  */
-public class OID4VCSdJwtAuthorizationDetailsFlowTest extends OID4VCAuthorizationDetailsFlowTestBase {
+@KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
+public class OID4VCSdJwtAuthorizationDetailsFlowPreAuthTest extends OID4VCAuthorizationDetailsFlowPreAuthTestBase {
 
     @Override
     protected String getCredentialFormat() {
@@ -40,7 +40,7 @@ public class OID4VCSdJwtAuthorizationDetailsFlowTest extends OID4VCAuthorization
 
     @Override
     protected ClientScopeRepresentation getCredentialClientScope() {
-        return sdJwtTypeCredentialClientScope;
+        return sdJwtTypeCredentialScope;
     }
 
     @Override
@@ -50,15 +50,15 @@ public class OID4VCSdJwtAuthorizationDetailsFlowTest extends OID4VCAuthorization
 
     @Override
     protected void verifyCredentialStructure(Object credentialObj) {
-        assertNotNull("Credential object should not be null", credentialObj);
+        assertNotNull(credentialObj, "Credential object should not be null");
 
         // For SD-JWT VC, the credential should be a string
-        assertTrue("SD-JWT credential should be a string", credentialObj instanceof String);
+        assertTrue(credentialObj instanceof String, "SD-JWT credential should be a string");
         String sdJwtString = (String) credentialObj;
-        assertFalse("SD-JWT credential should not be empty", sdJwtString.isEmpty());
+        assertFalse(sdJwtString.isEmpty(), "SD-JWT credential should not be empty");
 
         // Verify it looks like an SD-JWT (contains dots and ~)
-        assertTrue("SD-JWT should contain dots", sdJwtString.contains("."));
-        assertTrue("SD-JWT should contain tilde", sdJwtString.contains(SDJWT_DELIMITER));
+        assertTrue(sdJwtString.contains("."), "SD-JWT should contain dots");
+        assertTrue(sdJwtString.contains(SDJWT_DELIMITER), "SD-JWT should contain tilde");
     }
 }
