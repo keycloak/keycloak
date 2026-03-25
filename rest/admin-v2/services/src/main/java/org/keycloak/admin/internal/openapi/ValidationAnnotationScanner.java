@@ -15,6 +15,12 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
+import org.keycloak.representations.admin.v2.validation.CreateClient;
+import org.keycloak.representations.admin.v2.validation.PatchClient;
+import org.keycloak.representations.admin.v2.validation.PutClient;
+import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
+
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.hibernate.validator.constraints.URL;
 import org.jboss.jandex.AnnotationInstance;
@@ -25,11 +31,6 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
-import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
-import org.keycloak.representations.admin.v2.validation.CreateClient;
-import org.keycloak.representations.admin.v2.validation.PatchClient;
-import org.keycloak.representations.admin.v2.validation.PutClient;
-import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
 
 /**
  * Builds human-readable validation descriptions for OpenAPI schemas based on validation annotations.
