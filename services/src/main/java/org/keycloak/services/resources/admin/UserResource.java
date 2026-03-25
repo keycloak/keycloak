@@ -453,6 +453,27 @@ public class UserResource {
     }
 
     /**
+     * Get offline sessions associated with the user
+     *
+     * @return
+     */
+    @Path("offline-sessions")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(summary = "Get offline sessions associated with the user")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = UserSessionRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "403", description = "Forbidden")
+    })
+    public Stream<UserSessionRepresentation> getOfflineSessionsForUser() {
+        auth.users().requireView(user);
+        return new UserSessionManager(session).findOfflineSessionsStream(realm, user)
+                .map(ModelToRepresentation::toRepresentation);
+    }
+
+    /**
      * Get offline sessions associated with the user and client
      *
      * @return
@@ -688,6 +709,12 @@ public class UserResource {
                 .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
                 .forEach(userSession -> AuthenticationManager.backchannelLogout(session, realm, userSession,
                         session.getContext().getUri(), clientConnection, headers, true));
+
+        new UserSessionManager(session).findOfflineSessionsStream(realm, user)
+                .collect(Collectors.toList())
+                .forEach(offlineSession -> offlineSession.getAuthenticatedClientSessions().values().forEach(
+                        clientSession -> new UserSessionManager(session).revokeOfflineToken(user, clientSession.getClient())));
+
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 

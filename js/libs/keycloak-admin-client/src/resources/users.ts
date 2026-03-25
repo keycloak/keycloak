@@ -440,6 +440,18 @@ export class Users extends Resource<{ realm?: string }> {
   });
 
   /**
+   * list all offline sessions associated with the user
+   */
+  public listAllOfflineSessions = this.makeRequest<
+    { id: string },
+    UserSessionRepresentation[]
+  >({
+    method: "GET",
+    path: "/{id}/offline-sessions",
+    urlParamKeys: ["id"],
+  });
+
+  /**
    * list offline sessions associated with the user and client
    */
   public listOfflineSessions = this.makeRequest<

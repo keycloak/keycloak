@@ -14,6 +14,8 @@ export const UserSessions = () => {
   const { t } = useTranslation();
 
   const loader = () => adminClient.users.listSessions({ id, realm });
+  const offlineLoader = () =>
+    adminClient.users.listAllOfflineSessions({ id, realm });
 
   return (
     <PageSection variant="light" className="pf-v5-u-p-0">
@@ -22,6 +24,11 @@ export const UserSessions = () => {
         hiddenColumns={["username", "type"]}
         emptyInstructions={t("noSessionsForUser")}
         logoutUser={id}
+      />
+      <SessionsTable
+        loader={offlineLoader}
+        hiddenColumns={["username", "type"]}
+        emptyInstructions={t("noOfflineSessionsForUser")}
       />
     </PageSection>
   );
