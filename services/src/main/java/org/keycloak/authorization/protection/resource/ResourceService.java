@@ -31,12 +31,12 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
+import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.admin.ResourceSetService;
-import org.keycloak.authorization.identity.Identity;
+import org.keycloak.authorization.common.KeycloakIdentity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.services.ErrorResponseException;
@@ -50,11 +50,11 @@ public class ResourceService {
 
     private final ResourceServer resourceServer;
     private final ResourceSetService resourceManager;
-    private final KeycloakSession session;
-    private final Identity identity;
+    private final AuthorizationProvider authorization;
+    private final KeycloakIdentity identity;
 
-    public ResourceService(KeycloakSession session, ResourceServer resourceServer, Identity identity, ResourceSetService resourceManager) {
-        this.session = session;
+    public ResourceService(AuthorizationProvider authorization, ResourceServer resourceServer, KeycloakIdentity identity, ResourceSetService resourceManager) {
+        this.authorization = authorization;
         this.identity = identity;
         this.resourceServer = resourceServer;
         this.resourceManager = resourceManager;
@@ -69,20 +69,9 @@ public class ResourceService {
             return Response.status(Status.BAD_REQUEST).build();
         }
 
-        ResourceOwnerRepresentation owner = resource.getOwner();
-
-        if (owner == null) {
-            owner = new ResourceOwnerRepresentation();
-            resource.setOwner(owner);
-        }
-
-        String ownerId = owner.getId();
-
-        if (ownerId == null) {
-            ownerId = this.identity.getId();
-        }
-
-        owner.setId(ownerId);
+        ResourceOwnerRepresentation owner = new ResourceOwnerRepresentation();
+        owner.setId(identity.getId());
+        resource.setOwner(owner);
 
         ResourceRepresentation newResource = resourceManager.create(resource);
 
@@ -96,12 +85,14 @@ public class ResourceService {
     @Consumes("application/json")
     @Produces("application/json")
     public Response update(@PathParam("id") String id, ResourceRepresentation resource) {
+        checkOwner(id);
         return this.resourceManager.update(id, resource);
     }
 
     @Path("/{id}")
     @DELETE
     public Response delete(@PathParam("id") String id) {
+        checkOwner(id);
         return this.resourceManager.delete(id);
     }
 
@@ -109,6 +100,7 @@ public class ResourceService {
     @GET
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
+        checkOwner(id);
         return this.resourceManager.findById(id, UmaResourceRepresentation::new);
     }
 
@@ -126,6 +118,10 @@ public class ResourceService {
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
+        if (!identity.isResourceServer()) {
+            owner = identity.getId();
+        }
+
         if(deep != null && deep) {
             return resourceManager.find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult);
         } else {
@@ -136,6 +132,22 @@ public class ResourceService {
     private void checkResourceServerSettings() {
         if (!this.resourceServer.isAllowRemoteResourceManagement()) {
             throw new ErrorResponseException("not_supported", "Remote management is disabled.", Status.BAD_REQUEST);
+        }
+    }
+
+    private void checkOwner(String resourceId) {
+        if (identity.isResourceServer()) {
+            return;
+        }
+
+        Resource resource = authorization.getStoreFactory().getResourceStore().findById(resourceServer, resourceId);
+
+        if (resource == null) {
+            throw new ErrorResponseException("not_found", "Resource not found", Status.NOT_FOUND);
+        }
+
+        if (!resource.getOwner().equals(identity.getId())) {
+            throw new ErrorResponseException("forbidden", "You don't have permission to manage this resource", Status.FORBIDDEN);
         }
     }
 }
