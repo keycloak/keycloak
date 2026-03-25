@@ -123,18 +123,18 @@ test.describe("Realm localization", () => {
     await page.locator("#attributes\\.locale").waitFor({ state: "visible" });
     await page.locator("#attributes\\.locale").click();
 
-    await page.getByRole("option", { name: "English" }).waitFor({ state: "visible" });
+    await page
+      .getByRole("option", { name: "English" })
+      .waitFor({ state: "visible" });
     await page.getByRole("option", { name: "English" }).click();
-    
+
     await page.getByTestId("save").click();
     await assertLastAlert(page, "Your account has been updated.");
 
     await page.reload();
 
-
     await page.locator("#attributes\\.locale").waitFor({ state: "visible" });
 
-    await expect(page.locator("#attributes\\.locale"))
-        .toContainText("English");
+    await expect(page.locator("#attributes\\.locale")).toContainText("English");
   });
 });
