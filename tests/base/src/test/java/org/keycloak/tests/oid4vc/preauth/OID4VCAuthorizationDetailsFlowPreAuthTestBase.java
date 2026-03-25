@@ -71,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Base class for authorization details flow tests.
  * Contains common test logic that can be reused by JWT and SD-JWT specific test classes.
  */
-public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssuerTestBase {
+public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4VCIssuerTestBase {
 
     protected String getBearerToken(OAuthClient oauthClient, ClientRepresentation client, String scopeName) {
         AccessTokenResponse tokenResponse = oauthClient

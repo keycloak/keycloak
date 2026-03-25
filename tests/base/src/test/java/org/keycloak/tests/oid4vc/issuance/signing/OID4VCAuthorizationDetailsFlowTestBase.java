@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Base class for authorization_details tests in scope + authorization_code grant flow.
  */
-public abstract class OID4VCAuthorizationCodeAuthorizationDetailsFlowTestBase extends OID4VCIssuerTestBase {
+public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssuerTestBase {
 
     private static final class Oid4vcTestContext {
         CredentialIssuer credentialIssuer;

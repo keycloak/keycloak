@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * JWT-specific authorization_details tests for pre-authorized_code grant.
  */
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
-public class OID4VCJwtAuthorizationDetailsFlowPreAuthTest extends OID4VCAuthorizationDetailsFlowTestBase {
+public class OID4VCJwtAuthorizationDetailsFlowPreAuthTest extends OID4VCAuthorizationDetailsFlowPreAuthTestBase {
 
     @Override
     protected String getCredentialFormat() {
