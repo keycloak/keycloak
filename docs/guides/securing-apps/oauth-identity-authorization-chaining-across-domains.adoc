@@ -21,7 +21,7 @@ image::identity-authorization-chaining.dio.svg[Identity and Authorization Chaini
 . Authorization server of trust domain B validates the JWT authorization grant and returns an access token.
 . The client in trust domain A uses the access token received from the authorization server in trust domain B to access the protected resource in trust domain B.
 
-{project_name} currently provides standard Token Exchange (see <@links.securingapps id="token-exchange" anchor="_standard-token-exchange" />) as a supported feature and JWT Authorization Grant (see <@links.securingapps id="jwt-authorization-grant" />) as technology preview. This way, {project_name} can implement OAuth Identity and Authorization Chaining Across Domains between two different realms or servers. For domain A, domain B is an audience that can be restricted via token exchange. For domain B, domain A is an Identity Provider that is used to validate the assertion.
+{project_name} currently provides standard Token Exchange (see <@links.securingapps id="token-exchange" anchor="_standard-token-exchange" />) and JWT Authorization Grant (see <@links.securingapps id="jwt-authorization-grant" />) as supported features. This way, {project_name} can implement OAuth Identity and Authorization Chaining Across Domains between two different realms or servers. For domain A, domain B is an audience that can be restricted via token exchange. For domain B, domain A is an Identity Provider that is used to validate the assertion.
 
 WARNING: OAuth Identity and Authorization Chaining Across Domains is still in draft, it is not yet a definitive standard.
 

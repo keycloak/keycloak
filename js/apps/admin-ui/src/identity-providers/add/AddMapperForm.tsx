@@ -40,15 +40,16 @@ export const AddMapperForm = ({
 
   return (
     <>
-      <TextControl
-        name="name"
-        label={t("name")}
-        labelIcon={t("addIdpMapperNameHelp")}
-        readOnly={!!id}
-        rules={{
-          required: t("required"),
-        }}
-      />
+      {!id && (
+        <TextControl
+          name="name"
+          label={t("name")}
+          labelIcon={t("addIdpMapperNameHelp")}
+          rules={{
+            required: t("required"),
+          }}
+        />
+      )}
       <SelectControl
         name="config.syncMode"
         label={t("syncModeOverride")}

@@ -1,5 +1,6 @@
 package org.keycloak.models.workflow;
 
+import org.keycloak.common.util.DurationConverter;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -37,10 +38,29 @@ final class ScheduleWorkflowTask extends WorkflowTransactionalTask {
             firstStep.setAfter(workflow.getNotBefore());
             WorkflowStateProvider stateProvider = session.getProvider(WorkflowStateProvider.class);
             stateProvider.scheduleStep(workflow, firstStep, event.getResourceId(), workflowContext.getExecutionId());
+            fireWorkflowActivated(session, workflowContext);
+            fireWorkflowStepScheduled(session, workflowContext, firstStep);
         } finally {
             // restore the original after value
             firstStep.setAfter(originalAfter);
         }
+    }
+
+    private void fireWorkflowActivated(KeycloakSession session, DefaultWorkflowExecutionContext context) {
+        log.debugf("Workflow '%s' activated for resource %s (execution id: %s)", context.getWorkflow().getName(),
+                context.getResourceId(), context.getExecutionId());
+        // fire workflow activated event
+        WorkflowProviderEvents.fireWorkflowActivatedEvent(session, context.getWorkflow(), context.getEvent().getResourceId(),
+                context.getExecutionId(), context.getEvent().getEventProviderId());
+    }
+
+    private void fireWorkflowStepScheduled(KeycloakSession session, DefaultWorkflowExecutionContext context, WorkflowStep nextStep) {
+        log.debugf("Scheduled step %s to run in %s for resource %s (execution id: %s)",
+                nextStep.getProviderId(), nextStep.getAfter(), context.getResourceId(), context.getExecutionId());
+        long scheduledTime = System.currentTimeMillis() + DurationConverter.parseDuration(nextStep.getAfter()).toMillis();
+        // fire workflow step scheduled event
+        WorkflowProviderEvents.fireWorkflowStepScheduledEvent(session, context.getWorkflow(), nextStep, context.getResourceId(), context.getExecutionId(),
+                scheduledTime, nextStep.getAfter());
     }
 
     @Override

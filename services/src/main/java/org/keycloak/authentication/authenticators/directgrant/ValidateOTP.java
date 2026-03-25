@@ -86,7 +86,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
             return;
         }
 
-        context.success();
+        context.success(OTPCredentialModel.TYPE);
     }
 
     @Override
@@ -117,7 +117,7 @@ public class ValidateOTP extends AbstractDirectGrantAuthenticator implements Cre
 
     @Override
     public String getReferenceCategory() {
-        return null;
+        return OTPCredentialModel.TYPE;
     }
 
     @Override

@@ -64,7 +64,7 @@ import org.keycloak.testframework.ui.page.OAuthGrantPage;
 import org.keycloak.testframework.ui.page.TermsAndConditionsPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.common.BasicUserConfig;
-import org.keycloak.testsuite.forms.ClickThroughAuthenticator;
+import org.keycloak.tests.providers.forms.ClickThroughAuthenticator;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 

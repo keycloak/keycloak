@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.federation.storage;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,7 +38,9 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.CacheableStorageProviderModel.CachePolicy;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -59,6 +62,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+
+import static org.keycloak.storage.CacheableStorageProviderModel.CACHE_POLICY;
+import static org.keycloak.storage.CacheableStorageProviderModel.MAX_LIFESPAN;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -202,6 +212,19 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             memoryProvider.getConfig().putSingle("fail", Boolean.toString(toggle));
             realm.updateComponent(memoryProvider);
         });
+        getCleanup().addCleanup(() -> testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
+            ComponentModel memoryProvider = realm.getComponent(failureProviderId);
+            memoryProvider.getConfig().remove("fail");
+            realm.updateComponent(memoryProvider);
+        }));
+    }
+
+    private void toggleForceFailOnValidation(final boolean toggle) {
+        testingClient.server().run(session -> {
+            FailableHardcodedStorageProviderFactory factory = (FailableHardcodedStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, FailableHardcodedStorageProviderFactory.PROVIDER_ID);
+            factory.setFailOnValidation(toggle);
+        });
     }
 
     protected void toggleProviderEnabled(final boolean toggle) {
@@ -295,10 +318,10 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             session.users().getUsersCount(realm);
 
             UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
-            Assert.assertFalse(user instanceof CachedUserModel);
+            assertFalse(user instanceof CachedUserModel);
             Assert.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
             Assert.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
-            Assert.assertFalse(user.isEnabled());
+            assertFalse(user.isEnabled());
             try {
                 user.setEmail("error@error.com");
                 Assert.fail();
@@ -312,7 +335,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
             UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
-            Assert.assertFalse(user instanceof CachedUserModel);
+            assertFalse(user instanceof CachedUserModel);
             Assert.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
             Assert.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
         });
@@ -322,7 +345,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
             UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
-            Assert.assertFalse(user instanceof CachedUserModel);
+            assertFalse(user instanceof CachedUserModel);
             Assert.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
             Assert.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
         });
@@ -343,5 +366,70 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         });
 
         events.clear();
+    }
+
+    @Test
+    public void testDisableUsersWhenFailing() {
+        enableCache();
+        events.clear();
+        toggleForceFailOnValidation(true);
+        UserRepresentation user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+        assertFalse(user.isEnabled());
+        toggleForceFailOnValidation(false);
+        user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+        assertTrue(user.isEnabled());
+        oauth.client("offline-client", "secret");
+        oauth.redirectUri(OAuthClient.AUTH_SERVER_ROOT + "/offline-client");
+        oauth.doLogin(FailableHardcodedStorageProvider.username, "password");
+        String code = oauth.parseLoginResponse().getCode();
+        AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code);
+        assertNotNull(tokenResponse.getIdToken());
+        toggleForceFailOnValidation(true);
+        user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+        // user still enabled because it was cached before and the cache is still valid based on the storage cache policy config
+        assertTrue(user.isEnabled());
+
+        try {
+            // force cache to expire
+            setTimeOffset(Math.toIntExact(Duration.ofMinutes(10).toSeconds()));
+            user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+            assertFalse(user.isEnabled());
+            toggleForceFailOnValidation(false);
+            user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+            assertTrue(user.isEnabled());
+
+            // force cache to expire again and make sure user is disabled
+            setTimeOffset(Math.toIntExact(Duration.ofMinutes(20).toSeconds()));
+            toggleForceFailOnValidation(true);
+            user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+            assertFalse(user.isEnabled());
+
+            // make sure that once provider is available again user is enabled
+            toggleForceFailOnValidation(false);
+            user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+            assertTrue(user.isEnabled());
+
+            // user should still be enabled even if provider is failing again because user is cached and cache is valid based on the storage cache policy config
+            toggleForceFailOnValidation(true);
+            user = testRealm().users().search(FailableHardcodedStorageProvider.username).get(0);
+            assertTrue(user.isEnabled());
+        } finally {
+            resetTimeOffset();
+            toggleForceFailOnValidation(false);
+        }
+    }
+
+    private void enableCache() {
+        ComponentRepresentation component = testRealm().components().query().stream()
+                .filter(c -> c.getProviderId().equals(FailableHardcodedStorageProviderFactory.PROVIDER_ID))
+                .findAny().orElse(null);
+        component.getConfig().putSingle(CACHE_POLICY, CachePolicy.MAX_LIFESPAN.name());
+        component.getConfig().putSingle(MAX_LIFESPAN, String.valueOf(Duration.ofMinutes(5).toMillis()));
+        testRealm().components().component(component.getId()).update(component);
+        getCleanup().addCleanup(() -> {
+            component.getConfig().remove(CACHE_POLICY);
+            component.getConfig().remove(MAX_LIFESPAN);
+            testRealm().components().component(component.getId()).update(component);
+        });
     }
 }

@@ -38,6 +38,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Assertions;
@@ -105,6 +106,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAddRemoveExecution() {
 
         // try add execution to built-in flow
@@ -232,6 +234,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testUpdateExecution() {
 
         // get current auth-cookie execution

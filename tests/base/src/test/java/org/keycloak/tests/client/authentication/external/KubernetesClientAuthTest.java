@@ -4,7 +4,6 @@ import java.util.UUID;
 
 import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
 import org.keycloak.broker.kubernetes.KubernetesIdentityProviderFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.representations.JsonWebToken;
@@ -17,7 +16,6 @@ import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
 
 import org.junit.jupiter.api.Assertions;
@@ -25,7 +23,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-@KeycloakIntegrationTest(config = KubernetesClientAuthTest.KubernetesServerConfig.class)
+@KeycloakIntegrationTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
 
@@ -98,14 +96,6 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
     @Override
     public ManagedRealm getRealm() {
         return realm;
-    }
-
-    public static class KubernetesServerConfig extends ClientAuthIdpServerConfig {
-
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return super.configure(config).features(Profile.Feature.KUBERNETES_SERVICE_ACCOUNTS);
-        }
     }
 
     public static class ExernalClientAuthRealmConfig implements RealmConfig {

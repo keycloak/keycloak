@@ -30,6 +30,7 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 
 import static org.keycloak.common.Profile.isFeatureEnabled;
+import static org.keycloak.constants.OID4VCIConstants.VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -84,7 +85,8 @@ public class DefaultRequiredActions {
         WEBAUTHN_REGISTER("webauthn-register", DefaultRequiredActions::addWebAuthnRegisterAction, () -> isFeatureEnabled(Profile.Feature.WEB_AUTHN)),
         WEBAUTHN_PASSWORDLESS_REGISTER("webauthn-register-passwordless", DefaultRequiredActions::addWebAuthnPasswordlessRegisterAction, () -> isFeatureEnabled(Profile.Feature.WEB_AUTHN)),
         VERIFY_USER_PROFILE(UserModel.RequiredAction.VERIFY_PROFILE.name(), DefaultRequiredActions::addVerifyProfile),
-        IDP_LINK_ACCOUNT("idp_link", DefaultRequiredActions::addIdpLink);
+        IDP_LINK_ACCOUNT("idp_link", DefaultRequiredActions::addIdpLink),
+        VERIFIABLE_CREDENTIAL_OFFER(VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID, DefaultRequiredActions::addVerifiableCredentialOfferAction, () -> isFeatureEnabled(Profile.Feature.OID4VC_VCI));
 
         private final String alias;
         private final Consumer<RealmModel> addAction;
@@ -234,6 +236,25 @@ public class DefaultRequiredActions {
             idpLink.setDefaultAction(false);
             idpLink.setPriority(120);
             realm.addRequiredActionProvider(idpLink);
+        }
+    }
+
+    public static void addVerifiableCredentialOfferAction(RealmModel realm) {
+        final boolean isAvailable = Action.VERIFIABLE_CREDENTIAL_OFFER.isAvailable();
+        if (!isAvailable) return;
+
+        final RequiredActionProviderModel provider = realm.getRequiredActionProviderByAlias(VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID);
+        final boolean isRequiredActionActive = provider != null;
+
+        if (!isRequiredActionActive) {
+            RequiredActionProviderModel vc = new RequiredActionProviderModel();
+            vc.setEnabled(true);
+            vc.setAlias(VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID);
+            vc.setName("Verifiable Credential Offer");
+            vc.setProviderId(VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID);
+            vc.setDefaultAction(false);
+            vc.setPriority(130);
+            realm.addRequiredActionProvider(vc);
         }
     }
 

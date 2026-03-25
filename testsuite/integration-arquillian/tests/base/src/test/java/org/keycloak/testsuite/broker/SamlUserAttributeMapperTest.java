@@ -18,12 +18,13 @@ public class SamlUserAttributeMapperTest extends AbstractUserAttributeMapperTest
     }
 
     @Override
-    protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode) {
+    protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode, boolean nullable) {
         IdentityProviderMapperRepresentation attrMapperEmail = new IdentityProviderMapperRepresentation();
         attrMapperEmail.setName("attribute-mapper-email");
         attrMapperEmail.setIdentityProviderMapper(UserAttributeMapper.PROVIDER_ID);
         attrMapperEmail.setConfig(ImmutableMap.<String,String>builder()
           .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
+          .put(UserAttributeMapper.ALLOW_NULLABLE, Boolean.toString(nullable))
           .put(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME, "email")
           .put(UserAttributeMapper.USER_ATTRIBUTE, "email")
           .build());

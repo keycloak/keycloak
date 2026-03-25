@@ -3,6 +3,7 @@
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
 <#import "/templates/profile.adoc" as profile>
+<#import "templates/databases.adoc" as databases>
 
 <@tmpl.guide title="Configuring the database" summary="Configure a relational database for {project_name} to store user, client, and realm data.">
 
@@ -12,20 +13,7 @@ This {section} explains how to configure the {project_name} server to store data
 
 The server has built-in support for different databases. You can query the available databases by viewing the expected values for the `db` configuration option. The following table lists the supported databases and their tested versions.
 
-[%autowidth]
-|===
-|Database | Option value | Tested Version | Supported Versions
-
-|MariaDB Server | `mariadb` | ${properties["mariadb.version"]} | 11.8 (LTS), 11.4 (LTS), 10.11 (LTS), 10.6 (LTS)
-|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]} | 2022, 2019
-|MySQL | `mysql` | ${properties["mysql.version"]} | 8.4 (LTS), 8.0 (LTS)
-|Oracle Database | `oracle` | ${properties["oracledb.version"]} | 23.x (i.e 23.5+), 19c (19.3+) (*Note:* Oracle RAC is also supported if using the same database engine version, e.g 23.5+, 19.3+)
-|PostgreSQL | `postgres` | ${properties["postgresql.version"]} | 18.x, 17.x, 16.x, 15.x, 14.x
-|EnterpriseDB Advanced | `postgres` | ${properties["edb.version"]} | 18.x, 17.x
-|Amazon Aurora PostgreSQL | `postgres` | ${properties["aurora-postgresql.version"]} | 17.x, 16.x, 15.x
-|Azure SQL Database | `mssql` | latest | latest
-|Azure SQL Managed Instance | `mssql` | latest | latest
-|===
+<@databases.supportedDatabases detailed=true/>
 
 NOTE: It is not a supported configuration if the underlying database specific Hibernate dialect allows the use of a version that differs from those shown.
 
@@ -293,6 +281,15 @@ For example:
 
 <@kc.start parameters="--db mssql --db-url-properties=';sendStringParametersAsUnicode=true'"/>
 
+== Database connection and login timeout
+
+When {project_name} connects to the database, network problems can occur, especially during failovers or switchovers.
+To improve failover behavior and startup resilience during network issues, {project_name} sets a default connection timeout of 10s for all supported database vendors when using the standard JDBC driver.
+
+`db-connect-timeout`::
+Sets the JDBC driver connection timeout and login timeout.
+Default: `10s`.
+
 == Preparing for PostgreSQL
 
 === Writer and reader instances
@@ -322,15 +319,15 @@ To secure your database connection, configure your PostgreSQL server to use TLS 
 Before using the properties below, ensure your PostgreSQL server is configured for TLS.
 
 **Client-side Configuration:**
-Secure the connection by adding the following properties to your connection URL:
+Secure the connection by adding the options:
 
 [source]
 ----
-db-url=jdbc:postgresql://...?sslmode=verify-full&sslrootcert=/path/to/certificate
+--db-tls-mode=verify-server --db-tls-trust-store-file=/path/to/certificate
 ----
 
-* `sslmode=verify-full`: Forces TLS and verifies the server's identity against the trusted certificate.
-* `sslrootcert=/path/to/certificate`: The path to the server's public certificate file on the client machine.
+* `db-tls-mode=verify-server`: Forces TLS and verifies the server's identity against the trusted certificate.
+* `db-tls-trust-store-file=/path/to/certificate`: The path to the server's public certificate file on the client machine.
 
 [[preparing-keycloak-for-amazon-aurora-postgresql]]
 == Preparing for Amazon Aurora PostgreSQL
@@ -367,15 +364,15 @@ Amazon Aurora PostgreSQL 17.0 or later requires TLS connections by default.
 While this encrypts the connection, you must still perform a full server certificate verification.
 To do this download the https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html[certificate bundle] for your AWS region.
 
-Secure the connection by adding the `sslmode=verify-full` and `sslrootcert=/path/to/certificate` properties to your connection URL:
+Secure the connection by adding the options:
 
 [source]
 ----
-db-url=jdbc:aws-wrapper:postgresql://...?sslmode=verify-full&sslrootcert=/path/to/certificate
+--db-tls-mode=verify-server --db-tls-trust-store-file=/path/to/certificate
 ----
 
-* `sslmode=verify-full`: Forces TLS and verifies the server's identity against the trusted certificate.
-* `sslrootcert=/path/to/certificate`: The path to the downloaded certificate bundle.
+* `db-tls-mode=verify-server`: Forces TLS and verifies the server's identity against the trusted certificate.
+* `db-tls-trust-store-file=/path/to/certificate`: The path to the server's public certificate file on the client machine.
 ====
 
 == Preparing for MySQL server
@@ -438,6 +435,50 @@ These options can be configured via CLI, environment variables, or the `conf/key
 The `transaction-default-timeout` option takes precedence over the unsupported `quarkus.transaction-manager.default-transaction-timeout` Quarkus property.
 If you are using the Quarkus property, migrate to the supported `transaction-default-timeout` option and remove the Quarkus property from your configuration.
 ====
+
+== Secure the database connection
+
+Encrypting the traffic between {project_name} and the database is recommended for increased security, as it prevents third parties from examining the network traffic.
+
+It is recommended to go a step further and enable certificate verification to prevent more complex attacks such as DNS poisoning and address hijacking, whereby {project_name} could be directed to a different server than intended.
+To perform the certificate validation, the database certificate, or the Certificate Authority (CA) certificate, must be added to the {project_name} truststore.
+
+This section provides guidance on how to enable these settings in {project_name} and configure the JDBC driver properly.
+Configuring the database server with the private keys and certificates is outside the scope of this section.
+Consult your vendor documentation on how to do it.
+
+{project_name} provides unified CLI options to configure database TLS settings across different database vendors.
+These options simplify the configuration by abstracting vendor-specific JDBC properties and providing a consistent interface.
+
+The following options are available:
+
+`db-tls-mode`::
+Sets the TLS mode for the database connection.
+Valid values are `disabled` and `verify-server`.
+When set to `verify-server`, it enables encryption and server identity verification.
+Default: `disabled`
+
+`db-tls-trust-store-file`::
+The path to the truststore file containing the database server certificates or Certificate Authority (CA) certificates used to verify the database server's identity.
+
+`db-tls-trust-store-password`::
+The password to access the truststore file (if required and supported by the JDBC driver).
+
+`db-tls-trust-store-type`::
+The type of the truststore file.
+Common values include `JKS` (Java KeyStore) and `PKCS12`.
+If not specified, the driver's default truststore type is used.
+
+NOTE: These unified CLI options are the recommended approach for configuring database TLS.
+{project_name} automatically translates these options to the appropriate vendor-specific JDBC properties.
+
+The following example demonstrates how to configure database TLS using these options for a PostgreSQL database.
+
+<@kc.start parameters="--db=postgres --db-tls-mode=verify-server --db-tls-trust-store-file=/path/to/certificate.pem"/>
+
+Alternatively, you can use `--truststore-paths` instead of the `db-tls-trust-store-*` options to add your certificate to the Java truststore.
+
+<@kc.start parameters="--db=postgres --db-tls-mode=verify-server --truststore-paths=/path/to/certificate.pem"/>
 
 == Setting JPA provider configuration option for migrationStrategy
 

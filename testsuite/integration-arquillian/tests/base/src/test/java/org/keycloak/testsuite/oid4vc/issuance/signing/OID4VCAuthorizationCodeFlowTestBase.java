@@ -182,7 +182,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         assertEquals("Credential request should fail with unknown credential configuration when OID4VCI scope is missing or authorization_details missing from the token",
             ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue(), error);
-        assertEquals("No authorization_details found in token", errorDescription);
+        assertEquals("Invalid AccessToken for credential request. No authorization_details", errorDescription);
     }
 
     // Test for the whole authorization_code flow with the credentialRequest using credential_configuration_id
@@ -194,7 +194,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         // Perform authorization code flow to get authorization code (includes authorization_details)
         AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
         // Clear events before credential request
         events.clear();
@@ -293,7 +293,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
             // Perform authorization code flow to get authorization code
             AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
             String credentialIdentifier = assertTokenResponse(tokenResponse);
-            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
             // Clear events before credential request
             events.clear();
@@ -351,7 +351,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
             // Request with mandatory lastName will fail as user does not have "lastName"
             String credentialIdentifier = assertTokenResponse(tokenResponseWithMandatoryLastName);
-            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
             Oid4vcCredentialRequest credentialRequest = getCredentialRequest(ctx, credRequestSupplier, tokenResponseWithMandatoryLastName, credentialConfigurationId, credentialIdentifier);
             Oid4vcCredentialResponse credentialResponse = credentialRequest.send();
@@ -410,7 +410,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
             // Perform authorization code flow to get authorization code
             AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
             String credentialIdentifier = assertTokenResponse(tokenResponse);
-            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+            String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
             // Clear events before credential request
             events.clear();
@@ -573,7 +573,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         assertNotNull("authorization_details should be derived from requested OID4VC scope", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         assertEquals("credential_configuration_id should match requested scope",
-                getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID),
+                getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID),
                 authDetailsResponse.get(0).getCredentialConfigurationId());
         assertNotNull("credential_identifiers should be present", authDetailsResponse.get(0).getCredentialIdentifiers());
         assertFalse("credential_identifiers should not be empty", authDetailsResponse.get(0).getCredentialIdentifiers().isEmpty());
@@ -857,10 +857,10 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
                 .send();
 
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
-        assertEquals(ErrorType.INVALID_CREDENTIAL_REQUEST.getValue(), credentialResponse.getError());
+        assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue(), credentialResponse.getError());
 
         // Verify VERIFIABLE_CREDENTIAL_REQUEST_ERROR event was fired
-        expectCredentialRequestError().assertEvent();
+        expectCredentialRequestError(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue()).assertEvent();
     }
 
     /**
@@ -927,7 +927,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         // Perform authorization code flow to get authorization code
         AccessTokenResponse tokenResponse = authzCodeFlow(ctx);
         String credentialIdentifier = assertTokenResponse(tokenResponse);
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
         // Request the actual credential using the identifier
         Oid4vcCredentialRequest credentialRequest = getCredentialRequest(ctx, credentialRequestSupplier, tokenResponse, credentialConfigurationId, credentialIdentifier);
@@ -972,7 +972,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
+        authDetail.setCredentialConfigurationId(getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID));
         authDetail.setClaims(claimsForAuthorizationDetailsParameter);
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
 
@@ -1070,7 +1070,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(credentialConfigurationId != null
                 ? credentialConfigurationId
-                : getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
+                : getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID));
         authDetail.setLocations(Collections.singletonList(ctx.credentialIssuer.getCredentialIssuer()));
         return authDetail;
     }

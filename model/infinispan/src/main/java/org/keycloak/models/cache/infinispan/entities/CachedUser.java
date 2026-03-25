@@ -43,6 +43,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
 
     private final String realm;
     private final Long createdTimestamp;
+    private final Long lastModifiedTimestamp;
     private final boolean emailVerified;
     private final boolean enabled;
     private final String federationLink;
@@ -59,6 +60,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         super(revision, user.getId());
         this.realm = realm.getId();
         this.createdTimestamp = user.getCreatedTimestamp();
+        this.lastModifiedTimestamp = user.getLastModifiedTimestamp();
         this.emailVerified = user.isEmailVerified();
         this.enabled = user.isEnabled();
         this.federationLink = user.getFederationLink();
@@ -93,6 +95,10 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
 
     public Long getCreatedTimestamp() {
         return createdTimestamp;
+    }
+
+    public Long getLastModifiedTimestamp() {
+        return lastModifiedTimestamp;
     }
 
     public String getEmail() {

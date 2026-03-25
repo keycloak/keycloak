@@ -8,6 +8,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Assertions;
@@ -20,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class UserRequiredActionsTest extends AbstractUserTest {
 
     @Test
+    @DatabaseTest
     public void addRequiredAction() {
         String id = createUser();
 
@@ -35,6 +37,7 @@ public class UserRequiredActionsTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void removeRequiredAction() {
         String id = createUser();
 

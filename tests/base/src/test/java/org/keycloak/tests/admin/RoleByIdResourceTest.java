@@ -45,6 +45,7 @@ import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RoleConfigBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
@@ -123,6 +124,7 @@ public class RoleByIdResourceTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateRole() {
         RoleRepresentation role = resource.getRole(roleIds.get(roleNameA));
 
@@ -141,6 +143,7 @@ public class RoleByIdResourceTest {
     }
 
     @Test
+    @DatabaseTest
     public void deleteRole() {
         assertNotNull(resource.getRole(roleIds.get(roleNameA)));
         resource.deleteRole(roleIds.get(roleNameA));
@@ -155,6 +158,7 @@ public class RoleByIdResourceTest {
     }
 
     @Test
+    @DatabaseTest
     public void composites() {
         assertFalse(resource.getRole(roleIds.get(roleNameA)).isComposite());
         assertEquals(0, resource.getRoleComposites(roleIds.get(roleNameA)).size());

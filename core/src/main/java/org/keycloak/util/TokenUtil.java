@@ -203,19 +203,23 @@ public class TokenUtil {
     }
 
     public static String jweDirectEncode(Key aesKey, Key hmacKey, byte[] contentBytes) throws JWEException {
+        return jweDirectEncode(null, aesKey, hmacKey, contentBytes);
+    }
+
+    public static String jweDirectEncode(String kid, Key aesKey, Key hmacKey, byte[] contentBytes) throws JWEException {
         int keyLength = aesKey.getEncoded().length;
         String encAlgorithm;
         switch (keyLength) {
-            case 16: encAlgorithm = JWEConstants.A128CBC_HS256;
+            case 16: encAlgorithm = hmacKey != null ? JWEConstants.A128CBC_HS256 : JWEConstants.A128GCM;
                 break;
-            case 24: encAlgorithm = JWEConstants.A192CBC_HS384;
+            case 24: encAlgorithm = hmacKey != null ? JWEConstants.A192CBC_HS384 : JWEConstants.A192GCM;
                 break;
-            case 32: encAlgorithm = JWEConstants.A256CBC_HS512;
+            case 32: encAlgorithm = hmacKey != null ? JWEConstants.A256CBC_HS512 : JWEConstants.A256GCM;
                 break;
             default: throw new IllegalArgumentException("Bad size for Encryption key: " + aesKey + ". Valid sizes are 16, 24, 32.");
         }
 
-        JWEHeader jweHeader = new JWEHeader(JWEConstants.DIRECT, encAlgorithm, null);
+        JWEHeader jweHeader = new JWEHeader(JWEConstants.DIRECT, encAlgorithm, null, kid);
         JWE jwe = new JWE()
                 .header(jweHeader)
                 .content(contentBytes);

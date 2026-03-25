@@ -55,6 +55,7 @@ public class AttributeMetadata {
     private boolean multivalued;
     private String defaultValue;
     private Function<AttributeContext, Map<String, Object>> annotationDecorator = (c) -> c.getMetadata().getAnnotations();
+    private boolean defaultAttribute;
 
     AttributeMetadata(String attributeName, int guiOrder) {
         this(attributeName, guiOrder, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE, ALWAYS_TRUE);
@@ -233,6 +234,7 @@ public class AttributeMetadata {
         cloned.setMultivalued(multivalued);
         cloned.setDefaultValue(defaultValue);
         cloned.setAnnotationDecorator(annotationDecorator);
+        cloned.setDefault(defaultAttribute);
         return cloned;
     }
 
@@ -291,5 +293,13 @@ public class AttributeMetadata {
     public AttributeMetadata setAnnotationDecorator(Function<AttributeContext, Map<String, Object>> annotationDecorator) {
         this.annotationDecorator = annotationDecorator;
         return this;
+    }
+
+    public void setDefault(boolean defaultAttribute) {
+        this.defaultAttribute = defaultAttribute;
+    }
+
+    public boolean isDefault() {
+        return defaultAttribute;
     }
 }

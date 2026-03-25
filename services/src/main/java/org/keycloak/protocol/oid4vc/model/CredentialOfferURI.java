@@ -35,9 +35,6 @@ public class CredentialOfferURI {
     private String issuer;
     private String nonce;
 
-    @JsonProperty("tx_code")
-    private String txCode;
-
     @JsonProperty("qr_code")
     private String qrCode;
 
@@ -56,15 +53,6 @@ public class CredentialOfferURI {
 
     public CredentialOfferURI setNonce(String nonce) {
         this.nonce = nonce;
-        return this;
-    }
-
-    public String getTxCode() {
-        return txCode;
-    }
-
-    public CredentialOfferURI setTxCode(String txCode) {
-        this.txCode = txCode;
         return this;
     }
 

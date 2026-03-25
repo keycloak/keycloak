@@ -45,6 +45,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.Assert;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
@@ -101,6 +102,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
     }
 
     @Test
+    @DatabaseTest
     public void testCreateConfig() {
         AuthenticatorConfigRepresentation cfg = newConfig("foo", IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION, "true");
 
@@ -132,6 +134,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
     }
     
     @Test
+    @DatabaseTest
     public void testUpdateConfig() {
         AuthenticatorConfigRepresentation cfg = newConfig("foo", IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION, "true");
         String cfgId = createConfig(executionId, cfg);
@@ -160,6 +163,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
 
 
     @Test
+    @DatabaseTest
     public void testRemoveConfig() {
         AuthenticatorConfigRepresentation cfg = newConfig("foo", IdpCreateUserIfUniqueAuthenticatorFactory.REQUIRE_PASSWORD_UPDATE_AFTER_REGISTRATION, "true");
         String cfgId = createConfig(executionId, cfg);

@@ -21,6 +21,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -49,11 +50,16 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
         RealmModel realm = session.getContext().getRealm();
         GroupModel model = session.groups().createGroup(realm, group.getDisplayName());
         populate(model, group);
+        group.setCreatedTimestamp(model.getCreatedTimestamp());
+        group.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
         return group;
     }
 
     @Override
     protected Group onUpdate(GroupModel model, Group resource) {
+        model.setLastModifiedTimestamp(Time.currentTimeMillis());
+        resource.setCreatedTimestamp(model.getCreatedTimestamp());
+        resource.setLastModifiedTimestamp(model.getLastModifiedTimestamp());
         return resource;
     }
 
@@ -84,7 +90,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<GroupEntity> query = cb.createQuery(GroupEntity.class);
             Root<GroupEntity> root = query.from(GroupEntity.class);
-            List<Predicate> predicates = getGroupPredicates(filterContext, cb, root);
+            List<Predicate> predicates = getGroupPredicates(filterContext, cb, query, root);
 
             // apply distinct and order by name to ensure consistency with no-filter case
             query.where(predicates).distinct(true).orderBy(cb.asc(root.get("name")));
@@ -110,7 +116,7 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
             CriteriaQuery<Long> query = cb.createQuery(Long.class);
             Root<GroupEntity> root = query.from(GroupEntity.class);
 
-            List<Predicate> predicates = this.getGroupPredicates(filterContext, cb, root);
+            List<Predicate> predicates = this.getGroupPredicates(filterContext, cb, query, root);
             query.select(cb.countDistinct(root)).where(predicates);
             return em.createQuery(query).getSingleResult();
         } else {
@@ -133,17 +139,22 @@ public class GroupResourceTypeProvider extends AbstractScimResourceTypeProvider<
     public void close() {
     }
 
-    private List<Predicate> getGroupPredicates(ScimFilterParser.FilterContext filterContext, CriteriaBuilder cb, Root<GroupEntity> root) {
+    private List<Predicate> getGroupPredicates(ScimFilterParser.FilterContext filterContext, CriteriaBuilder cb, CriteriaQuery<?> query, Root<GroupEntity> root) {
         List<Predicate> predicates = new ArrayList<>();
 
         // create filter predicate using the same query and root that will be used for execution
-        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(session, getSchemas(), cb, root);
+        ScimJPAPredicateEvaluator evaluator = new ScimJPAPredicateEvaluator(this, getSchemas(), cb, root);
         predicates.add(evaluator.visit(filterContext).predicate());
 
         // apply realm restriction and group type restrictions
-        predicates.add(cb.equal(root.get("realm"), session.getContext().getRealm().getId()));
+        RealmModel realm = session.getContext().getRealm();
+
+        predicates.add(cb.equal(root.get("realm"), realm.getId()));
         predicates.add(cb.equal(root.get("type"), GroupModel.Type.REALM.intValue()));
         predicates.add(cb.equal(root.get("parentId"), GroupEntity.TOP_PARENT_ID));
+
+        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, realm, cb, query, root));
+
         return predicates;
     }
 }

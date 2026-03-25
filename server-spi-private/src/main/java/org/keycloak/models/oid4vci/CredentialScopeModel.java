@@ -136,19 +136,6 @@ public class CredentialScopeModel implements ClientScopeModel {
      */
     public static final String VC_KEY_ATTESTATION_REQUIRED_USER_AUTH = "vc.key_attestations_required.user_authentication";
 
-    // [TODO] Remove deprecated constants used in the old testsuite
-    @Deprecated public static final String CONFIGURATION_ID = VC_CONFIGURATION_ID;
-    @Deprecated public static final String CREDENTIAL_IDENTIFIER = VC_IDENTIFIER;
-    @Deprecated public static final String CONTEXTS = VC_CONTEXTS;
-    @Deprecated public static final String EXPIRY_IN_SECONDS = VC_EXPIRY_IN_SECONDS;
-    @Deprecated public static final Integer EXPIRY_IN_SECONDS_DEFAULT = VC_EXPIRY_IN_SECONDS_DEFAULT;
-    @Deprecated public static final String FORMAT = VC_FORMAT;
-    @Deprecated public static final String ISSUER_DID = VC_ISSUER_DID;
-    @Deprecated public static final String KEY_ATTESTATION_REQUIRED = VC_KEY_ATTESTATION_REQUIRED;
-    @Deprecated public static final String KEY_ATTESTATION_REQUIRED_KEY_STORAGE = VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE;
-    @Deprecated public static final String KEY_ATTESTATION_REQUIRED_USER_AUTH = VC_KEY_ATTESTATION_REQUIRED_USER_AUTH;
-    @Deprecated public static final String TYPES = VC_SUPPORTED_TYPES;
-
     /**
      * the actual object that is represented by this scope
      */
@@ -172,7 +159,7 @@ public class CredentialScopeModel implements ClientScopeModel {
     }
 
     public String getCredentialConfigurationId() {
-        return clientScope.getAttribute(VC_CONFIGURATION_ID);
+        return Optional.ofNullable(clientScope.getAttribute(VC_CONFIGURATION_ID)).orElse(clientScope.getName());
     }
 
     public void setCredentialConfigurationId(String credentialConfigurationId) {

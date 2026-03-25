@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.keycloak.authorization.fgap.AdminPermissionsSchema;
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.models.ModelValidationException;
@@ -42,9 +41,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     @Override
     public R create(R resource) {
-        KeycloakContext context = session.getContext();
-
-        if (!context.hasPermission(getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+        if (!hasPermission(getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
             throw new ForbiddenException();
         }
 
@@ -55,9 +52,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     public R update(R resource) {
         M model = getModel(resource.getId());
 
-        KeycloakContext context = session.getContext();
-
-        if (!context.hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
             throw new ForbiddenException();
         }
 
@@ -74,13 +69,11 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
             return null;
         }
 
-        R resource = createResourceTypeInstance();
-
-        KeycloakContext context = session.getContext();
-
-        if (!context.hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.VIEW)) {
             throw new ForbiddenException();
         }
+
+        R resource = createResourceTypeInstance();
 
         for (ModelSchema<M, R> schema : schemas) {
             schema.populate(resource, model);
@@ -91,10 +84,11 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     @Override
     public Stream<R> getAll(SearchRequest searchRequest) {
+        if (!canQuery()) {
+            throw new ForbiddenException();
+        }
+
         return getModels(searchRequest).map(m -> {
-            if (AdminPermissionsSchema.SCHEMA.isAdminPermissionsEnabled(session.getContext().getRealm())) {
-                return get(m.getId());
-            }
             try {
                 return get(m.getId());
             } catch (ForbiddenException fe) {
@@ -106,9 +100,8 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
     @Override
     public boolean delete(String id) {
         M model = getModel(id);
-        KeycloakContext context = session.getContext();
 
-        if (!context.hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
             throw new ForbiddenException();
         }
 
@@ -120,9 +113,8 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
         Objects.requireNonNull(existing, "existing cannot be null");
         Objects.requireNonNull(operations, "operations cannot be null");
         M model = getModel(existing.getId());
-        KeycloakContext context = session.getContext();
 
-        if (!context.hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
+        if (!hasPermission(model, getRealmResourceType(), AdminPermissionsSchema.MANAGE)) {
             throw new ForbiddenException();
         }
 
@@ -139,8 +131,8 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
             for (ModelSchema<M, R> schema : schemas) {
                 switch (op.toLowerCase()) {
                     case "add" -> schema.add(model, path, value);
-                    case "replace" -> schema.replace(model, path, value);
-                    case "remove" -> schema.remove(model, path);
+                    case "replace" -> schema.replace(existing, model, path, value);
+                    case "remove" -> schema.remove(existing, model, path);
                     default -> throw new RuntimeException("Unsupported patch operation " + op);
                 }
             }
@@ -149,16 +141,17 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     @Override
     public String getSchema() {
-        return schema.getName();
+        return schema.getId();
     }
 
+    @Override
     public List<ModelSchema<M, R>> getSchemas() {
         return schemas;
     }
 
     @Override
     public List<String> getSchemaExtensions() {
-        return schemaExtensions.stream().map(ModelSchema::getName).toList();
+        return schemaExtensions.stream().map(ModelSchema::getId).toList();
     }
 
     protected abstract R onCreate(R resource);
@@ -175,23 +168,10 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     protected void populate(M model, R resource) {
         for (ModelSchema<M, R> schema : schemas) {
-            if (resource.hasSchema(schema.getName())) {
+            if (resource.hasSchema(schema.getId())) {
                 schema.populate(model, resource);
             }
         }
-    }
-
-    protected String[] splitScimAttribute(String scimAttrPath) {
-        // first split the attribute path into schema and attribute name. If no schema is specified, use the core user schema by default
-        String schemaName;
-        int lastColon = scimAttrPath.lastIndexOf(':');
-        if (lastColon > 0 && (scimAttrPath.contains("://") || scimAttrPath.startsWith("urn:"))) {
-            schemaName = scimAttrPath.substring(0, lastColon);
-            scimAttrPath = scimAttrPath.substring(lastColon + 1);
-        } else {
-            schemaName = this.schema.getName();
-        }
-        return new String[] {schemaName, scimAttrPath};
     }
 
     private R createResourceTypeInstance() {
@@ -201,4 +181,17 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
             throw new RuntimeException("Could not create instance of resource type " + getResourceType(), e);
         }
     }
+
+    private boolean canQuery() {
+        return session.getContext().getPermissions().hasPermission(getRealmResourceType(), AdminPermissionsSchema.QUERY);
+    }
+
+    private boolean hasPermission(String realmResourceType, String scope) {
+        return session.getContext().getPermissions().hasPermission(realmResourceType, scope);
+    }
+
+    private boolean hasPermission(M model, String realmResourceType, String scope) {
+        return session.getContext().getPermissions().hasPermission(model, realmResourceType, scope);
+    }
+
 }

@@ -46,7 +46,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.drone.Different;
-import org.keycloak.testsuite.oauth.RefreshTokenTest;
+import org.keycloak.testsuite.oauth.OAuthProofKeyForCodeExchangeTest;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.MutualTLSUtils;
@@ -358,7 +358,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertEquals("Bearer", tokenResponse.getTokenType());
         assertThat(token.getExp() - getCurrentTime(), allOf(greaterThanOrEqualTo(200L), lessThanOrEqualTo(350L)));
         long actual = refreshToken.getExp() - getCurrentTime();
-        assertThat(actual, allOf(greaterThanOrEqualTo(1799L - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
+        assertThat(actual, allOf(greaterThanOrEqualTo(1799L - OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW)));
         assertEquals(sessionId, refreshToken.getSessionState());
 
         setTimeOffset(2);
@@ -398,7 +398,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertEquals("Bearer", tokenResponse.getTokenType());
         assertThat(token.getExp() - getCurrentTime(), allOf(greaterThanOrEqualTo(200L), lessThanOrEqualTo(350L)));
         long actual = refreshToken.getExp() - getCurrentTime();
-        assertThat(actual, allOf(greaterThanOrEqualTo(1799L - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
+        assertThat(actual, allOf(greaterThanOrEqualTo(1799L - OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800L + OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW)));
         assertEquals(sessionId, refreshToken.getSessionState());
 
         setTimeOffset(2);
@@ -437,7 +437,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertEquals(sessionId, refreshedRefreshToken.getSessionState());
 
         assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
-        assertThat(refreshedToken.getExp() - getCurrentTime(), allOf(greaterThanOrEqualTo(250L - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300L + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
+        assertThat(refreshedToken.getExp() - getCurrentTime(), allOf(greaterThanOrEqualTo(250L - OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300L + OAuthProofKeyForCodeExchangeTest.ALLOWED_CLOCK_SKEW)));
 
         assertThat(refreshedToken.getExp() - token.getExp(), allOf(greaterThanOrEqualTo(1L), lessThanOrEqualTo(10L)));
         assertThat(refreshedRefreshToken.getExp() - refreshToken.getExp(), allOf(greaterThanOrEqualTo(1L), lessThanOrEqualTo(10L)));

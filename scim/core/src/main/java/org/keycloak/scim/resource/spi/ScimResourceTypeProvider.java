@@ -1,12 +1,16 @@
 package org.keycloak.scim.resource.spi;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.Model;
 import org.keycloak.provider.Provider;
 import org.keycloak.scim.protocol.request.PatchRequest.PatchOperation;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
+import org.keycloak.scim.resource.schema.ModelSchema;
 
 /**
  * <p>A provider of a SCIM resource type.
@@ -39,6 +43,8 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      */
     String getSchema();
 
+    <M extends Model> List<ModelSchema<M, R>> getSchemas();
+
     /**
      * Returns the schema extensions names of the resource type managed by this provider.
      *
@@ -70,10 +76,10 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      * and should persist the updated resource and return the persisted instance.
      * The returned resource will be used in the response to the client.
      *
-     * @param user the resource to update
+     * @param resource the resource to update
      * @return the updated resource
      */
-    R update(R user);
+    R update(R resource);
 
     /**
      * Retrieves a resource of this type by its identifier. This method is invoked when a client requests a specific resource,
@@ -113,5 +119,20 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
 
     default void patch(R existing, List<PatchOperation> operations) {
         throw new UnsupportedOperationException("Add operation is not supported for resource type " + getName());
+    }
+
+    /**
+     * Returns the admin event {@link ResourceType} for this SCIM resource type.
+     * By default, derives it from {@link #getName()} by converting to uppercase and matching against known values.
+     * Providers can override this to map to a different {@link ResourceType} value.
+     *
+     * @return the admin event resource type
+     */
+    default ResourceType getAdminEventResourceType() {
+        String name = getName().toUpperCase();
+        return Arrays.stream(ResourceType.values())
+                .filter(rt -> rt.name().equals(name))
+                .findFirst()
+                .orElse(ResourceType.CUSTOM);
     }
 }

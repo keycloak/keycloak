@@ -652,7 +652,7 @@ in that namespace.
 
 
 ==== Modify ServiceMonitor configuration
-You can configure the `interval` and `scrapeTimeout` fields of the generated `ServiceMonitor` by modifying the Keycloak CR spec.
+You can configure the `interval` and `scrapeTimeout` fields and also `annotations` and `labels` of the generated `ServiceMonitor` by modifying the Keycloak CR spec.
 
 .Modified ServiceMonitor
 [source,yaml]
@@ -665,7 +665,15 @@ spec:
   serviceMonitor:
     interval: 10s
     scrapeTimeout: 5s
+    labels:
+      label1: label-value1
+      label2: label-value2
+    annotations:
+      annotation1: annotation-value1
+      annotation2: annotation-value2
 ----
+
+NOTE: You can use service monitor labels to determine which Prometheus instance will scrape metrics from {project_name}.
 
 ==== Disable ServiceMonitor creation
 You can prevent the Operator from creating a ServiceMonitor by configuring the Keycloak CR as follows:

@@ -5,6 +5,10 @@ import java.util.List;
 import org.keycloak.admin.client.resource.ComponentResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientPolicyRepresentation;
+import org.keycloak.representations.idm.ClientProfileRepresentation;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -118,7 +122,7 @@ public class ManagedRealm extends ManagedTestResource {
      * @param username the username of the user to update
      * @param update the update to perform on the user
      */
-    public void updateUser(String username, UserConfigBuilder.UserUpdate update) {
+    public void updateUserWithCleanup(String username, UserConfigBuilder.UserUpdate update) {
         List<UserRepresentation> result = realmResource.users().search(username);
         Assertions.assertEquals(1, result.size());
 
@@ -128,6 +132,17 @@ public class ManagedRealm extends ManagedTestResource {
         realmResource.users().get(original.getId()).update(updated);
 
         cleanup().add(r -> r.users().get(original.getId()).update(original));
+    }
+
+    public void updateUser(String username, UserConfigBuilder.UserUpdate update) {
+        List<UserRepresentation> result = realmResource.users().search(username);
+        Assertions.assertEquals(1, result.size());
+
+        UserRepresentation original = result.get(0);
+        UserRepresentation updated = RepresentationUtils.clone(original);
+        update.update(updated);
+        realmResource.users().get(original.getId()).update(updated);
+
     }
 
     /**
@@ -145,6 +160,22 @@ public class ManagedRealm extends ManagedTestResource {
         resource.update(updated);
 
         cleanup().add(r -> r.identityProviders().get(alias).update(original));
+    }
+
+    public void updateClientProfile(List<ClientProfileRepresentation> profiles) {
+        ClientProfilesRepresentation oldProfiles = realmResource.clientPoliciesProfilesResource().getProfiles(true);
+        ClientProfilesRepresentation profilesToUpdate = realmResource.clientPoliciesProfilesResource().getProfiles(true);
+        profilesToUpdate.setProfiles(profiles);
+        realmResource.clientPoliciesProfilesResource().updateProfiles(profilesToUpdate);
+        cleanup().add(r -> r.clientPoliciesProfilesResource().updateProfiles(oldProfiles));
+    }
+
+    public void updateClientPolicy(List<ClientPolicyRepresentation> policies) {
+        ClientPoliciesRepresentation oldPolicies = realmResource.clientPoliciesPoliciesResource().getPolicies();
+        ClientPoliciesRepresentation policiesToUpdate = realmResource.clientPoliciesPoliciesResource().getPolicies();
+        policiesToUpdate.setPolicies(policies);
+        realmResource.clientPoliciesPoliciesResource().updatePolicies(policiesToUpdate);
+        cleanup().add(r -> r.clientPoliciesPoliciesResource().updatePolicies(oldPolicies));
     }
 
     /**

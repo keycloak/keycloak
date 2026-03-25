@@ -20,6 +20,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.userprofile.DefaultAttributes;
 import org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator;
 
@@ -78,6 +79,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByEmail() {
         createUsers();
 
@@ -99,6 +101,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByUsername() {
         createUsers();
 
@@ -110,6 +113,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByAttribute() {
         createUsers();
 
@@ -131,6 +135,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByMultipleAttributes() {
         createUsers();
 
@@ -151,6 +156,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByAttributesWithPagination() {
         createUsers();
 
@@ -164,6 +170,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void storeAndReadUserWithLongAttributeValue() {
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES), true, true);
 
@@ -187,6 +194,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByLongAttributes() {
         // random string with suffix that makes it case-sensitive and distinct
         String longValue = RandomStringUtils.random(Integer.parseInt(DefaultAttributes.DEFAULT_MAX_LENGTH_ATTRIBUTES) - 1, true, true) + "u";
@@ -312,6 +320,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchWithFilters() {
         createUser();
 
@@ -365,6 +374,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchByIdp() {
         // Add user without IDP
         createUser();
@@ -480,6 +490,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void searchById() {
         List<String> userIds = createUsers();
         String expectedUserId = userIds.get(0);
@@ -508,6 +519,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void infixSearch() {
         List<String> userIds = createUsers();
 
@@ -543,6 +555,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void prefixSearch() {
         List<String> userIds = createUsers();
 
@@ -610,6 +623,7 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
     public void wildcardSearch() {
         UserProfileResource upResource = managedRealm.admin().users().userProfile();
         UPConfig upConfig = upResource.getConfiguration();
@@ -635,6 +649,45 @@ public class UserSearchTest extends AbstractUserTest {
     }
 
     @Test
+    @DatabaseTest
+    public void sqlWildcardEscaping() {
+        // Test underscore character doesn't act as SQL wildcard
+        createUser("john_doe", "john_doe@test.com");
+        createUser("johnadoe", "johnadoe@test.com");
+        createUser("johnbdoe", "johnbdoe@test.com");
+
+        List<UserRepresentation> users = managedRealm.admin().users().search("john_", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getUsername(), is("john_doe"));
+
+        // Test percent character doesn't act as SQL wildcard - use email since username doesn't allow %
+        createUser("fifty", "50%@test.com");
+        createUser("fivehundred", "500@test.com");
+        createUser("fiftyabc", "50abc@test.com");
+
+        users = managedRealm.admin().users().search("50%", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getEmail(), is("50%@test.com"));
+
+        // Test combination of wildcards - underscore in email
+        createUser("testuser", "test_email@example.com");
+        createUser("testauser", "testaemail@example.com");
+
+        users = managedRealm.admin().users().search("test_email", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getEmail(), is("test_email@example.com"));
+
+        // Test both percent and underscore in email
+        createUser("testpercent", "50%_test@test.com");
+        createUser("testatest", "50atest@test.com");
+
+        users = managedRealm.admin().users().search("50%_", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getEmail(), is("50%_test@test.com"));
+    }
+
+    @Test
+    @DatabaseTest
     public void exactSearch() {
         List<String> userIds = createUsers();
 

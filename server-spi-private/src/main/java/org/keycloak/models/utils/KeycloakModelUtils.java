@@ -986,15 +986,15 @@ public final class KeycloakModelUtils {
 
     /**
      * Retrieves and validates a group for use in an Identity Provider mapper.
-     * This method handles organization-aware group lookup.
-     *
-     * When the IdP is linked to an organization, this method first attempts to find the group
-     * within that organization's groups. If not found (or IdP not linked to org), it falls back
-     * to searching realm groups.
+     * The lookup strategy is determined by the {@code groupType} config value:
+     * <ul>
+     *   <li>{@code "ORGANIZATION"} — searches within the organization groups linked to the IdP</li>
+     *   <li>{@code "REALM"} or missing — searches realm groups</li>
+     * </ul>
      *
      * @param session the Keycloak session
      * @param realm the realm
-     * @param mapperModel the mapper model configuration containing the group path
+     * @param mapperModel the mapper model configuration containing the group path and group type
      * @param context the brokered identity context containing the IdP configuration
      * @return the group if found and valid, null otherwise (mapper should be skipped)
      */
@@ -1003,17 +1003,26 @@ public final class KeycloakModelUtils {
                                                    IdentityProviderMapperModel mapperModel,
                                                    BrokeredIdentityContext context) {
         String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
+        String groupTypeStr = mapperModel.getConfig().get(ConfigConstants.GROUP_TYPE);
         GroupModel group = null;
 
-        // Check if IdP is linked to organization and validate the relationship
-        OrganizationModel organization = getOrganizationForIdpMapper(session, context.getIdpConfig());
-
-        if (organization != null) {
-            group = findGroupByPath(session, realm, organization, groupPath);
+        // Parse the group type from config
+        GroupModel.Type groupType = null;
+        if (groupTypeStr != null) {
+            try {
+                groupType = GroupModel.Type.valueOf(groupTypeStr);
+            } catch (IllegalArgumentException e) {
+                // Invalid group type, treat as null
+            }
         }
 
-        // If not found in organization (or IdP not in org context), try as realm group
-        if (group == null) {
+        if (groupType == GroupModel.Type.ORGANIZATION) {
+            OrganizationModel organization = getOrganizationForIdpMapper(session, context.getIdpConfig());
+            if (organization != null) {
+                group = findGroupByPath(session, realm, organization, groupPath);
+            }
+        } else {
+            // GroupModel.Type.REALM or null → search realm groups
             group = findGroupByPath(session, realm, groupPath);
         }
 

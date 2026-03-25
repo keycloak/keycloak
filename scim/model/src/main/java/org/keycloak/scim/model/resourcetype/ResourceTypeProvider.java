@@ -5,18 +5,23 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.Model;
+import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.config.ServiceProviderConfig;
 import org.keycloak.scim.resource.resourcetype.ResourceType;
 import org.keycloak.scim.resource.resourcetype.ResourceType.SchemaExtension;
+import org.keycloak.scim.resource.schema.ModelSchema;
+import org.keycloak.scim.resource.schema.Schema;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProviderFactory;
 
 public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceType> {
 
-    private static final List<Class<? extends ResourceTypeRepresentation>> EXCLUDED_RESOURCE_TYPES = List.of(ServiceProviderConfig.class, ResourceType.class);
+    private static final List<Class<? extends ResourceTypeRepresentation>> EXCLUDED_RESOURCE_TYPES = List.of(ServiceProviderConfig.class, ResourceType.class, Schema.class);
     private final KeycloakSession session;
 
     public ResourceTypeProvider(KeycloakSession session) {
@@ -38,7 +43,7 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
     }
 
     @Override
-    public ResourceType update(ResourceType user) {
+    public ResourceType update(ResourceType resourceType) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -49,6 +54,9 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
 
     @Override
     public Stream<ResourceType> getAll(SearchRequest searchRequest) {
+        if (!session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
+            throw new ForbiddenException();
+        }
         return session.getKeycloakSessionFactory().getProviderFactoriesStream(ScimResourceTypeProvider.class)
                 .map(ScimResourceTypeProviderFactory.class::cast)
                 .map(this::toRepresentation)
@@ -101,5 +109,10 @@ public class ResourceTypeProvider implements ScimResourceTypeProvider<ResourceTy
     @Override
     public String getSchema() {
         return ResourceType.SCHEMA;
+    }
+
+    @Override
+    public <M extends Model> List<ModelSchema<M, ResourceType>> getSchemas() {
+        return List.of();
     }
 }

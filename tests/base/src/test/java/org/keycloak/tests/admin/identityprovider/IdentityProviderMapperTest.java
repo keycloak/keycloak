@@ -25,8 +25,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.providers.broker.oidc.OverwrittenMappersTestIdentityProviderFactory;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
-import org.keycloak.testsuite.broker.oidc.OverwrittenMappersTestIdentityProviderFactory;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

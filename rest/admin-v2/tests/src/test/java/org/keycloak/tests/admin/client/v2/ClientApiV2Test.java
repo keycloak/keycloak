@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin.client.v2;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -24,6 +25,9 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
@@ -31,9 +35,11 @@ import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
@@ -43,6 +49,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpOptions;
 import org.apache.http.client.methods.HttpPatch;
@@ -54,6 +61,8 @@ import org.apache.http.util.EntityUtils;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.keycloak.services.cors.Cors.ACCESS_CONTROL_ALLOW_METHODS;
 import static org.keycloak.services.cors.Cors.ORIGIN_HEADER;
@@ -61,8 +70,15 @@ import static org.keycloak.services.cors.Cors.ORIGIN_HEADER;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KeycloakIntegrationTest(config = ClientApiV2Test.AdminV2Config.class)
 public class ClientApiV2Test extends AbstractClientApiV2Test{
@@ -76,23 +92,30 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @InjectRealm(config = NoAccessRealmConfig.class)
     ManagedRealm testRealm;
 
+    @InjectRealm(attachTo = "master", ref = "master")
+    ManagedRealm masterRealm;
+
     @InjectAdminClient(ref = "noAccessClient", client = "myclient", mode = InjectAdminClient.Mode.MANAGED_REALM)
     Keycloak noAccessAdminClient;
 
+    @InjectClient(realmRef = "master")
+    ManagedClient testClient;
+
     @Test
     public void getClient() throws Exception {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "/account");
+        HttpGet request = new HttpGet(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         try (var response = client.execute(request)) {
             assertEquals(200, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
-            assertEquals("account", client.getClientId());
+            assertEquals(testClient.getClientId(), client.getClientId());
+            assertClientUuid(client);
         }
     }
 
     @Test
     public void jsonPatchClient() throws Exception {
-        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
+        HttpPatch request = new HttpPatch(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_PATCH_JSON);
         try (var response = client.execute(request)) {
@@ -103,7 +126,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void jsonMergePatchClient() throws Exception {
-        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
+        HttpPatch request = new HttpPatch(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
@@ -122,7 +145,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void jsonMergePatchClientInvalid() throws Exception {
-        HttpPatch request = new HttpPatch(getClientsApiUrl() + "/account");
+        HttpPatch request = new HttpPatch(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
 
@@ -151,7 +174,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void putFailsWithDifferentClientId() throws Exception {
-        HttpPut request = new HttpPut(getClientsApiUrl() + "/account");
+        HttpPut request = new HttpPut(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
@@ -182,6 +205,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(201, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals("I'm new", client.getDescription());
+            assertClientUuid(client);
         }
 
         rep.setDescription("I'm updated");
@@ -191,6 +215,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(200, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
             assertEquals("I'm updated", client.getDescription());
+            assertClientUuid(client);
         }
     }
 
@@ -213,6 +238,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertThat(client.getEnabled(),is(true));
             assertThat(client.getClientId(),is("client-123"));
             assertThat(client.getDescription(),is("I'm new"));
+            assertClientUuid(client);
         }
 
         try (var response = client.execute(request)) {
@@ -400,8 +426,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             var violations = body.violations();
-            assertThat(violations.size(), is(1));
-            assertThat(violations.iterator().next(), is("clientId: must not be blank"));
+            assertThat(violations, hasSize(2));
+            assertThat(violations, hasItem("clientId: must not be blank"));
+            assertThat(violations, hasItem("appUrl: must be a valid URL"));
         }
 
         request.setEntity(new StringEntity("""
@@ -429,7 +456,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
     @Test
     public void authenticationRequired() throws Exception {
-        HttpGet request = new HttpGet(getClientsApiUrl() + "/account");
+        HttpGet request = new HttpGet(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request, noAccessAdminClient);
         try (var response = client.execute(request)) {
             assertEquals(403, response.getStatusLine().getStatusCode());
@@ -448,6 +475,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         try (var response = client.execute(request)) {
             assertEquals(201, response.getStatusLine().getStatusCode());
             OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            client.setUuid(null); // UUID is generated by server
             assertThat(client, is(rep));
         }
     }
@@ -719,7 +747,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientUpdateFailsWithError(rep, "A redirect URI uses an illegal scheme");
+        assertClientUpdateFailsWithError(rep, "Each redirect URL must be valid");
     }
 
     @Test
@@ -747,7 +775,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientUpdateFailsWithError(rep, "A redirect URI uses an illegal scheme");
+        assertClientUpdateFailsWithError(rep, "Each redirect URL must be valid");
     }
 
     @Test
@@ -758,6 +786,306 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setClientId("saml-client-update-invalid-root-url");
         rep.setAppUrl("http://localhost:3000#fragment");
         assertClientUpdateFailsWithError(rep, "Root URL must not contain an URL fragment");
+    }
+
+    /**
+     * Asserts that client secret is generated when the secret field is not set.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
+    void createClientWithPostAndGeneratedSecret(String authenticationMethod) throws IOException {
+        String clientId = authenticationMethod + "-generation-post";
+        HttpPost request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(authenticationMethod);
+        auth.setSecret(null);
+
+        OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfig(auth, request, clientId);
+        assertThat(createdAuth, notNullValue());
+        assertThat(createdAuth.getSecret(), not(emptyOrNullString()));
+
+        // make sure that the created model was persisted and GET method returns the newly generated secret
+        HttpGet getRequest = new HttpGet(getClientApiUrl(clientId));
+        setAuthHeader(getRequest);
+        try (var response = client.execute(getRequest)) {
+            assertEquals(200, response.getStatusLine().getStatusCode());
+            OIDCClientRepresentation client = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            assertEquals(clientId, client.getClientId());
+            assertThat(client.getAuth().getSecret(), not(emptyOrNullString()));
+        }
+    }
+
+    /**
+     * Asserts that the client secret is not generated for authentication methods other than the client secret.
+     */
+    @Test
+    void createJwtClientWithoutSecret() throws IOException {
+        String clientId = "jwt-client-generation-post";
+        HttpPost request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(JWTClientAuthenticator.PROVIDER_ID);
+        auth.setSecret(null);
+
+        OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfig(auth, request, clientId);
+        assertThat(createdAuth, notNullValue());
+        assertThat(createdAuth.getSecret(), nullValue());
+    }
+
+    /**
+     * Asserts that the client secret is generated when a public client is patched with the client secret method.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
+    void patchedOriginallyPublicClientHasSecretGenerated(String authenticationMethod) throws IOException {
+        String clientId = authenticationMethod + "-pub-generation-patch";
+
+        HttpEntityEnclosingRequestBase request = new HttpPost(getClientsApiUrl());
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfig(null, request, clientId);
+        assertThat(createdAuth, nullValue());
+
+        request = new HttpPatch(getClientApiUrl(clientId));
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+        OIDCClientRepresentation.Auth authWithoutSecret = new OIDCClientRepresentation.Auth();
+        authWithoutSecret.setMethod(authenticationMethod);
+        authWithoutSecret.setSecret(null);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(authWithoutSecret, request, clientId);
+        assertThat(patchedAuth, notNullValue());
+        String newlyGeneratedSecret = patchedAuth.getSecret();
+        assertThat(newlyGeneratedSecret, not(emptyOrNullString()));
+    }
+
+    /**
+     * Asserts that the client secret is generated when a client JWT is patched with the client secret method.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
+    void patchedOriginallyJwtClientHasSecretGenerated(String authenticationMethod) throws IOException {
+        String clientId = authenticationMethod + "-jwt-generation-patch";
+
+        HttpEntityEnclosingRequestBase request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(JWTClientAuthenticator.PROVIDER_ID);
+        auth.setSecret("hush-hush");
+
+        OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfig(auth, request, clientId);
+        assertThat(createdAuth, notNullValue());
+        assertThat(createdAuth.getSecret(), is(auth.getSecret()));
+
+        request = new HttpPatch(getClientApiUrl(clientId));
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+        OIDCClientRepresentation.Auth authWithoutSecret = new OIDCClientRepresentation.Auth();
+        authWithoutSecret.setMethod(authenticationMethod);
+        authWithoutSecret.setAdditionalField("secret", null);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(authWithoutSecret, request, clientId);
+        assertThat(patchedAuth, notNullValue());
+        String newlyGeneratedSecret = patchedAuth.getSecret();
+        assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
+    }
+
+    /**
+     * Asserts that the client secret is regenerated when a client is patched with the empty secret field.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
+    void patchedClientSecretIsRegenerated(String authenticationMethod) throws IOException {
+        String clientId = authenticationMethod + "-re-generation-patch";
+
+        HttpEntityEnclosingRequestBase request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(authenticationMethod);
+        auth.setSecret("shush");
+
+        OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfig(auth, request, clientId);
+        assertThat(createdAuth, notNullValue());
+        assertThat(createdAuth.getSecret(), is(auth.getSecret()));
+
+        request = new HttpPatch(getClientApiUrl(clientId));
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+        OIDCClientRepresentation.Auth authWithoutSecret = new OIDCClientRepresentation.Auth();
+        authWithoutSecret.setAdditionalField("secret", null);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(authWithoutSecret, request, clientId);
+        assertThat(patchedAuth, notNullValue());
+        String newlyGeneratedSecret = patchedAuth.getSecret();
+        assertThat(newlyGeneratedSecret, not(is(createdAuth.getSecret())));
+    }
+
+    /**
+     * Asserts that the confidential client is turned into public one when we explicitly set auth config field with null.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
+    void patchTurnsConfidentialClientIntoPublicOne(String authenticationMethod) throws IOException {
+        String clientId = authenticationMethod + "-patch-into-public-cl";
+
+        HttpEntityEnclosingRequestBase request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(authenticationMethod);
+        auth.setSecret("shush");
+
+        OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfig(auth, request, clientId);
+        assertThat(createdAuth, notNullValue());
+        assertThat(createdAuth.getSecret(), is(auth.getSecret()));
+
+        request = new HttpPatch(getClientApiUrl(clientId));
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(null, request, clientId, "auth", null);
+        assertThat(patchedAuth, nullValue());
+    }
+
+    @Test
+    void patchAuthMethodAndAssertExistingSecretDidNotChange() throws IOException {
+        String clientId = "patch-auth-method-switch";
+
+        HttpEntityEnclosingRequestBase request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(ClientIdAndSecretAuthenticator.PROVIDER_ID);
+        auth.setSecret("shush");
+
+        OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfig(auth, request, clientId);
+        assertThat(createdAuth, notNullValue());
+        assertThat(createdAuth.getMethod(), is(auth.getMethod()));
+        assertThat(createdAuth.getSecret(), is(auth.getSecret()));
+
+        // just change auth method and expect that the secret is still same
+        request = new HttpPatch(getClientApiUrl(clientId));
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+        OIDCClientRepresentation.Auth authWithoutSecret = new OIDCClientRepresentation.Auth();
+        authWithoutSecret.setMethod(JWTClientSecretAuthenticator.PROVIDER_ID);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(authWithoutSecret, request, clientId);
+        assertThat(patchedAuth, notNullValue());
+        assertThat(patchedAuth.getMethod(), is(authWithoutSecret.getMethod()));
+        assertThat(patchedAuth.getSecret(), is(createdAuth.getSecret()));
+    }
+
+    /**
+     * Asserts that the confidential client has still the client secret set if field is left out.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
+    void patchedClientWithSecretRetainSecret(String authenticationMethod) throws IOException {
+        String clientId = authenticationMethod + "-patched-other-fields";
+
+        HttpEntityEnclosingRequestBase request = new HttpPost(getClientsApiUrl());
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(authenticationMethod);
+        auth.setSecret("shush");
+
+        OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfig(auth, request, clientId);
+        assertThat(createdAuth, notNullValue());
+        assertThat(createdAuth.getSecret(), is(auth.getSecret()));
+
+        request = new HttpPatch(getClientApiUrl(clientId));
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+        OIDCClientRepresentation.Auth patchedAuth = getResultingAuthConfig(null, request, clientId);
+        assertThat(patchedAuth, notNullValue());
+        assertThat(patchedAuth.getSecret(), is(auth.getSecret()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
+    void expectValidationFailureForUpdatePutWithoutSecret(String authenticationMethod) throws IOException {
+        String clientId = authenticationMethod + "-validation-update-put";
+        HttpPut request = new HttpPut(getClientApiUrl(clientId));
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(authenticationMethod);
+        auth.setSecret(clientId);
+
+        OIDCClientRepresentation.Auth createdAuth = getResultingAuthConfig(auth, request, clientId);
+        assertThat(createdAuth, notNullValue());
+        assertThat(createdAuth.getSecret(), is(auth.getSecret()));
+
+        auth.setSecret(null);
+        var assertionError = assertThrows(AssertionError.class, () -> getResultingAuthConfig(auth, request, clientId));
+        assertThat(assertionError.getMessage(), Matchers.containsString("was <400>"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
+    void expectValidationFailureForCreatePutWithoutSecret(String authenticationMethod) {
+        String clientId = authenticationMethod + "-validation-create-put";
+        HttpPut request = new HttpPut(getClientApiUrl(clientId));
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(authenticationMethod);
+        auth.setSecret(null);
+
+        var assertionError = assertThrows(AssertionError.class, () -> getResultingAuthConfig(auth, request, clientId));
+        assertThat(assertionError.getMessage(), Matchers.containsString("was <400>"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = { ClientIdAndSecretAuthenticator.PROVIDER_ID, JWTClientSecretAuthenticator.PROVIDER_ID })
+    void usePutToTurnConfidentialClientToPublicOne(String authenticationMethod) throws IOException {
+        String clientId = authenticationMethod + "-put-to-public-cl";
+        HttpPut request = new HttpPut(getClientApiUrl(clientId));
+        setAuthHeader(request);
+        request.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
+        auth.setMethod(authenticationMethod);
+        auth.setSecret("top-secret");
+
+        OIDCClientRepresentation.Auth putAuth = getResultingAuthConfig(auth, request, clientId);
+        assertThat(putAuth, notNullValue());
+        assertThat(putAuth.getSecret(), is(auth.getSecret()));
+
+        // now turn this client to public one
+        request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+        putAuth = getResultingAuthConfig(null, request, clientId);
+        assertThat(putAuth, nullValue());
+    }
+
+    private OIDCClientRepresentation.Auth getResultingAuthConfig(OIDCClientRepresentation.Auth auth, HttpEntityEnclosingRequestBase request, String clientId, String... additionalFields) throws IOException {
+        setAuthHeader(request);
+
+        OIDCClientRepresentation rep = new OIDCClientRepresentation();
+        rep.setEnabled(true);
+        rep.setClientId(clientId);
+        rep.setDescription("I'm OIDC Client");
+        rep.setAuth(auth);
+
+        if (additionalFields.length % 2 != 0) {
+            throw new IllegalArgumentException("Additional fields must always specify both field name and key");
+        }
+        for (int i = 0; i < additionalFields.length; i += 2) {
+            rep.setAdditionalField(additionalFields[i], additionalFields[i + 1]);
+        }
+
+        request.setEntity(new StringEntity(mapper.writeValueAsString(rep)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), Matchers.anyOf(is(201), is(200)));
+            OIDCClientRepresentation createdClient = mapper.createParser(response.getEntity().getContent()).readValueAs(OIDCClientRepresentation.class);
+            assertThat(createdClient.getEnabled(), is(rep.getEnabled()));
+            assertThat(createdClient.getClientId(), is(rep.getClientId()));
+            assertThat(createdClient.getDescription(), is(rep.getDescription()));
+
+            if (auth != null) {
+                assertThat(createdClient.getAuth(), notNullValue());
+                if (auth.getMethod() != null) {
+                    assertThat(createdClient.getAuth().getMethod(), is(auth.getMethod()));
+                }
+            }
+
+            return createdClient.getAuth();
+        }
     }
 
     /**
@@ -823,6 +1151,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         try (var response = client.execute(deleteRequest)) {
             EntityUtils.consumeQuietly(response.getEntity());
         }
+    }
+
+    private void assertClientUuid(BaseClientRepresentation client) {
+        assertThat(client.getUuid(), matchesPattern("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"));
     }
 
     private OIDCClientRepresentation getTestingFullClientRep() {

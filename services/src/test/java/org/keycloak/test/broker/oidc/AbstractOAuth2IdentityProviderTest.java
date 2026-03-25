@@ -64,10 +64,37 @@ public class AbstractOAuth2IdentityProviderTest {
 		Assert.assertNull(tested.getJsonProperty(jsonNode, "nonexisting"));
 		Assert.assertNull(tested.getJsonProperty(jsonNode, "nullone"));
 		Assert.assertNull(tested.getJsonProperty(jsonNode, "emptyone"));
-		Assert.assertEquals(" ", tested.getJsonProperty(jsonNode, "blankone"));
+		Assert.assertEquals(null, tested.getJsonProperty(jsonNode, "blankone"));
 		Assert.assertEquals("my value", tested.getJsonProperty(jsonNode, "withvalue"));
 		Assert.assertEquals("true", tested.getJsonProperty(jsonNode, "withbooleanvalue"));
 		Assert.assertEquals("10", tested.getJsonProperty(jsonNode, "withnumbervalue"));
+	}
+
+	@Test
+	public void getJsonProperty_nullAndBlankInputs() throws IOException {
+		TestProvider tested = getTested();
+		JsonNode jsonNode = tested.asJsonNode("{\"data\":{\"id\":\"123\"}}");
+
+		Assert.assertNull(tested.getJsonProperty(null, "data.id"));
+		Assert.assertNull(tested.getJsonProperty(jsonNode, null));
+		Assert.assertNull(tested.getJsonProperty(jsonNode, "  "));
+	}
+
+	@Test
+	public void getJsonProperty_nestedPath() throws IOException {
+		TestProvider tested = getTested();
+
+		Assert.assertEquals("123", tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"id\":\"123\"}}"), "data.id"));
+		Assert.assertEquals("deep", tested.getJsonProperty(tested.asJsonNode("{\"a\":{\"b\":{\"c\":\"deep\"}}}"), "a.b.c"));
+		Assert.assertEquals("nested", tested.getJsonProperty(tested.asJsonNode("{\"data.id\":\"literal\",\"data\":{\"id\":\"nested\"}}"), "data.id"));
+		Assert.assertNull(tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"other\":\"val\"}}"), "data.id"));
+		Assert.assertNull(tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"id\":null}}"), "data.id"));
+		Assert.assertNull(tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"id\":\"\"}}"), "data.id"));
+		Assert.assertEquals("literal", tested.getJsonProperty(tested.asJsonNode("{\"data.id\":\"literal\"}"), "data\\.id"));
+		Assert.assertEquals("val", tested.getJsonProperty(tested.asJsonNode("{\"foo\":{\"bar.xyz\":\"val\"}}"), "foo.bar\\.xyz"));
+		Assert.assertNull(tested.getJsonProperty(tested.asJsonNode("{\"foo\":{\"bar.xyz\":\"val\"}}"), "foo.bar.xyz"));
+		Assert.assertEquals("true", tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"flag\":true}}"), "data.flag"));
+		Assert.assertEquals("42", tested.getJsonProperty(tested.asJsonNode("{\"data\":{\"num\":42}}"), "data.num"));
 	}
 
 	@Test(expected = IdentityBrokerException.class)
@@ -175,6 +202,7 @@ public class AbstractOAuth2IdentityProviderTest {
 
 		public TestProvider(OAuth2IdentityProviderConfig config) {
 			super(null, config);
+            config.setEnabled(true);
 		}
 
 		@Override

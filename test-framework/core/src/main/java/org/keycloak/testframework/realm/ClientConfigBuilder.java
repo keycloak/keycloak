@@ -103,6 +103,7 @@ public class ClientConfigBuilder {
     }
 
     public ClientConfigBuilder authorizationServicesEnabled(boolean enabled) {
+        serviceAccountsEnabled(enabled);
         rep.setAuthorizationServicesEnabled(enabled);
         return this;
     }
@@ -128,6 +129,11 @@ public class ClientConfigBuilder {
 
     public ClientConfigBuilder defaultClientScopes(String... defaultClientScopes) {
         rep.setDefaultClientScopes(Collections.combine(rep.getDefaultClientScopes(), defaultClientScopes));
+        return this;
+    }
+
+    public ClientConfigBuilder optionalClientScopes(String... optionalClientScopes) {
+        rep.setOptionalClientScopes(Collections.combine(rep.getOptionalClientScopes(), optionalClientScopes));
         return this;
     }
 

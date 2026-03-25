@@ -26,7 +26,6 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
-import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -61,9 +60,9 @@ import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -219,11 +218,20 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
             assertThat("V2 event should have representation", representation, notNullValue());
 
             // Unmarshall the representation to BaseClientRepresentation
-            var clientRep = mapper.readValue(representation, BaseClientRepresentation.class);
-            assertThat("Client representation should have clientId", clientRep.getClientId(), is(TEST_CLIENT_ID));
-            assertThat("Client representation should have protocol", clientRep.getProtocol(), is("openid-connect"));
-            assertThat("Client representation should not have description", clientRep.getDescription(),is(nullValue()));
-            assertThat("Client representation should not have enabled field", clientRep.getEnabled(), is(nullValue()));
+            var eventRepresentation = mapper.readValue(representation, OIDCClientRepresentation.class);
+            assertThat(eventRepresentation, notNullValue());
+            var testClientRep = getTestClientRepresentation();
+            assertThat(testClientRep, notNullValue());
+
+            assertThat(eventRepresentation.getClientId(), is(testClientRep.getClientId()));
+            assertThat(eventRepresentation.getProtocol(), is(testClientRep.getProtocol()));
+            assertThat(eventRepresentation.getDescription(), is(testClientRep.getDescription()));
+            assertThat(eventRepresentation.getRoles(), is(testClientRep.getRoles()));
+            assertThat(eventRepresentation.getAuth(), is(notNullValue()));
+            assertThat(testClientRep.getAuth(), is(notNullValue()));
+            assertThat(eventRepresentation.getAuth().getMethod(), is(testClientRep.getAuth().getMethod()));
+            assertThat(eventRepresentation.getAuth().getSecret(), is(not(testClientRep.getAuth().getSecret())));
+            assertThat(eventRepresentation.getAuth().getSecret(), is("**********"));
 
             try (var response = client.execute(deleteRequest)) {
                 assertEquals(404, response.getStatusLine().getStatusCode());

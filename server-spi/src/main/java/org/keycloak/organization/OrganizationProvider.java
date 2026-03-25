@@ -293,7 +293,6 @@ public interface OrganizationProvider extends Provider {
     /**
      * Returns all organization groups that the given {@code member} explicitly belongs to within the given {@code organization}.
      * Only returns groups of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION} that belong to the specified organization.
-     * Membership is explicit - being a member of a child group does not imply membership in parent groups.
      *
      * @param organization the organization whose groups to check
      * @param member the user whose group memberships to retrieve
@@ -303,17 +302,17 @@ public interface OrganizationProvider extends Provider {
 
     /**
      * Returns organization groups that the given {@code member} explicitly belongs to within the given {@code organization},
-     * with pagination support.
+     * with pagination and search support.
      * Only returns groups of type {@link org.keycloak.models.GroupModel.Type#ORGANIZATION} that belong to the specified organization.
-     * Membership is explicit - being a member of a child group does not imply membership in parent groups.
      *
      * @param organization the organization whose groups to check
      * @param member the user whose group memberships to retrieve
+     * @param search a case-insensitive search string to filter groups by name. If {@code null} or blank, no filtering is applied.
      * @param first the position of the first result to be processed (pagination offset). Ignored if negative or {@code null}.
      * @param max the maximum number of results to be returned. Ignored if negative or {@code null}.
      * @return Stream of organization groups the member belongs to. Never returns {@code null}.
      */
-    Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member, Integer first, Integer max);
+    Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member, String search, Integer first, Integer max);
 
     /**
      * Returns the internal organization group for the given {@link OrganizationModel}.

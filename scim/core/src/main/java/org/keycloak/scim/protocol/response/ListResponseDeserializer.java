@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.scim.resource.resourcetype.ResourceType;
+import org.keycloak.scim.resource.schema.Schema;
 import org.keycloak.scim.resource.user.User;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -55,6 +56,8 @@ public class ListResponseDeserializer extends JsonDeserializer<List<ResourceType
             return Group.class;
         } else if (schemas.contains(getCoreSchema(ResourceType.class))) {
             return  ResourceType.class;
+        } else if (schemas.contains(getCoreSchema(Schema.class))) {
+            return Schema.class;
         }
 
         throw new IllegalArgumentException("Could not map resource type from any of the schemas: " + schemas);

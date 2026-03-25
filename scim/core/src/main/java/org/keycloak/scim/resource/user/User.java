@@ -1,5 +1,6 @@
 package org.keycloak.scim.resource.user;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -54,9 +55,6 @@ public class User extends ResourceTypeRepresentation {
 
     @JsonProperty("active")
     private Boolean active;
-
-    @JsonProperty("password")
-    private String password;
 
     @JsonProperty("emails")
     private List<Email> emails;
@@ -175,14 +173,6 @@ public class User extends ResourceTypeRepresentation {
 
     public void setActive(Boolean active) {
         this.active = active;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public List<Email> getEmails() {
@@ -304,5 +294,20 @@ public class User extends ResourceTypeRepresentation {
             schemas.add(ENTERPRISE_USER_SCHEMA);
         }
         return schemas;
+    }
+
+    public void addGroup(String id) {
+        GroupMembership membership = new GroupMembership();
+
+        membership.setValue(id);
+
+        addGroup(membership);
+    }
+
+    public void addGroup(GroupMembership membership) {
+        if (groups == null) {
+            groups = new ArrayList<>();
+        }
+        groups.add(membership);
     }
 }

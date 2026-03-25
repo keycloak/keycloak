@@ -10,7 +10,7 @@ import org.keycloak.Config;
 public abstract class AbstractCompatibilityMetadataProvider implements CompatibilityMetadataProvider {
 
     final String spi;
-    final Config.Scope config;
+    protected final Config.Scope config;
 
     public AbstractCompatibilityMetadataProvider(String spi, String providerId) {
         this.spi = spi;

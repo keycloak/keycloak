@@ -47,13 +47,7 @@ record JpaInvitationManager(KeycloakSession session, EntityManager em) implement
 
     @Override
     public OrganizationInvitationModel getById(String id) {
-        OrganizationInvitationEntity entity = em.find(OrganizationInvitationEntity.class, id);
-
-        if (entity == null) {
-            return null;
-        }
-
-        return entity;
+        return em.find(OrganizationInvitationEntity.class, id);
     }
 
     @Override
@@ -67,7 +61,10 @@ record JpaInvitationManager(KeycloakSession session, EntityManager em) implement
 
         for (Entry<Filter, String> filter : attributes.entrySet()) {
             switch (filter.getKey()) {
-                case EMAIL -> predicates.add(builder.like(root.get("email"), builder.literal("%" + filter.getValue().toLowerCase() + "%")));
+                case EMAIL -> {
+                    String escapedValue = filter.getValue().toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                    predicates.add(builder.like(root.get("email"), "%" + escapedValue + "%", '\\'));
+                }
                 case STATUS -> {
                     Status value = Status.valueOf(filter.getValue());
 
@@ -77,14 +74,21 @@ record JpaInvitationManager(KeycloakSession session, EntityManager em) implement
                         predicates.add(builder.greaterThanOrEqualTo(root.get("expiresAt"), Time.currentTime()));
                     }
                 }
-                case FIRST_NAME -> predicates.add(builder.equal(root.get("firstName"), builder.literal("%" + filter.getValue().toLowerCase() + "%")));
-                case LAST_NAME -> predicates.add(builder.equal(root.get("lastName"), builder.literal("%" + filter.getValue().toLowerCase() + "%")));
+                case FIRST_NAME -> {
+                    String escapedValue = filter.getValue().toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                    predicates.add(builder.like(builder.lower(root.get("firstName")), "%" + escapedValue + "%", '\\'));
+                }
+                case LAST_NAME -> {
+                    String escapedValue = filter.getValue().toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                    predicates.add(builder.like(builder.lower(root.get("lastName")), "%" + escapedValue + "%", '\\'));
+                }
                 case SEARCH -> {
-                    String searchValue = "%" + filter.getValue().toLowerCase() + "%";
+                    String escapedValue = filter.getValue().toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                    String searchValue = "%" + escapedValue + "%";
 
-                    Predicate emailPredicate = builder.like(builder.lower(root.get("email")), searchValue);
-                    Predicate firstNamePredicate = builder.like(builder.lower(root.get("firstName")), searchValue);
-                    Predicate lastNamePredicate = builder.like(builder.lower(root.get("lastName")), searchValue);
+                    Predicate emailPredicate = builder.like(builder.lower(root.get("email")), searchValue, '\\');
+                    Predicate firstNamePredicate = builder.like(builder.lower(root.get("firstName")), searchValue, '\\');
+                    Predicate lastNamePredicate = builder.like(builder.lower(root.get("lastName")), searchValue, '\\');
 
                     predicates.add(builder.or(emailPredicate, firstNamePredicate, lastNamePredicate));
                 }

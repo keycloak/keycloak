@@ -17,7 +17,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Test;
 
-@KeycloakIntegrationTest(config = JWTAuthorizationGrantTest.JWTAuthorizationGrantServerConfig.class)
+@KeycloakIntegrationTest
 public class JWTAuthorizationGrantJWTClaimsClientPoliciesTest extends BaseAbstractJWTAuthorizationGrantTest {
 
     @InjectRealm(config = JWTAuthorizationGrantRealmConfig.class)

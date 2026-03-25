@@ -179,26 +179,30 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                 return;
             }
             stateProvider.getDueScheduledSteps(workflow).forEach((scheduled) -> {
-                // check if the resource still meets the workflow's resource conditions
-                DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflow, scheduled);
-                EventBasedWorkflow provider = new EventBasedWorkflow(session, workflow.getSupportedType(), getWorkflowComponent(workflow.getId()));
-                if (!provider.validateResourceConditions(context)) {
-                    log.debugf("Resource %s is no longer eligible for workflow %s. Cancelling execution of the workflow.",
-                            scheduled.resourceId(), scheduled.workflowId());
-                    WorkflowProviderEvents.fireWorkflowDeactivatedEvent(session, workflow, scheduled.resourceId(),
-                            scheduled.executionId(), "Resource no longer meets workflow conditions");
-                    stateProvider.remove(scheduled.executionId());
-                } else {
-                    WorkflowStep step = context.getStep();
-                    if (step == null) {
-                        log.warnf("Could not find step %s in workflow %s for resource %s. Cancelling execution of the workflow.",
-                                scheduled.stepId(), scheduled.workflowId(), scheduled.resourceId());
+                try {
+                    // check if the resource still meets the workflow's resource conditions
+                    DefaultWorkflowExecutionContext context = new DefaultWorkflowExecutionContext(session, workflow, scheduled);
+                    EventBasedWorkflow provider = new EventBasedWorkflow(session, workflow.getSupportedType(), getWorkflowComponent(workflow.getId()));
+                    if (!provider.validateResourceConditions(context)) {
+                        log.debugf("Resource %s is no longer eligible for workflow %s. Cancelling execution of the workflow.",
+                                scheduled.resourceId(), scheduled.workflowId());
                         WorkflowProviderEvents.fireWorkflowDeactivatedEvent(session, workflow, scheduled.resourceId(),
-                                scheduled.executionId(), "Step not found in workflow");
+                                scheduled.executionId(), "Resource no longer meets workflow conditions");
                         stateProvider.remove(scheduled.executionId());
                     } else {
-                        runWorkflow(context);
+                        WorkflowStep step = context.getStep();
+                        if (step == null) {
+                            log.warnf("Could not find step %s in workflow %s for resource %s. Cancelling execution of the workflow.",
+                                    scheduled.stepId(), scheduled.workflowId(), scheduled.resourceId());
+                            WorkflowProviderEvents.fireWorkflowDeactivatedEvent(session, workflow, scheduled.resourceId(),
+                                    scheduled.executionId(), "Step not found in workflow");
+                            stateProvider.remove(scheduled.executionId());
+                        } else {
+                            runWorkflow(context);
+                        }
                     }
+                } catch(Exception e) {
+                    log.warnf(e, "Error resuming workflow %s for resource %s: %s", scheduled.workflowId(), scheduled.resourceId(), e.getMessage());
                 }
             });
         });
@@ -417,11 +421,8 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
                         stateProvider.remove(executionId);
                     }
                 }
-            } catch (WorkflowInvalidStateException e) {
-                workflow.setEnabled(false);
-                workflow.setError(e.getMessage());
-                workflow.updateConfig(workflow.getConfig(), null);
-                log.warnf("Workflow %s was disabled due to: %s", workflow.getId(), e.getMessage());
+            } catch (Exception e) {
+                log.warnf("Error processing event %s for workflow %s: %s", event.getEventProviderId(), workflow.getName(), e.getMessage());
             }
         });
     }
@@ -484,9 +485,10 @@ public class DefaultWorkflowProvider implements WorkflowProvider {
     }
 
     private void scheduleWorkflow(Workflow workflow) {
+        // only start the task if the workflow is enabled and has a schedule configured
         String scheduled = workflow.getConfig().getFirst(WorkflowConstants.CONFIG_SCHEDULE_AFTER);
 
-        if (scheduled != null) {
+        if (workflow.isEnabled() && scheduled != null) {
             Duration duration = DurationConverter.parseDuration(scheduled);
             TimerProvider timer = session.getProvider(TimerProvider.class);
             timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ScheduledWorkflowRunner(workflow.getId(), realm.getId()), duration.toMillis()), duration.toMillis());

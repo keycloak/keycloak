@@ -392,6 +392,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public int getMaxSecondaryAuthFailures() {
+        return getAttribute("maxSecondaryAuthFailures", 0);
+    }
+
+    @Override
+    public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+        setAttribute("maxSecondaryAuthFailures", maxSecondaryAuthFailures);
+    }
+
+    @Override
     public boolean isVerifyEmail() {
         return realm.isVerifyEmail();
     }

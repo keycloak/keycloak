@@ -114,7 +114,9 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
 
         UserEntity entity = new UserEntity();
         entity.setId(id);
-        entity.setCreatedTimestamp(System.currentTimeMillis());
+        long now = Time.currentTimeMillis();
+        entity.setCreatedTimestamp(now);
+        entity.setLastModifiedTimestamp(now);
         entity.setUsername(username.toLowerCase());
         entity.setRealmId(realm.getId());
         em.persist(entity);
@@ -988,9 +990,10 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
             orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
             orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
         } else {
+            boolean endsWithWildcard = value.endsWith("*");
             value = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
             value = value.replace("*", "%");
-            if (value.isEmpty() || value.charAt(value.length() - 1) != '%') value += "%";
+            if (value.isEmpty() || !endsWithWildcard) value += "%";
 
             orPredicates.add(builder.like(from.get(USERNAME), value, ESCAPE_BACKSLASH));
             orPredicates.add(builder.like(from.get(EMAIL), value, ESCAPE_BACKSLASH));

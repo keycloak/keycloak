@@ -81,4 +81,13 @@ public interface OrganizationMemberResource {
             @QueryParam("first") Integer firstResult,
             @QueryParam("max") Integer maxResults,
             @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
+
+    @Path("groups")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> groups(
+            @QueryParam("first") Integer firstResult,
+            @QueryParam("max") Integer maxResults,
+            @QueryParam("search") String search,
+            @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 }

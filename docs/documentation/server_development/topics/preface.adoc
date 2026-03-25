@@ -2,7 +2,7 @@
 
 === Container Images
 
-The official {project_name} container image uses OpenJDK {jdk_version_recommended} as the Java runtime environment.
+The official {project_name} container image uses OpenJDK {jdk_version_container} as the Java runtime environment.
 Consider this when writing custom extensions.
 
 === Example Listings

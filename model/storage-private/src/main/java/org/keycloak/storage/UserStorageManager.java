@@ -59,6 +59,7 @@ import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.models.utils.StorageUnavailableUserModelDelegate;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.datastore.DefaultDatastoreProvider;
@@ -168,7 +169,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return validated;
         } catch (Exception e) {
             logger.warnf(e, "User storage provider %s failed during federated user validation", model.getName());
-            return new ReadOnlyUserModelDelegate(user, false, ignore -> new ReadOnlyException("The user is read-only. The user storage provider '" + model.getName() + "' is currently unavailable. Check the server logs for more details."));
+            return new StorageUnavailableUserModelDelegate(user, ignore -> new ReadOnlyException("The user is read-only. The user storage provider '" + model.getName() + "' is currently unavailable. Check the server logs for more details."));
         }
     }
 

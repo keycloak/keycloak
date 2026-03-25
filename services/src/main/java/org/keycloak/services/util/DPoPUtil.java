@@ -195,6 +195,9 @@ public class DPoPUtil {
             throw new VerificationException("No JWK in DPoP header");
         } else {
             key = JWKSUtils.getKeyWrapper(jwk);
+            if (key == null) {
+                throw new VerificationException("Unsupported key type in DPoP header");
+            }
             if (key.getPublicKey() == null) {
                 throw new VerificationException("No public key in DPoP header");
             }

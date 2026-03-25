@@ -46,9 +46,10 @@ public class ScimClientSupplier implements Supplier<ScimClient, InjectScimClient
                 UserRepresentation serviceAccountUser = managedRealm.admin().clients().get(id).getServiceAccountUser();
                 ClientRepresentation realmMgmtClient = managedRealm.admin().clients().findByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID).get(0);
                 RoleResource manageUsersRole = managedRealm.admin().clients().get(realmMgmtClient.getId()).roles().get(AdminRoles.MANAGE_USERS);
+                RoleResource viewRealmRole = managedRealm.admin().clients().get(realmMgmtClient.getId()).roles().get(AdminRoles.VIEW_REALM);
                 managedRealm.admin().users().get(serviceAccountUser.getId()).roles()
                         .clientLevel(realmMgmtClient.getId())
-                        .add(List.of(manageUsersRole.toRepresentation()));
+                        .add(List.of(manageUsersRole.toRepresentation(), viewRealmRole.toRepresentation()));
             }
         }
 

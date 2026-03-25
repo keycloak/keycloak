@@ -30,7 +30,7 @@ import org.keycloak.testframework.realm.RealmConfigBuilder;
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest(config = JWTAuthorizationGrantTest.JWTAuthorizationGrantServerConfig.class)
+@KeycloakIntegrationTest
 public class JWTNegativeIdentityProviderConditionDownscopeClientPoliciesTest extends JWTAuthorizationGrantDownscopeClientPoliciesTest {
 
     @InjectRealm(config = JWTAuthorizationGranthRealmConfig.class)
