@@ -26,7 +26,8 @@ const CodeEditor = ({
         padding={15}
         minHeight={height}
         style={{
-          fontFamily: '"Liberation Mono", "Courier New", Courier, monospace',
+          fontFamily:
+            'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace',
           fontSize: "16px",
         }}
         onChange={(event) => onChange?.(event.target.value)}
