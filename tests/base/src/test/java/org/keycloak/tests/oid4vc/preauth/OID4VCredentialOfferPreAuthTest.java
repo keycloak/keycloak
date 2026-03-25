@@ -1,4 +1,4 @@
-package org.keycloak.tests.oid4vc;
+package org.keycloak.tests.oid4vc.preauth;
 
 import java.net.URI;
 import java.util.List;
@@ -9,9 +9,11 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
+import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -37,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * +----------+----------+---------+------------------------------------------------------+
  */
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
-public class OID4VCPreAuthorizedCodeOfferTest extends OID4VCIssuerTestBase {
+public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
     OID4VCBasicWallet wallet;
 
@@ -45,13 +47,6 @@ public class OID4VCPreAuthorizedCodeOfferTest extends OID4VCIssuerTestBase {
     void beforeEach() {
         wallet = new OID4VCBasicWallet(keycloak, oauth);
         wallet.logout();
-    }
-
-    @Test
-    public void testRealmSetup() {
-        RealmRepresentation realmRep = testRealm.admin().toRepresentation();
-        assertEquals(shouldEnableOid4vci(realmRep), realmRep.isVerifiableCredentialsEnabled());
-        assertEquals(shouldEnableOid4vci(client), isOid4vciEnabled(client));
     }
 
     @Test

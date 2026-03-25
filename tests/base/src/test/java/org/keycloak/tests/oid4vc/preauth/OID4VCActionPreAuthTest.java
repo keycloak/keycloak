@@ -1,4 +1,4 @@
-package org.keycloak.tests.oid4vc;
+package org.keycloak.tests.oid4vc.preauth;
 
 
 import org.keycloak.events.Details;
@@ -12,6 +12,9 @@ import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.OID4VCCredentialOfferPage;
 import org.keycloak.tests.common.TestRealmUserConfig;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
+import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
+import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 

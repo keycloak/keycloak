@@ -174,6 +174,21 @@ public class AuthorizationTest extends AbstractScimTest {
     }
 
     @Test
+    public void testDiscoveryEndpointsDeniedIfRolesNotGranted() {
+        assertAccessDenied(() -> noAccessClient.config().get());
+        assertAccessDenied(() -> noAccessClient.schemas().getAll());
+        assertAccessDenied(() -> noAccessClient.resourceTypes().getAll());
+    }
+
+    @Test
+    public void testDiscoveryEndpointsAccessIfViewRealmRoleGranted() {
+        grantAdminRole(AdminRoles.VIEW_REALM);
+        assertNotNull(noAccessClient.config().get());
+        assertNotNull(noAccessClient.schemas().getAll());
+        assertNotNull(noAccessClient.resourceTypes().getAll());
+    }
+
+    @Test
     public void testGroupsCanQueryIfQueryRoleGranted() {
         createGroup();
         grantAdminRole(AdminRoles.QUERY_GROUPS);

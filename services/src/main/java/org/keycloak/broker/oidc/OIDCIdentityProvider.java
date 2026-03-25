@@ -351,11 +351,16 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     }
 
     private void updateUserSessionFromRefresh(UserSessionModel tokenUserSession, AccessTokenResponse newResponse, int currentTime) {
-        long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + newResponse.getExpiresIn() : 0;
-        tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
-        tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
-        tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
-        tokenUserSession.setNote(FEDERATED_ID_TOKEN, newResponse.getIdToken());
+        final boolean isStoreTokenInSession = getConfig().isStoreTokenInSession();
+        if (isStoreTokenInSession) {
+            long accessTokenExpiration = newResponse.getExpiresIn() > 0 ? currentTime + newResponse.getExpiresIn() : 0;
+            tokenUserSession.setNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(accessTokenExpiration));
+            tokenUserSession.setNote(FEDERATED_REFRESH_TOKEN, newResponse.getRefreshToken());
+            tokenUserSession.setNote(FEDERATED_ACCESS_TOKEN, newResponse.getToken());
+        }
+        if (newResponse.getIdToken() != null && (isStoreTokenInSession || getConfig().isSendIdTokenOnLogout())) {
+            tokenUserSession.setNote(FEDERATED_ID_TOKEN, newResponse.getIdToken());
+        }
     }
 
     @Override
@@ -815,13 +820,18 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     public void authenticationFinished(AuthenticationSessionModel authSession, BrokeredIdentityContext context) {
+        final boolean isStoreTokenInSession = getConfig().isStoreTokenInSession();
         AccessTokenResponse tokenResponse = (AccessTokenResponse) context.getContextData().get(FEDERATED_ACCESS_TOKEN_RESPONSE);
-        int currentTime = Time.currentTime();
-        long expiration = tokenResponse.getExpiresIn() > 0 ? tokenResponse.getExpiresIn() + currentTime : 0;
-        authSession.setUserSessionNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(expiration));
-        authSession.setUserSessionNote(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
-        authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, tokenResponse.getToken());
-        authSession.setUserSessionNote(FEDERATED_ID_TOKEN, tokenResponse.getIdToken());
+        if (isStoreTokenInSession) {
+            int currentTime = Time.currentTime();
+            long expiration = tokenResponse.getExpiresIn() > 0 ? tokenResponse.getExpiresIn() + currentTime : 0;
+            authSession.setUserSessionNote(FEDERATED_TOKEN_EXPIRATION, Long.toString(expiration));
+            authSession.setUserSessionNote(FEDERATED_REFRESH_TOKEN, tokenResponse.getRefreshToken());
+            authSession.setUserSessionNote(FEDERATED_ACCESS_TOKEN, tokenResponse.getToken());
+        }
+        if (isStoreTokenInSession || getConfig().isSendIdTokenOnLogout()) {
+            authSession.setUserSessionNote(FEDERATED_ID_TOKEN, tokenResponse.getIdToken());
+        }
     }
 
     @Override

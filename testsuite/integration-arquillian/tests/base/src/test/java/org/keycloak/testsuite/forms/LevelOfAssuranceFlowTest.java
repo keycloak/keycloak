@@ -55,11 +55,13 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
@@ -847,6 +849,38 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
                 Assert.assertEquals(204, response.getStatus());
             }
             Assert.assertNull(accountRestClient.getCredentialByUserLabel("totp2-label"));
+        }
+    }
+
+    // Test that LoA enforcement works for the case when there is "AuthenticationFlowBindingOverride" with the enforced LoA flow for the particular client
+    @Test
+    public void testWithMultipleOTPCodes_clientSpecificAuthenticationFlow() throws Exception {
+        List<AuthenticationFlowRepresentation> flows = testRealm().flows().getFlows();
+
+        // Set default browser flow for realm
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setBrowserFlow(DefaultAuthenticationFlows.BROWSER_FLOW);
+        testRealm().update(realm);
+
+        // Override step-up flow just for the client
+        AuthenticationFlowRepresentation stepUpFlowRepresentation = AbstractAuthenticationTest.findFlowByAlias(FLOW_ALIAS, flows);
+        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientRepresentation testClientRep = testClient.toRepresentation();
+        testClientRep.setAuthenticationFlowBindingOverrides(
+                Map.of(DefaultAuthenticationFlows.BROWSER_FLOW, stepUpFlowRepresentation.getId())
+        );
+        testClient.update(testClientRep);
+
+        try {
+            testWithMultipleOTPCodes();
+        } finally {
+            // Revert
+            testClientRep.setAuthenticationFlowBindingOverrides(
+                    Map.of(DefaultAuthenticationFlows.BROWSER_FLOW, "")
+            );
+            testClient.update(testClientRep);
+            realm.setBrowserFlow(FLOW_ALIAS);
+            testRealm().update(realm);
         }
     }
 

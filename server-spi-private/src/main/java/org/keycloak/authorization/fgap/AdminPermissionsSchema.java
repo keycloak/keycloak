@@ -69,6 +69,8 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 public class AdminPermissionsSchema extends AuthorizationSchema {
 
+    public static final String REALMS_RESOURCE_TYPE = "Realms";
+
     public static final String CLIENTS_RESOURCE_TYPE = "Clients";
     public static final String GROUPS_RESOURCE_TYPE = "Groups";
     public static final String ROLES_RESOURCE_TYPE = "Roles";
@@ -121,7 +123,7 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         ));
     }
 
-    public Resource getOrCreateResource(KeycloakSession session, ResourceServer resourceServer, String policyType, String resourceType, String id) {
+    public Resource getOrCreateResource(KeycloakSession session, ResourceServer resourceServer, String resourceType, String id) {
         if (!supportsAuthorizationSchema(session, resourceServer)) {
             return null;
         }
@@ -137,10 +139,14 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         String name;
 
         switch (resourceType) {
-            case CLIENTS_RESOURCE_TYPE -> name = resolveClient(session, id).map(ClientModel::getId).orElse(resourceType);
-            case GROUPS_RESOURCE_TYPE -> name = resolveGroup(session, id).map(GroupModel::getId).orElse(resourceType);
-            case ROLES_RESOURCE_TYPE -> name = resolveRole(session, id).map(RoleModel::getId).orElse(resourceType);
-            case USERS_RESOURCE_TYPE -> name = resolveUser(session, id).map(UserModel::getId).orElse(resourceType);
+            case CLIENTS_RESOURCE_TYPE -> name = resolveClient(session, id).map(ClientModel::getId)
+                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
+            case GROUPS_RESOURCE_TYPE -> name = resolveGroup(session, id).map(GroupModel::getId)
+                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
+            case ROLES_RESOURCE_TYPE -> name = resolveRole(session, id).map(RoleModel::getId)
+                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
+            case USERS_RESOURCE_TYPE -> name = resolveUser(session, id).map(UserModel::getId)
+                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
 
             default -> throw new IllegalStateException("Resource type [" + resourceType + "] not found.");
         }

@@ -7,16 +7,17 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.models.Permissions;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.services.resources.admin.fgap.GroupPermissionEvaluator;
+import org.keycloak.services.resources.admin.fgap.RealmPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
 
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.GROUPS_RESOURCE_TYPE;
+import static org.keycloak.authorization.fgap.AdminPermissionsSchema.REALMS_RESOURCE_TYPE;
 import static org.keycloak.authorization.fgap.AdminPermissionsSchema.USERS_RESOURCE_TYPE;
 
 public class DefaultPermissions implements Permissions {
@@ -40,6 +41,7 @@ public class DefaultPermissions implements Permissions {
         return switch (realmResourceType) {
             case USERS_RESOURCE_TYPE -> evaluateUserPermission(model, scope);
             case GROUPS_RESOURCE_TYPE -> evaluateGroupPermission(model, scope);
+            case REALMS_RESOURCE_TYPE -> evaluateRealmPermission(scope);
             default -> false;
         };
     }
@@ -82,14 +84,24 @@ public class DefaultPermissions implements Permissions {
         return false;
     }
 
-    private RealmModel getRealm() {
-        return context.getRealm();
+    private boolean evaluateRealmPermission(String scope) {
+        Token token = context.getBearerToken();
+
+        if (token instanceof AccessToken accessToken) {
+            AdminPermissionEvaluator evaluator = getEvaluator(accessToken);
+            RealmPermissionEvaluator realms = evaluator.realm();
+
+            if (AdminPermissionsSchema.VIEW.equals(scope)) {
+                return realms.canViewRealm();
+            }
+        }
+
+        return false;
     }
 
     private AdminPermissionEvaluator getEvaluator(AccessToken accessToken) {
         if (realmAuth == null) {
-            RealmModel realm = getRealm();
-            realmAuth = AdminPermissions.evaluator(session, realm, new AdminAuth(realm, accessToken, context.getUser(), context.getClient()));
+            realmAuth = AdminPermissions.evaluator(session, context.getRealm(), new AdminAuth(context.getRealm(), accessToken, context.getUser(), context.getClient()));
         }
         return realmAuth;
     }

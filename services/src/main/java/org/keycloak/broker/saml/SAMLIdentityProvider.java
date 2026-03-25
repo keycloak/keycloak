@@ -287,7 +287,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     @Override
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
         String token = null;
-        if (userSession != null) {
+        if (userSession != null && getConfig().isStoreTokenInSession()) {
             token = getFederatedAccessToken(userSession);
         }
 

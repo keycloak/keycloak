@@ -388,7 +388,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCIssuerTestBase {
         }
     }
 
-    protected class CredentialResponseHandler {
+    public static class CredentialResponseHandler {
         final Logger log = Logger.getLogger(OID4VCIssuerEndpointTest.class);
 
         protected void handleCredentialResponse(CredentialResponse credentialResponse, ClientScopeRepresentation clientScope) throws VerificationException {

@@ -103,6 +103,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.JsonUtils;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
@@ -309,8 +310,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
         UriInfo uriInfo = session.getContext().getUri();
         Response response = null;
-        if (userSession != null) {
-            // use the session if present, only in V2
+        if (userSession != null && getConfig().isStoreTokenInSession()) {
+            // use the session if present and configured to be used, only in V2
             String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
             brokerId = brokerId == null ? userSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
             String federatedAccessToken = userSession.getNote(FEDERATED_ACCESS_TOKEN);
@@ -592,22 +593,22 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     /**
-     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null.
+     * Get JSON property as text.
+     *
+     * <p>Supports literal keys containing dots and nested lookup via dot-notation (e.g. "data.id" resolves
+     * json.data.id). Use backslash escaping for literal dots in nested paths (e.g. "data\.id" matches key "data.id").
+     * See {@link org.keycloak.utils.JsonUtils#splitClaimPath(String)}.
+     *
+     * <p>Resolution order: 1) Exact key match (literal) 2) Nested path lookup
+     *
+     * <p>JSON numbers and booleans are converted to text. Empty string is converted to null.
      *
      * @param jsonNode to get property from
-     * @param name of property to get
+     * @param name of property to get (supports dot-notation for nested paths, backslash-escaped dots for literal keys)
      * @return string value of the property or null.
      */
     public String getJsonProperty(JsonNode jsonNode, String name) {
-        if (jsonNode.has(name) && !jsonNode.get(name).isNull()) {
-            String s = jsonNode.get(name).asText();
-            if(s != null && !s.isEmpty())
-                return s;
-            else
-                return null;
-        }
-
-        return null;
+        return Optional.ofNullable(JsonUtils.getJsonValue(jsonNode, name)).map(Object::toString).orElse(null);
     }
 
     public JsonNode asJsonNode(String json) throws IOException {
@@ -1096,12 +1097,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     @Override
     public void exchangeExternalComplete(UserSessionModel userSession, BrokeredIdentityContext context, MultivaluedMap<String, String> params) {
-        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ACCESS_TOKEN))
-            userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
-        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN))
-            userSession.setNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
-        userSession.setNote(OIDCIdentityProvider.EXCHANGE_PROVIDER, getConfig().getAlias());
-
+        if (getConfig().isStoreTokenInSession()) {
+            if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ACCESS_TOKEN)) {
+                userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+            }
+            if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN)) {
+                userSession.setNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+            }
+            userSession.setNote(OIDCIdentityProvider.EXCHANGE_PROVIDER, getConfig().getAlias());
+        }
     }
 
     @Override

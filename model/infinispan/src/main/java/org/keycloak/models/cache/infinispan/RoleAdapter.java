@@ -142,7 +142,7 @@ public class RoleAdapter implements RoleModel {
 
         if (composites == null) {
             composites = new HashSet<>();
-            for (String id : cached.getComposites(session, modelSupplier)) {
+            for (String id : cached.getComposites(session, modelSupplier).ids()) {
                 RoleModel role = realm.getRoleById(id);
                 if (role == null) {
                     // chance that composite role was removed, so invalidate this entry and fallback to delegate
@@ -160,7 +160,7 @@ public class RoleAdapter implements RoleModel {
     public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
         if (isUpdated()) return updated.getCompositesStream(search, first, max);
 
-        return cacheSession.getRoleDelegate().getRolesStream(realm, cached.getComposites(session, modelSupplier).stream(), search, first, max);
+        return cacheSession.getRoleDelegate().getRolesStream(realm, cached.getComposites(session, modelSupplier).ids().stream(), search, first, max);
     }
 
     @Override
@@ -243,7 +243,7 @@ public class RoleAdapter implements RoleModel {
         return cached.getAttributes(session, modelSupplier);
     }
 
-    private RoleModel getRoleModel() {
+    protected RoleModel getRoleModel() {
         return cacheSession.getRoleDelegate().getRoleById(realm, cached.getId());
     }
 

@@ -70,10 +70,12 @@ public final class Util {
      */
     public static Properties readProperties(File _file) {
         if (_file.exists()) {
-            try {
-                return readProperties(new FileInputStream(_file));
+            try (FileInputStream fle = new FileInputStream(_file)) {
+                return readProperties(fle);
             } catch (FileNotFoundException _ex) {
                 LOGGER.info("Could not load properties file: " + _file, _ex);
+            } catch (IOException e) {
+                LOGGER.warn("Could not read properties: ", e);
             }
         }
         return null;
@@ -84,7 +86,7 @@ public final class Util {
      * @param _stream input stream providing property file content
      * @return properties object/null
      */
-    public static Properties readProperties(InputStream _stream) {
+    private static Properties readProperties(InputStream _stream) {
         Properties props = new Properties();
         if (_stream == null) {
             return null;
@@ -94,7 +96,7 @@ public final class Util {
             props.load(_stream);
             return props;
         } catch (IOException | NumberFormatException _ex) {
-            LOGGER.warn("Could not properties: ", _ex);
+            LOGGER.warn("Could not read properties: ", _ex);
         }
         return null;
     }
