@@ -94,6 +94,7 @@ public final class OIDCConfigAttributes {
     
     public static final String STANDARD_TOKEN_EXCHANGE_ENABLED = "standard.token.exchange.enabled";
     public static final String STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED = "standard.token.exchange.enableRefreshRequestedTokenType";
+    public static final String STANDARD_TOKEN_EXCHANGE_REFRESH_AS_SUBJECT_ENABLED = "standard.token.exchange.enableRefreshSubjectTokenType";
 
     public static final String JWT_AUTHORIZATION_GRANT_ENABLED = "oauth2.jwt.authorization.grant.enabled";
     public static final String JWT_AUTHORIZATION_GRANT_IDP = "oauth2.jwt.authorization.grant.idp";
