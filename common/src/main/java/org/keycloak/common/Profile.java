@@ -151,7 +151,7 @@ public class Profile {
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEPRECATED, 1),
         ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.DEFAULT, 2),
 
-        WORKFLOWS("Workflows", Type.PREVIEW),
+        WORKFLOWS("Workflows", Type.DEFAULT),
 
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.DEFAULT),
 
