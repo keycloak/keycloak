@@ -59,6 +59,10 @@ public class SecretGenerator {
         return id;
     }
 
+    public static int nextInt(int bound) {
+        return SECURE_RANDOM.nextInt(bound);
+    }
+
     public String randomString() {
         return randomString(SECRET_LENGTH_256_BITS, ALPHANUM);
     }

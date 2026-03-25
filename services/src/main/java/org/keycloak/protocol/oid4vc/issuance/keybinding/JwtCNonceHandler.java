@@ -26,12 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 
 import jakarta.annotation.Nullable;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.crypto.Algorithm;
@@ -82,7 +82,7 @@ public class JwtCNonceHandler implements CNonceHandler {
         audiences = Optional.ofNullable(audiences).orElseGet(Collections::emptyList);
         final long nowSeconds = Time.currentTime();
         final long expiresAt = nowSeconds + nonceLifetimeSeconds;
-        final int nonceLength = NONCE_DEFAULT_LENGTH + new Random().nextInt(NONCE_LENGTH_RANDOM_OFFSET);
+        final int nonceLength = NONCE_DEFAULT_LENGTH + SecretGenerator.nextInt(NONCE_LENGTH_RANDOM_OFFSET);
         // this generated value itself is basically just a salt-value for the generated token, which itself is the nonce.
         final String strongSalt = Base64.getEncoder().encodeToString(RandomSecret.createRandomSecret(nonceLength));
 
