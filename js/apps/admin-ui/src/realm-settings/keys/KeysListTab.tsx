@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { KeycloakSpinner } from "@keycloak/keycloak-ui-shared";
 import { ListEmptyState } from "@keycloak/keycloak-ui-shared";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { emptyFormatter } from "../../util";
@@ -94,12 +95,12 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
 
   const { realm } = useRealm();
 
-  const [keyData, setKeyData] = useState<KeyData[]>([]);
+  const [keyData, setKeyData] = useState<KeyData[] | undefined>();
 
   const [filter, setFilter] = useState<string>(FILTER_OPTIONS[0]);
 
   const filteredKeyData = useMemo(
-    () => keyData.filter(({ status }) => status === filter),
+    () => keyData?.filter(({ status }) => status === filter),
     [keyData, filter],
   );
 
@@ -133,6 +134,10 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
     continueButtonVariant: ButtonVariant.primary,
     onConfirm: () => Promise.resolve(),
   });
+
+  if (!keyData) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <PageSection variant="light" padding={{ default: "noPadding" }}>
