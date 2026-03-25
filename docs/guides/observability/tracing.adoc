@@ -5,7 +5,7 @@
 <#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide title="Root cause analysis with tracing"
-summary="Record information during the request lifecycle with OpenTelementry tracing to identify root cases for latencies and errors in {project_name} and connected systems."
+summary="Record information during the request lifecycle with OpenTelemetry tracing to identify root cases for latencies and errors in {project_name} and connected systems."
 includedOptions="tracing-* log-*-include-trace">
 
 This {section} explains how you can enable and configure distributed tracing in {project_name} by utilizing https://opentelemetry.io/[OpenTelemetry] (OTel).
