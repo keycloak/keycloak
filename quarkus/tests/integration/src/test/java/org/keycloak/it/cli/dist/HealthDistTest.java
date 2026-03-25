@@ -108,6 +108,13 @@ public class HealthDistTest {
     }
 
     @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--server-async-bootstrap=true" })
+    void testAsyncStartupEnabledAsNoHealthIsPresentButUserAsksForIt(LaunchResult result) {
+        assertTrue(result.getOutput().indexOf(LISTENING_ON_HTTP) < result.getOutput().indexOf(BOOTSTRAP_COMPLETED),
+                () -> "Should listen, then bootstrap");
+    }
+
+    @Test
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     void testAsyncStartupDisabledAsNoHealthIsPresent(LaunchResult result) {
         assertTrue(result.getOutput().indexOf(LISTENING_ON_HTTP) > result.getOutput().indexOf(BOOTSTRAP_COMPLETED),
