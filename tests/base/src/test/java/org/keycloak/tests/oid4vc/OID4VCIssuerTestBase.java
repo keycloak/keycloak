@@ -174,6 +174,12 @@ public abstract class OID4VCIssuerTestBase {
                 .orElse(null);
     }
 
+    protected UserRepresentation getExistingUser(String username) {
+        return testRealm.admin().users().search(username).stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No such user: " + username));
+    }
+
     protected KeyWrapper getRsaKey(KeyUse keyUse, String algorithm, String keyName) {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");

@@ -49,8 +49,7 @@ import org.keycloak.protocol.oid4vc.model.JwtCNonce;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.saml.RandomSecret;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 /**
  * @author Pascal Knüppel
@@ -63,7 +62,7 @@ public class JwtCNonceHandler implements CNonceHandler {
 
     public static final int NONCE_LENGTH_RANDOM_OFFSET = 15;
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtCNonceHandler.class);
+    private static final Logger logger = Logger.getLogger(JwtCNonceHandler.class);
 
     private final KeycloakSession keycloakSession;
 
@@ -189,7 +188,7 @@ public class JwtCNonceHandler implements CNonceHandler {
         try {
             signingKey = keycloakSession.keys().getActiveKey(realm, KeyUse.SIG, Algorithm.ES256);
         } catch (RuntimeException ex) {
-            logger.debug("Failed to find active ES256 signing key for realm {}. Falling back to RSA...",
+            logger.debugf("Failed to find active ES256 signing key for realm %s. Falling back to RSA...",
                          realm.getName());
             logger.debug(ex.getMessage(), ex);
             // use RSA only as fallback since the preferred algorithm by OpenID4VC is elliptic curve

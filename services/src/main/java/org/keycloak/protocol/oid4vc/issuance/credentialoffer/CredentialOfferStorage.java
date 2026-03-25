@@ -26,8 +26,6 @@ public interface CredentialOfferStorage extends Provider {
 
     CredentialOfferState getOfferStateByNonce(String nonce);
 
-    CredentialOfferState getOfferStateByPreAuthCode(String code);
-
     void removeOfferState(CredentialOfferState entry);
 
     @Override
