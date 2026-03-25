@@ -4,31 +4,28 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 
-import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
-
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * SD-JWT-specific authorization_details tests for scope + authorization_code grant.
+ * JWT-specific authorization_details tests for scope + authorization_code grant.
  */
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerConfig.class)
-public class OID4VCSdJwtAuthorizationCodeAuthorizationDetailsFlowTest extends OID4VCAuthorizationCodeAuthorizationDetailsFlowTestBase {
+public class OID4VCJwtAuthorizationDetailsFlowTest extends OID4VCAuthorizationDetailsFlowTestBase {
 
     @Override
     protected ClientScopeRepresentation getCredentialClientScope() {
-        return sdJwtTypeCredentialScope;
+        return jwtTypeCredentialScope;
     }
 
     @Override
     protected void verifyCredentialStructure(Object credentialObj) {
         assertNotNull(credentialObj, "Credential object should not be null");
 
-        assertTrue(credentialObj instanceof String, "SD-JWT credential should be a string");
-        String sdJwtString = (String) credentialObj;
-        assertFalse(sdJwtString.isEmpty(), "SD-JWT credential should not be empty");
-        assertTrue(sdJwtString.contains("."), "SD-JWT should contain dots");
-        assertTrue(sdJwtString.contains(SDJWT_DELIMITER), "SD-JWT should contain tilde");
+        assertTrue(credentialObj instanceof String, "JWT credential should be a string");
+        String jwtString = (String) credentialObj;
+        assertFalse(jwtString.isEmpty(), "JWT credential should not be empty");
+        assertTrue(jwtString.contains("."), "JWT should contain dots");
     }
 }
