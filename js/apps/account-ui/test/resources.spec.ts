@@ -11,8 +11,8 @@ test.describe("Resources", () => {
     );
 
     await login(page, testBed.realm);
-    const responsePromise = page.waitForResponse(resp =>
-          resp.url().includes('/realms/') && resp.status() === 200
+    const responsePromise = page.waitForResponse(
+      (resp) => resp.url().includes("/realms/") && resp.status() === 200,
     );
 
     await page.getByTestId("resources").click();
@@ -27,9 +27,6 @@ test.describe("Resources", () => {
     );
 
     await login(page, testBed.realm, "alice", "alice");
-    
-    await page.waitForTimeout(1000);
-    
     await page.getByTestId("resources").click();
     await page.getByTestId("sharedWithMe").click();
 
