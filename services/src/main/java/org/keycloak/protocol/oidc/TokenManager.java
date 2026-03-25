@@ -717,6 +717,7 @@ public class TokenManager {
 
         Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false);
 
+        OrganizationScope orgScope = tryResolveOrganizationScope(session, scopeParam, user);
         // Add optional client scopes requested by scope parameter
         return Stream.concat(parseScopeParameter(scopeParam)
                         .map(name -> {
@@ -726,13 +727,13 @@ public class TokenManager {
                                 return scope;
                             }
 
-                            return tryResolveDynamicClientScope(session, scopeParam, user, name);
+                            return tryResolveOrganizationClientScope(session, user, orgScope, name);
                         })
                         .filter(Objects::nonNull),
                 clientScopes).distinct();
     }
 
-    private static ClientScopeModel tryResolveDynamicClientScope(KeycloakSession session, String scopeParam, UserModel user, String name) {
+    private static OrganizationScope tryResolveOrganizationScope(KeycloakSession session, String scopeParam, UserModel user) {
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             OrganizationScope orgScope = OrganizationScope.valueOfScope(session, scopeParam);
 
@@ -744,10 +745,14 @@ public class TokenManager {
                 return null;
             }
 
-            return orgScope.toClientScope(name, user, session);
+            return orgScope;
+        } else {
+            return null;
         }
+    }
 
-        return null;
+    private static ClientScopeModel tryResolveOrganizationClientScope(KeycloakSession session, UserModel user, OrganizationScope orgScope, String name) {
+        return orgScope == null ? null : orgScope.toClientScope(name, user, session);
     }
 
     /**
