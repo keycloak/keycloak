@@ -37,6 +37,9 @@ import org.jboss.jandex.Index;
 import org.jboss.jandex.Indexer;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.representations.admin.v2.validation.CreateClient;
+import org.keycloak.representations.admin.v2.validation.PatchClient;
+import org.keycloak.representations.admin.v2.validation.PutClient;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -67,9 +70,9 @@ public class ValidationAnnotationScannerTest {
         index = createIndex(
                 TestRepresentation.class,
                 TestWithGroups.class,
-                CreateTestResource.class,
-                PutTestResource.class,
-                PatchTestResource.class
+                CreateClient.class,
+                PutClient.class,
+                PatchClient.class
         );
     }
 
@@ -255,20 +258,16 @@ public class ValidationAnnotationScannerTest {
 
     @SuppressWarnings("unused")
     public static class TestWithGroups {
-        @NotBlank(groups = CreateTestResource.class)
+        @NotBlank(groups = CreateClient.class)
         private String createOnly;
 
-        @NotNull(groups = PutTestResource.class)
+        @NotNull(groups = PutClient.class)
         private String updateOnly;
 
-        @NotBlank(groups = PatchTestResource.class)
+        @NotBlank(groups = PatchClient.class)
         private String patchOnly;
 
-        @NotBlank(groups = {CreateTestResource.class, PutTestResource.class})
+        @NotBlank(groups = {CreateClient.class, PutClient.class})
         private String createAndUpdate;
     }
-
-    public interface CreateTestResource {}
-    public interface PutTestResource {}
-    public interface PatchTestResource {}
 }
