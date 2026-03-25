@@ -26,6 +26,9 @@ import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
+import org.keycloak.representations.admin.v2.validation.CreateClient;
+import org.keycloak.representations.admin.v2.validation.PatchClient;
+import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
 
 /**
@@ -62,11 +65,15 @@ public class ValidationAnnotationScanner {
     private static final DotName UUID_UNMODIFIED = DotName.createSimple(UuidUnmodified.class);
     private static final DotName CLIENT_SECRET_NOT_BLANK = DotName.createSimple(ClientSecretNotBlank.class);
 
-    // Validation group operation prefixes mapped to their human-readable context
-    private static final Map<String, String> OPERATION_PREFIXES = Map.of(
-            "Create", "on create",
-            "Put", "on update",
-            "Patch", "on patch"
+    // Validation group package prefix for detecting unknown groups
+    private static final String VALIDATION_PACKAGE = "org.keycloak.representations.admin.v2.validation";
+
+    // Validation groups mapped to their human-readable context
+    // When adding a new validation group, add it here to provide a description for the OpenAPI docs.
+    private static final Map<DotName, String> VALIDATION_GROUPS = Map.of(
+            DotName.createSimple(CreateClient.class), "on create",
+            DotName.createSimple(PutClient.class), "on update",
+            DotName.createSimple(PatchClient.class), "on patch"
     );
 
     /**
@@ -347,10 +354,15 @@ public class ValidationAnnotationScanner {
 
         List<String> contexts = new ArrayList<>();
         for (Type group : groups) {
-            String simpleName = group.name().local();
-            String context = getOperationContext(simpleName);
+            DotName groupName = group.name();
+            String context = VALIDATION_GROUPS.get(groupName);
             if (context != null) {
                 contexts.add(context);
+            } else if (groupName.toString().startsWith(VALIDATION_PACKAGE)) {
+                throw new IllegalStateException(
+                        "Unknown validation group: " + groupName + ". " +
+                        "Please add it to VALIDATION_GROUPS map in " + ValidationAnnotationScanner.class.getSimpleName() +
+                        " with an appropriate description (e.g., \"on create\", \"on update\").");
             }
         }
 
@@ -359,15 +371,6 @@ public class ValidationAnnotationScanner {
         }
 
         return String.join("/", contexts) + ": ";
-    }
-
-    private String getOperationContext(String groupSimpleName) {
-        for (Map.Entry<String, String> entry : OPERATION_PREFIXES.entrySet()) {
-            if (groupSimpleName.startsWith(entry.getKey())) {
-                return entry.getValue();
-            }
-        }
-        return null;
     }
 
     private AnnotationInstance getFieldAnnotation(FieldInfo field, DotName annotationName) {
