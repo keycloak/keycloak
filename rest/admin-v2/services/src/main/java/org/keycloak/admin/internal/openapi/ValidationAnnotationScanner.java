@@ -6,7 +6,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
 import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.hibernate.validator.constraints.URL;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.AnnotationValue;
@@ -15,6 +25,8 @@ import org.jboss.jandex.DotName;
 import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
+import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
+import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
 
 /**
  * Builds human-readable validation descriptions for OpenAPI schemas based on validation annotations.
@@ -34,21 +46,21 @@ public class ValidationAnnotationScanner {
     private static final Logger log = Logger.getLogger(ValidationAnnotationScanner.class);
 
     // Jakarta Validation annotations
-    private static final DotName NOT_BLANK = DotName.createSimple("jakarta.validation.constraints.NotBlank");
-    private static final DotName NOT_NULL = DotName.createSimple("jakarta.validation.constraints.NotNull");
-    private static final DotName NOT_EMPTY = DotName.createSimple("jakarta.validation.constraints.NotEmpty");
-    private static final DotName SIZE = DotName.createSimple("jakarta.validation.constraints.Size");
-    private static final DotName PATTERN = DotName.createSimple("jakarta.validation.constraints.Pattern");
-    private static final DotName MIN = DotName.createSimple("jakarta.validation.constraints.Min");
-    private static final DotName MAX = DotName.createSimple("jakarta.validation.constraints.Max");
-    private static final DotName VALID = DotName.createSimple("jakarta.validation.Valid");
+    private static final DotName NOT_BLANK = DotName.createSimple(NotBlank.class);
+    private static final DotName NOT_NULL = DotName.createSimple(NotNull.class);
+    private static final DotName NOT_EMPTY = DotName.createSimple(NotEmpty.class);
+    private static final DotName SIZE = DotName.createSimple(Size.class);
+    private static final DotName PATTERN = DotName.createSimple(Pattern.class);
+    private static final DotName MIN = DotName.createSimple(Min.class);
+    private static final DotName MAX = DotName.createSimple(Max.class);
+    private static final DotName VALID = DotName.createSimple(Valid.class);
 
     // Hibernate Validator annotations (not supported by SmallRye's BeanValidationScanner)
-    private static final DotName URL = DotName.createSimple("org.hibernate.validator.constraints.URL");
+    private static final DotName URL = DotName.createSimple(URL.class);
 
     // Custom validation annotations
-    private static final DotName UUID_UNMODIFIED = DotName.createSimple("org.keycloak.representations.admin.v2.validation.UuidUnmodified");
-    private static final DotName CLIENT_SECRET_NOT_BLANK = DotName.createSimple("org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank");
+    private static final DotName UUID_UNMODIFIED = DotName.createSimple(UuidUnmodified.class);
+    private static final DotName CLIENT_SECRET_NOT_BLANK = DotName.createSimple(ClientSecretNotBlank.class);
 
     // Validation group operation prefixes mapped to their human-readable context
     private static final Map<String, String> OPERATION_PREFIXES = Map.of(
