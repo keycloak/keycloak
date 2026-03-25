@@ -11,7 +11,12 @@ test.describe("Resources", () => {
     );
 
     await login(page, testBed.realm);
+    const responsePromise = page.waitForResponse(resp =>
+          resp.url().includes('/realms/') && resp.status() === 200
+    );
+
     await page.getByTestId("resources").click();
+    await responsePromise;
 
     await expect(page.getByRole("gridcell", { name: "one" })).toBeVisible();
   });
@@ -22,9 +27,14 @@ test.describe("Resources", () => {
     );
 
     await login(page, testBed.realm, "alice", "alice");
+    
+    await page.waitForTimeout(1000);
+    
     await page.getByTestId("resources").click();
-
     await page.getByTestId("sharedWithMe").click();
+
+    const table = page.locator("table");
+    await expect(table).toBeVisible();
     const tableData = await page.locator("table > tr").count();
     expect(tableData).toBe(0);
   });
@@ -76,6 +86,8 @@ test.describe("Resources", () => {
     await page2.getByTestId("resources").click();
 
     await page2.getByTestId("sharedWithMe").click();
+    const table = page2.locator("table");
+    await expect(table).toBeVisible();
     const rowData = page2.getByTestId("row[0].name");
     await expect(rowData).toHaveText("one");
   });

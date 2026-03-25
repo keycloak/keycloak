@@ -119,16 +119,22 @@ test.describe("Realm localization", () => {
     });
 
     await login(page, testBed.realm);
+
+    await page.locator("#attributes\\.locale").waitFor({ state: "visible" });
     await page.locator("#attributes\\.locale").click();
-    page.getByRole("option").filter({ hasText: "Deutsch" });
+
+    await page.getByRole("option", { name: "English" }).waitFor({ state: "visible" });
     await page.getByRole("option", { name: "English" }).click();
+    
     await page.getByTestId("save").click();
     await assertLastAlert(page, "Your account has been updated.");
 
     await page.reload();
 
-    expect(
-      page.locator("#attributes\\.locale").filter({ hasText: /^English$/ }),
-    ).toBeDefined();
+
+    await page.locator("#attributes\\.locale").waitFor({ state: "visible" });
+
+    await expect(page.locator("#attributes\\.locale"))
+        .toContainText("English");
   });
 });
