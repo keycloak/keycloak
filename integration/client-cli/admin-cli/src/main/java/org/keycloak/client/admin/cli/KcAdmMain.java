@@ -73,7 +73,7 @@ public class KcAdmMain {
             KcAdmV2Completer.complete(stripArgs(v2Args, COMPLETE_FLAG),
                     new PrintWriter(System.out, true));
         } else {
-            Globals.main(v2Args, new KcAdmV2Cmd(), CMD, DEFAULT_CONFIG_FILE_STRING);
+            Globals.main(v2Args, new KcAdmV2Cmd(v2Args), CMD, DEFAULT_CONFIG_FILE_STRING);
         }
     }
 

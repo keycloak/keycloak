@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.keycloak.client.admin.cli.KcAdmMain;
 import org.keycloak.client.admin.cli.v2.KcAdmV2Cmd;
+import org.keycloak.client.cli.common.BaseConfigCredentialsCmd;
 import org.keycloak.client.cli.common.Globals;
 
 import org.junit.Test;
@@ -26,6 +27,12 @@ public class KcAdmV2HelpTest {
 
         assertTrue("Help should list 'client' resource group", help.contains("client"));
         assertTrue("Help should list 'config' command", help.contains("config"));
+    }
+
+    @Test
+    public void testHelpShowsCompletionInstructions() {
+        String help = createCli().getUsageMessage();
+        assertTrue("Help should mention tab completion setup", help.contains("completion"));
     }
 
     @Test
@@ -381,6 +388,31 @@ public class KcAdmV2HelpTest {
             System.setErr(originalErr);
             Globals.dumpTrace = false;
         }
+    }
+
+    @Test
+    public void testConfigOpenApiHelpShowsUrl() {
+        CommandLine cli = createCli();
+        StringWriter out = new StringWriter();
+        StringWriter err = new StringWriter();
+        cli.setOut(new PrintWriter(out));
+        cli.setErr(new PrintWriter(err));
+
+        int exitCode = cli.execute("config", "openapi", "--help");
+        assertEquals("--help on config openapi should exit with 0", 0, exitCode);
+        String output = out.toString();
+        assertTrue("should show <source> parameter: " + output, output.contains("<source>"));
+        assertTrue("should show --config option: " + output, output.contains("--config"));
+        assertTrue("should mention 'config credentials': " + output, output.contains("config credentials"));
+    }
+
+    @Test
+    public void testConfigCredentialsHelpShowsOpenApiUrl() {
+        CommandLine cli = createCli();
+        String help = ((BaseConfigCredentialsCmd) cli.getSubcommands().get("config")
+                .getSubcommands().get("credentials").getCommand()).help();
+        assertTrue("should show --openapi-url option: " + help, help.contains("--openapi-url"));
+        assertTrue("should show --v2 in command: " + help, help.contains("--v2"));
     }
 
     private String getVariantHelp(String command, String variant) {

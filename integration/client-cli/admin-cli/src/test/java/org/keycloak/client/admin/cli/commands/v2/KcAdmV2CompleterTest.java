@@ -141,6 +141,28 @@ public class KcAdmV2CompleterTest {
     }
 
     @Test
+    public void testConfigShowsSubcommands() {
+        List<String> candidates = complete("config", "");
+        assertTrue("Should suggest 'credentials'", candidates.contains("credentials"));
+        assertTrue("Should suggest 'openapi'", candidates.contains("openapi"));
+    }
+
+    @Test
+    public void testConfigOpenApiOptionsInAutocomplete() {
+        List<String> candidates = complete("config", "openapi", "--");
+        assertTrue("Should suggest '--config': " + candidates, candidates.contains("--config"));
+        assertTrue("Should suggest '--help': " + candidates, candidates.contains("--help"));
+    }
+
+    @Test
+    public void testConfigCredentialsShowsOpenApiUrlOption() {
+        List<String> candidates = complete("config", "credentials", "--");
+        assertTrue("Should suggest '--openapi-url': " + candidates, candidates.contains("--openapi-url"));
+        assertTrue("Should suggest '--server': " + candidates, candidates.contains("--server"));
+        assertTrue("Should suggest '--realm': " + candidates, candidates.contains("--realm"));
+    }
+
+    @Test
     public void testUnknownSubcommandStaysAtCurrentLevel() {
         List<String> candidates = complete("client", "nonexistent", "");
         assertTrue("Should still suggest commands under 'client'", candidates.contains("list"));

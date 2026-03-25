@@ -1,18 +1,13 @@
 package org.keycloak.tests.admin.cli.v2;
 
 import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.keycloak.client.admin.cli.KcAdmMain;
-import org.keycloak.client.admin.cli.v2.KcAdmV2Cmd;
-import org.keycloak.client.cli.common.Globals;
 import org.keycloak.client.cli.config.FileConfigHandler;
 import org.keycloak.client.cli.util.HttpUtil;
 import org.keycloak.common.Profile;
-import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
@@ -20,13 +15,12 @@ import org.keycloak.testframework.config.Config;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.testframework.server.KeycloakUrls;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import picocli.CommandLine;
 
+import static org.keycloak.client.admin.cli.v2.KcAdmV2DescriptorCache.REGISTRY_FILENAME;
 import static org.keycloak.client.cli.config.FileConfigHandler.setConfigFile;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,15 +28,13 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @KeycloakIntegrationTest(config = KcAdmV2ClientCLITest.V2ApiServerConfig.class)
-public class KcAdmV2ClientCLITest {
+public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
 
     @InjectRealm
     ManagedRealm realm;
-
-    @InjectKeycloakUrls
-    KeycloakUrls keycloakUrls;
 
     @TempDir
     static File tempDir;
@@ -583,6 +575,33 @@ public class KcAdmV2ClientCLITest {
         assertThat(getResult.err(), containsString("Could not find client"));
     }
 
+    @Test
+    void testLoginAutoFetchFailsGracefully() {
+        // This server does NOT have OPENAPI enabled, so auto-fetch on login should fail gracefully
+        Path cacheDir = tempDir.toPath().resolve("auto-fetch-fail");
+        String autoFetchConfigFile = new File(tempDir, "auto-fetch-fail.config").getAbsolutePath();
+        HttpUtil.clearHttpClient();
+
+        CommandResult result = kcAdmV2Cmd(cacheDir, autoFetchConfigFile,
+                "config", "credentials",
+                "--server", keycloakUrls.getBase(),
+                "--realm", "master",
+                "--client", Config.getAdminClientId(),
+                "--secret", Config.getAdminClientSecret());
+
+        assertThat("login should succeed even when auto-fetch fails: " + result.err(), result.exitCode(), is(0));
+        assertFalse(Files.exists(cacheDir.resolve(REGISTRY_FILENAME)),
+                "no registry should be created when auto-fetch fails");
+
+        // Warning should explain: what failed, why it matters, and how to fix it
+        assertThat("should mention fetch failure: " + result.err(),
+                result.err(), containsString("Failed to fetch OpenAPI"));
+        assertThat("should explain why it matters: " + result.err(),
+                result.err(), containsString("CLI commands may not match your server version"));
+        assertThat("should suggest manual fallback: " + result.err(),
+                result.err(), containsString("config openapi"));
+    }
+
     private String createClientWithAllParams(String clientId) {
         CommandResult result = kcAdmV2Cmd("client", "create", "oidc",
                 "--client-id", clientId,
@@ -613,48 +632,7 @@ public class KcAdmV2ClientCLITest {
     }
 
     private CommandResult kcAdmV2Cmd(String... args) {
-        CommandLine cli = Globals.createCommandLine(new KcAdmV2Cmd(), KcAdmMain.CMD, new PrintWriter(System.err, true));
-
-        StringWriter out = new StringWriter();
-        StringWriter err = new StringWriter();
-        cli.setOut(new PrintWriter(out));
-        cli.setErr(new PrintWriter(err));
-
-        String[] fullArgs = new String[args.length + 2];
-        System.arraycopy(args, 0, fullArgs, 0, args.length);
-        fullArgs[args.length] = "--config";
-        fullArgs[args.length + 1] = configFilePath;
-
-        int exitCode = cli.execute(fullArgs);
-        return new CommandResult(exitCode, out.toString(), err.toString());
-    }
-
-    private CommandResult kcAdmV2CmdRaw(String... args) {
-        CommandLine cli = Globals.createCommandLine(new KcAdmV2Cmd(), KcAdmMain.CMD, new PrintWriter(System.err, true));
-
-        StringWriter out = new StringWriter();
-        StringWriter err = new StringWriter();
-        cli.setOut(new PrintWriter(out));
-        cli.setErr(new PrintWriter(err));
-
-        int exitCode = cli.execute(args);
-        return new CommandResult(exitCode, out.toString(), err.toString());
-    }
-
-    private CommandResult kcAdmV2CmdNoConfig(String... args) {
-        CommandLine cli = Globals.createCommandLine(new KcAdmV2Cmd(), KcAdmMain.CMD, new PrintWriter(System.err, true));
-
-        StringWriter out = new StringWriter();
-        StringWriter err = new StringWriter();
-        cli.setOut(new PrintWriter(out));
-        cli.setErr(new PrintWriter(err));
-
-        String[] fullArgs = new String[args.length + 1];
-        System.arraycopy(args, 0, fullArgs, 0, args.length);
-        fullArgs[args.length] = "--no-config";
-
-        int exitCode = cli.execute(fullArgs);
-        return new CommandResult(exitCode, out.toString(), err.toString());
+        return kcAdmV2Cmd(null, configFilePath, args);
     }
 
     private String getTokenFromConfig() {
@@ -674,9 +652,6 @@ public class KcAdmV2ClientCLITest {
         } catch (Exception e) {
             throw new AssertionError("Could not extract clientId from: " + result.out(), e);
         }
-    }
-
-    record CommandResult(int exitCode, String out, String err) {
     }
 
     public static class V2ApiServerConfig implements KeycloakServerConfig {
