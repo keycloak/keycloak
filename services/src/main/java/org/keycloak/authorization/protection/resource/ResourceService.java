@@ -57,14 +57,13 @@ public class ResourceService {
         this.identity = identity;
         this.resourceServer = resourceServer;
         this.resourceManager = resourceManager;
+        checkResourceServerSettings();
     }
 
     @POST
     @Consumes("application/json")
     @Produces("application/json")
     public Response create(UmaResourceRepresentation resource) {
-        checkResourceServerSettings();
-
         if (resource == null) {
             return Response.status(Status.BAD_REQUEST).build();
         }
@@ -102,7 +101,6 @@ public class ResourceService {
     @Path("/{id}")
     @DELETE
     public Response delete(@PathParam("id") String id) {
-        checkResourceServerSettings();
         return this.resourceManager.delete(id);
     }
 
@@ -127,7 +125,6 @@ public class ResourceService {
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-
         if(deep != null && deep) {
             return resourceManager.find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult);
         } else {
