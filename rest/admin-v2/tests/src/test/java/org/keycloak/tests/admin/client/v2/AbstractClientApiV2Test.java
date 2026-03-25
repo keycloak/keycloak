@@ -2,8 +2,12 @@ package org.keycloak.tests.admin.client.v2;
 
 import jakarta.ws.rs.core.HttpHeaders;
 
+import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.services.client.ClientServiceHelper;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
@@ -22,12 +26,6 @@ public abstract class AbstractClientApiV2Test {
 
     public String getClientsApiUrl() {
         return "http://localhost:8080/admin/api/%s/clients/v2".formatted(getRealmName());
-    }
-    public String getClientsApiUrl(String realmName) {
-        return "http://localhost:8080/admin/api/%s/clients/v2".formatted(realmName);
-    }
-    public String getClientsApiUrl(String realmName, String clientId) {
-        return "http://localhost:8080/admin/api/%s/clients/v2/%s".formatted(realmName, clientId);
     }
     public String getClientApiUrl(String clientId) {
         return "http://localhost:8080/admin/api/%s/clients/v2/%s".formatted(getRealmName(), clientId);
