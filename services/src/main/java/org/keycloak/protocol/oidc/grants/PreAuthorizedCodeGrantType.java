@@ -20,7 +20,6 @@ package org.keycloak.protocol.oidc.grants;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
@@ -303,19 +302,17 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                     errorMessage, Response.Status.BAD_REQUEST);
         }
 
-        // Pre-auth code is valid, but let's prevent replay attacks
+        // Pre-auth code is valid, but let's prevent replay attacks (for the remaining validity period)
         SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         String key = getPreAuthCodeSingleObjectKey(code);
-        if (singleUseStore.get(key) != null) {
+        long expiresIn = preAuthCodeCtx.getExpiresAt() - Time.currentTime();
+        boolean firstInsertion = singleUseStore.putIfAbsent(key, expiresIn);
+        if (!firstInsertion) {
             String errorMessage = "Pre-authorized code has already been used";
             event.detail(Details.REASON, errorMessage).error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT,
                     errorMessage, Response.Status.BAD_REQUEST);
         }
-
-        // Prevent code replay for the remaining validity period
-        long expiresIn = preAuthCodeCtx.getExpiresAt() - Time.currentTime();
-        singleUseStore.put(key, expiresIn, Map.of());
 
         return preAuthCodeCtx;
     }
