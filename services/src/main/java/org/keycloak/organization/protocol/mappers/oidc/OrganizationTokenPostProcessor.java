@@ -57,7 +57,7 @@ public class OrganizationTokenPostProcessor implements TokenPostProcessor{
         UserSessionModel userSession = clientSession.getUserSession();
         OrganizationModel organization = provider.getByAlias(orgAlias);
 
-        if (organization == null) {
+        if (organization == null || !organization.isEnabled()) {
             throw new TokenInterceptorException(OAuthErrorException.INVALID_REQUEST, OAuthErrorException.INVALID_TOKEN);
         }
 

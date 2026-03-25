@@ -42,6 +42,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.OAuth2Constants;
@@ -233,7 +234,7 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
         }
 
-        validateOrganization(session, oldToken, user);
+        validateSelectedOrganization(session, oldToken, user);
 
         try {
             TokenVerifier.createWithoutSignature(oldToken)
@@ -894,10 +895,16 @@ public class TokenManager {
                 });
     }
 
-    public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token,
+    public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken userInfo,
                                                     UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        return transformUserInfoAccessToken(session, null, userInfo, userSession, clientSessionCtx);
+    }
+
+    public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken bearerToken, AccessToken userInfo,
+                                                    UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        validateSelectedOrganization(session, bearerToken, userSession == null ? null : userSession.getUser());
         return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof UserInfoTokenMapper)
-                .collect(new TokenCollector<AccessToken>(token) {
+                .collect(new TokenCollector<AccessToken>(userInfo) {
                     @Override
                     protected AccessToken applyMapper(AccessToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
                         return ((UserInfoTokenMapper) mapper.getValue()).transformUserInfoToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
@@ -905,8 +912,9 @@ public class TokenManager {
                 });
     }
 
-    public AccessToken transformIntrospectionAccessToken(KeycloakSession session, AccessToken token,
+    public AccessToken transformIntrospectionAccessToken(KeycloakSession session, AccessToken bearer, AccessToken token,
                                                          UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        validateSelectedOrganization(session, bearer, userSession == null ? null : userSession.getUser());
         return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof TokenIntrospectionTokenMapper)
                 .collect(new TokenCollector<AccessToken>(token) {
                     @Override
@@ -1672,15 +1680,28 @@ public class TokenManager {
         return Optional.ofNullable(refreshToken.getOtherClaims().get(Constants.REUSE_ID)).map(String::valueOf).orElse("");
     }
 
-    private void validateOrganization(KeycloakSession session, RefreshToken refreshToken, UserModel user) throws OAuthErrorException {
-        Object orgAlias = refreshToken.getOtherClaims().get(ORGANIZATION);
+    private void validateSelectedOrganization(KeycloakSession session, JsonWebToken token, UserModel user) {
+        if (token == null) {
+            return;
+        }
 
-        if (orgAlias != null) {
+        List<String> orgAlias = List.of();
+        Object organizations = token.getOtherClaims().get(ORGANIZATION);
+
+        if (organizations instanceof String) {
+            orgAlias = List.of((String) organizations);
+        } else if (organizations instanceof Collection<?> orgList) {
+            orgAlias = orgList.stream().map(String::valueOf).collect(Collectors.toList());
+        } else if (organizations instanceof Map<?,?> orgMap) {
+            orgAlias = orgMap.keySet().stream().map(String::valueOf).collect(Collectors.toList());
+        }
+
+        if (orgAlias.size() == 1) {
             OrganizationProvider provider = Organizations.getProvider(session);
-            OrganizationModel organization = provider.getByAlias(orgAlias.toString());
+            OrganizationModel organization = provider.getByAlias(orgAlias.get(0));
 
             if (organization == null || !organization.isEnabled() || !organization.isMember(user)) {
-                throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid organization", "Invalid organization");
+                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Invalid organization", Status.BAD_REQUEST);
             }
 
             session.getContext().setOrganization(organization);

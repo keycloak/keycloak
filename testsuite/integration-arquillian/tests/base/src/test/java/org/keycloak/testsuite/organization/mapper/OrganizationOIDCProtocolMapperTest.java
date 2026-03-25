@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.organization.mapper;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
@@ -43,6 +44,7 @@ import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -51,12 +53,15 @@ import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.broker.KcOidcBrokerConfiguration;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -459,6 +464,90 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     }
 
     @Test
+    public void testUserInfoEndpoint() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        oauth.scope("organization");
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            //first tab - select orgA
+            loginPage.open(bc.consumerRealmName());
+            loginPage.loginUsername(member.getEmail());
+            selectOrganizationPage.selectOrganization(orgA.getAlias());
+            loginPage.login(memberPassword);
+            AccessTokenResponse response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab1AccessToken = response.getAccessToken();
+
+            //second tab - select orgB
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), is(2));
+            selectOrganizationPage.isCurrent();
+            selectOrganizationPage.selectOrganization(orgB.getAlias());
+            response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab2AccessToken = response.getAccessToken();
+
+            UserInfoResponse userInfoResponse = oauth.userInfoRequest(tab1AccessToken).send();
+            UserInfo userInfo = userInfoResponse.getUserInfo();
+            List<String> organizations = (List<String>) userInfo.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgA.getAlias()), is(true));
+
+            userInfoResponse = oauth.userInfoRequest(tab2AccessToken).send();
+            userInfo = userInfoResponse.getUserInfo();
+            organizations = (List<String>) userInfo.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgB.getAlias()), is(true));
+        }
+    }
+
+    @Test
+    public void testIntrospectionEndpoint() throws IOException {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+        oauth.scope("organization");
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            //first tab - select orgA
+            loginPage.open(bc.consumerRealmName());
+            loginPage.loginUsername(member.getEmail());
+            selectOrganizationPage.selectOrganization(orgA.getAlias());
+            loginPage.login(memberPassword);
+            AccessTokenResponse response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab1AccessToken = response.getAccessToken();
+
+            //second tab - select orgB
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), is(2));
+            selectOrganizationPage.isCurrent();
+            selectOrganizationPage.selectOrganization(orgB.getAlias());
+            response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab2AccessToken = response.getAccessToken();
+
+            IntrospectionResponse userInfoResponse = oauth.introspectionRequest(tab1AccessToken).send();
+            TokenMetadataRepresentation metadata = userInfoResponse.asTokenMetadata();
+            List<String> organizations = (List<String>) metadata.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgA.getAlias()), is(true));
+
+            userInfoResponse = oauth.introspectionRequest(tab2AccessToken).send();
+            metadata = userInfoResponse.asTokenMetadata();
+            organizations = (List<String>) metadata.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgB.getAlias()), is(true));
+        }
+    }
+
+    @Test
     public void testRefreshTokenWithAllOrganizationsAskingForSpecificOrganization() {
         OrganizationRepresentation orgA = createOrganization("orga", true);
         MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
@@ -617,6 +706,18 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.scope("organization:orgb");
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
         assertThat(response.getScope(), not(containsString("organization")));
+
+        //previous:(ANY -> ALL) -> return the selected org
+        oauth.scope("organization:*");
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertThat(response.getScope(), containsString("organization"));
+        accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString("organization"));
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertEquals( 1, organizations.toArray().length);
+        assertThat(organizations.contains(orgB.getAlias()), is(true));
+        assertThat(organizations.contains(orgA.getAlias()), is(false));
     }
 
     @Test
