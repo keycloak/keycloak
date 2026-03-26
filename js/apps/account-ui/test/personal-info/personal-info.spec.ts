@@ -6,7 +6,8 @@ import { adminClient } from "../support/admin-client.ts";
 import userProfileRealm from "../realms/user-profile-realm.json" with { type: "json" };
 
 /**
- * Retry with backoff after maximum of 5 retries.
+ * Retry helper for operations that may fail due to realm initialization timing.
+ * Implements exponential backoff with a maximum of 5 retries.
  */
 async function retryOperation<T>(
   operation: () => Promise<T>,
@@ -68,6 +69,7 @@ test.describe("Personal info (user profile enabled)", () => {
     await expect(page.getByText("Alternative email")).toHaveCount(1);
     await expect(page.getByPlaceholder("Deutsch")).toHaveCount(1);
     await page.getByTestId("help-label-email2").click();
+    await expect(page.getByText("Español")).toBeVisible();
     await expect(page.getByText("Español")).toHaveCount(1);
   });
 
