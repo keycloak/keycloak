@@ -26,12 +26,15 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.when;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest(keepAlive = true,
         requestPort = 9000,
@@ -86,6 +89,54 @@ public class HealthDistTest {
                 .body("checks.size()", equalTo(4));
         when().get("/lb-check").then()
                 .statusCode(404);
+    }
+
+    private static final String LISTENING_ON_HTTP = "Listening on: http://";
+    private static final String BOOTSTRAP_COMPLETED = "Bootstrap completed";
+
+    @Test
+    @Launch({ "start", "--health-enabled=true", "--http-enabled=true", "--hostname-strict=false" })
+    void testAsyncStartupEnabled(LaunchResult result) {
+        when().get("/health/live").then()
+                .statusCode(200);
+        when().get("/health/ready").then()
+                .statusCode(200)
+                .body("checks.size()", equalTo(3))
+                .body(containsString("\"Keycloak Initialized\""));
+        assertTrue(result.getOutput().indexOf(LISTENING_ON_HTTP) < result.getOutput().indexOf(BOOTSTRAP_COMPLETED),
+                () -> "Should first listen, then boostrap");
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--server-async-bootstrap=true" })
+    void testAsyncStartupEnabledAsNoHealthIsPresentButUserAsksForIt(LaunchResult result) {
+        assertTrue(result.getOutput().indexOf(LISTENING_ON_HTTP) < result.getOutput().indexOf(BOOTSTRAP_COMPLETED),
+                () -> "Should listen, then bootstrap");
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    void testAsyncStartupDisabledAsNoHealthIsPresent(LaunchResult result) {
+        assertTrue(result.getOutput().indexOf(LISTENING_ON_HTTP) > result.getOutput().indexOf(BOOTSTRAP_COMPLETED),
+                () -> "Should bootstrap, then listen");
+    }
+
+    @Test
+    @Launch({ "start", "--health-enabled=true", "--http-enabled=true", "--hostname-strict=false", "--server-async-bootstrap=false" })
+    void testAsyncStartupDisabledViaCLI(LaunchResult result) {
+        when().get("/health/ready").then()
+                .statusCode(200);
+        assertTrue(result.getOutput().indexOf(LISTENING_ON_HTTP) > result.getOutput().indexOf(BOOTSTRAP_COMPLETED),
+                () -> "Should first bootstrap, then listen");
+    }
+
+    @Test
+    @Launch({ "start", "--health-enabled=true", "--http-enabled=true", "--hostname-strict=false", "--server-async-bootstrap=false" })
+    void testAsyncStartupDisabledAsNoHealthEndpoint(LaunchResult result) {
+        when().get("/health/ready").then()
+                .statusCode(200);
+        assertTrue(result.getOutput().indexOf(LISTENING_ON_HTTP) > result.getOutput().indexOf(BOOTSTRAP_COMPLETED),
+                () -> "Should first bootstrap, then listen");
     }
 
     @Test

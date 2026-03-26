@@ -17,13 +17,15 @@
 
 package org.keycloak.config;
 
+import java.util.Optional;
+
 public final class ServerOptions {
 
     private ServerOptions() {}
 
     public static final Option<Boolean> SERVER_ASYNC_BOOTSTRAP = new OptionBuilder<>("server-async-bootstrap", Boolean.class)
             .category(OptionCategory.SERVER)
-            .defaultValue(Boolean.TRUE)
-            .description("If true, endpoints are opened while the bootstrap runs in the background. If false, endpoints are opened after bootstrap completes, ensuring the server is ready to handle requests.")
+            .defaultValue(Optional.empty())
+            .description("If true, endpoints are opened while the bootstrap runs in the background. If false, endpoints are opened after bootstrap completes, ensuring the server is ready to handle requests. Async bootstrap is enabled by default when the health endpoints are also enabled, unless this option is explicitly set to false.")
             .build();
 }
