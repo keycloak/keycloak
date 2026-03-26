@@ -35,6 +35,7 @@ test.describe("Personal info (user profile enabled)", () => {
     await expect(page.getByText("Alternative email")).toHaveCount(1);
     await expect(page.getByPlaceholder("Deutsch")).toHaveCount(1);
     await page.getByTestId("help-label-email2").click();
+    await expect(page.getByText("Español")).toBeVisible();
     await expect(page.getByText("Español")).toHaveCount(1);
   });
 
