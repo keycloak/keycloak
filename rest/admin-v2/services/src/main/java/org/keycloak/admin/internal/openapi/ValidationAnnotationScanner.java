@@ -242,25 +242,11 @@ public class ValidationAnnotationScanner {
             return resolved;
         }
 
-        // Fallback: derive description from annotation name
-        String simpleName = annotationName.withoutPackagePrefix();
-        return humanize(simpleName);
+        return annotationName.withoutPackagePrefix();
     }
 
     private String getDefaultMessage(DotName annotationName) {
         return "{" + annotationName.toString() + ".message}";
-    }
-
-    private String humanize(String annotationName) {
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < annotationName.length(); i++) {
-            char c = annotationName.charAt(i);
-            if (Character.isUpperCase(c) && i > 0) {
-                result.append(' ');
-            }
-            result.append(Character.toLowerCase(c));
-        }
-        return result.toString();
     }
 
     /**
@@ -291,28 +277,17 @@ public class ValidationAnnotationScanner {
             String message = resolveMessage(messageTemplate, annotation);
 
             if (message == null) {
-                message = humanize(annotation.name().withoutPackagePrefix());
+                message = annotation.name().withoutPackagePrefix();
             }
 
             // Try to determine which field(s) this class-level constraint affects
-            String affectedField = getAffectedField(annotation);
+            String affectedField = annotation.name().withoutPackagePrefix().toLowerCase();
             if (affectedField != null) {
                 fieldDescriptions.put(affectedField, context + message);
             }
         }
 
         return fieldDescriptions;
-    }
-
-    private String getAffectedField(AnnotationInstance classLevelConstraint) {
-        String simpleName = classLevelConstraint.name().withoutPackagePrefix().toLowerCase();
-        if (simpleName.contains("uuid")) {
-            return "uuid";
-        }
-        if (simpleName.contains("secret")) {
-            return "secret";
-        }
-        return null;
     }
 
     /**
