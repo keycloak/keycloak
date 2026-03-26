@@ -458,7 +458,7 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         if (organization == null) {
             OrganizationScope scope = OrganizationScope.valueOfScope(session);
 
-            if (OrganizationScope.SINGLE.equals(scope)) {
+            if (OrganizationScope.SPECIFIC.equals(scope)) {
                 organization = scope.resolveOrganizations(session).findAny().orElse(null);
             }
         }
