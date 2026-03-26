@@ -9,11 +9,7 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.services.error.ViolationExceptionResponse;
-import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ClientConfig;
-import org.keycloak.testframework.realm.ClientConfigBuilder;
-import org.keycloak.testframework.realm.ManagedClient;
 
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpPost;
@@ -29,12 +25,6 @@ import static org.hamcrest.Matchers.not;
 
 @KeycloakIntegrationTest(config = AbstractClientValidationTest.AdminV2Config.class)
 public class PutClientValidationTest extends AbstractClientValidationTest {
-
-    @InjectClient(config = PutClientValidationTest.TestOidcClient.class, ref = "test-oidc")
-    ManagedClient testOidcClient;
-
-    @InjectClient(config = PutClientValidationTest.TestSamlClient.class, ref = "test-saml")
-    ManagedClient testSamlClient;
 
     @Override
     public String getHttpMethod() {
@@ -226,46 +216,6 @@ public class PutClientValidationTest extends AbstractClientValidationTest {
 
         try (var response = client.execute(updateRequest)) {
             assertThat(response.getStatusLine().getStatusCode(), is(200));
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
-    public void clientIdMismatchBetweenPathAndPayloadFails(String protocol) throws Exception {
-        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
-        var request = getRequest(isOidc);
-        setAuthHeader(request);
-
-        request.setEntity(new StringEntity("""
-                {
-                    "protocol": "%s",
-                    "clientId": "different-client-id",
-                    "enabled": true
-                }
-                """.formatted(protocol)));
-
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(400));
-            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-            assertThat(body.error(), is("Field 'clientId' in payload does not match the provided 'clientId'"));
-        }
-    }
-
-    public static class TestOidcClient implements ClientConfig {
-        @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
-            return client.clientId("test-client-oidc")
-                    .enabled(true)
-                    .protocol("openid-connect");
-        }
-    }
-
-    public static class TestSamlClient implements ClientConfig {
-        @Override
-        public ClientConfigBuilder configure(ClientConfigBuilder client) {
-            return client.clientId("test-client-saml")
-                    .enabled(true)
-                    .protocol("saml");
         }
     }
 }

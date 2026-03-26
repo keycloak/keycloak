@@ -11,6 +11,8 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -61,5 +63,11 @@ public class PostClientValidationTest extends AbstractClientValidationTest {
             var rep = mapper.createParser(response.getEntity().getContent()).readValueAs(BaseClientRepresentation.class);
             assertThat(rep.getUuid(), not(is(uuid)));
         }
+    }
+
+    @Test
+    @Override
+    @Disabled("Only for PUT/PATCH")
+    public void clientIdMismatchBetweenPathAndPayloadFails(String protocol){
     }
 }

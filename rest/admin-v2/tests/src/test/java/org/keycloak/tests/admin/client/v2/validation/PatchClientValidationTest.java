@@ -23,7 +23,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
 @KeycloakIntegrationTest(config = AbstractClientValidationTest.AdminV2Config.class)
-public class PatchClientValidationTest extends PutClientValidationTest {
+public class PatchClientValidationTest extends AbstractClientValidationTest {
 
     @Override
     public String getHttpMethod() {
@@ -35,6 +35,11 @@ public class PatchClientValidationTest extends PutClientValidationTest {
         var request = new HttpPatch(getClientApiUrl(isOidc ? testOidcClient.getClientId() : testSamlClient.getClientId()));
         request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
         return request;
+    }
+
+    @Override
+    public String getPayloadClientId(boolean isOidc) {
+        return isOidc ? testOidcClient.getClientId() : testSamlClient.getClientId();
     }
 
     @ParameterizedTest
@@ -139,11 +144,5 @@ public class PatchClientValidationTest extends PutClientValidationTest {
     @Override
     @Disabled("Only for PUT/POST")
     public void validOIDCClientSucceeds() {
-    }
-
-    @Test
-    @Override
-    @Disabled("Only PUT is tested")
-    public void putClientWithSecretAuthAndBlankSecretFails(String authMethod) {
     }
 }
