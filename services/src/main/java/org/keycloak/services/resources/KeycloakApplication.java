@@ -35,6 +35,7 @@ import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
 import org.keycloak.services.managers.ApplianceBootstrap;
+import org.keycloak.services.managers.RealmManager;
 
 import org.jboss.logging.Logger;
 
@@ -132,6 +133,12 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
         resetTransactionTimeout(keycloakSessionFactory);
         bootstrapCompleted = true;
         keycloakSessionFactory.publish(new PostMigrationEvent(keycloakSessionFactory));
+
+        if (Profile.isFeatureEnabled(Profile.Feature.GLOBAL_READONLY_ADMIN)) {
+            KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, session -> {
+                new RealmManager(session).migrateViewAdminRoleForAllRealms();
+            });
+        }
 
         var duration = Duration.ofNanos(System.nanoTime() - startTime);
         logger.infof("Bootstrap completed in %f seconds", (double) duration.toMillis() / 1000);

@@ -163,6 +163,8 @@ public class Profile {
 
         CIMD("OAuth Client ID Metadata Document", Type.EXPERIMENTAL),
 
+        GLOBAL_READONLY_ADMIN("Global Read-Only Admin Role", Type.DISABLED_BY_DEFAULT),
+
         /**
          * @see <a href="https://github.com/keycloak/keycloak/issues/37967">Deprecate for removal the Instagram social broker</a>.
          */

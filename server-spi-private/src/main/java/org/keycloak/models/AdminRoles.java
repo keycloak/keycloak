@@ -29,6 +29,7 @@ public class AdminRoles {
     public static final String APP_SUFFIX = "-realm";
 
     public static final String ADMIN = "admin";
+    public static final String VIEW_ADMIN = "view-admin";
 
     // for admin client local to each realm
     public static final String REALM_ADMIN = "realm-admin";
@@ -61,6 +62,7 @@ public class AdminRoles {
 
     public static String[] ALL_REALM_ROLES = {CREATE_CLIENT, VIEW_REALM, VIEW_USERS, VIEW_CLIENTS, VIEW_EVENTS, VIEW_IDENTITY_PROVIDERS, VIEW_AUTHORIZATION, MANAGE_REALM, MANAGE_USERS, MANAGE_CLIENTS, MANAGE_EVENTS, MANAGE_IDENTITY_PROVIDERS, MANAGE_AUTHORIZATION, QUERY_USERS, QUERY_CLIENTS, QUERY_REALMS, QUERY_GROUPS};
     public static String[] ALL_QUERY_ROLES = {QUERY_USERS, QUERY_CLIENTS, QUERY_REALMS, QUERY_GROUPS};
+    public static String[] ALL_VIEW_REALM_ROLES = {VIEW_REALM, VIEW_USERS, VIEW_CLIENTS, VIEW_EVENTS, VIEW_IDENTITY_PROVIDERS, VIEW_AUTHORIZATION, QUERY_USERS, QUERY_CLIENTS, QUERY_GROUPS};
 
     public static Set<String> ALL_ROLES = new HashSet<>();
     static {
@@ -68,6 +70,7 @@ public class AdminRoles {
         ALL_ROLES.add(IMPERSONATION);
         ALL_ROLES.add(ADMIN);
         ALL_ROLES.add(CREATE_REALM);
+        ALL_ROLES.add(VIEW_ADMIN);
         ALL_ROLES.add(REALM_ADMIN);
         ALL_ROLES.add(VIEW_SYSTEM);
     }

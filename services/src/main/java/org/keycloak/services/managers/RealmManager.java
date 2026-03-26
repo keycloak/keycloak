@@ -382,6 +382,14 @@ public class RealmManager {
             RoleModel createRealmRole = realm.addRole(AdminRoles.CREATE_REALM);
             adminRole.addCompositeRole(createRealmRole);
             createRealmRole.setDescription("${role_" + AdminRoles.CREATE_REALM + "}");
+
+            // Create view-admin role if feature is enabled
+            if (Profile.isFeatureEnabled(Profile.Feature.GLOBAL_READONLY_ADMIN)) {
+                RoleModel viewAdminRole = realm.addRole(AdminRoles.VIEW_ADMIN);
+                viewAdminRole.setDescription("${role_" + AdminRoles.VIEW_ADMIN + "}");
+                // Add view-admin to admin role so it can be assigned by admins
+                adminRole.addCompositeRole(viewAdminRole);
+            }
         } else {
             adminRealm = model.getRealmByName(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
@@ -399,6 +407,26 @@ public class RealmManager {
             adminRole.addCompositeRole(role);
         }
         addQueryCompositeRoles(realmAdminApp);
+
+        // Grant view roles to view-admin if feature is enabled
+        if (Profile.isFeatureEnabled(Profile.Feature.GLOBAL_READONLY_ADMIN)) {
+            grantViewRolesToViewAdmin(adminRealm, realmAdminApp);
+        }
+    }
+
+    private void grantViewRolesToViewAdmin(RealmModel adminRealm, ClientModel realmAdminApp) {
+        RoleModel viewAdminRole = adminRealm.getRole(AdminRoles.VIEW_ADMIN);
+        if (viewAdminRole == null) {
+            return; // Safety check
+        }
+
+        // Add all view-* and query-* roles as composites
+        for (String roleName : AdminRoles.ALL_VIEW_REALM_ROLES) {
+            RoleModel role = realmAdminApp.getRole(roleName);
+            if (role != null) {
+                viewAdminRole.addCompositeRole(role);
+            }
+        }
     }
 
     private void checkMasterAdminManagementRoles(RealmModel realm) {
@@ -413,6 +441,35 @@ public class RealmManager {
             }
         }
         addQueryCompositeRoles(masterAdminClient);
+
+        // Migration: Add view-admin role if feature is enabled and role doesn't exist
+        if (Profile.isFeatureEnabled(Profile.Feature.GLOBAL_READONLY_ADMIN)) {
+            ensureViewAdminRoleExists(adminRealm, adminRole, masterAdminClient);
+        }
+    }
+
+    /**
+     * Migration support: Ensures view-admin role exists for existing installations.
+     * This method is called when realms are imported/updated to ensure the view-admin
+     * role is available even for installations that existed before this feature.
+     */
+    private void ensureViewAdminRoleExists(RealmModel adminRealm, RoleModel adminRole, ClientModel realmAdminClient) {
+        // Check if view-admin role exists in master realm
+        RoleModel viewAdminRole = adminRealm.getRole(AdminRoles.VIEW_ADMIN);
+
+        // Create the role if it doesn't exist
+        if (viewAdminRole == null) {
+            viewAdminRole = adminRealm.addRole(AdminRoles.VIEW_ADMIN);
+            viewAdminRole.setDescription("${role_" + AdminRoles.VIEW_ADMIN + "}");
+        }
+
+        // Ensure view-admin is a composite of admin role (so admins can assign it)
+        if (!adminRole.hasRole(viewAdminRole)) {
+            adminRole.addCompositeRole(viewAdminRole);
+        }
+
+        // Grant view permissions for this realm
+        grantViewRolesToViewAdmin(adminRealm, realmAdminClient);
     }
 
 
@@ -903,5 +960,34 @@ public class RealmManager {
         setupClientRegistrations(realm);
         session.clientPolicy().setupClientPoliciesOnCreatedRealm(realm);
         DefaultKeyProviders.createProviders(realm);
+    }
+
+    /**
+     * Migration method to ensure view-admin role exists for all realms when feature is enabled.
+     * This should be called once at startup after enabling the GLOBAL_READONLY_ADMIN feature
+     * to migrate existing installations.
+     */
+    public void migrateViewAdminRoleForAllRealms() {
+        if (!Profile.isFeatureEnabled(Profile.Feature.GLOBAL_READONLY_ADMIN)) {
+            return;
+        }
+
+        RealmModel adminRealm = model.getRealmByName(Config.getAdminRealm());
+        if (adminRealm == null) {
+            return;
+        }
+
+        RoleModel adminRole = adminRealm.getRole(AdminRoles.ADMIN);
+        if (adminRole == null) {
+            return;
+        }
+
+        // Process all realms
+        model.getRealmsStream().forEach(realm -> {
+            ClientModel masterAdminClient = realm.getMasterAdminClient();
+            if (masterAdminClient != null) {
+                ensureViewAdminRoleExists(adminRealm, adminRole, masterAdminClient);
+            }
+        });
     }
 }

@@ -36,7 +36,9 @@ import jakarta.ws.rs.core.CacheControl;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AdminRoles;
@@ -46,6 +48,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -163,6 +166,9 @@ public class RealmsAdminResource {
 
             grantPermissionsToRealmCreator(realm);
 
+            // Grant view permissions to view-admin users for the new realm
+            grantViewRolesToViewAdmins(realm);
+
             URI location = AdminRoot.realmsUrl(session.getContext().getUri()).path(realm.getName()).build();
             logger.debugv("imported realm success, sending back: {0}", location.toString());
 
@@ -198,6 +204,40 @@ public class RealmsAdminResource {
         Arrays.stream(AdminRoles.ALL_REALM_ROLES)
                 .map(realmAdminApp::getRole)
                 .forEach(auth.getUser()::grantRole);
+    }
+
+    /**
+     * Grants view roles to users with view-admin role for newly created realm.
+     * This ensures that view-admin users automatically get access to new realms.
+     */
+    private void grantViewRolesToViewAdmins(RealmModel newRealm) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.GLOBAL_READONLY_ADMIN)) {
+            return;
+        }
+
+        RealmModel masterRealm = session.realms().getRealmByName(Config.getAdminRealm());
+        if (masterRealm == null) {
+            return;
+        }
+
+        RoleModel viewAdminRole = masterRealm.getRole(AdminRoles.VIEW_ADMIN);
+        if (viewAdminRole == null) {
+            return;
+        }
+
+        // Get the master admin client for the new realm
+        ClientModel newRealmMasterClient = newRealm.getMasterAdminClient();
+        if (newRealmMasterClient == null) {
+            return;
+        }
+
+        // Add all view roles as composites to the view-admin role
+        for (String roleName : AdminRoles.ALL_VIEW_REALM_ROLES) {
+            RoleModel role = newRealmMasterClient.getRole(roleName);
+            if (role != null) {
+                viewAdminRole.addCompositeRole(role);
+            }
+        }
     }
 
     /**
