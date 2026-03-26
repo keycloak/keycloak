@@ -67,14 +67,22 @@ public class ValidationAnnotationScannerTest {
 
     @Before
     public void setUp() throws IOException {
-        scanner = new ValidationAnnotationScanner();
         index = createIndex(
                 TestRepresentation.class,
                 TestWithGroups.class,
                 CreateClient.class,
                 PutClient.class,
-                PatchClient.class
+                PatchClient.class,
+                NotBlank.class,
+                NotNull.class,
+                NotEmpty.class,
+                Size.class,
+                Pattern.class,
+                Min.class,
+                Max.class,
+                URL.class
         );
+        scanner = new ValidationAnnotationScanner(index);
     }
 
     @Test
@@ -113,7 +121,7 @@ public class ValidationAnnotationScannerTest {
 
         String description = scanner.buildDescription(classInfo, "notNullField");
 
-        assertTrue(description.contains("required"));
+        assertTrue(description.contains("must not be null"));
     }
 
     @Test
@@ -191,7 +199,7 @@ public class ValidationAnnotationScannerTest {
 
         assertNotNull(description);
         assertTrue(description.contains("on update"));
-        assertTrue(description.contains("required"));
+        assertTrue(description.contains("must not be null"));
     }
 
     @Test

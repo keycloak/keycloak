@@ -37,13 +37,14 @@ public class OASModelFilter implements OASFilter {
 
     private final Logger log = Logger.getLogger(OASModelFilter.class);
     private final Map<String, ClassInfo> simpleNameToClassInfoMap = new HashMap<>();
-    private final ValidationAnnotationScanner validationScanner = new ValidationAnnotationScanner();
+    private final ValidationAnnotationScanner validationScanner;
 
     public static final String REF_PREFIX = "#/components/schemas/";
 
     public OASModelFilter(IndexView indexView) {
         log.debug("Index size: " + indexView.getKnownClasses().size());
 
+        this.validationScanner = new ValidationAnnotationScanner(indexView);
         indexView.getKnownClasses().forEach(classInfo -> {
             simpleNameToClassInfoMap.put(classInfo.simpleName(), classInfo);
         });

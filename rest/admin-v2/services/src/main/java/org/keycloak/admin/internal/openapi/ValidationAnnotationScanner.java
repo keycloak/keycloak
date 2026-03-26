@@ -2,24 +2,24 @@ package org.keycloak.admin.internal.openapi;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.StringJoiner;
 
+import jakarta.validation.Constraint;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
-import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
 
 import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.hibernate.validator.constraints.URL;
@@ -29,6 +29,7 @@ import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.FieldInfo;
+import org.jboss.jandex.IndexView;
 import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
@@ -49,10 +50,10 @@ public class ValidationAnnotationScanner {
 
     private static final Logger log = Logger.getLogger(ValidationAnnotationScanner.class);
 
-    // Jakarta Validation annotations
-    private static final DotName NOT_BLANK = DotName.createSimple(NotBlank.class);
-    private static final DotName NOT_NULL = DotName.createSimple(NotNull.class);
-    private static final DotName NOT_EMPTY = DotName.createSimple(NotEmpty.class);
+    // Meta-annotation that marks constraint annotations
+    private static final DotName CONSTRAINT = DotName.createSimple(Constraint.class);
+
+    // Annotations that need special handling for parameter formatting
     private static final DotName SIZE = DotName.createSimple(Size.class);
     private static final DotName PATTERN = DotName.createSimple(Pattern.class);
     private static final DotName MIN = DotName.createSimple(Min.class);
@@ -61,10 +62,6 @@ public class ValidationAnnotationScanner {
 
     // Hibernate Validator annotations (not supported by SmallRye's BeanValidationScanner)
     private static final DotName URL = DotName.createSimple(URL.class);
-
-    // Custom validation annotations
-    private static final DotName UUID_UNMODIFIED = DotName.createSimple(UuidUnmodified.class);
-    private static final DotName CLIENT_SECRET_NOT_BLANK = DotName.createSimple(ClientSecretNotBlank.class);
 
     // Validation group package prefix for detecting unknown groups
     private static final String VALIDATION_PACKAGE = "org.keycloak.representations.admin.v2.validation";
@@ -76,6 +73,62 @@ public class ValidationAnnotationScanner {
             DotName.createSimple(PutClient.class), "on update",
             DotName.createSimple(PatchClient.class), "on patch"
     );
+
+    private final IndexView indexView;
+    private final ResourceBundle validationMessages;
+    private final Set<DotName> constraintAnnotations;
+
+    public ValidationAnnotationScanner(IndexView indexView) {
+        this.indexView = indexView;
+        this.validationMessages = loadValidationMessages();
+        this.constraintAnnotations = discoverConstraintAnnotations();
+    }
+
+    private ResourceBundle loadValidationMessages() {
+        try {
+            return ResourceBundle.getBundle("org.hibernate.validator.ValidationMessages");
+        } catch (MissingResourceException e) {
+            log.warn("Could not load ValidationMessages resource bundle", e);
+            return null;
+        }
+    }
+
+    private Set<DotName> discoverConstraintAnnotations() {
+        Set<DotName> constraints = new HashSet<>();
+        for (AnnotationInstance annotation : indexView.getAnnotations(CONSTRAINT)) {
+            if (annotation.target().kind() == AnnotationTarget.Kind.CLASS) {
+                constraints.add(annotation.target().asClass().name());
+            }
+        }
+        log.debugf("Discovered %d constraint annotations: %s", constraints.size(), constraints);
+        return constraints;
+    }
+
+    private boolean isConstraintAnnotation(DotName annotationName) {
+        if (constraintAnnotations.contains(annotationName)) {
+            return true;
+        }
+        ClassInfo annotationClass = indexView.getClassByName(annotationName);
+        return annotationClass != null && annotationClass.hasAnnotation(CONSTRAINT);
+    }
+
+    private String resolveMessage(String messageTemplate) {
+        if (messageTemplate == null || messageTemplate.isEmpty()) {
+            return null;
+        }
+        if (messageTemplate.startsWith("{") && messageTemplate.endsWith("}")) {
+            String key = messageTemplate.substring(1, messageTemplate.length() - 1);
+            if (validationMessages != null) {
+                try {
+                    return validationMessages.getString(key);
+                } catch (MissingResourceException e) {
+                    log.debugf("Message key not found in resource bundle: %s", key);
+                }
+            }
+            return null;
+        }
+        return messageTemplate;
+    }
 
     /**
      * Applies schema properties for annotations not handled by SmallRye's BeanValidationScanner.
@@ -117,73 +170,29 @@ public class ValidationAnnotationScanner {
 
         List<String> constraints = new ArrayList<>();
 
-        // Check for @NotBlank
-        AnnotationInstance notBlank = getFieldAnnotation(field, NOT_BLANK);
-        if (notBlank != null) {
-            String context = getGroupContext(notBlank);
-            constraints.add(context + "must not be blank");
-        }
-
-        // Check for @NotNull
-        AnnotationInstance notNull = getFieldAnnotation(field, NOT_NULL);
-        if (notNull != null) {
-            String context = getGroupContext(notNull);
-            constraints.add(context + "required");
-        }
-
-        // Check for @NotEmpty
-        AnnotationInstance notEmpty = getFieldAnnotation(field, NOT_EMPTY);
-        if (notEmpty != null) {
-            String context = getGroupContext(notEmpty);
-            constraints.add(context + "must not be empty");
-        }
-
-        // Check for @URL
-        AnnotationInstance url = getFieldAnnotation(field, URL);
-        if (url != null) {
-            constraints.add("must be a valid URL");
-        }
-
-        // Check for @Size
-        AnnotationInstance size = getFieldAnnotation(field, SIZE);
-        if (size != null) {
-            String sizeDesc = buildSizeDescription(size);
-            if (sizeDesc != null) {
-                constraints.add(sizeDesc);
+        for (AnnotationInstance annotation : field.annotations()) {
+            if (annotation.target().kind() != AnnotationTarget.Kind.FIELD) {
+                continue;
             }
-        }
 
-        // Check for @Pattern
-        AnnotationInstance pattern = getFieldAnnotation(field, PATTERN);
-        if (pattern != null) {
-            AnnotationValue regexp = pattern.value("regexp");
-            if (regexp != null) {
-                constraints.add("must match pattern: " + regexp.asString());
+            DotName annotationName = annotation.name();
+
+            // Handle @Valid (nested validation) - not a constraint but useful to document
+            if (VALID.equals(annotationName)) {
+                constraints.add("nested fields are validated");
+                continue;
             }
-        }
 
-        // Check for @Min
-        AnnotationInstance min = getFieldAnnotation(field, MIN);
-        if (min != null) {
-            AnnotationValue value = min.value();
-            if (value != null) {
-                constraints.add("minimum value " + value.asLong());
+            // Check if this is a constraint annotation
+            if (!isConstraintAnnotation(annotationName)) {
+                continue;
             }
-        }
 
-        // Check for @Max
-        AnnotationInstance max = getFieldAnnotation(field, MAX);
-        if (max != null) {
-            AnnotationValue value = max.value();
-            if (value != null) {
-                constraints.add("maximum value " + value.asLong());
+            String constraintDesc = buildConstraintDescription(annotation);
+            if (constraintDesc != null) {
+                String context = getGroupContext(annotation);
+                constraints.add(context + constraintDesc);
             }
-        }
-
-        // Check for @Valid (nested validation)
-        AnnotationInstance valid = getFieldAnnotation(field, VALID);
-        if (valid != null) {
-            constraints.add("nested fields are validated");
         }
 
         // Check for type argument annotations (e.g., Set<@NotBlank @URL String>)
@@ -201,9 +210,74 @@ public class ValidationAnnotationScanner {
         return joiner.toString();
     }
 
+    private String buildConstraintDescription(AnnotationInstance annotation) {
+        DotName annotationName = annotation.name();
+
+        // Handle annotations that need special parameter formatting
+        if (SIZE.equals(annotationName)) {
+            return buildSizeDescription(annotation);
+        }
+        if (PATTERN.equals(annotationName)) {
+            AnnotationValue regexp = annotation.value("regexp");
+            if (regexp != null) {
+                return "must match pattern: " + regexp.asString();
+            }
+            return null;
+        }
+        if (MIN.equals(annotationName)) {
+            AnnotationValue value = annotation.value();
+            if (value != null) {
+                return "minimum value " + value.asLong();
+            }
+            return null;
+        }
+        if (MAX.equals(annotationName)) {
+            AnnotationValue value = annotation.value();
+            if (value != null) {
+                return "maximum value " + value.asLong();
+            }
+            return null;
+        }
+        if (URL.equals(annotationName)) {
+            return "must be a valid URL";
+        }
+
+        // For all other constraint annotations, resolve the message
+        AnnotationValue messageValue = annotation.value("message");
+        String messageTemplate = messageValue != null ? messageValue.asString() : getDefaultMessage(annotationName);
+        String resolved = resolveMessage(messageTemplate);
+
+        if (resolved != null) {
+            return resolved;
+        }
+
+        // Fallback: derive description from annotation name
+        String simpleName = annotationName.withoutPackagePrefix();
+        return humanize(simpleName);
+    }
+
+    private String getDefaultMessage(DotName annotationName) {
+        return "{" + annotationName.toString() + ".message}";
+    }
+
+    private String humanize(String annotationName) {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < annotationName.length(); i++) {
+            char c = annotationName.charAt(i);
+            if (Character.isUpperCase(c) && i > 0) {
+                result.append(' ');
+            }
+            result.append(Character.toLowerCase(c));
+        }
+        return result.toString();
+    }
+
     /**
      * Builds validation descriptions from class-level validation annotations.
      * Returns a map of field name to validation description for fields affected by class-level constraints.
+     * <p>
+     * Note: Class-level constraints often affect multiple fields or cross-field validation.
+     * The mapping to specific fields is derived from the constraint's documented behavior.
      *
      * @param classInfo the class to scan
      * @return map of field name to validation description
@@ -211,28 +285,43 @@ public class ValidationAnnotationScanner {
     public Map<String, String> buildClassLevelDescriptions(ClassInfo classInfo) {
         Map<String, String> fieldDescriptions = new HashMap<>();
 
-        // Check for @UuidUnmodified
-        AnnotationInstance uuidUnmodified = classInfo.annotation(UUID_UNMODIFIED);
-        if (uuidUnmodified != null) {
-            String context = getGroupContext(uuidUnmodified);
-            String message = uuidUnmodified.value("message") != null
-                    ? uuidUnmodified.value("message").asString()
-                    : "server-managed, must not be modified";
-            if (!message.startsWith("{")) {
-                fieldDescriptions.put("uuid", context + message);
-            } else {
-                fieldDescriptions.put("uuid", context + "server-managed, must not be modified");
+        for (AnnotationInstance annotation : classInfo.annotations()) {
+            if (annotation.target().kind() != AnnotationTarget.Kind.CLASS) {
+                continue;
+            }
+
+            if (!isConstraintAnnotation(annotation.name())) {
+                continue;
+            }
+
+            String context = getGroupContext(annotation);
+            AnnotationValue messageValue = annotation.value("message");
+            String messageTemplate = messageValue != null ? messageValue.asString() : getDefaultMessage(annotation.name());
+            String message = resolveMessage(messageTemplate);
+
+            if (message == null) {
+                message = humanize(annotation.name().withoutPackagePrefix());
+            }
+
+            // Try to determine which field(s) this class-level constraint affects
+            String affectedField = getAffectedField(annotation);
+            if (affectedField != null) {
+                fieldDescriptions.put(affectedField, context + message);
             }
         }
 
-        // Check for @ClientSecretNotBlank
-        AnnotationInstance clientSecretNotBlank = classInfo.annotation(CLIENT_SECRET_NOT_BLANK);
-        if (clientSecretNotBlank != null) {
-            String context = getGroupContext(clientSecretNotBlank);
-            fieldDescriptions.put("secret", context + "required when using client secret authentication");
-        }
-
         return fieldDescriptions;
+    }
+
+    private String getAffectedField(AnnotationInstance classLevelConstraint) {
+        String simpleName = classLevelConstraint.name().withoutPackagePrefix().toLowerCase();
+        if (simpleName.contains("uuid")) {
+            return "uuid";
+        }
+        if (simpleName.contains("secret")) {
+            return "secret";
+        }
+        return null;
     }
 
     private String buildSizeDescription(AnnotationInstance size) {
@@ -295,40 +384,14 @@ public class ValidationAnnotationScanner {
         List<String> elementConstraints = new ArrayList<>();
 
         for (Type typeArg : typeArgs) {
-            List<AnnotationInstance> annotations = typeArg.annotations();
-            for (AnnotationInstance annotation : annotations) {
-                DotName annotationName = annotation.name();
+            for (AnnotationInstance annotation : typeArg.annotations()) {
+                if (!isConstraintAnnotation(annotation.name())) {
+                    continue;
+                }
 
-                if (NOT_BLANK.equals(annotationName)) {
-                    elementConstraints.add("must not be blank");
-                } else if (NOT_NULL.equals(annotationName)) {
-                    elementConstraints.add("required");
-                } else if (NOT_EMPTY.equals(annotationName)) {
-                    elementConstraints.add("must not be empty");
-                } else if (URL.equals(annotationName)) {
-                    AnnotationValue message = annotation.value("message");
-                    if (message != null && !message.asString().isEmpty() && !message.asString().startsWith("{")) {
-                        elementConstraints.add(message.asString());
-                    } else {
-                        elementConstraints.add("must be a valid URL");
-                    }
-                } else if (SIZE.equals(annotationName)) {
-                    AnnotationValue minValue = annotation.value("min");
-                    AnnotationValue maxValue = annotation.value("max");
-                    int min = minValue != null ? minValue.asInt() : 0;
-                    int max = maxValue != null ? maxValue.asInt() : Integer.MAX_VALUE;
-                    if (min > 0 && max < Integer.MAX_VALUE) {
-                        elementConstraints.add("length between " + min + " and " + max);
-                    } else if (min > 0) {
-                        elementConstraints.add("minimum length " + min);
-                    } else if (max < Integer.MAX_VALUE) {
-                        elementConstraints.add("maximum length " + max);
-                    }
-                } else if (PATTERN.equals(annotationName)) {
-                    AnnotationValue regexp = annotation.value("regexp");
-                    if (regexp != null) {
-                        elementConstraints.add("must match pattern: " + regexp.asString());
-                    }
+                String constraintDesc = buildConstraintDescription(annotation);
+                if (constraintDesc != null) {
+                    elementConstraints.add(constraintDesc);
                 }
             }
         }
