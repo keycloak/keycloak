@@ -26,6 +26,6 @@ public final class ServerOptions {
     public static final Option<Boolean> SERVER_ASYNC_BOOTSTRAP = new OptionBuilder<>("server-async-bootstrap", Boolean.class)
             .category(OptionCategory.SERVER)
             .defaultValue(Optional.empty())
-            .description("If true, endpoints are opened while the bootstrap runs in the background. If false, endpoints are opened after bootstrap completes, ensuring the server is ready to handle requests. Will be enabled by default when the health endpoints are enabled unless set to false explicitly")
+            .description("If true, endpoints are opened while the bootstrap runs in the background. If false, endpoints are opened after bootstrap completes, ensuring the server is ready to handle requests. Async bootstrap is enabled by default when the health endpoints are also enabled, unless this option is explicitly set to false.")
             .build();
 }
