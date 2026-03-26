@@ -87,6 +87,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.services.CorsErrorResponseException;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager.BearerTokenAuthenticator;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -1034,8 +1035,9 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 try {
                     issuerEndpoint.requestCredential(requestPayload);
                     fail();
-                } catch (Exception e) {
-                    assertTrue(e.getMessage().contains("Could not validate provided proof"), "Error should be related to JWT validation, not conversion");
+                } catch (ErrorResponseException ex) {
+                    assertEquals(ErrorType.INVALID_PROOF.getValue(), ex.getError());
+                    assertEquals("Could not validate JWT proof", ex.getErrorDescription());
                 }
 
                 // Test 2: Create a request with both proof and proofs fields - should fail validation
