@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.authz;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response.Status;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.authorization.client.AuthorizationDeniedException;
@@ -125,6 +126,36 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         newPermission.addUser("kolo");
 
         ProtectionResource protection = getAuthzClient().protection("marta", "password");
+
+        ResourceRepresentation resourceB = new ResourceRepresentation();
+
+        resourceB.setName("Resource B");
+        resourceB.setOwnerManagedAccess(true);
+        resourceB.setOwner("kolo");
+        resourceB.addScope("Scope A", "Scope B", "Scope C");
+        resourceB = getAuthzClient().protection().resource().create(resourceB);
+        newPermission.addResource(resourceB.getId());
+
+        try {
+            protection.policy(resource.getId()).create(newPermission);
+            fail("Should fail, not allowed to set a resource other than the one referenced in the path");
+        } catch (RuntimeException ignore) {
+            Throwable cause = ignore.getCause();
+            assertTrue(cause instanceof HttpResponseException);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), ((HttpResponseException) cause).getStatusCode());
+        }
+
+        try {
+            newPermission.addResource(resource.getId());
+            protection.policy(resource.getId()).create(newPermission);
+            fail("Should fail, not allowed to set a resource other than the one referenced in the path");
+        } catch (RuntimeException ignore) {
+            Throwable cause = ignore.getCause();
+            assertTrue(cause instanceof HttpResponseException);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), ((HttpResponseException) cause).getStatusCode());
+        }
+
+        newPermission.getResources().remove(resourceB.getId());
 
         UmaPermissionRepresentation permission = protection.policy(resource.getId()).create(newPermission);
 
