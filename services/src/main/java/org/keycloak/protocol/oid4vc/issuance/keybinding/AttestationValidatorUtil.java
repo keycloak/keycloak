@@ -97,7 +97,7 @@ public class AttestationValidatorUtil {
         throws JWSInputException, VerificationException {
 
         if (attestationJwt == null || attestationJwt.split("\\.").length != 3) {
-            throw new VCIssuerException("Invalid JWT format");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Invalid JWT format");
         }
 
         JWSInput jwsInput = new JWSInput(attestationJwt);
@@ -108,7 +108,7 @@ public class AttestationValidatorUtil {
         try {
             JsonSerialization.mapper.readTree(payloadString);
         } catch (JsonProcessingException e) {
-            throw new VCIssuerException("Invalid JSON in attestation payload: " + payloadString, e);
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Invalid JSON in attestation payload: " + payloadString, e);
         }
 
         KeyAttestationJwtBody attestationBody;
@@ -118,7 +118,7 @@ public class AttestationValidatorUtil {
                     KeyAttestationJwtBody.class
             );
         } catch (IOException e) {
-            throw new VCIssuerException("Invalid attestation payload format", e);
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Invalid attestation payload format", e);
         }
 
         JWSHeader header = jwsInput.getHeader();
@@ -135,22 +135,22 @@ public class AttestationValidatorUtil {
             JWK resolvedJwk = keyResolver.resolveKey(header.getKeyId(), rawHeader,
                     JsonSerialization.mapper.convertValue(attestationBody, Map.class));
             if (resolvedJwk == null) {
-                throw new VCIssuerException("Key with kid '" + header.getKeyId() + "' not found in trusted key registry");
+                throw new VCIssuerException(ErrorType.INVALID_PROOF, "Key with kid '" + header.getKeyId() + "' not found in trusted key registry");
             }
             verifier = verifierFromResolvedJWK(resolvedJwk, header.getAlgorithm().name(), keycloakSession);
         } else {
-            throw new VCIssuerException("Neither x5c nor kid present in attestation JWT header");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Neither x5c nor kid present in attestation JWT header");
         }
 
         if (!verifier.verify(jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8),
                 jwsInput.getSignature())) {
-            throw new VCIssuerException("Could not verify signature of attestation JWT");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Could not verify signature of attestation JWT");
         }
 
         validateAttestationPayload(keycloakSession, vcIssuanceContext, attestationBody);
 
         if (attestationBody.getAttestedKeys() == null) {
-            throw new VCIssuerException("Missing required attested_keys claim in attestation");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing required attested_keys claim in attestation");
         }
 
         return attestationBody;
@@ -162,7 +162,7 @@ public class AttestationValidatorUtil {
             KeyAttestationJwtBody attestationBody) throws VCIssuerException, VerificationException {
 
         if (attestationBody.getIat() == null) {
-            throw new VCIssuerException("Missing 'iat' claim in attestation");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing 'iat' claim in attestation");
         }
 
         // Get resistance level requirements from configuration
@@ -176,13 +176,13 @@ public class AttestationValidatorUtil {
         boolean nonceRequired = cNonceHandler != null;
 
         if (nonceRequired && attestationBody.getNonce() == null) {
-            throw new VCIssuerException("Missing 'nonce' in attestation");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing 'nonce' in attestation");
         }
 
         // Validate nonce if present. If provided, it must correspond to a nonce value provided by Keycloak.
         if (attestationBody.getNonce() != null) {
             if (cNonceHandler == null) {
-                throw new VCIssuerException("No CNonceHandler available");
+                throw new VCIssuerException(ErrorType.INVALID_PROOF, "No CNonceHandler available");
             }
 
             try {
@@ -270,14 +270,14 @@ public class AttestationValidatorUtil {
         // parameter may be empty, indicating a key attestation is needed without additional constraints.
         // from: https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#section-12.2.4
         if (providedLevels == null || providedLevels.isEmpty()) {
-            throw new VCIssuerException(levelType + " is required but was missing.");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, levelType + " is required but was missing.");
         }
 
         // Check each provided level against the accepted levels
         boolean foundMatch = providedLevels.stream().anyMatch(acceptedLevels::contains);
         if (!foundMatch) {
-            throw new VCIssuerException(
-                levelType + " none of the provided levels from '" + providedLevels + "' did match any of the " +
+            throw new VCIssuerException(ErrorType.INVALID_PROOF,
+                    levelType + " none of the provided levels from '" + providedLevels + "' did match any of the " +
                     "accepted levels: " + acceptedLevels);
         }
     }
@@ -285,26 +285,26 @@ public class AttestationValidatorUtil {
     private static void validateJwsHeader(JWSHeader header) {
         String alg = Optional.ofNullable(header.getAlgorithm())
                 .map(Algorithm::name)
-                .orElseThrow(() -> new VCIssuerException("Missing algorithm in JWS header"));
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing algorithm in JWS header"));
 
         if ("none".equalsIgnoreCase(alg)) {
-            throw new VCIssuerException("'none' algorithm is not allowed");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "'none' algorithm is not allowed");
         }
 
         if (!ALLOWED_ALGORITHMS.contains(alg)) {
-            throw new VCIssuerException("Unsupported algorithm: " + alg +
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Unsupported algorithm: " + alg +
                     ". Allowed algorithms: " + ALLOWED_ALGORITHMS);
         }
 
         String typ = Optional.ofNullable(header.getType())
                 .map(Object::toString)
-                .orElseThrow(() -> new VCIssuerException("Missing typ in JWS header"));
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing typ in JWS header"));
 
         if (!ATTESTATION_JWT_TYP.equals(typ)) {
             if (LEGACY_ATTESTATION_JWT_TYP.equals(typ)) {
                 LOGGER.debugf("Accepting deprecated attestation JWT typ '%s' for backward compatibility", typ);
             } else {
-                throw new VCIssuerException("Invalid JWT typ: expected " + ATTESTATION_JWT_TYP);
+                throw new VCIssuerException(ErrorType.INVALID_PROOF, "Invalid JWT typ: expected " + ATTESTATION_JWT_TYP);
             }
         }
     }
@@ -350,7 +350,7 @@ public class AttestationValidatorUtil {
             return verifierFromResolvedJWK(certJwk, alg, keycloakSession);
 
         } catch (Exception e) {
-            throw new VCIssuerException("Failed to validate x5c certificate chain", e);
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Failed to validate x5c certificate chain", e);
         }
     }
 
@@ -401,7 +401,7 @@ public class AttestationValidatorUtil {
         } else if (key instanceof ECPublicKey ec) {
             return JWKBuilder.create().algorithm(alg).ec(ec, certChain, null);
         } else {
-            throw new VCIssuerException("Unsupported public key type in certificate: " + key.getClass().getName());
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Unsupported public key type in certificate: " + key.getClass().getName());
         }
     }
 }
