@@ -794,6 +794,168 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(organizations.contains(orgB.getAlias()), is(true));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testPasswordGrantWithAllOrganizationsAndRefresh() throws Exception {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+
+        oauth.client("direct-grant", "password");
+        oauth.scope("openid organization:*");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(member.getEmail(), memberPassword);
+        assertThat(response.getScope(), containsString("organization"));
+
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, containsInAnyOrder("orga", "orgb"));
+
+        // refresh token and verify same organizations are resolved
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertThat(response.getScope(), containsString("organization"));
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, containsInAnyOrder("orga", "orgb"));
+
+        // refresh again to verify subsequent refreshes also work
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertThat(response.getScope(), containsString("organization"));
+        accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, containsInAnyOrder("orga", "orgb"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testMultipleTabsWithMixedScopeFormats() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        oauth.client("broker-app", KcOidcBrokerConfiguration.CONSUMER_BROKER_APP_SECRET);
+
+        try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // first tab - organization:* (all orgs)
+            oauth.scope("organization:*");
+            loginPage.open(bc.consumerRealmName());
+            loginPage.loginUsername(member.getEmail());
+            loginPage.login(memberPassword);
+            AccessTokenResponse response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization:*"));
+            String tab1RefreshToken = response.getRefreshToken();
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(2));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias(), orgB.getAlias()));
+
+            // second tab - organization (ANY, select orgB)
+            oauth.scope("organization");
+            tabUtil.newTab(oauth.loginForm().build());
+            assertThat(tabUtil.getCountOfTabs(), is(2));
+            selectOrganizationPage.isCurrent();
+            selectOrganizationPage.selectOrganization(orgB.getAlias());
+            response = assertSuccessfulCodeGrant(oauth);
+            assertThat(response.getScope(), containsString("organization"));
+            String tab2RefreshToken = response.getRefreshToken();
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgB.getAlias()), is(true));
+
+            // refresh first tab - should still have all organizations (not contaminated by tab 2's org selection)
+            tabUtil.switchToTab(0);
+            oauth.scope(null);
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), containsString("organization:*"));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(2));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias(), orgB.getAlias()));
+
+            // refresh second tab - should still have only orgB
+            tabUtil.switchToTab(1);
+            oauth.scope(null);
+            response = oauth.doRefreshTokenRequest(tab2RefreshToken);
+            assertThat(response.getScope(), containsString("organization"));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations.contains(orgB.getAlias()), is(true));
+
+            // refresh second tab changing scopes to ask for orgA, should not be allowed since the user selection in
+            // that tab was orgB
+            tabUtil.switchToTab(1);
+            oauth.scope("organization:" + orgA.getAlias());
+            response = oauth.doRefreshTokenRequest(tab2RefreshToken);
+            assertThat(response.getScope(), not(containsString("organization")));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations, is(nullValue()));
+
+            // refresh first tab changing scopes ALL -> SINGLE
+            tabUtil.switchToTab(0);
+            oauth.scope("organization:" + orgA.getAlias());
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), containsString("organization:" + orgA.getAlias()));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(1));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias()));
+
+            // try to refresh first tab changing scopes SINGLE -> ANY, not allowed
+            tabUtil.switchToTab(0);
+            oauth.scope("organization");
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), not(containsString("organization")));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations, is(nullValue()));
+
+            // try to refresh first tab changing scopes SINGLE -> ALL
+            tabUtil.switchToTab(0);
+            oauth.scope("organization:*");
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), containsString("organization:*"));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(2));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias(), orgB.getAlias()));
+
+            // try to refresh second tab changing scopes ANY -> ALL
+            tabUtil.switchToTab(1);
+            oauth.scope("organization:*");
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), containsString("organization:*"));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(2));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias(), orgB.getAlias()));
+
+            // try to refresh second tab changing scopes ALL -> ANY
+            tabUtil.switchToTab(1);
+            oauth.scope("organization");
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), not(containsString("organization")));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations, is(nullValue()));
+
+            // refresh second tab resetting scopes so that the scopes from the last successful refresh are respected
+            tabUtil.switchToTab(1);
+            oauth.scope(null);
+            response = oauth.doRefreshTokenRequest(tab1RefreshToken);
+            assertThat(response.getScope(), containsString("organization:*"));
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+            assertThat(organizations.size(), is(2));
+            assertThat(organizations, containsInAnyOrder(orgA.getAlias(), orgB.getAlias()));
+        }
+    }
+
     @Test
     public void testIncludeOrganizationAttributes() throws Exception {
         OrganizationRepresentation orgRep = createOrganization();

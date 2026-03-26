@@ -37,7 +37,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
@@ -111,22 +110,14 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel model, UserSessionModel userSession, KeycloakSession session, ClientSessionContext clientSessionCtx) {
-        String orgId;
         KeycloakContext context = session.getContext();
         OrganizationModel organization = context.getOrganization();
-
-        if (organization != null) {
-            orgId = organization.getId();
-        } else {
-            orgId = clientSessionCtx.getClientSession().getNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
-        }
-
         List<OrganizationModel> organizations;
 
-        if (orgId == null) {
-            organizations = resolveFromRequestedScopes(session, userSession, clientSessionCtx).toList();
+        if (organization != null) {
+            organizations = List.of(organization);
         } else {
-            organizations = List.of(session.getProvider(OrganizationProvider.class).getById(orgId));
+            organizations = resolveFromRequestedScopes(session, userSession, clientSessionCtx).toList();
         }
 
         RealmModel realm = context.getRealm();
