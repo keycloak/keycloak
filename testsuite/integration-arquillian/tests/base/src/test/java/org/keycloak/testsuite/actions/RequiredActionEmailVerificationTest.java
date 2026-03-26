@@ -539,8 +539,6 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         driver.manage().deleteAllCookies();
 
         driver.navigate().to(verificationUrl.trim());
-        proceedPage.assertCurrent();
-        proceedPage.clickProceedLink();
         infoPage.assertCurrent();
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
@@ -772,8 +770,6 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
             driver.manage().deleteAllCookies();
 
             driver.navigate().to(verificationUrl.trim());
-            proceedPage.assertCurrent();
-            proceedPage.clickProceedLink();
 
             infoPage.assertCurrent();
             assertEquals("Your account has been updated.", infoPage.getInfo());
@@ -801,21 +797,11 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         // open link in the second browser without the session
         driver2.navigate().to(verificationUrl.trim());
 
-        // follow the link
-        final WebElement proceedLink = driver2.findElement(By.linkText("» Click here to proceed"));
-        assertThat(proceedLink, Matchers.notNullValue());
-
-        // check if the initial client is preserved
-        String link = proceedLink.getAttribute("href");
-        assertThat(link, Matchers.containsString("client_id=test-app"));
-        proceedLink.click();
-
-        // confirmation in the second browser
+        // With the middle page removed, the link lands directly on the info page.
+        // Verify the final confirmation is shown and client_id is preserved in the current URL.
         assertThat(driver2.getPageSource(), Matchers.containsString("kc-info-message"));
         assertThat(driver2.getPageSource(), Matchers.containsString("Your email address has been verified."));
-
-        final WebElement backToApplicationLink = driver2.findElement(By.linkText("« Back to Application"));
-        assertThat(backToApplicationLink, Matchers.notNullValue());
+        assertThat(driver2.getCurrentUrl(), Matchers.containsString("client_id=test-app"));
     }
 
     @Test
@@ -950,20 +936,14 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
                 verifyEmailPage.assertCurrent();
 
-                // Browser 2 [still logged in]: Click the email verification link
+                // Browser 2: Click the email verification link
                 Assert.assertEquals(1, greenMail.getReceivedMessages().length);
                 MimeMessage message = greenMail.getLastReceivedMessage();
-
                 String verificationUrl = getEmailLink(message);
 
                 driver2.navigate().to(verificationUrl.trim());
 
-                // Browser 2: Confirm email belongs to the user
-                final WebElement proceedLink = driver2.findElement(By.linkText("» Click here to proceed"));
-                assertThat(proceedLink, Matchers.notNullValue());
-                proceedLink.click();
-
-                // Browser 2: Expect confirmation
+                // Browser 2: Middle page removed - lands directly on confirmation page
                 assertThat(driver2.getPageSource(), Matchers.containsString("kc-info-message"));
                 assertThat(driver2.getPageSource(), Matchers.containsString("Your email address has been verified."));
 

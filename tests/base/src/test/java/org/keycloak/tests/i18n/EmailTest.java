@@ -274,47 +274,28 @@ public class EmailTest {
         }
     }
 
-    //KEYCLOAK-7478
-    // Issue 13922
+    //KEYCLOAK-7478 - updated: middle "Perform actions" page removed, link now goes directly to required action
     @Test
-    public void changeLocaleOnInfoPage() throws InterruptedException, IOException {
-        UserResource testUser = user.admin();
+    public void changeLocaleOnUpdatePasswordPage() throws InterruptedException, IOException, MessagingException {
+        ProfileAssume.assumeCommunity();
+
+        UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "login-test");
         testUser.executeActionsEmail(Arrays.asList(UserModel.RequiredAction.UPDATE_PASSWORD.toString()));
-
-        if (!mailServer.waitForIncomingEmail(1)) {
-            Assertions.fail("Error when receiving email");
+        if (!greenMail.waitForIncomingEmail(1)) {
+            Assert.fail("Error when receiving email");
         }
+        String link = MailUtils.getPasswordResetEmailLink(greenMail.getLastReceivedMessage());
 
-        String link = MailUtils.getPasswordResetEmailLink(mailServer.getLastReceivedMessage());
-
-        // Make sure kc_locale added to link doesn't set locale
+        // kc_locale in the URL must NOT override the user's profile locale
         link += "&kc_locale=de";
+        DroneUtils.getCurrentDriver().navigate().to(link);
+        WaitUtils.waitForPageToLoad();
 
-        driver.open(link);
-
-        infoPage.assertCurrent();
-        assertThat(infoPage.getSelectedLanguage(), is(equalTo("English")));
-
-        infoPage.selectLanguage("Deutsch");
-
-        assertThat(driver.page().getPageSource(), containsString("Passwort aktualisieren"));
-
-        driver.findElement(By.linkText("» Klicken Sie hier um fortzufahren")).click();
-
-        loginPasswordUpdatePage.selectLanguage("English");
-        loginPasswordUpdatePage.changePassword("pass", "pass");
-
-        assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
-
-        // Change language again when on final info page with the message about updated account (authSession removed already at this point)
-        infoPage.selectLanguage("Deutsch");
-        assertEquals("Deutsch", infoPage.getSelectedLanguage());
-        assertThat(infoPage.getInfo(), containsString("Ihr Benutzerkonto wurde aktualisiert."));
-
-        infoPage.selectLanguage("English");
-        assertEquals("English", infoPage.getSelectedLanguage());
-        assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
-
+        // The middle "Perform the following action(s)" info page has been removed.
+        // The link now redirects directly to the UPDATE_PASSWORD required-action form.
+        Assert.assertTrue("Expected to be on UpdatePasswordPage, but it was on "
+                        + DroneUtils.getCurrentDriver().getTitle(),
+                updatePasswordPage.isCurrent());
     }
 
     // Issue 10981
