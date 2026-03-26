@@ -1,5 +1,8 @@
 package org.keycloak.testframework.events;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -148,6 +151,29 @@ public class EventAssertion {
             withoutDetails(key);
         }
         return this;
+    }
+
+    public EventAssertion detailsAsStringList(String key, String expectedValue, String separator) {
+        if (expectedValue != null) {
+            String actualValue = event.getDetails().get(key);
+            MatcherAssert.assertThat(actualValue, Matchers.notNullValue());
+
+            List<String> expectedItems = Arrays.asList(expectedValue.split(separator));
+            List<String> actualItems = Arrays.asList(actualValue.split(separator));
+
+            MatcherAssert.assertThat(actualItems, Matchers.containsInAnyOrder(expectedItems.toArray()));
+        } else {
+            withoutDetails(key);
+        }
+        return this;
+    }
+
+    public EventAssertion detailsAsList(String key, String expectedValue) {
+        return detailsAsStringList(key, expectedValue, ",");
+    }
+
+    public EventAssertion scopeDetails(String expectedScopes) {
+        return detailsAsStringList(Details.SCOPE, expectedScopes, " ");
     }
 
     /**

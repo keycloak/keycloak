@@ -1,1 +1,2 @@
-org.keycloak.tests.providers.client.policies.TrackEventsClientPolicyExecutor
+org.keycloak.tests.providers.client.policies.executor.TrackEventsClientPolicyExecutor
+org.keycloak.tests.providers.client.policies.executor.TestRaiseExceptionExecutorFactory

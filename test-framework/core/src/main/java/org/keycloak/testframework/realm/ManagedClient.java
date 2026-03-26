@@ -54,6 +54,18 @@ public class ManagedClient extends ManagedTestResource {
         return clientResource;
     }
 
+    public void update(ManagedClient.ClientUpdate... updates) {
+        ClientRepresentation rep = admin().toRepresentation();
+
+        ClientConfigBuilder configBuilder = ClientConfigBuilder.update(rep);
+        for (ManagedClient.ClientUpdate update : updates) {
+            configBuilder = update.update(configBuilder);
+        }
+
+        ClientRepresentation updated = configBuilder.build();
+        admin().update(updated);
+    }
+
     /**
      * Update the client within a test with automatic reset to the original configuration after the test has completed
      *

@@ -20,6 +20,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.RolesRepresentation;
+import org.keycloak.representations.idm.ScopeMappingRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.util.Collections;
 
@@ -476,6 +477,27 @@ public class RealmConfigBuilder {
             rep.setClientScopes(new ArrayList<>());
         }
         rep.getClientScopes().add(clientScope);
+    }
+
+    public RealmConfigBuilder addClientScopeRealmRoleMapping(String clientScopeName, String... roleNames) {
+        ScopeMappingRepresentation mapping = rep.clientScopeScopeMapping(clientScopeName);
+        for (String roleName : roleNames) {
+            mapping.role(roleName);
+        }
+        return this;
+    }
+
+    public RealmConfigBuilder addClientScopeClientRoleMapping(String clientName, String clientScopeName, String... roleNames) {
+        ScopeMappingRepresentation mapping = new ScopeMappingRepresentation();
+        mapping.setClientScope(clientScopeName);
+        for (String roleName : roleNames) {
+            mapping.role(roleName);
+        }
+        if (rep.getClientScopeMappings() == null) {
+            rep.setClientScopeMappings(new HashMap<>());
+        }
+        rep.getClientScopeMappings().computeIfAbsent(clientName, k -> new ArrayList<>()).add(mapping);
+        return this;
     }
 
     /**

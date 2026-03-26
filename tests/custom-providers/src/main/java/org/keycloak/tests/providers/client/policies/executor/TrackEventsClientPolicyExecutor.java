@@ -1,4 +1,4 @@
-package org.keycloak.tests.providers.client.policies;
+package org.keycloak.tests.providers.client.policies.executor;
 
 import java.util.ArrayList;
 import java.util.List;
