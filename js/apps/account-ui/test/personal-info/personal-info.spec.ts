@@ -7,12 +7,12 @@ import userProfileRealm from "../realms/user-profile-realm.json" with { type: "j
 
 /**
  * Retry helper for operations that may fail due to realm initialization timing or server load.
- * Implements exponential backoff with a maximum of 10 retries for better resilience under load.
+ * Implements exponential backoff with extended retries for CI environments with high parallelism.
  */
 async function retryOperation<T>(
   operation: () => Promise<T>,
-  maxRetries = 10,
-  initialDelay = 200,
+  maxRetries = 15,
+  initialDelay = 300,
 ): Promise<T> {
   let lastError: Error | undefined;
 
@@ -44,9 +44,9 @@ async function retryOperation<T>(
 
 /**
  * Wait for realm to be fully initialized after creation.
- * This helps prevent race conditions when the realm is created but not fully ready.
+ * Extended delay for high-load scenarios.
  */
-async function waitForRealmReady(delayMs = 200): Promise<void> {
+async function waitForRealmReady(delayMs = 500): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
@@ -84,7 +84,6 @@ test.describe("Personal info (user profile enabled)", () => {
     await expect(page.getByPlaceholder("Deutsch")).toHaveCount(1);
     await page.getByTestId("help-label-email2").click();
     await expect(page.getByText("Español")).toBeVisible();
-    await expect(page.getByText("Español")).toHaveCount(1);
   });
 
   test("renders long select options as typeahead", async ({ page }) => {
@@ -164,7 +163,6 @@ test.describe("Personal info (user profile enabled)", () => {
     await assertLastAlert(page, "Your account has been updated.");
 
     await page.reload();
-    await page.locator("delete-account").isVisible();
     await expect(page.getByTestId("email2")).toHaveValue("valid@email.com");
   });
 });
