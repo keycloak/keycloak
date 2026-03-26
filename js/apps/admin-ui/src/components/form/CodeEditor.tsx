@@ -26,7 +26,7 @@ const CodeEditor = ({
         padding={15}
         minHeight={height}
         style={{
-          font: "var(--pf-global--FontFamily--monospace)",
+          font: "var(--pf-v5-global--FontFamily--monospace)",
         }}
         onChange={(event) => onChange?.(event.target.value)}
         value={value}
@@ -38,7 +38,9 @@ const CodeEditor = ({
   );
 
   return (
-    <div style={{ height: `${height}px`, overflow: "auto" }}>{codeEditor}</div>
+    <div className="pf-v5-u-overflow-auto" style={{ height: `${height}px` }}>
+      {codeEditor}
+    </div>
   );
 };
 

@@ -1,8 +1,8 @@
 .kc-filter-session-type-select {
-  margin-right: 10px;
+  margin-right: var(--pf-v5-global--spacer--sm);
   width: 300px;
 }
 
-.pf-v5-c-form__group.kc-revocation-modal-form-group {
-  display: inline-block !important;
+.pf-v5-c-form__group.kc-revocation-modal-form-group[class] {
+  display: inline-block;
 }
