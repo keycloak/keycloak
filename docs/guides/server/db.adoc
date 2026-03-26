@@ -160,11 +160,6 @@ By default, no schema is explicitly set and {project_name} uses the default sche
 (for example, `public` in PostgreSQL, `dbo` in Microsoft SQL Server).
 You can override this by using the `db-schema` configuration option.
 
-NOTE: In PostgreSQL, `keycloak` in the examples above refers to the *database name* (set via `db-url-database`), not the schema.
-The database and schema are separate concepts in PostgreSQL.
-To use a dedicated schema such as `keycloak`, you must first create it in your database and then configure
-`db-schema=keycloak` along with granting the appropriate permissions to the database user.
-
 It is also possible to configure the database when <@links.server id="importExport"/> or <@links.server id="bootstrap-admin-recovery"/>:
 ----
 bin/kc.[sh|bat] import --help
