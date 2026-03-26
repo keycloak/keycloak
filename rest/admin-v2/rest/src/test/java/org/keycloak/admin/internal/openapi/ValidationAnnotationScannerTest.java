@@ -130,7 +130,8 @@ public class ValidationAnnotationScannerTest {
 
         String description = scanner.buildDescription(classInfo, "sizedString");
 
-        assertTrue(description.contains("length must be between 5 and 100"));
+        // Standard message: "size must be between {min} and {max}"
+        assertTrue(description.contains("size must be between 5 and 100"));
     }
 
     @Test
@@ -139,7 +140,8 @@ public class ValidationAnnotationScannerTest {
 
         String description = scanner.buildDescription(classInfo, "patternField");
 
-        assertTrue(description.contains("must match pattern: [a-z]+"));
+        // Standard message: "must match \"{regexp}\""
+        assertTrue(description.contains("must match \"[a-z]+\""));
     }
 
     @Test
@@ -149,8 +151,9 @@ public class ValidationAnnotationScannerTest {
         String minDescription = scanner.buildDescription(classInfo, "minValue");
         String maxDescription = scanner.buildDescription(classInfo, "maxValue");
 
-        assertTrue(minDescription.contains("minimum value 10"));
-        assertTrue(maxDescription.contains("maximum value 1000"));
+        // Standard messages: "must be greater than or equal to {value}" / "must be less than or equal to {value}"
+        assertTrue(minDescription.contains("must be greater than or equal to 10"));
+        assertTrue(maxDescription.contains("must be less than or equal to 1000"));
     }
 
     @Test

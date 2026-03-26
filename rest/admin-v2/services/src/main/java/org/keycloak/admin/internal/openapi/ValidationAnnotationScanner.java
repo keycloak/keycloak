@@ -12,10 +12,6 @@ import java.util.StringJoiner;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
@@ -53,14 +49,10 @@ public class ValidationAnnotationScanner {
     // Meta-annotation that marks constraint annotations
     private static final DotName CONSTRAINT = DotName.createSimple(Constraint.class);
 
-    // Annotations that need special handling for parameter formatting
-    private static final DotName SIZE = DotName.createSimple(Size.class);
-    private static final DotName PATTERN = DotName.createSimple(Pattern.class);
-    private static final DotName MIN = DotName.createSimple(Min.class);
-    private static final DotName MAX = DotName.createSimple(Max.class);
+    // @Valid is not a constraint but useful to document for nested validation
     private static final DotName VALID = DotName.createSimple(Valid.class);
 
-    // Hibernate Validator annotations (not supported by SmallRye's BeanValidationScanner)
+    // Hibernate Validator's @URL annotation (for schema property handling - not supported by SmallRye)
     private static final DotName URL = DotName.createSimple(URL.class);
 
     // Validation group package prefix for detecting unknown groups
@@ -112,22 +104,50 @@ public class ValidationAnnotationScanner {
         return annotationClass != null && annotationClass.hasAnnotation(CONSTRAINT);
     }
 
-    private String resolveMessage(String messageTemplate) {
+    private String resolveMessage(String messageTemplate, AnnotationInstance annotation) {
         if (messageTemplate == null || messageTemplate.isEmpty()) {
             return null;
         }
-        if (messageTemplate.startsWith("{") && messageTemplate.endsWith("}")) {
-            String key = messageTemplate.substring(1, messageTemplate.length() - 1);
+
+        String resolved = messageTemplate;
+
+        // Resolve resource bundle key if message is a template like {jakarta.validation.constraints.NotNull.message}
+        if (resolved.startsWith("{") && resolved.endsWith("}")) {
+            String key = resolved.substring(1, resolved.length() - 1);
             if (validationMessages != null) {
                 try {
-                    return validationMessages.getString(key);
+                    resolved = validationMessages.getString(key);
                 } catch (MissingResourceException e) {
                     log.debugf("Message key not found in resource bundle: %s", key);
+                    return null;
+                }
+            } else {
+                return null;
+            }
+        }
+
+        // Interpolate annotation parameters into the message (e.g., {min}, {max}, {value}, {regexp})
+        if (annotation != null) {
+            for (AnnotationValue value : annotation.values()) {
+                String placeholder = "{" + value.name() + "}";
+                if (resolved.contains(placeholder)) {
+                    resolved = resolved.replace(placeholder, formatAnnotationValue(value));
                 }
             }
-            return null;
         }
-        return messageTemplate;
+
+        return resolved;
+    }
+
+    private String formatAnnotationValue(AnnotationValue value) {
+        if (value == null) {
+            return "";
+        }
+        Object val = value.value();
+        if (val instanceof String) {
+            return (String) val;
+        }
+        return String.valueOf(val);
     }
 
     /**
@@ -213,39 +233,10 @@ public class ValidationAnnotationScanner {
     private String buildConstraintDescription(AnnotationInstance annotation) {
         DotName annotationName = annotation.name();
 
-        // Handle annotations that need special parameter formatting
-        if (SIZE.equals(annotationName)) {
-            return buildSizeDescription(annotation);
-        }
-        if (PATTERN.equals(annotationName)) {
-            AnnotationValue regexp = annotation.value("regexp");
-            if (regexp != null) {
-                return "must match pattern: " + regexp.asString();
-            }
-            return null;
-        }
-        if (MIN.equals(annotationName)) {
-            AnnotationValue value = annotation.value();
-            if (value != null) {
-                return "minimum value " + value.asLong();
-            }
-            return null;
-        }
-        if (MAX.equals(annotationName)) {
-            AnnotationValue value = annotation.value();
-            if (value != null) {
-                return "maximum value " + value.asLong();
-            }
-            return null;
-        }
-        if (URL.equals(annotationName)) {
-            return "must be a valid URL";
-        }
-
-        // For all other constraint annotations, resolve the message
+        // Resolve the message from annotation or resource bundle
         AnnotationValue messageValue = annotation.value("message");
         String messageTemplate = messageValue != null ? messageValue.asString() : getDefaultMessage(annotationName);
-        String resolved = resolveMessage(messageTemplate);
+        String resolved = resolveMessage(messageTemplate, annotation);
 
         if (resolved != null) {
             return resolved;
@@ -297,7 +288,7 @@ public class ValidationAnnotationScanner {
             String context = getGroupContext(annotation);
             AnnotationValue messageValue = annotation.value("message");
             String messageTemplate = messageValue != null ? messageValue.asString() : getDefaultMessage(annotation.name());
-            String message = resolveMessage(messageTemplate);
+            String message = resolveMessage(messageTemplate, annotation);
 
             if (message == null) {
                 message = humanize(annotation.name().withoutPackagePrefix());
@@ -320,22 +311,6 @@ public class ValidationAnnotationScanner {
         }
         if (simpleName.contains("secret")) {
             return "secret";
-        }
-        return null;
-    }
-
-    private String buildSizeDescription(AnnotationInstance size) {
-        AnnotationValue minValue = size.value("min");
-        AnnotationValue maxValue = size.value("max");
-        int min = minValue != null ? minValue.asInt() : 0;
-        int max = maxValue != null ? maxValue.asInt() : Integer.MAX_VALUE;
-
-        if (min > 0 && max < Integer.MAX_VALUE) {
-            return "length must be between " + min + " and " + max;
-        } else if (min > 0) {
-            return "minimum length " + min;
-        } else if (max < Integer.MAX_VALUE) {
-            return "maximum length " + max;
         }
         return null;
     }
