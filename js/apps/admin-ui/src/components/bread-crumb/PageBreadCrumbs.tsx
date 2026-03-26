@@ -25,8 +25,8 @@ export const PageBreadCrumbs = () => {
           ? { pathname: match.pathname, label }
           : null;
       })
-      .filter((crumb): crumb is { pathname: string; label: string } =>
-        crumb !== null,
+      .filter(
+        (crumb): crumb is { pathname: string; label: string } => crumb !== null,
       ),
     (crumb) => crumb.label,
   );
@@ -35,11 +35,7 @@ export const PageBreadCrumbs = () => {
     <Breadcrumb>
       {crumbs.map(({ pathname, label }, i) => (
         <BreadcrumbItem key={i} isActive={crumbs.length - 1 === i}>
-          {crumbs.length - 1 !== i ? (
-            <Link to={pathname}>{label}</Link>
-          ) : (
-            label
-          )}
+          {crumbs.length - 1 !== i ? <Link to={pathname}>{label}</Link> : label}
         </BreadcrumbItem>
       ))}
     </Breadcrumb>
