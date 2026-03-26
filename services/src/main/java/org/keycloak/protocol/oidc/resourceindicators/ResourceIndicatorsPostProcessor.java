@@ -1,17 +1,15 @@
-package org.keycloak.protocol.oidc.token;
+package org.keycloak.protocol.oidc.resourceindicators;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.protocol.oidc.token.TokenInterceptorException;
+import org.keycloak.protocol.oidc.token.TokenPostProcessor;
+import org.keycloak.protocol.oidc.token.TokenPostProcessorContext;
 
 public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
-
-    public static final String ERROR_NOT_MATCHING = "The requested resource is not matching the original request.";
-    public static final String ERROR_INVALID_RESOURCE = "The requested resource is invalid, missing, unknown, or malformed.";
-    public static final String URN_CLIENT_PREFIX = "urn:client:";
-    public static final String CLIENT_RESOURCE_URL_ATTRIBUTE = "resource_url";
 
     private final KeycloakSession session;
 
@@ -22,6 +20,10 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
     @Override
     public void process(TokenPostProcessorContext context) {
         String requestedResource = context.clientSessionCtx().getAttribute(OAuth2Constants.RESOURCE, String.class);
+        if (requestedResource != null && !ResourceIndicatorValidation.isValidResourceIndicator(requestedResource)) {
+            throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_INVALID_RESOURCE);
+        }
+
         String grantType = context.clientSessionCtx().getAttribute(Constants.GRANT_TYPE, String.class);
 
         boolean originalResourceParamRequired = false;
@@ -40,13 +42,13 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
 
         if (originalResourceParamRequired) {
             if (originalResourceParam == null) {
-                throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ERROR_NOT_MATCHING);
+                throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_NOT_MATCHING);
             }
 
             if (requestedResource == null) {
                 requestedResource = originalResourceParam;
             } else if (!requestedResource.equals(originalResourceParam)){
-                throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ERROR_NOT_MATCHING);
+                throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_NOT_MATCHING);
             }
         }
 
@@ -58,7 +60,7 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
         }
 
         if (audienceToSet == null) {
-            throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ERROR_INVALID_RESOURCE);
+            throw new TokenInterceptorException(OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_INVALID_RESOURCE);
         }
 
         context.refreshToken().getOtherClaims().put(OAuth2Constants.RESOURCE, requestedResource);
@@ -66,11 +68,11 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
     }
 
     private boolean isClientUrn(String resource) {
-        return resource.startsWith(URN_CLIENT_PREFIX);
+        return resource.startsWith(ResourceIndicatorConstants.URN_CLIENT_PREFIX);
     }
 
     private String findAudienceByClientUrn(String resource, String[] audience) {
-        String requestedClientId = resource.substring(URN_CLIENT_PREFIX.length());
+        String requestedClientId = resource.substring(ResourceIndicatorConstants.URN_CLIENT_PREFIX.length());
         return find(requestedClientId, audience);
     }
 
@@ -78,7 +80,7 @@ public class ResourceIndicatorsPostProcessor implements TokenPostProcessor {
         for (String a : audience) {
             ClientModel client = session.clients().getClientByClientId(session.getContext().getRealm(), a);
             if (client != null) {
-                String clientResourceUrl = client.getAttribute(CLIENT_RESOURCE_URL_ATTRIBUTE);
+                String clientResourceUrl = client.getAttribute(ResourceIndicatorConstants.CLIENT_RESOURCE_URL_ATTRIBUTE);
                 if (resource.equals(clientResourceUrl)) {
                     return resource;
                 }

@@ -40,6 +40,8 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
+import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorValidation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
@@ -239,6 +241,16 @@ public class AuthorizationEndpointChecker {
             event.detail(Details.REASON, errorMessage);
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_SCOPE, errorMessage);
+        }
+    }
+
+    public void checkValidResource() throws AuthorizationCheckException {
+        if (!ResourceIndicatorValidation.isValidResourceIndicator(request.getResource())) {
+            ServicesLogger.LOGGER.invalidParameter(OIDCLoginProtocol.SCOPE_PARAM);
+            String errorMessage = "Invalid resource: " + request.getResource();
+            event.detail(Details.REASON, errorMessage);
+            event.error(Errors.INVALID_REQUEST);
+            throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_TARGET, ResourceIndicatorConstants.ERROR_INVALID_RESOURCE);
         }
     }
 
