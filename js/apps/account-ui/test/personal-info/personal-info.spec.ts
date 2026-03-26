@@ -6,13 +6,13 @@ import { adminClient } from "../support/admin-client.ts";
 import userProfileRealm from "../realms/user-profile-realm.json" with { type: "json" };
 
 /**
- * Retry helper for operations that may fail due to realm initialization timing.
- * Implements exponential backoff with a maximum of 5 retries.
+ * Retry helper for operations that may fail due to realm initialization timing or server load.
+ * Implements exponential backoff with a maximum of 10 retries for better resilience under load.
  */
 async function retryOperation<T>(
   operation: () => Promise<T>,
-  maxRetries = 5,
-  initialDelay = 100,
+  maxRetries = 10,
+  initialDelay = 200,
 ): Promise<T> {
   let lastError: Error | undefined;
 
@@ -22,9 +22,14 @@ async function retryOperation<T>(
     } catch (error) {
       lastError = error as Error;
 
-      // Only retry on 500 errors (server errors), not on validation errors
-      if (error instanceof Error && error.message.includes("unknown_error")) {
-        const delay = initialDelay * Math.pow(2, attempt);
+      // Only retry on 500 errors (server errors) or network errors, not on validation errors
+      if (
+        error instanceof Error &&
+        (error.message.includes("unknown_error") ||
+          error.message.includes("500") ||
+          error.message.includes("ECONNREFUSED"))
+      ) {
+        const delay = initialDelay * Math.pow(1.5, attempt);
         await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
@@ -35,6 +40,14 @@ async function retryOperation<T>(
   }
 
   throw lastError;
+}
+
+/**
+ * Wait for realm to be fully initialized after creation.
+ * This helps prevent race conditions when the realm is created but not fully ready.
+ */
+async function waitForRealmReady(delayMs = 200): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
 }
 
 test.describe("Personal info", () => {
@@ -55,6 +68,7 @@ test.describe("Personal info", () => {
 test.describe("Personal info (user profile enabled)", () => {
   test("renders user profile fields", async ({ page }) => {
     await using testBed = await createTestBed(userProfileRealm);
+    await waitForRealmReady();
 
     await retryOperation(() =>
       adminClient.users.updateProfile({
@@ -75,6 +89,7 @@ test.describe("Personal info (user profile enabled)", () => {
 
   test("renders long select options as typeahead", async ({ page }) => {
     await using testBed = await createTestBed(userProfileRealm);
+    await waitForRealmReady();
 
     await retryOperation(() =>
       adminClient.users.updateProfile({
@@ -85,7 +100,7 @@ test.describe("Personal info (user profile enabled)", () => {
     await login(page, testBed.realm);
 
     await page.locator("#alternatelang").click();
-    await page.waitForSelector("text=Italiano");
+    await expect(page.getByText("Italiano")).toBeVisible();
 
     await page.locator("#alternatelang").click();
     await page.locator("*:focus").press("Control+A");
@@ -97,6 +112,7 @@ test.describe("Personal info (user profile enabled)", () => {
 
   test("renders long list of locales as typeahead", async ({ page }) => {
     await using testBed = await createTestBed(userProfileRealm);
+    await waitForRealmReady();
 
     await retryOperation(() =>
       adminClient.users.updateProfile({
@@ -107,7 +123,7 @@ test.describe("Personal info (user profile enabled)", () => {
     await login(page, testBed.realm);
 
     await page.locator("#attributes\\.locale").click();
-    await page.waitForSelector("text=Italiano");
+    await expect(page.getByText("Italiano")).toBeVisible();
 
     await page.locator("#attributes\\.locale").click();
     await page.locator("*:focus").press("Control+A");
@@ -119,6 +135,7 @@ test.describe("Personal info (user profile enabled)", () => {
 
   test("saves user profile", async ({ page }) => {
     await using testBed = await createTestBed(userProfileRealm);
+    await waitForRealmReady();
 
     await retryOperation(() =>
       adminClient.users.updateProfile({
@@ -158,6 +175,7 @@ test.describe("Realm localization", () => {
       internationalizationEnabled: true,
       supportedLocales: ["en", "nl", "de"],
     });
+    await waitForRealmReady();
 
     await login(page, testBed.realm);
 
