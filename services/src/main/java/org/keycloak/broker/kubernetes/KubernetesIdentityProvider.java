@@ -10,8 +10,10 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.keys.PublicKeyStorageUtils;
+import org.keycloak.keys.loader.OIDCIdentityProviderPublicKeyLoader;
 import org.keycloak.models.KeycloakSession;
 
 import org.jboss.logging.Logger;
@@ -48,7 +50,14 @@ public class KubernetesIdentityProvider implements ClientAssertionIdentityProvid
 
             String modelKey = PublicKeyStorageUtils.getIdpModelCacheKey(validator.getContext().getRealm().getId(), config.getInternalId());
             PublicKeyStorageProvider keyStorage = session.getProvider(PublicKeyStorageProvider.class);
-            KeyWrapper publicKey = keyStorage.getPublicKey(modelKey, kid, alg, new KubernetesJwksEndpointLoader(session, config.getIssuer()));
+
+            PublicKeyLoader loader;
+            if (config.isUseJwksUrl()) {
+                loader = new OIDCIdentityProviderPublicKeyLoader(session, config);
+            } else {
+                loader = new KubernetesJwksEndpointLoader(session, config.getIssuer());
+            }
+            KeyWrapper publicKey = keyStorage.getPublicKey(modelKey, kid, alg, loader);
 
             SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, alg);
             if (signatureProvider == null) {
