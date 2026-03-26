@@ -64,6 +64,9 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
     private String returned = RETURNED_DEFAULT;
     private boolean multivalued;
     private Class<?> complexType;
+    private boolean required;
+    private boolean caseExact;
+    private String uniqueness;
 
     private Attribute(String name, AttributeMapper<M, R> mapper, String parentName, String alias) {
         this.name = name;
@@ -159,6 +162,30 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         return complexType;
     }
 
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
+
+    public boolean isRequired() {
+        return required;
+    }
+
+    public void setCaseExact(boolean caseExact) {
+        this.caseExact = caseExact;
+    }
+
+    public boolean isCaseExact() {
+        return caseExact;
+    }
+
+    public void setUniqueness(String uniqueness) {
+        this.uniqueness = uniqueness;
+    }
+
+    public String getUniqueness() {
+        return uniqueness;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Attribute<?, ?> attribute)) return false;
@@ -244,13 +271,17 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         private TriConsumer<M, String, ?> modelSetter;
         private BiConsumer<R, ?> representationSetter;
         List<Attribute<M, R>> attributes = new ArrayList<>();
-        private Function<Attribute<M, R>, String> modelAttributeResolver;
+        // by default, resolve model attribute name as the same as the scim attribute name
+        private Function<Attribute<M, R>, String> modelAttributeResolver = Attribute::getName;
         private String type;
         private String mutability;
         private String returned;
         private boolean multivalued;
         private TriConsumer<M, String, Set<?>> modelRemover;
         private TriConsumer<M, String, Set<?>> modelAdder;
+        private boolean required;
+        private boolean caseExact = true;
+        private String uniqueness = "none";
 
         private Builder(String name, Class<?> complexType) {
             Objects.requireNonNull(name, "name cannot be null");
@@ -284,7 +315,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             String subName = this.name + "." + name;
             Attribute<M, R> attribute = assembleAttribute(subName, this.name, alias,
                     new AttributeMapper<>(modelSetter, new ComplexAttributeSetter<>(this.name, name, complexType)),
-                    modelAttributeResolver, "string", null, returned, false, null);
+                    modelAttributeResolver, "string", null, returned, false, false, true, null, null);
             attributes.add(attribute);
             return this;
         }
@@ -322,7 +353,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         public List<Attribute<M, R>> build() {
             Attribute<M, R> attribute = assembleAttribute(name, null, null,
                     new AttributeMapper<>(modelSetter, representationSetter, modelRemover, modelAdder),
-                    modelAttributeResolver, type, mutability, returned, multivalued, complexType);
+                    modelAttributeResolver, type, mutability, returned, multivalued, required, caseExact, uniqueness, complexType);
             if (attributes.isEmpty()) {
                 // do not add the root attribute if there are subattributes
                 attributes.add(attribute);
@@ -334,7 +365,11 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
                                                    AttributeMapper<M, R> mapper,
                                                    Function<Attribute<M, R>, String> modelAttributeResolver,
                                                    String type, String mutability, String returned,
-                                                   boolean multivalued, Class<?> complexType) {
+                                                   boolean multivalued,
+                                                   boolean required,
+                                                   boolean caseExact,
+                                                   String uniqueness,
+                                                   Class<?> complexType) {
             Attribute<M, R> attribute = new Attribute<>(name, mapper, parentName, alias);
             attribute.setModelAttributeResolver(modelAttributeResolver);
             attribute.setType(type);
@@ -344,6 +379,9 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             }
             attribute.setMultivalued(multivalued);
             attribute.setComplexType(complexType);
+            attribute.setRequired(required);
+            attribute.setCaseExact(caseExact);
+            attribute.setUniqueness(uniqueness == null ? "none" : uniqueness);
             return attribute;
         }
 
@@ -359,6 +397,26 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
         public <C> Builder<M, R> withModelAdder(TriConsumer<M, String, Set<C>> adder) {
             this.modelAdder = (m, s, objects) -> adder.accept(m, s, (Set<C>) objects);
+            return this;
+        }
+
+        public Builder<M, R> required() {
+            this.required = true;
+            return this;
+        }
+
+        public Builder<M, R> notCaseExact() {
+            this.caseExact = false;
+            return this;
+        }
+
+        public Builder<M, R> serverUnique() {
+            this.uniqueness = "server";
+            return this;
+        }
+
+        public Builder<M, R> globalUnique() {
+            this.uniqueness = "global";
             return this;
         }
     }

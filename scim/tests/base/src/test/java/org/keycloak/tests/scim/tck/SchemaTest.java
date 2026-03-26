@@ -50,27 +50,42 @@ public class SchemaTest extends AbstractScimTest {
         assertFalse(schema.getAttributes().isEmpty());
 
         // Verify ALL expected attributes are present (extracted from UserCoreModelSchema)
-        // UserCoreModelSchema has: userName, emails[0].value, name.*, externalId, nickName, locale, active
-        // These should map to top-level attributes: userName, emails, name, externalId, nickName, locale, active
         Set<String> attributeNames = schema.getAttributes().stream()
                 .map(Schema.Attribute::getName)
                 .collect(Collectors.toSet());
 
-        assertEquals(14, attributeNames.size(), "User schema should have exactly 7 attributes");
-        assertTrue(attributeNames.contains("userName"));
-        assertTrue(attributeNames.contains("emails"));
-        assertTrue(attributeNames.contains("name"));
-        assertTrue(attributeNames.contains("externalId"));
-        assertTrue(attributeNames.contains("nickName"));
-        assertTrue(attributeNames.contains("locale"));
-        assertTrue(attributeNames.contains("active"));
-        assertTrue(attributeNames.contains("profileUrl"));
-        assertTrue(attributeNames.contains("preferredLanguage"));
-        assertTrue(attributeNames.contains("displayName"));
-        assertTrue(attributeNames.contains("timezone"));
-        assertTrue(attributeNames.contains("groups"));
-        assertTrue(attributeNames.contains("title"));
-        assertTrue(attributeNames.contains("userType"));
+        assertEquals(14, attributeNames.size(), "User schema should have exactly 14 attributes");
+
+        assertAttribute(findAttribute(schema, "userName"), "string", false, true, false, "readWrite", "server");
+        assertAttribute(findAttribute(schema, "emails"), "complex", true, false, false, "readWrite", "global");
+        assertAttribute(findAttribute(schema, "name"), "complex", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "displayName"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "title"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "externalId"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "userType"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "nickName"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "locale"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "timezone"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "preferredLanguage"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "profileUrl"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "active"), "boolean", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "groups"), "complex", true, false, true, "readWrite", "none");
+
+        // Verify name sub-attributes
+        Schema.Attribute name = findAttribute(schema, "name");
+        assertNotNull(name.getSubAttributes(), "name should have sub-attributes");
+        Set<String> nameSubAttrNames = name.getSubAttributes().stream()
+                .map(Schema.Attribute::getName)
+                .collect(Collectors.toSet());
+        assertTrue(nameSubAttrNames.contains("givenName"));
+        assertTrue(nameSubAttrNames.contains("familyName"));
+        assertTrue(nameSubAttrNames.contains("middleName"));
+        assertTrue(nameSubAttrNames.contains("honorificPrefix"));
+        assertTrue(nameSubAttrNames.contains("honorificSuffix"));
+        assertTrue(nameSubAttrNames.contains("formatted"));
+        for (Schema.Attribute subAttr : name.getSubAttributes()) {
+            assertSubAttribute(subAttr, "string", false, "readWrite");
+        }
     }
 
     @Test
@@ -83,15 +98,14 @@ public class SchemaTest extends AbstractScimTest {
         assertEquals("Group", schema.getDescription());
         assertNotNull(schema.getAttributes());
 
-        // Verify ALL expected attributes are present (extracted from GroupCoreModelSchema)
-        // GroupCoreModelSchema currently only has: displayName
-        // Note: members is not yet supported in GroupCoreModelSchema attribute mappers
         Set<String> attributeNames = schema.getAttributes().stream()
                 .map(Schema.Attribute::getName)
                 .collect(Collectors.toSet());
 
-        assertEquals(1, attributeNames.size(), "Group schema should have exactly 1 attribute");
-        assertTrue(attributeNames.contains("displayName"));
+        assertEquals(2, attributeNames.size(), "Group schema should have exactly 2 attributes");
+
+        assertAttribute(findAttribute(schema, "displayName"), "string", false, false, false, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "externalId"), "string", false, false, true, "immutable", "none");
     }
 
     @Test
@@ -104,145 +118,31 @@ public class SchemaTest extends AbstractScimTest {
         assertEquals("Enterprise User", schema.getDescription());
         assertNotNull(schema.getAttributes());
 
-        // Verify ALL expected attributes are present (extracted from UserEnterpriseModelSchema)
-        // UserEnterpriseModelSchema has: employeeNumber, costCenter, organization, division, department, manager.*
-        // These should map to: employeeNumber, costCenter, organization, division, department, manager
         Set<String> attributeNames = schema.getAttributes().stream()
                 .map(Schema.Attribute::getName)
                 .collect(Collectors.toSet());
 
         assertEquals(6, attributeNames.size(), "Enterprise User schema should have exactly 6 attributes");
-        assertTrue(attributeNames.contains("employeeNumber"));
-        assertTrue(attributeNames.contains("costCenter"));
-        assertTrue(attributeNames.contains("organization"));
-        assertTrue(attributeNames.contains("division"));
-        assertTrue(attributeNames.contains("department"));
-        assertTrue(attributeNames.contains("manager"));
-    }
 
-    @Test
-    public void testAttributeProperties() {
-        Schema schema = client.schemas().get(Scim.USER_CORE_SCHEMA);
+        // Simple string attributes
+        assertAttribute(findAttribute(schema, "employeeNumber"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "costCenter"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "organization"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "division"), "string", false, false, true, "readWrite", "none");
+        assertAttribute(findAttribute(schema, "department"), "string", false, false, true, "readWrite", "none");
 
-        // Test STRING type (userName)
-        Schema.Attribute userNameAttr = findAttribute(schema, "userName");
-        assertNotNull(userNameAttr, "userName attribute should exist");
-        assertEquals("string", userNameAttr.getType());
-        assertEquals(false, userNameAttr.getMultiValued());
-
-        // Test BOOLEAN type (active)
-        Schema.Attribute activeAttr = findAttribute(schema, "active");
-        assertNotNull(activeAttr, "active attribute should exist");
-        assertEquals("boolean", activeAttr.getType());
-        assertEquals(false, activeAttr.getMultiValued());
-
-        // Test COMPLEX multi-valued (emails)
-        Schema.Attribute emailsAttr = findAttribute(schema, "emails");
-        assertNotNull(emailsAttr, "emails attribute should exist");
-        assertEquals("complex", emailsAttr.getType());
-        assertEquals(true, emailsAttr.getMultiValued());
-
-        // Test COMPLEX single-valued (name)
-        Schema.Attribute nameAttr = findAttribute(schema, "name");
-        assertNotNull(nameAttr, "name attribute should exist");
-        assertEquals("complex", nameAttr.getType());
-        assertEquals(false, nameAttr.getMultiValued());
-
-        // Test STRING attributes (externalId, nickName, locale)
-        Schema.Attribute externalIdAttr = findAttribute(schema, "externalId");
-        assertNotNull(externalIdAttr, "externalId attribute should exist");
-        assertEquals("string", externalIdAttr.getType());
-        assertEquals(false, externalIdAttr.getMultiValued());
-
-        Schema.Attribute nickNameAttr = findAttribute(schema, "nickName");
-        assertNotNull(nickNameAttr, "nickName attribute should exist");
-        assertEquals("string", nickNameAttr.getType());
-        assertEquals(false, nickNameAttr.getMultiValued());
-
-        Schema.Attribute localeAttr = findAttribute(schema, "locale");
-        assertNotNull(localeAttr, "locale attribute should exist");
-        assertEquals("string", localeAttr.getType());
-        assertEquals(false, localeAttr.getMultiValued());
-    }
-
-    @Test
-    public void testReferenceTypes() {
-        // Test EnterpriseUser manager is a complex attribute
-        Schema enterpriseUserSchema = client.schemas().get(Scim.ENTERPRISE_USER_SCHEMA);
-        Schema.Attribute managerAttr = findAttribute(enterpriseUserSchema, "manager");
-        assertNotNull(managerAttr, "manager attribute should exist");
-        assertEquals("complex", managerAttr.getType());
-        assertEquals(false, managerAttr.getMultiValued());
-
-        // TODO: referenceTypes are not yet tracked in the model schema Attribute.
-        // Once Attribute supports reference types, add assertions for:
-        //   managerAttr.getReferenceTypes() containing "User"
-
-        // Note: Group.members is not yet supported in GroupCoreModelSchema,
-        // so reference type testing for members is omitted
-    }
-
-    @Test
-    public void testEnterpriseUserAttributeTypes() {
-        Schema schema = client.schemas().get(Scim.ENTERPRISE_USER_SCHEMA);
-
-        // All enterprise user attributes (except manager) should be string type
-        String[] stringAttributes = {"employeeNumber", "costCenter", "organization", "division", "department"};
-        for (String attrName : stringAttributes) {
-            Schema.Attribute attr = findAttribute(schema, attrName);
-            assertNotNull(attr, attrName + " attribute should exist");
-            assertEquals("string", attr.getType(), attrName + " should be string type");
-            assertEquals(false, attr.getMultiValued(), attrName + " should not be multi-valued");
+        // Manager is a complex attribute with sub-attributes
+        assertAttribute(findAttribute(schema, "manager"), "complex", false, false, false, "readWrite", "none");
+        Schema.Attribute manager = findAttribute(schema, "manager");
+        assertNotNull(manager.getSubAttributes(), "manager should have sub-attributes");
+        Set<String> managerSubAttrNames = manager.getSubAttributes().stream()
+                .map(Schema.Attribute::getName)
+                .collect(Collectors.toSet());
+        assertTrue(managerSubAttrNames.contains("value"));
+        assertTrue(managerSubAttrNames.contains("displayName"));
+        for (Schema.Attribute subAttr : manager.getSubAttributes()) {
+            assertSubAttribute(subAttr, "string", false, "readWrite");
         }
-
-        // Manager is complex type with User reference
-        Schema.Attribute managerAttr = findAttribute(schema, "manager");
-        assertNotNull(managerAttr, "manager attribute should exist");
-        assertEquals("complex", managerAttr.getType());
-        assertEquals(false, managerAttr.getMultiValued());
-    }
-
-    @Test
-    public void testGroupAttributeTypes() {
-        Schema schema = client.schemas().get(Scim.GROUP_CORE_SCHEMA);
-
-        // displayName should be string
-        Schema.Attribute displayNameAttr = findAttribute(schema, "displayName");
-        assertNotNull(displayNameAttr, "displayName attribute should exist");
-        assertEquals("string", displayNameAttr.getType());
-        assertEquals(false, displayNameAttr.getMultiValued());
-
-        // Note: members is not yet supported in GroupCoreModelSchema attribute mappers
-    }
-
-    @Test
-    public void testPathExtractionLogic() {
-        // This test verifies that the path extraction logic works correctly
-        // Multiple SCIM paths should map to the same top-level attribute
-
-        Schema userSchema = client.schemas().get(Scim.USER_CORE_SCHEMA);
-
-        // UserCoreModelSchema has multiple paths for 'name':
-        // - name.givenName, name.familyName, name.middleName, name.honorificPrefix, name.honorificSuffix
-        // All should map to a single 'name' attribute
-        Schema.Attribute nameAttr = findAttribute(userSchema, "name");
-        assertNotNull(nameAttr, "name attribute should exist (from multiple name.* paths)");
-        assertEquals("complex", nameAttr.getType());
-        assertEquals(false, nameAttr.getMultiValued());
-
-        // emails[0].value should map to 'emails' attribute
-        Schema.Attribute emailsAttr = findAttribute(userSchema, "emails");
-        assertNotNull(emailsAttr, "emails attribute should exist (from emails[0].value path)");
-        assertEquals("complex", emailsAttr.getType());
-        assertEquals(true, emailsAttr.getMultiValued());
-
-        // EnterpriseUser has manager.value and manager.displayName
-        // Both should map to a single 'manager' attribute
-        Schema enterpriseSchema = client.schemas().get(Scim.ENTERPRISE_USER_SCHEMA);
-        Schema.Attribute managerAttr = findAttribute(enterpriseSchema, "manager");
-        assertNotNull(managerAttr, "manager attribute should exist (from manager.* paths)");
-        assertEquals("complex", managerAttr.getType());
-        assertEquals(false, managerAttr.getMultiValued());
     }
 
     @Test
@@ -283,5 +183,23 @@ public class SchemaTest extends AbstractScimTest {
                 .filter(attr -> name.equals(attr.getName()))
                 .findFirst()
                 .orElse(null);
+    }
+
+    private void assertAttribute(Schema.Attribute attribute, String type, boolean multiValued,
+                                  boolean required, boolean caseExact, String mutability, String uniqueness) {
+        assertNotNull(attribute, "attribute should not be null");
+        assertEquals(type, attribute.getType(), attribute.getName() + " type");
+        assertEquals(multiValued, attribute.getMultiValued(), attribute.getName() + " multiValued");
+        assertEquals(required, attribute.getRequired(), attribute.getName() + " required");
+        assertEquals(caseExact, attribute.getCaseExact(), attribute.getName() + " caseExact");
+        assertEquals(mutability, attribute.getMutability(), attribute.getName() + " mutability");
+        assertEquals(uniqueness, attribute.getUniqueness(), attribute.getName() + " uniqueness");
+    }
+
+    private void assertSubAttribute(Schema.Attribute subAttribute, String type, boolean multiValued, String mutability) {
+        assertNotNull(subAttribute, "sub-attribute should not be null");
+        assertEquals(type, subAttribute.getType(), subAttribute.getName() + " sub-attribute type");
+        assertEquals(multiValued, subAttribute.getMultiValued(), subAttribute.getName() + " sub-attribute multiValued");
+        assertEquals(mutability, subAttribute.getMutability(), subAttribute.getName() + " sub-attribute mutability");
     }
 }
