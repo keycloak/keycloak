@@ -63,6 +63,10 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
     @Override
     public R get(String id) {
+        return get(id, null, null);
+    }
+
+    public R get(String id, List<String> attributes, List<String> excludedAttributes) {
         M model = getModel(id);
 
         if (model == null) {
@@ -76,7 +80,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
         R resource = createResourceTypeInstance();
 
         for (ModelSchema<M, R> schema : schemas) {
-            schema.populate(resource, model);
+            schema.populate(resource, model, attributes, excludedAttributes);
         }
 
         return resource;
@@ -90,7 +94,7 @@ public abstract class AbstractScimResourceTypeProvider<M extends Model, R extend
 
         return getModels(searchRequest).map(m -> {
             try {
-                return get(m.getId());
+                return get(m.getId(), searchRequest.getAttributes(), searchRequest.getExcludedAttributes());
             } catch (ForbiddenException fe) {
                 return null;
             }

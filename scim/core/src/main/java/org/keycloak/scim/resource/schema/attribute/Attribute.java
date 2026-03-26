@@ -22,10 +22,16 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
+    public static final String RETURNED_ALWAYS = "always";
+    public static final String RETURNED_DEFAULT = "default";
+    public static final String RETURNED_REQUEST = "request";
+    public static final String RETURNED_NEVER = "never";
+
     private final String alias;
     private Function<Attribute<M, R>, String> modelAttributeResolver;
     private String type;
     private String mutability;
+    private String returned = RETURNED_DEFAULT;
     private boolean multivalued;
     private Class<?> complexType;
 
@@ -132,6 +138,14 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         return Objects.equals(mutability, "immutable");
     }
 
+    public String getReturned() {
+        return returned;
+    }
+
+    private void setReturned(String returned) {
+        this.returned = returned;
+    }
+
     private void setMultivalued(boolean multivalued) {
         this.multivalued = multivalued;
     }
@@ -185,6 +199,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         private Function<Attribute<M, R>, String> modelAttributeResolver;
         private String type;
         private String mutability;
+        private String returned;
         private boolean multivalued;
         private TriConsumer<M, String, Set<?>> modelRemover;
         private TriConsumer<M, String, Set<?>> modelAdder;
@@ -221,7 +236,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             String subName = this.name + "." + name;
             Attribute<M, R> attribute = assembleAttribute(subName, this.name, alias,
                     new AttributeMapper<>(modelSetter, new ComplexAttributeSetter<>(this.name, name, complexType)),
-                    modelAttributeResolver, "string", null, false, null);
+                    modelAttributeResolver, "string", null, returned, false, null);
             attributes.add(attribute);
             return this;
         }
@@ -251,10 +266,15 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             return this;
         }
 
+        public Builder<M, R> returned(String returned) {
+            this.returned = returned;
+            return this;
+        }
+
         public List<Attribute<M, R>> build() {
             Attribute<M, R> attribute = assembleAttribute(name, null, null,
                     new AttributeMapper<>(modelSetter, representationSetter, modelRemover, modelAdder),
-                    modelAttributeResolver, type, mutability, multivalued, complexType);
+                    modelAttributeResolver, type, mutability, returned, multivalued, complexType);
             if (attributes.isEmpty()) {
                 // do not add the root attribute if there are subattributes
                 attributes.add(attribute);
@@ -265,12 +285,15 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         private Attribute<M, R> assembleAttribute(String name, String parentName, String alias,
                                                    AttributeMapper<M, R> mapper,
                                                    Function<Attribute<M, R>, String> modelAttributeResolver,
-                                                   String type, String mutability,
+                                                   String type, String mutability, String returned,
                                                    boolean multivalued, Class<?> complexType) {
             Attribute<M, R> attribute = new Attribute<>(name, mapper, parentName, alias);
             attribute.setModelAttributeResolver(modelAttributeResolver);
             attribute.setType(type);
             attribute.setMutability(mutability);
+            if (returned != null) {
+                attribute.setReturned(returned);
+            }
             attribute.setMultivalued(multivalued);
             attribute.setComplexType(complexType);
             return attribute;

@@ -68,7 +68,13 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
 
     @Override
     public void populate(R resource, M model) {
-        populateResourceType(resource, model);
+        populateResourceType(resource, model, null, null);
+        resource.setId(model.getId());
+    }
+
+    @Override
+    public void populate(R resource, M model, List<String> attributes, List<String> excludedAttributes) {
+        populateResourceType(resource, model, attributes, excludedAttributes);
         resource.setId(model.getId());
     }
 
@@ -218,18 +224,101 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         }
     }
 
-    private void populateResourceType(R resource, M model) {
+    private void populateResourceType(R resource, M model, List<String> requestedAttributes, List<String> excludedAttributes) {
         for (String name : getModelAttributeNames()) {
             Attribute<M, R> attribute = getAttributeMapperByModelAttribute(name);
 
-            if  (attribute == null) {
-                continue;
+            if (attribute != null && !shouldSkipAttribute(attribute, requestedAttributes, excludedAttributes)) {
+                Object value = getAttributeValue(model, name);
+                attribute.set(resource, value);
+                resource.addSchema(this.id);
+            }
+        }
+    }
+
+    /**
+     * Determines whether the given attribute should be skipped during population based on
+     * the {@code returned} characteristic and the requested attribute filters.
+     */
+    private boolean shouldSkipAttribute(Attribute<M, R> attribute, List<String> requestedAttributes, List<String> excludedAttributes) {
+        String returned = attribute.getReturned();
+
+        // returned: always - never skip
+        if (Attribute.RETURNED_ALWAYS.equals(returned)) {
+            return false;
+        }
+
+        // returned: never - always skip
+        if (Attribute.RETURNED_NEVER.equals(returned)) {
+            return true;
+        }
+
+        // If attributes parameter is specified (inclusion filter)
+        if (requestedAttributes != null && !requestedAttributes.isEmpty()) {
+            if (!isAttributeRequested(attribute, requestedAttributes)) {
+                return true;
+            }
+        } else if (Attribute.RETURNED_REQUEST.equals(returned)) {
+            // No attributes parameter specified - returned: request attributes are not returned by default
+            return true;
+        }
+
+        // If excludedAttributes parameter is specified (exclusion filter)
+        if (excludedAttributes != null && !excludedAttributes.isEmpty()) {
+            return isAttributeExcluded(attribute, excludedAttributes);
+        }
+
+        return false;
+    }
+
+    private boolean isAttributeRequested(Attribute<M, R> attribute, List<String> requestedAttributes) {
+        return requestedAttributes.stream().anyMatch(requested -> matchesAttribute(attribute, requested.trim()));
+    }
+
+    private boolean isAttributeExcluded(Attribute<M, R> attribute, List<String> excludedAttributes) {
+        return excludedAttributes.stream().anyMatch(excluded -> matchesAttribute(attribute, excluded.trim()));
+    }
+
+    /**
+     * Matches a SCIM attribute reference against an internal attribute.
+     * Supports direct name match, parent match (e.g., "name" matches "name.familyName"),
+     * sub-attribute match, and extension URN match.
+     * All matches are case-insensitive
+     */
+    private boolean matchesAttribute(Attribute<M, R> attribute, String requestedName) {
+        String attrName = attribute.getName();
+        String parentName = attribute.getParentName();
+
+        // Direct match
+        if (attrName.equalsIgnoreCase(requestedName)) {
+            return true;
+        }
+
+        // Parent match: requesting "name" should include "name.givenName", "name.familyName" etc.
+        if (parentName != null && parentName.equalsIgnoreCase(requestedName)) {
+            return true;
+        }
+
+        // For extension schemas, match URN-qualified references
+        if (!isCore() && requestedName.startsWith(getId())) {
+            // Requesting the entire extension (just the URN)
+            if (requestedName.equalsIgnoreCase(getId())) {
+                return true;
             }
 
-            Object value = getAttributeValue(model, name);
-            attribute.set(resource, value);
-            resource.addSchema(this.id);
+            // Requesting a specific extension attribute (e.g. "urn:...:User:employeeNumber")
+            String afterUri = requestedName.substring(getId().length());
+            if (afterUri.startsWith(":")) {
+                String extensionAttrName = afterUri.substring(1);
+                // Match against the sub-attribute name (after the parent prefix)
+                if (parentName != null && attrName.startsWith(parentName + ".")) {
+                    String subName = attrName.substring(parentName.length() + 1);
+                    return subName.equalsIgnoreCase(extensionAttrName);
+                }
+            }
         }
+
+        return false;
     }
 
     private Attribute<M, R> getAttributeMapperByModelAttribute(String name) {

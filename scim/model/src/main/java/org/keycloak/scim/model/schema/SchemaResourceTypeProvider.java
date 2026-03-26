@@ -94,6 +94,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttr.setName(subName);
                     subAttr.setType(attribute.getType());
                     subAttr.setMultiValued(false);
+                    subAttr.setReturned(attribute.getReturned());
 
                     List<Attribute> subAttributes = parent.getSubAttributes();
                     if (subAttributes == null) {
@@ -115,6 +116,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttr.setName(relativeName);
                     subAttr.setType(attribute.getType());
                     subAttr.setMultiValued(false);
+                    subAttr.setReturned(attribute.getReturned());
 
                     List<Attribute> subAttributes = parent.getSubAttributes();
                     if (subAttributes == null) {
@@ -129,6 +131,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                         attr.setName(k);
                         attr.setType(attribute.getType());
                         attr.setMultiValued(attribute.isMultivalued());
+                        attr.setReturned(attribute.getReturned());
                         return attr;
                     });
                 }
@@ -139,6 +142,7 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     attr.setName(k);
                     attr.setType(attribute.getType());
                     attr.setMultiValued(attribute.isMultivalued());
+                    attr.setReturned(attribute.getReturned());
                     return attr;
                 });
             }

@@ -1,6 +1,10 @@
 package org.keycloak.scim.client;
 
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.request.SearchRequest;
@@ -44,10 +48,27 @@ public abstract class AbstractScimResourceClient<R extends ResourceTypeRepresent
     }
 
     public R get(String id) {
+        return get(id, null, null);
+    }
+
+    public R get(String id, List<String> attributes, List<String> excludedAttributes) {
         requireNonNull(id, "SCIM resource ID must not be null");
 
         try {
-            return client.execute(doGet("/" + id), resourceTypeClass);
+            SimpleHttpRequest request = doGet("/" + id);
+
+            Map<String, String> params = new HashMap<>();
+            if (attributes != null && !attributes.isEmpty()) {
+                params.put("attributes", String.join(",", attributes));
+            }
+            if (excludedAttributes != null && !excludedAttributes.isEmpty()) {
+                params.put("excludedAttributes", String.join(",", excludedAttributes));
+            }
+            if (!params.isEmpty()) {
+                request = request.params(params);
+            }
+
+            return client.execute(request, resourceTypeClass);
         } catch (ScimClientException scime) {
             ErrorResponse error = scime.getError();
 
@@ -68,11 +89,26 @@ public abstract class AbstractScimResourceClient<R extends ResourceTypeRepresent
 
     @SuppressWarnings("unchecked")
     protected ListResponse<R> doFilter(ResourceFilter filter) {
-        SimpleHttpRequest request = doGet("");
-        String query = filter.build();
+        return doFilter(filter, null, null);
+    }
 
+    @SuppressWarnings("unchecked")
+    protected ListResponse<R> doFilter(ResourceFilter filter, List<String> attributes, List<String> excludedAttributes) {
+        SimpleHttpRequest request = doGet("");
+
+        Map<String, String> params = new HashMap<>();
+        String query = filter.build();
         if (!query.isEmpty()) {
-            request = request.param("filter", query);
+            params.put("filter", query);
+        }
+        if (attributes != null && !attributes.isEmpty()) {
+            params.put("attributes", String.join(",", attributes));
+        }
+        if (excludedAttributes != null && !excludedAttributes.isEmpty()) {
+            params.put("excludedAttributes", String.join(",", excludedAttributes));
+        }
+        if (!params.isEmpty()) {
+            request = request.params(params);
         }
 
         return client.execute(request, ListResponse.class);

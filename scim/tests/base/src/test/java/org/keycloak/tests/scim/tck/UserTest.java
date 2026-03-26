@@ -864,6 +864,173 @@ public class UserTest extends AbstractScimTest {
                 .findFirst().orElse(null));
     }
 
+    @Test
+    public void testGetWithAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Request only userName
+        User actual = client.users().get(expected.getId(), List.of("userName"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNotNull(actual.getSchemas());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getName());
+        assertNull(actual.getEmails());
+        assertNull(actual.getActive());
+        assertNull(actual.getDisplayName());
+    }
+
+    @Test
+    public void testGetWithSubAttribute() {
+        User expected = client.users().create(createUser());
+
+        // Request only name.familyName
+        User actual = client.users().get(expected.getId(), List.of("name.familyName"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNotNull(actual.getName());
+        assertEquals(expected.getName().getFamilyName(), actual.getName().getFamilyName());
+        assertNull(actual.getName().getGivenName());
+        assertNull(actual.getUserName());
+    }
+
+    @Test
+    public void testGetWithExcludedAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Exclude emails
+        User actual = client.users().get(expected.getId(), null, List.of("emails"));
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getEmails());
+        assertNotNull(actual.getName());
+    }
+
+    @Test
+    public void testGetWithExcludedAttributesCannotExcludeId() {
+        User expected = client.users().create(createUser());
+
+        // Attempting to exclude id should have no effect (returned: always)
+        User actual = client.users().get(expected.getId(), null, List.of("id"));
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getId(), actual.getId());
+    }
+
+    @Test
+    public void testGetAllWithAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Request only userName for list
+        ListResponse<User> response = client.users().getAll(List.of("userName"), null);
+        assertNotNull(response);
+        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
+
+        User actual = response.getResources().stream()
+                .filter(u -> u.getId().equals(expected.getId()))
+                .findFirst().orElse(null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getName());
+        assertNull(actual.getEmails());
+    }
+
+    @Test
+    public void testGetAllWithExcludedAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Exclude emails from list
+        ListResponse<User> response = client.users().getAll(null, List.of("emails"));
+        assertNotNull(response);
+        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
+
+        User actual = response.getResources().stream()
+                .filter(u -> u.getId().equals(expected.getId()))
+                .findFirst().orElse(null);
+        assertNotNull(actual);
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getEmails());
+    }
+
+    @Test
+    public void testGetWithMultipleAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Request userName and emails
+        User actual = client.users().get(expected.getId(), List.of("userName", "emails"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNotNull(actual.getEmails());
+        assertNull(actual.getName());
+        assertNull(actual.getActive());
+    }
+
+    @Test
+    public void testGetWithBothAttributesAndExcludedAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Include userName and emails, then exclude emails
+        // Per issue spec: apply inclusion first, then exclusion
+        User actual = client.users().get(expected.getId(), List.of("userName", "emails"), List.of("emails"));
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getEmails());
+        assertNull(actual.getName());
+    }
+
+    @Test
+    public void testGetWithAttributeInBothIncludeAndExclude() {
+        User expected = client.users().create(createUser());
+
+        // Same attribute in both lists — inclusion first, then exclusion removes it
+        User actual = client.users().get(expected.getId(), List.of("userName"), List.of("userName"));
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNull(actual.getUserName());
+    }
+
+    @Test
+    public void testGetWithNonExistingAttribute() {
+        User expected = client.users().create(createUser());
+
+        // Non-existing attribute should be silently ignored (best-effort)
+        User actual = client.users().get(expected.getId(), List.of("userName", "nonExistingAttr"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getName());
+    }
+
+    @Test
+    public void testGetWithAttributesCaseInsensitive() {
+        User expected = client.users().create(createUser());
+
+        // Attribute names are case insensitive per RFC 7644, Section 3.10
+        User actual = client.users().get(expected.getId(), List.of("USERNAME"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getName());
+        assertNull(actual.getEmails());
+    }
+
+    @Test
+    public void testGetWithExcludedSubAttribute() {
+        User expected = client.users().create(createUser());
+
+        // Exclude a sub-attribute: name.givenName should be excluded but name.familyName kept
+        User actual = client.users().get(expected.getId(), null, List.of("name.givenName"));
+        assertNotNull(actual);
+        assertNotNull(actual.getName());
+        assertNull(actual.getName().getGivenName());
+        assertEquals(expected.getName().getFamilyName(), actual.getName().getFamilyName());
+        assertEquals(expected.getUserName(), actual.getUserName());
+    }
+
     private static void assertGroup(List<GroupMembership> groups, GroupRepresentation group, String type) {
         assertTrue(groups.stream().anyMatch(membership -> {
             boolean found = group.getId().equals(membership.getValue()) && group.getName().equals(membership.getDisplay());
