@@ -38,6 +38,11 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
     name: "config.validateSignature",
   });
 
+  const autoUpdated = useWatch({
+    control,
+    name: "config.autoUpdate",
+  });
+
   const useMetadataDescriptorUrl = useWatch({
     control,
     name: "config.useMetadataDescriptorUrl",
@@ -51,6 +56,26 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
   return (
     <div className="pf-v5-c-form pf-m-horizontal">
       <FormProvider {...form}>
+        <DefaultSwitchControl
+          name="config.autoUpdate"
+          label={t("autoUpdate")}
+          labelIcon={t("autoUpdateHelp")}
+          stringify
+        />
+        <TextControl
+          name="config.metadataDescriptorUrl"
+          label={t("metadataDescriptorUrl")}
+          labelIcon={t("metadataDescriptorUrlHelp")}
+          type="url"
+          readOnly={readOnly}
+          rules={{
+            required: {
+              value:
+                useMetadataDescriptorUrl === "true" || autoUpdated === "true",
+              message: t("required"),
+            },
+          }}
+        />
         <TextControl
           name="config.entityId"
           label={t("serviceProviderEntityId")}
@@ -279,19 +304,6 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         />
         {validateSignature === "true" && (
           <>
-            <TextControl
-              name="config.metadataDescriptorUrl"
-              label={t("metadataDescriptorUrl")}
-              labelIcon={t("metadataDescriptorUrlHelp")}
-              type="url"
-              readOnly={readOnly}
-              rules={{
-                required: {
-                  value: useMetadataDescriptorUrl === "true",
-                  message: t("required"),
-                },
-              }}
-            />
             <DefaultSwitchControl
               name="config.useMetadataDescriptorUrl"
               label={t("useMetadataDescriptorUrl")}

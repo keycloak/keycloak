@@ -17,7 +17,6 @@
 package org.keycloak.broker.oidc;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
@@ -53,18 +52,18 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, String config) {
-        return parseOIDCConfig(session, config);
+    public IdentityProviderModel parseConfig(KeycloakSession session, String config, IdentityProviderModel model) {
+        return parseOIDCConfig(session, config, model);
     }
 
-    protected static Map<String, String> parseOIDCConfig(KeycloakSession session, String configString) {
+    protected static IdentityProviderModel parseOIDCConfig(KeycloakSession session, String configString, IdentityProviderModel model) {
         OIDCConfigurationRepresentation rep;
         try {
             rep = JsonSerialization.readValue(configString, OIDCConfigurationRepresentation.class);
         } catch (IOException e) {
             throw new RuntimeException("failed to load openid connect metadata", e);
         }
-        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig();
+        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig(model);
         config.setIssuer(rep.getIssuer());
         config.setLogoutUrl(rep.getLogoutEndpoint());
         config.setAuthorizationUrl(rep.getAuthorizationEndpoint());
@@ -74,14 +73,16 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
             config.setValidateSignature(true);
             config.setUseJwksUrl(true);
             config.setJwksUrl(rep.getJwksUri());
+        } else  if (config.getJwksUrl() != null) {
+            config.setUseJwksUrl(false);
+            config.setJwksUrl(null);
         }
-
-        // Introspection URL may or may not be available in the configuration. It is available in RFC8414 , but not in the OIDC discovery specification.
+        
+         // Introspection URL may or may not be available in the configuration. It is available in RFC8414 , but not in the OIDC discovery specification.
         // Hence some servers may not add it to their well-known responses
-        if (rep.getIntrospectionEndpoint() != null) {
-            config.setTokenIntrospectionUrl(rep.getIntrospectionEndpoint());
-        }
-        return config.getConfig();
+        config.setTokenIntrospectionUrl(rep.getIntrospectionEndpoint());
+   
+        return config;
     }
 
 }

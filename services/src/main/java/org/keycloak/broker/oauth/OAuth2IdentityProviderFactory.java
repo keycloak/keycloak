@@ -17,7 +17,6 @@
 package org.keycloak.broker.oauth;
 
 import java.io.IOException;
-import java.util.Map;
 
 import org.keycloak.broker.oidc.OAuth2IdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -78,14 +77,14 @@ public class OAuth2IdentityProviderFactory extends AbstractIdentityProviderFacto
     }
 
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, String rawConfig) {
+    public IdentityProviderModel parseConfig(KeycloakSession session, String rawConfig, IdentityProviderModel model) {
         OIDCConfigurationRepresentation rep;
         try {
             rep = JsonSerialization.readValue(rawConfig, OIDCConfigurationRepresentation.class);
         } catch (IOException e) {
             throw new RuntimeException("failed to load openid connect metadata", e);
         }
-        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig();
+        OIDCIdentityProviderConfig config = new OIDCIdentityProviderConfig(model);
         config.setIssuer(rep.getIssuer());
         config.setAuthorizationUrl(rep.getAuthorizationEndpoint());
         config.setTokenUrl(rep.getTokenEndpoint());
@@ -96,6 +95,6 @@ public class OAuth2IdentityProviderFactory extends AbstractIdentityProviderFacto
         if (rep.getIntrospectionEndpoint() != null) {
             config.setTokenIntrospectionUrl(rep.getIntrospectionEndpoint());
         }
-        return config.getConfig();
+        return config;
     }
 }

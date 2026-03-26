@@ -78,7 +78,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected boolean organizationsEnabled;
     protected boolean adminPermissionsEnabled;
     protected boolean verifiableCredentialsEnabled;
-    protected boolean scimApiEnabled;
     //--- brute force settings
     protected boolean bruteForceProtected;
     protected boolean permanentLockout;
@@ -193,6 +192,8 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         loginWithEmailAllowed = model.isLoginWithEmailAllowed();
         duplicateEmailsAllowed = model.isDuplicateEmailsAllowed();
         resetPasswordAllowed = model.isResetPasswordAllowed();
+        autoUpdatedIdPsInterval = model.getAutoUpdatedIdPsInterval();
+        autoUpdatedIdPsLastRefreshTime = model.getAutoUpdatedIdPsLastRefreshTime();
         editUsernameAllowed = model.isEditUsernameAllowed();
         organizationsEnabled = model.isOrganizationsEnabled();
         adminPermissionsEnabled = model.isAdminPermissionsEnabled();
@@ -776,5 +777,13 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public boolean isScimApiEnabled() {
         return scimApiEnabled;
+    }
+
+    public Long getAutoUpdatedIdPsInterval() {
+        return autoUpdatedIdPsInterval;
+    }
+
+    public Long getAutoUpdatedIdPsLastRefreshTime() {
+        return autoUpdatedIdPsLastRefreshTime;
     }
 }

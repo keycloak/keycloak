@@ -1885,5 +1885,25 @@ public class IdentityBrokerStateTestHelpers {
         public boolean isScimApiEnabled() {
             return false;
         }
+
+        @Override
+        public Long getAutoUpdatedIdPsInterval() {
+            return null;
+        }
+
+        @Override
+        public void setAutoUpdatedIdPsInterval(Long autoUpdatedIdPsInterval) {
+
+        }
+
+        @Override
+        public Long getAutoUpdatedIdPsLastRefreshTime() {
+            return null;
+        }
+
+        @Override
+        public void setAutoUpdatedIdPsLastRefreshTime(Long autoUpdatedIdPsLastRefreshTime) {
+
+        }
     }
 }

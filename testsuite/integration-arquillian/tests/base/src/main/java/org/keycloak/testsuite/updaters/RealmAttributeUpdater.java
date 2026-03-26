@@ -250,4 +250,9 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(passkeysEnabled);
         return this;
     }
+
+    public RealmAttributeUpdater setAutoUpdatedIdPsInterval(Long autoUpdatedIdPsInterval) {
+        rep.setAutoUpdatedIdPsInterval(autoUpdatedIdPsInterval);
+        return this;
+    }
 }

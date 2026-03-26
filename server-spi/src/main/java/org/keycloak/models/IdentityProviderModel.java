@@ -62,6 +62,8 @@ public class IdentityProviderModel implements Serializable {
     public static final String SHOW_IN_ACCOUNT_CONSOLE = "showInAccountConsole";
     public static final String STORE_TOKEN_IN_SESSION = "storeTokenInSession";
     public static final int DEFAULT_MIN_VALIDITY_TOKEN = 5;
+    //for SAML and OIDC providers
+    public static final String AUTO_UPDATE = "autoUpdate";
 
     private String internalId;
 
