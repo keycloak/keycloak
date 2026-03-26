@@ -27,6 +27,7 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
@@ -51,6 +52,9 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
         X509Certificate[] certs = getCertificateChain(context);
         if (certs == null || certs.length == 0) {
             logger.debug("[ValidateX509CertificateUsername:authenticate] x509 client certificate is not available for mutual SSL.");
+            if (attemptedIfAlternative(context)) {
+                return;
+            }
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "X509 client certificate is missing.");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
@@ -91,6 +95,9 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
 
         Object userIdentity = getUserIdentityExtractor(config).extractUserIdentity(certs);
         if (userIdentity == null) {
+            if (attemptedIfAlternative(context)) {
+                return;
+            }
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             logger.errorf("[ValidateX509CertificateUsername:authenticate] Unable to extract user identity from certificate.");
             // TODO use specific locale to load error messages
@@ -120,6 +127,9 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             return;
         }
         if (user == null) {
+            if (attemptedIfAlternative(context)) {
+                return;
+            }
             context.getEvent().error(Errors.INVALID_USER_CREDENTIALS);
             Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
@@ -149,5 +159,31 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
     @Override
     public void action(AuthenticationFlowContext context) {
         // Intentionally does nothing
+    }
+
+    private boolean attemptedIfAlternative(AuthenticationFlowContext context) {
+        if (isAlternativeExecutionPath(context)) {
+            context.attempted();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isAlternativeExecutionPath(AuthenticationFlowContext context) {
+        AuthenticationExecutionModel current = context.getExecution();
+        while (current != null) {
+            if (current.isAlternative()) {
+                return true;
+            }
+
+            String parentFlowId = current.getParentFlow();
+            if (parentFlowId == null) {
+                return false;
+            }
+
+            current = context.getRealm().getAuthenticationExecutionByFlowId(parentFlowId);
+        }
+
+        return false;
     }
 }

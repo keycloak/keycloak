@@ -53,6 +53,9 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
     public void authenticate(AuthenticationFlowContext context) {
         String username = retrieveUsername(context);
         if (username == null) {
+            if (attemptedIfAlternative(context)) {
+                return;
+            }
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "invalid_request", "Missing parameter: username");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
@@ -74,6 +77,9 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
 
         if (user == null) {
             AuthenticatorUtils.dummyHash(context);
+            if (attemptedIfAlternative(context)) {
+                return;
+            }
             context.getEvent().error(Errors.USER_NOT_FOUND);
             Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Invalid user credentials");
             context.failure(AuthenticationFlowError.INVALID_USER, challengeResponse);
@@ -173,5 +179,31 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
     protected String retrieveUsername(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         return inputData.getFirst(AuthenticationManager.FORM_USERNAME);
+    }
+
+    private boolean attemptedIfAlternative(AuthenticationFlowContext context) {
+        if (isAlternativeExecutionPath(context)) {
+            context.attempted();
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isAlternativeExecutionPath(AuthenticationFlowContext context) {
+        AuthenticationExecutionModel current = context.getExecution();
+        while (current != null) {
+            if (current.isAlternative()) {
+                return true;
+            }
+
+            String parentFlowId = current.getParentFlow();
+            if (parentFlowId == null) {
+                return false;
+            }
+
+            current = context.getRealm().getAuthenticationExecutionByFlowId(parentFlowId);
+        }
+
+        return false;
     }
 }
