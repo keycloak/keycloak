@@ -96,17 +96,18 @@ public class PatchClientValidationTest extends PutClientValidationTest {
     @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
     public void clientWithTypeMismatchFails(String protocol) throws Exception {
         boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
+        var otherProtocol = isOidc ? SAMLClientRepresentation.PROTOCOL : OIDCClientRepresentation.PROTOCOL;
         var request = getRequest(isOidc);
         setAuthHeader(request);
 
         // Send invalid type for 'protocol' and 'enabled' field
         request.setEntity(new StringEntity("""
                 {
-                    "protocol": "unknown",
+                    "protocol": "%s",
                     "clientId": "%s",
                     "enabled": "not-a-boolean"
                 }
-                """.formatted(getPayloadClientId(isOidc))));
+                """.formatted(otherProtocol, getPayloadClientId(isOidc))));
 
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
