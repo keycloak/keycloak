@@ -71,7 +71,7 @@ public interface OrganizationMemberResource {
      * @param firstResult the position of the first result to be processed (pagination offset)
      * @param maxResults the maximum number of results to be returned
      * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default.
-     * @since Keycloak server 26
+     * @since Keycloak server 26.6.0
      * @return the organization groups the member belongs to
      */
     @Path("groups")
@@ -82,6 +82,16 @@ public interface OrganizationMemberResource {
             @QueryParam("max") Integer maxResults,
             @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation);
 
+    /**
+     * Returns the organization group memberships for this member
+     *
+     * @param firstResult the position of the first result to be processed (pagination offset)
+     * @param maxResults the maximum number of results to be returned
+     * @param search a case-insensitive search string to filter groups by name. If {@code null} or blank, no filtering is applied.
+     * @param briefRepresentation if false, return the full representation. Otherwise, only the basic fields are returned. It is true by default.
+     * @since Keycloak server 26.6.0
+     * @return the organization groups the member belongs to
+     */
     @Path("groups")
     @GET
     @Produces(MediaType.APPLICATION_JSON)

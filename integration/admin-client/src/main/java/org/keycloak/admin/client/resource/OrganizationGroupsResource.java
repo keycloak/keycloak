@@ -32,6 +32,8 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.GroupRepresentation;
 
 /**
+ * @since Keycloak server 26.6.0. All the child endpoints are also available since that version unless mentioned otherwise<p>
+ *
  * Organization groups resource for managing groups within an organization.
  */
 public interface OrganizationGroupsResource {
