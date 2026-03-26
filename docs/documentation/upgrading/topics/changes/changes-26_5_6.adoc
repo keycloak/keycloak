@@ -17,11 +17,3 @@ only the `query-*` role to an administrator is no longer sufficient to list role
 
 Instead, the administrator must have explicit permissions to view or manage the realm or client for which they want to list roles, or by
 having the `view-realm` or `manage-realm` role for realm roles, or `view-clients` or `manage-clients` role for client roles.
-
-=== Stricter access control for fetching user profile configuration and metadata
-
-In order to improve security, the access control for fetching user profile configuration and metadata from a realm has been made stricter,
-and it is no longer possible to fetch this information if the administrator is granted with any administrative role.
-
-Instead, the administrator must have explicit permissions to view or manage users, or by
-having the `view-realm`, or `manage-realm`, or `view-users`, or `manage-users`, or `query-users` roles.
