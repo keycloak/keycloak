@@ -147,7 +147,8 @@ public class DPoPUtil {
 
         HttpRequest request = keycloakSession.getContext().getHttpRequest();
         final boolean isClientRequiresDpop = clientConfig != null && clientConfig.isUseDPoP();
-        final boolean isDpopHeaderPresent = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER) != null;
+        final String dpopHeaderValue = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER);
+        final boolean isDpopHeaderPresent = dpopHeaderValue != null;
 
         if (!isClientRequiresDpop && !isDpopHeaderPresent) {
             return;
@@ -391,8 +392,8 @@ public class DPoPUtil {
         @Override
         public boolean test(DPoP t) throws DPoPVerificationException {
             SingleUseObjectProvider singleUseCache = session.singleUseObjects();
-            byte[] hash = HashUtils.hash("SHA1", (t.getId() + "\n" + t.getHttpUri()).getBytes());
-            String hashString = Hex.encodeHexString(hash);
+            String hashKey = t.getId() + "\n" + t.getHttpUri();
+            String hashString = Hex.encodeHexString(HashUtils.hash("SHA1", hashKey.getBytes()));
             if (!singleUseCache.putIfAbsent(hashString, (int)(t.getIat() + lifetime - Time.currentTime()))) {
                 throw new DPoPVerificationException(t, "DPoP proof has already been used");
             }
