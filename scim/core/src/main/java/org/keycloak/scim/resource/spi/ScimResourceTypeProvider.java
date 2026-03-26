@@ -92,6 +92,19 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
     R get(String id);
 
     /**
+     * Retrieves a resource of this type by its identifier, filtering the returned attributes
+     * based on the {@code attributes} and {@code excludedAttributes} parameters.
+     *
+     * @param id the identifier of the resource to retrieve
+     * @param attributes the list of attributes to include (may be null for no inclusion filter)
+     * @param excludedAttributes the list of attributes to exclude (may be null for no exclusion filter)
+     * @return the resource with the given identifier, or null if it does not exist
+     */
+    default R get(String id, List<String> attributes, List<String> excludedAttributes) {
+        return get(id);
+    }
+
+    /**
      * Retrieves all resources of this type. This method is invoked when a client requests a list of resources,
      * and should return a stream of all resources of this type.
      *
