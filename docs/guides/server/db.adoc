@@ -157,7 +157,6 @@ bin/kc.[sh|bat] start --optimized
 WARNING: The examples above include the minimum settings needed to connect to the database but it exposes the database password and is not recommended. Use the `conf/keycloak.conf` as shown above, environment variables, or keystore for at least the password.
 
 By default, no schema is explicitly set and {project_name} uses the default schema of the chosen database.
-(for example, `public` in PostgreSQL, `dbo` in Microsoft SQL Server).
 You can override this by using the `db-schema` configuration option.
 
 It is also possible to configure the database when <@links.server id="importExport"/> or <@links.server id="bootstrap-admin-recovery"/>:
