@@ -111,7 +111,6 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public CreateOrUpdateResult createOrUpdateClient(RealmModel realm, String clientId, BaseClientRepresentation client) throws ServiceException {
-        assertSameClientIds(clientId, client.getClientId());
         return createOrUpdate(realm, clientId, client, CreateOrUpdateStrategy.PUT);
     }
 
@@ -133,6 +132,9 @@ public class DefaultClientService implements ClientService {
 
     private CreateOrUpdateResult createOrUpdate(RealmModel realm, String clientId, BaseClientRepresentation client, CreateOrUpdateStrategy strategy) throws ServiceException {
         validateUnknownFields(client);
+        if (!strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
+            assertSameClientIds(clientId, client.getClientId());
+        }
 
         boolean created = false;
         ClientModel model;
@@ -230,10 +232,6 @@ public class DefaultClientService implements ClientService {
                     if (patch == null) {
                         // based on the RFC 7396 JSON Merge Patch should replace the whole entity if the patch is not an object - we can't do it
                         throw new ServiceException("Cannot replace client resource with null", Response.Status.BAD_REQUEST);
-                    }
-                    if (patch.has("clientId")) {
-                        // we don't allow renaming via patch yet
-                        assertSameClientIds(clientId, patch.get("clientId").asText());
                     }
                     final ObjectReader objectReader = MAPPER.readerForUpdating(getOriginalClient.get());
                     updated = objectReader.readValue(patch);

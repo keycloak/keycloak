@@ -70,4 +70,10 @@ public class PostClientValidationTest extends AbstractClientValidationTest {
     @Disabled("Only for PUT/PATCH")
     public void clientIdMismatchBetweenPathAndPayloadFails(String protocol){
     }
+
+    @Test
+    @Override
+    @Disabled("Only for PUT/PATCH")
+    public void clientWithTypeMismatchFails(String protocol){
+    }
 }

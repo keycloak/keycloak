@@ -11,7 +11,6 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.util.EntityUtils;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -94,43 +93,6 @@ public class PatchClientValidationTest extends AbstractClientValidationTest {
 
             String responseBody = EntityUtils.toString(response.getEntity());
             assertThat(responseBody, containsString("Cannot replace client resource with null"));
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
-    public void clientWithTypeMismatchFails(String protocol) throws Exception {
-        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
-        var otherProtocol = isOidc ? SAMLClientRepresentation.PROTOCOL : OIDCClientRepresentation.PROTOCOL;
-        var request = getRequest(isOidc);
-        setAuthHeader(request);
-
-        // Send invalid type for 'protocol' and 'enabled' field
-        request.setEntity(new StringEntity("""
-                {
-                    "protocol": "%s",
-                    "clientId": "%s",
-                    "enabled": "not-a-boolean"
-                }
-                """.formatted(otherProtocol, getPayloadClientId(isOidc))));
-
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(400));
-            assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Invalid values for these fields: protocol"));
-        }
-
-        request.setEntity(new StringEntity("""
-                {
-                    "enabled": "not-a-boolean",
-                    "protocol": "unknown",
-                    "clientId": "%s"
-                }
-                """.formatted(getPayloadClientId(isOidc))));
-
-        try (var response = client.execute(request)) {
-            assertThat(response.getStatusLine().getStatusCode(), is(400));
-            // always only the first one is recorded
-            assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Invalid values for these fields: enabled"));
         }
     }
 

@@ -42,6 +42,7 @@ import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -530,6 +531,49 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             assertThat(response.getStatusLine().getStatusCode(), is(400));
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Field 'clientId' in payload does not match the provided 'clientId'"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
+    public void clientWithTypeMismatchFails(String protocol) throws Exception {
+        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
+        var otherProtocol = isOidc ? SAMLClientRepresentation.PROTOCOL : OIDCClientRepresentation.PROTOCOL;
+        var request = getRequest(isOidc);
+        setAuthHeader(request);
+
+        // Cannot change the protocol for already existing client
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "%s",
+                    "clientId": "%s"
+                }
+                """.formatted(otherProtocol, getPayloadClientId(isOidc))));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            switch (getHttpMethod()){
+                case HttpPut.METHOD_NAME -> assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("protocol cannot be changed for an existing client"));
+                case HttpPatch.METHOD_NAME -> assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Invalid values for these fields: protocol"));
+            }
+        }
+
+        // check order
+        request.setEntity(new StringEntity("""
+                {
+                    "enabled": "not-a-boolean",
+                    "protocol": "unknown",
+                    "clientId": "%s"
+                }
+                """.formatted(getPayloadClientId(isOidc))));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+            // always only the first one is recorded
+            switch (getHttpMethod()){
+                case HttpPut.METHOD_NAME ->  assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Cannot parse the JSON"));
+                case HttpPatch.METHOD_NAME ->  assertThat(EntityUtils.toString(response.getEntity()), CoreMatchers.containsString("Invalid values for these fields: enabled"));
+            }
         }
     }
 
