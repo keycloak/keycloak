@@ -272,7 +272,7 @@ public class Picocli {
                 }
             }
             PropertyMapper<?> mapper = PropertyMappers.getMapper(name);
-            if (mapper == null) {
+            if (mapper == null || mapper.getOption().isSynthetic()) {
                 return; // TODO: need to look for disabled Wildcard mappers
             }
             var forKey = mapper.forKey(name);
@@ -288,15 +288,15 @@ public class Picocli {
                 return;
             }
             validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
-                    deprecatedInUse, missingOption, disabledMappers.contains(mapper), forKey, unnecessary);
+                    deprecatedInUse, missingOption, false, forKey, unnecessary);
         });
 
         // second pass validate any property mapper not seen in the first pass
         // - this will catch required values, anything missing from the property names, or disabled
         for (PropertyMapper<?> mapper : PropertyMappers.getMappers()) {
-            if (!mapper.hasWildcard()) {
+            if (!mapper.hasWildcard() && !mapper.getOption().isSynthetic()) {
                 validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
-                        deprecatedInUse, missingOption, disabledMappers.contains(mapper), mapper, unnecessary);
+                        deprecatedInUse, missingOption, false, mapper, unnecessary);
             }
         }
 
@@ -304,9 +304,9 @@ public class Picocli {
 
         // third pass check for disabled mappers
         for (PropertyMapper<?> mapper : disabledMappers) {
-            if (!mapper.hasWildcard()) {
+            if (!mapper.hasWildcard() && !mapper.getOption().isSynthetic()) {
                 validateProperty(abstractCommand, options, ignoredRunTime, disabledBuildTime, disabledRunTime,
-                        deprecatedInUse, missingOption, disabledMappers.contains(mapper), mapper, unnecessary);
+                        deprecatedInUse, missingOption, true, mapper, unnecessary);
             }
         }
 

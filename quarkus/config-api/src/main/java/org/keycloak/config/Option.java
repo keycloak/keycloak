@@ -22,7 +22,7 @@ public class Option<T> {
     private final DeprecatedMetadata deprecatedMetadata;
     private final Set<String> connectedOptions;
     private String wildcardKey;
-    private boolean synthetic;
+    private final boolean synthetic;
 
     public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description,
                   Optional<T> defaultValue, List<String> expectedValues, boolean strictExpectedValues, boolean caseInsensitiveExpectedValues,

@@ -484,6 +484,12 @@ public class PicocliTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testSyntheticValidationSkipped() {
+        NonRunningPicocli nonRunningPicocli = build("build", "--db=postgres");
+        assertFalse(nonRunningPicocli.getOutString(), nonRunningPicocli.getOutString().contains("kc.db"));
+    }
+
+    @Test
     public void testOptimizedReaugmentationMessage() {
         build("build", "--db=dev-file");
 

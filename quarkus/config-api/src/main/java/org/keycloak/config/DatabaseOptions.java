@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.keycloak.config.database.Database;
 
@@ -163,7 +164,7 @@ public class DatabaseOptions {
          * Options that have their sibling for a named datasource
          * Example: for `db-dialect`, `db-dialect-<datasource>` is created
          */
-        public static final List<String> OPTIONS_DATASOURCES = List.of(
+        public static final List<String> OPTIONS_DATASOURCES = Stream.of(
                 DB_DIALECT,
                 DB_DRIVER,
                 DB,
@@ -185,7 +186,7 @@ public class DatabaseOptions {
                 DB_TLS_TRUST_STORE_PASSWORD,
                 DB_TLS_TRUST_STORE_TYPE,
                 DB_ORACLE_TLS_TRANSPORT
-        ).stream().map(Option::getKey).toList();
+        ).map(Option::getKey).toList();
 
         /**
          * In order to avoid ambiguity, we need to have unique option names for wildcard options.
