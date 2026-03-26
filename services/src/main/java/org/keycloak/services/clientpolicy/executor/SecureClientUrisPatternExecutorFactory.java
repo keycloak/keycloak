@@ -24,6 +24,8 @@ import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 
 public class SecureClientUrisPatternExecutorFactory implements ClientPolicyExecutorProviderFactory {
@@ -40,7 +42,7 @@ public class SecureClientUrisPatternExecutorFactory implements ClientPolicyExecu
             "redirectUris",
             "webOrigins",
 
-            //attributes
+            //attributes in OIDC clients
             "jwksUri",
             "requestUris",
             "backchannelLogoutUrl",
@@ -49,7 +51,18 @@ public class SecureClientUrisPatternExecutorFactory implements ClientPolicyExecu
             OIDCConfigAttributes.LOGO_URI,
             OIDCConfigAttributes.POLICY_URI,
             OIDCConfigAttributes.TOS_URI,
-            OIDCConfigAttributes.SECTOR_IDENTIFIER_URI
+            OIDCConfigAttributes.SECTOR_IDENTIFIER_URI,
+
+            // attributes in SAML clients
+            SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE,
+            SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE,
+            SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE,
+            SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE,
+            SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE,
+            SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE,
+            SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE,
+            SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE,
+            SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL
     );
 
     private static final ProviderConfigProperty CLIENT_URI_FIELDS_PROPERTY = new ProviderConfigProperty(

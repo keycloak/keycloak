@@ -24,6 +24,9 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -62,20 +65,38 @@ public class ClientUrisPatternExecutorTest extends AbstractClientPoliciesTest {
 
     @Test
     public void testFieldsByAdmin() throws Exception {
-        testFieldByAdmin("rootUrl", ClientRepresentation::setRootUrl);
-        testFieldByAdmin("adminUrl", ClientRepresentation::setAdminUrl);
-        testFieldByAdmin("baseUrl", ClientRepresentation::setBaseUrl);
-        testFieldByAdmin("redirectUris", (c, val) -> c.setRedirectUris(Collections.singletonList(val)));
-        testFieldByAdmin("webOrigins", (c, val) -> c.setWebOrigins(Collections.singletonList(val)));
+        testFieldByAdmin("rootUrl", OIDCLoginProtocol.LOGIN_PROTOCOL, ClientRepresentation::setRootUrl);
+        testFieldByAdmin("adminUrl", OIDCLoginProtocol.LOGIN_PROTOCOL, ClientRepresentation::setAdminUrl);
+        testFieldByAdmin("baseUrl", OIDCLoginProtocol.LOGIN_PROTOCOL, ClientRepresentation::setBaseUrl);
+        testFieldByAdmin("redirectUris", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.setRedirectUris(Collections.singletonList(val)));
+        testFieldByAdmin("webOrigins", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.setWebOrigins(Collections.singletonList(val)));
 
-        testFieldByAdmin("jwksUri", (c, val) -> c.getAttributes().put(OIDCConfigAttributes.JWKS_URL, val));
-        testFieldByAdmin("requestUris", (c, val) -> c.getAttributes().put(OIDCConfigAttributes.REQUEST_URIS, val));
-        testFieldByAdmin("backchannelLogoutUrl", (c, val) -> c.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, val));
-        testFieldByAdmin("postLogoutRedirectUris", (c, val) -> c.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, val));
-        testFieldByAdmin("cibaClientNotificationEndpoint", (c, val) -> c.getAttributes().put(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, val));
-        testFieldByAdmin(OIDCConfigAttributes.LOGO_URI, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.LOGO_URI, val));
-        testFieldByAdmin(OIDCConfigAttributes.POLICY_URI, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.POLICY_URI, val));
-        testFieldByAdmin(OIDCConfigAttributes.TOS_URI, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.TOS_URI, val));
+        testFieldByAdmin("jwksUri", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.JWKS_URL, val));
+        testFieldByAdmin("requestUris", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.REQUEST_URIS, val));
+        testFieldByAdmin("backchannelLogoutUrl", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.BACKCHANNEL_LOGOUT_URL, val));
+        testFieldByAdmin("postLogoutRedirectUris", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, val));
+        testFieldByAdmin("cibaClientNotificationEndpoint", OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, val));
+        testFieldByAdmin(OIDCConfigAttributes.LOGO_URI, OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.LOGO_URI, val));
+        testFieldByAdmin(OIDCConfigAttributes.POLICY_URI, OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.POLICY_URI, val));
+        testFieldByAdmin(OIDCConfigAttributes.TOS_URI, OIDCLoginProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(OIDCConfigAttributes.TOS_URI, val));
+    }
+
+    @Test
+    public void testFieldsByAdminSaml() throws Exception {
+        testFieldByAdmin("rootUrl", SamlProtocol.LOGIN_PROTOCOL, ClientRepresentation::setRootUrl);
+        testFieldByAdmin("adminUrl", SamlProtocol.LOGIN_PROTOCOL, ClientRepresentation::setAdminUrl);
+        testFieldByAdmin("baseUrl", SamlProtocol.LOGIN_PROTOCOL, ClientRepresentation::setBaseUrl);
+        testFieldByAdmin("redirectUris", SamlProtocol.LOGIN_PROTOCOL, (c, val) -> c.setRedirectUris(Collections.singletonList(val)));
+
+        testFieldByAdmin(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, SamlProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_POST_ATTRIBUTE, val));
+        testFieldByAdmin(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, SamlProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_REDIRECT_ATTRIBUTE, val));
+        testFieldByAdmin(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, SamlProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(SamlProtocol.SAML_ASSERTION_CONSUMER_URL_ARTIFACT_ATTRIBUTE, val));
+        testFieldByAdmin(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, SamlProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_POST_ATTRIBUTE, val));
+        testFieldByAdmin(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE, SamlProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_ARTIFACT_ATTRIBUTE, val));
+        testFieldByAdmin(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, SamlProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_REDIRECT_ATTRIBUTE, val));
+        testFieldByAdmin(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE, SamlProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(SamlProtocol.SAML_SINGLE_LOGOUT_SERVICE_URL_SOAP_ATTRIBUTE, val));
+        testFieldByAdmin(SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, SamlProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(SamlProtocol.SAML_ARTIFACT_RESOLUTION_SERVICE_URL_ATTRIBUTE, val));
+        testFieldByAdmin(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL, SamlProtocol.LOGIN_PROTOCOL, (c, val) -> c.getAttributes().put(SamlConfigAttributes.SAML_METADATA_DESCRIPTOR_URL, val));
     }
 
     @Test
@@ -109,20 +130,20 @@ public class ClientUrisPatternExecutorTest extends AbstractClientPoliciesTest {
         }), sectorIdentifierUriPattern, TestApplicationResourceUrls.pairwiseSectorIdentifierUri(), INVALID_URL);
     }
 
-    public void testFieldByAdmin(String fieldName, BiConsumer<ClientRepresentation, String> setter) throws Exception {
+    public void testFieldByAdmin(String fieldName, String protocol, BiConsumer<ClientRepresentation, String> setter) throws Exception {
         setupPolicy(List.of(SAFE_PATTERN), List.of(fieldName));
 
         //create with valid field
         String validClientId = generateSuffixedName("valid-" + fieldName);
         try {
-            createClientByAdmin(validClientId, (ClientRepresentation c) -> setter.accept(c, VALID_URL));
+            createClientByAdmin(validClientId, protocol, (ClientRepresentation c) -> setter.accept(c, VALID_URL));
         } catch (Exception e) {
             fail("Create failed for valid URI on field " + fieldName + ": " + e.getMessage());
         }
 
         //create invalid field
         try {
-            createClientByAdmin(generateSuffixedName("invalid-" + fieldName), (ClientRepresentation c) ->  setter.accept(c, INVALID_URL));
+            createClientByAdmin(generateSuffixedName("invalid-" + fieldName), protocol, (ClientRepresentation c) ->  setter.accept(c, INVALID_URL));
             fail("Create should have failed for invalid URI on field: " + fieldName);
         } catch (ClientPolicyException e) {
             assertEquals("Invalid " + fieldName, e.getErrorDetail());
