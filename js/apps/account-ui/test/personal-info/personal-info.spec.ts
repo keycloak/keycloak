@@ -15,25 +15,25 @@ async function retryOperation<T>(
   initialDelay = 100,
 ): Promise<T> {
   let lastError: Error | undefined;
-  
+
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       return await operation();
     } catch (error) {
       lastError = error as Error;
-      
+
       // Only retry on 500 errors (server errors), not on validation errors
       if (error instanceof Error && error.message.includes("unknown_error")) {
         const delay = initialDelay * Math.pow(2, attempt);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
-      
+
       // For other errors, throw immediately
       throw error;
     }
   }
-  
+
   throw lastError;
 }
 
@@ -60,7 +60,7 @@ test.describe("Personal info (user profile enabled)", () => {
       adminClient.users.updateProfile({
         ...userProfile,
         realm: testBed.realm,
-      })
+      }),
     );
     await login(page, testBed.realm);
 
@@ -80,7 +80,7 @@ test.describe("Personal info (user profile enabled)", () => {
       adminClient.users.updateProfile({
         ...userProfile,
         realm: testBed.realm,
-      })
+      }),
     );
     await login(page, testBed.realm);
 
@@ -102,7 +102,7 @@ test.describe("Personal info (user profile enabled)", () => {
       adminClient.users.updateProfile({
         ...userProfile,
         realm: testBed.realm,
-      })
+      }),
     );
     await login(page, testBed.realm);
 
@@ -124,7 +124,7 @@ test.describe("Personal info (user profile enabled)", () => {
       adminClient.users.updateProfile({
         ...userProfile,
         realm: testBed.realm,
-      })
+      }),
     );
     await login(page, testBed.realm);
 
