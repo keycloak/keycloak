@@ -38,6 +38,8 @@ jobs:
       - name: Cherry-pick additional commits in quarkus-next
         run: |
           ${GITHUB_WORKSPACE}/.github/scripts/prepare-quarkus-next.sh
+        env:
+          QUARKUS_PACKAGES_TOKEN: ${{ secrets.QUARKUS_PACKAGES_TOKEN }}
 
       - name: Push changes
         run: |

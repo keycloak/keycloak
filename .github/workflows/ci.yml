@@ -14,6 +14,7 @@ env:
   SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
   KC_TEST_GITHUB_SLOW_METHOD: "10"
   KC_TEST_GITHUB_SLOW_CLASS: "60"
+  QUARKUS_PACKAGES_TOKEN: ${{ secrets.QUARKUS_PACKAGES_TOKEN }}
 
 concurrency:
   # Only cancel jobs for PR updates

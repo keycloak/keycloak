@@ -4,10 +4,9 @@ set -xeuo pipefail
 add_repository() {
   local file=$1
   local element=$2
-
-  local id="sonatype-snapshots"
-  local name="Sonatype Snapshots"
-  local url="https://central.sonatype.com/repository/maven-snapshots/"
+  local id=$3
+  local name=$4
+  local url=$5
 
   # Decide the tag based on the element
   local tag
@@ -33,8 +32,8 @@ add_repository() {
 
   # Check if the tag exists in the file
   if grep -q "<$tag>" "$file"; then
-    # Insert the element before the closing tag
-    sed -i "/<\/$tag>/i $repository" "$file"
+    # Insert the element before the closing tag (use sed substitution to handle same-line tags)
+    sed -i "s|</$tag>|$repository \n            </$tag>|" "$file"
   else
     # If the tag doesn't exist, create it and insert the element
     sed -i "/<\/project>/i \
@@ -46,12 +45,26 @@ add_repository() {
 
 git checkout -b new-quarkus-next origin/main
 
-add_repository "pom.xml" "repository"
-add_repository "quarkus/pom.xml" "pluginRepository"
-add_repository "operator/pom.xml" "pluginRepository"
+# Sonatype for io.quarkus.platform:quarkus-bom
+# GitHub Packages for io.quarkus:*
+add_repository "pom.xml" "repository" "sonatype-snapshots" "Sonatype Snapshots" "https://central.sonatype.com/repository/maven-snapshots/"
+add_repository "pom.xml" "repository" "github-quarkus" "Quarkus GitHub Packages Snapshots" "https://maven.pkg.github.com/quarkusio/quarkus"
+add_repository "quarkus/pom.xml" "pluginRepository" "github-quarkus" "Quarkus GitHub Packages Snapshots" "https://maven.pkg.github.com/quarkusio/quarkus"
+add_repository "operator/pom.xml" "pluginRepository" "github-quarkus" "Quarkus GitHub Packages Snapshots" "https://maven.pkg.github.com/quarkusio/quarkus"
+
+# Point Maven to the GitHub Packages settings (PAT with read:packages scope)
+sed -i -e '$a\' .mvn/maven.config 2>/dev/null || true
+printf '%s\n' "-s" ".github/quarkus-next-settings.xml" >> .mvn/maven.config
 
 ./quarkus/set-quarkus-version.sh
-git commit -am "Set quarkus version to 999-SNAPSHOT"
+
+git add -A
+git commit -m "Set quarkus version to 999-SNAPSHOT"
+
+if ! git rev-parse --verify origin/quarkus-next &>/dev/null; then
+  echo "No existing quarkus-next branch found. Nothing to cherry-pick."
+  exit 0
+fi
 
 snapshot_version_hash=$(git log origin/quarkus-next --grep="Set quarkus version to 999-SNAPSHOT" --format="%H" -n 1)
 commits_to_cherry_pick=$(git rev-list --right-only --no-merges --reverse new-quarkus-next...origin/quarkus-next | grep -vE "$snapshot_version_hash" || echo "")
