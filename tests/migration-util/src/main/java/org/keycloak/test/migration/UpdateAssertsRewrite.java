@@ -22,38 +22,45 @@ public class UpdateAssertsRewrite extends TestRewrite {
             String trimmed = l.trim();
             if (trimmed.startsWith("Assert.") && trimmed.endsWith(";")) {
                 String method = trimmed.substring("Assert.".length(), trimmed.indexOf("("));
-                int arguments = l.substring(l.indexOf("(") + 1, l.lastIndexOf(")")).split(", ").length;
-
-                if (method.equals(FAIL)) {
-                    directReplace(i, FAIL);
-                } else if (method.equals(ASSERT_THROWS) && arguments == 3) {
-                    moveMessageToLast(i, ASSERT_THROWS);
-                } else if (method.equals(ASSERT_TRUE) && arguments == 1) {
-                    directReplace(i, ASSERT_TRUE);
-                } else if (method.equals(ASSERT_TRUE) && arguments == 2) {
-                    moveMessageToLast(i, ASSERT_TRUE);
-                } else if (method.equals(ASSERT_FALSE) && arguments == 1) {
-                    directReplace(i, ASSERT_FALSE);
-                } else if (method.equals(ASSERT_FALSE) && arguments == 2) {
-                    moveMessageToLast(i, ASSERT_FALSE);
-                } else if (method.equals(ASSERT_NULL) && arguments == 1) {
-                    directReplace(i, ASSERT_NULL);
-                } else if (method.equals(ASSERT_NULL) && arguments == 2) {
-                    moveMessageToLast(i, ASSERT_NULL);
-                } else if (method.equals(ASSERT_NOT_NULL) && arguments == 1) {
-                    directReplace(i, ASSERT_NOT_NULL);
-                } else if (method.equals(ASSERT_NOT_NULL) && arguments == 2) {
-                    moveMessageToLast(i, ASSERT_NOT_NULL);
-                }  else if (method.equals(ASSERT_EQUALS) && arguments == 2) {
-                    directReplace(i, ASSERT_EQUALS);
-                } else if (method.equals(ASSERT_EQUALS) && arguments == 3) {
-                    moveMessageToLast(i, ASSERT_EQUALS);
-                }  else if (method.equals(ASSERT_NOT_EQUALS) && arguments == 2) {
-                    directReplace(i, ASSERT_NOT_EQUALS);
-                } else if (method.equals(ASSERT_NOT_EQUALS) && arguments == 3) {
-                    moveMessageToLast(i, ASSERT_NOT_EQUALS);
-                }
+                moveMessageOnAllAsserts(i, l, method);
+            } else if ((trimmed.startsWith("assert") || trimmed.startsWith("fail")) && trimmed.endsWith(";")) {
+                String method = trimmed.substring(0, trimmed.indexOf("("));
+                moveMessageOnAllAsserts(i, l, method);
             }
+        }
+    }
+
+    private void moveMessageOnAllAsserts(int index, String lineContent, String method) {
+        int arguments = lineContent.substring(lineContent.indexOf("(") + 1, lineContent.lastIndexOf(")")).split(", ").length;
+
+        if (method.equals(FAIL)) {
+            directReplace(index, FAIL);
+        } else if (method.equals(ASSERT_THROWS) && arguments == 3) {
+            moveMessageToLast(index, ASSERT_THROWS);
+        } else if (method.equals(ASSERT_TRUE) && arguments == 1) {
+            directReplace(index, ASSERT_TRUE);
+        } else if (method.equals(ASSERT_TRUE) && arguments == 2) {
+            moveMessageToLast(index, ASSERT_TRUE);
+        } else if (method.equals(ASSERT_FALSE) && arguments == 1) {
+            directReplace(index, ASSERT_FALSE);
+        } else if (method.equals(ASSERT_FALSE) && arguments == 2) {
+            moveMessageToLast(index, ASSERT_FALSE);
+        } else if (method.equals(ASSERT_NULL) && arguments == 1) {
+            directReplace(index, ASSERT_NULL);
+        } else if (method.equals(ASSERT_NULL) && arguments == 2) {
+            moveMessageToLast(index, ASSERT_NULL);
+        } else if (method.equals(ASSERT_NOT_NULL) && arguments == 1) {
+            directReplace(index, ASSERT_NOT_NULL);
+        } else if (method.equals(ASSERT_NOT_NULL) && arguments == 2) {
+            moveMessageToLast(index, ASSERT_NOT_NULL);
+        }  else if (method.equals(ASSERT_EQUALS) && arguments == 2) {
+            directReplace(index, ASSERT_EQUALS);
+        } else if (method.equals(ASSERT_EQUALS) && arguments == 3) {
+            moveMessageToLast(index, ASSERT_EQUALS);
+        }  else if (method.equals(ASSERT_NOT_EQUALS) && arguments == 2) {
+            directReplace(index, ASSERT_NOT_EQUALS);
+        } else if (method.equals(ASSERT_NOT_EQUALS) && arguments == 3) {
+            moveMessageToLast(index, ASSERT_NOT_EQUALS);
         }
     }
 
