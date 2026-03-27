@@ -3,7 +3,7 @@ package org.keycloak.test.migration;
 public class RunOnServerRewrite extends TestRewrite {
 
     private static final String REGEX = "testingClient\\.server\\([a-zA-Z\"_-]*\\)";
-    private static final String REPLACEMENT = "runOnServerClient";
+    private static final String REPLACEMENT = "runOnServer";
 
     @Override
     public void rewrite() {
@@ -13,7 +13,7 @@ public class RunOnServerRewrite extends TestRewrite {
 
             content.add(managedRealm + 1, "");
             content.add(managedRealm + 2, "    @InjectRunOnServer");
-            content.add(managedRealm + 3, "    RunOnServerClient runOnServerClient;");
+            content.add(managedRealm + 3, "    RunOnServerClient " + REPLACEMENT + ";");
             info(managedRealm + 2, "Injecting: RunOnServerClient");
 
             addImport("org.keycloak.testframework.remote.runonserver.InjectRunOnServer");
