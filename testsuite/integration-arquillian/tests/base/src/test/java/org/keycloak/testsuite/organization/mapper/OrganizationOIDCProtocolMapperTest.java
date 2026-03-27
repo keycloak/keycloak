@@ -794,6 +794,42 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(organizations.contains(orgB.getAlias()), is(true));
     }
 
+    @Test
+    public void testRefreshTokenScopeWithSingleOrganizationAskingForAll() {
+        OrganizationRepresentation orgA = createOrganization("orga", true);
+        MemberRepresentation member = addMember(testRealm().organizations().get(orgA.getId()), "member@" + orgA.getDomains().iterator().next().getName());
+        OrganizationRepresentation orgB = createOrganization("orgb", true);
+        testRealm().organizations().get(orgB.getId()).members().addMember(member.getId()).close();
+        oauth.client("broker-app", "broker-app-secret");
+        String originalScope = "organization:" + orgA.getAlias();
+        oauth.scope(originalScope);
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(member.getEmail());
+        loginPage.login(memberPassword);
+        AccessTokenResponse response = assertSuccessfulCodeGrant();
+        assertThat(response.getScope(), containsString(originalScope));
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString(originalScope));
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertEquals( 1, organizations.toArray().length);
+        assertThat(organizations.contains(orgA.getAlias()), is(true));
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+        assertThat(refreshToken.getScope(), containsString(originalScope));
+
+        //previous:(SINGLE:orga) -> current:(ALL) == SINGLE:orga
+        String allOrgsScope = "organization:*";
+        oauth.scope(allOrgsScope);
+        response = oauth.doRefreshTokenRequest(response.getRefreshToken());
+        assertThat(response.getScope(), not(containsString(allOrgsScope)));
+        accessToken = oauth.verifyToken(response.getAccessToken());
+        assertThat(accessToken.getScope(), containsString(originalScope));
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertEquals( 1, organizations.toArray().length);
+        assertThat(organizations.contains(orgA.getAlias()), is(true));
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     public void testPasswordGrantWithAllOrganizationsAndRefresh() throws Exception {
