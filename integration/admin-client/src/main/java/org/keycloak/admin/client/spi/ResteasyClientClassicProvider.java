@@ -25,7 +25,7 @@ import jakarta.ws.rs.client.WebTarget;
 
 import org.keycloak.admin.client.ClientBuilderWrapper;
 import org.keycloak.admin.client.JacksonProvider;
-
+import org.keycloak.admin.client.StreamRxInvokerProvider;
 import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
 
 /**
@@ -42,6 +42,7 @@ public class ResteasyClientClassicProvider implements ResteasyClientProvider {
         } else {
             clientBuilder.register(JacksonProvider.class, 100);
         }
+        clientBuilder.register(StreamRxInvokerProvider.class);
 
         return clientBuilder.build();
     }
