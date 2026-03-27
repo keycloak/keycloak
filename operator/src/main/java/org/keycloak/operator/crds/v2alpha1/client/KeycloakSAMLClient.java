@@ -33,7 +33,7 @@ import io.sundr.builder.annotations.BuildableReference;
         displayName="KeycloakSAMLClient"
     )
     @Group(Constants.CRDS_GROUP)
-    @Version(Constants.CRDS_VERSION)
+    @Version(Constants.CRDS_VERSION_ALPHA)
     @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder",
             lazyCollectionInitEnabled = false, refs = {
             @BuildableReference(io.fabric8.kubernetes.api.model.ObjectMeta.class),

@@ -48,7 +48,7 @@ kubectl --namespace keycloak create configmap keycloak-aurora-rootcert --from-fi
 +
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   labels:

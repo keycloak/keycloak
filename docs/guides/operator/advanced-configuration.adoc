@@ -18,7 +18,7 @@ similar pattern in the CR and use the `httpsPort` field. The following example i
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -86,7 +86,7 @@ The values can be expressed as plain text strings or Secret object references as
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -117,7 +117,7 @@ Here's an example setting JAVA_OPTS_APPEND:
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -156,7 +156,7 @@ The following example illustrates injecting labels, annotations, volumes, and vo
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -184,7 +184,7 @@ The Keycloak CR exposes options to set periodSeconds and failureThreshold on eac
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -209,7 +209,7 @@ Specifically, you can disable the hostname and TLS as shown in the following exa
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -235,7 +235,7 @@ You can specify your custom values based on your requirements as follows:
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -263,7 +263,7 @@ An example utilizing all scheduling fields:
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -306,7 +306,7 @@ For example the following will remove the use of any server Pod scheduling for t
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -325,7 +325,7 @@ You can specify the `port` and the `additionalOptions` as follows:
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -351,7 +351,7 @@ Use the truststores stanza of the Keycloak spec to specify Secrets or ConfigMaps
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -414,7 +414,7 @@ You can change tracing configuration via Keycloak CR fields as follows:
 
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -457,7 +457,7 @@ To disable the NetworkPolicy, set `spec.networkPolicy.enabled` in your Keycloak 
 .Keycloak CR with Network Policies enabled
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -473,7 +473,7 @@ These rules specify from where (the source) the traffic is allowed, and it is po
 .Extended Network Policy configuration
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -508,7 +508,7 @@ Based on those requirements, the Keycloak CR would be like this (most parts are 
 .Keycloak CR
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -542,7 +542,7 @@ If you need to set custom labels or annotations to keycloak service you can do t
 .Custom service labels and annotations
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -604,7 +604,7 @@ A ServiceMonitor is only created if the `metrics-enabled` option is set.
 .Enable Keycloak metrics
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -657,7 +657,7 @@ You can configure the `interval` and `scrapeTimeout` fields and also `annotation
 .Modified ServiceMonitor
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -681,7 +681,7 @@ You can prevent the Operator from creating a ServiceMonitor by configuring the K
 .Disabled ServiceMonitor
 [source,yaml]
 ----
-apiVersion: k8s.keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2beta1
 kind: Keycloak
 metadata:
   name: example-kc

@@ -64,11 +64,11 @@ import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientSpec;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatus;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpec;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
 import io.fabric8.kubernetes.api.model.Secret;
@@ -85,7 +85,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.logging.Log;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.isTlsConfigured;
 
 /**
  * Base class for Client controllers.
@@ -214,7 +214,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
         return updateControl;
     }
-    
+
     private boolean isServerReady(Context<R> context, R resource) {
         StatefulSet existingDeployment = context.getClient().resources(StatefulSet.class)
                 .inNamespace(resource.getMetadata().getNamespace()).withName(resource.getSpec().getKeycloakCRName())
