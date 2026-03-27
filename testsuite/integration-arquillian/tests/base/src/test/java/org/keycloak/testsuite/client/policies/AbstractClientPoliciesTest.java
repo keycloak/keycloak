@@ -680,15 +680,23 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     // Client CRUD operation by Admin REST API primitives
 
     protected String createClientByAdmin(String clientName, Consumer<ClientRepresentation> op) throws ClientPolicyException {
+        return createClientByAdmin(clientName, OIDCLoginProtocol.LOGIN_PROTOCOL, op);
+    }
+
+    protected String createClientByAdmin(String clientName, String protocol, Consumer<ClientRepresentation> op) throws ClientPolicyException {
         ClientRepresentation clientRep = new ClientRepresentation();
         clientRep.setClientId(clientName);
         clientRep.setName(clientName);
-        clientRep.setProtocol("openid-connect");
-        clientRep.setBearerOnly(Boolean.FALSE);
-        clientRep.setPublicClient(Boolean.FALSE);
-        clientRep.setServiceAccountsEnabled(Boolean.TRUE);
+        clientRep.setProtocol(protocol);
         clientRep.setRedirectUris(Collections.singletonList(ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setPostLogoutRedirectUris(Collections.singletonList("+"));
+        if (protocol.equals(OIDCLoginProtocol.LOGIN_PROTOCOL)) {
+            clientRep.setBearerOnly(Boolean.FALSE);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.setServiceAccountsEnabled(Boolean.TRUE);
+        } else {
+            clientRep.setPublicClient(Boolean.TRUE);
+        }
         op.accept(clientRep);
         Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
         if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
