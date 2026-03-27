@@ -38,11 +38,11 @@ import static org.hamcrest.Matchers.startsWith;
 @KeycloakIntegrationTest(config = KcAdmV2ClientCLITest.V2ApiServerConfig.class)
 public class KcAdmV2ClientCLITest {
 
-    @InjectKeycloakUrls
-    KeycloakUrls keycloakUrls;
-
     @InjectRealm
     ManagedRealm realm;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
 
     @TempDir
     static File tempDir;
@@ -530,7 +530,8 @@ public class KcAdmV2ClientCLITest {
 
         CommandResult result = kcAdmV2Cmd("client", "update", "oidc", "some-id", "-f", jsonFile.toString());
         assertThat("PUT without clientId should fail", result.exitCode(), is(not(0)));
-        assertThat(result.err(), containsString("does not match"));
+        assertThat(result.err(), containsString("Provided data is invalid"));
+        assertThat(result.err(), containsString("clientId: must not be blank"));
     }
 
     @Test

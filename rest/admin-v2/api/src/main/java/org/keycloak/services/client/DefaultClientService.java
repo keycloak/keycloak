@@ -268,6 +268,10 @@ public class DefaultClientService implements ClientService {
     }
 
     protected void assertSameClientIds(String pathId, String payloadId) {
+        if (payloadId == null) {
+            // When the payload clientId is null, it is not part of the payload at all - validated via @NotBlank validator annotation
+            return;
+        }
         if (!Objects.equals(pathId, payloadId)) {
             throw new ServiceException("Field 'clientId' in payload does not match the provided 'clientId'", Response.Status.BAD_REQUEST);
         }
