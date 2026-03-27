@@ -11,6 +11,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.keycloak.OAuth2Constants;
+
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -21,6 +23,8 @@ import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.media.Discriminator;
 import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.models.security.SecurityScheme;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
@@ -85,6 +89,7 @@ public class OASModelFilter implements OASFilter {
         });
 
         addDescriptionsToSchemasProperties(openAPI);
+        addSecurityScheme(openAPI);
     }
 
     /**
@@ -267,6 +272,30 @@ public class OASModelFilter implements OASFilter {
             log.debugf("Added discriminator '%s' to schema '%s' with %d subtypes",
                     discriminatorPropertyName, schemaName, typeAnnotations.length);
         }
+    }
+
+    /**
+     * Adds a Bearer token security scheme and applies it globally to all operations.
+     * This documents the 401 (Unauthorized) and 403 (Forbidden) responses at the API level
+     * rather than repeating them on every endpoint.
+     */
+    private void addSecurityScheme(OpenAPI openAPI) {
+        String schemeName = "bearer-auth";
+
+        SecurityScheme bearerScheme = OASFactory.createSecurityScheme()
+                .type(SecurityScheme.Type.HTTP)
+                .scheme("bearer")
+                .bearerFormat(OAuth2Constants.JWT)
+                .description("Bearer token authentication using a Keycloak access token");
+
+        if (openAPI.getComponents() == null) {
+            openAPI.setComponents(OASFactory.createComponents());
+        }
+        openAPI.getComponents().addSecurityScheme(schemeName, bearerScheme);
+
+        SecurityRequirement securityRequirement = OASFactory.createSecurityRequirement()
+                .addScheme(schemeName);
+        openAPI.addSecurityRequirement(securityRequirement);
     }
 
     private PathItem sortOperationsByMethod(PathItem pathItem) {
