@@ -93,6 +93,11 @@ public class HttpClientBuilder {
     protected boolean disableCookies = false;
     protected ProxyMappings proxyMappings;
     protected boolean expectContinueEnabled = false;
+    protected org.apache.http.impl.client.HttpClientBuilder apacheBuilder = createApacheHttpClientBuilder();
+
+    protected org.apache.http.impl.client.HttpClientBuilder createApacheHttpClientBuilder() {
+        return HttpClients.custom();
+    }
 
     /**
      * Socket inactivity timeout
@@ -281,7 +286,7 @@ public class HttpClientBuilder {
     }
 
     protected org.apache.http.impl.client.HttpClientBuilder getApacheHttpClientBuilder() {
-        return HttpClients.custom();
+        return apacheBuilder;
     }
 
     private SSLContext createSslContext(

@@ -1,12 +1,16 @@
 package org.keycloak.connections.httpclient;
 
+import org.apache.http.client.HttpRequestRetryHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.protocol.HttpContext;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.concurrent.TimeUnit;
+import static org.junit.Assert.assertNotNull;
 
 public class HttpClientBuilderTest {
 
@@ -18,6 +22,23 @@ public class HttpClientBuilderTest {
 
         Assert.assertEquals("Default socket timeout is -1 and can be converted by TimeUnit", -1, requestConfig.getSocketTimeout());
         Assert.assertEquals("Default connect timeout is -1 and can be converted by TimeUnit", -1, requestConfig.getConnectTimeout());
+    }
+
+    @Test
+    public void testRepeatedApacheBuilderUse() throws Exception {
+        HttpClientBuilder httpClientBuilder = new HttpClientBuilder();
+        httpClientBuilder.getApacheHttpClientBuilder().setRetryHandler(new HttpRequestRetryHandler() {
+
+            @Override
+            public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
+                return true;
+            }
+        });
+        var builder = httpClientBuilder.getApacheHttpClientBuilder(); // should not clear the retry handler
+
+        Field retryHandler = builder.getClass().getDeclaredField("retryHandler");
+        retryHandler.setAccessible(true);
+        assertNotNull(retryHandler.get(builder));
     }
 
     @Test
@@ -53,4 +74,5 @@ public class HttpClientBuilderTest {
         defaultConfig.setAccessible(true);
         return (RequestConfig) defaultConfig.get(httpClient);
     }
+
 }
