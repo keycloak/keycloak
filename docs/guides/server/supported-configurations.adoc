@@ -20,6 +20,8 @@ This {section} provides an overview of the platforms, versions, and configuratio
 NOTE: To benefit from the latest performance improvements, we suggest using the latest supported JDK version for production deployments.
 This is currently OpenJDK {jdk_version_latest}.
 
+WARNING: Due to OpenJDK limitations, FIPS mode is only supported with OpenJDK 17 and 21 in {project_name}. Consider this when choosing the Java version for your production deployment.
+
 === Container Image
 
 {project_name} provides official container image that is using OpenJDK {jdk_version_container}. Consider this when writing
