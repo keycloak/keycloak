@@ -318,6 +318,10 @@ public abstract class AbstractOAuthClient<T> {
         return new Endpoints(baseUrl, config.getRealm());
     }
 
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
     public String getRealm() {
         return config.getRealm();
     }

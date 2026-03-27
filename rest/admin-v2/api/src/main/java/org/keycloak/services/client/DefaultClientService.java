@@ -47,6 +47,7 @@ import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 import org.keycloak.validation.jakarta.ValidationContext;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -110,9 +111,6 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public CreateOrUpdateResult createOrUpdateClient(RealmModel realm, String clientId, BaseClientRepresentation client) throws ServiceException {
-        if (!Objects.equals(clientId, client.getClientId())) {
-            throw new ServiceException("Field 'clientId' in payload does not match the provided 'clientId'", Response.Status.BAD_REQUEST);
-        }
         return createOrUpdate(realm, clientId, client, CreateOrUpdateStrategy.PUT);
     }
 
@@ -134,6 +132,9 @@ public class DefaultClientService implements ClientService {
 
     private CreateOrUpdateResult createOrUpdate(RealmModel realm, String clientId, BaseClientRepresentation client, CreateOrUpdateStrategy strategy) throws ServiceException {
         validateUnknownFields(client);
+        if (!strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
+            assertSameClientIds(clientId, client.getClientId());
+        }
 
         boolean created = false;
         ClientModel model;
@@ -234,6 +235,9 @@ public class DefaultClientService implements ClientService {
                     }
                     final ObjectReader objectReader = MAPPER.readerForUpdating(getOriginalClient.get());
                     updated = objectReader.readValue(patch);
+                } catch (JsonMappingException e) {
+                    var invalidFields = e.getPath().stream().map(JsonMappingException.Reference::getFieldName).collect(Collectors.joining(", "));
+                    throw new ServiceException("Invalid values for these fields: %s".formatted((invalidFields)));
                 } catch (JsonProcessingException e) {
                     throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
                 } catch (IOException e) {
@@ -261,6 +265,12 @@ public class DefaultClientService implements ClientService {
 
         clientResource.deleteClient();
         fireAdminEvent(OperationType.DELETE, client);
+    }
+
+    protected void assertSameClientIds(String pathId, String payloadId) {
+        if (!Objects.equals(pathId, payloadId)) {
+            throw new ServiceException("Field 'clientId' in payload does not match the provided 'clientId'", Response.Status.BAD_REQUEST);
+        }
     }
 
     /**

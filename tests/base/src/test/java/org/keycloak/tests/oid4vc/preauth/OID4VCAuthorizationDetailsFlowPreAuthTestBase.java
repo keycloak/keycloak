@@ -910,9 +910,6 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
                 return locations.get(0);
             }
         }
-
-        // Some flows do not include locations in token authorization_details.
-        // Fall back to issuer metadata, which is the same audience expected for proof generation.
         return oauth.oid4vc().issuerMetadataRequest().send().getMetadata().getCredentialIssuer();
     }
 
