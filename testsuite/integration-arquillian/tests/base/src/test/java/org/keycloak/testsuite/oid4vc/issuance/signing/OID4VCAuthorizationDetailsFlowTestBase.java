@@ -35,6 +35,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -230,6 +231,8 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(new Proofs().setJwt(List.of(
+                        generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), oauth.oid4vc().nonceRequest().send().getNonce()))))
                 .bearerToken(accessToken)
                 .send();
 
@@ -645,11 +648,14 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         //      * It does not assume the caller already has an authenticated session.
         //      * It must guarantee isolation of state tied to the VC issuance flow.
         {
-            // Clear events before credential request
+            // Clear events before credential request. Fetching a nonce emits a nonce event.
+            String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
             events.clear();
 
             Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credentialIdentifier)
+                    .proofs(new Proofs().setJwt(List.of(
+                            generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), cNonce))))
                     .bearerToken(tokenResponse.getAccessToken())
                     .send();
 
@@ -706,8 +712,12 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         assertNotNull("Credential identifier should be present", credentialIdentifier);
 
         // Step 2: Verify token works at credential endpoint (should succeed)
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        events.clear();
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(new Proofs().setJwt(List.of(
+                        generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), cNonce))))
                 .bearerToken(preAuthorizedToken)
                 .send();
 
@@ -912,8 +922,12 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
         String credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
         String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        events.clear();
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(new Proofs().setJwt(List.of(
+                        generateJwtProof(getCredentialIssuerMetadata().getCredentialIssuer(), cNonce))))
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
 
@@ -950,9 +964,13 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
         String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        events.clear();
 
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(new Proofs().setJwt(List.of(
+                        generateJwtProof(getCredentialIssuerMetadata().getCredentialIssuer(), cNonce))))
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
@@ -1000,8 +1018,12 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         events.clear();
 
         // Request credential with invalid credential identifier
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        events.clear();
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier("invalid-credential-identifier")
+                .proofs(new Proofs().setJwt(List.of(
+                        generateJwtProof(getCredentialIssuerMetadata().getCredentialIssuer(), cNonce))))
                 .bearerToken(token)
                 .send();
 

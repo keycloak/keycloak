@@ -206,16 +206,21 @@ public class JwtProofValidator extends AbstractProofValidator {
         return Optional.ofNullable(vcIssuanceContext.getCredentialConfig())
                 .map(SupportedCredentialConfiguration::getProofTypesSupported)
                 .flatMap(proofTypesSupported -> {
+                    Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
+
                     // If no proof types are configured for this credential configuration, cryptographic binding is
-                    // not required and we must not enforce presence of proofs.
+                    // not required and we must not enforce presence of proofs. However, if a JWT proof is supplied,
+                    // reject it explicitly rather than silently ignoring an unconfigured proof input.
                     if (proofTypesSupported == null ||
                             proofTypesSupported.getSupportedProofTypes() == null ||
                             proofTypesSupported.getSupportedProofTypes().isEmpty()) {
+                        if (proofs != null && proofs.getJwt() != null && !proofs.getJwt().isEmpty()) {
+                            throw new VCIssuerException("Proof type " + ProofType.JWT + " is not supported for this credential configuration");
+                        }
                         return Optional.<List<String>>empty();
                     }
 
                     Map<String, SupportedProofTypeData> supportedProofTypes = proofTypesSupported.getSupportedProofTypes();
-                    Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
 
                     if (!supportedProofTypes.containsKey(ProofType.JWT)) {
                         if (proofs != null && proofs.getJwt() != null && !proofs.getJwt().isEmpty()) {

@@ -33,6 +33,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -44,6 +45,7 @@ import org.apache.http.HttpStatus;
 import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getCredentialIssuer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -77,6 +79,7 @@ public class OID4VCTimeNormalizationSdJwtTest extends OID4VCIssuerEndpointTest {
         String token = tokenResponse.getAccessToken();
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        String cNonce = getCNonce();
 
         final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
 
@@ -97,9 +100,11 @@ public class OID4VCTimeNormalizationSdJwtTest extends OID4VCIssuerEndpointTest {
                 AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
                 authenticator.setTokenString(token);
                 OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+                Proofs proof = new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce)));
 
                 CredentialRequest credentialRequest = new CredentialRequest()
-                        .setCredentialIdentifier(credentialIdentifier);
+                        .setCredentialIdentifier(credentialIdentifier)
+                        .setProofs(proof);
 
                 String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
                 Response response = issuerEndpoint.requestCredential(requestPayload);

@@ -71,7 +71,7 @@ const OID4VCI_FIELDS = {
   ISSUER_DID: "attributes.vc🍺issuer_did",
   EXPIRY_IN_SECONDS: "attributes.vc🍺expiry_in_seconds",
   BINDING_METHODS: "attributes.vc🍺cryptographic_binding_methods_supported",
-  BINDING_PROOF_TYPES: "attributes.vc🍺binding_required_proof_types",
+  BINDING_SUPPORTED_PROOF_TYPES: "attributes.vc🍺binding_required_proof_types",
   FORMAT: "#kc-vc-format",
   TOKEN_JWS_TYPE: "attributes.vc🍺credential_build_config🍺token_jws_type",
   SIGNING_KEY_ID: "#kc-signing-key-id",
@@ -654,7 +654,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
     await assertSaveButtonIsDisabled(page);
 
-    await page.getByTestId(OID4VCI_FIELDS.BINDING_PROOF_TYPES).fill("jwt");
+    await page
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+      .fill("jwt");
 
     await clickSaveButton(page);
     await expect(page.getByText("Client scope created")).toBeVisible();
@@ -668,7 +670,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       "jwk",
     );
     await expect(
-      page.getByTestId(OID4VCI_FIELDS.BINDING_PROOF_TYPES),
+      page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
     ).toHaveValue("jwt");
   });
 
@@ -721,7 +723,9 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     );
 
     await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("cose_key");
-    await page.getByTestId(OID4VCI_FIELDS.BINDING_PROOF_TYPES).fill("jwt");
+    await page
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+      .fill("jwt");
 
     await assertSaveButtonIsDisabled(page);
 
@@ -751,14 +755,16 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     );
 
     await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
-    await page.getByTestId(OID4VCI_FIELDS.BINDING_PROOF_TYPES).fill("foo");
+    await page
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+      .fill("foo");
 
     await assertSaveButtonIsDisabled(page);
 
     await expect(page.getByText("Unsupported proof type(s)")).toBeVisible();
 
     await page
-      .getByTestId(OID4VCI_FIELDS.BINDING_PROOF_TYPES)
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
       .fill("jwt,attestation");
 
     await clickSaveButton(page);
@@ -786,7 +792,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
 
     await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
     await page
-      .getByTestId(OID4VCI_FIELDS.BINDING_PROOF_TYPES)
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
       .fill("jwt,unknown_type");
 
     await assertSaveButtonIsDisabled(page);
@@ -818,7 +824,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
 
     await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
     await page
-      .getByTestId(OID4VCI_FIELDS.BINDING_PROOF_TYPES)
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
       .fill("jwt,attestation");
 
     await clickSaveButton(page);
@@ -833,7 +839,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       "jwk",
     );
     await expect(
-      page.getByTestId(OID4VCI_FIELDS.BINDING_PROOF_TYPES),
+      page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
     ).toHaveValue("jwt,attestation");
   });
 
@@ -851,7 +857,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
 
     await expect(page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS)).toBeHidden();
     await expect(
-      page.getByTestId(OID4VCI_FIELDS.BINDING_PROOF_TYPES),
+      page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
     ).toBeHidden();
 
     await switchToggle(
@@ -863,7 +869,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
       page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS),
     ).toBeVisible();
     await expect(
-      page.getByTestId(OID4VCI_FIELDS.BINDING_PROOF_TYPES),
+      page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
     ).toBeVisible();
 
     await switchToggle(
@@ -873,7 +879,7 @@ test.describe("OID4VCI Client Scope Functionality", () => {
 
     await expect(page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS)).toBeHidden();
     await expect(
-      page.getByTestId(OID4VCI_FIELDS.BINDING_PROOF_TYPES),
+      page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
     ).toBeHidden();
   });
 

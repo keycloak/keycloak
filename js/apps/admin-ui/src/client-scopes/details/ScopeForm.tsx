@@ -524,8 +524,8 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                   name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
                     "attributes.vc.binding_required_proof_types",
                   )}
-                  label={t("bindingRequiredProofTypes")}
-                  labelIcon={t("bindingRequiredProofTypesHelp")}
+                  label={t("bindingSupportedProofTypes")}
+                  labelIcon={t("bindingSupportedProofTypesHelp")}
                   rules={{
                     validate: (value: string | undefined) => {
                       if (!value || value.trim() === "") {
@@ -545,7 +545,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                           ),
                       );
                       if (invalid.length > 0) {
-                        return t("bindingRequiredProofTypesInvalid", {
+                        return t("bindingSupportedProofTypesInvalid", {
                           invalid: invalid.join(","),
                         });
                       }
