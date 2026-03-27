@@ -43,7 +43,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import helpUrls from "../help-urls";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import { ProviderInfo } from "./ProviderInfo";
-import { DashboardTab, toDashboard } from "./routes/Dashboard";
+import { toDashboard } from "./routes/Dashboard";
 
 import "./dashboard.css";
 
@@ -124,19 +124,11 @@ const Dashboard = () => {
     [serverInfo.features],
   );
 
-  const useTab = (tab: DashboardTab) =>
-    useRoutableTab(
-      toDashboard({
-        realm,
-        tab,
-      }),
-    );
-
   const realmDisplayInfo = label(t, realmInfo?.displayName, realm);
 
-  const welcomeTab = useTab("welcome");
-  const infoTab = useTab("info");
-  const providersTab = useTab("providers");
+  const welcomeTab = useRoutableTab(toDashboard({ realm, tab: "welcome" }));
+  const infoTab = useRoutableTab(toDashboard({ realm, tab: "info" }));
+  const providersTab = useRoutableTab(toDashboard({ realm, tab: "providers" }));
 
   if (Object.keys(serverInfo).length === 0) {
     return <KeycloakSpinner />;

@@ -1,4 +1,4 @@
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 import path from "node:path";
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
 import { defineConfig } from "vite";
@@ -24,7 +24,16 @@ export default defineConfig({
     },
   },
   plugins: [
-    react(),
+    react({
+      babel: {
+        plugins: [
+          [
+            "babel-plugin-react-compiler",
+            { target: "18", panicThreshold: "NONE" },
+          ],
+        ],
+      },
+    }),
     libInjectCss(),
     checker({ typescript: true }),
     dts({ insertTypesEntry: true }),

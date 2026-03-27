@@ -55,7 +55,6 @@ import { toIdentityProviderAddMapper } from "../routes/AddMapper";
 import { toIdentityProviderEditMapper } from "../routes/EditMapper";
 import {
   IdentityProviderParams,
-  IdentityProviderTab,
   toIdentityProvider,
 } from "../routes/IdentityProvider";
 import { toIdentityProviders } from "../routes/IdentityProviders";
@@ -323,20 +322,18 @@ export default function DetailSettings() {
     [],
   );
 
-  const toTab = (tab: IdentityProviderTab) =>
-    toIdentityProvider({
-      realm,
-      alias,
-      providerId,
-      tab,
-    });
-
-  const useTab = (tab: IdentityProviderTab) => useRoutableTab(toTab(tab));
-
-  const settingsTab = useTab("settings");
-  const mappersTab = useTab("mappers");
-  const permissionsTab = useTab("permissions");
-  const eventsTab = useTab("events");
+  const settingsTab = useRoutableTab(
+    toIdentityProvider({ realm, alias, providerId, tab: "settings" }),
+  );
+  const mappersTab = useRoutableTab(
+    toIdentityProvider({ realm, alias, providerId, tab: "mappers" }),
+  );
+  const permissionsTab = useRoutableTab(
+    toIdentityProvider({ realm, alias, providerId, tab: "permissions" }),
+  );
+  const eventsTab = useRoutableTab(
+    toIdentityProvider({ realm, alias, providerId, tab: "events" }),
+  );
 
   const save = async (savedProvider?: IdentityProviderRepresentation) => {
     const p = savedProvider || getValues();
@@ -639,7 +636,15 @@ export default function DetailSettings() {
       />
 
       <PageSection variant="light" className="pf-v5-u-p-0">
-        <RoutableTabs isBox defaultLocation={toTab("settings")}>
+        <RoutableTabs
+          isBox
+          defaultLocation={toIdentityProvider({
+            realm,
+            alias,
+            providerId,
+            tab: "settings",
+          })}
+        >
           <Tab
             id="settings"
             title={<TabTitleText>{t("settings")}</TabTitleText>}

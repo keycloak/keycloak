@@ -22,7 +22,6 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useParams } from "../../utils/useParams";
 import {
   DedicatedScopeDetailsParams,
-  DedicatedScopeTab,
   toDedicatedScope,
 } from "../routes/DedicatedScopeDetails";
 import { toMapper } from "../routes/Mapper";
@@ -40,11 +39,12 @@ export default function DedicatedScopes() {
 
   useFetch(() => adminClient.clients.findOne({ id: clientId }), setClient, []);
 
-  const useTab = (tab: DedicatedScopeTab) =>
-    useRoutableTab(toDedicatedScope({ realm, clientId, tab }));
-
-  const mappersTab = useTab("mappers");
-  const scopeTab = useTab("scope");
+  const mappersTab = useRoutableTab(
+    toDedicatedScope({ realm, clientId, tab: "mappers" }),
+  );
+  const scopeTab = useRoutableTab(
+    toDedicatedScope({ realm, clientId, tab: "scope" }),
+  );
 
   if (!client) {
     return <KeycloakSpinner />;
