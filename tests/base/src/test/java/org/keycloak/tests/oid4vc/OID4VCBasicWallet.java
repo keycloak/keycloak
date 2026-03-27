@@ -42,6 +42,7 @@ import org.keycloak.util.JsonSerialization;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
+import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.TEST_PASSWORD;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestRealmConfig.TEST_REALM_NAME;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_ATTACHMENT_KEY;
@@ -56,9 +57,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * A basic Wallet to exercise various OID4VCI message flows.
+ * A specialized Wallet facade for OID4VCI integration tests.
  *
- * Wallet state between messages is maintained in {@code OID4VCTestContext}.
+ * <p>This class orchestrates OID4VCI message flows (Credential Offer, Authorization Request,
+ * Token Exchange, Credential Request) using the Keycloak test framework.
+ *
+ * <p>It maintains internal session state (tracks logged-in users) to facilitate
+ * automated cleanup and mimics the behavior of a mobile wallet app.
  *
  * @author <a href="mailto:tdiesler@ibm.com">Thomas Diesler</a>
  */
@@ -80,25 +85,25 @@ public class OID4VCBasicWallet {
 
         // Get Issuer AccessToken
         //
-        AccessTokenResponse issTokenResponse = getIssuerAccessToken(ctx.issuer);
+        AccessTokenResponse issTokenResponse = getIssuerAccessToken(ctx.getIssuer());
 
         // Exclude scope: <credScope>
         // Require role: credential-offer-create
         String issToken = validateIssuerAccessToken(issTokenResponse,
-                List.of(), List.of(ctx.credScopeName),
+                List.of(), List.of(ctx.getCredScopeName()),
                 List.of(CREDENTIAL_OFFER_CREATE.getName()), List.of());
 
         // Create Authorized Code CredentialOffer
         //
         CredentialOfferURI credOfferUri;
         try {
-            credOfferUri = createCredentialOffer(ctx, ctx.credConfigId)
+            credOfferUri = createCredentialOffer(ctx, ctx.getCredConfigId())
                     .preAuthorized(false)
                     .targetUser(targetUser)
                     .bearerToken(issToken)
                     .send().getCredentialOfferURI();
         } finally {
-            logout(ctx.issuer);
+            logout(ctx.getIssuer());
         }
 
         // Fetch the CredentialsOffer
@@ -116,26 +121,26 @@ public class OID4VCBasicWallet {
 
         // Get Issuer AccessToken
         //
-        AccessTokenResponse issTokenResponse = getIssuerAccessToken(ctx.issuer);
+        AccessTokenResponse issTokenResponse = getIssuerAccessToken(ctx.getIssuer());
         assertNotNull(issTokenResponse.getAccessToken(), "No accessToken");
 
         // Exclude scope: <credScope>
         // Require role: credential-offer-create
         String issToken = validateIssuerAccessToken(issTokenResponse,
-                List.of(), List.of(ctx.credScopeName),
+                List.of(), List.of(ctx.getCredScopeName()),
                 List.of(CREDENTIAL_OFFER_CREATE.getName()), List.of());
 
         // Create Pre-Authorized CredentialOffer
         //
         CredentialOfferURI credOfferUri;
         try {
-            credOfferUri = createCredentialOffer(ctx, ctx.credConfigId)
+            credOfferUri = createCredentialOffer(ctx, ctx.getCredConfigId())
                     .preAuthorized(true)
                     .targetUser(targetUser)
                     .bearerToken(issToken)
                     .send().getCredentialOfferURI();
         } finally {
-            logout(ctx.issuer);
+            logout(ctx.getIssuer());
         }
 
         // Fetch the CredentialsOffer
@@ -213,7 +218,8 @@ public class OID4VCBasicWallet {
                 ctx.putAttachment(CREDENTIAL_RESPONSE_ATTACHMENT_KEY, credentialResponse);
                 return response;
             }
-        }.bearerToken(accessToken);
+        };
+        request.bearerToken(accessToken);
         return request;
     }
 
@@ -221,14 +227,14 @@ public class OID4VCBasicWallet {
         PkceGenerator pkce = PkceGenerator.s256();
         AuthorizationEndpointResponse authResponse = authorizationRequest()
                 .codeChallenge(pkce)
-                .send(username, "password");
+                .send(username, TEST_PASSWORD);
 
         String authCode = authResponse.getCode();
-        assertNotNull(authCode, "No authCode");
+        assertNotNull(authCode, "Authorization code (issuer) should not be null");
         AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authCode)
                 .codeVerifier(pkce)
                 .send();
-        assertNotNull(tokenResponse.getAccessToken(), "No AccessToken");
+        assertNotNull(tokenResponse.getAccessToken(), "Issuer AccessToken should not be null");
         return tokenResponse;
     }
 
@@ -239,6 +245,10 @@ public class OID4VCBasicWallet {
         return issuerMetadata;
     }
 
+    /**
+     * Terminates all active user sessions tracked by this wallet instance.
+     * Recommended to be called in {@code @AfterEach} methods.
+     */
     public void logout() {
         for (String user : loginUsers) {
             logout(user);
@@ -246,9 +256,16 @@ public class OID4VCBasicWallet {
         loginUsers.clear();
     }
 
+    /**
+     * Terminates a specific user session via the Keycloak Admin API.
+     *
+     * @param username the username of the user to logout.
+     */
     public void logout(String username) {
         RealmResource realm = keycloak.realm(TEST_REALM_NAME);
-        UserRepresentation userRep = realm.users().search(username).get(0);
+        UserRepresentation userRep = realm.users().search(username, true).stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("User not found for logout: " + username));
         UserResource userResource = realm.users().get(userRep.getId());
         userResource.logout();
     }
@@ -347,7 +364,7 @@ public class OID4VCBasicWallet {
         assertEquals(1, jwtAuthDetails.size(), "Expected one authorization_details entry");
         var jwtAuthDetail = jwtAuthDetails.get(0);
 
-        assertEquals(ctx.credConfigId, tokenAuthDetail.getCredentialConfigurationId());
+        assertEquals(ctx.getCredConfigId(), tokenAuthDetail.getCredentialConfigurationId());
         assertEquals(tokenAuthDetail, jwtAuthDetail);
 
         return accessToken;
@@ -388,8 +405,12 @@ public class OID4VCBasicWallet {
             return this;
         }
 
-        public AuthorizationEndpointResponse send(String username, String password) {
+        public void openLoginForm() {
             loginForm.open();
+        }
+
+        public AuthorizationEndpointResponse send(String username, String password) {
+            openLoginForm();
             client.fillLoginForm(username, password);
             return client.parseLoginResponse();
         }
