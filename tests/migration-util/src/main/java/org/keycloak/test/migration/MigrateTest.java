@@ -31,6 +31,8 @@ public class MigrateTest {
             BeforeRewrite.class,
             AfterRewrite.class,
             OAuthClientRewrite.class,
+            WebDriverRewrite.class,
+            PageObjectRewrite.class,
             CommonStatementsRewrite.class);
 
     Path rootPath = getRootPath();
