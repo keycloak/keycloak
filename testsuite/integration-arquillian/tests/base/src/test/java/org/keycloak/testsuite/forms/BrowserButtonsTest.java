@@ -147,23 +147,31 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
         // Login and assert on "updatePassword" page
         loginPage.login("login-test", getPassword("login-test"));
-        updatePasswordPage.assertCurrent();
-
-        // Update password and assert on "updateProfile" page
-        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
         updateProfilePage.assertCurrent();
+
+        // Update profile and assert on "updatePassword" page
+        updateProfile();
+        updatePasswordPage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
         UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
         // Click browser forward. Assert on "updateProfile" page again
         driver.navigate().forward();
-        updateProfilePage.assertCurrent();
+        updatePasswordPage.assertCurrent();
 
 
-        // Successfully update profile and assert user logged
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
+        // Successfully update password and assert user logged
+        updatePassword();
         appPage.assertCurrent();
+    }
+
+    private void updateProfile() {
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
+    }
+
+    private void updatePassword() {
+        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
     }
 
 
@@ -174,15 +182,15 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
         // Login and assert on "updatePassword" page
         loginPage.login("login-test", getPassword("login-test"));
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
         // Click browser refresh. Assert still on updatePassword page
         driver.navigate().refresh();
-        updatePasswordPage.assertCurrent();
-
-        // Update password and assert on "updateProfile" page
-        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
         updateProfilePage.assertCurrent();
+
+        // Update profile and assert on "updatePassword" page
+        updateProfile();
+        updatePasswordPage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
         UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
@@ -195,19 +203,19 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         loginExpiredPage.clickLoginRestartLink();
         loginPage.assertCurrent();
 
-        // Login again and assert on "updateProfile" page
+        // Login again and assert on "updatePassword" page
         loginPage.login("login-test", getPassword("login-test"));
-        updateProfilePage.assertCurrent();
+        updatePasswordPage.assertCurrent();
 
         // Click browser back. Assert on "Page expired" page
         UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
-        // Click "login continue" and assert on updateProfile page
+        // Click "login continue" and assert on updatePassword page
         loginExpiredPage.clickLoginContinueLink();
-        updateProfilePage.assertCurrent();
+        updatePasswordPage.assertCurrent();
 
-        // Successfully update profile and assert user logged
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
+        // Successfully update password and assert user logged
+        updatePassword();
         appPage.assertCurrent();
     }
 
@@ -220,8 +228,8 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         // Login and go through required actions
         oauth.openLoginForm();
         loginPage.login("login-test", getPassword("login-test"));
-        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
+        updateProfile();
+        updatePassword();
 
         // Assert on consent screen
         grantPage.assertCurrent();
@@ -300,7 +308,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
         // Login and assert on "updatePassword" page
         loginPage.login("login-test", getPassword("login-test"));
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
         // Click browser back. I should be on login page . URL corresponds to OIDC AuthorizationEndpoint
         driver.navigate().back();
@@ -329,21 +337,21 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
         driver.navigate().to(changePasswordUrl.trim());
 
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
         // Click browser back. Should be on loginPage for "forked flow"
         driver.navigate().back();
         loginPage.assertCurrent();
 
-        // When clicking browser forward, back on updatePasswordPage
+        // When clicking browser forward, back on updateProfilePage
         driver.navigate().forward();
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
-        // Click browser back. And continue login. Should be on updatePasswordPage
+        // Click browser back. And continue login. Should be on updateProfilePage
         driver.navigate().back();
         loginPage.assertCurrent();
         loginPage.login("login-test", getPassword("login-test"));
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
     }
 
 
@@ -360,14 +368,14 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
         // Login
         loginPage.login("login-test", getPassword("login-test"));
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
         // Click browser back. Should be on 'page expired'
         UIUtils.navigateBackWithRefresh(driver, loginExpiredPage);
 
         // Click 'continue' should be on updatePasswordPage
         loginExpiredPage.clickLoginContinueLink();
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
         // Click browser back. Should be on 'page expired'
         driver.navigate().back();

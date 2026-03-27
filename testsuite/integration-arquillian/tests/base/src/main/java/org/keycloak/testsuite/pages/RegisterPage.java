@@ -85,6 +85,11 @@ public class RegisterPage extends LanguageComboboxAwarePage
         register(firstName, lastName, email, username, password, password, null, null, null);
     }
 
+    // Register user with the registration-page expected to NOT have "password" and "password-confirmation" fields
+    public void registerWithoutPassword(String firstName, String lastName, String email, String username) {
+        register(firstName, lastName, email, username, null, null, null, null, null);
+    }
+
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm) {
         register(firstName, lastName, email, username, password, passwordConfirm, null, null, null);
     }
@@ -120,14 +125,20 @@ public class RegisterPage extends LanguageComboboxAwarePage
             usernameInput.sendKeys(username);
         }
 
-        passwordInput.clear();
-        if (password != null) {
-            passwordInput.sendKeys(password);
+        if (!isPasswordPresent() && password != null) {
+            Assert.fail("Password expected to be filled, but password field not present on the registration page");
         }
 
-        passwordConfirmInput.clear();
-        if (passwordConfirm != null) {
-            passwordConfirmInput.sendKeys(passwordConfirm);
+        if (isPasswordPresent()) {
+            passwordInput.clear();
+            if (password != null) {
+                passwordInput.sendKeys(password);
+            }
+
+            passwordConfirmInput.clear();
+            if (passwordConfirm != null) {
+                passwordConfirmInput.sendKeys(passwordConfirm);
+            }
         }
 
         if(isDepartmentPresent()) {
@@ -266,6 +277,14 @@ public class RegisterPage extends LanguageComboboxAwarePage
     public boolean isUsernamePresent() {
         try {
             return driver.findElement(By.name("username")).isDisplayed();
+        } catch (NoSuchElementException nse) {
+            return false;
+        }
+    }
+
+    public boolean isPasswordPresent() {
+        try {
+            return driver.findElement(By.name("password")).isDisplayed();
         } catch (NoSuchElementException nse) {
             return false;
         }

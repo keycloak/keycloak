@@ -67,9 +67,9 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
 
         String cookieValue1 = getAuthSessionCookieValue(driver);
 
-        // Login and assert on "updatePassword" page
+        // Login and assert on "updateProfile" page
         loginPage.login("login-test", "password");
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
         // Route didn't change
         Assert.assertEquals(cookieValue1, getAuthSessionCookieValue(driver));
@@ -83,11 +83,11 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
         logFailoverSetup();
 
         // Trigger the action now
-        updatePasswordPage.changePassword("password", "password");
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
 
         if (expectSuccessfulFailover) {
             //Action was successful
-            updateProfilePage.assertCurrent();
+            updatePasswordPage.assertCurrent();
 
             String cookieValue2 = getAuthSessionCookieValue(driver);
 
@@ -104,14 +104,14 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
             Assert.assertNotNull(error);
 
             loginPage.login("login-test", "password");
-            updatePasswordPage.changePassword("password", "password");
+            updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
         }
 
 
-        updateProfilePage.assertCurrent();
+        updatePasswordPage.assertCurrent();
 
-        // Successfully update profile and assert user logged
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
+        // Successfully update password and assert user logged
+        updatePasswordPage.changePassword("password", "password");
         appPage.assertCurrent();
     }
 

@@ -37,6 +37,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -50,6 +51,7 @@ import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -101,6 +103,9 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginPasswordResetPage resetPasswordPage;
+
+    @Page
+    protected LoginPasswordUpdatePage changePasswordPage;
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
@@ -478,14 +483,15 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-     // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerification() throws Exception {
         try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
             oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
-            registerPage.register("firstName", "lastName", "registerUserSuccessWithEmailVerification@email", "registerUserSuccessWithEmailVerification", generatePassword());
+            // Password not shown initially on the registration page since verify-email is required
+            Assert.assertFalse(registerPage.isPasswordPresent());
+            registerPage.registerWithoutPassword("firstName", "lastName", "registerUserSuccessWithEmailVerification@email", "registerUserSuccessWithEmailVerification");
             verifyEmailPage.assertCurrent();
 
             String userId = events.expectRegister("registerUserSuccessWithEmailVerification", "registerUserSuccessWithEmailVerification@email").assertEvent().getUserId();
@@ -509,6 +515,9 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
               .user(userId)
               .assertEvent();
 
+            // User is required to update password as a next step after email is verified
+            updatePasswordOnChangePasswordPage(userId);
+
             assertUserRegistered(userId, "registerUserSuccessWithEmailVerification", "registerUserSuccessWithEmailVerification@email");
 
             appPage.assertCurrent();
@@ -519,15 +528,30 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    private void updatePasswordOnChangePasswordPage(String userId) {
+        changePasswordPage.assertCurrent();
+        String password = generatePassword();
+        changePasswordPage.changePassword(password, password);
+        events.expectRequiredAction(EventType.UPDATE_PASSWORD)
+                .detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .user(userId)
+                .assertEvent();
+        events.expectRequiredAction(EventType.UPDATE_CREDENTIAL)
+                .detail(Details.CREDENTIAL_TYPE, PasswordCredentialModel.TYPE)
+                .user(userId)
+                .assertEvent();
+    }
+
     @Test
-     // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerificationWithResend() throws Exception {
         try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
             oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
-            registerPage.register("firstName", "lastName", "registerUserSuccessWithEmailVerificationWithResend@email", "registerUserSuccessWithEmailVerificationWithResend", generatePassword());
+            // Password not shown initially on the registration page since verify-email is required
+            Assert.assertFalse(registerPage.isPasswordPresent());
+            registerPage.registerWithoutPassword("firstName", "lastName", "registerUserSuccessWithEmailVerificationWithResend@email", "registerUserSuccessWithEmailVerificationWithResend");
             verifyEmailPage.assertCurrent();
 
             String userId = events.expectRegister("registerUserSuccessWithEmailVerificationWithResend", "registerUserSuccessWithEmailVerificationWithResend@email").assertEvent().getUserId();
@@ -561,6 +585,9 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
               .detail(Details.EMAIL, "registerUserSuccessWithEmailVerificationWithResend@email".toLowerCase())
               .user(userId)
               .assertEvent();
+
+            // User is required to update password as a next step after email is verified
+            updatePasswordOnChangePasswordPage(userId);
 
             assertUserRegistered(userId, "registerUserSuccessWithEmailVerificationWithResend", "registerUserSuccessWithEmailVerificationWithResend@email");
 
