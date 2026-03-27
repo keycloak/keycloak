@@ -21,13 +21,11 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
-import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.apache.http.HttpStatus;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest(config = VCTestServerWithPreAuthCodeEnabled.class)
 public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
 
-    OID4VCBasicWallet wallet;
     OID4VCTestContext testCtx;
 
     @InjectRunOnServer
@@ -51,13 +48,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
 
     @BeforeEach
     void beforeEach() {
-        wallet = new OID4VCBasicWallet(keycloak, oauth);
         testCtx = new OID4VCTestContext(client, jwtTypeCredentialScope);
-    }
-
-    @AfterEach
-    void afterEach() {
-        wallet.logout();
     }
 
     @Test
@@ -81,7 +72,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         assertPreAuthCodeCtx(preAuthCodeCtx);
 
         // Ensure that the pre-auth code can be exchanged for an access token
-        AccessTokenResponse resp = wallet.preAuthAccessTokenRequest(testCtx, preAuthCode).send();
+        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(testCtx, preAuthCode).send();
         assertEquals(HttpStatus.SC_OK, resp.getStatusCode());
         assertNotNull(resp.getAccessToken(), "Access token must not be null");
     }
@@ -115,7 +106,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         });
 
         // Ensure that it cannot be exchanged for an access token
-        AccessTokenResponse resp = wallet.preAuthAccessTokenRequest(testCtx, imposterPreAuthCode).send();
+        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(testCtx, imposterPreAuthCode).send();
         assertEquals(HttpStatus.SC_BAD_REQUEST, resp.getStatusCode());
         assertEquals("Pre-authorized code failed handler verification (invalid_code)",
                 resp.getErrorDescription());
@@ -165,11 +156,11 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         assertValidPreAuthCodeJwt(preAuthCode);
 
         // First use: the pre-auth code can be exchanged for an access token
-        AccessTokenResponse resp = wallet.preAuthAccessTokenRequest(testCtx, preAuthCode).send();
+        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(testCtx, preAuthCode).send();
         assertEquals(HttpStatus.SC_OK, resp.getStatusCode());
 
         // Second use: the same pre-auth code must be rejected as replayed
-        AccessTokenResponse replayResp = wallet.preAuthAccessTokenRequest(testCtx, preAuthCode).send();
+        AccessTokenResponse replayResp = wallet.accessTokenRequestPreAuth(testCtx, preAuthCode).send();
         assertEquals(HttpStatus.SC_BAD_REQUEST, replayResp.getStatusCode());
         assertEquals("Pre-authorized code has already been used", replayResp.getErrorDescription());
     }
@@ -182,7 +173,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         });
 
         try {
-            CredentialsOffer offer = wallet.createPreAuthCredentialOffer(testCtx, testCtx.getHolder());
+            CredentialsOffer offer = wallet.createCredentialOfferPreAuth(testCtx, testCtx.getHolder());
             return offer.getPreAuthorizedCode();
         } catch (Exception e) {
             throw new AssertionError("Should not fail to create pre-auth code", e);

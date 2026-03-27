@@ -53,11 +53,9 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
     ManagedUser user;
 
     OID4VCTestContext ctx;
-    OID4VCBasicWallet wallet;
 
     @BeforeEach
     void beforeEach() {
-        wallet = new OID4VCBasicWallet(keycloak, oauth);
         ctx = new OID4VCTestContext(client, minimalJwtTypeCredentialScope);
         user.admin().logout();
     }
@@ -134,7 +132,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         //
         AuthorizationEndpointResponse authResponse = wallet
                 .authorizationRequest()
-                .scope(ctx.getCredScopeName())
+                .scope(ctx.getScope())
                 .issuerState(issuerState)
                 .send(user.getUsername(), "password");
         String authCode = authResponse.getCode();

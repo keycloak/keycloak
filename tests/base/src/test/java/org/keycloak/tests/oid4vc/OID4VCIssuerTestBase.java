@@ -85,6 +85,7 @@ import org.keycloak.util.AuthorizationDetailsParser;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
@@ -153,6 +154,7 @@ public abstract class OID4VCIssuerTestBase {
     protected String clientId = "test-app";
     protected ClientRepresentation client;
     protected ClientRepresentation pubClient;
+    protected OID4VCBasicWallet wallet;
 
     @TestSetup
     public void configureTestRealm() {
@@ -165,7 +167,7 @@ public abstract class OID4VCIssuerTestBase {
     }
 
     @BeforeEach
-    void beforeEachInternal() {
+    void beforeEachBase() {
         client = managedClient.admin().toRepresentation();
         pubClient = managedPublicClient.admin().toRepresentation();
 
@@ -175,6 +177,15 @@ public abstract class OID4VCIssuerTestBase {
 
         oauth.client(client.getClientId(), client.getSecret());
         enableVerifiableCredentialEvents(testRealm);
+
+        wallet = new OID4VCBasicWallet(keycloak, oauth);
+    }
+
+    @AfterEach
+    void afterEachBase() {
+        wallet.logout();
+        driver.cookies().deleteAll();
+        driver.open("about:blank");
     }
 
     protected CredentialScopeRepresentation getExistingCredentialScope(String scopeName) {

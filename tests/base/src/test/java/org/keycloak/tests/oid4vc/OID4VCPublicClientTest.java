@@ -33,7 +33,6 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +40,7 @@ import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 /**
@@ -50,19 +50,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @KeycloakIntegrationTest(config = VCTestServerConfig.class)
 public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
 
-    OID4VCBasicWallet wallet;
-
     @BeforeEach
     void beforeEach() {
-        wallet = new OID4VCBasicWallet(keycloak, oauth);
-
         // Reconfigure OAuthClient
         oauth.client(pubClient.getClientId(), null);
-    }
-
-    @AfterEach
-    void afterEach() {
-        wallet.logout();
     }
 
     @Test
@@ -76,14 +67,14 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialConfigurationId(ctx.getCredConfigId());
+        authDetail.setCredentialConfigurationId(ctx.getCredentialConfigurationId());
         authDetail.setLocations(List.of(issuerMetadata.getCredentialIssuer()));
 
         // Send AuthorizationRequest
         //
         AuthorizationEndpointResponse authResponse = wallet
                 .authorizationRequest()
-                .scope(ctx.getCredScopeName())
+                .scope(ctx.getScope())
                 .authorizationDetails(authDetail)
                 .codeChallenge(pkce)
                 .send(ctx.getHolder(), "password");
@@ -111,6 +102,23 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
     }
 
     @Test
+    public void testAuthorizationRequestSuccess() throws Exception {
+
+        var ctx = new OID4VCTestContext(pubClient, jwtTypeCredentialScope);
+
+        // Send AuthorizationRequest with PKCE
+        //
+        AuthorizationEndpointResponse authResponse = wallet
+                .authorizationRequest()
+                .scope(ctx.getScope())
+                .codeChallenge(PkceGenerator.s256())
+                .send(ctx.getHolder(), "password");
+
+        assertNull(authResponse.getError(), "No error");
+        assertNotNull(authResponse.getCode(), "Has auth code");
+    }
+
+    @Test
     public void testAuthorizationRequestNoPkce() throws Exception {
 
         var ctx = new OID4VCTestContext(pubClient, jwtTypeCredentialScope);
@@ -119,7 +127,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
         //
         AuthorizationEndpointResponse authResponse = wallet
                 .authorizationRequest()
-                .scope(ctx.getCredScopeName())
+                .scope(ctx.getScope())
                 .send(ctx.getHolder(), "password");
 
         assertEquals("invalid_request", authResponse.getError());
@@ -130,7 +138,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
 
     private void verifyCredentialResponse(OID4VCTestContext ctx, String expUser, CredentialResponse credResponse) throws Exception {
 
-        String scope = ctx.getCredScopeName();
+        String scope = ctx.getScope();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
 

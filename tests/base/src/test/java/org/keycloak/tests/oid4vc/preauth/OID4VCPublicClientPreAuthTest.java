@@ -26,13 +26,11 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -48,19 +46,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
 public class OID4VCPublicClientPreAuthTest extends OID4VCIssuerTestBase {
 
-    OID4VCBasicWallet wallet;
-
     @BeforeEach
     void beforeEach() {
-        wallet = new OID4VCBasicWallet(keycloak, oauth);
-
         // Reconfigure OAuthClient
         oauth.client(pubClient.getClientId(), null);
-    }
-
-    @AfterEach
-    void afterEach() {
-        wallet.logout();
     }
 
     @Test
@@ -70,12 +59,12 @@ public class OID4VCPublicClientPreAuthTest extends OID4VCIssuerTestBase {
 
         // Create Pre-Authorized CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder());
+        CredentialsOffer credOffer = wallet.createCredentialOfferPreAuth(ctx, ctx.getHolder());
         String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken
         //
-        AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode).send();
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
@@ -98,7 +87,7 @@ public class OID4VCPublicClientPreAuthTest extends OID4VCIssuerTestBase {
 
     private void verifyCredentialResponse(OID4VCTestContext ctx, String expUser, CredentialResponse credResponse) throws Exception {
 
-        String scope = ctx.getCredScopeName();
+        String scope = ctx.getScope();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
 
