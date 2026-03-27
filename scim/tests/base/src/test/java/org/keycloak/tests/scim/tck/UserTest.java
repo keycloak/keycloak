@@ -881,6 +881,21 @@ public class UserTest extends AbstractScimTest {
     }
 
     @Test
+    public void testGetWithParentAttribute() {
+        User expected = client.users().create(createUser());
+
+        // Requesting "name" should return all its sub-attributes (givenName, familyName, etc.)
+        User actual = client.users().get(expected.getId(), List.of("name"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNotNull(actual.getName());
+        assertEquals(expected.getName().getGivenName(), actual.getName().getGivenName());
+        assertEquals(expected.getName().getFamilyName(), actual.getName().getFamilyName());
+        assertNull(actual.getUserName());
+        assertNull(actual.getEmails());
+    }
+
+    @Test
     public void testGetWithSubAttribute() {
         User expected = client.users().create(createUser());
 
@@ -1029,6 +1044,27 @@ public class UserTest extends AbstractScimTest {
         assertNull(actual.getName().getGivenName());
         assertEquals(expected.getName().getFamilyName(), actual.getName().getFamilyName());
         assertEquals(expected.getUserName(), actual.getUserName());
+    }
+
+    @Test
+    public void testGetWithExtensionUrnAttribute() {
+        User expected = createUser();
+        EnterpriseUser enterpriseUser = new EnterpriseUser();
+        enterpriseUser.setEmployeeNumber("12345");
+        enterpriseUser.setDepartment("Engineering");
+        expected.setEnterpriseUser(enterpriseUser);
+        expected = client.users().create(expected);
+
+        // Requesting the extension URN should return all extension attributes
+        User actual = client.users().get(expected.getId(),
+                List.of("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        assertEquals("12345", actual.getEnterpriseUser().getEmployeeNumber());
+        assertEquals("Engineering", actual.getEnterpriseUser().getDepartment());
+        assertNull(actual.getUserName());
+        assertNull(actual.getName());
     }
 
     private static void assertGroup(List<GroupMembership> groups, GroupRepresentation group, String type) {
