@@ -34,7 +34,9 @@ public class MigrateTest {
             WebDriverRewrite.class,
             PageObjectRewrite.class,
             RunOnServerRewrite.class,
-            CommonStatementsRewrite.class);
+            CommonStatementsRewrite.class,
+            TestRealmRewrite.class
+    );
 
     Path rootPath = getRootPath();
     Path oldTestsuitePath = rootPath.resolve("testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite").toAbsolutePath();
