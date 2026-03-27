@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import javax.naming.AuthenticationException;
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -534,17 +535,7 @@ public class LDAPOperationManager {
 
             // Check for password policy response control in the response.
             // If present and forced password change is required, throw an exception.
-            Control[] responseControls = authCtx.getResponseControls();
-            if (responseControls != null) {
-                for (Control control : responseControls) {
-                    if (control instanceof PasswordPolicyControl) {
-                        PasswordPolicyControl response = (PasswordPolicyControl) control;
-                        if (response.changeAfterReset()) {
-                            throw new PasswordPolicyPasswordChangeException();
-                        }
-                    }
-                }
-            }
+            checkPasswordPolicy(authCtx, PasswordPolicyControl::changeAfterReset);
 
         } catch (AuthenticationException ae) {
             if (logger.isDebugEnabled()) {
@@ -552,19 +543,14 @@ public class LDAPOperationManager {
             }
 
             try {
-                Control[] responseControls = authCtx.getResponseControls();
-                if (responseControls != null) {
-                    for (Control control : responseControls) {
-                        if (control instanceof PasswordPolicyControl) {
-                            PasswordPolicyControl response = (PasswordPolicyControl) control;
-                            if (response.passwordExpired()) {
-                                throw new PasswordPolicyPasswordChangeException();
-                            }
-                        }
-                    }
-                }
-
+                // Check for password policy response control in the response.
+                // If present and indicate an expired password, throw an exception.
+                checkPasswordPolicy(authCtx, PasswordPolicyControl::passwordExpired);
             } catch (PasswordPolicyPasswordChangeException ppe) {
+                // PasswordPolicyPasswordChangeException must be caught before NamingException
+                // because it extends NamingException. If not explicitly handled first, it would
+                // be swallowed by the broader catch block below, and the caller would never
+                // receive the intended password‑policy specific error.
                 tracing.error(ppe);
                 throw ppe;
             } catch (NamingException ne) {
@@ -826,5 +812,40 @@ public class LDAPOperationManager {
         result.add(LDAPConstants.OBJECT_CLASS);
 
         return result;
+    }
+
+
+    /**
+     * Reads the LDAP response controls after a bind operation and evaluates the
+     * password policy using a supplied rule.
+     * 
+     * If the rule evaluates to true for any PasswordPolicyControl, a
+     * PasswordPolicyPasswordChangeException is thrown.
+     * 
+     * @param authCtx The LDAP context to read response controls from
+     * @param rule  A predicate representing the password policy condition to test
+     * @throws NamingException If reading the LDAP response controls fails
+     * @throws PasswordPolicyPasswordChangeException If the policy condition is true
+     */
+    private void checkPasswordPolicy(LdapContext authCtx, Predicate<PasswordPolicyControl> rule)
+            throws NamingException, PasswordPolicyPasswordChangeException {
+
+        if (authCtx == null) {
+            return;
+        }
+
+        Control[] responseControls = authCtx.getResponseControls();
+        if (responseControls == null) {
+            return;
+        }
+
+        for (Control control : responseControls) {
+            if (control instanceof PasswordPolicyControl) {
+                PasswordPolicyControl response = (PasswordPolicyControl) control;
+                if (rule.test(response)) {
+                    throw new PasswordPolicyPasswordChangeException();
+                }
+            }
+        }
     }
 }
