@@ -4,6 +4,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.services.client.ClientServiceHelper;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
@@ -15,6 +16,9 @@ import org.junit.jupiter.api.BeforeEach;
 
 public abstract class AbstractClientApiV2Test {
     protected static ObjectMapper mapper;
+
+    @InjectAdminClient
+    protected Keycloak adminClient;
 
     public String getRealmName() {
         return "master";
@@ -48,8 +52,13 @@ public abstract class AbstractClientApiV2Test {
     }
     // END
 
+    protected void setAuthHeader(HttpMessage request) {
+        String token = adminClient.tokenManager().getAccessTokenString();
+        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+    }
+
     // TODO Rewrite the tests to not need explicit auth. They should use the admin client directly.
-    static void setAuthHeader(HttpMessage request, Keycloak adminClient) {
+    protected static void setAuthHeader(HttpMessage request, Keycloak adminClient) {
         String token = adminClient.tokenManager().getAccessTokenString();
         request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
     }
