@@ -198,23 +198,7 @@ public class UserTest extends AbstractScimTest {
 
     @Test
     public void testCreateEnterpriseUser() {
-        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-
-        configuration.addOrReplaceAttribute(new UPAttribute("department", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".department")));
-        configuration.addOrReplaceAttribute(new UPAttribute("division", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".division")));
-        configuration.addOrReplaceAttribute(new UPAttribute("costCenter", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".costCenter")));
-        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
-        configuration.addOrReplaceAttribute(new UPAttribute("organization", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".organization")));
-        configuration.addOrReplaceAttribute(new UPAttribute("manager", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.value")));
-        configuration.addOrReplaceAttribute(new UPAttribute("managerName", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.displayName")));
-        realm.admin().users().userProfile().update(configuration);
+        addEnterpriseUserUserProfileAttributes();
 
         User expected = createUser();
         EnterpriseUser enterpriseUser = new EnterpriseUser();
@@ -1048,6 +1032,7 @@ public class UserTest extends AbstractScimTest {
 
     @Test
     public void testGetWithExtensionUrnAttribute() {
+        addEnterpriseUserUserProfileAttributes();
         User expected = createUser();
         EnterpriseUser enterpriseUser = new EnterpriseUser();
         enterpriseUser.setEmployeeNumber("12345");
@@ -1065,6 +1050,24 @@ public class UserTest extends AbstractScimTest {
         assertEquals("Engineering", actual.getEnterpriseUser().getDepartment());
         assertNull(actual.getUserName());
         assertNull(actual.getName());
+    }
+
+    @Test
+    public void testGetWithExcludedExtensionUrnAttribute() {
+        addEnterpriseUserUserProfileAttributes();
+        User expected = createUser();
+        EnterpriseUser enterpriseUser = new EnterpriseUser();
+        enterpriseUser.setEmployeeNumber("12345");
+        enterpriseUser.setDepartment("Engineering");
+        expected.setEnterpriseUser(enterpriseUser);
+        expected = client.users().create(expected);
+
+        // Requesting the extension URN should return all extension attributes
+        User actual = client.users().get(expected.getId(),
+                null, List.of("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"));
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNull(actual.getEnterpriseUser());
     }
 
     private static void assertGroup(List<GroupMembership> groups, GroupRepresentation group, String type) {
@@ -1183,5 +1186,25 @@ public class UserTest extends AbstractScimTest {
         user.setNickName("mynickname");
 
         return user;
+    }
+
+    private void addEnterpriseUserUserProfileAttributes() {
+        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
+
+        configuration.addOrReplaceAttribute(new UPAttribute("department", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".department")));
+        configuration.addOrReplaceAttribute(new UPAttribute("division", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".division")));
+        configuration.addOrReplaceAttribute(new UPAttribute("costCenter", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".costCenter")));
+        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
+        configuration.addOrReplaceAttribute(new UPAttribute("organization", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".organization")));
+        configuration.addOrReplaceAttribute(new UPAttribute("manager", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.value")));
+        configuration.addOrReplaceAttribute(new UPAttribute("managerName", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.displayName")));
+        realm.admin().users().userProfile().update(configuration);
     }
 }
