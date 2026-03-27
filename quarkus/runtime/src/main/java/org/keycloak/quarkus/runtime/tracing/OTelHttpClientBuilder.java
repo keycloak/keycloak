@@ -32,7 +32,7 @@ public class OTelHttpClientBuilder extends HttpClientBuilder {
     }
 
     @Override
-    protected org.apache.http.impl.client.HttpClientBuilder getApacheHttpClientBuilder() {
+    protected org.apache.http.impl.client.HttpClientBuilder createApacheHttpClientBuilder() {
         return ApacheHttpClientTelemetry.builder(provider.getOpenTelemetry()).build().newHttpClientBuilder();
     }
 

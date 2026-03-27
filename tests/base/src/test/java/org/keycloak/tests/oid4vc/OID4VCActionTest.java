@@ -134,7 +134,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         //
         AuthorizationEndpointResponse authResponse = wallet
                 .authorizationRequest()
-                .scope(ctx.credScopeName)
+                .scope(ctx.getCredScopeName())
                 .issuerState(issuerState)
                 .send(user.getUsername(), "password");
         String authCode = authResponse.getCode();

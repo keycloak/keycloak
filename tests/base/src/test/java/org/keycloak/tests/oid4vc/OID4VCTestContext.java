@@ -19,7 +19,7 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 /**
  * A context that can maintain state across OID4VCI message flows.
- *
+ * <p>
  * It uses a typed in-memory value store based on attachment keys.
  * Values can be accessed by type and when there are multiple values - by name+type.
  *
@@ -33,14 +33,14 @@ public class OID4VCTestContext {
     static final AttachmentKey<AccessTokenResponse> ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(AccessTokenResponse.class);
     static final AttachmentKey<CredentialResponse> CREDENTIAL_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(CredentialResponse.class);
 
-    public String clientId;
-    public String issuer;      // Issuing username (i.e. agent who creates credential offers)
-    public String holder;      // Holder who requests the credential
-    public String credConfigId;
-    public String credScopeName;
+    private String clientId;
+    private String issuer;      // Issuing username (i.e. agent who creates credential offers)
+    private String holder;      // Holder who requests the credential
+    private String credConfigId;
+    private String credScopeName;
 
-    public ClientRepresentation client;
-    public CredentialScopeRepresentation credentialScope;
+    private ClientRepresentation client;
+    private CredentialScopeRepresentation credentialScope;
 
     private final Map<AttachmentKey<?>, Object> attachments = new HashMap<>();
 
@@ -52,14 +52,6 @@ public class OID4VCTestContext {
         this.credentialScope = credentialScope;
         this.credScopeName = credentialScope.getName();
         this.credConfigId = credentialScope.getCredentialConfigurationId();
-    }
-
-    public String getHolder() {
-        return holder;
-    }
-
-    public CredentialScopeRepresentation getCredentialScope() {
-        return credentialScope;
     }
 
     public List<String> getAuthorizedCredentialIdentifiers() {
@@ -91,6 +83,62 @@ public class OID4VCTestContext {
     public OID4VCAuthorizationDetail getOID4VCAuthorizationDetail() {
         List<OID4VCAuthorizationDetail> tokenAuthDetails = getOID4VCAuthorizationDetails();
         return tokenAuthDetails.size() == 1 ? tokenAuthDetails.get(0) : null;
+    }
+
+    public ClientRepresentation getClient() {
+        return client;
+    }
+
+    public void setClient(ClientRepresentation client) {
+        this.client = client;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
+    }
+
+    public String getHolder() {
+        return holder;
+    }
+
+    public void setHolder(String holder) {
+        this.holder = holder;
+    }
+
+    public String getCredConfigId() {
+        return credConfigId;
+    }
+
+    public void setCredConfigId(String credConfigId) {
+        this.credConfigId = credConfigId;
+    }
+
+    public String getCredScopeName() {
+        return credScopeName;
+    }
+
+    public void setCredScopeName(String credScopeName) {
+        this.credScopeName = credScopeName;
+    }
+
+    public CredentialScopeRepresentation getCredentialScope() {
+        return credentialScope;
+    }
+
+    public void setCredentialScope(CredentialScopeRepresentation credentialScope) {
+        this.credentialScope = credentialScope;
     }
 
     // Attachment Support ----------------------------------------------------------------------------------------------

@@ -24,6 +24,7 @@ import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.OutputFrame.OutputType;
 import org.testcontainers.containers.output.ToStringConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.utility.DockerImageName;
@@ -105,7 +106,10 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                 .withExposedPorts(exposedPorts)
                 .withStartupAttempts(1)
                 .withStartupTimeout(Duration.ofSeconds(STARTUP_TIMEOUT_SECONDS))
-                .waitingFor(Wait.forListeningPorts(8080));
+                .waitingFor(new WaitAllStrategy()
+                        .withStrategy(Wait.forLogMessage(".*Bootstrap completed.*", 1))
+                        .withStrategy(Wait.forListeningPorts(8080))
+                );
     }
 
     public static LazyFuture<String> createImage(boolean failIfDockerFileMissing) {

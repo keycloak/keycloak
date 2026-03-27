@@ -29,7 +29,14 @@ public class MigrateTest {
             AddManagedResourcesRewrite.class,
             AdminEventAssertRewrite.class,
             BeforeRewrite.class,
-            CommonStatementsRewrite.class);
+            AfterRewrite.class,
+            OAuthClientRewrite.class,
+            WebDriverRewrite.class,
+            PageObjectRewrite.class,
+            RunOnServerRewrite.class,
+            CommonStatementsRewrite.class,
+            TestRealmRewrite.class
+    );
 
     Path rootPath = getRootPath();
     Path oldTestsuitePath = rootPath.resolve("testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite").toAbsolutePath();
