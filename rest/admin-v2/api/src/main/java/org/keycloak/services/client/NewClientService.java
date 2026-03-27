@@ -1,6 +1,5 @@
 package org.keycloak.services.client;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -121,9 +120,6 @@ public class NewClientService extends DefaultClientService implements ClientServ
 
     @Override
     public CreateOrUpdateResult createOrUpdateClient(RealmModel realm, String clientId, BaseClientRepresentation client) throws ServiceException {
-        if (!Objects.equals(clientId, client.getClientId())) {
-            throw new ServiceException("Field 'clientId' in payload does not match the provided 'clientId'", Response.Status.BAD_REQUEST);
-        }
         return createOrUpdate(realm, clientId, client, CreateOrUpdateStrategy.PUT);
     }
 
@@ -154,6 +150,10 @@ public class NewClientService extends DefaultClientService implements ClientServ
 
     private CreateOrUpdateResult createOrUpdate(RealmModel realm, String clientId, BaseClientRepresentation client, CreateOrUpdateStrategy strategy) throws ServiceException {
         validateUnknownFields(client);
+        if (!strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
+            assertSameClientIds(clientId, client.getClientId());
+        }
+
         ClientModel model = avoidClientIdPhishing(realm.getClientByClientId(clientId)).orElse(null);
         boolean alreadyExists = model != null;
         ClientModelMapper mapper = getMapper(client.getProtocol());
