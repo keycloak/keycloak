@@ -73,8 +73,8 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
     }
 
     @Override
-    public void populate(R resource, M model, List<String> attributes, List<String> excludedAttributes) {
-        populateResourceType(resource, model, attributes, excludedAttributes);
+    public void populate(R resource, M model, List<String> requestedAttributes, List<String> excludedAttributes) {
+        populateResourceType(resource, model, requestedAttributes, excludedAttributes);
         resource.setId(model.getId());
     }
 
@@ -228,47 +228,12 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         for (String name : getModelAttributeNames()) {
             Attribute<M, R> attribute = getAttributeMapperByModelAttribute(name);
 
-            if (attribute != null && !shouldSkipAttribute(attribute, requestedAttributes, excludedAttributes)) {
+            if (attribute != null && !attribute.isExcluded(this, requestedAttributes, excludedAttributes)) {
                 Object value = getAttributeValue(model, name);
                 attribute.set(resource, value);
                 resource.addSchema(this.id);
             }
         }
-    }
-
-    /**
-     * Determines whether the given attribute should be skipped during population based on
-     * the {@code returned} characteristic and the requested attribute filters.
-     */
-    private boolean shouldSkipAttribute(Attribute<M, R> attribute, List<String> requestedAttributes, List<String> excludedAttributes) {
-        String returned = attribute.getReturned();
-
-        // returned: always - never skip
-        if (Attribute.RETURNED_ALWAYS.equals(returned)) {
-            return false;
-        }
-
-        // returned: never - always skip
-        if (Attribute.RETURNED_NEVER.equals(returned)) {
-            return true;
-        }
-
-        // If attributes parameter is specified (inclusion filter)
-        if (requestedAttributes != null && !requestedAttributes.isEmpty()) {
-            if (requestedAttributes.stream().map(this::getAttributeByPath).noneMatch(attribute::equals)) {
-                return true;
-            }
-        } else if (Attribute.RETURNED_REQUEST.equals(returned)) {
-            // No attributes parameter specified - returned: request attributes are not returned by default
-            return true;
-        }
-
-        // If excludedAttributes parameter is specified (exclusion filter)
-        if (excludedAttributes != null && !excludedAttributes.isEmpty()) {
-            return excludedAttributes.stream().map(this::getAttributeByPath).anyMatch(attribute::equals);
-        }
-
-        return false;
     }
 
     private Attribute<M, R> getAttributeMapperByModelAttribute(String name) {

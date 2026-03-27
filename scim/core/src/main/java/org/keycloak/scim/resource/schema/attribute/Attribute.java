@@ -14,6 +14,8 @@ import org.keycloak.scim.resource.schema.ModelSchema;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static java.util.Optional.ofNullable;
+
 /**
  * Represents an attribute from a {@link ModelSchema}, its metadata and the mapper
  * that is used to map the attribute from a {@link ResourceTypeRepresentation} to a {@link Model} and vice versa.
@@ -26,14 +28,6 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
     public static final String RETURNED_DEFAULT = "default";
     public static final String RETURNED_REQUEST = "request";
     public static final String RETURNED_NEVER = "never";
-
-    private final String alias;
-    private Function<Attribute<M, R>, String> modelAttributeResolver;
-    private String type;
-    private String mutability;
-    private String returned = RETURNED_DEFAULT;
-    private boolean multivalued;
-    private Class<?> complexType;
 
     /**
      * Creates a simple attribute with the given {@code name}.
@@ -63,10 +57,13 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
     private final String name;
     private final AttributeMapper<M, R> mapper;
     private final String parentName;
-
-    private Attribute(String name, AttributeMapper<M, R> mapper, String parentName) {
-        this(name, mapper, parentName, null);
-    }
+    private final String alias;
+    private Function<Attribute<M, R>, String> modelAttributeResolver;
+    private String type;
+    private String mutability;
+    private String returned = RETURNED_DEFAULT;
+    private boolean multivalued;
+    private Class<?> complexType;
 
     private Attribute(String name, AttributeMapper<M, R> mapper, String parentName, String alias) {
         this.name = name;
@@ -187,6 +184,57 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
     public void remove(M model, JsonNode value) {
         mapper.removeValue(model, value);
+    }
+
+    /**
+     * Determines whether the given attribute should be skipped during population based on
+     * the {@code returned} characteristic and the requested attribute filters.
+     */
+    public boolean isExcluded(ModelSchema<M, R> schema, List<String> requestedAttributes, List<String> excludedAttributes) {
+        String returned = getReturned();
+
+        // returned: always - never skip
+        if (Attribute.RETURNED_ALWAYS.equals(returned)) {
+            return false;
+        }
+
+        // returned: never - always skip
+        if (Attribute.RETURNED_NEVER.equals(returned)) {
+            return true;
+        }
+
+        // If attributes parameter is specified (inclusion filter)
+        if (requestedAttributes != null && !requestedAttributes.isEmpty()) {
+            if (!isPresent(schema, requestedAttributes)) {
+                return true;
+            }
+        }
+
+        if (Attribute.RETURNED_REQUEST.equals(returned)) {
+            // No attributes parameter specified - returned: request attributes are not returned by default
+            return true;
+        }
+
+        return isPresent(schema, excludedAttributes);
+    }
+
+    private boolean isPresent(ModelSchema<M, R> schema, List<String> names) {
+        return ofNullable(names).orElse(List.of()).stream()
+                .map(path -> {
+                    String parentName = getParentName();
+
+                    // fallback to check if the attribute is a child of a requested attribute
+                    if (path.equalsIgnoreCase(parentName)) {
+                        return this;
+                    }
+
+                    // fallback to check if the path is the scheme itself
+                    if (path.equalsIgnoreCase(schema.getId())) {
+                        return this;
+                    }
+
+                    return schema.getAttributeByPath(path);
+                }).anyMatch(this::equals);
     }
 
     public static class Builder<M extends Model, R extends ResourceTypeRepresentation> {

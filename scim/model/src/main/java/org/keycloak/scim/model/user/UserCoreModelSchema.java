@@ -215,8 +215,8 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     }
 
     @Override
-    public void populate(User resource, UserModel model, List<String> attributes, List<String> excludedAttributes) {
-        super.populate(resource, model, attributes, excludedAttributes);
+    public void populate(User resource, UserModel model, List<String> requestedAttributes, List<String> excludedAttributes) {
+        super.populate(resource, model, requestedAttributes, excludedAttributes);
         setTimestamps(resource, model);
     }
 

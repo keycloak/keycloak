@@ -84,8 +84,8 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     }
 
     @Override
-    public void populate(Group resource, GroupModel model, List<String> attributes, List<String> excludedAttributes) {
-        super.populate(resource, model, attributes, excludedAttributes);
+    public void populate(Group resource, GroupModel model, List<String> requestedAttributes, List<String> excludedAttributes) {
+        super.populate(resource, model, requestedAttributes, excludedAttributes);
         setTimestamps(resource, model);
     }
 
