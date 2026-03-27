@@ -326,7 +326,7 @@ s|Authorization  | Verification that the requester client must be in the audienc
 s|Revocation chain | Not available for access tokens. Available for refresh tokens   | Not available for access nor refresh tokens
 s|Delegation per RFC 8693|Not supported yet|Not supported
 s|Resource parameter per RFC 8693|Not supported yet|Not supported
-s|Internal to external Token Exchange | Not implemented yet | Implemented as a preview
+s|Internal to external Token Exchange | Identity brokering APIs can be used instead. See link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] for more information. | Implemented as a preview
 s|External to internal Token Exchange | Use-case implemented by Standard Token Exchange V2 and JWT Authorization Grant. See <@links.securingapps id="oauth-identity-authorization-chaining-across-domains" /> for more information. | Implemented as a preview
 s|Subject impersonation (including direct naked impersonation)   | Not implemented yet | Implemented as a preview
 |===
@@ -551,6 +551,8 @@ the client making the request to successfully complete the exchange.
 ----
 
 === Internal token to external token exchange
+
+NOTE: For internal token to external token exchange, it is recommended to use link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] instead. The legacy Token Exchange V1 is deprecated and will be removed in future versions.
 
 You can exchange a realm token for an external token minted by an external identity provider.  This external identity provider
 must be configured within the `Identity Provider` section of the Admin Console.  Currently only OAuth/OpenID Connect based external

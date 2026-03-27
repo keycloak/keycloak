@@ -135,7 +135,7 @@ public class KeycloakController implements Reconciler<Keycloak> {
                     .endMetadata()
                     .withSpec(kc.getSpec())
                     .build();
-            return UpdateControl.patchResource(patchedKc);
+            return UpdateControl.<Keycloak>patchResource(patchedKc).rescheduleAfter(0L);
         }
 
         var existingDeployment = context.getSecondaryResource(StatefulSet.class).filter(ss -> ss.hasOwnerReferenceFor(kc)).orElse(null);

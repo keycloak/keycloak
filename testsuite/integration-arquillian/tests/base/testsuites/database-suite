@@ -2,7 +2,6 @@ AccountRestServiceTest
 AuthorizationCodeTest
 AuthorizationTest
 ClientRegistrationTest
-EventStoreProviderTest
 ExportImportTest
 KcOidcBrokerTest
 LDAPUserLoginTest

@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.TokenVerifier;
@@ -48,6 +47,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
 import org.keycloak.protocol.oid4vc.model.Proofs;
@@ -58,6 +58,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.sdjwt.vp.SdJwtVP;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
@@ -66,7 +67,6 @@ import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 import org.junit.Test;
@@ -184,8 +184,10 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                 }));
             });
             Assert.fail("Should have thrown an exception");
-        } catch (BadRequestException ex) {
-            Assert.assertEquals("Could not validate provided proof", ex.getMessage());
+        } catch (ErrorResponseException ex) {
+            String message = ex.getErrorDescription();
+            Assert.assertEquals(ErrorType.INVALID_PROOF.getValue(), ex.getError());
+            Assert.assertTrue("Unexpected: " + message, message.contains("Could not verify signature of provided proof"));
         }
     }
 
@@ -224,13 +226,13 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         testRequestTestCredential(session, clientScope, token, proof, credentialIdentifier);
                     })));
             Assert.fail("Should have thrown an exception");
-        } catch (BadRequestException ex) {
+        } catch (ErrorResponseException ex) {
+            String message = ex.getErrorDescription();
+            Assert.assertEquals(ErrorType.INVALID_NONCE.getValue(), ex.getError());
             Assert.assertEquals("""
-                                        c_nonce: expected 'aud' to be equal to \
-                                        '[https://localhost:8543/auth/realms/test/protocol/oid4vc/credential]' but \
-                                        actual value was '[]'""",
-                    ExceptionUtils.getRootCause(ex).getMessage());
-            Assert.assertEquals("Could not validate provided proof", ex.getMessage());
+                    c_nonce: expected 'aud' to be equal to \
+                    '[https://localhost:8543/auth/realms/test/protocol/oid4vc/credential]' but \
+                    actual value was '[]'""", message);
         }
     }
 
@@ -268,13 +270,13 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         testRequestTestCredential(session, clientScope, token, proof, credentialIdentifier);
                     })));
             Assert.fail("Should have thrown an exception");
-        } catch (BadRequestException ex) {
+        } catch (ErrorResponseException ex) {
+            String message = ex.getErrorDescription();
+            Assert.assertEquals(ErrorType.INVALID_NONCE.getValue(), ex.getError());
             Assert.assertEquals("""
-                                        c_nonce: expected 'source_endpoint' to be equal to \
-                                        'https://localhost:8543/auth/realms/test/protocol/oid4vc/nonce' but \
-                                        actual value was 'null'""",
-                    ExceptionUtils.getRootCause(ex).getMessage());
-            Assert.assertEquals("Could not validate provided proof", ex.getMessage());
+                    c_nonce: expected 'source_endpoint' to be equal to \
+                    'https://localhost:8543/auth/realms/test/protocol/oid4vc/nonce' but \
+                    actual value was 'null'""", message);
         }
     }
 
@@ -320,11 +322,11 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                         }
                     })));
             Assert.fail("Should have thrown an exception");
-        } catch (BadRequestException ex) {
-            String message = ExceptionUtils.getRootCause(ex).getMessage();
+        } catch (ErrorResponseException ex) {
+            String message = ex.getErrorDescription();
+            Assert.assertEquals(ErrorType.INVALID_NONCE.getValue(), ex.getError());
             Assert.assertTrue(String.format("Message '%s' should match regular expression", message),
                     message.matches("c_nonce not valid: \\d+\\(exp\\) < \\d+\\(now\\)"));
-            Assert.assertEquals("Could not validate provided proof", ex.getMessage());
         }
     }
 
@@ -349,7 +351,6 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
 
         Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);
         assertEquals("The credential request should be answered successfully.",
-
                 HttpStatus.SC_OK,
                 credentialResponse.getStatus());
         assertNotNull("A credential should be responded.", credentialResponse.getEntity());

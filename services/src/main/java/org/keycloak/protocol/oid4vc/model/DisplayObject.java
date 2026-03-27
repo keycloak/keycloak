@@ -30,8 +30,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.jboss.logging.Logger;
 
 /**
  * Represents a DisplayObject, as used in the OID4VCI Credentials Issuer Metadata
@@ -47,7 +46,7 @@ import org.slf4j.LoggerFactory;
 )
 public class DisplayObject {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DisplayObject.class);
+    private static final Logger LOGGER = Logger.getLogger(DisplayObject.class);
 
     @JsonIgnore
     private static final String NAME_KEY = "name";
@@ -97,7 +96,7 @@ public class DisplayObject {
             // lets say we have an invalid value we should not kill the whole execution if just the display value is
             // broken
             LOGGER.debug(e.getMessage(), e);
-            LOGGER.warn("Failed to parse display-metadata for credential '{}': {}", credentialScope.getName(), e.getMessage());
+            LOGGER.warnf("Failed to parse display-metadata for credential '%s': %s", credentialScope.getName(), e.getMessage());
             return null;
         }
     }

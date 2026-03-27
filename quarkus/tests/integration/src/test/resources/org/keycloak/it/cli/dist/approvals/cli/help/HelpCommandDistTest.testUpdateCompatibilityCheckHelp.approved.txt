@@ -572,7 +572,9 @@ Server configuration:
 --server-async-bootstrap <enabled>
                      If true, endpoints are opened while the bootstrap runs in the background. If
                        false, endpoints are opened after bootstrap completes, ensuring the server
-                       is ready to handle requests. Default: true.
+                       is ready to handle requests. Async bootstrap is enabled by default when the
+                       health endpoints are also enabled, unless this option is explicitly set to
+                       false.
 
 Bootstrap Admin:
 

@@ -290,10 +290,10 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return true;
         }
 
-        // look for an idp that can match any of the org domains
+        // look for an idp that can match any of the org domains (case-insensitive)
         idp = organization.getIdentityProviders().filter(IdentityProviderRedirectMode.EMAIL_MATCH::isSet)
                 .filter(broker -> ANY_DOMAIN.equals(broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE)))
-                .filter(broker -> organization.getDomains().map(OrganizationDomainModel::getName).anyMatch(domain::equals))
+                .filter(broker -> organization.getDomains().map(OrganizationDomainModel::getName).anyMatch(domain::equalsIgnoreCase))
                 .findFirst().orElse(null);
 
         if (idp != null) {

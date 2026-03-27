@@ -72,8 +72,8 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         //
         AuthorizationEndpointResponse authResponse = wallet
                 .authorizationRequest()
-                .scope(ctx.credScopeName)
-                .send(ctx.holder, "password");
+                .scope(ctx.getCredScopeName())
+                .send(ctx.getHolder(), "password");
         String authCode = authResponse.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -93,7 +93,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .proofs(getJwtProofs(ctx))
                 .send().getCredentialResponse();
 
-        verifyCredentialResponse(ctx, ctx.holder, credResponse);
+        verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
     }
 
     @Test
@@ -105,16 +105,16 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialConfigurationId(ctx.credConfigId);
+        authDetail.setCredentialConfigurationId(ctx.getCredConfigId());
         authDetail.setLocations(List.of(issuerMetadata.getCredentialIssuer()));
 
         // Send AuthorizationRequest
         //
         AuthorizationEndpointResponse authResponse = wallet
                 .authorizationRequest()
-                .scope(ctx.credScopeName)
+                .scope(ctx.getCredScopeName())
                 .authorizationDetails(authDetail)
-                .send(ctx.holder, "password");
+                .send(ctx.getHolder(), "password");
         String authCode = authResponse.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -134,7 +134,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .proofs(getJwtProofs(ctx))
                 .send().getCredentialResponse();
 
-        verifyCredentialResponse(ctx, ctx.holder, credResponse);
+        verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
     }
 
     @Test
@@ -152,9 +152,9 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         //
         AuthorizationEndpointResponse authResponse = wallet
                 .authorizationRequest()
-                .scope(ctx.credScopeName)
+                .scope(ctx.getCredScopeName())
                 .issuerState(issuerState)
-                .send(ctx.holder, "password");
+                .send(ctx.getHolder(), "password");
         String authCode = authResponse.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -174,7 +174,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .proofs(getJwtProofs(ctx))
                 .send().getCredentialResponse();
 
-        verifyCredentialResponse(ctx, ctx.holder, credResponse);
+        verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
     }
 
     @Test
@@ -192,9 +192,9 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         //
         AuthorizationEndpointResponse authResponse1 = wallet
                 .authorizationRequest()
-                .scope(ctx1.credScopeName)
+                .scope(ctx1.getCredScopeName())
                 .issuerState(issuerState)
-                .send(ctx1.holder, "password");
+                .send(ctx1.getHolder(), "password");
         String authCode = authResponse1.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -224,9 +224,9 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         //
         AuthorizationEndpointResponse authResponse2 = wallet
                 .authorizationRequest()
-                .scope(ctx2.credScopeName)
+                .scope(ctx2.getCredScopeName())
                 .issuerState(issuerState)
-                .send(ctx2.holder, "password");
+                .send(ctx2.getHolder(), "password");
         authCode = authResponse2.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -246,7 +246,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .proofs(getJwtProofs(ctx1))
                 .send().getCredentialResponse();
 
-        verifyCredentialResponse(ctx1, ctx1.holder, credResponse);
+        verifyCredentialResponse(ctx1, ctx1.getHolder(), credResponse);
 
         // Send the CredentialRequest2 with 2nd access-token. Ensure credential successfully obtained for the correct VC type
         //
@@ -257,9 +257,9 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         CredentialResponse.Credential credentialObj = credResponse2.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
         IssuerSignedJWT issuerSignedJWT = SdJwtVP.of(credentialObj.getCredential().toString()).getIssuerSignedJWT();
-        assertEquals(ctx2.credentialScope.getName(), issuerSignedJWT.getPayload().get(CLAIM_NAME_VCT).asText());
+        assertEquals(ctx2.getCredentialScope().getName(), issuerSignedJWT.getPayload().get(CLAIM_NAME_VCT).asText());
 
-        assertNotEquals(ctx1.credentialScope.getName(), ctx2.credentialScope.getName());
+        assertNotEquals(ctx1.getCredentialScope().getName(), ctx2.getCredentialScope().getName());
     }
 
     @Test
@@ -277,9 +277,9 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         //
         AuthorizationEndpointResponse authResponse = wallet
                 .authorizationRequest()
-                .scope(ctx.credScopeName)
+                .scope(ctx.getCredScopeName())
                 .issuerState(issuerState)
-                .send(ctx.holder, "password");
+                .send(ctx.getHolder(), "password");
         String authCode = authResponse.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -312,7 +312,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
         // Create Authorization Code CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createAuthCodeCredentialOffer(ctx, ctx.holder);
+        CredentialsOffer credOffer = wallet.createAuthCodeCredentialOffer(ctx, ctx.getHolder());
         String issuerState = credOffer.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
@@ -320,9 +320,9 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         //
         AuthorizationEndpointResponse authResponse = wallet
                 .authorizationRequest()
-                .scope(ctx.credScopeName)
+                .scope(ctx.getCredScopeName())
                 .issuerState(issuerState)
-                .send(ctx.holder, "password");
+                .send(ctx.getHolder(), "password");
         String authCode = authResponse.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -342,14 +342,14 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .proofs(getJwtProofs(ctx))
                 .send().getCredentialResponse();
 
-        verifyCredentialResponse(ctx, ctx.holder, credResponse);
+        verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
 
     private void verifyCredentialResponse(OID4VCTestContext ctx, String expUser, CredentialResponse credResponse) throws Exception {
 
-        String scope = ctx.credentialScope.getName();
+        String scope = ctx.getCredentialScope().getName();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
 

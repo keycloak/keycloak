@@ -136,6 +136,8 @@ import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
+import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_NONCE;
+import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_PROOF;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 /**
@@ -609,7 +611,7 @@ public class OID4VCIssuerEndpoint {
 
         // Remove the nonce entry atomically for replay protection
         // This prevents the same offer URL from being accessed multiple times
-        // while keeping pre-authorized code and credential identifier entries available
+        // while keeping offerId entries available
         Map<String, String> removed = session.singleUseObjects().remove(nonce);
         if (removed == null) {
             var errorMessage = "Credential offer not found or already consumed";
@@ -1282,7 +1284,7 @@ public class OID4VCIssuerEndpoint {
 
         if (hasJwtProofs && hasAttestationProofs) {
             LOGGER.debug("The 'proofs' object must not contain multiple proof types.");
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF,
+            throw new BadRequestException(getErrorResponse(INVALID_PROOF,
                     "The 'proofs' object must not contain multiple proof types."));
         }
     }
@@ -1673,14 +1675,14 @@ public class OID4VCIssuerEndpoint {
                 vcIssuanceContext.getCredentialBody().addKeyBinding(jwks.get(0));
             }
         } catch (VCIssuerException e) {
-            if (e.getErrorType() == ErrorType.INVALID_NONCE) {
-                throw new ErrorResponseException(
-                        ErrorType.INVALID_NONCE.getValue(),
-                        "The proofs parameter in the Credential Request uses an invalid nonce",
-                        Response.Status.BAD_REQUEST
-                );
+            switch (e.getErrorType()) {
+                case INVALID_NONCE:
+                    throw new ErrorResponseException(INVALID_NONCE.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
+                case INVALID_PROOF:
+                    throw new ErrorResponseException(INVALID_PROOF.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
+                default:
+                    throw new BadRequestException("Could not validate provided proof", e);
             }
-            throw new BadRequestException("Could not validate provided proof", e);
         }
     }
 

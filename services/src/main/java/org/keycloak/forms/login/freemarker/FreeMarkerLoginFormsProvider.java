@@ -101,10 +101,12 @@ import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
+import org.keycloak.tracing.TracingProvider;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;
 
+import io.opentelemetry.api.trace.SpanContext;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
@@ -141,6 +143,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected UriInfo uriInfo;
 
     protected FreeMarkerProvider freeMarker;
+    protected TracingProvider tracing;
 
     protected UserModel user;
 
@@ -152,6 +155,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public FreeMarkerLoginFormsProvider(KeycloakSession session) {
         this.session = session;
         this.freeMarker = session.getProvider(FreeMarkerProvider.class);
+        this.tracing = session.getProvider(TracingProvider.class);
         this.attributes.put("scripts", new LinkedList<>());
         this.realm = session.getContext().getRealm();
         this.client = session.getContext().getClient();
@@ -596,6 +600,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         }
 
         attributes.put("lang", lang);
+
+        SpanContext spanContext = tracing.getCurrentSpan().getSpanContext();
+        if (spanContext.isValid()) {
+            attributes.put("traceId", spanContext.getTraceId());
+        }
     }
 
     private UriBuilder getDefaultPageUriForLocale(URI baseUri) {

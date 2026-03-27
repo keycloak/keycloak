@@ -29,6 +29,12 @@ A new guide for OAuth 2.0 Demonstrating Proof-of-Possession (DPoP) in the {secur
 
 See https://www.keycloak.org/nightly/securing-apps/dpop[Securing applications with DPoP] for more details.
 
+== Identity Brokering APIs V2 (preview)
+
+A new preview version 2 for the Identity Brokering APIs is introduced in this release. When brokering is used during the authentication process, {project_name} allows you to store tokens and responses issued by the external Identity Provider. Applications can call a specific endpoint to retrieve those tokens, that, in turn, can be used to get extra user information or invoke endpoints in the external trust domain. The new version improves the token retrieval endpoint to accommodate its functionality to substitute the internal to external Token Exchange (use-case for the link:{securing_apps_token_exchange_link}#_legacy-token-exchange[legacy Token Exchange V1]).
+
+For more information, see the chapter link:{developerguide_link}#_identity-brokering-apis[Identity Brokering APIs] in the {developerguide_name}.
+
 == Step-up authentication for SAML (preview)
 
 The feature `step-up-authentication-saml` extends the step-up authentication to include the SAML protocol and clients. This feature is in preview mode. Additional information is available in the link:{adminguide_link}#_step-up-authentication-saml[{adminguide_name}].
@@ -222,4 +228,3 @@ Behind the scenes, the framework handles the lifecycle of Keycloak, the database
 Tests simply declare what they want, including specific configuration, and the framework takes care of the rest.
 
 For more information, see https://github.com/keycloak/keycloak/tree/main/test-framework#readme[Keycloak Test Framework].
-
