@@ -100,9 +100,19 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     @InjectClient(realmRef = "master")
     ManagedClient testClient;
 
+    @Override
+    protected Keycloak getAdminClient() {
+        return this.adminClient;
+    }
+
+    @Override
+    protected ManagedRealm getTestRealm() {
+        return this.testRealm;
+    }
+
     @Test
     public void getClient() {
-        var client = adminClient.clients(testRealm.getName()).v2().client("account").getClient();
+        var client = getClientApi("account").getClient();
         assertEquals("account", client.getClientId());
     }
 

@@ -24,6 +24,7 @@ import org.keycloak.representations.idm.authorization.UserPolicyRepresentation;
 import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.client.ClientServiceHelper;
 import org.keycloak.testframework.admin.AdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectAdminClientFactory;
 import org.keycloak.testframework.annotations.InjectClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
@@ -66,6 +67,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
     private static final String FGAP_USER_ID = "00000000000000000000";
 
+    @InjectAdminClient
+    Keycloak adminClient;
+
     @InjectHttpClient
     CloseableHttpClient client;
 
@@ -77,6 +81,16 @@ public class ClientApiV2AuthorizationTest extends AbstractClientApiV2Test {
 
     @InjectClient(attachTo = Constants.ADMIN_PERMISSIONS_CLIENT_ID)
     ManagedClient adminPermissionClient;
+
+    @Override
+    protected Keycloak getAdminClient() {
+        return this.adminClient;
+    }
+
+    @Override
+    protected ManagedRealm getTestRealm() {
+        return this.testRealm;
+    }
 
     @Override
     public String getRealmName() {

@@ -86,6 +86,16 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
+    @Override
+    protected Keycloak getAdminClient() {
+        return this.adminClient;
+    }
+
+    @Override
+    protected ManagedRealm getTestRealm() {
+        return this.masterRealm;
+    }
+
     @BeforeEach
     public void setupAndClearEvents() {
         runOnServer.run(session -> {

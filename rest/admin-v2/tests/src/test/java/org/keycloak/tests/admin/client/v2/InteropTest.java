@@ -34,7 +34,9 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
@@ -75,6 +77,19 @@ public class InteropTest extends AbstractClientApiV2Test {
 
     @InjectAdminClient
     Keycloak adminClient;
+
+    @InjectRealm
+    ManagedRealm testRealm;
+
+    @Override
+    protected Keycloak getAdminClient() {
+        return this.adminClient;
+    }
+
+    @Override
+    protected ManagedRealm getTestRealm() {
+        return this.testRealm;
+    }
 
     /**
      * Test: Create a client using v1 API, then assert/read using v2 API.

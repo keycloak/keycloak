@@ -50,7 +50,9 @@ import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExec
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
+import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
@@ -109,6 +111,19 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
+
+    @InjectRealm
+    ManagedRealm testRealm;
+
+    @Override
+    protected Keycloak getAdminClient() {
+        return this.adminClient;
+    }
+
+    @Override
+    protected ManagedRealm getTestRealm() {
+        return this.testRealm;
+    }
 
     @AfterEach
     public void cleanup() {
