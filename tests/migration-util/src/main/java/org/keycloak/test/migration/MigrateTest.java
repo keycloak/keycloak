@@ -29,6 +29,7 @@ public class MigrateTest {
             AddManagedResourcesRewrite.class,
             AdminEventAssertRewrite.class,
             BeforeRewrite.class,
+            AfterRewrite.class,
             CommonStatementsRewrite.class);
 
     Path rootPath = getRootPath();
