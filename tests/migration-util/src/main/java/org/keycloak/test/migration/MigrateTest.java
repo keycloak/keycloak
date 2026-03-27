@@ -30,6 +30,7 @@ public class MigrateTest {
             AdminEventAssertRewrite.class,
             BeforeRewrite.class,
             AfterRewrite.class,
+            OAuthClientRewrite.class,
             CommonStatementsRewrite.class);
 
     Path rootPath = getRootPath();
