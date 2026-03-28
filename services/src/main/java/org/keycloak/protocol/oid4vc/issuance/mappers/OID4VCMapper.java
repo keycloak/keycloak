@@ -113,8 +113,11 @@ public abstract class OID4VCMapper implements ProtocolMapper, OID4VCEnvironmentP
     public List<String> getMetadataAttributePath() {
         final String claimName = mapperModel.getConfig().get(CLAIM_NAME);
         final String userAttributeName = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
-        return ListUtils.union(getAttributePrefix(),
-                               List.of(Optional.ofNullable(claimName).orElse(userAttributeName)));
+        final String attributeName = Optional.ofNullable(claimName).orElse(userAttributeName);
+        if (attributeName == null) {
+            return getAttributePrefix();
+        }
+        return ListUtils.union(getAttributePrefix(), List.of(attributeName));
     }
 
     protected List<String> getAttributePrefix() {
