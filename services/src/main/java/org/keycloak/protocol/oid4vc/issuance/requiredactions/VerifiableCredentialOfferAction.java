@@ -44,7 +44,8 @@ import static org.keycloak.constants.OID4VCIConstants.PRE_AUTHORIZED;
 import static org.keycloak.constants.OID4VCIConstants.VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID;
 import static org.keycloak.events.Details.REASON;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CODE_LIFESPAN_REALM_ATTRIBUTE_KEY;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CODE_LIFESPAN_S;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST;
 import static org.keycloak.protocol.oid4vc.model.ErrorType.MISSING_CREDENTIAL_CONFIG;
@@ -167,9 +168,10 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
                                                         CredentialOfferActionConfig actionConfig) throws CredentialOfferException {
         boolean preAuthorized = actionConfig.getPreAuthorized() != null && actionConfig.getPreAuthorized();
         String grantType = preAuthorized ? PRE_AUTH_GRANT_TYPE : AUTH_CODE_GRANT_TYPE;
-        int codeLifeSpan = Optional.ofNullable(realm.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY))
+        int codeLifeSpan = Optional.ofNullable(realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY))
+                .or(() -> Optional.ofNullable(realm.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY)))
                 .map(Integer::valueOf)
-                .orElse(DEFAULT_CODE_LIFESPAN_S);
+                .orElse(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
         int expiresAt = timeProvider.currentTimeSeconds() + codeLifeSpan;
 
         String credentialConfigurationId = actionConfig.getCredentialConfigurationId();

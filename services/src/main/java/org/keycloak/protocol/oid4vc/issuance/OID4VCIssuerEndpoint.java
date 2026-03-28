@@ -168,8 +168,18 @@ public class OID4VCIssuerEndpoint {
      */
     private AuthenticationManager.AuthResult cachedAuthResult;
 
+    public static final String CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY = "credentialOfferLifespanS";
+    /**
+     * @deprecated Use {@link #CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY} instead.
+     */
+    @Deprecated(forRemoval = true)
     public static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
-    public static final int DEFAULT_CODE_LIFESPAN_S = 30;
+    public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = 30;
+    /**
+     * @deprecated Use {@link #DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S} instead.
+     */
+    @Deprecated(forRemoval = true)
+    public static final int DEFAULT_CODE_LIFESPAN_S = DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String NONCE_PATH = "nonce";
@@ -182,8 +192,8 @@ public class OID4VCIssuerEndpoint {
     private final AppAuthManager.BearerTokenAuthenticator bearerTokenAuthenticator;
     private final TimeProvider timeProvider;
 
-    // lifespan of the preAuthorizedCodes in seconds
-    private final int preAuthorizedCodeLifeSpan;
+    // lifespan of credential offers in seconds
+    private final int credentialOfferLifespan;
 
     /**
      * Credential builders are responsible for initiating the production of
@@ -201,12 +211,12 @@ public class OID4VCIssuerEndpoint {
                                 Map<String, CredentialBuilder> credentialBuilders,
                                 AppAuthManager.BearerTokenAuthenticator authenticator,
                                 TimeProvider timeProvider,
-                                int preAuthorizedCodeLifeSpan) {
+                                int credentialOfferLifespan) {
         this.session = session;
         this.bearerTokenAuthenticator = authenticator;
         this.timeProvider = timeProvider;
         this.credentialBuilders = credentialBuilders;
-        this.preAuthorizedCodeLifeSpan = preAuthorizedCodeLifeSpan;
+        this.credentialOfferLifespan = credentialOfferLifespan;
     }
 
     public OID4VCIssuerEndpoint(KeycloakSession keycloakSession) {
@@ -217,9 +227,10 @@ public class OID4VCIssuerEndpoint {
         this.credentialBuilders = loadCredentialBuilders(session);
 
         RealmModel realm = keycloakSession.getContext().getRealm();
-        this.preAuthorizedCodeLifeSpan = Optional.ofNullable(realm.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY))
+        this.credentialOfferLifespan = Optional.ofNullable(realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY))
+                .or(() -> Optional.ofNullable(realm.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY)))
                 .map(Integer::valueOf)
-                .orElse(DEFAULT_CODE_LIFESPAN_S);
+                .orElse(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
     }
 
     /**
@@ -472,7 +483,7 @@ public class OID4VCIssuerEndpoint {
         }
 
         if (expiresAt == null) {
-            expiresAt = timeProvider.currentTimeSeconds() + preAuthorizedCodeLifeSpan;
+            expiresAt = timeProvider.currentTimeSeconds() + credentialOfferLifespan;
         }
 
         // Create the CredentialsOffer

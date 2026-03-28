@@ -684,10 +684,10 @@ export const RealmSettingsTokensTab = ({
           />
           <TimeSelectorControl
             name={convertAttributeNameToForm(
-              "attributes.preAuthorizedCodeLifespanS",
+              "attributes.credentialOfferLifespanS",
             )}
-            label={t("preAuthorizedCodeLifespan")}
-            labelIcon={t("preAuthorizedCodeLifespanHelp")}
+            label={t("credentialOfferLifespan")}
+            labelIcon={t("credentialOfferLifespanHelp")}
             controller={{
               defaultValue: 30,
               rules: { min: 30 },

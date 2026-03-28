@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CODE_LIFESPAN_S;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.PROMPT_VALUE_LOGIN;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.jwtProofs;
 
@@ -279,7 +279,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         assertNotNull(authorizedIdentifier, "No authorized credential identifier");
 
         // Move time forward to make sure offer is expired
-        timeOffSet.set(DEFAULT_CODE_LIFESPAN_S + 10);
+        timeOffSet.set(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S + 10);
 
         // Send the CredentialRequest
         IllegalStateException error = assertThrows(IllegalStateException.class,

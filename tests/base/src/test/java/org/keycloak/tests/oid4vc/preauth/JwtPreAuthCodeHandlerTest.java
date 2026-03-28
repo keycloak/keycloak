@@ -29,7 +29,7 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CODE_LIFESPAN_S;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -135,7 +135,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         runOnServer.run((session) -> {
             try {
                 // Move time forward to ensure code is expired
-                Time.setOffset(2 * DEFAULT_CODE_LIFESPAN_S);
+                Time.setOffset(2 * DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
 
                 JwtPreAuthCodeHandler handler = new JwtPreAuthCodeHandler(session);
                 VerificationException exception = assertThrows(VerificationException.class,
