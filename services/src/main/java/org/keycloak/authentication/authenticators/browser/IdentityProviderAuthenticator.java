@@ -42,7 +42,7 @@ public class IdentityProviderAuthenticator implements Authenticator {
 
     private static final Logger LOG = Logger.getLogger(IdentityProviderAuthenticator.class);
 
-    protected static final String ACCEPTS_PROMPT_NONE = "acceptsPromptNoneForwardFromClient";
+    public static final String ACCEPTS_PROMPT_NONE = "acceptsPromptNoneForwardFromClient";
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {

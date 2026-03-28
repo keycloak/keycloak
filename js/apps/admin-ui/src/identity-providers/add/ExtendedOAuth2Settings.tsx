@@ -31,10 +31,6 @@ export const ExtendedOAuth2Settings = () => {
           controller={{ defaultValue: "" }}
         />
         <SwitchField
-          field="config.acceptsPromptNoneForwardFromClient"
-          label="acceptsPromptNone"
-        />
-        <SwitchField
           field="config.requiresShortStateParameter"
           label="requiresShortStateParameter"
         />
