@@ -568,12 +568,9 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
                 assertEquals(credentialDefinitionTypes.size(), supportedConfig.getCredentialDefinition().getType().size());
             }
 
-            List<String> credentialDefinitionContexts = credScope.getVcContexts();
-            if (!credentialDefinitionContexts.isEmpty()) {
-                assertEquals(credentialDefinitionContexts.size(), supportedConfig.getCredentialDefinition().getContext().size());
-                MatcherAssert.assertThat(supportedConfig.getCredentialDefinition().getContext(),
-                        Matchers.containsInAnyOrder(credentialDefinitionTypes.toArray()));
-            }
+            // @context must not be present for jwt_vc_json format per OID4VCI spec
+            assertNull(supportedConfig.getCredentialDefinition().getContext(),
+                    "jwt_vc_json credentials should not have @context in credential_definition");
         }
 
         List<String> signingAlgsSupported = supportedConfig.getCredentialSigningAlgValuesSupported();
