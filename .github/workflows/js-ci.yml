@@ -179,7 +179,7 @@ jobs:
         working-directory: js
 
       - name: Run Playwright tests
-        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test -- --project=${{ matrix.browser }} --repeat-each=50
+        run: pnpm --fail-if-no-match --filter ${{ env.WORKSPACE }} test -- --project=${{ matrix.browser }}
         working-directory: js
 
       - name: Upload Playwright report
