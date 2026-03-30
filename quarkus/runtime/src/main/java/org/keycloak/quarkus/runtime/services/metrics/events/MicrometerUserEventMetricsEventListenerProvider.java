@@ -30,6 +30,7 @@ import org.keycloak.events.EventListenerTransaction;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.utils.StringUtil;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Meter;
@@ -45,20 +46,23 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
     private static final String CLIENT_ID_TAG = "client.id";
     private static final String ERROR_TAG = "error";
     private static final String EVENT_TAG = "event";
+    public static final String NONE_TAG_VALUE = "none";
 
     private final boolean withIdp;
     private final boolean withRealm;
     private final boolean withClientId;
+    private final boolean allowEmptyTags;
     private final HashSet<String> events;
 
     private final EventListenerTransaction tx =
             new EventListenerTransaction(null, this::countEvent);
     private final Meter.MeterProvider<Counter> meterProvider;
 
-    public MicrometerUserEventMetricsEventListenerProvider(KeycloakSession session, boolean withIdp, boolean withRealm, boolean withClientId, HashSet<String> events, Meter.MeterProvider<Counter> meterProvider) {
+    public MicrometerUserEventMetricsEventListenerProvider(KeycloakSession session, boolean withIdp, boolean withRealm, boolean withClientId, boolean allowEmptyTags, HashSet<String> events, Meter.MeterProvider<Counter> meterProvider) {
         this.withIdp = withIdp;
         this.withRealm = withRealm;
         this.withClientId = withClientId;
+        this.allowEmptyTags = allowEmptyTags;
         this.events = events;
         this.meterProvider = meterProvider;
         session.getTransactionManager().enlistAfterCompletion(tx);
@@ -114,19 +118,23 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
 
     private String getClientId(Event event) {
         // Don't use the clientId as a tag value of the event CLIENT_NOT_FOUND as it would lead to a metrics cardinality explosion
-        return Errors.CLIENT_NOT_FOUND.equals(event.getError()) ? "unknown" : event.getClientId();
+        return Errors.CLIENT_NOT_FOUND.equals(event.getError()) ? NONE_TAG_VALUE : event.getClientId();
     }
 
     private String getError(Event event) {
         String error = event.getError();
         if (error == null && event.getType().name().endsWith("_ERROR")) {
-            error = "unknown";
+            error = NONE_TAG_VALUE;
         }
         return error;
     }
 
     private void addTag(List<Tag> tags, String tagName, String value) {
-        tags.add(Tag.of(tagName, value != null ? value : ""));
+        if (StringUtil.isBlank(value)) {
+            tags.add(Tag.of(tagName, allowEmptyTags ? "" : NONE_TAG_VALUE));
+        } else {
+            tags.add(Tag.of(tagName, value));
+        }
     }
 
     public static String format(EventType type) {

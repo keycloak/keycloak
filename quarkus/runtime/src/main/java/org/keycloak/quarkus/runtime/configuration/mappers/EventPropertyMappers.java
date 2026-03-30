@@ -7,6 +7,7 @@ import java.util.List;
 import org.keycloak.common.Profile;
 import org.keycloak.events.EventType;
 
+import static org.keycloak.config.EventOptions.USER_EVENT_METRICS_ALLOW_EMPTY_TAGS;
 import static org.keycloak.config.EventOptions.USER_EVENT_METRICS_ENABLED;
 import static org.keycloak.config.EventOptions.USER_EVENT_METRICS_EVENTS;
 import static org.keycloak.config.EventOptions.USER_EVENT_METRICS_TAGS;
@@ -14,7 +15,6 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.isTrue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.MetricsPropertyMappers.METRICS_ENABLED_MSG;
 import static org.keycloak.quarkus.runtime.configuration.mappers.MetricsPropertyMappers.metricsEnabled;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
-
 
 final class EventPropertyMappers implements PropertyMapperGrouping {
 
@@ -33,6 +33,10 @@ final class EventPropertyMappers implements PropertyMapperGrouping {
                 fromOption(USER_EVENT_METRICS_EVENTS.toBuilder().expectedValues(expectedUserMetricEvents()).build())
                         .to("kc.spi-events-listener--micrometer-user-event-metrics--events")
                         .paramLabel("events")
+                        .isEnabled(EventPropertyMappers::userEventsMetricsTags, "user event metrics are enabled")
+                        .build(),
+                fromOption(USER_EVENT_METRICS_ALLOW_EMPTY_TAGS)
+                        .to("kc.spi-events-listener--micrometer-user-event-metrics--allow-empty-tags")
                         .isEnabled(EventPropertyMappers::userEventsMetricsTags, "user event metrics are enabled")
                         .build()
         );
