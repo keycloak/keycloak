@@ -165,7 +165,8 @@ class KcAdmV2RequestExecutor extends AbstractTargetAuthOptionsCmd {
             HeadersBodyStatus response = HttpUtil.doRequest(
                     descriptor.getHttpMethod().toLowerCase(),
                     url,
-                    new HeadersBody(headers, bodyStream));
+                    new HeadersBody(headers, bodyStream),
+                    true);
 
             response.checkSuccess();
             String responseBody = response.getBody() != null ? readFully(response.getBody()) : "";

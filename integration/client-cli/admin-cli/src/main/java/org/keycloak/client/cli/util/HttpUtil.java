@@ -122,6 +122,10 @@ public class HttpUtil {
     }
 
     public static HeadersBodyStatus doRequest(String type, String url, HeadersBody request) throws IOException {
+        return doRequest(type, url, request, false);
+    }
+
+    public static HeadersBodyStatus doRequest(String type, String url, HeadersBody request, boolean allowJakartaValidation) throws IOException {
         HttpRequestBase req;
         switch (type) {
             case "get":
@@ -177,7 +181,7 @@ public class HttpUtil {
             headers.add(header.getName(), header.getValue());
         }
 
-        return new HeadersBodyStatus(res.getStatusLine().toString(), headers, responseStream);
+        return new HeadersBodyStatus(res.getStatusLine().toString(), headers, responseStream, allowJakartaValidation);
     }
 
     private static void addHeaders(HttpRequestBase request, Headers headers) {
