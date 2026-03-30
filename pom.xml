@@ -314,6 +314,7 @@
         <module>tests</module>
         <module>quarkus</module>
         <module>scim</module>
+        <module>authzen</module>
     </modules>
 
     <dependencyManagement>
@@ -1339,6 +1340,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-scim-services</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-authzen-services</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

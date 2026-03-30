@@ -50,6 +50,8 @@ public class Profile {
     public enum Feature {
         AUTHORIZATION("Authorization Service", Type.DEFAULT),
 
+        AUTHZEN("OpenID AuthZen Authorization", Type.EXPERIMENTAL),
+
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
 
         ACCOUNT_V3("Account Console version 3", Type.DEFAULT, 3, Feature.ACCOUNT_API),
