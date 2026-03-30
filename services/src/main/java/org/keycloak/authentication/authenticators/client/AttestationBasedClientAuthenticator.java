@@ -39,8 +39,10 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.exceptions.TokenVerificationException;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -87,7 +89,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
      * [
      *     {
      *       "kty": "RSA",
-     *       "kid": "keycloak-abca-sig-rsa",
+     *       "kid": "openid-abca-attester-key",
      *       "use": "sig",
      *       "alg": "PS256",
      *       "n": "uVd8mEqXMp...aaVZNQ",
@@ -95,7 +97,7 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
      *     }
      * ]
      */
-    public static final String OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS = "attester.jwks";
+    public static final String OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS = "attester_jwks";
 
     @Override
     public String getId() {
@@ -118,8 +120,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         context.attempted();
 
         try {
-            validateClientAttestationJwt(context);
-            validateClientAttestationPoPJwt(context);
+            ClientAttestationJwt attesterJwt = validateClientAttestationJwt(context);
+            validateClientAttestationPoPJwt(context, attesterJwt);
 
             context.success();
 
@@ -272,7 +274,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
     // Validate the Client Attestation JWT
     // https://www.ietf.org/archive/id/draft-ietf-oauth-attestation-based-client-auth-07.html#section-5.1
-    private void validateClientAttestationJwt(ClientAuthenticationFlowContext context) throws Exception {
+    private ClientAttestationJwt validateClientAttestationJwt(ClientAuthenticationFlowContext context) throws Exception {
+        RealmModel realmModel = context.getSession().getContext().getRealm();
 
         HttpRequest httpRequest = context.getHttpRequest();
         MultivaluedMap<String, String> formParams = httpRequest.getDecodedFormParameters();
@@ -282,53 +285,62 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         if (headerValue == null)
             throw new IllegalStateException("Required header " + OAUTH_CLIENT_ATTESTATION_HEADER + " for is missing");
 
-        // Parse the Client Attestation JWT without signature verification
-        //
-        TokenVerifier<ClientAttestationJwt> tokenVerifier = TokenVerifier.create(headerValue, ClientAttestationJwt.class);
-        ClientAttestationJwt jwt = tokenVerifier
-                .withChecks(TokenVerifier.IS_ACTIVE)
-                .getToken();
+        JWSInput jws = new JWSInput(headerValue);
+        String jwsType = jws.getHeader().getType();
+        if (!OAUTH_CLIENT_ATTESTATION_JWT_TYPE.equals(jwsType))
+            throw new IllegalStateException("The JWS type MUST be " + OAUTH_CLIENT_ATTESTATION_JWT_TYPE + " instead of " + jwsType);
 
-        // [TODO] Do these checks with predicates
+        ClientAttestationJwt attesterJwt = jws.readJsonContent(ClientAttestationJwt.class);
+        ClientModel clientModel = Optional.ofNullable(attesterJwt.getSubject())
+                .map(realmModel::getClientByClientId)
+                .orElseThrow(() -> new TokenVerificationException(attesterJwt, "The sub (subject) claim MUST identify a known client_id"));
 
-        if (OAUTH_CLIENT_ATTESTATION_JWT_TYPE.equals(jwt.getType()))
-            throw new IllegalStateException("The JWT type MUST be " + OAUTH_CLIENT_ATTESTATION_JWT_TYPE + " instead of " + jwt.getType());
-        if (Strings.isEmpty(jwt.getIssuer()))
-            throw new IllegalStateException("The iss (issuer) claim MUST contains a unique identifier for the entity that issued the JWT");
-        if (Strings.isEmpty(jwt.getSubject()))
-            throw new IllegalStateException("The sub (subject) claim MUST specify client_id value of the OAuth Client");
-        if (jwt.getExp() == 0)
-            throw new IllegalStateException("The exp (expiration time) claim MUST specify the time at which the Client Attestation is considered expired by its issuer.");
-        if (jwt.getConfirmation() == null || jwt.getConfirmation().getJwk() == null)
-            throw new IllegalStateException("The cnf (confirmation) claim MUST specify a key that is used by the Client Instance to generate the Client Attestation PoP JWT");
-
-        // The Authorization Server MUST verify that the value of client_id parameter is the same as the client_id value in the sub claim
-        //
-        String clientIdParam = formParams.getFirst(CLIENT_ID);
-        if (clientIdParam != null && !clientIdParam.equals(jwt.getSubject()))
-            throw new IllegalStateException("The client attestation subject does not match the client_id parameter");
-
-        // We set the target client in the context before we attempt signature verification
-        //
-        RealmModel realmModel = context.getSession().getContext().getRealm();
-        ClientModel clientModel = realmModel.getClientByClientId(jwt.getSubject());
+        // Set the target client in the context before we attempt signature verification
         context.setClient(clientModel);
+
+        // Define a few Client Attestation JWT checks
+        //
+
+        TokenVerifier.Predicate<JsonWebToken> subCheck = (t) -> {
+            String clientIdParam = formParams.getFirst(CLIENT_ID);
+            if (Strings.isEmpty(t.getSubject()) || clientIdParam != null && !clientIdParam.equals(t.getSubject()))
+                throw new TokenVerificationException(t, "The sub claim (subject) MUST match the client_id parameter");
+            return true;
+        };
+
+        TokenVerifier.Predicate<JsonWebToken> issCheck = (t) -> {
+            if (Strings.isEmpty(t.getIssuer()))
+                throw new TokenVerificationException(t, "The iss (issuer) claim MUST contains a unique identifier for the entity that issued the JWT");
+            return true;
+        };
+
+        TokenVerifier.Predicate<JsonWebToken> cnfCheck = (t) -> {
+            var jwt = (ClientAttestationJwt) t;
+            if (jwt.getConfirmation() == null || jwt.getConfirmation().getJwk() == null)
+                throw new TokenVerificationException(t, "The cnf (confirmation) claim MUST specify a key that is used by the Client Instance to generate the Client Attestation PoP JWT");
+            return true;
+        };
 
         // The signature of the Client Attestation JWT verifies with the public key of a known and trusted Attester
         //
-        JWSInput jws = new JWSInput(headerValue);
         PublicKey publicKey = loadAttesterPublicKey(context, jws.getHeader().getKeyId());
-        tokenVerifier.publicKey(publicKey).verifySignature();
 
         // Verification and Processing
+        //
+        TokenVerifier.create(headerValue, ClientAttestationJwt.class)
+                .publicKey(publicKey)
+                .withChecks(subCheck, issCheck, cnfCheck, TokenVerifier.IS_ACTIVE)
+                .verify().getToken();
 
         // [TODO] The alg JOSE Header Parameter for both JWTs indicates a registered asymmetric digital signature algorithm
         // [TODO] The key contained in the cnf claim of the Client Attestation JWT is not a private key
+
+        return attesterJwt;
     }
 
     // Validate the Client Attestation PoP JWT
     // https://www.ietf.org/archive/id/draft-ietf-oauth-attestation-based-client-auth-07.html#section-5.2
-    private void validateClientAttestationPoPJwt(ClientAuthenticationFlowContext context) throws Exception {
+    private void validateClientAttestationPoPJwt(ClientAuthenticationFlowContext context, ClientAttestationJwt attesterJwt) throws Exception {
 
         HttpHeaders headers = context.getHttpRequest().getHttpHeaders();
         String headerValue = headers.getHeaderString(OAUTH_CLIENT_ATTESTATION_POP_HEADER);
@@ -336,37 +348,58 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             throw new IllegalStateException("Required header " + OAUTH_CLIENT_ATTESTATION_POP_HEADER + " for is missing");
 
         JWSInput jws = new JWSInput(headerValue);
-        ClientAttestationPoPJwt jwt = jws.readJsonContent(ClientAttestationPoPJwt.class);
+        String jwsType = jws.getHeader().getType();
+        if (!OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE.equals(jwsType))
+            throw new IllegalStateException("The JWS type MUST be " + OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE + " instead of " + jwsType);
 
-        if (OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE.equals(jwt.getType()))
-            throw new IllegalStateException("The JWT type MUST be " + OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE + " instead of " + jwt.getType());
-        if (Strings.isEmpty(jwt.getIssuer()))
-            throw new IllegalStateException("The iss (issuer) claim MUST specify client_id value of the OAuth Client");
-        if (jwt.getAudience() == null || jwt.getAudience().length == 0)
-            throw new IllegalStateException("The aud (audience) claim MUST specify a value that identifies the authorization server as an intended audience.");
-        if (Strings.isEmpty(jwt.getId()))
-            throw new IllegalStateException("The jti (JWT identifier) claim MUST specify a unique identifier for the Client Attestation PoP.");
-        if (jwt.getIat() == 0)
-            throw new IllegalStateException("The iat (issued at) claim MUST specify the time at which the Client Attestation PoP was issued.");
+        // Define a few Client Attestation JWT checks
+        //
+
+        TokenVerifier.Predicate<JsonWebToken> jtiCheck = (t) -> {
+            if (Strings.isEmpty(t.getId()))
+                throw new TokenVerificationException(t, "The jti (JWT identifier) claim MUST specify a unique identifier for the Client Attestation PoP.");
+            return true;
+        };
+
+        TokenVerifier.Predicate<JsonWebToken> iatCheck = (t) -> {
+            if (t.getIat() == 0)
+                throw new TokenVerificationException(t, "The iat (issued at) claim MUST specify the time at which the Client Attestation PoP was issued.");
+            return true;
+        };
+
+        TokenVerifier.Predicate<JsonWebToken> issCheck = (t) -> {
+            if (Strings.isEmpty(t.getIssuer()) || !t.getIssuer().equals(attesterJwt.getSubject()))
+                throw new TokenVerificationException(t, "The value of the iss (issuer) claim, representing the client_id MUST match the value of the sub (subject) claim in the Client Attestation");
+            return true;
+        };
+
+        TokenVerifier.Predicate<JsonWebToken> audCheck = (t) -> {
+            if (t.getAudience() == null || t.getAudience().length == 0)
+                throw new TokenVerificationException(t, "The aud (audience) claim MUST specify a value that identifies the authorization server as an intended audience.");
+            return true;
+        };
+
+        // The public key used to verify the ClientAttestationPoP JWT MUST be the key located in the "cnf" claim of the corresponding ClientAttestation JWT
+        //
+        JWK jwk = attesterJwt.getConfirmation().getJwk();
+        PublicKey publicKey = JWKParser.create()
+                .parse(JsonSerialization.valueAsString(jwk))
+                .toPublicKey();
+
+        // Verification and Processing
+        //
+        TokenVerifier.create(headerValue, ClientAttestationPoPJwt.class)
+                .publicKey(publicKey)
+                .withChecks(jtiCheck, iatCheck, issCheck, audCheck)
+                .verify().getToken();
+
 
         // [TODO] The aud (audience) claim MUST specify a value that identifies the authorization server as an intended audience
         // [TODO] The authorization server can utilize the jti value for replay attack detection
         // [TODO] The authorization server may reject JWTs with an "iat" claim value that is unreasonably far in the past
 
-        // [TODO] The authorization server MUST reject JWTs with an invalid signature.
-        // [TODO] The value of the iss claim, representing the client_id MUST match the value of the sub claim in the corresponding Client Attestation JWT
-
-//        if (!clientModel.getClientId().equals(clientAttestationPoPJwt.getIssuer())) {
-//            throw new IllegalStateException("The client attestation PoP issuer does not match the authorized client_id");
-//        }
-
-
-        // Verification and Processing
-
-        // [TODO] The signature of the Client Attestation PoP JWT verifies with the public key contained in the cnf claim of the Client Attestation JWT.
         // [TODO] If the server provided a challenge value to the client, the challenge claim is present in the Client Attestation PoP JWT and matches the server-provided challenge value.
         // [TODO] Additional checks to guarantee replay protection for the Client Attestation PoP JWT might need to be applied
-
     }
 
     // Error Message specifically related to the use of client attestations
