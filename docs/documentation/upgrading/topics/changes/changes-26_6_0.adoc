@@ -279,6 +279,12 @@ See the https://www.keycloak.org/server/db#_secure_the_database_connection[Secur
 A new CLI option `--db-connect-timeout` sets the JDBC driver connection timeout and login timeout.
 It defaults to `10s` to improve failover behavior and startup resilience during network issues.
 
+=== Database connection timeout no longer causes server startup warning
+
+The `--db-connect-timeout` option now also automatically configures the Agroal connection pool acquisition timeout to twice the connect timeout value.
+This prevents the Agroal startup warning:
+`WARN [io.agroal.pool] (JPA Startup Thread) Datasource '': Login timeout should be smaller than acquisition timeout .`
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 

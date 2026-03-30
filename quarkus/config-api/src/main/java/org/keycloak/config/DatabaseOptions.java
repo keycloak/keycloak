@@ -129,6 +129,10 @@ public class DatabaseOptions {
             .defaultValue("10s")
             .build();
 
+    public static final Option<String> DB_POOL_ACQUISITION_TIMEOUT = new OptionBuilder<>("db-pool-acquisition-timeout", String.class)
+            .category(OptionCategory.DATABASE)
+            .hidden()
+            .build();
     public static final Option<String> DB_TLS_MODE = new OptionBuilder<>("db-tls-mode", String.class)
             .category(OptionCategory.DATABASE)
             .expectedValues(Arrays.stream(DatabaseTlsMode.values()).map(DatabaseTlsMode::toCliValue).toList())
