@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.organization.group;
+package org.keycloak.tests.organization.group;
 
 import java.util.List;
 
@@ -26,10 +26,11 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -38,13 +39,14 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
+@KeycloakIntegrationTest
 public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
 
     @Test
     public void testUserGetGroupsDoesNotIncludeOrgGroups() {
         // user.getGroupsStream() should only return realm groups
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -52,14 +54,14 @@ public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
         GroupRepresentation realmGroupRep = new GroupRepresentation();
         realmGroupRep.setName("RealmGroup");
         String realmGroupId;
-        try (Response response = testRealm().groups().add(realmGroupRep)) {
+        try (Response response = realm.admin().groups().add(realmGroupRep)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
             realmGroupId = ApiUtil.getCreatedId(response);
         }
-        getCleanup().addCleanup(() -> testRealm().groups().group(realmGroupId).remove());
+        realm.cleanup().add(r -> r.groups().group(realmGroupId).remove());
 
         // Add user to realm group
-        testRealm().users().get(member.getId()).joinGroup(realmGroupId);
+        realm.admin().users().get(member.getId()).joinGroup(realmGroupId);
 
         // Create org group
         GroupRepresentation orgGroupRep = new GroupRepresentation();
@@ -74,7 +76,7 @@ public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
         orgResource.groups().group(orgGroupId).addMember(member.getId());
 
         // Get user's group names via UserResource
-        List<String> userGroups = testRealm().users().get(member.getId()).groups().stream().map(GroupRepresentation::getName).toList();
+        List<String> userGroups = realm.admin().users().get(member.getId()).groups().stream().map(GroupRepresentation::getName).toList();
 
         // Should only contain realm group, not org group
         assertThat(userGroups, hasItem("RealmGroup"));
@@ -85,7 +87,7 @@ public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
     public void testGetOrgGroupMembersViaOrgAPI() {
         // Query org group members via Organization API
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member1 = addMember(orgResource, "member1@example.com");
         MemberRepresentation member2 = addMember(orgResource, "member2@example.com");
@@ -112,10 +114,10 @@ public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
     public void testUserInMultipleOrgGroupsAcrossOrgs() {
         // User in multiple orgs, member of different groups in each
         OrganizationRepresentation orgA = createOrganization("OrgA", "orga.com");
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
+        OrganizationResource orgAResource = realm.admin().organizations().get(orgA.getId());
 
         OrganizationRepresentation orgB = createOrganization("OrgB", "orgb.com");
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        OrganizationResource orgBResource = realm.admin().organizations().get(orgB.getId());
 
         // Create user in both orgs
         MemberRepresentation member = addMember(orgAResource, "multiorg@example.com");
@@ -170,7 +172,7 @@ public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
     public void testGroupsCountDoesNotIncludeOrgGroups() {
         // getGroupsCount() should not count org groups
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -178,22 +180,22 @@ public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
         GroupRepresentation realmGroup1 = new GroupRepresentation();
         realmGroup1.setName("RealmGroup1");
         String realmGroup1Id;
-        try (Response response = testRealm().groups().add(realmGroup1)) {
+        try (Response response = realm.admin().groups().add(realmGroup1)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
             realmGroup1Id = ApiUtil.getCreatedId(response);
         }
-        getCleanup().addCleanup(() -> testRealm().groups().group(realmGroup1Id).remove());
-        testRealm().users().get(member.getId()).joinGroup(realmGroup1Id);
+        realm.cleanup().add(r -> r.groups().group(realmGroup1Id).remove());
+        realm.admin().users().get(member.getId()).joinGroup(realmGroup1Id);
 
         GroupRepresentation realmGroup2 = new GroupRepresentation();
         realmGroup2.setName("RealmGroup2");
         String realmGroup2Id;
-        try (Response response = testRealm().groups().add(realmGroup2)) {
+        try (Response response = realm.admin().groups().add(realmGroup2)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
             realmGroup2Id = ApiUtil.getCreatedId(response);
         }
-        getCleanup().addCleanup(() -> testRealm().groups().group(realmGroup2Id).remove());
-        testRealm().users().get(member.getId()).joinGroup(realmGroup2Id);
+        realm.cleanup().add(r -> r.groups().group(realmGroup2Id).remove());
+        realm.admin().users().get(member.getId()).joinGroup(realmGroup2Id);
 
         // Add to 3 org groups
         for (int i = 1; i <= 3; i++) {
@@ -208,7 +210,7 @@ public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
         }
 
         // Get user's groups
-        List<GroupRepresentation> userGroups = testRealm().users().get(member.getId()).groups();
+        List<GroupRepresentation> userGroups = realm.admin().users().get(member.getId()).groups();
 
         // Count should match size (both should be 2, excluding org groups and internal group)
         assertThat(userGroups, hasSize(2));
@@ -218,7 +220,7 @@ public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
     public void testQueryingNonExistentOrgGroupReturnsNotFound() {
         // Querying a non-existent org group should return 404
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         try {
             orgResource.groups().group("non-existent-id").toRepresentation(false);

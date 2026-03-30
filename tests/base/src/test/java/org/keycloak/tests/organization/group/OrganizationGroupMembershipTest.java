@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.organization.group;
+package org.keycloak.tests.organization.group;
 
 import java.util.List;
 
@@ -27,18 +27,18 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests for organization group membership - validates the dual explicit membership model.
@@ -48,13 +48,14 @@ import static org.junit.Assert.fail;
  * - Users are members of org-specific groups (explicit, on top of org membership)
  * - Both memberships are explicit in the database, NOT implicit through hierarchy
  */
+@KeycloakIntegrationTest
 public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
 
     @Test
     public void testDualMembershipModel() {
         // A30: User should have explicit membership in both internal group and org-group
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create member - this adds them to internal group
         MemberRepresentation member = addMember(orgResource);
@@ -85,7 +86,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testOrgMembershipRequiredBeforeGroupMembership() {
         // A30 + Q12a: Users must be org members before joining org groups
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create a user who is NOT an org member
         UserRepresentation nonMember = new UserRepresentation();
@@ -93,10 +94,10 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
         nonMember.setUsername("nonmember");
         nonMember.setEnabled(true);
         String userId;
-        try (Response response = testRealm().users().create(nonMember)) {
+        try (Response response = realm.admin().users().create(nonMember)) {
             userId = ApiUtil.getCreatedId(response);
         }
-        getCleanup().addCleanup(() -> testRealm().users().get(userId).remove());
+        realm.cleanup().add(r -> r.users().get(userId).remove());
 
         // Create org group
         GroupRepresentation groupRep = new GroupRepresentation();
@@ -119,7 +120,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testMemberInMultipleOrgGroups() {
         // User can be member of multiple org groups simultaneously
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -155,7 +156,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testRemoveFromGroupDoesNotRemoveFromOrg() {
         // Removing from org-group should NOT remove from organization
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -166,6 +167,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
         try (Response response = orgResource.groups().addTopLevelGroup(backendRep)) {
             backendId = ApiUtil.getCreatedId(response);
         }
+        // Add member to Backend only
         orgResource.groups().group(backendId).addMember(member.getId());
 
         // Remove from Backend group
@@ -184,7 +186,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testRemoveFromOrgRemovesFromAllOrgGroups() {
         // Q14: Removing from organization should remove from all org groups
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -224,7 +226,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testNestedGroupMembershipIsExplicit() {
         // Being member of Backend does NOT implicitly make you member of Engineering
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -244,7 +246,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
             backendId = response.readEntity(GroupRepresentation.class).getId();
         }
 
-        // Add member to Backend only
+        // Add member ONLY to Backend (child group)
         orgResource.groups().group(backendId).addMember(member.getId());
 
         // Member should be in Backend
@@ -260,7 +262,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testMemberOfParentAndChild() {
         // User can explicitly be member of both parent and child groups
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -295,7 +297,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testAddSameMemberTwiceReturnsConflict() {
         // Adding the same member twice should return conflict
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -322,7 +324,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testGetMemberGroupMemberships() {
         // Test basic retrieval of member's group memberships
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -364,7 +366,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testGetMemberGroupMembershipsWithPagination() {
         // Test pagination of member's group memberships
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -400,7 +402,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testGetMemberGroupMembershipsEmpty() {
         // Test retrieval when member has no group memberships
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -414,7 +416,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testGetMemberGroupMembershipsWithHierarchy() {
         // Test that only explicit memberships are returned, not parent groups
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -448,7 +450,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testGetMemberGroupMembershipsAfterRemoval() {
         // Test that group memberships are correctly reflected after removal
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -487,7 +489,7 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     @Test
     public void testGetMemberGroupMembershipsWithSearch() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         MemberRepresentation member = addMember(orgResource);
 
@@ -540,10 +542,10 @@ public class OrganizationGroupMembershipTest extends AbstractOrganizationTest {
     public void testGroupMembershipsRequiresMembershipInCurrentOrganization() {
         // Calling groupMemberships for a user who is a member of another org should return 404
         OrganizationRepresentation orgARep = createOrganization("orgA", "orga.com");
-        OrganizationResource orgA = testRealm().organizations().get(orgARep.getId());
+        OrganizationResource orgA = realm.admin().organizations().get(orgARep.getId());
 
         OrganizationRepresentation orgBRep = createOrganization("orgB", "orgb.com");
-        OrganizationResource orgB = testRealm().organizations().get(orgBRep.getId());
+        OrganizationResource orgB = realm.admin().organizations().get(orgBRep.getId());
 
         // Add member to orgB
         MemberRepresentation memberB = addMember(orgB, "memberb@orgb.com");
