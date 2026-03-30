@@ -81,11 +81,62 @@ public class DefaultTokenManager implements TokenManager {
         String signatureAlgorithm = signatureAlgorithm(token.getCategory());
 
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
-        SignatureSignerContext signer = signatureProvider.signer();
+        SignatureSignerContext signer = getSignerForClient(signatureProvider, signatureAlgorithm, token.getCategory());
 
         String type = type(token.getCategory());
         String encodedToken = new JWSBuilder().type(type).jsonContent(token).sign(signer);
         return encodedToken;
+    }
+
+    private SignatureSignerContext getSignerForClient(SignatureProvider provider, String algorithm, TokenCategory category) {
+        // Only apply client-specific signing key for external tokens (ACCESS, ID, etc.)
+        // Internal tokens (session cookies, action tokens) should use realm default key
+        if (category == TokenCategory.INTERNAL || category == TokenCategory.ADMIN) {
+            return provider.signer();
+        }
+
+        ClientModel client = session.getContext().getClient();
+        if (client == null) {
+            return provider.signer();
+        }
+
+        String signingKeyId = getSigningKeyIdForCategory(client, category);
+        if (signingKeyId == null || signingKeyId.isEmpty()) {
+            return provider.signer();
+        }
+
+        KeyWrapper key = session.keys().getKey(
+            session.getContext().getRealm(), signingKeyId, KeyUse.SIG, algorithm);
+
+        if (key == null) {
+            logger.debugf("Signing key '%s' is not available (disabled or not found) for client '%s', using realm's active signing key",
+                signingKeyId, client.getClientId());
+            return provider.signer();
+        }
+
+        if (!key.getStatus().isActive()) {
+            logger.debugf("Signing key '%s' is passive for client '%s', using realm's active signing key",
+                signingKeyId, client.getClientId());
+            return provider.signer();
+        }
+
+        return provider.signer(key);
+    }
+
+    private String getSigningKeyIdForCategory(ClientModel client, TokenCategory category) {
+        switch (category) {
+            case ID:
+            case LOGOUT:
+                return client.getAttribute(OIDCConfigAttributes.ID_TOKEN_SIGNED_RESPONSE_KID);
+            case ACCESS:
+                return client.getAttribute(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_KID);
+            case USERINFO:
+                return client.getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_KID);
+            case AUTHORIZATION_RESPONSE:
+                return client.getAttribute(OIDCConfigAttributes.AUTHORIZATION_SIGNED_RESPONSE_KID);
+            default:
+                return null;
+        }
     }
 
     @Override
