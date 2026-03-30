@@ -89,7 +89,6 @@ import org.junit.runners.MethodSorters;
 
 import static org.junit.Assert.assertEquals;
 
-import org.keycloak.locale.LocaleSelectorProvider;
 import org.openqa.selenium.Cookie;
 import java.util.stream.Stream;
 
