@@ -41,6 +41,17 @@ The following example limits the events collected to `LOGIN` and `LOGOUT` events
 
 <@kc.start parameters="... --event-metrics-user-events=login,logout ..."/>
 
+== Handling empty metric tags
+
+By default, {project_name} allows empty metric tag values (e.g. `idp=""`).
+Some monitoring systems reject metrics with empty labels as they do not comply with the https://prometheus.io/docs/specs/prw/remote_write_spec/#labels[Prometheus Remote-Write specification].
+
+To replace empty tag values with `none`, set the `event-metrics-user-allow-empty-tags` option to `false`:
+
+<@kc.start parameters="... --event-metrics-user-allow-empty-tags=false ..."/>
+
+With this setting, a metric like `keycloak_user_events_total{event="login",error="",idp=""}` becomes `keycloak_user_events_total{event="login",error="none",idp="none"}`.
+
 See <@links.observability id="metrics-for-troubleshooting-keycloak"/> for a description of the metrics collected.
 
 </@tmpl.guide>

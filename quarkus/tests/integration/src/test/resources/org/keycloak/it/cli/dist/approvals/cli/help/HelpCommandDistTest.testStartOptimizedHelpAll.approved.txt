@@ -836,6 +836,11 @@ Tracing:
 
 Events:
 
+--event-metrics-user-allow-empty-tags <true|false>
+                     If set to 'false', empty metric tag values are replaced with 'none' to comply
+                       with the Prometheus Remote-Write specification. By default, empty tags are
+                       allowed for backward compatibility. Default: true. Available only when user
+                       event metrics are enabled.
 --event-metrics-user-events <events>
                      Comma-separated list of events to be collected for user event metrics. This
                        option can be used to reduce the number of metrics created as by default all

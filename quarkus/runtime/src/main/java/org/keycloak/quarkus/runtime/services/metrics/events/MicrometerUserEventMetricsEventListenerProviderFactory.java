@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime.services.metrics.events;
 import java.util.HashSet;
 
 import org.keycloak.Config;
+import org.keycloak.config.EventOptions;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
@@ -37,19 +38,21 @@ public class MicrometerUserEventMetricsEventListenerProviderFactory implements E
     private static final String ID = "micrometer-user-event-metrics";
     private static final String TAGS_OPTION = "tags";
     private static final String EVENTS_OPTION = "events";
+    private static final String ALLOW_EMPTY_TAGS_OPTION = "allow-empty-tags";
     private static final String DESCRIPTION_OF_EVENT_METER = "Keycloak user events";
     // Micrometer naming convention that separates lowercase words with a . (dot) character.
     private static final String KEYCLOAK_METER_NAME_PREFIX = "keycloak.";
     private static final String USER_EVENTS_METER_NAME = KEYCLOAK_METER_NAME_PREFIX + "user";
 
     private boolean withIdp, withRealm, withClientId;
+    private boolean allowEmptyTags;
 
     private HashSet<String> events;
     private Meter.MeterProvider<Counter> meterProvider;
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
-        return new MicrometerUserEventMetricsEventListenerProvider(session, withIdp, withRealm, withClientId, events, meterProvider);
+        return new MicrometerUserEventMetricsEventListenerProvider(session, withIdp, withRealm, withClientId, allowEmptyTags, events, meterProvider);
     }
 
     @Override
@@ -77,6 +80,7 @@ public class MicrometerUserEventMetricsEventListenerProviderFactory implements E
             }
         }
 
+        allowEmptyTags = config.getBoolean(ALLOW_EMPTY_TAGS_OPTION, EventOptions.USER_EVENT_METRICS_ALLOW_EMPTY_TAGS.getDefaultValue().orElse(true));
     }
 
     @Override
