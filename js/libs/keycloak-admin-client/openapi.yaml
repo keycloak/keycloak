@@ -144,6 +144,12 @@ components:
           type: string
       allOf:
       - $ref: "#/components/schemas/BaseClientRepresentation"
+  securitySchemes:
+    bearer-auth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer token authentication using a Keycloak access token
 tags:
 - name: Clients (v2)
   x-smallrye-profile-admin: ""
@@ -177,11 +183,12 @@ paths:
               $ref: "#/components/schemas/BaseClientRepresentation"
         required: true
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/BaseClientRepresentation"
     parameters:
     - name: realmName
       in: path
@@ -196,6 +203,8 @@ paths:
         pattern: v\d+
   /admin/api/{realmName}/clients/{version}/{id}:
     get:
+      summary: Get a client
+      description: Returns a single client by its clientId
       operationId: getClient
       tags:
       - Clients (v2)
@@ -206,7 +215,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BaseClientRepresentation"
+        "404":
+          description: Not Found
     put:
+      summary: Create or update a client
+      description: Creates or updates a client in the realm
       operationId: createOrUpdateClient
       tags:
       - Clients (v2)
@@ -221,8 +234,17 @@ paths:
           description: OK
           content:
             application/json:
-              schema: {}
+              schema:
+                $ref: "#/components/schemas/BaseClientRepresentation"
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BaseClientRepresentation"
     patch:
+      summary: Patch a client
+      description: Partially updates a client using JSON Merge Patch
       operationId: patchClient
       tags:
       - Clients (v2)
@@ -237,13 +259,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/BaseClientRepresentation"
+        "404":
+          description: Not Found
     delete:
+      summary: Delete a client
+      description: Deletes a client from the realm
       operationId: deleteClient
       tags:
       - Clients (v2)
       responses:
         "204":
-          description: No Content
+          description: Client successfully deleted
+        "404":
+          description: Not Found
     parameters:
     - name: realmName
       in: path
@@ -261,6 +289,8 @@ paths:
       required: true
       schema:
         type: string
+security:
+- bearer-auth: []
 info:
   title: Keycloak API
   version: 999.0.0-SNAPSHOT
