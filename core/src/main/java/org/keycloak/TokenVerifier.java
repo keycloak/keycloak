@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.crypto.SecretKey;
@@ -35,6 +36,7 @@ import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.jose.jws.crypto.ECDSAProvider;
 import org.keycloak.jose.jws.crypto.HMACProvider;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.representations.JsonWebToken;
@@ -439,16 +441,23 @@ public class TokenVerifier<T extends JsonWebToken> {
                 throw new VerificationException(e);
             }
         } else {
-            AlgorithmType algorithmType = getHeader().getAlgorithm().getType();
+            AlgorithmType algorithmType = Optional.ofNullable(getHeader().getAlgorithm().getType())
+                    .orElseThrow(() -> new VerificationException("No token algorithm"));
 
-            if (null == algorithmType) {
-                throw new VerificationException("Unknown or unsupported token algorithm");
-            } else switch (algorithmType) {
+            switch (algorithmType) {
                 case RSA:
                     if (publicKey == null) {
                         throw new VerificationException("Public key not set");
                     }
                     if (!RSAProvider.verify(jws, publicKey)) {
+                        throw new TokenSignatureInvalidException(token, "Invalid token signature");
+                    }
+                    break;
+                case ECDSA:
+                    if (publicKey == null) {
+                        throw new VerificationException("Public key not set");
+                    }
+                    if (!ECDSAProvider.verify(jws, publicKey)) {
                         throw new TokenSignatureInvalidException(token, "Invalid token signature");
                     }
                     break;
