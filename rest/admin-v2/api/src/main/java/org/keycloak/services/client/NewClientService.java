@@ -234,6 +234,8 @@ public class NewClientService extends DefaultClientService implements ClientServ
      * Creates a temporary client to convert BaseClientRepresentation to ClientRepresentation.
      * Required because client policy contexts expect ClientRepresentation (v1), but there's no
      * direct converter from BaseClientRepresentation (v2 API). The temp client is immediately removed.
+     * <p>
+     * For more details, see the <a href="https://github.com/keycloak/keycloak/issues/47576">keycloak#47576</a>.
      */
     private ClientRepresentation getProposedOldRepresentation(RealmModel realm, BaseClientRepresentation client, ClientModelMapper mapper) {
         String tempId = "__temp__" + client.getClientId() + "__" + System.nanoTime();
