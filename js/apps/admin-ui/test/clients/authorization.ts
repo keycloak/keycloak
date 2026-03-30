@@ -37,6 +37,22 @@ export async function createResource(
   await fillForm(page, resource);
 }
 
+export async function assertEmptyStateNotVisible(page: Page) {
+  await expect(page.getByTestId("empty-state")).toBeHidden();
+}
+
+export async function assertTableIsPopulated(page: Page) {
+  await expect(page.locator("tbody tr").first()).toBeVisible();
+}
+
+export async function assertRowNotVisible(page: Page, name: string) {
+  await expect(page.getByText(name, { exact: true })).toBeHidden();
+}
+
+export async function clickNextPage(page: Page) {
+  await page.getByLabel("Go to next page").first().click();
+}
+
 export async function fillForm(
   page: Page,
   resource:

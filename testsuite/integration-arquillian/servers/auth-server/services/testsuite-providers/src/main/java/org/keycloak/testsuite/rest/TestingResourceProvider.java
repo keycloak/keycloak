@@ -55,6 +55,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
+import org.keycloak.common.VerificationException;
 import org.keycloak.common.enums.HostnameVerificationPolicy;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.HtmlUtils;
@@ -89,9 +90,11 @@ import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferState;
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.JwtPreAuthCodeHandler;
+import org.keycloak.protocol.oid4vc.issuance.credentialoffer.preauth.PreAuthCodeHandler;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
-import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
+import org.keycloak.protocol.oid4vc.model.PreAuthCodeCtx;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.provider.Provider;
@@ -1132,11 +1135,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
         String credConfigId = "oid4vc_natural_person_sd";
 
-        String code = "urn:oid4vci:code:" + UUID.randomUUID();
         CredentialsOffer credOffer = new CredentialsOffer()
                 .setCredentialIssuer(OID4VCIssuerWellKnownProvider.getIssuer(session.getContext()))
-                .setCredentialConfigurationIds(List.of(credConfigId))
-                .addGrant(new PreAuthorizedCodeGrant().setPreAuthorizedCode(code));
+                .setCredentialConfigurationIds(List.of(credConfigId));
 
         String targetUserId = userSession.getUser().getId();
         CredentialOfferState offerState = new CredentialOfferState(credOffer, clientId, targetUserId, expireAt, credOfferId -> {
@@ -1150,15 +1151,20 @@ public class TestingResourceProvider implements RealmResourceProvider {
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
         offerStorage.putOfferState( offerState);
 
-        return code;
+        PreAuthCodeCtx preAuthCodeCtx = new PreAuthCodeCtx(offerState);
+        return new JwtPreAuthCodeHandler(session).createPreAuthCode(preAuthCodeCtx);
     }
 
     @GET
     @Path("/tx-code")
     @NoCache
-    public String getTxCode(@QueryParam("pre-auth-code") final String preAuthCode) {
+    public String getTxCode(@QueryParam("pre-auth-code") final String preAuthCode) throws VerificationException {
+        var preAuthCodeHandler = session.getProvider(PreAuthCodeHandler.class);
+        PreAuthCodeCtx ctx = preAuthCodeHandler.verifyPreAuthCode(preAuthCode);
+
         var offerStorage = session.getProvider(CredentialOfferStorage.class);
-        var offerState = offerStorage.getOfferStateByPreAuthCode( preAuthCode);
+        var offerState = offerStorage.getOfferStateById(ctx.getCredentialsOfferId());
+
         return Optional.ofNullable(offerState).map(CredentialOfferState::getTxCode).orElse(null);
     }
 

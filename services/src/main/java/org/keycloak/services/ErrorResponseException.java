@@ -50,6 +50,10 @@ public class ErrorResponseException extends WebApplicationException {
         this.status = null;
     }
 
+    public String getError() {
+        return error;
+    }
+
     public String getErrorDescription() {
         return errorDescription;
     }

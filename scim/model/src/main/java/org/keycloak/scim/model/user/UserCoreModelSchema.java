@@ -211,6 +211,16 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     @Override
     public void populate(User resource, UserModel model) {
         super.populate(resource, model);
+        setTimestamps(resource, model);
+    }
+
+    @Override
+    public void populate(User resource, UserModel model, List<String> requestedAttributes, List<String> excludedAttributes) {
+        super.populate(resource, model, requestedAttributes, excludedAttributes);
+        setTimestamps(resource, model);
+    }
+
+    private void setTimestamps(User resource, UserModel model) {
         Long createdTimestamp = model.getCreatedTimestamp();
         if (createdTimestamp != null) {
             resource.setCreatedTimestamp(createdTimestamp);

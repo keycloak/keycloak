@@ -85,8 +85,13 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @Path("{id}")
     @GET
     @Produces(APPLICATION_SCIM_JSON)
-    public Response get(@PathParam("id") String id) {
-        R resource = getResource(id);
+    public Response get(@PathParam("id") String id,
+                        @QueryParam("attributes") String attributes,
+                        @QueryParam("excludedAttributes") String excludedAttributes) {
+        List<String> attrList = attributes != null ? List.of(attributes.split(",")) : null;
+        List<String> excludedList = excludedAttributes != null ? List.of(excludedAttributes.split(",")) : null;
+
+        R resource = getResource(id, attrList, excludedList);
 
         if (resource == null) {
             return resourceNotFound(id);
@@ -288,12 +293,16 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     }
 
     private R getResource(String id) {
+        return getResource(id, null, null);
+    }
+
+    private R getResource(String id, List<String> attributes, List<String> excludedAttributes) {
         if (id == null) {
             return null;
         }
 
         try {
-            return resourceTypeProvider.get(id);
+            return resourceTypeProvider.get(id, attributes, excludedAttributes);
         } catch (ForbiddenException fe) {
             throw new jakarta.ws.rs.ForbiddenException(fe);
         }

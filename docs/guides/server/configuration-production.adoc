@@ -52,10 +52,11 @@ By default, there is no limit set.
 Set the option `http-max-queued-requests` to limit the number of queued requests to a given threshold matching your environment.
 Any request that exceeds this limit would return with an immediate `503 Server not Available` response.
 
+[[server-boostrap-behavior]]
 == Server bootstrap behavior
 
 Server initialization, such as database migrations, may take a significant amount of time to complete.
-By default, {project_name} opens its HTTP(S) and Management endpoints while initialization is still in progress in the background.
+When {project_name} is configured to expose health endpoints, the server will open its HTTP(S) and Management endpoints while initialization progresses in the background.
 This allows the startup and liveness probes to report UP early, preventing orchestrators like Kubernetes from killing the container during a long-running migration, while the readiness probe reports DOWN until initialization completes.
 
 If you run {project_name} behind a proxy or load balancer, configure an HTTP health check with the path `/health/ready` to ensure traffic is routed only to instances that have completed initialization.

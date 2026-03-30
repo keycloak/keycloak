@@ -14,6 +14,8 @@ import org.keycloak.scim.resource.schema.ModelSchema;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import static java.util.Optional.ofNullable;
+
 /**
  * Represents an attribute from a {@link ModelSchema}, its metadata and the mapper
  * that is used to map the attribute from a {@link ResourceTypeRepresentation} to a {@link Model} and vice versa.
@@ -22,12 +24,10 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
-    private final String alias;
-    private Function<Attribute<M, R>, String> modelAttributeResolver;
-    private String type;
-    private String mutability;
-    private boolean multivalued;
-    private Class<?> complexType;
+    public static final String RETURNED_ALWAYS = "always";
+    public static final String RETURNED_DEFAULT = "default";
+    public static final String RETURNED_REQUEST = "request";
+    public static final String RETURNED_NEVER = "never";
 
     /**
      * Creates a simple attribute with the given {@code name}.
@@ -57,10 +57,13 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
     private final String name;
     private final AttributeMapper<M, R> mapper;
     private final String parentName;
-
-    private Attribute(String name, AttributeMapper<M, R> mapper, String parentName) {
-        this(name, mapper, parentName, null);
-    }
+    private final String alias;
+    private Function<Attribute<M, R>, String> modelAttributeResolver;
+    private String type;
+    private String mutability;
+    private String returned = RETURNED_DEFAULT;
+    private boolean multivalued;
+    private Class<?> complexType;
 
     private Attribute(String name, AttributeMapper<M, R> mapper, String parentName, String alias) {
         this.name = name;
@@ -132,6 +135,14 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         return Objects.equals(mutability, "immutable");
     }
 
+    public String getReturned() {
+        return returned;
+    }
+
+    private void setReturned(String returned) {
+        this.returned = returned;
+    }
+
     private void setMultivalued(boolean multivalued) {
         this.multivalued = multivalued;
     }
@@ -175,6 +186,57 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         mapper.removeValue(model, value);
     }
 
+    /**
+     * Determines whether the given attribute should be skipped during population based on
+     * the {@code returned} characteristic and the requested attribute filters.
+     */
+    public boolean isExcluded(ModelSchema<M, R> schema, List<String> requestedAttributes, List<String> excludedAttributes) {
+        String returned = getReturned();
+
+        // returned: always - never skip
+        if (Attribute.RETURNED_ALWAYS.equals(returned)) {
+            return false;
+        }
+
+        // returned: never - always skip
+        if (Attribute.RETURNED_NEVER.equals(returned)) {
+            return true;
+        }
+
+        // If attributes parameter is specified (inclusion filter)
+        if (requestedAttributes != null && !requestedAttributes.isEmpty()) {
+            if (!isPresent(schema, requestedAttributes)) {
+                return true;
+            }
+        }
+
+        if (Attribute.RETURNED_REQUEST.equals(returned)) {
+            // No attributes parameter specified - returned: request attributes are not returned by default
+            return true;
+        }
+
+        return isPresent(schema, excludedAttributes);
+    }
+
+    private boolean isPresent(ModelSchema<M, R> schema, List<String> names) {
+        return ofNullable(names).orElse(List.of()).stream()
+                .map(path -> {
+                    String parentName = getParentName();
+
+                    // fallback to check if the attribute is a child of a requested attribute
+                    if (path.equalsIgnoreCase(parentName)) {
+                        return this;
+                    }
+
+                    // fallback to check if the path is the scheme itself
+                    if (path.equalsIgnoreCase(schema.getId())) {
+                        return this;
+                    }
+
+                    return schema.getAttributeByPath(path);
+                }).anyMatch(this::equals);
+    }
+
     public static class Builder<M extends Model, R extends ResourceTypeRepresentation> {
 
         private final Class<?> complexType;
@@ -185,6 +247,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         private Function<Attribute<M, R>, String> modelAttributeResolver;
         private String type;
         private String mutability;
+        private String returned;
         private boolean multivalued;
         private TriConsumer<M, String, Set<?>> modelRemover;
         private TriConsumer<M, String, Set<?>> modelAdder;
@@ -221,7 +284,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             String subName = this.name + "." + name;
             Attribute<M, R> attribute = assembleAttribute(subName, this.name, alias,
                     new AttributeMapper<>(modelSetter, new ComplexAttributeSetter<>(this.name, name, complexType)),
-                    modelAttributeResolver, "string", null, false, null);
+                    modelAttributeResolver, "string", null, returned, false, null);
             attributes.add(attribute);
             return this;
         }
@@ -251,10 +314,15 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
             return this;
         }
 
+        public Builder<M, R> returned(String returned) {
+            this.returned = returned;
+            return this;
+        }
+
         public List<Attribute<M, R>> build() {
             Attribute<M, R> attribute = assembleAttribute(name, null, null,
                     new AttributeMapper<>(modelSetter, representationSetter, modelRemover, modelAdder),
-                    modelAttributeResolver, type, mutability, multivalued, complexType);
+                    modelAttributeResolver, type, mutability, returned, multivalued, complexType);
             if (attributes.isEmpty()) {
                 // do not add the root attribute if there are subattributes
                 attributes.add(attribute);
@@ -265,12 +333,15 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
         private Attribute<M, R> assembleAttribute(String name, String parentName, String alias,
                                                    AttributeMapper<M, R> mapper,
                                                    Function<Attribute<M, R>, String> modelAttributeResolver,
-                                                   String type, String mutability,
+                                                   String type, String mutability, String returned,
                                                    boolean multivalued, Class<?> complexType) {
             Attribute<M, R> attribute = new Attribute<>(name, mapper, parentName, alias);
             attribute.setModelAttributeResolver(modelAttributeResolver);
             attribute.setType(type);
             attribute.setMutability(mutability);
+            if (returned != null) {
+                attribute.setReturned(returned);
+            }
             attribute.setMultivalued(multivalued);
             attribute.setComplexType(complexType);
             return attribute;

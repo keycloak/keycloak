@@ -1,5 +1,7 @@
 package org.keycloak.scim.client;
 
+import java.util.List;
+
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.user.User;
 
@@ -20,6 +22,17 @@ public class ScimUsersClient extends AbstractScimResourceClient<User> {
      */
     public ListResponse<User> getAll() {
         return doFilter(filter());
+    }
+
+    /**
+     * Get all users, returning only the specified attributes or excluding the specified attributes.
+     *
+     * @param attributes list of attribute names to include in the response (may be null)
+     * @param excludedAttributes list of attribute names to exclude from the response (may be null)
+     * @return list response containing all users with filtered attributes
+     */
+    public ListResponse<User> getAll(List<String> attributes, List<String> excludedAttributes) {
+        return doFilter(filter(), attributes, excludedAttributes);
     }
 
     /**

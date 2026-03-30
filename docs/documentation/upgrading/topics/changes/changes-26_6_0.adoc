@@ -69,7 +69,7 @@ For example, `spi-truststore--file--hostname-verification-policy` was marked as 
 To ensure that the further introduction of new first-class options does not immediately break existing configurations, the logic for determining the value of a second-class option
 will now consider the direct usage of the second-class value ahead of a default, or derived default, from the first-class option.
 
-Please review the server startup to see if there are any warnings about the continued usage of second-class options, and update them accordingly. 
+Please review the server startup to see if there are any warnings about the continued usage of second-class options, and update them accordingly.
 
 === New option for transaction timeout
 
@@ -82,7 +82,7 @@ To maintain your desired transaction timeout configuration, migrate to using the
 
 === Endpoints are opened while Keycloak is initializing
 
-By default, {project_name} now opens its HTTP(S) and Management ports while initialization is still in progress.
+{project_name} now opens its HTTP(S) and Management ports while initialization is still in progress when the health endpoints are enabled.
 If you use a proxy or load balancer, configure an HTTP health check with the path `/health/ready` to ensure traffic is only routed to the server once it is fully ready.
 
 If this behavior is not desired or an HTTP health check is not possible, start {project_name} with `--server-async-bootstrap=false` to revert to the previous behavior where ports are opened only after initialization completes.

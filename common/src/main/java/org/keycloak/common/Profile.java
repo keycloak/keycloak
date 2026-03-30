@@ -151,7 +151,7 @@ public class Profile {
         ROLLING_UPDATES_V1("Rolling Updates", Type.DEPRECATED, 1),
         ROLLING_UPDATES_V2("Rolling Updates for patch releases", Type.DEFAULT, 2),
 
-        WORKFLOWS("Workflows", Type.PREVIEW),
+        WORKFLOWS("Workflows", Type.DEFAULT),
 
         LOG_MDC("Mapped Diagnostic Context (MDC) information in logs", Type.DEFAULT),
 
@@ -174,7 +174,7 @@ public class Profile {
         RESOURCE_INDICATORS("Resource Indicators for OAuth 2.0", Type.EXPERIMENTAL),
 
         IDENTITY_BROKERING_API_V1("Identity Brokering API V1", Type.DEFAULT, 1),
-        IDENTITY_BROKERING_API_V2("Identity Brokering API V2", Type.EXPERIMENTAL, 2);
+        IDENTITY_BROKERING_API_V2("Identity Brokering API V2", Type.PREVIEW, 2);
 
         private final Type type;
         private final String label;

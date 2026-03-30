@@ -614,6 +614,36 @@ class AdminClient {
     );
   }
 
+  async deleteResource(
+    clientId: string,
+    resource: { name: string; realm?: string },
+  ) {
+    await this.#login();
+    const { realm = this.#client.realmName, name } = resource;
+
+    const client = (await this.#client.clients.find({ clientId, realm }))[0];
+
+    if (!client?.id) {
+      throw new Error(`Client ${clientId} not found in realm ${realm}`);
+    }
+
+    const resources = await this.#client.clients.listResources({
+      id: client.id,
+      realm,
+      name,
+    });
+
+    const foundResource = resources.find((r) => r.name === name);
+
+    if (foundResource?._id) {
+      await this.#client.clients.delResource({
+        id: client.id,
+        realm,
+        resourceId: foundResource._id,
+      });
+    }
+  }
+
   async findUserByUsername(
     realm: string,
     username: string,

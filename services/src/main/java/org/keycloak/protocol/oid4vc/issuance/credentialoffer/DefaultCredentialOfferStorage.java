@@ -81,11 +81,6 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
 
         // Store with key=nonce
         session.singleUseObjects().put(entry.getNonce(), lifespanSeconds, Map.of(ENTRY_KEY, entryJson));
-
-        // Store with key=pre_auth_code
-        entry.getPreAuthorizedCode().ifPresent(preAuthCode ->
-            session.singleUseObjects().put(preAuthCode, lifespanSeconds, Map.of(ENTRY_KEY, entryJson))
-        );
     }
 
     @Override
@@ -105,18 +100,9 @@ class DefaultCredentialOfferStorage implements CredentialOfferStorage {
     }
 
     @Override
-    public CredentialOfferState getOfferStateByPreAuthCode(String preAuthCode) {
-        return Optional.ofNullable(session.singleUseObjects().get(preAuthCode))
-                .map(o -> o.get(ENTRY_KEY))
-                .map(o -> JsonSerialization.valueFromString(o, CredentialOfferState.class))
-                .orElse(null);
-    }
-
-    @Override
     public void removeOfferState(CredentialOfferState offerState) {
         SingleUseObjectProvider singleUseObjects = session.singleUseObjects();
         singleUseObjects.remove(offerState.getCredentialsOfferId());
         singleUseObjects.remove(offerState.getNonce());
-        offerState.getPreAuthorizedCode().ifPresent(singleUseObjects::remove);
     }
 }

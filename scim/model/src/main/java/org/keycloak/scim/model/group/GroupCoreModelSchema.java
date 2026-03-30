@@ -80,6 +80,16 @@ public final class GroupCoreModelSchema extends AbstractModelSchema<GroupModel, 
     @Override
     public void populate(Group resource, GroupModel model) {
         super.populate(resource, model);
+        setTimestamps(resource, model);
+    }
+
+    @Override
+    public void populate(Group resource, GroupModel model, List<String> requestedAttributes, List<String> excludedAttributes) {
+        super.populate(resource, model, requestedAttributes, excludedAttributes);
+        setTimestamps(resource, model);
+    }
+
+    private void setTimestamps(Group resource, GroupModel model) {
         Long createdTimestamp = model.getCreatedTimestamp();
         if (createdTimestamp != null) {
             resource.setCreatedTimestamp(createdTimestamp);

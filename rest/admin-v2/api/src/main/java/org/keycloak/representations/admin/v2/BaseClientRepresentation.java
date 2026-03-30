@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import org.keycloak.representations.admin.v2.validation.ClientUuidProvider;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
+import org.keycloak.representations.admin.v2.validation.ProtocolUnmodified;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
 
@@ -30,6 +31,7 @@ import org.hibernate.validator.constraints.URL;
     @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = SAMLClientRepresentation.PROTOCOL)
 })
 @UuidUnmodified(uuidProvider = ClientUuidProvider.class, groups = {PutClient.class, PatchClient.class})
+@ProtocolUnmodified(groups = {PutClient.class, PatchClient.class})
 public abstract class BaseClientRepresentation extends BaseRepresentation implements RepresentationWithUuid {
     public static final String DISCRIMINATOR_FIELD = "protocol";
 

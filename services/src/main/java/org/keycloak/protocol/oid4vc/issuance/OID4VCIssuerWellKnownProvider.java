@@ -81,8 +81,9 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
 
     private static final Logger LOGGER = Logger.getLogger(OID4VCIssuerWellKnownProvider.class);
 
+    public static final String PROVIDER_ID = "openid-credential-issuer";
+
     // Realm attributes for signed metadata configuration
-    public static final String SIGNED_METADATA_ENABLED_ATTR = "oid4vci.signed_metadata.enabled";
     public static final String SIGNED_METADATA_LIFESPAN_ATTR = "oid4vci.signed_metadata.lifespan";
     public static final String SIGNED_METADATA_ALG_ATTR = "oid4vci.signed_metadata.alg";
 
@@ -161,9 +162,8 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         RealmModel realm = session.getContext().getRealm();
         String acceptHeader = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT);
         boolean preferJwt = acceptHeader != null && acceptHeader.contains(MediaType.APPLICATION_JWT);
-        boolean signedMetadataEnabled = Boolean.parseBoolean(realm.getAttribute(SIGNED_METADATA_ENABLED_ATTR));
 
-        if (preferJwt && signedMetadataEnabled) {
+        if (preferJwt) {
             Optional<String> signedJwt = generateSignedMetadata(issuer, session);
             if (signedJwt.isPresent()) {
                 return signedJwt.get();
@@ -235,15 +235,17 @@ public class OID4VCIssuerWellKnownProvider implements WellKnownProvider {
         JsonWebToken jwt = createMetadataJwt(metadata, realm);
 
         // Validate lifespan configuration
-        String lifespanStr = realm.getAttribute(SIGNED_METADATA_LIFESPAN_ATTR);
-        if (lifespanStr != null) {
+        Optional<String> maybeLifespan = Optional.ofNullable(realm.getAttribute(SIGNED_METADATA_LIFESPAN_ATTR));
+        if (maybeLifespan.isPresent()) {
+            String lifespanVal = maybeLifespan.get();
             try {
-                long lifespan = Long.parseLong(lifespanStr);
-                jwt.exp(Time.currentTime() + lifespan);
+                jwt.exp(Time.currentTime() + Long.parseLong(lifespanVal));
             } catch (NumberFormatException e) {
-                LOGGER.warnf("Invalid lifespan duration for signed metadata: %s. Falling back to unsigned metadata.", lifespanStr);
+                LOGGER.warnf("Invalid lifespan duration for signed metadata: %s. Falling back to unsigned metadata.", lifespanVal);
                 return Optional.empty(); // Return empty to indicate fallback to JSON
             }
+        } else {
+            jwt.exp(Time.currentTime() + 3600L);
         }
 
         // Build JWS with proper headers

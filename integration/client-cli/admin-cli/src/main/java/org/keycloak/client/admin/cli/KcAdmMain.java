@@ -16,7 +16,13 @@
  */
 package org.keycloak.client.admin.cli;
 
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.Set;
+
 import org.keycloak.client.admin.cli.commands.KcAdmCmd;
+import org.keycloak.client.admin.cli.v2.KcAdmV2Cmd;
+import org.keycloak.client.admin.cli.v2.KcAdmV2Completer;
 import org.keycloak.client.cli.common.CommandState;
 import org.keycloak.client.cli.common.Globals;
 import org.keycloak.client.cli.util.OsUtil;
@@ -51,8 +57,34 @@ public class KcAdmMain {
 
     };
 
-    public static void main(String [] args) {
-        Globals.main(args, new KcAdmCmd(), CMD, DEFAULT_CONFIG_FILE_STRING);
+    public static final String V2_FLAG = "--v2";
+
+    private static final String COMPLETE_FLAG = "__complete";
+
+    public static void main(String[] args) {
+        if (!containsArg(args, V2_FLAG)) {
+            Globals.main(args, new KcAdmCmd(), CMD, DEFAULT_CONFIG_FILE_STRING);
+            return;
+        }
+
+        String[] v2Args = stripArgs(args, V2_FLAG);
+
+        if (containsArg(v2Args, COMPLETE_FLAG)) {
+            KcAdmV2Completer.complete(stripArgs(v2Args, COMPLETE_FLAG),
+                    new PrintWriter(System.out, true));
+        } else {
+            Globals.main(v2Args, new KcAdmV2Cmd(), CMD, DEFAULT_CONFIG_FILE_STRING);
+        }
     }
 
+    private static boolean containsArg(String[] args, String arg) {
+        return Arrays.stream(args).anyMatch(arg::equalsIgnoreCase);
+    }
+
+    private static String[] stripArgs(String[] args, String... argsToStrip) {
+        Set<String> toStrip = Set.of(argsToStrip);
+        return Arrays.stream(args)
+                .filter(a -> !toStrip.contains(a.toLowerCase()))
+                .toArray(String[]::new);
+    }
 }

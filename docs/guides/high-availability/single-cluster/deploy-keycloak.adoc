@@ -32,8 +32,6 @@ Depending on the database you deployed use the relevant procedure for deploying 
 
 . Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
 
-. Notice the configuration file below contains options relevant for connecting to the Aurora database from <@links.ha id="single-cluster-deploy-aurora" anchor="single-cluster-aurora-connecting" />
-
 . Build a custom {project_name} image which is link:{links_server_db_url}#preparing-keycloak-for-amazon-aurora-postgresql[prepared for usage with the Amazon Aurora PostgreSQL database].
 
 . Secure the Amazon Aurora PostgreSQL database connection by downloading the https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html[certificate bundles].
@@ -41,8 +39,18 @@ Create a `ConfigMap` with the certificate bundle using:
 +
 [source,bash]
 ----
-kubectl --namespace keycloak create configmap keycloak-aurora-rootcert --from-file aurora.pem=/path/to/bundle.pem
+kubectl --namespace keycloak create configmap keycloak-aurora-rootcert \
+  --from-file aurora.pem=/path/to/bundle.pem
 ----
+
+. Create a generic secret `keycloak-db-secret` containing username and password values defined when creating the Aurora database.
++
+[source,bash]
+----
+kubectl --namespace keycloak create secret generic keycloak-db-secret \
+  --from-literal="username=keycloak" --from-literal="password=secret99" # <1>
+----
+<1> Note: These are sample values for demonstration purposes only. Please chose a unique password to secure your database.
 
 . Deploy the {project_name} CR with the following values with the resource requests and limits calculated in the first step:
 +
@@ -71,24 +79,24 @@ spec:
     poolMinSize: 30 # <2>
     poolInitialSize: 30
     poolMaxSize: 30
-    usernameSecret:
+    usernameSecret: # <3>
       name: keycloak-db-secret
       key: username
-    passwordSecret:
+    passwordSecret: # <3>
       name: keycloak-db-secret
       key: password
-  image: <KEYCLOAK_IMAGE_HERE> # <3>
-  startOptimized: false # <3>
+  image: <KEYCLOAK_IMAGE_HERE> # <4>
+  startOptimized: false # <4>
   additionalOptions:
     - name: log-console-output
       value: json
-    - name: metrics-enabled # <4>
+    - name: metrics-enabled # <5>
       value: 'true'
     - name: event-metrics-user-enabled
       value: 'true'
     - name: db-driver
       value: software.amazon.jdbc.Driver
-    - name: db-tls-mode # <5>
+    - name: db-tls-mode # <6>
       value: verify-server
   http:
     tlsSecret: keycloak-tls-secret
@@ -96,7 +104,7 @@ spec:
   truststores:
     aurora:
       configMap:
-        name: keycloak-aurora-rootcert # <6>
+        name: keycloak-aurora-rootcert # <7>
 
 ----
 <1> Set the Amazon Aurora PostgreSQL URL.
@@ -104,10 +112,11 @@ spec:
 Adjust this number to meet the needs of your system.
 As most requests will not touch the database due to the {project_name} embedded cache, this change can serve several hundreds of requests per second.
 See the <@links.ha id="single-cluster-concepts-database-connections" /> {section} for details.
-<3> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
-<4> To be able to analyze the system under load, enable the metrics endpoint.
-<5> Secure the database connection.
-<6> Specify the `ConfigMap` name that contains the Amazon Aurora PostgreSQL database certificate bundle.
+<3> Utilise the Secret `keycloak-db-secret` created in the previous step for connecting to the database.
+<4> Specify the URL to your custom {project_name} image. If your image is optimized, set the `startOptimized` flag to `true`.
+<5> Enable the metrics endpoint in order to effectively monitor the system under load.
+<6> Secure the database connection.
+<7> Specify the `ConfigMap` name that contains the Amazon Aurora PostgreSQL database certificate bundle.
 The Operator will automatically mount the file in directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`
 
 [#single-cluster-deploy-keycloak-with-cnpg-procedure]
@@ -116,7 +125,31 @@ The Operator will automatically mount the file in directory `/opt/keycloak/conf/
 
 . Install the {project_name} Operator as described in the <@links.operator id="installation" /> {section}.
 
-. Notice the configuration file below contains options relevant for connecting to the CloudNativePG database from <@links.ha id="single-cluster-deploy-cnpg" anchor="single-cluster-cnpg-connecting" />
+. Create a `ConfigMap` containing the generated CA certificate of the CloudNativePG cluster so that {project_name} can secure the connection to the database.
++
+[source,bash]
+----
+kubectl --namespace keycloak create configmap cnpg-keycloak-ca \
+  --from-literal=cert.pem="$(kubectl --namespace cnpg-keycloak get secrets cnpg-keycloak-ca -o jsonpath='{.data.ca\.crt}' | base64 -d)"
+----
+
+. Create a generic secret `keycloak-db-secret` containing a username and password for accessing the database.
+We use the values from the `cnpg-keycloak-app` Secret which is automatically generated during the installation of the CloudNativePG database cluster.
++
+[source,bash]
+----
+kubectl get secret cnpg-keycloak-app --namespace cnpg-keycloak -o go-template='
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-db-secret
+  namespace: keycloak
+type: Opaque
+data:
+  username: {{ .data.username }}
+  password: {{ .data.password }}
+' | kubectl apply -f -
+----
 
 . Deploy the {project_name} CR with the following values with the resource requests and limits calculated in the first step:
 +
@@ -142,23 +175,23 @@ spec:
   db:
     vendor: postgres
     host: cnpg-keycloak-rw.cnpg-keycloak.svc.cluster.local # <1>
-    poolMinSize: 30 <2>
+    poolMinSize: 30 # <2>
     poolInitialSize: 30
     poolMaxSize: 30
-    usernameSecret:
+    usernameSecret: # <3>
       name: keycloak-db-secret
       key: username
-    passwordSecret:
+    passwordSecret: # <3>
       name: keycloak-db-secret
       key: password
   additionalOptions:
     - name: log-console-output
       value: json
-    - name: metrics-enabled <3>
+    - name: metrics-enabled # <4>
       value: 'true'
     - name: event-metrics-user-enabled
       value: 'true'
-    - name: db-tls-mode # <4>
+    - name: db-tls-mode # <5>
       value: verify-server
   http:
     tlsSecret: keycloak-tls-secret
@@ -166,7 +199,7 @@ spec:
   truststores:
     cnpg:
       configMap:
-        name: cnpg-keycloak-ca <5>
+        name: cnpg-keycloak-ca # <6>
 
 ----
 <1> Set CloudNativePG read-write service URL.
@@ -174,9 +207,10 @@ spec:
 Adjust this number to meet the needs of your system.
 As most requests will not touch the database due to the {project_name} embedded cache, this change can serve several hundreds of requests per second.
 See the <@links.ha id="single-cluster-concepts-database-connections" /> {section} for details.
-<3> To be able to analyze the system under load, enable the metrics endpoint.
-<4> Secure the database connection.
-<5> Specify the `ConfigMap` name that contains the CloudNativePG CA certificate.
+<3> Utilise the Secret `keycloak-db-secret` created in the previous step for connecting to the database.
+<4> Enable the metrics endpoint in order to effectively monitor the system under load.
+<5> Secure the database connection.
+<6> Specify the `ConfigMap` name that contains the CloudNativePG CA certificate.
 The Operator will automatically mount the file in directory `/opt/keycloak/conf/truststores/configmap-<config map name>/<file-name>`
 
 <#include "/high-availability/partials/building-blocks/verifying-deployment.adoc" />

@@ -1,6 +1,7 @@
 package org.keycloak.tests.scim.tck;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.events.admin.OperationType;
@@ -138,6 +139,32 @@ public class GroupTest extends AbstractScimTest {
         assertThat(lastModifiedAfterUpdate, greaterThanOrEqualTo(lastModifiedAfterCreate));
     }
 
+
+    @Test
+    public void testGetWithAttributes() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // Request only displayName
+        Group actual = client.groups().get(group.getId(), List.of("displayName"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(group.getDisplayName(), actual.getDisplayName());
+    }
+
+    @Test
+    public void testGetWithExcludedAttributes() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        group = client.groups().create(group);
+
+        // Exclude displayName
+        Group actual = client.groups().get(group.getId(), null, List.of("displayName"));
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNull(actual.getDisplayName());
+    }
 
     @Test
     public void testGetExisting() {

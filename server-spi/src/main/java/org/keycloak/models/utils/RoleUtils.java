@@ -29,6 +29,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleMapperModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
@@ -182,6 +183,24 @@ public class RoleUtils {
         return roles.flatMap(roleModel -> RoleUtils.expandCompositeRolesStream(roleModel, visited));
     }
 
+
+    /**
+     * @param roleMapper
+     * @return all role mappings for the given mapper with composite roles expanded.
+     * For {@link UserModel} instances, group-inherited roles are also included.
+     */
+    public static Set<RoleModel> getDeepRoleMappings(RoleMapperModel roleMapper) {
+        // RoleMapperModel has exactly two implementations: UserModel and GroupModel.
+        // UserModel.hasRole() considers group-inherited roles, so we must include them
+        // here too — otherwise the effective role set would be incomplete for users
+        // who receive roles through group membership.
+        // GroupModel has no parent-group role inheritance at this level, so a plain
+        // composite expansion of its direct mappings is sufficient.
+        if (roleMapper instanceof UserModel) {
+            return getDeepUserRoleMappings((UserModel) roleMapper);
+        }
+        return expandCompositeRoles(roleMapper.getRoleMappingsStream().collect(Collectors.toSet()));
+    }
 
     /**
      * @param user

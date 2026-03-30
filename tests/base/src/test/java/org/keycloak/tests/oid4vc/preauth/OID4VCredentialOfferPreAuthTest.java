@@ -55,14 +55,14 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
 
         // Disable user
-        UserRepresentation userRep = testRealm.admin().users().search(ctx.holder).get(0);
+        UserRepresentation userRep = testRealm.admin().users().search(ctx.getHolder()).get(0);
         UserResource userResource = testRealm.admin().users().get(userRep.getId());
         userRep.setEnabled(false);
         userResource.update(userRep);
 
         try {
             IllegalStateException error = assertThrows(IllegalStateException.class,
-                    () -> wallet.createPreAuthCredentialOffer(ctx, ctx.holder));
+                    () -> wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder()));
             assertTrue(error.getMessage().contains("User 'alice' disabled"), error.getMessage());
         } finally {
             userRep.setEnabled(true);
@@ -97,7 +97,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
                 .credentialIdentifier(authorizedIdentifier)
                 .send().getCredentialResponse();
 
-        verifyCredentialResponse(ctx, ctx.issuer, credResponse);
+        verifyCredentialResponse(ctx, ctx.getIssuer(), credResponse);
     }
 
     @Test
@@ -106,7 +106,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         // Create Pre-Authorized CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.holder);
+        CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder());
         String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken
@@ -126,14 +126,14 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
                 .credentialIdentifier(authorizedIdentifier)
                 .send().getCredentialResponse();
 
-        verifyCredentialResponse(ctx, ctx.holder, credResponse);
+        verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
 
     private void verifyCredentialResponse(OID4VCTestContext ctx, String expUser, CredentialResponse credResponse) throws Exception {
 
-        String scope = ctx.credentialScope.getName();
+        String scope = ctx.getCredentialScope().getName();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
 

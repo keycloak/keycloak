@@ -28,6 +28,7 @@ import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.representations.idm.OrganizationInvitationRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.updaters.OrganizationAttributeUpdater;
 import org.keycloak.testsuite.util.MailServer;
 
 import org.junit.After;
@@ -380,6 +381,47 @@ public class OrganizationInvitationManagementTest extends AbstractOrganizationTe
         assertThat(org2Invitations, hasSize(1));
         assertThat(org2Invitations.get(0).getEmail(), equalTo("user@test-org-2.com"));
         assertThat(org2Invitations.get(0).getOrganizationId(), equalTo(org2Rep.getId()));
+    }
+
+    @Test
+    public void testSendInvitationToDisabledOrganization() throws Exception {
+        try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
+            try (Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe")) {
+                assertThat(response.getStatus(), equalTo(400));
+                assertThat(response.readEntity(String.class), containsString("Organization is disabled"));
+            }
+        }
+    }
+
+    @Test
+    public void testResendInvitationToDisabledOrganization() throws Exception {
+        sendInvitation("user@test-org.com", "John", "Doe");
+
+        List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+        assertThat(invitations, hasSize(1));
+        String invitationId = invitations.get(0).getId();
+
+        try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
+            try (Response response = organization.invitations().resend(invitationId)) {
+                assertThat(response.getStatus(), equalTo(400));
+                assertThat(response.readEntity(String.class), containsString("Organization is disabled"));
+            }
+        }
+    }
+
+    @Test
+    public void testInvitationWorksAfterReEnablingOrganization() throws Exception {
+        try (OrganizationAttributeUpdater oau = new OrganizationAttributeUpdater(organization).setEnabled(false).update()) {
+            try (Response response = organization.members().inviteUser("user@test-org.com", "John", "Doe")) {
+                assertThat(response.getStatus(), equalTo(400));
+            }
+        }
+
+        // After re-enabling (OrganizationAttributeUpdater restores original state), invitation should work
+        sendInvitation("user@test-org.com", "John", "Doe");
+        List<OrganizationInvitationRepresentation> invitations = organization.invitations().list();
+        assertThat(invitations, hasSize(1));
+        assertThat(invitations.get(0).getEmail(), equalTo("user@test-org.com"));
     }
 
     private void sendInvitation(String email, String firstName, String lastName) {

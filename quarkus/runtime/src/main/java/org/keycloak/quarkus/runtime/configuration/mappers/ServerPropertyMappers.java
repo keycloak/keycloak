@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import java.util.List;
 
+import org.keycloak.config.HealthOptions;
 import org.keycloak.config.ServerOptions;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
@@ -28,6 +29,7 @@ public final class ServerPropertyMappers implements PropertyMapperGrouping {
     public List<? extends PropertyMapper<?>> getPropertyMappers() {
         return List.of(
                 fromOption(ServerOptions.SERVER_ASYNC_BOOTSTRAP)
+                        .mapFrom(HealthOptions.HEALTH_ENABLED)
                         .paramLabel("enabled")
                         .build()
         );

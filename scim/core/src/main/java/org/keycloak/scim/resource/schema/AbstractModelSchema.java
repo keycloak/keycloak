@@ -68,7 +68,13 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
 
     @Override
     public void populate(R resource, M model) {
-        populateResourceType(resource, model);
+        populateResourceType(resource, model, null, null);
+        resource.setId(model.getId());
+    }
+
+    @Override
+    public void populate(R resource, M model, List<String> requestedAttributes, List<String> excludedAttributes) {
+        populateResourceType(resource, model, requestedAttributes, excludedAttributes);
         resource.setId(model.getId());
     }
 
@@ -218,17 +224,15 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         }
     }
 
-    private void populateResourceType(R resource, M model) {
+    private void populateResourceType(R resource, M model, List<String> requestedAttributes, List<String> excludedAttributes) {
         for (String name : getModelAttributeNames()) {
             Attribute<M, R> attribute = getAttributeMapperByModelAttribute(name);
 
-            if  (attribute == null) {
-                continue;
+            if (attribute != null && !attribute.isExcluded(this, requestedAttributes, excludedAttributes)) {
+                Object value = getAttributeValue(model, name);
+                attribute.set(resource, value);
+                resource.addSchema(this.id);
             }
-
-            Object value = getAttributeValue(model, name);
-            attribute.set(resource, value);
-            resource.addSchema(this.id);
         }
     }
 
@@ -275,9 +279,8 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         if (attribute == null) {
             for (Entry<String, Attribute<M, R>> entry : getAttributes().entrySet()) {
                 Attribute<M, R> attr = entry.getValue();
-                List<String> paths = getPaths(attr);
 
-                if (paths.contains(path)) {
+                if (hasPath(attr, path)) {
                     return Map.of(attr, resolveAttributeValue(attr, valueJson));
                 }
             }
@@ -326,7 +329,15 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         return attributes;
     }
 
-    protected List<String> getPaths(Attribute<M, R> attr) {
+    protected boolean hasPath(Attribute<M, R> attribute, String path) {
+        if (attribute == null || path == null) {
+            return false;
+        }
+
+        return getPaths(attribute).stream().anyMatch(path::equalsIgnoreCase);
+    }
+
+    private List<String> getPaths(Attribute<M, R> attr) {
         List<String> paths = new ArrayList<>();
 
         // the name of the attribute itself is always a valid path

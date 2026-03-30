@@ -86,10 +86,9 @@ public abstract class AbstractUserModelSchema extends AbstractModelSchema<UserMo
 
     protected String createModelAttributeResolver(Attribute<UserModel, User> attribute) {
         for (String name : getModelAttributeNames()) {
-            Object scimName = getAttributeSchemaName(name);
-            List<String> paths = getPaths(attribute);
+            String scimName = getAttributeSchemaName(name);
 
-            if (paths.contains(scimName)) {
+            if (hasPath(attribute, scimName)) {
                 return name;
             }
         }

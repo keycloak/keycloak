@@ -27,7 +27,14 @@ By default, the background task tracking due steps runs every 12 hours, but this
 *   `spi-events-listener--workflow-event-listener--step-runner-task-interval`: Defines the interval at which the background task runs to check for workflow steps that are due for execution.
 It follows the same format used in the workflow step `after` field, where you can specify the interval as a number followed by a time unit (`ms`, `s` - default, `m`, `h`, `d`) or using the ISO-8601 duration format.
 
-You can adjust this interval based on your realm's needs and the expected frequency of workflow executions.
+By default, the first execution of the background task occurs after one full interval has elapsed since the server started.
+You can control this by setting a start time that acts as an anchor for aligning executions to a predictable schedule:
+
+*   `spi-events-listener--workflow-event-listener--step-runner-task-start-time`: Defines the time of day used to align the background task executions, in `HH:mm` format (e.g., `02:00`, `14:30`), using the server's local timezone.
+
+When a start time is set, the task interval is aligned to a grid of execution times anchored at the specified time. For example, with a start time of `02:00` and an interval of `12h`, the task always runs at 02:00 and 14:00 regardless of when the server was started. If the server starts at 10:30, the first execution would occur at 14:00.
+
+You can adjust these options based on your realm's needs and the expected frequency of workflow executions.
 
 == Configuring the task execution timeout
 

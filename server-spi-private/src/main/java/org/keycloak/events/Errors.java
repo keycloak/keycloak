@@ -49,6 +49,7 @@ public interface Errors {
     String EMAIL_IN_USE = "email_in_use";
     String EMAIL_ALREADY_VERIFIED = "email_already_verified";
     String ORG_NOT_FOUND = "org_not_found";
+    String ORG_DISABLED = "org_disabled";
     String USER_ORG_MEMBER_ALREADY = "user_org_member_already";
 
     String INVALID_REDIRECT_URI = "invalid_redirect_uri";

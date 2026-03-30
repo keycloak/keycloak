@@ -72,7 +72,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.issuance.JWTVCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
@@ -673,21 +672,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         var contextRoot = suiteContext.getAuthServerInfo().getContextRoot();
         // [TODO] This should be contextRoot/.well-known/openid-credential-issuer/auth/realms/...
         return contextRoot + "/auth/.well-known/openid-credential-issuer/realms/" + realm;
-    }
-
-    protected String getSpecCompliantRealmMetadataPath(String realm) {
-        var contextRoot = suiteContext.getAuthServerInfo().getContextRoot();
-        // [TODO] This should be contextRoot/.well-known/jwt-vc-issuer/auth/realms/...
-        return contextRoot + "/auth/.well-known/" + JWTVCIssuerWellKnownProviderFactory.PROVIDER_ID + "/realms/" + realm;
-    }
-
-    protected String getLegacyJwtVcRealmMetadataPath(String realm) {
-        var contextRoot = suiteContext.getAuthServerInfo().getContextRoot();
-        return contextRoot + "/auth/realms/" + realm + "/.well-known/" + JWTVCIssuerWellKnownProviderFactory.PROVIDER_ID;
-    }
-
-    protected String getCredentialOfferUrl(String nonce) {
-        return getBasePath("test") + "credential-offer/" + nonce;
     }
 
     protected void requestCredentialWithIdentifier(String token,
