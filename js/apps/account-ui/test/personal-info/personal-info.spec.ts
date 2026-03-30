@@ -1,54 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { assertLastAlert, login } from "../support/actions.ts";
 import { createTestBed } from "../support/testbed.ts";
+import { retryOperation, waitForRealmReady } from "../support/test-utils.ts";
 import userProfile from "./user-profile.json" with { type: "json" };
 import { adminClient } from "../support/admin-client.ts";
 import userProfileRealm from "../realms/user-profile-realm.json" with { type: "json" };
-
-/**
- * Retry helper for operations that may fail due to realm initialization timing or server load.
- * Implements exponential backoff with extended retries for CI environments with high parallelism.
- */
-async function retryOperation<T>(
-  operation: () => Promise<T>,
-  maxRetries = 15,
-  initialDelay = 300,
-): Promise<T> {
-  let lastError: Error | undefined;
-
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error as Error;
-
-      // Only retry on 500 errors (server errors) or network errors, not on validation errors
-      if (
-        error instanceof Error &&
-        (error.message.includes("unknown_error") ||
-          error.message.includes("500") ||
-          error.message.includes("ECONNREFUSED"))
-      ) {
-        const delay = initialDelay * Math.pow(1.5, attempt);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        continue;
-      }
-
-      // For other errors, throw immediately
-      throw error;
-    }
-  }
-
-  throw lastError;
-}
-
-/**
- * Wait for realm to be fully initialized after creation.
- * Extended delay for high-load scenarios.
- */
-async function waitForRealmReady(delayMs = 500): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, delayMs));
-}
 
 test.describe("Personal info", () => {
   test("sets basic information", async ({ page }) => {
@@ -80,8 +36,8 @@ test.describe("Personal info (user profile enabled)", () => {
 
     await expect(page.locator("#select")).toBeVisible();
     await expect(page.getByTestId("help-label-select")).toBeVisible();
-    await expect(page.getByText("Alternative email")).toHaveCount(1);
-    await expect(page.getByPlaceholder("Deutsch")).toHaveCount(1);
+    await expect(page.getByText("Alternative email")).toBeVisible();
+    await expect(page.getByPlaceholder("Deutsch")).toBeVisible();
     await page.getByTestId("help-label-email2").click();
     await expect(page.getByText("Español")).toBeVisible();
   });
@@ -104,7 +60,7 @@ test.describe("Personal info (user profile enabled)", () => {
     await page.locator("#alternatelang").click();
     await page.locator("*:focus").press("Control+A");
     await page.locator("*:focus").pressSequentially("S");
-    await expect(page.getByText("Italiano")).toHaveCount(0);
+    await expect(page.getByText("Italiano")).toBeHidden();
     await expect(page.getByText("Slovak")).toBeVisible();
     await expect(page.getByText('Create "S"')).toBeHidden();
   });
@@ -127,7 +83,7 @@ test.describe("Personal info (user profile enabled)", () => {
     await page.locator("#attributes\\.locale").click();
     await page.locator("*:focus").press("Control+A");
     await page.locator("*:focus").pressSequentially("S");
-    await expect(page.getByText("Italiano")).toHaveCount(0);
+    await expect(page.getByText("Italiano")).toBeHidden();
     await expect(page.getByText("Slovak")).toBeVisible();
     await expect(page.getByText('Create "S"')).toBeHidden();
   });

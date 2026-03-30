@@ -3,14 +3,7 @@ import { expect, test } from "@playwright/test";
 import resourcesRealm from "./realms/resources-realm.json" with { type: "json" };
 import { login } from "./support/actions.ts";
 import { createTestBed } from "./support/testbed.ts";
-
-/**
- * Wait for realm to be fully initialized after creation.
- * Extended delay for high-load scenarios with parallel test execution.
- */
-async function waitForRealmReady(delayMs = 500): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, delayMs));
-}
+import { waitForRealmReady } from "./support/test-utils.ts";
 
 test.describe("Resources", () => {
   test("shows the resources owned by the user", async ({ page }) => {
