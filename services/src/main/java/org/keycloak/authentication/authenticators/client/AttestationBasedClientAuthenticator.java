@@ -314,6 +314,12 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         ClientModel clientModel = realmModel.getClientByClientId(jwt.getSubject());
         context.setClient(clientModel);
 
+        // The signature of the Client Attestation JWT verifies with the public key of a known and trusted Attester
+        //
+        JWSInput jws = new JWSInput(headerValue);
+        PublicKey publicKey = loadAttesterPublicKey(context, jws.getHeader().getKeyId());
+        tokenVerifier.publicKey(publicKey).verifySignature();
+
         // Verification and Processing
 
         // [TODO] The alg JOSE Header Parameter for both JWTs indicates a registered asymmetric digital signature algorithm
