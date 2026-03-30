@@ -30,8 +30,12 @@ public class UpdateUserLocaleAction implements RequiredActionProvider, RequiredA
                 LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
                 updater.updateLocaleCookie(userLocale);
             } else {
-                LocaleUpdaterProvider updater = context.getSession().getProvider(LocaleUpdaterProvider.class);
-                updater.expireLocaleCookie();
+                org.keycloak.cookie.CookieProvider cookies = context.getSession().getProvider(org.keycloak.cookie.CookieProvider.class);
+                String cookieVal = cookies.get(org.keycloak.cookie.CookieType.LOCALE);
+                
+                if (cookieVal == null || cookieVal.isEmpty()) {
+                    context.getSession().getProvider(LocaleUpdaterProvider.class).expireLocaleCookie();
+                }
             }
         }
     }
