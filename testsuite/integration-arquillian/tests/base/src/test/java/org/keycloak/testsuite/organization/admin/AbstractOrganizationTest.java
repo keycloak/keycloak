@@ -71,6 +71,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@Deprecated
 public abstract class AbstractOrganizationTest extends AbstractAdminTest  {
 
     protected String organizationName = "neworg";
