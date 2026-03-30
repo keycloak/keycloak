@@ -55,8 +55,10 @@ components:
           description: Roles associated with this client
         protocol:
           type: string
+          pattern: \S
       required:
       - clientId
+      - protocol
       discriminator:
         propertyName: protocol
         mapping:

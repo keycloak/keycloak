@@ -128,6 +128,7 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
         this.roles = roles;
     }
 
+    @NotBlank
     public abstract String getProtocol();
 
     void setProtocol(String protocol) {
