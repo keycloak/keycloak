@@ -625,6 +625,14 @@ public class UserTest extends AbstractScimTest {
         expected.setActive(false);
         assertRootAttributes(actual, expected);
 
+        // patch a multivalued attribute using a filter in the path that matches an existing value
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("emails[value ew \"patched4.org\"].value", expected.getEmail().replace("patched4.org", "filtered.org"))
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setEmail(expected.getEmail().replace("patched4.org", "filtered.org"));
+        assertRootAttributes(actual, expected);
+
         // patch a multivalued attribute using a filter in the path that does not resolve to any value, no update should be performed
         String expectedEmail = expected.getEmail();
         expected.setEmail(expected.getEmail().replace("patched4.org", "patched5.org"));
@@ -765,8 +773,7 @@ public class UserTest extends AbstractScimTest {
         assertEquals(5, groups.size());
 
         client.users().patch(expected.getId(), PatchRequest.create()
-                .remove("groups[value eq \"" + groupA1.getId() + "\"]")
-                .remove("groups[value eq \"" + groupB.getId() + "\"]")
+                .remove("groups[value eq \"" + groupA1.getId() + "\" or value eq \"" + groupB.getId() + "\"]")
                 .build());
         actual = client.users().get(expected.getId());
         groups = actual.getGroups();

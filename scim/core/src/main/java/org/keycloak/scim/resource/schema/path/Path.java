@@ -1,13 +1,16 @@
 package org.keycloak.scim.resource.schema.path;
 
-import java.util.function.Function;
+import java.util.function.Predicate;
 
-import org.keycloak.models.ModelValidationException;
+import org.keycloak.scim.filter.FilterUtils;
+import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.ModelSchema;
-import org.keycloak.scim.resource.schema.attribute.Attribute;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.NullNode;
 
 public final class Path {
 
@@ -49,31 +52,27 @@ public final class Path {
         return path;
     }
 
-    public JsonNode getValue(Attribute<?, ?> attribute, JsonNode rawValue) {
+    public JsonNode getValue(JsonNode rawValue) {
         if (filter == null) {
             return rawValue;
         }
 
-        return parseFilter(attribute).apply(rawValue);
-    }
+        ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(filter);
+        Predicate<JsonNode> predicate = new ScimJsonNodeFilterEvaluator().visit(filterContext);
 
-    private Function<JsonNode, JsonNode> parseFilter(Attribute<?, ?> attribute) {
-        String[] parts = filter.trim().split(" ");
-
-        if (parts.length == 3) {
-            String leftOperand = parts[0];
-            String operator = parts[1];
-            String rightOperand = parts[2];
-
-            if ("eq".equals(operator)) {
-                return new EqualExpression(attribute, leftOperand, rightOperand);
+        if (rawValue.isArray()) {
+            ArrayNode matches = JsonNodeFactory.instance.arrayNode();
+            for (JsonNode node : rawValue) {
+                if (node.isObject() && predicate.test(node)) {
+                    matches.add(node);
+                }
             }
-
-            // for now, we only support equality filter in the path, and we assume the filter is always in the format "attribute eq "value""
-            throw new ModelValidationException("Unsupported filter operator: " + operator);
+            if (!matches.isEmpty()) {
+                return matches.size() == 1 ? matches.get(0) : matches;
+            }
         }
 
-        throw new ModelValidationException("Unsupported filter format: " + filter);
+        return NullNode.getInstance();
     }
 
     public boolean hasFilter() {
