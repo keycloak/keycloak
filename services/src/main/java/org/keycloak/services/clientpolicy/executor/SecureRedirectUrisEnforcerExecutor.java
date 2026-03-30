@@ -61,6 +61,8 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
     public static final String ERR_LOOPBACK = "Invalid Redirect Uri: invalid loopback address";
     public static final String ERR_PRIVATESCHEME = "Invalid Redirect Uri: invalid private use scheme";
     public static final String ERR_NORMALURI = "Invalid Redirect Uri: invalid uri";
+    public static final String ERR_WILDCARD_SUBDOMAIN = "Invalid Redirect Uri: invalid wildcard subdomain";
+    public static final String ERR_WILDCARD_SUBDOMAIN_WITH_PERMITTED_DOMAINS = "Invalid Redirect Uri: wildcard subdomain cannot be used when permitted domains are configured";
 
     public SecureRedirectUrisEnforcerExecutor(KeycloakSession session) {
         this.session = session;
@@ -92,6 +94,8 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         protected boolean allowHttpScheme;
         @JsonProperty(SecureRedirectUrisEnforcerExecutorFactory.ALLOW_WILDCARD_CONTEXT_PATH)
         protected boolean allowWildcardContextPath;
+        @JsonProperty(SecureRedirectUrisEnforcerExecutorFactory.ALLOW_WILDCARD_SUBDOMAIN)
+        protected boolean allowWildcardSubdomain;
         @JsonProperty(SecureRedirectUrisEnforcerExecutorFactory.ALLOW_PERMITTED_DOMAINS)
         protected List<String> allowPermittedDomains = Collections.emptyList();
         @JsonProperty(SecureRedirectUrisEnforcerExecutorFactory.OAUTH_2_1_COMPLIANT)
@@ -137,6 +141,14 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
 
         public void setAllowWildcardContextPath(boolean allowWildcardContextPath) {
             this.allowWildcardContextPath = allowWildcardContextPath;
+        }
+
+        public boolean isAllowWildcardSubdomain() {
+            return allowWildcardSubdomain;
+        }
+
+        public void setAllowWildcardSubdomain(boolean allowWildcardSubdomain) {
+            this.allowWildcardSubdomain = allowWildcardSubdomain;
         }
 
         public List<String> getAllowPermittedDomains() {
@@ -283,8 +295,9 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
                     }
                     break;
                 case NORMAL_URI:
-                    if(!isValidNormalUri()) {
-                        throw invalidRedirectUri(ERR_NORMALURI);
+                    String invalidNormalUriError = getInvalidNormalUriError();
+                    if (invalidNormalUriError != null) {
+                        throw invalidRedirectUri(invalidNormalUriError);
                     }
                     break;
                 default :
@@ -371,12 +384,12 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
             }
 
             if (config.isAllowWildcardContextPath()) {
-                if (isIncludeInvalidWildcard()) {
+                if (isIncludeInvalidWildcardContextPath()) {
                     logger.debugv("Invalid LoopbackAddress: invalid Wildcard - input = {0}", uri.toString());
                     return false;
                 }
             } else {
-                if (isIncludeWildcard()) {
+                if (isIncludeWildcardOtherThanSubdomain()) {
                     logger.debugv("Invalid LoopbackAddress: Wildcard not allowed - input = {0}", uri.toString());
                     return false;
                 }
@@ -419,12 +432,12 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
             // valid addresses depend on configurations
 
             if (config.isAllowWildcardContextPath()) {
-                if (isIncludeInvalidWildcard()) {
+                if (isIncludeInvalidWildcardContextPath()) {
                     logger.debugv("Invalid PrivateUseUriScheme: invalid Wildcard - input = {0}", uri.toString());
                     return false;
                 }
             } else {
-                if (isIncludeWildcard()) {
+                if (isIncludeWildcardOtherThanSubdomain()) {
                     logger.debugv("Invalid PrivateUseUriScheme: Wildcard not allowed - input = {0}", uri.toString());
                     return false;
                 }
@@ -451,50 +464,66 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
         }
 
         boolean isValidNormalUri() {
+            return getInvalidNormalUriError() == null;
+        }
+
+        String getInvalidNormalUriError() {
             // valid addresses depend on configurations
 
             if (!config.isAllowHttpScheme() && isHttp()) {
                 logger.debugv("Invalid NormalUri: HTTP not allowed - input = {0}", uri.toString());
-                return false;
+                return ERR_NORMALURI;
+            }
+
+            if (isIncludeWildcardSubdomain()) {
+                if (!config.isAllowWildcardSubdomain() || isIncludeInvalidWildcardSubdomain()) {
+                    logger.debugv("Invalid NormalUri: wildcard subdomain not allowed - input = {0}", uri.toString());
+                    return ERR_WILDCARD_SUBDOMAIN;
+                }
+
+                if (config.getAllowPermittedDomains() != null && !config.getAllowPermittedDomains().isEmpty()) {
+                    logger.debugv("Invalid NormalUri: wildcard subdomain cannot be used with permitted domains - input = {0}", uri.toString());
+                    return ERR_WILDCARD_SUBDOMAIN_WITH_PERMITTED_DOMAINS;
+                }
             }
 
             if (config.isAllowWildcardContextPath()) {
-                if (isIncludeInvalidWildcard()) {
+                if (isIncludeInvalidWildcardContextPath()) {
                     logger.debugv("Invalid NormalUri: invalid Wildcard - input = {0}", uri.toString());
-                    return false;
+                    return ERR_NORMALURI;
                 }
             } else {
-                if (isIncludeWildcard()) {
+                if (isIncludeWildcardOtherThanSubdomain()) {
                     logger.debugv("Invalid NormalUri: Wildcard not allowed - input = {0}", uri.toString());
-                    return false;
+                    return ERR_NORMALURI;
                 }
             }
 
             if (config.getAllowPermittedDomains() != null && !config.getAllowPermittedDomains().isEmpty()) {
                 if (!matchDomains(config.getAllowPermittedDomains())) {
                     logger.debugv("Invalid NormalUri: no permitted domain matched - input = {0}", uri.toString());
-                    return false;
+                    return ERR_NORMALURI;
                 }
             }
 
             if (config.isOAuth2_1Compliant()) {
                 if (!isHttps()) { // only https scheme is allowed.
                     logger.debugv("Invalid NormalUri: HTTP not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
-                    return false;
+                    return ERR_NORMALURI;
                 }
 
                 if (isIncludeUriFragment()) { // URL fragment is not allowed.
                     logger.debugv("Invalid NormalUri: URI fragment not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
-                    return false;
+                    return ERR_NORMALURI;
                 }
 
                 if (isIncludeWildcard()) { // wildcard is not allowed.
                     logger.debugv("Invalid NormalUri: Wildcard not allowed - OAuth 2.1 compliant - input = {0}", uri.toString());
-                    return false;
+                    return ERR_NORMALURI;
                 }
             }
 
-            return true;
+            return null;
         }
 
         boolean matchDomain(String domainPattern) {
@@ -513,8 +542,16 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
             return "https".equals(uri.getScheme());
         }
 
-        boolean isWildcardContextPath() {
-            return uri.getPath() != null && (uri.getPath().startsWith("/*") || uri.getPath().startsWith("*"));
+        boolean isIncludeWildcardSubdomain() {
+            return RedirectUtils.hasWildcardHost(uri.toString());
+        }
+
+        boolean isIncludeInvalidWildcardSubdomain() {
+            return isIncludeWildcardSubdomain() && !RedirectUtils.isValidWildcardHostPattern(uri.toString());
+        }
+
+        boolean isIncludeWildcardContextPath() {
+            return uri.getRawPath() != null && uri.getRawPath().contains("*");
         }
 
         boolean isIncludeUriFragment() {
@@ -525,12 +562,48 @@ public class SecureRedirectUrisEnforcerExecutor implements ClientPolicyExecutorP
             return uri.toString().contains("*");
         }
 
-        boolean isIncludeInvalidWildcard() {
-            // NOTE: this method assumes that the uri includes at least one wildcard.
-            if (!isWildcardContextPath()) {
+        boolean isIncludeWildcardOtherThanSubdomain() {
+            if (!isIncludeWildcard()) {
                 return false;
             }
-            return uri.toString().length() - uri.toString().replace("*", "").length() != 1;
+
+            if (containsWildcard(uri.getRawUserInfo()) || containsWildcard(uri.getRawQuery()) || containsWildcard(uri.getRawFragment())) {
+                return true;
+            }
+
+            String rawAuthority = uri.getRawAuthority();
+            if (containsWildcard(rawAuthority) && !isIncludeWildcardSubdomain()) {
+                return true;
+            }
+
+            return containsWildcard(uri.getRawPath());
+        }
+
+        boolean isIncludeInvalidWildcardContextPath() {
+            if (!isIncludeWildcard()) {
+                return false;
+            }
+
+            if (containsWildcard(uri.getRawUserInfo()) || containsWildcard(uri.getRawQuery()) || containsWildcard(uri.getRawFragment())) {
+                return true;
+            }
+
+            String rawAuthority = uri.getRawAuthority();
+            if (containsWildcard(rawAuthority) && !isIncludeWildcardSubdomain()) {
+                return true;
+            }
+
+            String rawPath = uri.getRawPath();
+            if (!containsWildcard(rawPath)) {
+                return false;
+            }
+
+            long wildcardCount = rawPath.chars().filter(ch -> ch == '*').count();
+            return wildcardCount != 1 || !(rawPath.startsWith("*") || rawPath.startsWith("/*") || rawPath.endsWith("/*"));
+        }
+
+        private boolean containsWildcard(String value) {
+            return value != null && value.indexOf('*') != -1;
         }
 
     }
