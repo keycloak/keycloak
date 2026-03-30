@@ -31,7 +31,11 @@ public class WaitUtils {
 
     public WaitUtils waitForOAuthCallback() {
         try {
-            createDefaultWait().until(d -> d.getCurrentUrl().contains("code=") || d.getCurrentUrl().contains("error="));
+            // "response=" is for JARM (JWT Secured Authorization Response Mode, e.g. query.jwt)
+            createDefaultWait().until(d -> {
+                String url = d.getCurrentUrl();
+                return url.contains("code=") || url.contains("error=") || url.contains("response=");
+            });
         } catch (TimeoutException e) {
             Assertions.fail("Expected OAuth callback, but URL was '" + managed.getCurrentUrl() + "' after timeout");
         }

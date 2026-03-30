@@ -110,6 +110,7 @@
         <module>tests</module>
         <module>infinispan-server</module>
         <module>oauth</module>
+        <module>saml</module>
         <module>remote</module>
         <module>remote-providers</module>
         <module>ui</module>

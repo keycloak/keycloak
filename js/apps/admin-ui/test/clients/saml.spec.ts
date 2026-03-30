@@ -5,7 +5,7 @@ import { switchOff, switchOn } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
 import { assertNotificationMessage } from "../utils/masthead.ts";
 import { assertModalTitle, cancelModal, confirmModal } from "../utils/modal.ts";
-import { goToClients } from "../utils/sidebar.ts";
+import { goToClients, goToRealm } from "../utils/sidebar.ts";
 import { clickTableRowItem } from "../utils/table.ts";
 import { goToAdvancedTab, revertFineGrain, saveFineGrain } from "./advanced.ts";
 import {
@@ -20,6 +20,8 @@ import {
   assertEncryptionMaskGenerationFunctionInputVisible,
   assertNameIdFormatDropdown,
   assertSamlClientDetails,
+  assertSigningKeyDropdownVisible,
+  assertSigningKeyValue,
   assertTermsOfServiceUrl,
   clickClientSignature,
   clickEncryptionAssertions,
@@ -33,6 +35,8 @@ import {
   selectEncryptionKeyAlgorithmInput,
   selectEncryptionDigestMethodInput,
   selectEncryptionMaskGenerationFunctionInput,
+  selectSigningKey,
+  assertSamlSigningKeyDisplayText,
   setTermsOfServiceUrl,
 } from "./saml.ts";
 
@@ -233,5 +237,95 @@ test.describe.serial("Clients SAML tests", () => {
     await saveSamlSettings(page);
 
     await assertNotificationMessage(page, "Client successfully updated");
+  });
+});
+
+test.describe.serial("SAML Signing Key Selection", () => {
+  const realmName = `saml-signing-key-${uuid()}`;
+  const clientName = `saml-signing-test-${uuid()}`;
+  const testKeyName = "test-rsa-key";
+  let testKeyKid: string;
+
+  test.beforeAll(async () => {
+    await adminClient.createRealm(realmName);
+    // Add an ACTIVE key with lower priority than the default (100)
+    await adminClient.addKeyProvider(
+      testKeyName,
+      true,
+      true,
+      "rsa-generated",
+      realmName,
+      50,
+    );
+    const keys = await adminClient.getRealmKeys(realmName);
+    const testKey = keys.find(
+      (k) =>
+        k.status === "ACTIVE" &&
+        k.providerPriority === 50 &&
+        (k as { use?: string }).use === "SIG",
+    );
+    testKeyKid = testKey?.kid || "";
+    await adminClient.createClient({
+      realm: realmName,
+      protocol: "saml",
+      clientId: clientName,
+    });
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteRealm(realmName);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToRealm(page, realmName);
+    await goToClients(page);
+    await clickTableRowItem(page, clientName);
+  });
+
+  test("should display signing key dropdown and select active key", async ({
+    page,
+  }) => {
+    await assertSigningKeyDropdownVisible(page);
+    await assertSigningKeyValue(page, "");
+    await selectSigningKey(page, testKeyKid);
+    await saveSamlSettings(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+    await page.reload();
+    await assertSigningKeyValue(page, testKeyKid);
+  });
+
+  test("should show key status changes: passive, disabled, not found", async ({
+    page,
+  }) => {
+    // Configure client with the test key
+    await assertSigningKeyDropdownVisible(page);
+    await selectSigningKey(page, testKeyKid);
+    await saveSamlSettings(page);
+    await assertNotificationMessage(page, "Client successfully updated");
+
+    // Make key passive and verify display
+    await adminClient.makeKeyProviderPassive(testKeyName, realmName);
+    await page.reload();
+    await assertSamlSigningKeyDisplayText(
+      page,
+      new RegExp(`\\(Passive\\).*${testKeyKid}`),
+    );
+
+    // Disable key and verify display
+    await adminClient.disableKeyProvider(testKeyName, realmName);
+    await page.reload();
+    await assertSamlSigningKeyDisplayText(
+      page,
+      new RegExp(`\\(Disabled\\).*${testKeyKid}`),
+    );
+
+    // Delete key and verify not found display
+    await adminClient.deleteKeyProvider(testKeyName, realmName);
+    await page.reload();
+    await assertSamlSigningKeyDisplayText(
+      page,
+      new RegExp(`Not found.*${testKeyKid}`),
+    );
   });
 });
