@@ -70,12 +70,12 @@ test.describe("Personal info (user profile enabled)", () => {
     await using testBed = await createTestBed(userProfileRealm);
     await waitForRealmReady();
 
-    await retryOperation(() =>
+    /*await retryOperation(() =>
       adminClient.users.updateProfile({
         ...userProfile,
         realm: testBed.realm,
       }),
-    );
+    );*/
     await login(page, testBed.realm);
 
     await expect(page.locator("#select")).toBeVisible();
@@ -90,12 +90,12 @@ test.describe("Personal info (user profile enabled)", () => {
     await using testBed = await createTestBed(userProfileRealm);
     await waitForRealmReady();
 
-    await retryOperation(() =>
+    /*await retryOperation(() =>
       adminClient.users.updateProfile({
         ...userProfile,
         realm: testBed.realm,
       }),
-    );
+    );*/
     await login(page, testBed.realm);
 
     await page.locator("#alternatelang").click();
@@ -113,12 +113,12 @@ test.describe("Personal info (user profile enabled)", () => {
     await using testBed = await createTestBed(userProfileRealm);
     await waitForRealmReady();
 
-    await retryOperation(() =>
+    /*await retryOperation(() =>
       adminClient.users.updateProfile({
         ...userProfile,
         realm: testBed.realm,
       }),
-    );
+    );*/
     await login(page, testBed.realm);
 
     await page.locator("#attributes\\.locale").click();
@@ -136,12 +136,12 @@ test.describe("Personal info (user profile enabled)", () => {
     await using testBed = await createTestBed(userProfileRealm);
     await waitForRealmReady();
 
-    await retryOperation(() =>
+    /*await retryOperation(() =>
       adminClient.users.updateProfile({
         ...userProfile,
         realm: testBed.realm,
       }),
-    );
+    );*/
     await login(page, testBed.realm);
 
     await page.locator("#select").click();
