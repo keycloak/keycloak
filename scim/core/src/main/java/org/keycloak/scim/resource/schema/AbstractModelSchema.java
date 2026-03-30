@@ -115,7 +115,7 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         }
 
         for (Entry<Attribute<M, R>, JsonNode> entry : resolveAttributes(path.getPath(), value).entrySet()) {
-            JsonNode attrValue = path.getValue(entry.getKey(), entry.getValue());
+            JsonNode attrValue = path.getValue(entry.getValue());
             setValue(model, entry.getKey(), attrValue, REMOVE);
         }
     }
