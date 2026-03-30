@@ -180,6 +180,17 @@ This makes it easier to process and archive access logs independently for securi
 
 For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
 
+== Customizable service fields in JSON log output
+
+{project_name} now provides native options to customize the `service.name` and `service.environment` fields in JSON log output across all log handlers (console, file, and syslog).
+
+Previously, when using the ECS format, `service.name` and `service.environment` could not be overridden through {project_name} configuration.
+This made it difficult to align JSON log fields with OpenTelemetry resource attributes.
+
+You can now set these fields using `log-service-name` and `log-service-environment`.
+
+For more information, see the https://www.keycloak.org/server/logging#customize-service-fields[Configuring logging] guide.
+
 == New and updated translations
 
 New translations for Indonesian and Armenian were added. A warm welcome to the new language maintainers for these languages!
