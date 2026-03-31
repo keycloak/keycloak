@@ -124,6 +124,12 @@ This makes it easier to process and archive access logs independently for securi
 
 For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
 
+== KCRAW_ environment variable prefix
+
+For passwords, and any other values where you want the value to be treated literally, you may now use the KCRAW_ environment variable prefix.
+
+For more information, see the https://www.keycloak.org/server/configuration[Configuration guide] for more.
+
 = Observability
 
 == Telemetry configuration via Keycloak CR

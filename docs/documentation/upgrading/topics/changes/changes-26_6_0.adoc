@@ -77,6 +77,10 @@ For more information about brokering, see link:{developerguide_link}#_identity_b
 Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
 It also lists significant changes to internal APIs.
 
+=== KCRAW_ prefix for raw values
+
+The KCRAW_ prefix for environment variables is now used to prevent SmallRye Config expression handling. If you were by chance using the KCRAW_ for another purpose, please use a different prefix for those environment variable keys. 
+
 === Dev Mode defaults to localhost
 
 When running the server in dev mode on a platform other than Windows Subsystem For Linux, the `http-host` setting will default to localhost.
