@@ -85,7 +85,7 @@ export default function PolicyDetails() {
             id: permissionClientId ?? id,
             type: policyType!,
             policyId,
-          }) as PolicyRepresentation | undefined,
+          }) as Promise<PolicyRepresentation | undefined>,
           adminClient.clients.getAssociatedPolicies({
             id: permissionClientId ?? id,
             permissionId: policyId,

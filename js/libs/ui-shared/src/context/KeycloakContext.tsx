@@ -19,15 +19,16 @@ export type KeycloakContext<T extends BaseEnvironment = BaseEnvironment> =
     keycloak: Keycloak;
   };
 
-const createKeycloakEnvContext = <T extends BaseEnvironment>() =>
-  createContext<KeycloakContext<T> | undefined>(undefined);
-
-let KeycloakEnvContext: any;
+const KeycloakEnvContext = createContext<KeycloakContext<any> | undefined>(
+  undefined,
+);
 
 export const useEnvironment = <
   T extends BaseEnvironment = BaseEnvironment,
 >() => {
-  const context = useContext<KeycloakContext<T>>(KeycloakEnvContext);
+  const context = useContext(KeycloakEnvContext) as
+    | KeycloakContext<T>
+    | undefined;
   if (!context)
     throw Error(
       "no environment provider in the hierarchy make sure to add the provider",
@@ -45,7 +46,6 @@ export const KeycloakProvider = <T extends BaseEnvironment>({
   keycloak: externalKeycloak,
   children,
 }: PropsWithChildren<KeycloakContextProps<T>>) => {
-  KeycloakEnvContext = createKeycloakEnvContext<T>();
   const calledOnce = useRef(false);
   const [init, setInit] = useState(!!externalKeycloak);
   const [error, setError] = useState<unknown>();

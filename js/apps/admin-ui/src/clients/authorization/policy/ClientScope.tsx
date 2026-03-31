@@ -33,7 +33,7 @@ export const ClientScope = () => {
 
   useFetch(
     () => adminClient.clientScopes.find(),
-    (scopes = []) => {
+    (scopes) => {
       const clientScopes = getValues("clientScopes") || [];
       setSelectedScopes(
         clientScopes.map((s) => scopes.find((c) => c.id === s.id)!),
