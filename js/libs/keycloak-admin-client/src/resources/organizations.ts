@@ -1,6 +1,7 @@
 import type { KeycloakAdminClient } from "../client.js";
 import IdentityProviderRepresentation from "../defs/identityProviderRepresentation.js";
 import type OrganizationRepresentation from "../defs/organizationRepresentation.js";
+import type OrganizationDomainRepresentation from "../defs/organizationDomainRepresentation.js";
 import type OrganizationInvitationRepresentation from "../defs/organizationInvitationRepresentation.js";
 import UserRepresentation from "../defs/userRepresentation.js";
 import Resource from "./resource.js";
@@ -166,6 +167,44 @@ export class Organizations extends Resource<{ realm?: string }> {
       urlParamKeys: ["orgId", "alias"],
     },
   );
+
+  public getOrganizationDomainsByIdp = this.makeRequest<
+    { orgId: string; alias: string },
+    OrganizationDomainRepresentation[]
+  >({
+    method: "GET",
+    path: "/{orgId}/identity-providers/{alias}/domains",
+    urlParamKeys: ["orgId", "alias"],
+  });
+
+  // Organization Domains Management
+  public listDomains = this.makeRequest<
+    { orgId: string },
+    OrganizationDomainRepresentation[]
+  >({
+    method: "GET",
+    path: "/{orgId}/domains",
+    urlParamKeys: ["orgId"],
+  });
+
+  public getDomain = this.makeRequest<
+    { orgId: string; domainName: string },
+    OrganizationDomainRepresentation
+  >({
+    method: "GET",
+    path: "/{orgId}/domains/{domainName}",
+    urlParamKeys: ["orgId", "domainName"],
+  });
+
+  public updateDomain = this.makeUpdateRequest<
+    { orgId: string; domainName: string },
+    OrganizationDomainRepresentation,
+    OrganizationDomainRepresentation
+  >({
+    method: "PATCH",
+    path: "/{orgId}/domains/{domainName}",
+    urlParamKeys: ["orgId", "domainName"],
+  });
 
   // Organization Invitations Management
   public listInvitations = this.makeRequest<

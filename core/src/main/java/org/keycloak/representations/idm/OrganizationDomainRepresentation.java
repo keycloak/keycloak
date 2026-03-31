@@ -26,6 +26,7 @@ public class OrganizationDomainRepresentation {
 
     private String name;
     private boolean verified;
+    private String idpId;
 
     public OrganizationDomainRepresentation() {
         // for reflection
@@ -49,6 +50,14 @@ public class OrganizationDomainRepresentation {
 
     public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public String getIdpId() {
+        return this.idpId;
+    }
+
+    public void setIdpId(String idpId) {
+        this.idpId = idpId;
     }
 
     @Override

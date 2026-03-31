@@ -142,4 +142,9 @@ public class OrganizationResource {
     public OrganizationGroupsResource groups() {
         return new OrganizationGroupsResource(session, organization, adminEvent);
     }
+
+    @Path("domains")
+    public OrganizationDomainResource domains() {
+        return new OrganizationDomainResource(session, organization, adminEvent);
+    }
 }

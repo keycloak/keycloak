@@ -26,6 +26,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.persistence.EntityManager;
+
+import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -35,6 +38,7 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.jpa.JpaModel;
+import org.keycloak.models.jpa.entities.IdentityProviderEntity;
 import org.keycloak.models.jpa.entities.OrganizationDomainEntity;
 import org.keycloak.models.jpa.entities.OrganizationEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -183,21 +187,26 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
                 .map(this::validateDomain)
                 .collect(Collectors.toMap(OrganizationDomainModel::getName, Function.identity()));
 
+        EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
+
         for (OrganizationDomainEntity domainEntity : new HashSet<>(this.entity.getDomains())) {
-            // update the existing domain (for now, only the verified flag can be changed).
+            // update the existing domain
             if (modelMap.containsKey(domainEntity.getName())) {
-                domainEntity.setVerified(modelMap.get(domainEntity.getName()).isVerified());
+                OrganizationDomainModel model = modelMap.get(domainEntity.getName());
+                domainEntity.setVerified(model.isVerified());
+                
+                // Update identity provider reference
+                if (model.getIdpId() != null) {
+                    IdentityProviderEntity idpEntity = em.getReference(IdentityProviderEntity.class, model.getIdpId());
+                    domainEntity.setIdentityProvider(idpEntity);
+                } else {
+                    domainEntity.setIdentityProvider(null);
+                }
+                
                 modelMap.remove(domainEntity.getName());
             } else {
                 // remove domain that is not found in the new set.
                 this.entity.removeDomain(domainEntity);
-                // check if any idp is assigned to the removed domain, and unset the domain if that's the case.
-                getIdentityProviders()
-                        .filter(idp -> Objects.equals(domainEntity.getName(), idp.getConfig().get(ORGANIZATION_DOMAIN_ATTRIBUTE)))
-                        .forEach(idp -> {
-                            idp.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
-                            session.identityProviders().update(idp);
-                        });
             }
         }
 
@@ -208,6 +217,12 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
             domainEntity.setName(model.getName());
             domainEntity.setVerified(model.isVerified());
             domainEntity.setOrganization(this.entity);
+
+            if (model.getIdpId() != null) {
+                IdentityProviderEntity idpEntity = em.getReference(IdentityProviderEntity.class, model.getIdpId());
+                domainEntity.setIdentityProvider(idpEntity);
+            }
+            
             this.entity.addDomain(domainEntity);
         }
     }
@@ -263,7 +278,8 @@ public final class OrganizationAdapter implements OrganizationModel, JpaModel<Or
     }
 
     private OrganizationDomainModel toModel(OrganizationDomainEntity entity) {
-        return new OrganizationDomainModel(entity.getName(), entity.isVerified());
+        String idpId = entity.getIdentityProvider() != null ? entity.getIdentityProvider().getInternalId() : null;
+        return new OrganizationDomainModel(entity.getName(), entity.isVerified(), idpId);
     }
 
     /**

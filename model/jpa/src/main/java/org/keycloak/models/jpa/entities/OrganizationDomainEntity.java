@@ -56,6 +56,10 @@ public class OrganizationDomainEntity {
     @JoinColumn(name = "ORG_ID")
     private OrganizationEntity organization;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "IDP_ID")
+    private IdentityProviderEntity identityProvider;
+
     public String getId() {
         return id;
     }
@@ -86,6 +90,14 @@ public class OrganizationDomainEntity {
 
     public void setOrganization(OrganizationEntity organization) {
         this.organization = organization;
+    }
+
+    public IdentityProviderEntity getIdentityProvider() {
+        return this.identityProvider;
+    }
+
+    public void setIdentityProvider(IdentityProviderEntity identityProvider) {
+        this.identityProvider = identityProvider;
     }
 
     @Override
