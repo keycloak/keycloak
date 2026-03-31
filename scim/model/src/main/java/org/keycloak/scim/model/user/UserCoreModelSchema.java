@@ -144,8 +144,9 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .modelAttributeResolver(attribute -> "lastModifiedTimestamp")
                 .build());
         attributes.addAll(Attribute.<UserModel, User>complex("groups", GroupMembership.class)
-                .modelAttributeResolver(Attribute::getName)
                 .multivalued()
+                .returned(Attribute.RETURNED_REQUEST)
+                .modelAttributeResolver(Attribute::getName)
                 .withModelSetter((TriConsumer<UserModel, String, Set<GroupMembership>>) (model, name, values) -> {
                     KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
                     RealmModel realm = session.getContext().getRealm();

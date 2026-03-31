@@ -1,6 +1,5 @@
 package org.keycloak.scim.resource.schema;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -104,19 +103,9 @@ public abstract class AbstractModelSchema<M extends Model, R extends ResourceTyp
         }
 
         Path path = new Path(this, rawPath);
-        JsonNode value = NullNode.getInstance();
 
-        if (path.hasFilter()) {
-            try {
-                value = JsonSerialization.createObjectNode(resource);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        for (Entry<Attribute<M, R>, JsonNode> entry : resolveAttributes(path.getPath(), value).entrySet()) {
-            JsonNode attrValue = path.getValue(entry.getValue());
-            setValue(model, entry.getKey(), attrValue, REMOVE);
+        for (Entry<Attribute<M, R>, JsonNode> entry : resolveAttributes(path.getPath(), NullNode.getInstance()).entrySet()) {
+            setValue(model, entry.getKey(), path.getValue(entry.getKey()), REMOVE);
         }
     }
 
