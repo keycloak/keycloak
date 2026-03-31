@@ -7,7 +7,7 @@ import org.keycloak.models.KeycloakSession;
 
 public class AddRequiredActionStepProviderFactory implements WorkflowStepProviderFactory<AddRequiredActionStepProvider> {
 
-    public static final String ID = "set-user-required-action";
+    public static final String ID = "add-required-action";
 
     @Override
     public AddRequiredActionStepProvider create(KeycloakSession session, ComponentModel model) {
