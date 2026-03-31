@@ -18,9 +18,11 @@
 package org.keycloak.authentication;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -28,9 +30,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -291,20 +295,39 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return onFlowExecutionsSuccessful();
             }
 
+            List<Map<String, Object>> alternativeErrorDetails = new ArrayList<>();
             //handle alternative elements: the first alternative element to be satisfied is enough
             for (AuthenticationExecutionModel alternative : alternativeList) {
                 try {
                     Response response = processSingleFlowExecutionModel(alternative, true);
-                    if (response != null) {
+                    if (response != null && processor.isBrowserFlow()) {
                         return response;
                     }
                     if (processor.isSuccessful(alternative) || isSetupRequired(alternative)) {
                         return onFlowExecutionsSuccessful();
+                    } else {
+                        setExecutionStatus(alternative, AuthenticationSessionModel.ExecutionStatus.ATTEMPTED);
                     }
+                    if (response != null || !processor.isSuccessful(alternative)) {
+                        alternativeErrorDetails.add(buildAlternativeErrorDetail(alternative, response, null));
+                    }
+
+                    // If the last alternative was not successful, generate and return an error object containing error details of all alternatives
+                    if (!processor.isBrowserFlow() && alternativeList.indexOf(alternative) == alternativeList.size() - 1) {
+                        alternativeErrorDetails.forEach(detail -> logger.debugf("Alternative execution failure detail: %s", detail));
+
+                        Map<String, Object> e = new HashMap<>();
+                        e.put(OAuth2Constants.ERROR, "invalid_grant");
+                        e.put(OAuth2Constants.ERROR_DESCRIPTION, "Invalid user credentials");
+
+                        return Response.status(Response.Status.UNAUTHORIZED.getStatusCode()).entity(e)
+                                .type(MediaType.APPLICATION_JSON_TYPE).build();
+                     }
                 } catch (AuthenticationFlowException afe) {
                     //consuming the error is not good here from an administrative point of view, but the user, since he has alternatives, should be able to go to another alternative and continue
                     afeList.add(afe);
                     setExecutionStatus(alternative, AuthenticationSessionModel.ExecutionStatus.ATTEMPTED);
+                    alternativeErrorDetails.add(buildAlternativeErrorDetail(alternative, null, afe));
                 }
             }
         } else {
@@ -516,7 +539,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return null;
             case FAILED:
                 logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
-                processor.logFailure(execution.getAuthenticator());
+                if (!isAlternativeExecutionPath(execution)) {
+                    processor.logFailure(execution.getAuthenticator());
+                }
                 setExecutionStatus(execution, AuthenticationSessionModel.ExecutionStatus.FAILED);
                 if (result.getChallenge() != null) {
                     return sendChallenge(result, execution);
@@ -532,7 +557,9 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 return sendChallenge(result, execution);
             case FAILURE_CHALLENGE:
                 logger.debugv("authenticator FAILURE_CHALLENGE: {0}", execution.getAuthenticator());
-                processor.logFailure(execution.getAuthenticator());
+                if (!isAlternativeExecutionPath(execution)) {
+                    processor.logFailure(execution.getAuthenticator());
+                }
                 setExecutionStatus(execution, AuthenticationSessionModel.ExecutionStatus.CHALLENGED);
                 return sendChallenge(result, execution);
             case ATTEMPTED:
@@ -549,9 +576,61 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         }
     }
 
+    private boolean isAlternativeExecutionPath(AuthenticationExecutionModel execution) {
+        AuthenticationExecutionModel current = execution;
+        while (current != null) {
+            if (current.isAlternative()) {
+                return true;
+            }
+
+            String parentFlowId = current.getParentFlow();
+            if (parentFlowId == null) {
+                return false;
+            }
+
+            current = processor.getRealm().getAuthenticationExecutionByFlowId(parentFlowId);
+        }
+
+        return false;
+    }
+
     public Response sendChallenge(AuthenticationProcessor.Result result, AuthenticationExecutionModel execution) {
         processor.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION, execution.getId());
         return result.getChallenge();
+    }
+
+    private Map<String, Object> buildAlternativeErrorDetail(AuthenticationExecutionModel execution, Response response, AuthenticationFlowException exception) {
+        Map<String, Object> detail = new HashMap<>();
+        detail.put("execution", logExecutionAlias(execution));
+
+        if (response != null) {
+            detail.put("status", response.getStatus());
+            Object entity = response.getEntity();
+            if (entity != null) {
+                detail.put("error", toJsonSafeError(entity));
+            }
+        }
+
+        if (exception != null) {
+            if (exception.getError() != null) {
+                detail.put("flow_error", exception.getError().name());
+            }
+            if (exception.getMessage() != null) {
+                detail.put("message", exception.getMessage());
+            }
+            if (exception.getEventDetails() != null) {
+                detail.put("event_details", exception.getEventDetails());
+            }
+        }
+
+        return detail;
+    }
+
+    private Object toJsonSafeError(Object entity) {
+        if (entity instanceof Map || entity instanceof List || entity instanceof String || entity instanceof Number || entity instanceof Boolean) {
+            return entity;
+        }
+        return String.valueOf(entity);
     }
 
     @Override
