@@ -8,6 +8,8 @@ import {
 import {
   Button,
   ButtonVariant,
+  Chip,
+  ChipGroup,
   PageSection,
   Switch,
   ToolbarItem,
@@ -25,6 +27,52 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import useToggle from "../utils/useToggle";
 import { LinkIdentityProviderModal } from "./LinkIdentityProviderModal";
 import { EditOrganizationParams } from "./routes/EditOrganization";
+
+type DomainCellProps = {
+  row: IdentityProviderRepresentation;
+  orgId: string;
+};
+
+const DomainCell = ({ row, orgId }: DomainCellProps) => {
+  const { adminClient } = useAdminClient();
+  const { t } = useTranslation();
+  const [domains, setDomains] = useState<string[]>([]);
+
+  useFetch(
+    async () => {
+      const configDomain = row.config?.["kc.org.domain"];
+      if (configDomain === "ANY") {
+        return ["ANY"];
+      }
+      const orgDomains =
+        await adminClient.organizations.getOrganizationDomainsByIdp({
+          orgId,
+          alias: row.alias!,
+        });
+      return orgDomains.map((domain) => domain.name!)
+    },
+    (result) => setDomains(result),
+    [row.alias],
+  );
+
+  if (domains.length === 0) {
+    return null;
+  }
+
+  return (
+    <ChipGroup
+      numChips={2}
+      expandedText={t("hide")}
+      collapsedText={t("showRemaining")}
+    >
+      {domains.map((name) => (
+        <Chip key={name} isReadOnly>
+          {name}
+        </Chip>
+      ))}
+    </ChipGroup>
+  );
+};
 
 type ShownOnLoginPageCheckProps = {
   row: IdentityProviderRepresentation;
@@ -208,8 +256,11 @@ export const IdentityProviders = () => {
                 ),
               },
               {
-                name: "config['kc.org.domain']",
+                name: "domain",
                 displayKey: "domain",
+                cellRenderer: (row) => (
+                  <DomainCell row={row} orgId={orgId!} />
+                ),
               },
               {
                 name: "providerId",

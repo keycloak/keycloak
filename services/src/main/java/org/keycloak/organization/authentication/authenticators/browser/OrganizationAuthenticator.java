@@ -279,13 +279,9 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
             return false;
         }
 
-        // first look for an IDP that matches exactly the specified domain (case-insensitive)
-        IdentityProviderModel idp = organization.getIdentityProviders()
-                .filter(broker -> IdentityProviderRedirectMode.EMAIL_MATCH.isSet(broker) &&
-                    domain.equalsIgnoreCase(broker.getConfig().get(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE))).findFirst().orElse(null);
+        IdentityProviderModel idp = resolveIdpByDomain(organization, domain);
 
         if (idp != null) {
-            // redirect the user using the broker that matches the specified domain
             redirect(context, idp.getAlias(), username);
             return true;
         }
@@ -302,6 +298,32 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
         }
 
         return false;
+    }
+
+    private IdentityProviderModel resolveIdpByDomain(OrganizationModel organization, String domain) {
+        if (domain == null) {
+            return null;
+        }
+
+        // Find the domain in the organization
+        Optional<OrganizationDomainModel> domainModel = organization.getDomains()
+                .filter(d -> domain.equalsIgnoreCase(d.getName()))
+                .findFirst();
+
+        if (domainModel.isEmpty()) {
+            return null;
+        }
+
+        String idpId = domainModel.get().getIdpId();
+        if (idpId == null) {
+            return null;
+        }
+
+        // Find the IDP in the organization's identity providers
+        return organization.getIdentityProviders()
+                .filter(idp -> idpId.equals(idp.getInternalId()))
+                .findFirst()
+                .orElse(null);
     }
 
     private UserModel resolveUser(AuthenticationFlowContext context, String username) {

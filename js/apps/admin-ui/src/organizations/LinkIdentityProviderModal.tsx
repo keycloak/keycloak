@@ -88,6 +88,16 @@ export const LinkIdentityProviderModal = ({
           alias: data.alias[0],
         });
       }
+
+      // Unless user selected ANY we update the domain link to the IDP
+      const domain = config["kc.org.domain"]
+      if (domain !== undefined && domain !== "ANY") {
+        await adminClient.organizations.updateDomain(
+          { orgId, domainName: domain },
+          { idpId: foundIdentityProvider.internalId },
+        );
+      }
+
       addAlert(
         t(!identityProvider ? "linkSuccessful" : "linkUpdatedSuccessful"),
       );
@@ -133,6 +143,7 @@ export const LinkIdentityProviderModal = ({
             defaultValue={[]}
             isRequired
             isDisabled={!!identityProvider}
+            orgId={orgId}
           />
           <SelectControl
             name={convertAttributeNameToForm("config.kc.org.domain")}

@@ -664,9 +664,14 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             return false;
         }
 
-        // clear the organization id and any domain assigned to the IDP.
+        // clear the organization id and any domain associated with the IDP.
         identityProvider.setOrganizationId(null);
+        organizationEntity.getDomains().stream()
+                .filter(domain -> domain.getIdentityProvider() !=null &&
+                        domain.getIdentityProvider().getInternalId().equalsIgnoreCase(identityProvider.getInternalId()))
+                .forEach(domain -> domain.setIdentityProvider(null));
         identityProvider.getConfig().remove(ORGANIZATION_DOMAIN_ATTRIBUTE);
+
         session.identityProviders().update(identityProvider);
 
         return true;

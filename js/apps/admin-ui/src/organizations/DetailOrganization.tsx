@@ -54,6 +54,21 @@ export default function DetailOrganization() {
   const save = async (org: OrganizationFormType) => {
     try {
       const organization = convertToOrg(org);
+      const currentOrg = await adminClient.organizations.findOne({ id });
+
+      const currentDomainsMap = new Map(
+        currentOrg?.domains?.map((d) => [d.name, d]) ?? [],
+      );
+
+      //We want to keep current domain idpId and verified status
+      organization.domains?.forEach((domain) => {
+        const currentDomain = currentDomainsMap.get(domain.name!);
+        if (currentDomain) {
+          domain.idpId = currentDomain.idpId;
+          domain.verified = currentDomain.verified;
+        }
+      });
+
       await adminClient.organizations.updateById({ id }, organization);
       addAlert(t("organizationSaveSuccess"));
     } catch (error) {

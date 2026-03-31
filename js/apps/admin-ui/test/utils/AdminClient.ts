@@ -3,6 +3,7 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation.js";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation.js";
 import type OrganizationRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationRepresentation.js";
+import type OrganizationDomainRepresentation from "@keycloak/keycloak-admin-client/lib/defs/organizationDomainRepresentation.js";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation.js";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation.js";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation.js";
@@ -333,6 +334,16 @@ class AdminClient {
     });
   }
 
+  async getIdentityProvider(
+    alias: string,
+    realm: string = this.#client.realmName,
+  ) {
+    await this.#login();
+    return this.#withRealm(realm, async () => {
+      return this.#client.identityProviders.findOne({ alias });
+    });
+  }
+
   async deleteIdentityProvider(idpAlias: string) {
     await this.#login();
     await this.#client.identityProviders.del({
@@ -373,6 +384,41 @@ class AdminClient {
   ) {
     await this.#login();
     await this.#client.organizations.create(org);
+  }
+
+  async findOrg(
+    name: string,
+    realm: string = this.#client.realmName,
+  ): Promise<string> {
+    await this.#login();
+    return this.#withRealm(realm, async () => {
+      const found = await this.#client.organizations.find({ search: name });
+      if (found.length === 0) throw new Error(`Organization not found: ${name}`);
+      return found[0].id!;
+    });
+  }
+
+  async linkIdpToOrg(
+    orgId: string,
+    alias: string,
+    realm: string = this.#client.realmName,
+  ): Promise<void> {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      await this.#client.organizations.linkIdp({ orgId, alias });
+    });
+  }
+
+  async updateOrgDomain(
+    orgId: string,
+    domainName: string,
+    data: Partial<OrganizationDomainRepresentation>,
+    realm: string = this.#client.realmName,
+  ): Promise<void> {
+    await this.#login();
+    await this.#withRealm(realm, async () => {
+      await this.#client.organizations.updateDomain({ orgId, domainName }, data);
+    });
   }
 
   async deleteOrganization(

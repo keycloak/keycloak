@@ -34,14 +34,20 @@ public class OrganizationDomainModel implements Serializable {
 
     private final String name;
     private final boolean verified;
+    private final String idpId;
 
     public OrganizationDomainModel(String name) {
-        this(name, false);
+        this(name, false, null);
     }
 
     public OrganizationDomainModel(String name, boolean verified) {
+        this(name, verified, null);
+    }
+
+    public OrganizationDomainModel(String name, boolean verified, String idpId) {
         this.name = name == null ? null : name.trim().toLowerCase();
         this.verified = verified;
+        this.idpId = idpId;
     }
 
     public String getName() {
@@ -50,6 +56,10 @@ public class OrganizationDomainModel implements Serializable {
 
     public boolean isVerified() {
         return this.verified;
+    }
+
+    public String getIdpId() {
+        return this.idpId;
     }
 
     @Override

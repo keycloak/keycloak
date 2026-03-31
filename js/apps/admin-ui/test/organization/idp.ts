@@ -1,5 +1,6 @@
 import type { Page } from "@playwright/test";
 import { selectItem } from "../utils/form.ts";
+import { clickRowKebabItem } from "../utils/table.ts";
 
 export async function goToIdentityProviders(page: Page) {
   await page.getByTestId("identityProvidersTab").click();
@@ -9,6 +10,17 @@ export async function clickAddIdentityProvider(page: Page) {
   await page
     .getByTestId("no-identity-provider-in-this-organization-empty-action")
     .click();
+}
+
+export async function clickUnlinkIdentityProvider(
+  page: Page,
+  alias: string,
+) {
+  await clickRowKebabItem(page, alias, "Unlink provider");
+}
+
+export async function clickLinkIdentityProviderFromToolbar(page: Page) {
+  await page.getByRole("button", { name: "Link identity provider" }).click();
 }
 
 export async function fillForm(

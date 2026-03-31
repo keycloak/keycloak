@@ -31,6 +31,7 @@ import useToggle from "../utils/useToggle";
 type IdentityProviderSelectProps = Omit<ComponentProps, "convertToName"> & {
   variant?: "typeaheadMulti" | "typeahead";
   isRequired?: boolean;
+  orgId: string;
 };
 
 export const IdentityProviderSelect = ({
@@ -41,6 +42,7 @@ export const IdentityProviderSelect = ({
   isRequired,
   variant = "typeahead",
   isDisabled,
+  orgId,
 }: IdentityProviderSelectProps) => {
   const { adminClient } = useAdminClient();
 
@@ -66,13 +68,14 @@ export const IdentityProviderSelect = ({
     async () => {
       const params: IdentityProvidersQuery = {
         max: 20,
-        realmOnly: true,
       };
       if (search) {
         params.search = search;
       }
 
-      return await adminClient.identityProviders.find(params);
+      var allIdentityProviders  = await adminClient.identityProviders.find(params);
+      //Filter IDP to keep the IDP which are either not linked to an org yet or linked to the current organisation
+      return allIdentityProviders.filter( (idp) => !idp.organizationId || idp.organizationId === orgId);
     },
     setIdps,
     [search],

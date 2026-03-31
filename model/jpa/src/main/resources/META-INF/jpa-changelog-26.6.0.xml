@@ -120,4 +120,19 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.6.0-org-domain-idp-column">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="ORG_DOMAIN" columnName="IDP_ID"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ORG_DOMAIN">
+            <column name="IDP_ID" type="VARCHAR(36)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.6.0-org-domain-idp-migration">
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate26_6_0_OrgDomainIdpMigration"/>
+    </changeSet>
+
 </databaseChangeLog>
