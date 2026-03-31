@@ -221,8 +221,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         var baseClientRepresentation = adminClient.clients(testRealm.getName()).v2().client(clientIdToDelete).getClient();
         assertEquals(clientIdToDelete, baseClientRepresentation.getClientId());
 
-        // TODO will change when TODO on RestAPI has been fixed. Right now deleteClient() is void, instead of Response
-        adminClient.clients(testRealm.getName()).v2().client(clientIdToDelete).deleteClient();
+        try (var response = adminClient.clients(testRealm.getName()).v2().client(clientIdToDelete).deleteClient()) {
+            assertEquals(204, response.getStatus());
+        }
 
         NotFoundException exception = assertThrows(
             NotFoundException.class,
@@ -244,6 +245,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         try (var response = adminClient.clients(testRealm.getName()).v2().createClient(oidcRep)) {
             assertEquals(201, response.getStatus());
+            OIDCClientRepresentation created = response.readEntity(OIDCClientRepresentation.class);
+            assertThat(created, notNullValue());
+            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Create a SAML client with SAML-specific fields
@@ -260,6 +264,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         try (var response = adminClient.clients(testRealm.getName()).v2().createClient(samlRep)) {
             assertEquals(201, response.getStatus());
+            SAMLClientRepresentation created = response.readEntity(SAMLClientRepresentation.class);
+            assertThat(created, notNullValue());
+            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Get all clients - this should work with mixed protocols
@@ -308,10 +315,6 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         assertThat(samlClient.getSignAssertions(), is(true));
         assertThat(samlClient.getForcePostBinding(), is(true));
         assertThat(samlClient.getFrontChannelLogout(), is(false));
-
-        // Cleanup
-        adminClient.clients(testRealm.getName()).v2().client(oidcRep.getClientId()).deleteClient();
-        adminClient.clients(testRealm.getName()).v2().client(samlRep.getClientId()).deleteClient();
     }
 
     @Test
@@ -943,6 +946,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
 
         try (var response = adminClient.clients(testRealm.getName()).v2().createClient(validRep)) {
             assertThat(response.getStatus(), is(201));
+            BaseClientRepresentation created = response.readEntity(BaseClientRepresentation.class);
+            assertThat(created, notNullValue());
+            masterRealm.cleanup().add(realm -> realm.clients().delete(created.getUuid()));
         }
 
         // Now try to update with invalid data
@@ -951,9 +957,6 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             String body = response.readEntity(String.class);
             assertThat(body, containsString(expectedErrorMessage));
         }
-
-        // Cleanup: delete the created client
-        adminClient.clients(testRealm.getName()).v2().client(clientId).deleteClient();
     }
 
     private void assertClientUuid(BaseClientRepresentation client) {
