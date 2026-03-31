@@ -261,11 +261,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     protected String getDefaultChallengeMessage(AuthenticationFlowContext context) {
-        if (isUserAlreadySetBeforeUsernamePasswordAuth(context)) {
-            return Messages.INVALID_PASSWORD;
-        } else {
-            return Messages.INVALID_USER;
-        }
+        return Messages.INVALID_USER;
     }
 
     protected boolean isUserAlreadySetBeforeUsernamePasswordAuth(AuthenticationFlowContext context) {

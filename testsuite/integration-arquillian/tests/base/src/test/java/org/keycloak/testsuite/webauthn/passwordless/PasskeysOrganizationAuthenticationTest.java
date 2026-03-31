@@ -215,7 +215,7 @@ public class PasskeysOrganizationAuthenticationTest extends AbstractWebAuthnVirt
             MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
             loginPage.login("invalid-password");
             loginPage.assertCurrent();
-            MatcherAssert.assertThat(loginPage.getPasswordInputError(), Matchers.is("Invalid password."));
+            MatcherAssert.assertThat(loginPage.getPasswordInputError(), Matchers.is("Invalid username or password."));
             events.expect(EventType.LOGIN_ERROR)
                     .error(Errors.INVALID_USER_CREDENTIALS)
                     .user(user.getId())
