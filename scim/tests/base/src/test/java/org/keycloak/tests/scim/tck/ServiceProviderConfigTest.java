@@ -6,6 +6,7 @@ import java.util.Set;
 import org.keycloak.scim.resource.config.ServiceProviderConfig;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.AuthenticationScheme;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.BulkSupport;
+import org.keycloak.scim.resource.config.ServiceProviderConfig.FilterSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.Supported;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 
@@ -37,8 +38,15 @@ public class ServiceProviderConfigTest extends AbstractScimTest {
         assertTrue(patch.getSupported());
         List<AuthenticationScheme> authenticationSchemes = config.getAuthenticationSchemes();
         assertNotNull(authenticationSchemes);
-        // TODO: support at least bearer token authentication scheme
-        assertTrue(authenticationSchemes.isEmpty());
+        assertEquals(1, authenticationSchemes.size());
+        AuthenticationScheme bearerScheme = authenticationSchemes.get(0);
+        assertEquals("OAuth Bearer Token", bearerScheme.getName());
+        assertEquals("Authentication scheme using the OAuth Bearer Token standard", bearerScheme.getDescription());
+        assertEquals("https://tools.ietf.org/html/rfc6750", bearerScheme.getSpecUri());
+        assertEquals("oauthbearertoken", bearerScheme.getType());
+        FilterSupport filter = config.getFilter();
+        assertNotNull(filter);
+        assertTrue(filter.getSupported());
         Set<String> schemas = config.getSchemas();
         assertNotNull(schemas);
         assertEquals(1, schemas.size());

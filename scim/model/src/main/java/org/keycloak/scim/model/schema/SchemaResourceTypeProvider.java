@@ -87,6 +87,10 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                         p.setName(k);
                         p.setType("complex");
                         p.setMultiValued(false);
+                        p.setMutability("readWrite");
+                        p.setCaseExact(false);
+                        p.setRequired(false);
+                        p.setUniqueness("none");
                         return p;
                     });
 
@@ -95,6 +99,8 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttr.setType(attribute.getType());
                     subAttr.setMultiValued(false);
                     subAttr.setReturned(attribute.getReturned());
+                    subAttr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                    subAttr.setUniqueness(attribute.getUniqueness());
 
                     List<Attribute> subAttributes = parent.getSubAttributes();
                     if (subAttributes == null) {
@@ -109,6 +115,10 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                         p.setName(k);
                         p.setType("complex");
                         p.setMultiValued(attribute.isMultivalued());
+                        p.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                        p.setRequired(attribute.isRequired());
+                        p.setCaseExact(attribute.isCaseExact());
+                        p.setUniqueness(attribute.getUniqueness());
                         return p;
                     });
 
@@ -117,6 +127,10 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttr.setType(attribute.getType());
                     subAttr.setMultiValued(false);
                     subAttr.setReturned(attribute.getReturned());
+                    subAttr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                    subAttr.setRequired(attribute.isRequired());
+                    subAttr.setCaseExact(attribute.isCaseExact());
+                    subAttr.setUniqueness(attribute.getUniqueness());
 
                     List<Attribute> subAttributes = parent.getSubAttributes();
                     if (subAttributes == null) {
@@ -132,6 +146,10 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                         attr.setType(attribute.getType());
                         attr.setMultiValued(attribute.isMultivalued());
                         attr.setReturned(attribute.getReturned());
+                        attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                        attr.setRequired(attribute.isRequired());
+                        attr.setCaseExact(attribute.isCaseExact());
+                        attr.setUniqueness(attribute.getUniqueness());
                         return attr;
                     });
                 }
@@ -143,6 +161,10 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     attr.setType(attribute.getType());
                     attr.setMultiValued(attribute.isMultivalued());
                     attr.setReturned(attribute.getReturned());
+                    attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                    attr.setRequired(attribute.isRequired());
+                    attr.setCaseExact(attribute.isCaseExact());
+                    attr.setUniqueness(attribute.getUniqueness());
                     return attr;
                 });
             }

@@ -445,7 +445,18 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
             user.setEnabled(false);
             updateUser(user);
 
+            // Wrong password on disabled user should return "Invalid user credentials" (not reveal disabled status)
             AccessTokenResponse response = getTestToken("invalid", "invalid");
+            Assert.assertNull(response.getAccessToken());
+            Assert.assertEquals(response.getError(), "invalid_grant");
+            Assert.assertEquals(response.getErrorDescription(), "Invalid user credentials");
+            events.clear();
+
+            assertUserNumberOfFailures(user.getId(), 0);
+
+            // Correct password on disabled user should return "Account disabled"
+            String totpSecret = totp.generateTOTP("totpSecret");
+            response = getTestToken(getPassword("test-user@localhost"), totpSecret);
             Assert.assertNull(response.getAccessToken());
             Assert.assertEquals(response.getError(), "invalid_grant");
             Assert.assertEquals(response.getErrorDescription(), "Account disabled");

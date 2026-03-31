@@ -88,6 +88,9 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         String claimName = mapperModel.getConfig().get(CLAIM_NAME);
         String userAttribute = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
+        if (claimName == null && userAttribute == null) {
+            return;
+        }
         boolean aggregateAttributes = Optional.ofNullable(mapperModel.getConfig().get(AGGREGATE_ATTRIBUTES_KEY))
                 .map(Boolean::parseBoolean).orElse(false);
         Collection<String> attributes =
@@ -96,7 +99,7 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
         attributes.removeAll(Collections.singleton(null));
         if (!attributes.isEmpty()) {
             JsonUtils.mapClaim(
-                    JsonUtils.splitClaimPath(claimName),
+                    JsonUtils.splitClaimPath(Optional.ofNullable(claimName).orElse(userAttribute)),
                     String.join(",", attributes),
                     claims,
                     false
@@ -143,7 +146,14 @@ public class OID4VCUserAttributeMapper extends OID4VCMapper {
         String claimName = mapperModel.getConfig().get(CLAIM_NAME);
         final String userAttributeName = mapperModel.getConfig().get(USER_ATTRIBUTE_KEY);
         // Split claim name into path segments for metadata endpoint.
-        final List<String> claimPath = Optional.ofNullable(claimName).map(JsonUtils::splitClaimPath).orElse(List.of(userAttributeName));
+        final List<String> claimPath = Optional.ofNullable(claimName)
+                .map(JsonUtils::splitClaimPath)
+                .orElse(Optional.ofNullable(userAttributeName)
+                        .map(List::of)
+                        .orElse(Collections.emptyList()));
+        if (claimPath.isEmpty()) {
+            return Collections.emptyList();
+        }
         return ListUtils.union(getAttributePrefix(), claimPath);
     }
 }

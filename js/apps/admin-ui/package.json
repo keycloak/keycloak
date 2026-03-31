@@ -111,7 +111,7 @@
     "react-router-dom": "^6.30.2",
     "reactflow": "^11.11.4",
     "use-react-router-breadcrumbs": "^4.0.1",
-    "yaml": "^2.8.2"
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",

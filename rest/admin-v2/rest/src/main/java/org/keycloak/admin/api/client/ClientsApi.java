@@ -16,7 +16,12 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENTS_V2)
@@ -27,15 +32,18 @@ public interface ClientsApi {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get all clients", description = "Returns a list of all clients in the realm")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = BaseClientRepresentation.class)))
+    })
     Stream<BaseClientRepresentation> getClients();
 
-    /**
-     * @return {@link BaseClientRepresentation} of created client
-     */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Create a new client", description = "Creates a new client in the realm")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class)))
+    })
     Response createClient(@Valid BaseClientRepresentation client);
 
     @Path("{id}")
