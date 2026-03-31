@@ -10,12 +10,15 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.common.util.TriConsumer;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelValidationException;
+import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.common.Email;
 import org.keycloak.scim.resource.common.Name;
@@ -146,6 +149,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .withModelSetter((TriConsumer<UserModel, String, Set<GroupMembership>>) (model, name, values) -> {
                     KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
                     RealmModel realm = session.getContext().getRealm();
+                    checkUserMembershipPermission(session.getContext().getPermissions(), model);
                     List<GroupModel> remove = new ArrayList<>();
 
                     for (GroupUtils.GroupMembership membership : GroupUtils.getAllMemberships(session, model.getGroupsStream().toList())) {
@@ -161,10 +165,12 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 
+                        checkGroupMembershipPermission(session.getContext().getPermissions(), group);
                         model.joinGroup(group);
                     }
 
                     for (GroupModel group : remove) {
+                        checkGroupMembershipPermission(session.getContext().getPermissions(), group);
                         model.leaveGroup(group);
                     }
                 }, (BiConsumer<User, Collection<GroupModel>>) (user, groups) -> {
@@ -183,6 +189,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                 .withModelRemover((TriConsumer<UserModel, String, Set<GroupMembership>>) (model, name, values) -> {
                     KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
                     RealmModel realm = session.getContext().getRealm();
+                    checkUserMembershipPermission(session.getContext().getPermissions(), model);
 
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
@@ -191,12 +198,14 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 
+                        checkGroupMembershipPermission(session.getContext().getPermissions(), group);
                         model.leaveGroup(group);
                     }
                 })
                 .withModelAdder((TriConsumer<UserModel, String, Set<GroupMembership>>) (model, name, values) -> {
                     KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
                     RealmModel realm = session.getContext().getRealm();
+                    checkUserMembershipPermission(session.getContext().getPermissions(), model);
 
                     for (GroupMembership membership : values) {
                         GroupModel group = session.groups().getGroupById(realm, membership.getValue());
@@ -205,6 +214,7 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
                             throw new ModelValidationException("Group with id " + membership.getValue() + " not found");
                         }
 
+                        checkGroupMembershipPermission(session.getContext().getPermissions(), group);
                         model.joinGroup(group);
                     }
                 })
@@ -223,6 +233,21 @@ public final class UserCoreModelSchema extends AbstractUserModelSchema {
     public void populate(User resource, UserModel model, List<String> requestedAttributes, List<String> excludedAttributes) {
         super.populate(resource, model, requestedAttributes, excludedAttributes);
         setTimestamps(resource, model);
+    }
+
+    private static void checkUserMembershipPermission(Permissions permissions, UserModel user) {
+        if (!permissions.hasPermission(user, AdminPermissionsSchema.USERS_RESOURCE_TYPE, AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP)) {
+            throw new ForbiddenException();
+        }
+    }
+
+    private static void checkGroupMembershipPermission(Permissions permissions, GroupModel group) {
+        if (GroupModel.Type.ORGANIZATION.equals(group.getType()) && group.getOrganization() != null) {
+            throw new ModelValidationException("Cannot access organization related group via non Organization API.");
+        }
+        if (!permissions.hasPermission(group, AdminPermissionsSchema.GROUPS_RESOURCE_TYPE, AdminPermissionsSchema.MANAGE_MEMBERSHIP)) {
+            throw new ForbiddenException();
+        }
     }
 
     private void setTimestamps(User resource, UserModel model) {

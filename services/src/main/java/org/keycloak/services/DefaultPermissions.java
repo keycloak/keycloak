@@ -57,6 +57,8 @@ public class DefaultPermissions implements Permissions {
                 return model == null ? groups.canView() : groups.canView((GroupModel) model);
             } else if (AdminPermissionsSchema.MANAGE.equals(scope)) {
                 return model == null ? groups.canManage() : groups.canManage((GroupModel) model);
+            } else if (AdminPermissionsSchema.MANAGE_MEMBERSHIP.equals(scope)) {
+                return model != null && groups.canManageMembership((GroupModel) model);
             } else if (AdminPermissionsSchema.QUERY.equals(scope)) {
                 return groups.canList();
             }
@@ -76,6 +78,8 @@ public class DefaultPermissions implements Permissions {
                 return model == null ? users.canView() : users.canView((UserModel) model);
             } else if (AdminPermissionsSchema.MANAGE.equals(scope)) {
                 return model == null ? users.canManage() : users.canManage((UserModel) model);
+            } else if (AdminPermissionsSchema.MANAGE_GROUP_MEMBERSHIP.equals(scope)) {
+                return model != null && users.canManageGroupMembership((UserModel) model);
             } else if (AdminPermissionsSchema.QUERY.equals(scope)) {
                 return users.canQuery();
             }
