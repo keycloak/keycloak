@@ -509,6 +509,15 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
     @Test
     public void testShowOnlyBrokersLinkedUserInPasswordPage() {
+        assertOrganizationBrokerVisibilityWhenUserIsLinkedElsewhere(false);
+    }
+
+    @Test
+    public void testShowOrganizationBrokerLinkedElsewhereInPasswordPage() {
+        assertOrganizationBrokerVisibilityWhenUserIsLinkedElsewhere(true);
+    }
+
+    private void assertOrganizationBrokerVisibilityWhenUserIsLinkedElsewhere(boolean showWhenLinkedElsewhere) {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());
         IdentityProviderRepresentation brokerRep = broker.toRepresentation();
@@ -520,6 +529,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         secondIdp.setInternalId(null);
         secondIdp.setHideOnLogin(false);
         secondIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        secondIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.toString(showWhenLinkedElsewhere));
         testRealm().identityProviders().create(secondIdp).close();
         getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
         organization.identityProviders().addIdentityProvider(secondIdp.getAlias()).close();
@@ -553,8 +563,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         Assert.assertFalse(loginPage.isUsernameInputPresent());
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        // second-idp not shown because user is linked to another broker
-        Assert.assertFalse(loginPage.isSocialButtonPresent(secondIdp.getAlias()));
+        Assert.assertEquals(showWhenLinkedElsewhere, loginPage.isSocialButtonPresent(secondIdp.getAlias()));
     }
 
     @Test
