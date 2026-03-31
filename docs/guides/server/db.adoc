@@ -291,9 +291,6 @@ To improve failover behavior and startup resilience during network issues, {proj
 Sets the JDBC driver connection timeout and login timeout.
 Default: `10s`.
 
-{project_name} also uses this value to automatically derive the connection pool acquisition timeout (`db-pool-acquisition-timeout`) , which is set to twice the value of db-connect-timeout.
-This ensures that the Agroal connection pool acquisition timeout is always greater than the JDBC connection timeout, preventing startup warnings.
-
 === Writer and reader instances
 
 When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.

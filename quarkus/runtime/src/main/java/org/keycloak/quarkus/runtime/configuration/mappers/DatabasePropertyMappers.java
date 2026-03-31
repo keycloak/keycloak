@@ -668,8 +668,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     private static String computeAcquisitionTimeout(String connectTimeoutValue) {
         Duration connectTimeout = DurationConverter.parseDuration(connectTimeoutValue);
         Duration transactionSetupTimeout = DurationConverter.parseDuration(
-                Configuration.getConfigValue(TransactionOptions.TRANSACTION_SETUP_TIMEOUT.getKey())
-                        .getValueOrDefault(TransactionOptions.MIGRATION_TRANSACTION_TIMEOUT)
+                Configuration.getKcConfigValue(TransactionOptions.TRANSACTION_SETUP_TIMEOUT.getKey()).getValue()
         );
         Duration acquisitionTimeout = connectTimeout.multipliedBy(2);
         if (acquisitionTimeout.compareTo(transactionSetupTimeout) > 0) {

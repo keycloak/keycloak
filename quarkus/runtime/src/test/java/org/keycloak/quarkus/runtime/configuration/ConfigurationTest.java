@@ -982,5 +982,28 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("30", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
         assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-connect-timeout=30s", "--transaction-setup-timeout=30s");
+        config = createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+        assertEquals("PT30S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-connect-timeout=30s", "--transaction-setup-timeout=45s");
+        config = createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+        assertEquals("PT45S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-connect-timeout=60s", "--transaction-setup-timeout=30s");
+        createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
     }
 }
