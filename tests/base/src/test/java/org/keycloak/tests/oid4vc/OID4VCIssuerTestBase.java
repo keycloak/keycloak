@@ -668,6 +668,28 @@ public abstract class OID4VCIssuerTestBase {
             );
             return protocolMapperRepresentation;
         }
+
+        static ProtocolMapperRepresentation getRoleMapper(String clientId) {
+            ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+            protocolMapperRepresentation.setName("role-mapper");
+            protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+            protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+            protocolMapperRepresentation.setProtocolMapper("oid4vc-target-role-mapper");
+            protocolMapperRepresentation.setConfig(
+                    Map.of("claim.name", "roles", "clientId", clientId)
+            );
+            return protocolMapperRepresentation;
+        }
+
+        static ProtocolMapperRepresentation getProtocolMapper(String name, String type, Map<String, String> config) {
+            ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+            protocolMapperRepresentation.setName(name);
+            protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+            protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+            protocolMapperRepresentation.setProtocolMapper(type);
+            protocolMapperRepresentation.setConfig(config);
+            return protocolMapperRepresentation;
+        }
     }
 
     public static class StaticTimeProvider implements TimeProvider {
