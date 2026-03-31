@@ -77,9 +77,14 @@ public class Claim {
                 return Optional.empty();
             }
 
-            claim.setName(String.join(".", mapper.getMetadataAttributePath()));
+            List<String> attributePath = mapper.getMetadataAttributePath();
+            if (attributePath == null || attributePath.isEmpty()) {
+                return Optional.empty();
+            }
 
-            claim.setPath(mapper.getMetadataAttributePath());
+            claim.setName(String.join(".", attributePath));
+
+            claim.setPath(attributePath);
             claim.setMandatory(protocolMapper.isMandatory());
 
             String displayString = protocolMapper.getDisplay();
