@@ -1109,6 +1109,24 @@ public class AuthenticationManager {
 
             return response;
         }
+
+        // After required actions complete, check if post-broker-login flow needs to run
+        // (deferred from browser flow continuation to allow required actions like CONFIGURE_TOTP first)
+        if ("true".equals(authSession.getAuthNote(AuthenticationProcessor.BROKER_CONTINUATION_PBL_PENDING))) {
+            authSession.removeAuthNote(AuthenticationProcessor.BROKER_CONTINUATION_PBL_PENDING);
+            // Reset session state so the post-broker-login endpoint accepts this session
+            authSession.setAction(AuthenticationSessionModel.Action.AUTHENTICATE.name());
+            authSession.setAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH, LoginActionsService.POST_BROKER_LOGIN_PATH);
+            authSession.removeAuthNote(AuthenticationProcessor.CURRENT_AUTHENTICATION_EXECUTION);
+            authSession.getParentSession().setTimestamp(Time.currentTime());
+            URI redirect = LoginActionsService.postBrokerLoginProcessor(uriInfo)
+                    .queryParam(Constants.CLIENT_ID, authSession.getClient().getClientId())
+                    .queryParam(Constants.TAB_ID, authSession.getTabId())
+                    .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authSession))
+                    .build(authSession.getRealm().getName());
+            return Response.status(302).location(redirect).build();
+        }
+
         RealmModel realm = authSession.getRealm();
 
         ClientSessionContext clientSessionCtx = AuthenticationProcessor.attachSession(authSession, userSession, session, realm, clientConnection, event);

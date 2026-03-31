@@ -31,9 +31,12 @@ import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
+import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.authentication.authenticators.util.AcrStore;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -95,6 +98,10 @@ public class AuthenticationProcessor {
 
     public static final String BROKER_SESSION_ID = "broker.session.id";
     public static final String BROKER_USER_ID = "broker.user.id";
+    public static final String BROKER_PENDING_USER_ID = "BROKER_PENDING_USER_ID";
+    public static final String BROKER_PENDING_CONTEXT = "BROKER_PENDING_CONTEXT";
+    public static final String BROKER_TOKENS_PENDING = "BROKER_TOKENS_PENDING";
+    public static final String BROKER_CONTINUATION_PBL_PENDING = "BROKER_CONTINUATION_PBL_PENDING";
     public static final String FORWARDED_PASSIVE_LOGIN = "forwarded.passive.login";
 
     // Boolean flag, which is true when authentication-selector screen should be rendered (typically displayed when user clicked on 'try another way' link)
@@ -993,10 +1000,17 @@ public class AuthenticationProcessor {
 
     public static void resetFlow(AuthenticationSessionModel authSession, String flowPath) {
         logger.debug("RESET FLOW");
+
         authSession.getParentSession().setTimestamp(Time.currentTime());
         authSession.setAuthenticatedUser(null);
         authSession.clearExecutionStatus();
+
+        // Preserve broker-related session notes during reset
+        Map<String, String> brokerNotes = preserveBrokerSessionNotes(authSession);
+
         authSession.clearUserSessionNotes();
+        restoreBrokerSessionNotes(authSession, brokerNotes);
+
         authSession.clearAuthNotes();
 
         Set<String> requiredActions = authSession.getRequiredActions();
@@ -1007,6 +1021,54 @@ public class AuthenticationProcessor {
         authSession.setAction(CommonClientSessionModel.Action.AUTHENTICATE.name());
 
         authSession.setAuthNote(CURRENT_FLOW_PATH, flowPath);
+    }
+
+    /**
+     * Preserves broker-related session notes that must survive flow resets.
+     * These notes contain critical broker state including tokens and identity provider info.
+     *
+     * @param authSession The authentication session
+     * @return Map of preserved notes
+     */
+    private static Map<String, String> preserveBrokerSessionNotes(AuthenticationSessionModel authSession) {
+        Map<String, String> preserved = new HashMap<>();
+        Map<String, String> currentNotes = authSession.getUserSessionNotes();
+
+        // Keys to preserve - using string constants to avoid broker package dependencies
+        String[] preservedKeys = {
+            "IDENTITY_PROVIDER",                  // Details.IDENTITY_PROVIDER
+            "IDENTITY_PROVIDER_USERNAME",         // Details.IDENTITY_PROVIDER_USERNAME
+            "FEDERATED_ID_TOKEN",                 // OIDCIdentityProvider.FEDERATED_ID_TOKEN
+            "FEDERATED_ACCESS_TOKEN",             // OIDCIdentityProvider.FEDERATED_ACCESS_TOKEN
+            "FEDERATED_ACCESS_TOKEN_RESPONSE",    // OIDCIdentityProvider.FEDERATED_ACCESS_TOKEN_RESPONSE
+            "FEDERATED_REFRESH_TOKEN",            // AbstractOAuth2IdentityProvider.FEDERATED_REFRESH_TOKEN
+            "FEDERATED_TOKEN_EXPIRATION",         // AbstractOAuth2IdentityProvider.FEDERATED_TOKEN_EXPIRATION
+            "SAML_FEDERATED_SUBJECT_NAMEID"      // SAMLEndpoint.SAML_FEDERATED_SUBJECT_NAMEID
+        };
+
+        for (String key : preservedKeys) {
+            String value = currentNotes.get(key);
+            if (value != null) {
+                preserved.put(key, value);
+                logger.debugf("Preserving broker note '%s' during resetFlow()", key);
+            }
+        }
+
+        return preserved;
+    }
+
+    /**
+     * Restores broker-related session notes after clearing.
+     *
+     * @param authSession The authentication session
+     * @param brokerNotes The notes to restore
+     */
+    private static void restoreBrokerSessionNotes(AuthenticationSessionModel authSession,
+                                                   Map<String, String> brokerNotes) {
+        for (Map.Entry<String, String> entry : brokerNotes.entrySet()) {
+            authSession.setUserSessionNote(entry.getKey(), entry.getValue());
+            logger.debugf("Restored broker note '%s' after resetFlow()", entry.getKey());
+        }
     }
 
     // Recreate new root auth session and new auth session from the given auth session.
@@ -1118,12 +1180,16 @@ public class AuthenticationProcessor {
         Response challenge = authenticationFlow.processFlow();
         if (challenge != null) return challenge;
         if (authenticationSession.getAuthenticatedUser() == null) {
-            if (this.forwardedErrorMessageStore.getForwardedMessage() != null) {
-                LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authenticationSession);
-                forms.addError(this.forwardedErrorMessageStore.getForwardedMessage());
-                return forms.createErrorPage(Response.Status.BAD_REQUEST);
-            } else
-                throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
+            // Check if there is a pending broker user that should be set
+            String brokerPendingUserId = authenticationSession.getAuthNote(BROKER_PENDING_USER_ID);
+            if (brokerPendingUserId == null) {
+                if (this.forwardedErrorMessageStore.getForwardedMessage() != null) {
+                    LoginFormsProvider forms = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authenticationSession);
+                    forms.addError(this.forwardedErrorMessageStore.getForwardedMessage());
+                    return forms.createErrorPage(Response.Status.BAD_REQUEST);
+                } else
+                    throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
+            }
         }
         if (!authenticationFlow.isSuccessful()) {
             throw new AuthenticationFlowException(authenticationFlow.getFlowExceptions());
@@ -1232,6 +1298,63 @@ public class AuthenticationProcessor {
     }
 
     protected Response authenticationComplete() {
+        // Finalize pending broker authentication if needed.
+        // Note: When finalizePendingBrokerAuthenticationInFlow() was called during flow processing
+        // (e.g., when an authenticator like OTP requires a user), BROKER_PENDING_USER_ID will already
+        // be cleaned up. In that case, we skip this block - the broker finalization and PBL setup
+        // were already handled there.
+        String brokerPendingUserId = authenticationSession.getAuthNote(BROKER_PENDING_USER_ID);
+        if (brokerPendingUserId != null) {
+            logger.debugf("Finalizing pending broker authentication for user ID %s", brokerPendingUserId);
+
+            // Set authenticated user if not already set
+            if (authenticationSession.getAuthenticatedUser() == null) {
+                UserModel federatedUser = session.users().getUserById(realm, brokerPendingUserId);
+                if (federatedUser == null) {
+                    throw new AuthenticationFlowException(AuthenticationFlowError.UNKNOWN_USER);
+                }
+                authenticationSession.setAuthenticatedUser(federatedUser);
+            }
+
+            SerializedBrokeredIdentityContext serializedCtx =
+                SerializedBrokeredIdentityContext.readFromAuthenticationSession(
+                    authenticationSession, BROKER_PENDING_CONTEXT);
+
+            if (serializedCtx != null) {
+                try {
+                    BrokeredIdentityContext context = serializedCtx.deserialize(session, authenticationSession);
+                    String providerAlias = context.getIdpConfig().getAlias();
+
+                    authenticationSession.setAuthNote(BROKER_SESSION_ID, context.getBrokerSessionId());
+                    authenticationSession.setAuthNote(BROKER_USER_ID, context.getBrokerUserId());
+
+                    context.getIdp().authenticationFinished(authenticationSession, context);
+
+                    authenticationSession.setUserSessionNote(Details.IDENTITY_PROVIDER, providerAlias);
+                    authenticationSession.setUserSessionNote(Details.IDENTITY_PROVIDER_USERNAME,
+                        context.getUsername());
+
+                    // Check if post-broker-login flow needs to run after browser flow continuation.
+                    org.keycloak.models.IdentityProviderModel currentIdpConfig = session.identityProviders().getByAlias(providerAlias);
+                    String postBrokerLoginFlowId = currentIdpConfig != null ? currentIdpConfig.getPostBrokerLoginFlowId() : null;
+                    if (postBrokerLoginFlowId != null) {
+                        logger.debugf("Post-broker-login flow configured for provider '%s', setting PBL pending flag", providerAlias);
+                        serializedCtx.saveToAuthenticationSession(authenticationSession,
+                            PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
+                        authenticationSession.setAuthNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN, "false");
+                        authenticationSession.setAuthNote(BROKER_CONTINUATION_PBL_PENDING, "true");
+                    }
+
+                } catch (Exception e) {
+                    logger.error("Failed to finalize pending broker authentication", e);
+                }
+            }
+
+            // Cleanup
+            authenticationSession.removeAuthNote(BROKER_PENDING_USER_ID);
+            authenticationSession.removeAuthNote(BROKER_PENDING_CONTEXT);
+        }
+
         new AcrStore(session, authenticationSession).setAuthFlowLevelAuthenticatedToCurrentRequest();
 
         // attachSession(); // Session will be attached after requiredActions + consents are finished.
@@ -1240,10 +1363,26 @@ public class AuthenticationProcessor {
         String nextRequiredAction = nextRequiredAction();
         if (nextRequiredAction != null) {
             return AuthenticationManager.redirectToRequiredActions(session, realm, authenticationSession, uriInfo, nextRequiredAction);
-        } else {
-            event.detail(Details.CODE_ID, authenticationSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
-            return AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event);
         }
+
+        // After all required actions are done, check if post-broker-login flow needs to run.
+        // This flag may have been set either above (when BROKER_PENDING_USER_ID was still present)
+        // or by finalizePendingBrokerAuthenticationInFlow() in DefaultAuthenticationFlow
+        // (when the broker state was consumed during flow processing).
+        if ("true".equals(authenticationSession.getAuthNote(BROKER_CONTINUATION_PBL_PENDING))) {
+            authenticationSession.removeAuthNote(BROKER_CONTINUATION_PBL_PENDING);
+            authenticationSession.getParentSession().setTimestamp(Time.currentTime());
+            URI redirect = LoginActionsService.postBrokerLoginProcessor(uriInfo)
+                    .queryParam(Constants.CLIENT_ID, authenticationSession.getClient().getClientId())
+                    .queryParam(Constants.TAB_ID, authenticationSession.getTabId())
+                    .queryParam(Constants.CLIENT_DATA, AuthenticationProcessor.getClientData(session, authenticationSession))
+                    .build(realm.getName());
+            logger.debugf("Redirecting to post-broker-login flow after browser flow continuation");
+            return Response.status(302).location(redirect).build();
+        }
+
+        event.detail(Details.CODE_ID, authenticationSession.getParentSession().getId());  // todo This should be set elsewhere.  find out why tests fail.  Don't know where this is supposed to be set
+        return AuthenticationManager.finishedRequiredActions(session, authenticationSession, userSession, connection, request, uriInfo, event);
     }
 
     public String nextRequiredAction() {

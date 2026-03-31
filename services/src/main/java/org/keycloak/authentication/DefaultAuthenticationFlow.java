@@ -31,11 +31,16 @@ import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
+import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
 import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
 import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
+import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -426,6 +431,26 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         logger.debugv("authenticator: {0}", factory.getId());
         UserModel authUser = processor.getAuthenticationSession().getAuthenticatedUser();
 
+        // If Authenticator requires a user but none is set, check pending broker user
+        String brokerPendingUserId = processor.getAuthenticationSession().getAuthNote(AuthenticationProcessor.BROKER_PENDING_USER_ID);
+        if (authenticator.requiresUser() && authUser == null) {
+            if (brokerPendingUserId != null) {
+                logger.debugf("Authenticator requires user, setting pending broker authenticated user now");
+
+                UserModel federatedUser = processor.getSession().users().getUserById(
+                    processor.getRealm(), brokerPendingUserId);
+                if (federatedUser == null) {
+                    throw new AuthenticationFlowException("Broker authenticated user not found",
+                        AuthenticationFlowError.UNKNOWN_USER);
+                }
+
+                processor.getAuthenticationSession().setAuthenticatedUser(federatedUser);
+                authUser = federatedUser;
+
+                finalizePendingBrokerAuthenticationInFlow(processor);
+            }
+        }
+
         //If executions are alternative, get the actual execution to show based on user preference
         List<AuthenticationSelectionOption> selectionOptions = createAuthenticationSelectionList(model);
         if (!selectionOptions.isEmpty() && calledFromFlow) {
@@ -617,5 +642,60 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 .filter(AuthenticationFlowCallback.class::isInstance)
                 .map(AuthenticationFlowCallback.class::cast)
                 .forEach(callback -> callback.onTopFlowSuccess(flow));
+    }
+
+    /**
+     * Finalizes a pending broker authentication by deserializing the context and calling authenticationFinished().
+     * This is called when an authenticator requires a user and a pending broker user needs to be set.
+     *
+     * @param processor The authentication processor
+     */
+    private void finalizePendingBrokerAuthenticationInFlow(AuthenticationProcessor processor) {
+        AuthenticationSessionModel authSession = processor.getAuthenticationSession();
+        KeycloakSession session = processor.getSession();
+
+        SerializedBrokeredIdentityContext serializedCtx =
+            SerializedBrokeredIdentityContext.readFromAuthenticationSession(
+                authSession, AuthenticationProcessor.BROKER_PENDING_CONTEXT);
+
+        if (serializedCtx == null) {
+            logger.debugf("No pending broker context found - cannot finalize");
+            return;
+        }
+
+        try {
+            BrokeredIdentityContext context = serializedCtx.deserialize(session, authSession);
+            String providerAlias = context.getIdpConfig().getAlias();
+
+            authSession.setAuthNote(AuthenticationProcessor.BROKER_SESSION_ID, context.getBrokerSessionId());
+            authSession.setAuthNote(AuthenticationProcessor.BROKER_USER_ID, context.getBrokerUserId());
+
+            logger.debugf("Calling authenticationFinished() to store tokens for provider '%s'", providerAlias);
+            context.getIdp().authenticationFinished(authSession, context);
+
+            authSession.setUserSessionNote(Details.IDENTITY_PROVIDER, providerAlias);
+            authSession.setUserSessionNote(Details.IDENTITY_PROVIDER_USERNAME, context.getUsername());
+
+            // Check if post-broker-login flow needs to run after browser flow continuation.
+            // Save PBL context now; the actual redirect happens in authenticationComplete().
+            org.keycloak.models.IdentityProviderModel currentIdpConfig = session.identityProviders().getByAlias(providerAlias);
+            String postBrokerLoginFlowId = currentIdpConfig != null ? currentIdpConfig.getPostBrokerLoginFlowId() : null;
+            if (postBrokerLoginFlowId != null) {
+                logger.debugf("Post-broker-login flow configured for provider '%s', setting PBL pending flag", providerAlias);
+                serializedCtx.saveToAuthenticationSession(authSession,
+                    PostBrokerLoginConstants.PBL_BROKERED_IDENTITY_CONTEXT);
+                authSession.setAuthNote(PostBrokerLoginConstants.PBL_AFTER_FIRST_BROKER_LOGIN, "false");
+                authSession.setAuthNote(AuthenticationProcessor.BROKER_CONTINUATION_PBL_PENDING, "true");
+            }
+
+        } catch (Exception e) {
+            logger.error("Failed to finalize pending broker authentication", e);
+            throw new AuthenticationFlowException("Failed to finalize broker authentication",
+                AuthenticationFlowError.INTERNAL_ERROR);
+        } finally {
+            // Cleanup
+            authSession.removeAuthNote(AuthenticationProcessor.BROKER_PENDING_USER_ID);
+            authSession.removeAuthNote(AuthenticationProcessor.BROKER_PENDING_CONTEXT);
+        }
     }
 }

@@ -18,6 +18,7 @@
 package org.keycloak.authentication.authenticators.browser;
 
 import java.net.URI;
+import java.util.Map;
 
 import jakarta.ws.rs.core.Response;
 
@@ -32,6 +33,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
+import org.keycloak.sessions.AuthenticationSessionModel;
 
 import org.jboss.logging.Logger;
 
@@ -46,6 +48,35 @@ public class IdentityProviderAuthenticator implements Authenticator {
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
+        // CRITICAL: Check for pending broker authentication and set user early
+        // This ensures the user is available for subsequent authenticators
+        setUserFromPendingBrokerAuthentication(context);
+
+        // Check if this authenticator was already executed successfully (e.g., after broker login flow continuation)
+        // This prevents re-execution and redirect loops when returning from broker authentication
+        if (context.getExecution() != null) {
+            Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatuses =
+                context.getAuthenticationSession().getExecutionStatus();
+
+            if (executionStatuses != null) {
+                AuthenticationSessionModel.ExecutionStatus currentStatus =
+                    executionStatuses.get(context.getExecution().getId());
+
+                if (currentStatus == AuthenticationSessionModel.ExecutionStatus.SUCCESS) {
+                    LOG.infof("IdentityProviderAuthenticator was already executed successfully " +
+                        "(execution ID: %s), marking as success and continuing to next authenticator. User=%s",
+                        context.getExecution().getId(),
+                        context.getUser() != null ? context.getUser().getUsername() : "null");
+
+                    context.success();
+                    return;
+                }
+
+                LOG.debugf("IdentityProviderAuthenticator current status: %s (execution ID: %s)",
+                    currentStatus, context.getExecution().getId());
+            }
+        }
+
         if (context.getUriInfo().getQueryParameters().containsKey(AdapterConstants.KC_IDP_HINT)) {
             String providerId = context.getUriInfo().getQueryParameters().getFirst(AdapterConstants.KC_IDP_HINT);
             if (providerId == null || providerId.equals("")) {
@@ -99,6 +130,40 @@ public class IdentityProviderAuthenticator implements Authenticator {
 
         LOG.warnf("Provider not found or not enabled for realm %s", providerId);
         context.attempted();
+    }
+
+    /**
+     * Sets the authenticated user from pending broker authentication if available.
+     * This is called when the IDP redirector is marked as SUCCESS and we're continuing
+     * the browser flow with additional authenticators.
+     *
+     * @param context The authentication flow context
+     */
+    private void setUserFromPendingBrokerAuthentication(AuthenticationFlowContext context) {
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        String brokerPendingUserId = authSession.getAuthNote(AuthenticationProcessor.BROKER_PENDING_USER_ID);
+
+        LOG.infof("setUserFromPendingBrokerAuthentication: brokerPendingUserId=%s, currentUser=%s",
+            brokerPendingUserId, context.getUser() != null ? context.getUser().getUsername() : "null");
+
+        if (brokerPendingUserId != null && context.getUser() == null) {
+            LOG.infof("Found pending broker user ID '%s', setting user in authentication context", brokerPendingUserId);
+
+            UserModel federatedUser = context.getSession().users().getUserById(
+                context.getRealm(), brokerPendingUserId);
+
+            if (federatedUser != null) {
+                authSession.setAuthenticatedUser(federatedUser);
+                context.setUser(federatedUser);
+                LOG.infof("Successfully set user '%s' from pending broker authentication", federatedUser.getUsername());
+            } else {
+                LOG.warnf("Pending broker user ID '%s' not found in realm", brokerPendingUserId);
+            }
+        } else if (brokerPendingUserId == null) {
+            LOG.infof("No pending broker user ID found - skipping user setup");
+        } else {
+            LOG.infof("User already set - skipping");
+        }
     }
 
     @Override
