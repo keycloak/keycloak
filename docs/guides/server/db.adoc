@@ -291,6 +291,8 @@ To improve failover behavior and startup resilience during network issues, {proj
 Sets the JDBC driver connection timeout and login timeout.
 Default: `10s`.
 
+== Preparing for PostgreSQL
+
 === Writer and reader instances
 
 When running PostgreSQL reader and writer instances, {project_name} needs to always connect to the writer instance to do its work.
