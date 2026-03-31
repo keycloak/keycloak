@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jakarta.annotation.Nonnull;
+import jakarta.validation.groups.Default;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
@@ -26,7 +27,8 @@ import org.keycloak.models.mapper.ClientModelMapper;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
-import org.keycloak.representations.admin.v2.validation.CreateClientDefault;
+import org.keycloak.representations.admin.v2.validation.CreateClient;
+import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -42,8 +44,10 @@ import org.keycloak.utils.StringUtil;
 import org.keycloak.validation.ValidationUtil;
 import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
+import org.keycloak.validation.jakarta.ValidationContext;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
@@ -73,7 +77,7 @@ public class DefaultClientService implements ClientService {
                                 @Nonnull RealmAdminResource realmResource) {
         this.session = session;
         this.permissions = permissions;
-        this.validator = new HibernateValidatorProvider();
+        this.validator = new HibernateValidatorProvider(new ValidationContext(session, realm));
 
         this.realmResource = realmResource;
         this.clientsResource = realmResource.getClients();
@@ -107,25 +111,29 @@ public class DefaultClientService implements ClientService {
 
     @Override
     public CreateOrUpdateResult createOrUpdateClient(RealmModel realm, String clientId, BaseClientRepresentation client) throws ServiceException {
-        if (!Objects.equals(clientId, client.getClientId())) {
-            throw new ServiceException("Field 'clientId' in payload does not match the provided 'clientId'", Response.Status.BAD_REQUEST);
-        }
         return createOrUpdate(realm, clientId, client, CreateOrUpdateStrategy.PUT);
     }
 
     private enum CreateOrUpdateStrategy {
-        ONLY_CREATE,
-        PUT,
-        // PATCH is currently separated from PUT only due to validation running before full preparation/defaulting.
-        // Once we validate the fully prepared resource, PUT and PATCH should share the same validation logic.
-        PATCH
+        ONLY_CREATE(CreateClient.class),
+        PUT(PutClient.class),
+        PATCH(PatchClient.class);
+
+        private final Class<?> validationGroup;
+
+        CreateOrUpdateStrategy(Class<?> validationGroup) {
+            this.validationGroup = validationGroup;
+        }
+
+        public Class<?> getValidationGroup() {
+            return validationGroup;
+        }
     }
 
     private CreateOrUpdateResult createOrUpdate(RealmModel realm, String clientId, BaseClientRepresentation client, CreateOrUpdateStrategy strategy) throws ServiceException {
         validateUnknownFields(client);
-
-        if (strategy == CreateOrUpdateStrategy.PUT) {
-            validator.validate(client, PutClient.class);
+        if (!strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
+            assertSameClientIds(clientId, client.getClientId());
         }
 
         boolean created = false;
@@ -137,6 +145,8 @@ public class DefaultClientService implements ClientService {
             if (strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
                 throw new ServiceException("Client already exists", Response.Status.CONFLICT);
             }
+            validator.validate(client, strategy.getValidationGroup(), Default.class);
+
             model = mapper.toModel(client, clientResource.viewClientModel());
             var rep = ModelToRepresentation.toRepresentation(model, session);
 
@@ -146,7 +156,7 @@ public class DefaultClientService implements ClientService {
             }
         } else {
             created = true;
-            validator.validate(client, CreateClientDefault.class);
+            validator.validate(client, strategy.getValidationGroup(), Default.class);
 
             // First, create a basic v1 representation to persist the client in the database.
             // We can't use mapper.toModel(client) directly for creation because the "detached model"
@@ -225,6 +235,9 @@ public class DefaultClientService implements ClientService {
                     }
                     final ObjectReader objectReader = MAPPER.readerForUpdating(getOriginalClient.get());
                     updated = objectReader.readValue(patch);
+                } catch (JsonMappingException e) {
+                    var invalidFields = e.getPath().stream().map(JsonMappingException.Reference::getFieldName).collect(Collectors.joining(", "));
+                    throw new ServiceException("Invalid values for these fields: %s".formatted((invalidFields)));
                 } catch (JsonProcessingException e) {
                     throw new ServiceException(e.getMessage(), Response.Status.BAD_REQUEST);
                 } catch (IOException e) {
@@ -252,6 +265,16 @@ public class DefaultClientService implements ClientService {
 
         clientResource.deleteClient();
         fireAdminEvent(OperationType.DELETE, client);
+    }
+
+    protected void assertSameClientIds(String pathId, String payloadId) {
+        if (payloadId == null) {
+            // When the payload clientId is null, it is not part of the payload at all - validated via @NotBlank validator annotation
+            return;
+        }
+        if (!Objects.equals(pathId, payloadId)) {
+            throw new ServiceException("Field 'clientId' in payload does not match the provided 'clientId'", Response.Status.BAD_REQUEST);
+        }
     }
 
     /**
