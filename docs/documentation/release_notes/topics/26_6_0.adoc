@@ -39,6 +39,17 @@ For more information, see the chapter link:{developerguide_link}#_identity-broke
 
 The feature `step-up-authentication-saml` extends the step-up authentication to include the SAML protocol and clients. This feature is in preview mode. Additional information is available in the link:{adminguide_link}#_step-up-authentication-saml[{adminguide_name}].
 
+
+== OAuth Client ID Metadata Document (experimental)
+
+https://www.ietf.org/archive/id/draft-ietf-oauth-client-id-metadata-document-01.html[OAuth Client ID Metadata Document (CIMD)] is an emerging standard that defines a JSON document format for describing OAuth 2.0 client metadata. Since the version 2025-11-25, the Model Context Protocol (MCP) requires an authorization server to comply with CIMD. {project_name} now includes experimental support for CIMD, allowing it to serve as an authorization server for MCP version 2025-11-25 or later.
+
+See link:{securing_apps_base_link}/mcp-authz-server[Integrating with Model Context Protocol (MCP)] for the updated guide including CIMD.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+endif::[]
+
 = Administration
 
 == Organization groups
