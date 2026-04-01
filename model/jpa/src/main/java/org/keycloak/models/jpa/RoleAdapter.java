@@ -39,6 +39,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StreamsUtil;
 
 import static java.util.Optional.ofNullable;
+
 import static org.keycloak.common.util.CollectionUtil.collectionEquals;
 
 /**
