@@ -24,7 +24,7 @@ backwards compatible with future {project_name} versions, and it will be finally
 provided by V2 together with other use cases that are supported by V1. For more details, see this <<_standard-token-exchange-comparison,token exchange comparison>>.
 
 NOTE: If you still need legacy token exchange feature, you also need link:{adminguide_link}#fine-grained-admin-permissions-v1[Fine-grained admin permissions version 1] (FGAP:v1) enabled because
-link:{adminguide_link}#_fine_grained_permissions[version 2 (FGAP:v2)] does not have support for token exchange permissions. This is on purpose because
+link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP:v2) does not have support for token exchange permissions. This is on purpose because
 token-exchange is conceptually not really an "admin" permission and hence there is no plan to add token exchange permissions to FGAP:v2.
 
 [[_standard-token-exchange]]
@@ -265,6 +265,8 @@ This use case can be replaced by refresh token grant.
 * The `subject_token` sent to the token exchange endpoint must have the requester client set as an audience in the `aud` claim. Otherwise, the request would be rejected. The only exception is, if client
 exchanges his own token, which was issued to it. Exchanging to itself might be useful to downscope/upscope the token or filter unneeded token audiences and so on.
 
+* Sender-constrained tokens (as defined in RFC 7800) cannot be used as `subject_token`. This includes DPoP-bound tokens and X.509 certificate-bound tokens. Standard Token Exchange only accepts Bearer access tokens as subject tokens. If you provide a sender-constrained token, the request will be rejected with an `invalid_request` error. However, you can obtain DPoP-bound tokens as **output** from token exchange by including a valid DPoP proof in the request. For more details, see <@links.securingapps id="dpop" />.
+
 * Consents - If the requester client has *Consent required* enabled, the token exchange is allowed only if the user is already granted consent to all requested scopes
 
 * link:{adminguide_link}#_fine_grain_permissions[Fine-grained admin permissions (FGAP)] are not needed for the standard token exchange. We plan to eventually integrate with FGAP for the future, but that
@@ -338,7 +340,10 @@ s|Subject impersonation (including direct naked impersonation)   | Not implement
 
 [NOTE]
 ====
-To use more than the <<_internal-token-to-internal-token-exchange,Internal Token to Internal Token Exchange>> flow, also enable the `admin-fine-grained-authz` feature.
+If you still need legacy token exchange feature, you also need link:{adminguide_link}#fine-grained-admin-permissions-v1[Fine-grained admin permissions version 1] (FGAP:v1) enabled because
+link:{adminguide_link}#_fine_grained_permissions[Fine-grained admin permissions version 2] (FGAP:v2) does not have support for token exchange permissions. This is on purpose because
+token-exchange is conceptually not really an "admin" permission and hence there is no plan to add token exchange permissions to FGAP:v2.
+
 For details, see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 ====
 

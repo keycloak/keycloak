@@ -39,6 +39,17 @@ For more information, see the chapter link:{developerguide_link}#_identity-broke
 
 The feature `step-up-authentication-saml` extends the step-up authentication to include the SAML protocol and clients. This feature is in preview mode. Additional information is available in the link:{adminguide_link}#_step-up-authentication-saml[{adminguide_name}].
 
+
+== OAuth Client ID Metadata Document (experimental)
+
+https://www.ietf.org/archive/id/draft-ietf-oauth-client-id-metadata-document-01.html[OAuth Client ID Metadata Document (CIMD)] is an emerging standard that defines a JSON document format for describing OAuth 2.0 client metadata. Since the version 2025-11-25, the Model Context Protocol (MCP) requires an authorization server to comply with CIMD. {project_name} now includes experimental support for CIMD, allowing it to serve as an authorization server for MCP version 2025-11-25 or later.
+
+See link:{securing_apps_base_link}/mcp-authz-server[Integrating with Model Context Protocol (MCP)] for the updated guide including CIMD.
+
+ifeval::[{project_community}==true]
+Many thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
+endif::[]
+
 = Administration
 
 == Organization groups
@@ -179,6 +190,17 @@ HTTP access logs can now be written to a dedicated file, separate from the serve
 This makes it easier to process and archive access logs independently for security auditing and compliance monitoring.
 
 For more information, see https://www.keycloak.org/server/logging#http-access-logging[Configuring HTTP access logging].
+
+== Customizable service fields in JSON log output
+
+{project_name} now provides native options to customize the `service.name` and `service.environment` fields in JSON log output across all log handlers (console, file, and syslog).
+
+Previously, when using the ECS format, `service.name` and `service.environment` could not be overridden through {project_name} configuration.
+This made it difficult to align JSON log fields with OpenTelemetry resource attributes.
+
+You can now set these fields using `log-service-name` and `log-service-environment`.
+
+For more information, see the https://www.keycloak.org/server/logging#customize-service-fields[Configuring logging] guide.
 
 == New and updated translations
 

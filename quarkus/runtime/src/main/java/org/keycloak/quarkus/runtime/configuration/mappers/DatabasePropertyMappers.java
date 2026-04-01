@@ -68,6 +68,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
     public static final String ORACLEDB_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.oracle.net.CONNECT_TIMEOUT";
     public static final String MSSQL_CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.loginTimeout";
     public static final String JDBC_LOGIN_TIMEOUT = "quarkus.datasource.jdbc.login-timeout";
+    public static final String JDBC_ACQUISITION_TIMEOUT = "quarkus.datasource.jdbc.acquisition-timeout";
 
     private static final Logger log = Logger.getLogger(DatabasePropertyMappers.class);
 
@@ -111,6 +112,10 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .to(JDBC_LOGIN_TIMEOUT)
                         .validator(DatabasePropertyMappers::validateConnectTimeout)
                         .paramLabel("timeout")
+                        .build(),
+                fromOption(DatabaseOptions.DB_POOL_ACQUISITION_TIMEOUT)
+                        .to(JDBC_ACQUISITION_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context) -> computeAcquisitionTimeout(value))
                         .build(),
                 fromOption(DatabaseOptions.DB_MYSQL_CONNECT_TIMEOUT)
                         .to(CONNECT_TIMEOUT)
@@ -658,6 +663,21 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             throw new PropertyException("Invalid duration format '%s' for option '%s'. %s"
                     .formatted(value, DatabaseOptions.DB_CONNECT_TIMEOUT.getKey(), OptionsUtil.DURATION_DESCRIPTION));
         }
+    }
+
+    private static String computeAcquisitionTimeout(String connectTimeoutValue) {
+        Duration connectTimeout = DurationConverter.parseDuration(connectTimeoutValue);
+        Duration transactionSetupTimeout = DurationConverter.parseDuration(
+                Configuration.getKcConfigValue(TransactionOptions.TRANSACTION_SETUP_TIMEOUT.getKey()).getValue()
+        );
+        Duration acquisitionTimeout = connectTimeout.multipliedBy(2);
+        if (acquisitionTimeout.compareTo(transactionSetupTimeout) > 0) {
+            acquisitionTimeout = transactionSetupTimeout;
+        }
+        if (acquisitionTimeout.compareTo(connectTimeout) < 0) {
+            acquisitionTimeout = connectTimeout;
+        }
+        return acquisitionTimeout.toString();
     }
 
 }

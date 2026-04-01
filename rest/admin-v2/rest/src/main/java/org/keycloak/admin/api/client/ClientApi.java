@@ -57,6 +57,5 @@ public interface ClientApi {
         @APIResponse(responseCode = "204", description = "Client successfully deleted"),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
-    void deleteClient();
-
+    Response deleteClient();
 }

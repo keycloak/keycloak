@@ -7,6 +7,8 @@ single-cluster/concepts-threads
 single-cluster/concepts-memory-and-cpu-sizing
 single-cluster/deploy-aurora
 single-cluster/deploy-cnpg
+single-cluster/deploy-cnpg-with-backup.adoc
+single-cluster/deploy-cnpg-recovery.adoc
 single-cluster/deploy-keycloak
 multi-cluster/introduction
 multi-cluster/concepts

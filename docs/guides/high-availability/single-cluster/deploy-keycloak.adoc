@@ -20,6 +20,8 @@ Use it together with the other building blocks outlined in the <@links.ha id="si
 * A database deployed according to one of the following guides:
 ** <@links.ha id="single-cluster-deploy-aurora" /> {section},
 ** <@links.ha id="single-cluster-deploy-cnpg" /> {section}.
+** <@links.ha id="single-cluster-deploy-cnpg-with-backup" /> {section}.
+** <@links.ha id="single-cluster-deploy-cnpg-recovery" /> {section}.
 
 [#single-cluster-deploy-keycloak-procedure]
 == Procedure

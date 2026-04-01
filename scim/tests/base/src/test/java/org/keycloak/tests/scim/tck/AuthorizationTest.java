@@ -254,6 +254,59 @@ public class AuthorizationTest extends AbstractScimTest {
         assertEquals(1, groups.getTotalResults());
     }
 
+    @Test
+    public void testGroupMembershipDeniedWithoutManageGroupMembershipFGAP() {
+        RealmRepresentation realmRep = this.realm.admin().toRepresentation();
+        realmRep.setAdminPermissionsEnabled(true);
+        realm.admin().update(realmRep);
+
+        GroupRepresentation group = createGroup();
+        ClientRepresentation client = getScimClient();
+        UserRepresentation serviceAccount = realm.admin().clients().get(client.getId()).getServiceAccountUser();
+
+        // Create policy for the SCIM service account
+        UserPolicyRepresentation policy = new UserPolicyRepresentation();
+        policy.setName("Allow SCIM user management");
+        policy.addUser(serviceAccount.getId());
+        ClientResource permissionClient = realm.admin().clients().get(
+                realm.admin().clients().findByClientId(Constants.ADMIN_PERMISSIONS_CLIENT_ID).get(0).getId());
+        permissionClient.authorization().policies().user().create(policy).close();
+
+        // Grant manage on users (but NOT manage-group-membership)
+        ScopePermissionRepresentation userPermission = new ScopePermissionRepresentation();
+        userPermission.setName("Allow SCIM manage users");
+        userPermission.setResourceType(AdminPermissionsSchema.USERS_RESOURCE_TYPE);
+        userPermission.setScopes(Set.of(AdminPermissionsSchema.MANAGE, AdminPermissionsSchema.VIEW));
+        userPermission.addPolicy(policy.getName());
+        permissionClient.authorization().permissions().scope().create(userPermission).close();
+
+        // Grant view on groups (so the SCIM client can resolve group IDs)
+        ScopePermissionRepresentation groupPermission = new ScopePermissionRepresentation();
+        groupPermission.setName("Allow SCIM view groups");
+        groupPermission.setResourceType(AdminPermissionsSchema.GROUPS_RESOURCE_TYPE);
+        groupPermission.setScopes(Set.of(AdminPermissionsSchema.VIEW));
+        groupPermission.addPolicy(policy.getName());
+        permissionClient.authorization().permissions().scope().create(groupPermission).close();
+
+        // Verify the client can manage users (e.g., update name)
+        User user = noAccessClient.users().get(managedUser.getId());
+        assertNotNull(user);
+        noAccessClient.users().patch(managedUser.getId(), PatchRequest.create()
+                .add("name.givenName", "updated name")
+                .build());
+
+        // Verify the client CANNOT add group membership via PATCH
+        assertAccessDenied(() -> noAccessClient.users().patch(managedUser.getId(), PatchRequest.create()
+                .add("groups", group.getId())
+                .build()));
+
+        // Verify the client CANNOT set group membership via PUT
+        user = noAccessClient.users().get(managedUser.getId());
+        user.addGroup(group.getId());
+        User finalUser = user;
+        assertAccessDenied(() -> noAccessClient.users().update(finalUser.getId(), finalUser));
+    }
+
     private ClientRepresentation getScimClient() {
         return realm.admin().clients().findByClientId("scim-client-restricted").get(0);
     }

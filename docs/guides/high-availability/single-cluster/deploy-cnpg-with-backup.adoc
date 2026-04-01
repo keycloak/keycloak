@@ -1,0 +1,302 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide title="Deploying CloudNativePG with scheduled backups to S3" summary="Deploy CloudNativePG with the Barman Cloud plugin and scheduled backups to AWS S3." tileVisible="false" >
+
+This topic describes how to configure backup and restore for a CloudNativePG cluster using the Barman Cloud plugin with AWS S3 as the object store.
+
+These instructions are intended for use with the setup described in the <@links.ha id="single-cluster-concepts"/> {section}.
+Use it together with the other building blocks outlined in the <@links.ha id="single-cluster-building-blocks"/> {section}.
+
+include::../partials/blueprint-disclaimer.adoc[]
+
+== Installing the CloudNativePG Operator with Barman Cloud plugin
+
+In addition to the CloudNativePG operator, the Barman Cloud plugin is required to enable backup and restore operations to an S3-compatible object store.
+
+=== Installing cert-manager
+
+The Barman Cloud plugin requires https://cert-manager.io/[cert-manager].
+Install it using the following commands or, alternatively, any other method described in the https://cert-manager.io/docs/installation/[cert-manager installation docs]:
+
+.Command:
+[source,bash]
+----
+kubectl apply --filename=https://github.com/cert-manager/cert-manager/releases/download/v1.20.0/cert-manager.yaml
+----
+
+Wait for the cert-manager deployments to be ready:
+
+.Command:
+[source,bash]
+----
+kubectl rollout status deployment --namespace=cert-manager cert-manager-webhook
+kubectl rollout status deployment --namespace=cert-manager cert-manager
+----
+
+.Output:
+[source,bash]
+----
+deployment "cert-manager-webhook" successfully rolled out
+deployment "cert-manager" successfully rolled out
+----
+
+=== Installing the CloudNativePG Operator
+
+Install the CloudNativePG Operator as described in <@links.ha id="single-cluster-deploy-cnpg" anchor="single-cluster-cnpg-installing-operator" />.
+
+=== Installing the Barman Cloud plugin
+
+Install the Barman Cloud plugin:
+
+.Command:
+[source,bash]
+----
+kubectl apply --filename=https://github.com/cloudnative-pg/plugin-barman-cloud/releases/download/v0.11.0/manifest.yaml
+----
+
+Wait for the Barman Cloud deployment to be ready:
+
+.Command:
+[source,bash]
+----
+kubectl rollout status deployment --namespace=cnpg-system barman-cloud
+----
+
+.Output:
+[source,bash]
+----
+deployment "barman-cloud" successfully rolled out
+----
+
+== Creating the AWS credentials secret
+
+This blueprint uses AWS S3 as the object store.
+The Barman Cloud plugin also supports Azure Blob Storage and Google Cloud Storage.
+For configuration details on other cloud providers, refer to the https://cloudnative-pg.io/plugin-barman-cloud/docs/object_stores/[Barman Cloud plugin object stores documentation].
+
+This blueprint uses AWS access keys for authentication.
+Other authentication methods, such as IAM Roles for Service Accounts (IRSA), are also supported.
+For details, refer to the https://cloudnative-pg.io/plugin-barman-cloud/docs/object_stores/#aws-s3[Barman Cloud plugin AWS S3 documentation].
+
+Create a Kubernetes secret with the AWS credentials required to access the S3 bucket.
+The secret must be created in the same namespace as the CloudNativePG cluster.
+
+.Command:
+[source,bash]
+----
+kubectl create secret generic aws-creds \
+  --namespace cnpg-keycloak \
+  --from-literal=ACCESS_KEY_ID=<access_key> \
+  --from-literal=ACCESS_SECRET_KEY=<secret_key> \
+  --from-literal=REGION=<region>
+----
+
+== Creating the ObjectStore
+
+The `ObjectStore` resource defines the S3 bucket destination and encryption settings for backups and WAL archiving.
+The example below uses AWS S3, but the Barman Cloud plugin also supports Azure Blob Storage and Google Cloud Storage.
+For details on configuring other cloud providers, refer to the https://cloudnative-pg.io/plugin-barman-cloud/docs/object_stores/[Barman Cloud plugin object stores documentation].
+
+[IMPORTANT]
+====
+The S3 bucket must be created before configuring the `ObjectStore` resource.
+CloudNativePG does not create the bucket automatically.
+Refer to the https://docs.aws.amazon.com/AmazonS3/latest/userguide/creating-bucket.html[AWS S3 documentation] for instructions on creating a bucket.
+For recommended bucket configuration settings such as lifecycle policies, refer to the https://cloudnative-pg.io/plugin-barman-cloud/docs/object_stores/#s3-lifecycle-policy[Barman Cloud plugin S3 lifecycle policy documentation].
+====
+
+. Create an `object-store.yaml` file based on the following content:
++
+.ObjectStore resource:
+[source,yaml,indent=0]
+----
+apiVersion: barmancloud.cnpg.io/v1
+kind: ObjectStore
+metadata:
+  name: cnpg-store
+spec:
+  configuration:
+    destinationPath: s3://<bucket-name>/<backup-path>/ # <1>
+    s3Credentials:
+      accessKeyId:
+        name: aws-creds # <2>
+        key: ACCESS_KEY_ID
+      secretAccessKey:
+        name: aws-creds
+        key: ACCESS_SECRET_KEY
+      region:
+        name: aws-creds
+        key: REGION
+    wal: # <3>
+      encryption: AES256
+      compression: gzip
+      maxParallel: 8
+    data: # <4>
+      compression: gzip
+      encryption: AES256
+----
+<1> The S3 bucket destination path for backups.
+Replace `<bucket-name>` and `<backup-path>` with the appropriate values.
+<2> References the `aws-creds` secret created in the previous step.
+<3> WAL archiving configuration with server-side encryption and gzip compression. `maxParallel` controls the number of WAL files to be archived in parallel.
+For other supported compression algorithms, refer to the https://cloudnative-pg.io/plugin-barman-cloud/docs/compression/[Barman Cloud plugin compression documentation].
+<4> Base backup data configuration with compression and encryption.
+
+. Apply the `ObjectStore` resource:
++
+.Command:
+[source,bash]
+----
+kubectl apply --namespace=cnpg-keycloak --filename=object-store.yaml
+----
+
+== Updating the CloudNativePG cluster with backup configuration
+
+Create or update the CloudNativePG `Cluster` resource to enable backup and WAL archiving to the object store using the Barman Cloud plugin.
+
+. Create or update the `cluster.yaml` file to include the `plugins` section:
++
+.Cluster resource:
+[source,yaml,indent=0]
+----
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cnpg-keycloak
+spec:
+  instances: 3 # <1>
+
+  storage:
+    size: 8Gi # <2>
+
+  affinity: # <3>
+    podAntiAffinityType: required
+    topologyKey: topology.kubernetes.io/zone
+
+  postgresql:
+    synchronous: # <4>
+      method: any
+      number: 1
+      dataDurability: required
+    parameters:
+      max_connections: "100" # <5>
+
+  bootstrap:
+    initdb: # <6>
+      database: keycloak
+      owner: keycloak
+
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"] # <7>
+
+  plugins: # <8>
+  - name: barman-cloud.cloudnative-pg.io
+    isWALArchiver: true
+    parameters:
+      barmanObjectName: cnpg-store
+----
+<1> Number of instances.
+<2> Pod storage size.
+This setting needs to take into account the expected size of the database and PostgreSQL WAL logs.
+<3> Pod affinity rules for Kubernetes scheduler.
+The `topology.kubernetes.io/zone` value ensures the scheduler will spread the pods across different availability zones.
+<4> Enables quorum-based synchronous replication with a single standby server.
+For more information about synchronous replication, follow the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/replication/#synchronous-replication[CloudNativePG documentation].
+<5> Database connection limit.
+This value should be adjusted based on the expected total number of JDBC connections from the {project_name} cluster.
+<6> Creates a database `keycloak` owned by the user `keycloak`.
+<7> Disables the `-ro` and `-r` default services, which are intended for read-only applications.
+Since {project_name} requires read-write access, it only connects to the `-rw` service.
+<8> Enables the Barman Cloud plugin for WAL archiving.
+The `barmanObjectName` references the `ObjectStore` resource created in the previous step.
+
+. Apply the updated cluster resource:
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak apply -f cluster.yaml
+----
++
+. Wait for the `cnpg-keycloak` cluster to get into the `Ready` state.
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak wait --for condition=Ready --timeout=300s cluster cnpg-keycloak
+----
++
+.Output:
+[source,bash]
+----
+cluster.postgresql.cnpg.io/cnpg-keycloak condition met
+----
+
+[#single-cluster-cnpg-enabling-scheduled-backups]
+== Enabling scheduled backups
+
+The `ScheduledBackup` resource enables automatic periodic backups of the CloudNativePG cluster.
+Scheduled backups are the recommended way to implement a reliable backup strategy.
+
+. Create a `scheduled-backup.yaml` file based on the following content:
++
+.ScheduledBackup resource:
+[source,yaml,indent=0]
+----
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: cnpg-keycloak-scheduled-backup
+spec:
+  schedule: "0 0 0 * * *" # <1>
+  backupOwnerReference: self # <2>
+  cluster:
+    name: cnpg-keycloak # <3>
+  method: plugin # <4>
+  pluginConfiguration:
+    name: barman-cloud.cloudnative-pg.io # <5>
+  immediate: true # <6>
+  suspend: false # <7>
+----
+<1> Cron schedule expression using a six-field format that includes seconds: `seconds minutes hours day-of-month month day-of-week`.
+This example runs at midnight every day.
+Adjust the schedule based on the Recovery Point Objective (RPO) requirements.
+<2> Sets the ownership reference for the backup objects. `self` means the `ScheduledBackup` resource owns the created backups, and deleting it will also delete all associated backups.
+<3> The name of the CloudNativePG cluster to back up.
+<4> The backup method. `plugin` delegates the backup operation to the configured plugin.
+<5> The Barman Cloud plugin that performs the backup to the object store.
+<6> Triggers a backup immediately upon creation of the `ScheduledBackup` resource, in addition to the configured schedule.
+<7> When set to `true`, temporarily suspends scheduled backups without deleting the resource.
+
+. Apply the `ScheduledBackup` resource:
++
+.Command:
+[source,bash]
+----
+kubectl apply --namespace=cnpg-keycloak --filename=scheduled-backup.yaml
+----
++
+. Verify the scheduled backup has been created:
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak get scheduledbackups
+----
++
+.Example output:
+[source,bash]
+----
+NAME                             AGE   CLUSTER         LAST BACKUP
+cnpg-keycloak-scheduled-backup   30s   cnpg-keycloak
+----
+
+== Next steps
+
+After successful configuration of the backup, continue with <@links.ha id="single-cluster-deploy-keycloak" />.
+
+For more information about backup and recovery operations, refer to the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/backup[CloudNativePG documentation].
+
+</@tmpl.guide>

@@ -62,6 +62,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -80,7 +81,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Endpoint test with sd-jwt specific config.
@@ -104,15 +104,18 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         String token = tokenResponse.getAccessToken();
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
+        String cNonce = getCNonce();
 
         final String clientScopeString = toJsonString(sdJwtTypeCredentialClientScope);
 
         testingClient
                 .server(TEST_REALM_NAME)
                 .run(session -> {
+                    Proofs proof = new Proofs()
+                            .setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce)));
                     ClientScopeRepresentation clientScope = fromJsonString(clientScopeString,
                             ClientScopeRepresentation.class);
-                    testRequestTestCredential(session, clientScope, token, null, credentialIdentifier);
+                    testRequestTestCredential(session, clientScope, token, proof, credentialIdentifier);
                 });
     }
 
@@ -427,25 +430,21 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
         assertNotNull("Credential identifier should be present", credentialIdentifier);
+        String cNonce = getCNonce();
 
         final String vct = clientScope.getAttributes().get(CredentialScopeModel.VCT);
+        Proofs proof = new Proofs().setJwt(List.of(generateJwtProof(credentialIssuer.getCredentialIssuer(), cNonce)));
 
         // 6. Get the credential using credential_identifier (required when authorization_details are present)
-        credentialsOffer.getCredentialConfigurationIds().stream()
-                .map(offeredCredentialId -> credentialIssuer.getCredentialsSupported().get(offeredCredentialId))
-                .forEach(supportedCredential -> {
-                    try {
-                        requestCredentialWithIdentifier(theToken,
-                                credentialIssuer.getCredentialEndpoint(),
-                                credentialIdentifier,
-                                new TestCredentialResponseHandler(vct),
-                                sdJwtTypeCredentialClientScope);
-                    } catch (IOException e) {
-                        fail("Was not able to get the credential.");
-                    } catch (VerificationException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(proof)
+                .bearerToken(theToken)
+                .send();
+        assertEquals("The credential request should be answered successfully.", HttpStatus.SC_OK, credentialResponse.getStatusCode());
+        assertNotNull("A credential should be responded.", credentialResponse.getCredentialResponse());
+
+        new TestCredentialResponseHandler(vct).handleCredentialResponse(credentialResponse.getCredentialResponse(), clientScope);
     }
 
     /**
@@ -565,18 +564,23 @@ public class OID4VCSdJwtIssuingEndpointTest extends OID4VCIssuerEndpointTest {
                             verifiableCredentialType,
                             credentialIssuer.getCredentialsSupported().get(credentialConfigurationId).getVct());
 
-                    // We are offering key binding only for identity credential
-                    assertTrue("The sd-jwt-credential should contain a cryptographic binding method supported named jwk",
+                    assertNotNull("Cryptographic binding methods should be advertised for SD-JWT test credential",
                             credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
-                                    .getCryptographicBindingMethodsSupported()
-                                    .contains(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT));
+                                    .getCryptographicBindingMethodsSupported());
                     assertTrue("The sd-jwt-credential should contain a credential signing algorithm named ES256",
                             credentialIssuer.getCredentialsSupported().get(credentialConfigurationId)
                                     .getCredentialSigningAlgValuesSupported().contains("ES256"));
+
+                    SupportedCredentialConfiguration sdJwtConfig =
+                            credentialIssuer.getCredentialsSupported().get(credentialConfigurationId);
+                    assertNotNull("Proof types should be advertised when binding is required",
+                            sdJwtConfig.getProofTypesSupported());
+                    assertNotNull("JWT proof type should be present for SD-JWT test credential",
+                            sdJwtConfig.getProofTypesSupported()
+                                    .getSupportedProofTypes()
+                                    .get("jwt"));
                     assertTrue("The sd-jwt-credential should support a proof of type jwt with signing algorithm ES256",
-                            credentialIssuer.getCredentialsSupported()
-                                    .get(credentialConfigurationId)
-                                    .getProofTypesSupported()
+                            sdJwtConfig.getProofTypesSupported()
                                     .getSupportedProofTypes()
                                     .get("jwt")
                                     .getSigningAlgorithmsSupported()

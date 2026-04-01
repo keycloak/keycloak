@@ -219,24 +219,45 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         // Add additional client scopes
         //
         List<ClientScopeRepresentation> clientScopes = Optional.ofNullable(testRealm.getClientScopes()).orElse(new ArrayList<>());
-        clientScopes.add(createOptionalClientScope(sdJwtTypeCredentialScopeName,
+
+        ClientScopeRepresentation sdJwtScope = createOptionalClientScope(sdJwtTypeCredentialScopeName,
                 null,
                 sdJwtTypeCredentialConfigurationIdName,
                 sdJwtTypeCredentialScopeName,
                 sdJwtCredentialVct,
                 VCFormat.SD_JWT_VC,
                 null,
-                List.of(KeyAttestationResistanceLevels.HIGH, KeyAttestationResistanceLevels.MODERATE))
-        );
-        clientScopes.add(createOptionalClientScope(jwtTypeCredentialScopeName,
+                List.of(KeyAttestationResistanceLevels.HIGH, KeyAttestationResistanceLevels.MODERATE));
+
+        // For the SD-JWT VC test credential, explicitly enable cryptographic binding with JWT proofs
+        // so that key binding related tests (including invalid key binding) have a well-defined
+        // configuration that advertises this capability in metadata.
+        Map<String, String> sdJwtAttributes = Optional.ofNullable(sdJwtScope.getAttributes())
+                .orElseGet(HashMap::new);
+        sdJwtAttributes.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
+        sdJwtAttributes.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
+        sdJwtAttributes.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS,
+                CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        sdJwtScope.setAttributes(sdJwtAttributes);
+
+        clientScopes.add(sdJwtScope);
+        ClientScopeRepresentation jwtVcScope = createOptionalClientScope(jwtTypeCredentialScopeName,
                 TEST_DID.toString(),
                 jwtTypeCredentialConfigurationIdName,
                 jwtTypeCredentialScopeName,
                 null,
                 VCFormat.JWT_VC,
                 TEST_CREDENTIAL_MAPPERS_FILE,
-                Collections.emptyList())
-        );
+                Collections.emptyList());
+        Map<String, String> jwtVcAttributes = Optional.ofNullable(jwtVcScope.getAttributes())
+                .orElseGet(HashMap::new);
+        jwtVcAttributes.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
+        jwtVcAttributes.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt,attestation");
+        jwtVcAttributes.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS,
+                CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        jwtVcScope.setAttributes(jwtVcAttributes);
+
+        clientScopes.add(jwtVcScope);
         clientScopes.add(createOptionalClientScope(minimalJwtTypeCredentialScopeName,
                 null,
                 null,

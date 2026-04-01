@@ -785,10 +785,10 @@ public class FilterTest extends AbstractScimTest {
         Instant before = Instant.now();
 
         Group group = new Group();
-        group.setDisplayName("groupA");
+        group.setDisplayName(KeycloakModelUtils.generateId());
         group = client.groups().create(group);
         groupIdsToRemove.add(group.getId());
-        final String displayName = group.getDisplayName();
+        String displayName = group.getDisplayName();
 
         Instant after = Instant.now();
 

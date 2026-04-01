@@ -46,10 +46,13 @@ public class IdentityProviderAuthenticator implements Authenticator {
 
     @Override
     public void authenticate(AuthenticationFlowContext context) {
-        if (context.getUriInfo().getQueryParameters().containsKey(AdapterConstants.KC_IDP_HINT)) {
-            String providerId = context.getUriInfo().getQueryParameters().getFirst(AdapterConstants.KC_IDP_HINT);
-            if (providerId == null || providerId.equals("")) {
-                LOG.tracef("Skipping: kc_idp_hint query parameter is empty");
+        String providerId = context.getUriInfo().getQueryParameters().containsKey(AdapterConstants.KC_IDP_HINT)
+            ? context.getUriInfo().getQueryParameters().getFirst(AdapterConstants.KC_IDP_HINT)
+            : context.getAuthenticationSession().getClientNote(AdapterConstants.KC_IDP_HINT);
+
+        if (providerId != null) {
+            if (providerId.equals("")) {
+                LOG.tracef("Skipping: %s parameter is empty", AdapterConstants.KC_IDP_HINT);
                 context.attempted();
             } else {
                 LOG.tracef("Redirecting: %s set to %s", AdapterConstants.KC_IDP_HINT, providerId);

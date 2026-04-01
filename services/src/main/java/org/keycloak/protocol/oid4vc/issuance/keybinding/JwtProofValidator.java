@@ -182,10 +182,17 @@ public class JwtProofValidator extends AbstractProofValidator {
     }
 
     private void checkCryptographicKeyBinding(VCIssuanceContext vcIssuanceContext) {
-        // Make sure we are dealing with a jwk proof.
+        // If the credential configuration does not require cryptographic holder binding, the metadata will omit
+        // cryptographic_binding_methods_supported and proof_types_supported. In that case, we must not enforce
+        // JWT-based cryptographic binding.
         if (vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported() == null ||
-                !vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported()
-                        .contains(CRYPTOGRAPHIC_BINDING_METHOD_JWK)) {
+                vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported().isEmpty()) {
+            return;
+        }
+
+        // If binding is required, this implementation currently only supports the "jwk" method.
+        if (!vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported()
+                .contains(CRYPTOGRAPHIC_BINDING_METHOD_JWK)) {
             throw new IllegalStateException("This SD-JWT implementation only supports jwk as cryptographic binding method");
         }
     }
@@ -194,10 +201,28 @@ public class JwtProofValidator extends AbstractProofValidator {
         return Optional.ofNullable(vcIssuanceContext.getCredentialConfig())
                 .map(SupportedCredentialConfiguration::getProofTypesSupported)
                 .flatMap(proofTypesSupported -> {
-                    Optional.ofNullable(proofTypesSupported.getSupportedProofTypes().get("jwt"))
+                    Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
+
+                    // If no proof types are configured for this credential configuration, cryptographic binding is
+                    // not required and we must not enforce presence of proofs. However, if a JWT proof is supplied,
+                    // reject it explicitly rather than silently ignoring an unconfigured proof input.
+                    if (proofTypesSupported == null ||
+                            proofTypesSupported.getSupportedProofTypes() == null ||
+                            proofTypesSupported.getSupportedProofTypes().isEmpty()) {
+                        if (proofs != null && proofs.getJwt() != null && !proofs.getJwt().isEmpty()) {
+                            throw new VCIssuerException(
+                                    ErrorType.INVALID_PROOF,
+                                    "Proof type " + ProofType.JWT + " is not supported for this credential configuration"
+                            );
+                        }
+                        return Optional.<List<String>>empty();
+                    }
+
+                    Map<String, SupportedProofTypeData> supportedProofTypes = proofTypesSupported.getSupportedProofTypes();
+                    Optional.ofNullable(supportedProofTypes.get(ProofType.JWT))
                             .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "SD-JWT supports only jwt proof type."));
 
-                    Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
+                    // At this point, JWT is an explicitly supported proof type and must be enforced.
                     if (proofs == null || proofs.getJwt() == null || proofs.getJwt().isEmpty()) {
                         throw new VCIssuerException(ErrorType.INVALID_PROOF, "Credential configuration requires a proof of type: " + ProofType.JWT);
                     }

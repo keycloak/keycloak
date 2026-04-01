@@ -38,7 +38,12 @@ Synchronous replication of databases as services with Aurora Regional Deployment
 A synchronously replicated database available across all availability-zones.
 
 *Blueprint:* <@links.ha id="single-cluster-deploy-aurora"/>.
+
 *Blueprint:* <@links.ha id="single-cluster-deploy-cnpg"/>.
+
+*Blueprint:* <@links.ha id="single-cluster-deploy-cnpg-with-backup"/>.
+
+*Blueprint:* <@links.ha id="single-cluster-deploy-cnpg-recovery"/>.
 
 [#single-cluster-blocks-keycloak]
 == {project_name}

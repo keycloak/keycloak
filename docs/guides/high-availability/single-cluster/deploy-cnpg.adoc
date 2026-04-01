@@ -21,6 +21,7 @@ image::high-availability/cnpg-multi-az.dio.svg[]
 
 == Installing CloudNativePG
 
+[#single-cluster-cnpg-installing-operator]
 === Installing the CloudNativePG Operator
 
 Install the operator directly using the operator manifest:
@@ -47,11 +48,15 @@ kubectl rollout status deployment \
 deployment "cnpg-controller-manager" successfully rolled out
 ----
 
-
-
 It is possible to install the operator using other supported methods such as Helm Chart, OLM, or `cnpg` plugin for `kubectl`. See the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/installation_upgrade[CloudNativePG documentation] for details.
 
 === Installing CloudNativePG Cluster
+
+[IMPORTANT]
+====
+We recommend enabling backups for the CloudNativePG cluster to protect against data loss.
+See <@links.ha id="single-cluster-deploy-cnpg-with-backup" /> for instructions on configuring scheduled backups to AWS S3.
+====
 
 Installation and configuration of CloudNativePG cluster is done via a `Cluster` resource.
 
@@ -62,12 +67,9 @@ Installation and configuration of CloudNativePG cluster is done via a `Cluster` 
 ----
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
-
 metadata:
   name: cnpg-keycloak
-
 spec:
-
   instances: 3 # <1>
 
   storage:

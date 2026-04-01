@@ -70,7 +70,8 @@ public class DefaultClientApi implements ClientApi {
 
     @DELETE
     @Override
-    public void deleteClient() {
+    public Response deleteClient() {
         clientService.deleteClient(realm, clientId);
+        return Response.noContent().build();
     }
 }

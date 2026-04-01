@@ -10,6 +10,7 @@ import org.keycloak.models.Model;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.config.ServiceProviderConfig;
+import org.keycloak.scim.resource.config.ServiceProviderConfig.AuthenticationScheme;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.BulkSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.FilterSupport;
 import org.keycloak.scim.resource.config.ServiceProviderConfig.Supported;
@@ -36,9 +37,29 @@ public class ServiceProviderConfigResourceTypeProvider implements SingletonResou
         config.setChangePassword(Supported.FALSE);
         config.setCreatedTimestamp(Time.currentTimeMillis());
         config.setSort(Supported.FALSE);
-        config.setFilter(new FilterSupport());
+        config.setFilter(getFilterSupport());
+        config.setAuthenticationSchemes(getAuthenticationSchemes());
 
         return config;
+    }
+
+    private FilterSupport getFilterSupport() {
+        FilterSupport filter = new FilterSupport();
+
+        filter.setSupported(true);
+
+        return filter;
+    }
+
+    private List<AuthenticationScheme> getAuthenticationSchemes() {
+        AuthenticationScheme scheme = new AuthenticationScheme();
+
+        scheme.setName("OAuth Bearer Token");
+        scheme.setDescription("Authentication scheme using the OAuth Bearer Token standard");
+        scheme.setSpecUri("https://tools.ietf.org/html/rfc6750");
+        scheme.setType("oauthbearertoken");
+
+        return List.of(scheme);
     }
 
     @Override

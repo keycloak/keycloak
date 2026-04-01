@@ -864,6 +864,8 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isMysqlConnectTimeoutEnabled());
         assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
         createConfigFromCliArguments("--db=mysql", "--db-url-properties=?connectTimeout=5000");
         assertFalse(DatabasePropertyMappers.isMysqlConnectTimeoutEnabled());
         createConfigFromCliArguments("--db=mysql", "--db-url=jdbc:mysql://localhost:3306/keycloak?connectTimeout=5000");
@@ -872,6 +874,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         config = createConfigFromCliArguments("--db=mysql", "--db-connect-timeout=30s");
         assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         // MariaDB:
         ConfigArgsConfigSource.setCliArgs("--db=mariadb");
@@ -879,6 +882,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
         assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=mariadb", "--db-url=jdbc:mariadb://localhost:3306/keycloak?connectTimeout=5000");
         config = createConfig();
@@ -893,6 +897,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
         assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         // Oracle:
         ConfigArgsConfigSource.setCliArgs("--db=oracle");
@@ -900,8 +905,10 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
         assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=oracle", "--db-url-properties=?oracle.net.CONNECT_TIMEOUT=5000");
+
         config = createConfig();
         assertFalse(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
         ConfigArgsConfigSource.setCliArgs("--db=oracle", "--db-url=jdbc:oracle:thin:@//localhost:1521/keycloak?oracle.net.CONNECT_TIMEOUT=5000");
@@ -913,6 +920,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
         assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         // MSSQL:
         ConfigArgsConfigSource.setCliArgs("--db=mssql");
@@ -920,6 +928,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isMssqlLoginTimeoutEnabled());
         assertEquals("10", config.getConfigValue(DatabasePropertyMappers.MSSQL_CONNECT_TIMEOUT).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-url-properties=;loginTimeout=20");
         config = createConfig();
@@ -933,6 +942,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isMssqlLoginTimeoutEnabled());
         assertEquals("30", config.getConfigValue(DatabasePropertyMappers.MSSQL_CONNECT_TIMEOUT).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         // PostgreSQL:
         resetConfiguration();
@@ -943,6 +953,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
         assertEquals("10", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         resetConfiguration();
         ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-url-properties=?connectTimeout=5");
@@ -970,5 +981,29 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
         assertEquals("30", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-connect-timeout=30s", "--transaction-setup-timeout=30s");
+        config = createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+        assertEquals("PT30S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-connect-timeout=30s", "--transaction-setup-timeout=45s");
+        config = createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+        assertEquals("PT45S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-connect-timeout=60s", "--transaction-setup-timeout=30s");
+        createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
     }
 }

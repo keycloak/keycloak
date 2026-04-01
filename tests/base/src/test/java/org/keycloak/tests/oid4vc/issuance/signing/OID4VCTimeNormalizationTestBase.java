@@ -10,6 +10,7 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.tests.oid4vc.OID4VCIssuerEndpointTest;
+import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
@@ -52,10 +53,12 @@ abstract class OID4VCTimeNormalizationTestBase extends OID4VCIssuerEndpointTest 
         String token = tokenResponse.getAccessToken();
         String credentialIdentifier = tokenResponse.getOID4VCAuthorizationDetails()
                 .get(0).getCredentialIdentifiers().get(0);
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
 
         return oauth.oid4vc()
                 .credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(OID4VCProofTestUtils.jwtProofs(getRealmPath(testRealm.getName()), cNonce))
                 .bearerToken(token)
                 .send()
                 .getCredentialResponse();

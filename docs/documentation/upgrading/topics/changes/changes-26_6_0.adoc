@@ -212,6 +212,14 @@ A similar change was done for the `UserSessionPersisterProvider`.
 
 Authentication failures resulting in an invalid_grant now correctly return an HTTP 400 status code instead of 401 for the Resource Owner Password Credentials and UMA Permission grants. This change was done to properly follow the OAuth 2.0 Authorization Framework specification.
 
+=== Sender-constrained tokens are now rejected in Standard Token Exchange
+
+Standard Token Exchange now rejects all sender-constrained tokens (as defined in link:https://datatracker.ietf.org/doc/html/rfc7800[RFC 7800]) used as the `subject_token` parameter. This includes both DPoP-bound tokens and X.509 certificate-bound tokens (mTLS).
+
+This change ensures better security and alignment with the OAuth 2.0 Token Exchange specification. Sender-constrained tokens are bound to specific clients and should not be exchanged across different contexts.
+
+If you attempt to exchange a sender-constrained token, the request will be rejected with an `invalid_request` error. For more details, see the link:{securing_apps_token_exchange_link}[Token Exchange] guide.
+
 === Re-indexing required for external Infinispan Server
 
 With the `clusterless` feature enabled and `persistent-user-sessions` disabled, a re-index is required due to schema changes.

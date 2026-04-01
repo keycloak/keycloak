@@ -47,6 +47,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AppAuthManager;
@@ -61,6 +62,7 @@ import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getCredentialIssuer;
 import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 import static org.junit.Assert.assertEquals;
@@ -96,6 +98,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
         assertNotNull("credential_identifier should be present", credentialIdentifier);
+        String cNonce = getCNonce();
 
         testingClient
                 .server(TEST_REALM_NAME)
@@ -115,6 +118,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
                     CredentialRequest credentialRequest = new CredentialRequest()
                             .setCredentialIdentifier(credentialIdentifier)
+                            .setProofs(new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce))))
                             .setCredentialResponseEncryption(
                                     new CredentialResponseEncryption()
                                             .setEnc(A256GCM)
@@ -205,6 +209,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
         assertNotNull("credential_identifier should be present", credentialIdentifier);
+        String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             try {
@@ -231,6 +236,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
                 CredentialRequest credentialRequest = new CredentialRequest()
                         .setCredentialIdentifier(credentialIdentifier)
+                        .setProofs(new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce))))
                         .setCredentialResponseEncryption(
                                 new CredentialResponseEncryption()
                                         .setEnc(A256GCM)
@@ -285,6 +291,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
         assertNotNull("credential_identifier should be present", credentialIdentifier);
+        String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             try {
@@ -314,6 +321,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 // Create credential request with response encryption parameters
                 CredentialRequest credentialRequest = new CredentialRequest()
                         .setCredentialIdentifier(credentialIdentifier)
+                        .setProofs(new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce))))
                         .setCredentialResponseEncryption(
                                 new CredentialResponseEncryption()
                                         .setEnc(A256GCM)
@@ -408,6 +416,8 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     String accessToken = (String) m.get("accessToken");
                     WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
                     CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
+                    String cNonce = getCNonce();
+                    credentialRequest.setProofs(new Proofs().setJwt(List.of(generateJwtProof(credentialIssuer.getCredentialIssuer(), cNonce))));
 
                     Map<String, Object> jwkPair;
                     try {
@@ -551,6 +561,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
         assertNotNull("credential_identifier should be present", credentialIdentifier);
+        String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
@@ -561,6 +572,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
             JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"alg\":\"RSA-OAEP-256\",\"e\":\"AQAB\"}").getJwk();
             CredentialRequest credentialRequest = new CredentialRequest()
                     .setCredentialIdentifier(credentialIdentifier)
+                    .setProofs(new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce))))
                     .setCredentialResponseEncryption(
                             new CredentialResponseEncryption()
                                     .setEnc("A256GCM")

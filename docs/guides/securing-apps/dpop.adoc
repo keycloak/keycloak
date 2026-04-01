@@ -174,4 +174,17 @@ For granular control, you can use the **dpop-bind-enforcer** executor within Cli
 * **Refresh Token Only:** Enforce DPoP binding only for the Refresh Token while keeping the access token as a standard Bearer token. This increases security for public clients while maintaining compatibility with legacy resource servers that do not support DPoP.
 * **Strict OIDC Enforcement:** Require clients to send the `dpop_jkt` parameter during the initial Authorization Code flow, binding the entire flow.
 
+== DPoP with Standard Token Exchange
+
+* Standard Token Exchange does not support DPoP-bound tokens (as defined in RFC 7800) as the `subject_token` parameter. Only Bearer access tokens can be exchanged. If you attempt to use a DPoP-bound token as the subject token, the request will be rejected with an `invalid_request` error.
+* While DPoP-bound tokens cannot be used as `subject_token` to token exchange, you can obtain DPoP-bound tokens as **output**.
+
+=== When to Use Token Exchange with DPoP
+
+Token exchange with DPoP is useful when:
+
+* You need to upgrade a Bearer token to a DPoP-bound token for increased security
+* You want to down-scope or change audiences while simultaneously adding DPoP binding
+* Your backend services require DPoP but the original token was issued as Bearer
+
 </@tmpl.guide>

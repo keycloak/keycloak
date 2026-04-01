@@ -41,6 +41,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -1454,5 +1455,29 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         assertEquals(sessionType, ctx.getSessionType());
         assertEquals(tokenType, ctx.getTokenType());
         assertEquals(grantType, ctx.getGrantType());
+    }
+
+    @Test
+    public void testSenderConstrainedTokenRejection() throws Exception {
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(TEST), "subject-client");
+        // Create a protocol mapper that adds the cnf claim
+        ProtocolMapperModel mapper = HardcodedClaim.create("test-cnf-mapper", "cnf", "{\"jkt\":\"test-thumbprint-12345\"}", "JSON", true,  false, false);
+
+        Response mapperResponse = client.getProtocolMappers().createMapper(ModelToRepresentation.toRepresentation(mapper));
+        String mapperId = ApiUtil.getCreatedId(mapperResponse);
+
+        // Get a new token with the cnf claim
+        String senderConstrainedToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+        AccessToken token = TokenVerifier.create(senderConstrainedToken, AccessToken.class).parse().getToken();
+        assertNotNull(token.getConfirmation());
+
+        AccessTokenResponse response = tokenExchange(senderConstrainedToken, "requester-client", "secret", null, null);
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        assertTrue("Error should mention sender-constrained tokens", response.getErrorDescription().contains("Sender-constrained"));
+
+        client.getProtocolMappers().delete(mapperId);
+
     }
 }
