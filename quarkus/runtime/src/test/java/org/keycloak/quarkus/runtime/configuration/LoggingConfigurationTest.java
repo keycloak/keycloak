@@ -26,7 +26,9 @@ import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 
+import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.logging.LogRuntimeConfig;
+import io.smallrye.config.Expressions;
 import io.smallrye.config.SmallRyeConfig;
 import org.hamcrest.CoreMatchers;
 import org.junit.Test;
@@ -394,6 +396,19 @@ public class LoggingConfigurationTest extends AbstractConfigurationTest {
         Environment.setRebuildCheck(true); // will be reset by the system properties logic
         ConfigArgsConfigSource.setCliArgs("");
         assertEquals("true", createConfig().getConfigValue("quarkus.log.console.enable").getValue());
+    }
+
+    @Test
+    public void testDefaultLogOutputIsHiddenDuringDevModeAugmentation() {
+        LaunchMode previousLaunchMode = LaunchMode.current();
+        LaunchMode.set(LaunchMode.DEVELOPMENT);
+
+        try {
+            SmallRyeConfig config = createConfig();
+            assertNull(Expressions.withoutExpansion(() -> config.getConfigValue("quarkus.log.console.json.enabled")).getValue());
+        } finally {
+            LaunchMode.set(previousLaunchMode);
+        }
     }
 
     @Test

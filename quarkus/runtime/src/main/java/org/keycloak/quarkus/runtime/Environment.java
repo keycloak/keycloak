@@ -55,6 +55,10 @@ public final class Environment {
         return Boolean.getBoolean("quarkus.launch.rebuild");
     }
 
+    public static boolean isAugmentation() {
+        return isRebuild() || Boolean.getBoolean(KC_TEST_REBUILD) || LaunchMode.current() == LaunchMode.DEVELOPMENT;
+    }
+
     public static Optional<String> getHomeDir() {
         return Optional.ofNullable(System.getProperty(KC_HOME_DIR));
     }
