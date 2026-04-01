@@ -167,12 +167,9 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
     @ParameterizedTest
     @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
     public void clientWithBlankClientIdMatchingPathFails(String protocol) throws Exception {
+        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
         var request = switch (getHttpMethod()) {
-            case HttpPost.METHOD_NAME -> {
-                var r = new HttpPost(getClientsApiUrl());
-                r.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-                yield r;
-            }
+            case HttpPost.METHOD_NAME -> getRequest(isOidc);
             case HttpPut.METHOD_NAME -> {
                 var r = new HttpPut(getClientApiUrl("%20"));
                 r.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
