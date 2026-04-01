@@ -58,7 +58,7 @@ public class StandardTokenExchangeRefreshBaseTokenV2Test extends AbstractBaseTok
             String accessToken = resourceOwnerLogin("mike", "password", "subject-client", "secret").getAccessToken();
             oauth.scope("optional-scope2");
             AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", java.util.List.of("target-client1"), OAuth2Constants.REFRESH_TOKEN_TYPE);
-            assertAudiencesAndScopes(response, mike, java.util.List.of("target-client1"), java.util.List.of("default-scope1", "optional-scope2"), OAuth2Constants.REFRESH_TOKEN_TYPE, "subject-client");
+            assertAudiencesAndScopes(response, mike.toRepresentation(), java.util.List.of("target-client1"), java.util.List.of("default-scope1", "optional-scope2"), OAuth2Constants.REFRESH_TOKEN_TYPE, "subject-client");
             assertNotNull(response.getRefreshToken());
 
             oauth.client("requester-client", "secret");
@@ -162,7 +162,7 @@ public class StandardTokenExchangeRefreshBaseTokenV2Test extends AbstractBaseTok
             // normal access token exchange is allowed for the offline session
             oauth.scope(null);
             AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", java.util.List.of("target-client1"), null);
-            AccessToken exchangedToken = assertAudiencesAndScopes(response, mike, java.util.List.of("target-client1"), java.util.List.of("default-scope1"));
+            AccessToken exchangedToken = assertAudiencesAndScopes(response, mike.toRepresentation(), java.util.List.of("target-client1"), java.util.List.of("default-scope1"));
             assertEquals(originalToken.getSessionId(), exchangedToken.getSessionId());
 
             // Refresh token-exchange without "scope=offline_access". Not allowed cos a new new "online" user session is needed (as previous one was offline)
