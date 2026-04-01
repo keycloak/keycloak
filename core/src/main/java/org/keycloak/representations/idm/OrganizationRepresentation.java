@@ -38,6 +38,10 @@ public class OrganizationRepresentation {
     private List<MemberRepresentation> members;
     private List<IdentityProviderRepresentation> identityProviders;
     private List<GroupRepresentation> groups;
+    private Integer sessionIdleTimeout;
+    private Integer sessionMaxLifespan;
+    private Integer sessionIdleTimeoutRememberMe;
+    private Integer sessionMaxLifespanRememberMe;
 
     public String getId() {
         return id;
@@ -173,6 +177,18 @@ public class OrganizationRepresentation {
         }
         groups.add(group);
     }
+
+    public Integer getSessionIdleTimeout() { return sessionIdleTimeout; }
+    public void setSessionIdleTimeout(Integer sessionIdleTimeout) { this.sessionIdleTimeout = sessionIdleTimeout; }
+
+    public Integer getSessionMaxLifespan() { return sessionMaxLifespan; }
+    public void setSessionMaxLifespan(Integer sessionMaxLifespan) { this.sessionMaxLifespan = sessionMaxLifespan; }
+
+    public Integer getSessionIdleTimeoutRememberMe() { return sessionIdleTimeoutRememberMe; }
+    public void setSessionIdleTimeoutRememberMe(Integer v) { this.sessionIdleTimeoutRememberMe = v; }
+
+    public Integer getSessionMaxLifespanRememberMe() { return sessionMaxLifespanRememberMe; }
+    public void setSessionMaxLifespanRememberMe(Integer v) { this.sessionMaxLifespanRememberMe = v; }
 
     @Override
     public boolean equals(Object o) {

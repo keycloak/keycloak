@@ -20,11 +20,17 @@ package org.keycloak.models.utils;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 
 import org.junit.Assert;
@@ -39,8 +45,12 @@ public class SessionExpirationUtilsTest {
 
     private static final Map<String, Object> realmMap = new HashMap<>();
     private static final Map<String, Object> clientMap = new HashMap<>();
+    private static final Map<String, Object> orgMap = new HashMap<>();
+    private static final Map<String, Object> userSessionMap = new HashMap<>();
     private static final RealmModel realm = createRealm();
     private static final ClientModel client = createClient();
+    private static final OrganizationModel org = createOrg();
+    private static final UserSessionModel userSession = createUserSession();
 
     private static RealmModel createRealm() {
         RealmModel realmModel = (RealmModel) Proxy.newProxyInstance(SessionExpirationUtilsTest.class.getClassLoader(),
@@ -67,6 +77,53 @@ public class SessionExpirationUtilsTest {
         return clientModel;
     }
 
+    private static OrganizationModel createOrg() {
+        return (OrganizationModel) Proxy.newProxyInstance(SessionExpirationUtilsTest.class.getClassLoader(),
+                new Class[]{OrganizationModel.class}, (proxy, method, args) -> {
+            Object result = orgMap.get(method.getName());
+            if (result != null) {
+                return result;
+            }
+            throw new UnsupportedOperationException("Org method not in map: " + method.getName());
+        });
+    }
+    
+    private static UserModel createUser() {
+        return (UserModel) Proxy.newProxyInstance(SessionExpirationUtilsTest.class.getClassLoader(),
+                new Class[]{UserModel.class}, (proxy, method, args) -> null);
+    }
+    
+    private static UserSessionModel createUserSession() {
+        UserModel user = createUser();
+        return (UserSessionModel) Proxy.newProxyInstance(SessionExpirationUtilsTest.class.getClassLoader(),
+                new Class[]{UserSessionModel.class}, (proxy, method, args) -> {
+            if ("getUser".equals(method.getName())) return user;
+            Object result = userSessionMap.get(method.getName());
+            if (result != null) return result;
+            throw new UnsupportedOperationException("UserSession method not in map: " + method.getName());
+        });
+    }
+    
+    private static KeycloakSession createKeycloakSession(OrganizationModel orgToReturn) {
+        return (KeycloakSession) Proxy.newProxyInstance(SessionExpirationUtilsTest.class.getClassLoader(),
+                new Class[]{KeycloakSession.class}, (proxy, method, args) -> {
+            if ("getProvider".equals(method.getName()) && args[0] == OrganizationProvider.class) {
+                return createOrgProvider(orgToReturn);
+            }
+            throw new UnsupportedOperationException("KeycloakSession method not in map: " + method.getName());
+        });
+    }
+    
+    private static OrganizationProvider createOrgProvider(OrganizationModel orgToReturn) {
+        return (OrganizationProvider) Proxy.newProxyInstance(SessionExpirationUtilsTest.class.getClassLoader(),
+                new Class[]{OrganizationProvider.class}, (proxy, method, args) -> {
+            if ("getByMember".equals(method.getName())) {
+                return orgToReturn != null ? Stream.of(orgToReturn) : Stream.empty();
+            }
+            throw new UnsupportedOperationException("OrganizationProvider method not in map: " + method.getName());
+        });
+    }
+
     private static void resetRealm() {
         realmMap.put("isOfflineSessionMaxLifespanEnabled", false);
         realmMap.put("getOfflineSessionMaxLifespan", 0);
@@ -83,6 +140,13 @@ public class SessionExpirationUtilsTest {
 
     private static void resetClient() {
         clientMap.clear();
+    }
+
+    private static void resetOrg() {
+        orgMap.put("getSessionMaxLifespan", 0);
+        orgMap.put("getSessionIdleTimeout", 0);
+        orgMap.put("getSessionMaxLifespanRememberMe", 0);
+        orgMap.put("getSessionIdleTimeoutRememberMe", 0);
     }
 
     @Test
@@ -271,5 +335,125 @@ public class SessionExpirationUtilsTest {
         // set -1 in the client and should be not taken into account
         clientMap.put(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT, "-1");
         Assert.assertEquals(4000 * 1000L, SessionExpirationUtils.calculateClientSessionIdleTimestamp(true, false, t, realm, client) - t);
+    }
+
+    @Test
+    public void testGetSsoSessionMaxLifespan_noOrg_returnsRealmDefault() {
+        resetRealm();
+        realmMap.put("getSsoSessionMaxLifespan", 36000);
+        KeycloakSession session = createKeycloakSession(null);
+        Assert.assertEquals(36000, SessionExpirationUtils.getSsoSessionMaxLifespan(realm, userSession, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionMaxLifespan_orgWithPositiveValue_returnsOrgValue() {
+        resetRealm();
+        resetOrg();
+        realmMap.put("getSsoSessionMaxLifespan", 36000);
+        orgMap.put("getSessionMaxLifespan", 3600);
+        KeycloakSession session = createKeycloakSession(org);
+        Assert.assertEquals(3600, SessionExpirationUtils.getSsoSessionMaxLifespan(realm, userSession, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionMaxLifespan_orgWithZeroValue_returnsRealmDefault() {
+        resetRealm();
+        resetOrg();
+        realmMap.put("getSsoSessionMaxLifespan", 36000);
+        orgMap.put("getSessionMaxLifespan", 0);
+        KeycloakSession session = createKeycloakSession(org);
+        Assert.assertEquals(36000, SessionExpirationUtils.getSsoSessionMaxLifespan(realm, userSession, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionMaxLifespan_nullUserSession_returnsRealmDefault() {
+        resetRealm();
+        realmMap.put("getSsoSessionMaxLifespan", 36000);
+        KeycloakSession session = createKeycloakSession(null);
+        Assert.assertEquals(36000, SessionExpirationUtils.getSsoSessionMaxLifespan(realm, null, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionIdleTimeout_noOrg_returnsRealmDefault() {
+        resetRealm();
+        realmMap.put("getSsoSessionIdleTimeout", 1800);
+        KeycloakSession session = createKeycloakSession(null);
+        Assert.assertEquals(1800, SessionExpirationUtils.getSsoSessionIdleTimeout(realm, userSession, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionIdleTimeout_orgWithPositiveValue_returnsOrgValue() {
+        resetRealm();
+        resetOrg();
+        realmMap.put("getSsoSessionIdleTimeout", 1800);
+        orgMap.put("getSessionIdleTimeout", 900);
+        KeycloakSession session = createKeycloakSession(org);
+        Assert.assertEquals(900, SessionExpirationUtils.getSsoSessionIdleTimeout(realm, userSession, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionIdleTimeout_orgWithZeroValue_returnsRealmDefault() {
+        resetRealm();
+        resetOrg();
+        realmMap.put("getSsoSessionIdleTimeout", 1800);
+        orgMap.put("getSessionIdleTimeout", 0);
+        KeycloakSession session = createKeycloakSession(org);
+        Assert.assertEquals(1800, SessionExpirationUtils.getSsoSessionIdleTimeout(realm, userSession, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionMaxLifespanRememberMe_noOrg_returnsRealmDefault() {
+        resetRealm();
+        realmMap.put("getSsoSessionMaxLifespanRememberMe", 72000);
+        KeycloakSession session = createKeycloakSession(null);
+        Assert.assertEquals(72000, SessionExpirationUtils.getSsoSessionMaxLifespanRememberMe(realm, userSession, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionMaxLifespanRememberMe_orgWithPositiveValue_returnsOrgValue() {
+        resetRealm();
+        resetOrg();
+        realmMap.put("getSsoSessionMaxLifespanRememberMe", 72000);
+        orgMap.put("getSessionMaxLifespanRememberMe", 14400);
+        KeycloakSession session = createKeycloakSession(org);
+        Assert.assertEquals(14400, SessionExpirationUtils.getSsoSessionMaxLifespanRememberMe(realm, userSession, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionMaxLifespanRememberMe_orgWithZeroValue_returnsRealmDefault() {
+        resetRealm();
+        resetOrg();
+        realmMap.put("getSsoSessionMaxLifespanRememberMe", 72000);
+        orgMap.put("getSessionMaxLifespanRememberMe", 0);
+        KeycloakSession session = createKeycloakSession(org);
+        Assert.assertEquals(72000, SessionExpirationUtils.getSsoSessionMaxLifespanRememberMe(realm, userSession, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionIdleTimeoutRememberMe_noOrg_returnsRealmDefault() {
+        resetRealm();
+        realmMap.put("getSsoSessionIdleTimeoutRememberMe", 7200);
+        KeycloakSession session = createKeycloakSession(null);
+        Assert.assertEquals(7200, SessionExpirationUtils.getSsoSessionIdleTimeoutRememberMe(realm, userSession, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionIdleTimeoutRememberMe_orgWithPositiveValue_returnsOrgValue() {
+        resetRealm();
+        resetOrg();
+        realmMap.put("getSsoSessionIdleTimeoutRememberMe", 7200);
+        orgMap.put("getSessionIdleTimeoutRememberMe", 3600);
+        KeycloakSession session = createKeycloakSession(org);
+        Assert.assertEquals(3600, SessionExpirationUtils.getSsoSessionIdleTimeoutRememberMe(realm, userSession, session));
+    }
+    
+    @Test
+    public void testGetSsoSessionIdleTimeoutRememberMe_orgWithZeroValue_returnsRealmDefault() {
+        resetRealm();
+        resetOrg();
+        realmMap.put("getSsoSessionIdleTimeoutRememberMe", 7200);
+        orgMap.put("getSessionIdleTimeoutRememberMe", 0);
+        KeycloakSession session = createKeycloakSession(org);
+        Assert.assertEquals(7200, SessionExpirationUtils.getSsoSessionIdleTimeoutRememberMe(realm, userSession, session));
     }
 }

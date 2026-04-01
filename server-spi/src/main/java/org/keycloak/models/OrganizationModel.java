@@ -34,6 +34,12 @@ public interface OrganizationModel {
     String HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN = "kc.org.broker.login.hide-when-org-unknown";
     String SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE = "kc.org.broker.login.show-when-linked-elsewhere";
 
+    String SESSION_IDLE_TIMEOUT = "org.sessionIdleTimeout";
+    String SESSION_MAX_LIFESPAN = "org.sessionMaxLifespan";
+    String SESSION_IDLE_TIMEOUT_REMEMBER_ME = "org.sessionIdleTimeoutRememberMe";
+    String SESSION_MAX_LIFESPAN_REMEMBER_ME = "org.sessionMaxLifespanRememberMe";
+
+
     enum IdentityProviderRedirectMode {
         EMAIL_MATCH("kc.org.broker.redirect.mode.email-matches");
 
@@ -135,4 +141,21 @@ public interface OrganizationModel {
     boolean isManaged(UserModel user);
 
     boolean isMember(UserModel user);
+
+
+    Integer getSessionIdleTimeout();
+
+    void setSessionIdleTimeout(Integer timeout);
+
+    Integer getSessionMaxLifespan();
+    
+    void setSessionMaxLifespan(Integer timeout);
+
+    Integer getSessionIdleTimeoutRememberMe();
+
+    void setSessionIdleTimeoutRememberMe(Integer timeout);
+
+    Integer getSessionMaxLifespanRememberMe();
+    
+    void setSessionMaxLifespanRememberMe(Integer timeout);
 }

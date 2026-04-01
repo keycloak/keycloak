@@ -39,6 +39,7 @@ import {
 } from "./routes/EditOrganization";
 import { useAccess } from "../context/access/Access";
 import { AdminEvents } from "../events/AdminEvents";
+import { OrganizationSessionsTab } from "./OrganizationSessionsTab";
 import { useState } from "react";
 
 export default function DetailOrganization() {
@@ -87,6 +88,7 @@ export default function DetailOrganization() {
 
   const settingsTab = useTab("settings");
   const attributesTab = useTab("attributes");
+  const sessionsTab = useTab("sessions");
   const membersTab = useTab("members");
   const groupsTab = useTab("groups");
   const identityProvidersTab = useTab("identityProviders");
@@ -153,6 +155,16 @@ export default function DetailOrganization() {
                 }
                 name="attributes"
               />
+            </PageSection>
+          </Tab>
+          <Tab
+            id="sessions"
+            data-testid="sessionsTab"
+            title={<TabTitleText>{t("sessions")}</TabTitleText>}
+            {...sessionsTab}
+          >
+            <PageSection variant="light">
+              <OrganizationSessionsTab save={save} />
             </PageSection>
           </Tab>
           <Tab

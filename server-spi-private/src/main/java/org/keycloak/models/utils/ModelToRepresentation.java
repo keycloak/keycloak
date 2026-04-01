@@ -1437,6 +1437,11 @@ public class ModelToRepresentation {
         rep.setDescription(model.getDescription());
         model.getDomains().filter(Objects::nonNull).map(ModelToRepresentation::toRepresentation)
                 .forEach(rep::addDomain);
+
+        rep.setSessionIdleTimeout(model.getSessionIdleTimeout());
+        rep.setSessionMaxLifespan(model.getSessionMaxLifespan());
+        rep.setSessionIdleTimeoutRememberMe(model.getSessionIdleTimeoutRememberMe());
+        rep.setSessionMaxLifespanRememberMe(model.getSessionMaxLifespanRememberMe());
         return rep;
     }
 

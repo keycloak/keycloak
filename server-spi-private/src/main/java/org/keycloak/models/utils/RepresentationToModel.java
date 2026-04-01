@@ -1749,6 +1749,11 @@ public class RepresentationToModel {
                 .map(RepresentationToModel::toModel)
                 .collect(Collectors.toSet()));
 
+
+        model.setSessionIdleTimeout(rep.getSessionIdleTimeout());
+        model.setSessionMaxLifespan(rep.getSessionMaxLifespan());
+        model.setSessionIdleTimeoutRememberMe(rep.getSessionIdleTimeoutRememberMe());
+        model.setSessionMaxLifespanRememberMe(rep.getSessionMaxLifespanRememberMe());
         return model;
     }
 

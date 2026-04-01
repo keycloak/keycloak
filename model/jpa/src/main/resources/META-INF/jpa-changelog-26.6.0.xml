@@ -130,6 +130,19 @@
             <column name="REALM_ID" type="VARCHAR(255)" />
             <column name="CREATED_TIMESTAMP" type="BIGINT" />
         </createIndex>
+	
+    <changeSet author="keycloak" id="26.6.0-46549-session-timeout-per-organization">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <columnExists tableName="ORG" columnName="SSO_SESSION_IDLE_TIMEOUT"/>
+            </not>
+        </preConditions>
+        <addColumn tableName="ORG">
+            <column name="SSO_SESSION_IDLE_TIMEOUT" type="INT"/>
+            <column name="SSO_SESSION_MAX_LIFESPAN" type="INT"/>
+            <column name="SSO_SESSION_IDLE_TIMEOUT_REMEMBER_ME" type="INT"/>
+            <column name="SSO_SESSION_MAX_LIFESPAN_REMEMBER_ME" type="INT"/>
+        </addColumn>
     </changeSet>
 
 </databaseChangeLog>
