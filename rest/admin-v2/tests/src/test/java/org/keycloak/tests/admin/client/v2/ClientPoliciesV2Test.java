@@ -55,7 +55,7 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.tests.providers.client.policies.executor.TrackEventsClientPolicyExecutor;
+import org.keycloak.tests.providers.client.policies.TrackEventsClientPolicyExecutor;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;

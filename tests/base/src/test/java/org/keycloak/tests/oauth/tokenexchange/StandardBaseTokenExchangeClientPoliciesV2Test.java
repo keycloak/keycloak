@@ -36,14 +36,11 @@ import org.keycloak.services.clientpolicy.condition.GrantTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.DownscopeAssertionGrantEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.JWTClaimEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.JWTClaimEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ClientPolicyBuilder;
 import org.keycloak.testframework.realm.ClientProfileBuilder;
-import org.keycloak.testframework.server.KeycloakServerConfig;
-import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
-import org.keycloak.tests.providers.client.policies.executor.TestRaiseExceptionExecutor;
-import org.keycloak.tests.providers.client.policies.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
@@ -52,24 +49,19 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-@KeycloakIntegrationTest(config = StandardBaseTokenExchangeClientPoliciesV2Test.ServerConfig.class)
+@KeycloakIntegrationTest
 public class StandardBaseTokenExchangeClientPoliciesV2Test extends AbstractBaseTokenExchangeTest {
 
     private static final String PROFILE_NAME = "MyProfile";
     private static final String POLICY_NAME = "MyPolicy";
 
     @Test
-    void testClientPolicies() throws Exception {
-        // Create executor configuration
-        TestRaiseExceptionExecutor.Configuration executorConfig = new TestRaiseExceptionExecutor.Configuration();
-        executorConfig.setEvents(List.of(ClientPolicyEvent.TOKEN_EXCHANGE_REQUEST));
-
-        // Create and update client profile
+    public void testClientPolicies() throws Exception {
         realm.updateClientProfile(List.of(
                 ClientProfileBuilder.create()
                         .name(PROFILE_NAME)
                         .description("Profilo")
-                        .executor(TestRaiseExceptionExecutorFactory.PROVIDER_ID, executorConfig)
+                        .executor(RejectRequestExecutorFactory.PROVIDER_ID, null)
                         .build()
         ));
 
@@ -103,8 +95,8 @@ public class StandardBaseTokenExchangeClientPoliciesV2Test extends AbstractBaseT
         oauth.scope("optional-scope2");
         response  = tokenExchange(accessToken, "requester-client", "secret",  List.of("target-client2"), null);
         Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
-        Assertions.assertEquals(ClientPolicyEvent.TOKEN_EXCHANGE_REQUEST.toString(), response.getError());
-        Assertions.assertEquals("Exception thrown intentionally", response.getErrorDescription());
+        Assertions.assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        Assertions.assertEquals("Request not allowed", response.getErrorDescription());
     }
 
     @Test
@@ -177,7 +169,7 @@ public class StandardBaseTokenExchangeClientPoliciesV2Test extends AbstractBaseT
     @Test
     public void testJWTClaimClientPolicies() throws Exception {
         testJWTClaimClientPolicies("username", "testuser", "testuser", true, null);
-        testJWTClaimClientPolicies("username", "puppa", "testuser", false, "Value for claim 'username' not allowed");
+        testJWTClaimClientPolicies("username", "baduser", "testuser", false, "Value for claim 'username' not allowed");
         testJWTClaimClientPolicies("username", "admin", "^(admin|service|test-[0-9]+)$", true, null);
         testJWTClaimClientPolicies("username", "test-12345", "^(admin|service|test-[0-9]+)$", true, null);
         testJWTClaimClientPolicies("username", "unknown-username", "^(admin|service|test-[0-9]+)$", false, "Value for claim 'username' not allowed");
@@ -238,14 +230,6 @@ public class StandardBaseTokenExchangeClientPoliciesV2Test extends AbstractBaseT
         } finally {
             // Remove protocol mapper
             subjectClient.admin().getProtocolMappers().delete(mapperId);
-        }
-    }
-
-    protected static class ServerConfig implements KeycloakServerConfig {
-
-        @Override
-        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-            return config.dependency("org.keycloak.tests", "keycloak-tests-custom-providers");
         }
     }
 }
