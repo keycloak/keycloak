@@ -280,7 +280,7 @@ Clear the table after recovery to avoid startup delays:
 .SQL:
 [source,sql]
 ----
-DELETE FROM jgroups_ping;
+TRUNCATE jgroups_ping;
 ----
 
 === Session tables
@@ -302,8 +302,8 @@ There are three approaches to handle stale sessions:
 .SQL:
 [source,sql]
 ----
-DELETE FROM offline_client_session;
-DELETE FROM offline_user_session;
+TRUNCATE offline_client_session;
+TRUNCATE offline_user_session;
 ----
 
 . **Clear only regular sessions**: delete sessions where the `offline_flag` column equals `'0'`, preserving offline sessions while removing regular sessions.
