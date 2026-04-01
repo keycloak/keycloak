@@ -32,7 +32,4 @@ KcSamlSignedBrokerTest
 KcSamlSpDescriptorTest
 KerberosLdapTest
 TrustStoreEmailTest
-OID4VCJWTIssuerEndpointTest
 OID4VCSdJwtIssuingEndpointTest
-OID4VCJwtAuthorizationCodeFlowTest
-OID4VCSdJwtAuthorizationCodeFlowTest
