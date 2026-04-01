@@ -1,0 +1,326 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide title="Recovering a CloudNativePG cluster from an S3 backup" summary="Recover a CloudNativePG cluster from a Barman Cloud backup stored in AWS S3." tileVisible="false" >
+
+This topic describes how to recover a CloudNativePG cluster from a backup stored in AWS S3 using the Barman Cloud plugin.
+
+These instructions are intended for use with the setup described in the <@links.ha id="single-cluster-concepts"/> {section}.
+Use it together with the other building blocks outlined in the <@links.ha id="single-cluster-building-blocks"/> {section}.
+
+include::../partials/blueprint-disclaimer.adoc[]
+
+== Prerequisites
+
+* A CloudNativePG cluster with scheduled backups configured as described in <@links.ha id="single-cluster-deploy-cnpg-with-backup" />.
+* At least one successful backup exists in the S3 bucket.
+* The CloudNativePG Operator, Barman Cloud plugin, and cert-manager are installed as described in <@links.ha id="single-cluster-deploy-cnpg-with-backup" />.
+* The AWS credentials secret and `ObjectStore` resource are configured as described in <@links.ha id="single-cluster-deploy-cnpg-with-backup" />.
+
+== Recovering the CloudNativePG cluster from a backup
+
+The recovery process creates a new CloudNativePG cluster by bootstrapping it from an existing backup in the object store.
+Instead of using `bootstrap.initdb` to create a fresh database, the `bootstrap.recovery` section instructs CloudNativePG to restore from a backup source.
+
+[IMPORTANT]
+====
+The existing CloudNativePG cluster must be deleted before creating the recovered cluster with the same name.
+====
+
+. Create a `cluster-recovery.yaml` file based on the following content:
++
+.Cluster recovery resource:
+[source,yaml,indent=0]
+----
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cnpg-keycloak
+spec:
+  instances: 3 # <1>
+
+  storage:
+    size: 8Gi # <2>
+
+  affinity: # <3>
+    podAntiAffinityType: required
+    topologyKey: topology.kubernetes.io/zone
+
+  postgresql:
+    synchronous: # <4>
+      method: any
+      number: 1
+      dataDurability: required
+    parameters:
+      max_connections: "100" # <5>
+
+  bootstrap:
+    recovery: # <6>
+      source: source
+
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"] # <7>
+
+  plugins: # <8>
+  - name: barman-cloud.cloudnative-pg.io
+    isWALArchiver: true
+    parameters:
+      barmanObjectName: cnpg-store
+      serverName: cnpg-keycloak-recovery # <9>
+
+  externalClusters: # <10>
+  - name: source
+    plugin:
+      name: barman-cloud.cloudnative-pg.io
+      parameters:
+        barmanObjectName: cnpg-store
+        serverName: cnpg-keycloak # <11>
+----
+<1> Number of instances.
+<2> Pod storage size.
+This setting needs to take into account the expected size of the database and PostgreSQL WAL logs.
+<3> Pod affinity rules for Kubernetes scheduler.
+The `topology.kubernetes.io/zone` value ensures the scheduler will spread the pods across different availability zones.
+<4> Enables quorum-based synchronous replication with a single standby server.
+For more information about synchronous replication, follow the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/replication/#synchronous-replication[CloudNativePG documentation].
+<5> Database connection limit.
+This value should be adjusted based on the expected total number of JDBC connections from the {project_name} cluster.
+<6> Bootstraps the cluster by recovering from the external cluster named `source` instead of creating a new database with `initdb`.
+<7> Disables the `-ro` and `-r` default services, which are intended for read-only applications.
+Since {project_name} requires read-write access, it only connects to the `-rw` service.
+<8> Enables the Barman Cloud plugin for WAL archiving on the recovered cluster.
+<9> The `serverName` for the recovered cluster must be different from the source cluster to prevent accidental overwrites of the original backup data in the object store.
+<10> Defines an external cluster as the source for recovery. The `source` name must match the value in `bootstrap.recovery.source`.
+<11> The `serverName` of the original cluster from which the backup was taken. This must match the `serverName` used during the backup.
+
+. Apply the recovery cluster resource:
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak apply -f cluster-recovery.yaml
+----
+
+. Wait for the `cnpg-keycloak` cluster to get into the `Ready` state.
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak wait --for condition=Ready --timeout=300s cluster cnpg-keycloak
+----
++
+.Output:
+[source,bash]
+----
+cluster.postgresql.cnpg.io/cnpg-keycloak condition met
+----
+
+. Optionally, view the `cnpg-keycloak` cluster pods and their roles.
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak get pods -L role
+----
++
+.Example output:
+[source,bash]
+----
+NAME              READY   STATUS    RESTARTS   AGE   ROLE
+cnpg-keycloak-1   1/1     Running   0          10m   primary
+cnpg-keycloak-2   1/1     Running   0          10m   replica
+cnpg-keycloak-3   1/1     Running   0          10m   replica
+----
+
+. Enable scheduled backups for the recovered cluster as described in <@links.ha id="single-cluster-deploy-cnpg-with-backup" anchor="single-cluster-cnpg-enabling-scheduled-backups" />.
+
+== Point-in-Time Recovery (PITR)
+
+Point-in-Time Recovery allows restoring the database to a specific moment in time rather than to the latest available state.
+This is useful in scenarios such as recovering from a corrupted database state, reverting changes caused by a failed {project_name} upgrade, or undoing an unintended data modification.
+
+PITR relies on continuous WAL archiving, which is already configured when using the Barman Cloud plugin as described in <@links.ha id="single-cluster-deploy-cnpg-with-backup" />.
+CloudNativePG automatically selects the base backup closest to the specified target time and replays the WAL logs up to that point.
+
+[IMPORTANT]
+====
+Before upgrading {project_name}, record the current timestamp or transaction ID so it can be used as a recovery target if the upgrade fails.
+The timestamp can be obtained by running:
+
+[source,bash]
+----
+date -u +"%Y-%m-%dT%H:%M:%SZ"
+----
+====
+
+To perform a Point-in-Time Recovery, add a `recoveryTarget` section to the `bootstrap.recovery` configuration.
+The following example recovers the cluster to a specific timestamp:
+
+. Create a `cluster-recovery-pitr.yaml` file based on the following content:
++
+.Cluster PITR resource:
+[source,yaml,indent=0]
+----
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cnpg-keycloak
+spec:
+  instances: 3
+
+  storage:
+    size: 8Gi
+
+  affinity:
+    podAntiAffinityType: required
+    topologyKey: topology.kubernetes.io/zone
+
+  postgresql:
+    synchronous:
+      method: any
+      number: 1
+      dataDurability: required
+    parameters:
+      max_connections: "100"
+
+  bootstrap:
+    recovery:
+      source: source
+      recoveryTarget: # <1>
+        targetTime: "2026-03-30T10:00:00Z" # <2>
+
+  managed:
+    services:
+      disabledDefaultServices: ["ro", "r"]
+
+  plugins:
+  - name: barman-cloud.cloudnative-pg.io
+    isWALArchiver: true
+    parameters:
+      barmanObjectName: cnpg-store
+      serverName: cnpg-keycloak-pitr # <3>
+
+  externalClusters:
+  - name: source
+    plugin:
+      name: barman-cloud.cloudnative-pg.io
+      parameters:
+        barmanObjectName: cnpg-store
+        serverName: cnpg-keycloak
+----
+
+<1> The `recoveryTarget` section specifies the target state to which the database is recovered.
+See the table below for all supported target options.
+<2> The target timestamp in RFC 3339 format.
+Always include an explicit timezone to avoid ambiguity.
+Replace this value with the timestamp recorded before the upgrade or the desired recovery point.
+<3> The `serverName` must be unique for each recovery to prevent overwriting backup data in the object store.
++
+The following table lists all supported recovery target options.
+Only one option can be used at a time:
++
+[cols="1,3",options="header"]
+|===
+| Option | Description
+
+| `targetTime`
+| Timestamp up to which recovery proceeds, expressed in RFC 3339 format (for example, `2026-03-30T10:00:00Z`). Always include an explicit timezone.
+
+| `targetXID`
+| Transaction ID up to which recovery proceeds. Note that transactions may complete in a different numeric order than their assignment order.
+
+| `targetName`
+| Named restore point created with the PostgreSQL function `pg_create_restore_point()` to which recovery proceeds.
+
+| `targetLSN`
+| Write-ahead log location (Log Sequence Number) up to which recovery proceeds.
+
+| `targetImmediate`
+| Recovery ends as soon as a consistent state is reached, that is, as early as possible.
+|===
++
+. Apply the PITR cluster resource:
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak apply -f cluster-recovery-pitr.yaml
+----
++
+. Wait for the `cnpg-keycloak` cluster to get into the `Ready` state.
++
+.Command:
+[source,bash]
+----
+kubectl -n cnpg-keycloak wait --for condition=Ready --timeout=300s cluster cnpg-keycloak
+----
++
+.Output:
+[source,bash]
+----
+cluster.postgresql.cnpg.io/cnpg-keycloak condition met
+----
+
+For more details on Point-in-Time Recovery options, refer to the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/recovery#point-in-time-recovery-pitr[CloudNativePG PITR documentation].
+
+== Stale data after recovery
+
+After a recovery, any database modifications made after the last archived WAL segment or the PITR target time are lost.
+Some {project_name} tables require attention because stale data may affect cluster behavior or security.
+
+=== JGroups discovery table
+
+The `jgroups_ping` table stores the IP addresses and ports of {project_name} instances and is used as a discovery mechanism for cluster formation.
+After a recovery, this table may contain references to instances that are no longer running.
+This causes {project_name} to attempt to reach those instances during startup, resulting in a delay of up to 20 seconds (the default timeout).
+
+Clear the table after recovery to avoid startup delays:
+
+.SQL:
+[source,sql]
+----
+DELETE FROM jgroups_ping;
+----
+
+=== Session tables
+
+The `offline_user_session` and `offline_client_session` tables store sessions for logged-in users and clients.
+After a recovery, sessions that were invalidated (for example, by a user logging out) after the recovery point are restored to their previous state, effectively reviving those sessions.
+
+[IMPORTANT]
+====
+Revived sessions are a security concern.
+If a user or client logged out after the recovery point, the recovery restores their session, granting access that should no longer be valid.
+Administrators should evaluate the impact based on their application's security requirements.
+====
+
+There are three approaches to handle stale sessions:
+
+. **Clear all sessions** (recommended for security-sensitive applications): truncate both tables to force all users and clients to log in again.
++
+.SQL:
+[source,sql]
+----
+DELETE FROM offline_client_session;
+DELETE FROM offline_user_session;
+----
+
+. **Clear only regular sessions**: delete sessions where the `offline_flag` column equals `'0'`, preserving offline sessions while removing regular sessions.
++
+.SQL:
+[source,sql]
+----
+DELETE FROM offline_client_session WHERE offline_flag = '0';
+DELETE FROM offline_user_session WHERE offline_flag = '0';
+----
+
+. **Leave tables untouched**: if revived sessions are acceptable for the application, the stale sessions will expire automatically based on the configured session maximum idle timeout.
+
+== Next steps
+
+After successful recovery of the CloudNativePG cluster, continue with <@links.ha id="single-cluster-deploy-keycloak" />.
+
+For more information about recovery operations, refer to the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/recovery[CloudNativePG recovery documentation].
+
+</@tmpl.guide>
