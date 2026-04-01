@@ -10,15 +10,15 @@ Use it together with the other building blocks outlined in the <@links.ha id="si
 
 include::../partials/blueprint-disclaimer.adoc[]
 
-== Installing the CloudNativePG Operator with Barman Cloud plugin
+== Install the CloudNativePG Operator with Barman Cloud plugin
 
-In addition to the CloudNativePG operator, the Barman Cloud plugin is required to enable backup and restore operations to an S3-compatible object store.
+Both the CloudNativePG operator and the Barman Cloud plugin are required in order to enable backup and restore operations using an S3-compatible object store.
 
-=== Installing the CloudNativePG Operator
+=== Install the CloudNativePG Operator
 
-Install the CloudNativePG Operator as described in <@links.ha id="single-cluster-deploy-cnpg" anchor="single-cluster-cnpg-installing-operator" />.
+Install the CloudNativePG Operator as described in <@links.ha id="single-cluster-deploy-cnpg" anchor="single-cluster-cnpg-install-operator" />.
 
-=== Installing cert-manager
+=== Install cert-manager
 
 The Barman Cloud plugin requires https://cert-manager.io/[cert-manager].
 Install it using the following commands or, alternatively, any other method described in the https://cert-manager.io/docs/installation/[cert-manager installation docs]:
@@ -45,7 +45,7 @@ deployment "cert-manager-webhook" successfully rolled out
 deployment "cert-manager" successfully rolled out
 ----
 
-=== Installing the Barman Cloud plugin
+=== Install the Barman Cloud plugin
 
 Install the Barman Cloud plugin:
 
@@ -235,8 +235,8 @@ kubectl -n cnpg-keycloak wait --for condition=Ready --timeout=300s cluster cnpg-
 cluster.postgresql.cnpg.io/cnpg-keycloak condition met
 ----
 
-[#single-cluster-cnpg-enabling-scheduled-backups]
-== Enabling scheduled backups
+[#single-cluster-cnpg-enable-scheduled-backups]
+== Enable scheduled backups
 
 The `ScheduledBackup` resource enables automatic periodic backups of the CloudNativePG cluster.
 Scheduled backups are the recommended way to implement a reliable backup strategy.
