@@ -14,7 +14,11 @@ import { useAdminClient } from "../../admin-client";
 import { useAlerts } from "@keycloak/keycloak-ui-shared";
 import { FormAccess } from "../../components/form/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import {
+  convertFormValuesToObject,
+  convertToFormValues,
+  mergeFormValuesWithExistingAttributes,
+} from "../../util";
 
 const CIBA_BACKHANNEL_TOKEN_DELIVERY_MODES = ["poll", "ping"] as const;
 const CIBA_EXPIRES_IN_MIN = 10;
@@ -47,17 +51,19 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
 
   const onSubmit = async (formValues: FormFields) => {
     try {
-      await adminClient.realms.update(
-        { realm: realmName },
+      const updatedRealm = mergeFormValuesWithExistingAttributes(
+        realm,
         convertFormValuesToObject(formValues),
       );
 
-      const updatedRealm = await adminClient.realms.findOne({
+      await adminClient.realms.update({ realm: realmName }, updatedRealm);
+
+      const refreshedRealm = await adminClient.realms.findOne({
         realm: realmName,
       });
 
-      realmUpdated(updatedRealm!);
-      setupForm(updatedRealm!);
+      realmUpdated(refreshedRealm!);
+      setupForm(refreshedRealm!);
       addAlert(t("updateCibaSuccess"), AlertVariant.success);
     } catch (error) {
       addError("updateCibaError", error);

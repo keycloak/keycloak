@@ -29,7 +29,11 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import type { Environment } from "../environment";
 import helpUrls from "../help-urls";
-import { convertFormValuesToObject, convertToFormValues } from "../util";
+import {
+  convertFormValuesToObject,
+  convertToFormValues,
+  mergeFormValuesWithExistingAttributes,
+} from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import { joinPath } from "../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
@@ -247,8 +251,7 @@ export const RealmSettingsTabs = () => {
 
     try {
       const savedRealm: UIRealmRepresentation = {
-        ...realm,
-        ...r,
+        ...mergeFormValuesWithExistingAttributes(realm!, r),
         id: r.realm,
       };
 

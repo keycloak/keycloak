@@ -144,6 +144,28 @@ export function convertFormValuesToObject<T extends Record<string, any>, G = T>(
   return result;
 }
 
+export function mergeFormValuesWithExistingAttributes<
+  T extends {
+    attributes?: Record<string, unknown>;
+  },
+>(existing: T, updated: Partial<T>): T {
+  const hasAttributes =
+    existing.attributes !== undefined || updated.attributes !== undefined;
+
+  return {
+    ...existing,
+    ...updated,
+    ...(hasAttributes
+      ? {
+          attributes: {
+            ...(existing.attributes || {}),
+            ...(updated.attributes || {}),
+          },
+        }
+      : {}),
+  };
+}
+
 export const emptyFormatter =
   (): IFormatter => (data?: IFormatterValueType) => {
     return data ? data : "—";
