@@ -1,9 +1,12 @@
 package org.keycloak.tests.oauth.tokenexchange;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -11,6 +14,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -22,7 +26,6 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testframework.admin.AdminClientFactory;
@@ -32,13 +35,15 @@ import org.keycloak.testframework.annotations.InjectEvents;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.InjectSimpleHttp;
+import org.keycloak.testframework.annotations.InjectUser;
+import org.keycloak.testframework.annotations.TestSetup;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.events.Events;
-import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
@@ -48,7 +53,6 @@ import org.keycloak.testframework.remote.timeoffset.TimeOffSet;
 import org.keycloak.testframework.server.KeycloakUrls;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.ConsentPage;
-import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
@@ -64,7 +68,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class BaseAbstractTokenExchangeTest {
+public class AbstractBaseTokenExchangeTest {
+
+    @InjectRealm(config = TokenExchangeRealm.class)
+    ManagedRealm realm;
 
     @InjectEvents
     Events events;
@@ -75,17 +82,23 @@ public class BaseAbstractTokenExchangeTest {
     @InjectPage
     ConsentPage consentPage;
 
-    @InjectRealm(config = TokenExchangeRealm.class)
-    ManagedRealm realm;
-
-    @InjectClient(attachTo = "subject-client", lifecycle = LifeCycle.METHOD)
+    @InjectClient(ref = "subject-client", attachTo = "subject-client")
     ManagedClient subjectClient;
 
-    @InjectClient(attachTo = "requester-client", lifecycle = LifeCycle.METHOD)
+    @InjectClient(ref = "requester-client", attachTo = "requester-client")
     ManagedClient requesterClient;
 
-    @InjectClient(attachTo = "requester-client-2", lifecycle = LifeCycle.METHOD)
+    @InjectClient(ref = "requester-client-2", attachTo = "requester-client-2")
     ManagedClient requesterClient2;
+
+    @InjectUser(ref = "john", attachTo = "john")
+    ManagedUser john;
+
+    @InjectUser(ref = "mike", attachTo = "mike")
+    ManagedUser mike;
+
+    @InjectUser(ref = "alice", attachTo = "alice")
+    ManagedUser alice;
 
     @InjectTimeOffSet
     TimeOffSet timeOffSet;
@@ -102,30 +115,9 @@ public class BaseAbstractTokenExchangeTest {
     @InjectSimpleHttp
     org.keycloak.http.simple.SimpleHttp simpleHttp;
 
-    UserRepresentation john;
 
-    UserRepresentation mike;
-
-    UserRepresentation alice;
-
-
-    @BeforeEach
+    @TestSetup
     public void setup() {
-        john = AdminApiUtil.findUserByUsernameId(realm.admin(), "john").toRepresentation();
-        mike = AdminApiUtil.findUserByUsernameId(realm.admin(), "mike").toRepresentation();
-        alice = AdminApiUtil.findUserByUsernameId(realm.admin(), "alice").toRepresentation();
-
-        // Assign roles to service account user
-        UserRepresentation serviceAccount = subjectClient.admin().getServiceAccountUser();
-
-        // Assign realm role default-roles-test
-        RoleRepresentation defaultRolesTest = realm.admin().roles().get("default-roles-test").toRepresentation();
-        realm.admin().users().get(serviceAccount.getId()).roles().realmLevel().add(List.of(defaultRolesTest));
-
-        // Assign client role target-client1-role
-        String targetClient1Id = realm.admin().clients().findByClientId("target-client1").get(0).getId();
-        RoleRepresentation targetClient1Role = realm.admin().clients().get(targetClient1Id).roles().get("target-client1-role").toRepresentation();
-        realm.admin().users().get(serviceAccount.getId()).roles().clientLevel(targetClient1Id).add(List.of(targetClient1Role));
         enableEvents(realm);
     }
 
@@ -169,6 +161,10 @@ public class BaseAbstractTokenExchangeTest {
                             createAudienceMapper("subject-client", "subject-client"),
                             createAudienceMapper("requester-client", "requester-client")
                     ));
+
+            realm.addUser(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "subject-client")
+                    .serviceAccountId("subject-client")
+                    .clientRoles("target-client1", "target-client1-role");
 
             realm.addClient("requester-client")
                     .secret("secret")
@@ -449,35 +445,23 @@ public class BaseAbstractTokenExchangeTest {
     protected AccessToken assertAudiencesAndScopes(AccessTokenResponse tokenExchangeResponse, UserRepresentation user,
                                                  List<String> expectedAudiences, List<String> expectedScopes, String expectedTokenType, String expectedSubjectTokenClientId) throws Exception {
         AccessToken token = assertAudiencesAndScopes(tokenExchangeResponse, expectedAudiences, expectedScopes);
-        EventAssertion.assertSuccess(events.poll())
+        EventRepresentation event = events.poll();
+        EventAssertion.assertSuccess(event)
                 .type(EventType.TOKEN_EXCHANGE)
                 .clientId(token.getIssuedFor())
                 .userId(user.getId())
                 .sessionId(token.getSessionId())
                 .details(Details.AUDIENCE, CollectionUtil.join(expectedAudiences, " "))
-                .scopeDetails(CollectionUtil.join(expectedScopes, " "))
                 .details(Details.USERNAME, user.getUsername())
                 .details(Details.REQUESTED_TOKEN_TYPE, expectedTokenType)
                 .details(Details.SUBJECT_TOKEN_CLIENT_ID, expectedSubjectTokenClientId);
+        // Verify scopes
+        Set<String> expectedScopeSet = new HashSet<>(expectedScopes);
+        Set<String> actualScopeSet = new HashSet<>(Arrays.asList(event.getDetails().get(Details.SCOPE).split(" ")));
+        assertEquals(expectedScopeSet, actualScopeSet);
+
         return token;
     }
-
-  /*  protected void createClientScopeForRole(RealmResource realm, String clientId, String clientRoleName, String clientScopeName) {
-        final ClientResource client = ApiUtil.findClientByClientId(realm, clientId);
-        createClientScopeForRole(realm, client, clientRoleName, clientScopeName);
-    }
-
-    protected void createClientScopeForRole(RealmResource realm, ClientResource client, String clientRoleName, String clientScopeName) {
-        final String clientUUID = client.toRepresentation().getId();
-        final RoleRepresentation clientRole = ApiUtil.findClientRoleByName(client, clientRoleName).toRepresentation();
-
-        final ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
-        clientScope.setName(clientScopeName);
-        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        final String clientScopeId = ApiUtil.getCreatedId(realm.clientScopes().create(clientScope));
-        getCleanup().addClientScopeId(clientScopeId);
-        realm.clientScopes().get(clientScopeId).getScopeMappings().clientLevel(clientUUID).add(List.of(clientRole));
-    }*/
 
     protected void assertIntrospectSuccess(String token, String clientId, String clientSecret, String userId) throws IOException {
         TokenMetadataRepresentation rep = oauth.client(clientId, clientSecret).introspectionRequest(token).tokenTypeHint("access_token").send().asTokenMetadata();

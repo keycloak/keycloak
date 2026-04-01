@@ -46,11 +46,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 
 @KeycloakIntegrationTest
-public class StandardTokenExchangeRefreshTokenV2Test extends BaseAbstractTokenExchangeTest {
+public class StandardTokenExchangeRefreshBaseTokenV2Test extends AbstractBaseTokenExchangeTest {
 
     @Test
     public void testScopeParamIncludedAudienceIncludedRefreshToken() throws Exception {
-        requesterClient.update(client -> client
+        requesterClient.updateWithCleanup(client -> client
                 .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name())
         );
 
@@ -81,7 +81,7 @@ public class StandardTokenExchangeRefreshTokenV2Test extends BaseAbstractTokenEx
                     .details(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_REFRESH)
                     .sessionId(exchangedToken.getSessionId());
         } finally {
-            requesterClient.update(client -> client
+            requesterClient.updateWithCleanup(client -> client
                     .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name())
             );
         }
@@ -98,7 +98,7 @@ public class StandardTokenExchangeRefreshTokenV2Test extends BaseAbstractTokenEx
         assertNotNull(exchangedTokenString);
         assertNull(refreshTokenString);
 
-        requesterClient.update(c-> c
+        requesterClient.updateWithCleanup(c-> c
                 .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, Boolean.FALSE.toString())
                 .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name()));
 
@@ -109,7 +109,7 @@ public class StandardTokenExchangeRefreshTokenV2Test extends BaseAbstractTokenEx
             assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
             assertEquals("requested_token_type unsupported", response.getErrorDescription());
         } finally {
-            requesterClient.update(c-> c
+            requesterClient.updateWithCleanup(c-> c
                     .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, Boolean.TRUE.toString())
                     .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name()));
         }
@@ -117,7 +117,7 @@ public class StandardTokenExchangeRefreshTokenV2Test extends BaseAbstractTokenEx
 
     @Test
     public void testOfflineAccessNotAllowed() throws Exception {
-        requesterClient.update(client -> client
+        requesterClient.updateWithCleanup(client -> client
                 .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name())
         );
 
@@ -135,7 +135,7 @@ public class StandardTokenExchangeRefreshTokenV2Test extends BaseAbstractTokenEx
             // Check that client session was not created
             assertEquals(getClientSessionsCountInUserSession(sessionId), Integer.valueOf(1));
         } finally {
-            requesterClient.update(client -> client
+            requesterClient.updateWithCleanup(client -> client
                     .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name())
             );
         }
@@ -143,10 +143,10 @@ public class StandardTokenExchangeRefreshTokenV2Test extends BaseAbstractTokenEx
 
     @Test
     public void testOfflineAccessLoginWithRegularTokenExchange() throws Exception {
-        requesterClient.update(client -> client
+        requesterClient.updateWithCleanup(client -> client
                 .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name())
         );
-        subjectClient.update(client -> client
+        subjectClient.updateWithCleanup(client -> client
                 .optionalClientScopes(OAuth2Constants.OFFLINE_ACCESS)
         );
 
@@ -179,7 +179,7 @@ public class StandardTokenExchangeRefreshTokenV2Test extends BaseAbstractTokenEx
                     .sessionId(originalToken.getSessionId())
                     .details(Details.REASON, "Refresh token not valid as requested_token_type because creating a new session is needed");
         } finally {
-            requesterClient.update(client -> client
+            requesterClient.updateWithCleanup(client -> client
                     .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name())
             );
         }
@@ -187,7 +187,7 @@ public class StandardTokenExchangeRefreshTokenV2Test extends BaseAbstractTokenEx
 
     @Test
     public void testOfflineAccessNotAllowedAfterOfflineAccessLogin() throws Exception {
-        requesterClient.update(client -> client
+        requesterClient.updateWithCleanup(client -> client
                 .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name())
         );
 
@@ -214,7 +214,7 @@ public class StandardTokenExchangeRefreshTokenV2Test extends BaseAbstractTokenEx
             assertEquals(0, user.getOfflineSessions(requesterClientUuid).size());
         } finally {
             oauth.scope("openid");
-            requesterClient.update(client -> client.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name())
+            requesterClient.updateWithCleanup(client -> client.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name())
             );
         }
     }

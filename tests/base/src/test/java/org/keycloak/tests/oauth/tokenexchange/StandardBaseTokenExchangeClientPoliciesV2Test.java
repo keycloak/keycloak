@@ -29,7 +29,6 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.representations.AccessToken;
-import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientScopesCondition;
 import org.keycloak.services.clientpolicy.condition.ClientScopesConditionFactory;
 import org.keycloak.services.clientpolicy.condition.GrantTypeCondition;
@@ -53,8 +52,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-@KeycloakIntegrationTest(config = StandardTokenExchangeClientPoliciesV2Test.ServerConfig.class)
-public class StandardTokenExchangeClientPoliciesV2Test extends BaseAbstractTokenExchangeTest {
+@KeycloakIntegrationTest(config = StandardBaseTokenExchangeClientPoliciesV2Test.ServerConfig.class)
+public class StandardBaseTokenExchangeClientPoliciesV2Test extends AbstractBaseTokenExchangeTest {
 
     private static final String PROFILE_NAME = "MyProfile";
     private static final String POLICY_NAME = "MyPolicy";

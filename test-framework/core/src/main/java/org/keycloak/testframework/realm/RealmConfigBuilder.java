@@ -493,10 +493,7 @@ public class RealmConfigBuilder {
         for (String roleName : roleNames) {
             mapping.role(roleName);
         }
-        if (rep.getClientScopeMappings() == null) {
-            rep.setClientScopeMappings(new HashMap<>());
-        }
-        rep.getClientScopeMappings().computeIfAbsent(clientName, k -> new ArrayList<>()).add(mapping);
+        rep.setClientScopeMappings(Collections.combine(rep.getClientScopeMappings(), Map.of(clientName, List.of(mapping))));
         return this;
     }
 

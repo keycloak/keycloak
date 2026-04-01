@@ -19,7 +19,10 @@
 
 package org.keycloak.tests.oauth.tokenexchange;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.Response;
@@ -67,7 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 @KeycloakIntegrationTest
-public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
+public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTest {
 
     @Test
     public void testSubjectTokenType() throws Exception {
@@ -113,7 +116,7 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
         assertEquals(TokenUtil.TOKEN_TYPE_BEARER, response.getTokenType());
         assertEquals(OAuth2Constants.ACCESS_TOKEN_TYPE, response.getIssuedTokenType());
 
-        requesterClient.update(c-> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name()));
+        requesterClient.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name()));
 
         response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.REFRESH_TOKEN_TYPE);
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
@@ -131,7 +134,7 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
         assertNotNull(event.getSessionId());
 
      //   realm.admin().clients().findByClientId("requester-client").getFirst().getAttributes()
-        requesterClient.update(c-> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name()));
+        requesterClient.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name()));
 
         response = tokenExchange(accessToken, "requester-client", "secret", null, OAuth2Constants.REFRESH_TOKEN_TYPE);
         assertAudiencesAndScopes(response, john, List.of("target-client1"), List.of("default-scope1"), OAuth2Constants.REFRESH_TOKEN_TYPE, "subject-client");
@@ -198,7 +201,7 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
                 .details(Details.SUBJECT_TOKEN_CLIENT_ID, "subject-client");
         assertNotNull(event.getSessionId());
 
-        requesterClient.update(c-> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name()));
+        requesterClient.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name()));
     }
 
     @Test
@@ -350,7 +353,7 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
         assertNull(exchangedToken.getSessionId());
         assertEquals("requester-client", exchangedToken.getIssuedFor());
 
-        requesterClient.update(c-> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name()));
+        requesterClient.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name()));
 
         response = tokenExchange(accessToken, "requester-client", "secret", null,
                 OAuth2Constants.REFRESH_TOKEN_TYPE);
@@ -366,7 +369,7 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
                 .userId(user.getId())
                 .details(Details.REASON, "Refresh token not valid as requested_token_type because creating a new session is needed");
 
-        requesterClient.update(c-> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name()));
+        requesterClient.updateWithCleanup(c-> c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name()));
     }
 
     @Test
@@ -384,7 +387,7 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
     public void testClientExchangeToItselfWithConsents() throws Exception {
         String accessToken = resourceOwnerLogin("john", "password","subject-client", "secret").getAccessToken();
 
-        subjectClient.update(c-> c.consentRequired(Boolean.TRUE));
+        subjectClient.updateWithCleanup(c-> c.consentRequired(Boolean.TRUE));
         AccessTokenResponse response = tokenExchange(accessToken, "subject-client", "secret", null, null);
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
         assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
@@ -393,7 +396,7 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
         response = tokenExchange(accessToken, "subject-client", "secret", List.of("subject-client"), null);
         assertEquals(OAuthErrorException.INVALID_SCOPE, response.getError());
         assertEquals("Missing consents for Token Exchange in client subject-client", response.getErrorDescription());
-        subjectClient.update(c-> c.consentRequired(Boolean.FALSE));
+        subjectClient.updateWithCleanup(c-> c.consentRequired(Boolean.FALSE));
     }
 
     @Test
@@ -506,7 +509,7 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
 
     @Test
     public void testConsents() throws Exception {
-        requesterClient.update(client -> client.consentRequired(true));
+        requesterClient.updateWithCleanup(client -> client.consentRequired(true));
         try {
             // initial TE without any consent should fail
             String accessToken = resourceOwnerLogin("mike", "password", "subject-client", "secret").getAccessToken();
@@ -551,14 +554,14 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
             assertAudiencesAndScopes(response, mike, List.of("target-client1"), List.of("default-scope1", "optional-scope2"),
                     OAuth2Constants.ACCESS_TOKEN_TYPE, "requester-client");
         } finally {
-            requesterClient.update(client -> client.consentRequired(false));
+            requesterClient.updateWithCleanup(client -> client.consentRequired(false));
         }
     }
 
     @Test
     public void testIntrospectionWithExchangedTokenAfterSSOLoginOfRequesterClient() throws Exception {
         // Login with "subject-client" and create SSO session
-        subjectClient.update(client -> client.consentRequired(true));
+        subjectClient.updateWithCleanup(client -> client.consentRequired(true));
         try {
             String accessToken = loginWithConsents(mike, "password", "subject-client", "secret");
 
@@ -582,13 +585,13 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
             assertIntrospectSuccess(requesterClientToken, "requester-client", "secret", mike.getId());
         } finally {
             timeOffSet.set(0);
-            subjectClient.update(client -> client.consentRequired(false));
+            subjectClient.updateWithCleanup(client -> client.consentRequired(false));
         }
     }
 
     @Test
     public void testTokenRevocation() throws Exception {
-        requesterClient.update(client -> client
+        requesterClient.updateWithCleanup(client -> client
                 .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name())
         );
         try {
@@ -679,7 +682,7 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
             final String mapperId = ApiUtil.getCreatedId(createMapperResponse);
             createMapperResponse.close();
 
-            requesterClient2.update(c->c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name()));
+            requesterClient2.updateWithCleanup(c->c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name()));
             try {
                 accessTokenResponse = resourceOwnerLogin("john", "password", "subject-client", "secret");
                 tokenExchangeResponse1 = tokenExchange(accessTokenResponse.getAccessToken(), "requester-client", "secret", null, OAuth2Constants.REFRESH_TOKEN_TYPE);
@@ -691,21 +694,26 @@ public class StandardTokenExchangeV2Test extends BaseAbstractTokenExchangeTest {
                 oauth.client("subject-client", "secret");
                 events.clear();
                 oauth.doTokenRevoke(accessTokenResponse.getAccessToken());
-                EventAssertion.assertSuccess(events.poll())
+                EventRepresentation event = events.poll();
+                EventAssertion.assertSuccess(event)
                         .type(EventType.REVOKE_GRANT)
                         .clientId("subject-client")
-                        .userId(john.getId())
-                        .detailsAsList(Details.TOKEN_EXCHANGE_REVOKED_CLIENTS,"requester-client-2,requester-client");
+                        .userId(john.getId());
+
+                // Verify revoked clients
+                Set<String> expectedClients = new HashSet<>(Arrays.asList("requester-client-2", "requester-client"));
+                Set<String> actualClients = new HashSet<>(Arrays.asList(event.getDetails().get(Details.TOKEN_EXCHANGE_REVOKED_CLIENTS).split(",")));
+                assertEquals(expectedClients, actualClients);
 
                 isTokenDisabled(tokenExchangeResponse1, "requester-client", "secret");
                 isTokenDisabled(tokenExchangeResponse2, "requester-client-2", "secret");
             } finally {
                 // Delete the protocol mapper and restore requester-client-2 attribute
                 requesterClient.admin().getProtocolMappers().delete(mapperId);
-                requesterClient2.update(c->c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name()));
+                requesterClient2.updateWithCleanup(c->c.attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name()));
             }
         } finally {
-            requesterClient.update(client -> client
+            requesterClient.updateWithCleanup(client -> client
                     .attribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.NO.name())
             );
         }
