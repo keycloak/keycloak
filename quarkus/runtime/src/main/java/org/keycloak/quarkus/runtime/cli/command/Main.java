@@ -111,6 +111,10 @@ public final class Main {
             throw new CommandLine.ParameterException(spec.commandLine(),
                     String.format("File specified via '%s' or '%s' option does not exist.", CONFIG_FILE_LONG_NAME, CONFIG_FILE_SHORT_NAME));
         }
+        if (!path.endsWith(".conf")) {
+            throw new CommandLine.ParameterException(spec.commandLine(),
+                    String.format("Configuration file specified via '%s' or '%s' must have the '.conf' extension.", CONFIG_FILE_LONG_NAME, CONFIG_FILE_SHORT_NAME));
+        }
         System.setProperty(KeycloakPropertiesConfigSource.KEYCLOAK_CONFIG_FILE_PROP, path);
     }
 }
