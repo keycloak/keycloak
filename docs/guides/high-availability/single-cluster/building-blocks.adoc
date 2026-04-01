@@ -37,7 +37,11 @@ Synchronous replication of databases as services with Aurora Regional Deployment
 
 A synchronously replicated database available across all availability-zones.
 
+=== Aurora
+
 *Blueprint:* <@links.ha id="single-cluster-deploy-aurora"/>.
+
+=== CloudNativePG
 
 *Blueprint:* <@links.ha id="single-cluster-deploy-cnpg"/>.
 
