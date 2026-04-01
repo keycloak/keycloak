@@ -298,6 +298,8 @@ cnpg-keycloak-scheduled-backup   30s   cnpg-keycloak
 
 After successful configuration of the backup, continue with <@links.ha id="single-cluster-deploy-keycloak" />.
 
+For details of how to restore a CloudNativePG cluster from a backup, see <@links.ha id="single-cluster-deploy-cnpg-recovery" />.
+
 For more information about backup and recovery operations, refer to the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/backup[CloudNativePG documentation].
 
 </@tmpl.guide>
