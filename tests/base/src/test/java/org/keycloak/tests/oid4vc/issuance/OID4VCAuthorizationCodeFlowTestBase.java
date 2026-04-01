@@ -21,11 +21,13 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
+import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -200,6 +202,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         // Step 5: Credential request with second token must fail
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(newJwtProofs())
                 .bearerToken(secondTokenResponse.getAccessToken())
                 .send();
 
@@ -222,6 +225,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
         CredentialRequest credentialRequest = new CredentialRequest();
         credentialRequest.setCredentialConfigurationId(ctx.getCredConfigId());
+        credentialRequest.setProofs(newJwtProofs());
 
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc()
                 .credentialRequest(credentialRequest)
@@ -251,6 +255,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
         Oid4vcCredentialResponse credResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(newJwtProofs())
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
         assertSuccessfulCredentialResponse(credResponse);
@@ -278,6 +283,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
         Oid4vcCredentialResponse credResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(newJwtProofs())
                 .bearerToken(refreshed.getAccessToken())
                 .send();
         assertSuccessfulCredentialResponse(credResponse);
@@ -306,6 +312,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
             Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credentialIdentifier)
+                    .proofs(newJwtProofs())
                     .bearerToken(tokenResponse.getAccessToken())
                     .send();
             assertErrorCredentialResponse(credentialResponse);
@@ -316,6 +323,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
             credentialResponse = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credentialIdentifier)
+                    .proofs(newJwtProofs())
                     .bearerToken(tokenResponse.getAccessToken())
                     .send();
             assertSuccessfulCredentialResponse(credentialResponse);
@@ -371,6 +379,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
             String credIdWithMandatory = assertTokenResponse(tokenWithMandatory);
             Oid4vcCredentialResponse respWithMandatory = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credIdWithMandatory)
+                    .proofs(newJwtProofs())
                     .bearerToken(tokenWithMandatory.getAccessToken())
                     .send();
             assertErrorCredentialResponse(respWithMandatory);
@@ -379,6 +388,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
             String credIdWithoutMandatory = assertTokenResponse(tokenWithoutMandatory);
             Oid4vcCredentialResponse respWithoutMandatory = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credIdWithoutMandatory)
+                    .proofs(newJwtProofs())
                     .bearerToken(tokenWithoutMandatory.getAccessToken())
                     .send();
             assertSuccessfulCredentialResponse(respWithoutMandatory);
@@ -428,6 +438,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
             Oid4vcCredentialResponse resp = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credentialIdentifier)
+                    .proofs(newJwtProofs())
                     .bearerToken(tokenResponse.getAccessToken())
                     .send();
             assertErrorCredentialResponse(resp);
@@ -439,6 +450,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
             resp = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credentialIdentifier)
+                    .proofs(newJwtProofs())
                     .bearerToken(tokenResponse.getAccessToken())
                     .send();
             assertErrorCredentialResponse(resp);
@@ -450,6 +462,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
             resp = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credentialIdentifier)
+                    .proofs(newJwtProofs())
                     .bearerToken(tokenResponse.getAccessToken())
                     .send();
             assertSuccessfulCredentialResponse(resp);
@@ -742,9 +755,12 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
         // Drain events from the successful flow
         events.clear();
+        Proofs proofs = newJwtProofs();
+        events.clear();
 
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialConfigurationId("unknown-credential-config-id")
+                .proofs(proofs)
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
 
@@ -768,9 +784,12 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
         // Drain events from the successful flow
         events.clear();
+        Proofs proofs = newJwtProofs();
+        events.clear();
 
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier("00000000-0000-0000-0000-000000000000")
+                .proofs(proofs)
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
 
@@ -966,6 +985,12 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         userRep.setLastName(userState.originalLastName);
         userRep.setAttributes(Objects.requireNonNullElse(userState.originalAttributes, Collections.emptyMap()));
         userState.user.update(userRep);
+    }
+
+    private Proofs newJwtProofs() {
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        String issuer = oauth.oid4vc().issuerMetadataRequest().send().getMetadata().getCredentialIssuer();
+        return OID4VCProofTestUtils.jwtProofs(issuer, cNonce);
     }
 
     protected static class UserState {

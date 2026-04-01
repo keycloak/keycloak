@@ -3,7 +3,12 @@ import type { Page } from "@playwright/test";
 import { createTestBed } from "../support/testbed.ts";
 import adminClient from "../utils/AdminClient.js";
 import { goToClientScopes } from "../utils/sidebar.ts";
-import { clickSaveButton, selectItem } from "../utils/form.ts";
+import {
+  clickSaveButton,
+  selectItem,
+  switchToggle,
+  assertSaveButtonIsDisabled,
+} from "../utils/form.ts";
 import { clickTableRowItem, clickTableToolbarItem } from "../utils/table.ts";
 import { login } from "../utils/login.ts";
 import { toClientScopes } from "../../src/client-scopes/routes/ClientScopes.tsx";
@@ -65,6 +70,8 @@ const OID4VCI_FIELDS = {
   CREDENTIAL_IDENTIFIER: "attributes.vc🍺credential_identifier",
   ISSUER_DID: "attributes.vc🍺issuer_did",
   EXPIRY_IN_SECONDS: "attributes.vc🍺expiry_in_seconds",
+  BINDING_METHODS: "attributes.vc🍺cryptographic_binding_methods_supported",
+  BINDING_SUPPORTED_PROOF_TYPES: "attributes.vc🍺binding_required_proof_types",
   FORMAT: "#kc-vc-format",
   TOKEN_JWS_TYPE: "attributes.vc🍺credential_build_config🍺token_jws_type",
   SIGNING_KEY_ID: "#kc-signing-key-id",
@@ -616,6 +623,57 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     );
   });
 
+  test("should require binding methods and proof types when binding is enabled", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    const testClientScopeName = `oid4vci-binding-required-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 10)}`;
+
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "JWT VC (jwt_vc_json)",
+    );
+
+    await page
+      .getByTestId(OID4VCI_FIELDS.CREDENTIAL_CONFIGURATION_ID)
+      .fill(TEST_VALUES.CREDENTIAL_CONFIG);
+    await page.getByTestId("name").fill(testClientScopeName);
+
+    await switchToggle(
+      page,
+      page.getByTestId("attributes.vc.binding_required"),
+    );
+
+    await assertSaveButtonIsDisabled(page);
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
+    await assertSaveButtonIsDisabled(page);
+
+    await page
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+      .fill("jwt");
+
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope created")).toBeVisible();
+
+    await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
+
+    await expect(
+      page.getByTestId("attributes.vc.binding_required"),
+    ).toBeChecked();
+    await expect(page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS)).toHaveValue(
+      "jwk",
+    );
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
+    ).toHaveValue("jwt");
+  });
+
   test("should default to sha-256 when hash algorithm is not set", async ({
     page,
   }) => {
@@ -643,6 +701,186 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await expect(page.locator(OID4VCI_FIELDS.HASH_ALGORITHM)).toContainText(
       "sha-256",
     );
+  });
+
+  test("should reject unsupported cryptographic binding methods", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "SD-JWT VC (dc+sd-jwt)",
+    );
+
+    await page.getByTestId("name").fill(`oid4vci-bad-binding-${Date.now()}`);
+
+    await switchToggle(
+      page,
+      page.getByTestId("attributes.vc.binding_required"),
+    );
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("cose_key");
+    await page
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+      .fill("jwt");
+
+    await assertSaveButtonIsDisabled(page);
+
+    await expect(page.getByText("Unsupported binding method(s)")).toBeVisible();
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
+
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope created")).toBeVisible();
+  });
+
+  test("should reject unsupported proof types", async ({ page }) => {
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "SD-JWT VC (dc+sd-jwt)",
+    );
+
+    await page.getByTestId("name").fill(`oid4vci-bad-proof-${Date.now()}`);
+
+    await switchToggle(
+      page,
+      page.getByTestId("attributes.vc.binding_required"),
+    );
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
+    await page
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+      .fill("foo");
+
+    await assertSaveButtonIsDisabled(page);
+
+    await expect(page.getByText("Unsupported proof type(s)")).toBeVisible();
+
+    await page
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+      .fill("jwt,attestation");
+
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope created")).toBeVisible();
+  });
+
+  test("should reject mixed valid and invalid proof types", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "SD-JWT VC (dc+sd-jwt)",
+    );
+
+    await page.getByTestId("name").fill(`oid4vci-mixed-proof-${Date.now()}`);
+
+    await switchToggle(
+      page,
+      page.getByTestId("attributes.vc.binding_required"),
+    );
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
+    await page
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+      .fill("jwt,unknown_type");
+
+    await assertSaveButtonIsDisabled(page);
+    await expect(page.getByText("Unsupported proof type(s)")).toBeVisible();
+  });
+
+  test("should accept valid binding methods and proof types", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    const testClientScopeName = `oid4vci-valid-binding-${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2, 10)}`;
+
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "SD-JWT VC (dc+sd-jwt)",
+    );
+
+    await page.getByTestId("name").fill(testClientScopeName);
+
+    await switchToggle(
+      page,
+      page.getByTestId("attributes.vc.binding_required"),
+    );
+
+    await page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS).fill("jwk");
+    await page
+      .getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES)
+      .fill("jwt,attestation");
+
+    await clickSaveButton(page);
+    await expect(page.getByText("Client scope created")).toBeVisible();
+
+    await navigateBackAndVerifyClientScope(page, testBed, testClientScopeName);
+
+    await expect(
+      page.getByTestId("attributes.vc.binding_required"),
+    ).toBeChecked();
+    await expect(page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS)).toHaveValue(
+      "jwk",
+    );
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
+    ).toHaveValue("jwt,attestation");
+  });
+
+  test("should hide binding fields when binding toggle is off", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "SD-JWT VC (dc+sd-jwt)",
+    );
+
+    await expect(page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS)).toBeHidden();
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
+    ).toBeHidden();
+
+    await switchToggle(
+      page,
+      page.getByTestId("attributes.vc.binding_required"),
+    );
+
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
+    ).toBeVisible();
+
+    await switchToggle(
+      page,
+      page.getByTestId("attributes.vc.binding_required"),
+    );
+
+    await expect(page.getByTestId(OID4VCI_FIELDS.BINDING_METHODS)).toBeHidden();
+    await expect(
+      page.getByTestId(OID4VCI_FIELDS.BINDING_SUPPORTED_PROOF_TYPES),
+    ).toBeHidden();
   });
 
   test("should not offer OID4VCI protocol when verifiable credentials are disabled for the realm", async ({

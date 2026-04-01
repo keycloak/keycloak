@@ -41,6 +41,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -262,8 +263,12 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
         }
 
         // Request the actual credential using the refreshed token
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        events.clear();
+        Proofs proof = new Proofs().setJwt(List.of(generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), cNonce)));
         Oid4vcCredentialResponse credRequestResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(proof)
                 .bearerToken(accessToken)
                 .send();
         assertSuccessfulCredentialResponse(credRequestResponse);
@@ -1010,6 +1015,12 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerEn
                                                          String credentialConfigurationId, String credentialIdentifier) throws Exception {
         // Request the actual credential using the identifier
         CredentialRequest credRequest = credentialRequestSupplier.apply(credentialConfigurationId, credentialIdentifier);
+        if (credRequest.getProofs() == null) {
+            String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+            events.clear();
+            Proofs proof = new Proofs().setJwt(List.of(generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), cNonce)));
+            credRequest.setProofs(proof);
+        }
 
         return oauth.oid4vc()
                 .credentialRequest(credRequest)

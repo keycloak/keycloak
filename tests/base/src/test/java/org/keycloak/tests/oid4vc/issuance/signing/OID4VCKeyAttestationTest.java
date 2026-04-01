@@ -43,6 +43,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
+import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
@@ -195,22 +196,7 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
     }
 
     private static KeyWrapper getECKey(String keyId) {
-        try {
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
-            kpg.initialize(new ECGenParameterSpec("secp256r1"));
-            KeyPair keyPair = kpg.generateKeyPair();
-            KeyWrapper kw = new KeyWrapper();
-            kw.setPrivateKey(keyPair.getPrivate());
-            kw.setPublicKey(keyPair.getPublic());
-            kw.setType(KeyType.EC);
-            kw.setAlgorithm("ES256");
-            if (keyId != null) {
-                kw.setKid(keyId);
-            }
-            return kw;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return OID4VCProofTestUtils.newEcSigningKey(keyId);
     }
 
     private static VCIssuanceContext createVCIssuanceContext(KeycloakSession session) {
@@ -242,22 +228,30 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                                                     List<JWK> proofJwks,
                                                     String cNonce,
                                                     String typ) {
-        try {
-            KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
-            payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
-            payload.setNonce(cNonce);
-            payload.setAttestedKeys(proofJwks);
-            payload.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH));
-            payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.HIGH));
-
-            return new JWSBuilder()
-                    .type(typ)
-                    .kid(attestationKey.getKid())
-                    .jsonContent(payload)
-                    .sign(new ECDSASignatureSignerContext(attestationKey));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create attestation JWT", e);
+        if (AttestationValidatorUtil.ATTESTATION_JWT_TYP.equals(typ)) {
+            return OID4VCProofTestUtils.generateAttestationProof(
+                    attestationKey,
+                    cNonce,
+                    proofJwks,
+                    List.of(KeyAttestationResistanceLevels.HIGH),
+                    List.of(KeyAttestationResistanceLevels.HIGH),
+                    null
+            );
         }
+
+        // Keep support for non-default typ variants used by dedicated compatibility tests.
+        KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
+        payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
+        payload.setNonce(cNonce);
+        payload.setAttestedKeys(proofJwks);
+        payload.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH));
+        payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.HIGH));
+
+        return new JWSBuilder()
+                .type(typ)
+                .kid(attestationKey.getKid())
+                .jsonContent(payload)
+                .sign(new ECDSASignatureSignerContext(attestationKey));
     }
 
     private static String generateJwtProofWithKeyAttestation(KeycloakSession session,
@@ -328,11 +322,20 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
                     KeyAttestationResistanceLevels.BASIC
             ));
 
-            String attestationJwt = new JWSBuilder()
-                    .type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
-                    .kid(attestationKey.getKid())
-                    .jsonContent(payload)
-                    .sign(new ECDSASignatureSignerContext(attestationKey));
+            String attestationJwt = OID4VCProofTestUtils.generateAttestationProof(
+                    attestationKey,
+                    cNonce,
+                    List.of(proofJwk),
+                    List.of(
+                            KeyAttestationResistanceLevels.HIGH,
+                            KeyAttestationResistanceLevels.MODERATE
+                    ),
+                    List.of(
+                            KeyAttestationResistanceLevels.ENHANCED_BASIC,
+                            KeyAttestationResistanceLevels.BASIC
+                    ),
+                    null
+            );
 
             VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
             KeyAttestationsRequired attestationRequirements = new KeyAttestationsRequired();
@@ -515,18 +518,14 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             proofJwk2.setKeyId(proofKey2.getKid());
             proofJwk2.setAlgorithm(proofKey2.getAlgorithm());
 
-            KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
-            payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
-            payload.setNonce(cNonce);
-            payload.setAttestedKeys(List.of(proofJwk1, proofJwk2));
-            payload.setKeyStorage(List.of(KeyAttestationResistanceLevels.HIGH));
-            payload.setUserAuthentication(List.of(KeyAttestationResistanceLevels.HIGH));
-
-            String attestationJwt = new JWSBuilder()
-                    .type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
-                    .kid(attestationKey.getKid())
-                    .jsonContent(payload)
-                    .sign(new ECDSASignatureSignerContext(attestationKey));
+            String attestationJwt = OID4VCProofTestUtils.generateAttestationProof(
+                    attestationKey,
+                    cNonce,
+                    List.of(proofJwk1, proofJwk2),
+                    List.of(KeyAttestationResistanceLevels.HIGH),
+                    List.of(KeyAttestationResistanceLevels.HIGH),
+                    null
+            );
 
             VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
             vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));
@@ -617,17 +616,14 @@ public class OID4VCKeyAttestationTest extends OID4VCIssuerTestBase {
             proofJwk.setKeyId(proofKey.getKid());
             proofJwk.setAlgorithm(proofKey.getAlgorithm());
 
-            KeyAttestationJwtBody payload = new KeyAttestationJwtBody();
-            payload.setIat((long) TIME_PROVIDER.currentTimeSeconds());
-            payload.setNonce(cNonce);
-            payload.setAttestedKeys(List.of(proofJwk));
-            payload.setKeyStorage(List.of("INVALID_LEVEL"));
-
-            String attestationJwt = new JWSBuilder()
-                    .type(AttestationValidatorUtil.ATTESTATION_JWT_TYP)
-                    .kid(attestationKey.getKid())
-                    .jsonContent(payload)
-                    .sign(new ECDSASignatureSignerContext(attestationKey));
+            String attestationJwt = OID4VCProofTestUtils.generateAttestationProof(
+                    attestationKey,
+                    cNonce,
+                    List.of(proofJwk),
+                    List.of("INVALID_LEVEL"),
+                    null,
+                    null
+            );
 
             VCIssuanceContext vcIssuanceContext = createVCIssuanceContext(session);
             vcIssuanceContext.getCredentialRequest().setProofs(new Proofs().setAttestation(List.of(attestationJwt)));

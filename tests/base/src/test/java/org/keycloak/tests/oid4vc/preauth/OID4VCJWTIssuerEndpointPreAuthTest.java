@@ -16,17 +16,20 @@
  */
 package org.keycloak.tests.oid4vc.preauth;
 
-import java.io.IOException;
 import java.util.List;
 
+import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
+import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -40,11 +43,12 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
+import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.jwtProofs;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
 public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest {
@@ -125,14 +129,22 @@ public class OID4VCJWTIssuerEndpointPreAuthTest extends OID4VCIssuerEndpointTest
                 .map(credConfigId -> credentialIssuer.getCredentialsSupported().get(credConfigId))
                 .forEach(supportedCredential -> {
                     try {
-                        requestCredentialWithIdentifier(
-                                theToken,
-                                credentialIdentifier,
-                                new CredentialResponseHandler(),
-                                jwtTypeCredentialScope
-                        );
-                    } catch (IOException e) {
-                        fail("Was not able to get the credential.");
+                        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+                        Proofs proofs = jwtProofs(credentialIssuer.getCredentialIssuer(), cNonce);
+
+                        CredentialResponse credentialResponse = oauth.oid4vc()
+                                .credentialRequest()
+                                .bearerToken(theToken)
+                                .credentialIdentifier(credentialIdentifier)
+                                .proofs(proofs)
+                                .send()
+                                .getCredentialResponse();
+
+                        JsonWebToken jsonWebToken = TokenVerifier.create(
+                                (String) credentialResponse.getCredentials().get(0).getCredential(),
+                                JsonWebToken.class
+                        ).getToken();
+                        assertNotNull(jsonWebToken);
                     } catch (VerificationException e) {
                         throw new RuntimeException(e);
                     }

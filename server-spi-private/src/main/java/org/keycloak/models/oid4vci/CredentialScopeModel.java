@@ -137,6 +137,26 @@ public class CredentialScopeModel implements ClientScopeModel {
     public static final String VC_KEY_ATTESTATION_REQUIRED_USER_AUTH = "vc.key_attestations_required.user_authentication";
 
     /**
+     * OPTIONAL. Flag that indicates whether cryptographic holder binding is REQUIRED for this credential configuration.
+     * If this flag is not set or set to false, the issuer metadata MUST omit the
+     * {@code cryptographic_binding_methods_supported} and {@code proof_types_supported} parameters for this
+     * configuration, meaning the wallet is not required to provide cryptographic key material or proofs.
+     * <p>
+     * If true, the issuer metadata MUST include those parameters and the issuer MUST enforce the corresponding
+     * proof types during credential issuance, as per OID4VCI Section 12.2.4.
+     */
+    public static final String VC_BINDING_REQUIRED = "vc.binding_required";
+
+    /**
+     * OPTIONAL. Comma-separated list of proof types that are REQUIRED for this credential configuration when
+     * {@link #VC_BINDING_REQUIRED} is set to true. Example: {@code "jwt,attestation"}.
+     * <p>
+     * If {@code VC_BINDING_REQUIRED} is false or this attribute is empty/absent, no proof types are required and
+     * metadata MUST omit {@code cryptographic_binding_methods_supported} and {@code proof_types_supported}.
+     */
+    public static final String VC_BINDING_REQUIRED_PROOF_TYPES = "vc.binding_required_proof_types";
+
+    /**
      * the actual object that is represented by this scope
      */
     private final ClientScopeModel clientScope;
@@ -310,6 +330,33 @@ public class CredentialScopeModel implements ClientScopeModel {
 
     public void setVcDisplay(String vcDisplay) {
         clientScope.setAttribute(VC_DISPLAY, vcDisplay);
+    }
+
+    /**
+     * Whether cryptographic holder binding is required for this credential configuration.
+     */
+    public boolean isBindingRequired() {
+        return Boolean.parseBoolean(clientScope.getAttribute(VC_BINDING_REQUIRED));
+    }
+
+    public void setBindingRequired(boolean required) {
+        clientScope.setAttribute(VC_BINDING_REQUIRED, String.valueOf(required));
+    }
+
+    /**
+     * The list of proof types that are required for this credential configuration when binding is required.
+     * Returns an empty list if none are configured.
+     */
+    public List<String> getRequiredProofTypes() {
+        return Optional.ofNullable(clientScope.getAttribute(VC_BINDING_REQUIRED_PROOF_TYPES))
+                .map(s -> s.split(","))
+                .map(Arrays::asList)
+                .orElse(Collections.emptyList());
+    }
+
+    public void setRequiredProofTypes(List<String> proofTypes) {
+        clientScope.setAttribute(VC_BINDING_REQUIRED_PROOF_TYPES,
+                proofTypes == null || proofTypes.isEmpty() ? null : String.join(",", proofTypes));
     }
 
     public boolean isKeyAttestationRequired() {

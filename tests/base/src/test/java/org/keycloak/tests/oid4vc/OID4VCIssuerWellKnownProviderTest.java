@@ -58,6 +58,7 @@ import org.keycloak.protocol.oid4vc.model.KeyAttestationsRequired;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.ProofTypesSupported;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+import org.keycloak.protocol.oid4vc.model.SupportedProofTypeData;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.annotations.TestSetup;
@@ -546,10 +547,19 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
         assertEquals(expectedFormat, supportedConfig.getFormat());
 
         assertEquals(credScope.getName(), supportedConfig.getScope());
-        {
-            // TODO this is still hardcoded
+        boolean bindingRequired = Boolean.parseBoolean(
+                Optional.ofNullable(credScope.getAttributes())
+                        .map(attrs -> attrs.get(CredentialScopeModel.VC_BINDING_REQUIRED))
+                        .orElse("false")
+        );
+        if (bindingRequired) {
+            assertNotNull(supportedConfig.getCryptographicBindingMethodsSupported(),
+                    "Binding methods should be advertised when binding is required");
             assertEquals(1, supportedConfig.getCryptographicBindingMethodsSupported().size());
             assertEquals(CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT, supportedConfig.getCryptographicBindingMethodsSupported().get(0));
+        } else {
+            assertNull(supportedConfig.getCryptographicBindingMethodsSupported(),
+                    "Binding methods should be omitted when binding is optional");
         }
 
         compareDisplay(supportedConfig, credScope);
@@ -575,10 +585,25 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
 
         List<String> signingAlgsSupported = supportedConfig.getCredentialSigningAlgValuesSupported();
         ProofTypesSupported proofTypesSupported = supportedConfig.getProofTypesSupported();
+        if (!bindingRequired) {
+            assertNull(proofTypesSupported, "proof_types_supported should be omitted when binding is optional");
+            MatcherAssert.assertThat(signingAlgsSupported,
+                    Matchers.containsInAnyOrder(getAllAsymmetricAlgorithms().toArray()));
+            compareClaims(expectedFormat, supportedConfig.getCredentialMetadata().getClaims(), credScope.getProtocolMappers());
+            return;
+        }
         String proofTypesSupportedString = proofTypesSupported.toJsonString();
 
-        MatcherAssert.assertThat(proofTypesSupported.getSupportedProofTypes().keySet(),
-                Matchers.containsInAnyOrder(ProofType.JWT, ProofType.ATTESTATION));
+        MatcherAssert.assertThat(
+                "JWT proof type must be supported",
+                proofTypesSupported.getSupportedProofTypes().keySet(),
+                Matchers.hasItem(ProofType.JWT)
+        );
+        MatcherAssert.assertThat(
+                "Only configured proof types should be advertised",
+                proofTypesSupported.getSupportedProofTypes().keySet(),
+                Matchers.everyItem(Matchers.isOneOf(ProofType.JWT, ProofType.ATTESTATION))
+        );
 
         List<String> expectedProofSigningAlgs = getAllAsymmetricAlgorithms();
 
@@ -611,9 +636,24 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
                             .map(s -> JsonSerialization.valueFromString(s, KeyAttestationsRequired.class))
                             .orElse(null);
 
-            ProofTypesSupported expectedProofTypesSupported = ProofTypesSupported.parse(
-                    session, keyAttestationsRequired, actualProofSigningAlgs);
-            assertEquals(expectedProofTypesSupported, actualProofTypesSupported);
+            // JWT proof support is mandatory for this flow. Attestation may or may not be advertised,
+            // depending on credential configuration, so we validate JWT strictly and treat attestation as optional.
+            SupportedProofTypeData jwtProofTypeData = actualProofTypesSupported
+                    .getSupportedProofTypes()
+                    .get(ProofType.JWT);
+            assertNotNull(jwtProofTypeData, "JWT proof type must be present");
+            assertEquals(keyAttestationsRequired, jwtProofTypeData.getKeyAttestationsRequired());
+            MatcherAssert.assertThat(jwtProofTypeData.getSigningAlgorithmsSupported(),
+                    Matchers.containsInAnyOrder(actualProofSigningAlgs.toArray()));
+
+            SupportedProofTypeData attestationProofTypeData = actualProofTypesSupported
+                    .getSupportedProofTypes()
+                    .get(ProofType.ATTESTATION);
+            if (attestationProofTypeData != null) {
+                assertEquals(keyAttestationsRequired, attestationProofTypeData.getKeyAttestationsRequired());
+                MatcherAssert.assertThat(attestationProofTypeData.getSigningAlgorithmsSupported(),
+                        Matchers.containsInAnyOrder(actualProofSigningAlgs.toArray()));
+            }
 
             MatcherAssert.assertThat(signingAlgsSupported,
                     Matchers.containsInAnyOrder(getAllAsymmetricAlgorithms().toArray()));
@@ -636,7 +676,8 @@ public class OID4VCIssuerWellKnownProviderTest extends OID4VCIssuerTestBase {
             assertNull(supportedConfig.getCredentialMetadata() != null ? supportedConfig.getCredentialMetadata().getDisplay() : null);
             return;
         }
-        List<DisplayObject> expectedDisplayObjectList = JsonSerialization.mapper.readValue(display, new TypeReference<>() {});
+        List<DisplayObject> expectedDisplayObjectList = JsonSerialization.mapper.readValue(display, new TypeReference<>() {
+        });
 
         assertNotNull(supportedConfig.getCredentialMetadata(), "Credential metadata should exist when display is configured");
         assertEquals(expectedDisplayObjectList.size(), supportedConfig.getCredentialMetadata().getDisplay().size());

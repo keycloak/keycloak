@@ -26,6 +26,7 @@ import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -175,8 +176,10 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
 
         // Step 5: Request the actual credential using the identifier
         // When authorization_details are present in the token, credential_identifier must be used
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(new Proofs().setJwt(List.of(generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), cNonce))))
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
 

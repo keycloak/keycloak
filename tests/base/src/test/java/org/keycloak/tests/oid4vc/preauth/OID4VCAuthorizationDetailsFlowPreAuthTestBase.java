@@ -34,6 +34,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -60,6 +61,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CODE_LIFESPAN_S;
+import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProof;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -518,10 +520,14 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         //      * It does not assume the caller already has an authenticated session.
         //      * It must guarantee isolation of state tied to the VC issuance flow.
         {
+            // Clear events before credential request. Fetching a nonce emits a nonce event.
+            String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
             events.clear();
 
             Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                     .credentialIdentifier(credentialIdentifier)
+                    .proofs(new Proofs().setJwt(List.of(
+                            generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), cNonce))))
                     .bearerToken(tokenResponse.getAccessToken())
                     .send();
 
@@ -576,8 +582,12 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         assertNotNull(credentialIdentifier, "Credential identifier should be present");
 
         // Step 2: Verify token works at credential endpoint (should succeed)
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        events.clear();
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(new Proofs().setJwt(List.of(
+                        generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), cNonce))))
                 .bearerToken(preAuthorizedToken)
                 .send();
 
@@ -762,8 +772,13 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
         String credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
         String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
+        String credentialIssuer = getCredentialIssuerFromAuthDetails(tokenResponse);
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        events.clear();
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(new Proofs().setJwt(List.of(
+                        generateJwtProof(credentialIssuer, cNonce))))
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
 
@@ -800,9 +815,14 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
         String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
+        String credentialIssuer = getCredentialIssuerFromAuthDetails(tokenResponse);
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        events.clear();
 
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(new Proofs().setJwt(List.of(
+                        generateJwtProof(credentialIssuer, cNonce))))
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
         assertEquals(HttpStatus.SC_BAD_REQUEST, credentialResponse.getStatusCode());
@@ -851,8 +871,12 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         events.clear();
 
         // Request credential with invalid credential identifier
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        events.clear();
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier("invalid-credential-identifier")
+                .proofs(new Proofs().setJwt(List.of(
+                        generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), cNonce))))
                 .bearerToken(token)
                 .send();
 
@@ -876,6 +900,17 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
     protected void verifyCredentialStructure(Object credentialObj) {
         // Default implementation - subclasses should override
         assertNotNull(credentialObj, "Credential object should not be null");
+    }
+
+    private String getCredentialIssuerFromAuthDetails(AccessTokenResponse tokenResponse) {
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
+        if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
+            List<String> locations = authDetailsResponse.get(0).getLocations();
+            if (locations != null && !locations.isEmpty() && locations.get(0) != null && !locations.get(0).isBlank()) {
+                return locations.get(0);
+            }
+        }
+        return oauth.oid4vc().issuerMetadataRequest().send().getMetadata().getCredentialIssuer();
     }
 
 }

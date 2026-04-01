@@ -35,6 +35,11 @@ const OID4VC_PROTOCOL = "oid4vc";
 const VC_FORMAT_JWT_VC = "jwt_vc_json";
 const VC_FORMAT_SD_JWT = "dc+sd-jwt";
 
+// Allowed values for OID4VCI cryptographic binding methods and proof types.
+// Keep these in sync with server-side support in CredentialScopeModel / ProofType.
+const ALLOWED_CRYPTO_BINDING_METHODS = ["jwk"] as const;
+const ALLOWED_PROOF_TYPES = ["jwt", "attestation"] as const;
+
 // Validation function for comma-separated lists
 const validateCommaSeparatedList = (value: string | undefined) => {
   if (!value || value.trim() === "") {
@@ -158,6 +163,14 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     isFeatureEnabled(Feature.OpenId4VCI) &&
     realmRepresentation?.verifiableCredentialsEnabled;
   const isNotSaml = selectedProtocol != "saml";
+
+  const bindingRequired = useWatch({
+    control,
+    name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.binding_required",
+    ),
+    defaultValue: clientScope?.attributes?.["vc.binding_required"] ?? "false",
+  });
 
   const isSigningKeySelected = useWatch({
     control,
@@ -456,6 +469,92 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                   value: alg,
                 }))}
               />
+            )}
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.vc.binding_required",
+              )}
+              defaultValue={
+                clientScope?.attributes?.["vc.binding_required"] ?? "false"
+              }
+              label={t("bindingRequired")}
+              labelIcon={t("bindingRequiredHelp")}
+              stringify
+            />
+            {bindingRequired === "true" && (
+              <>
+                <TextControl
+                  name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                    "attributes.vc.cryptographic_binding_methods_supported",
+                  )}
+                  label={t("cryptographicBindingMethodsSupported")}
+                  labelIcon={t("cryptographicBindingMethodsSupportedHelp")}
+                  rules={{
+                    validate: (value: string | undefined) => {
+                      if (!value || value.trim() === "") {
+                        return t("required");
+                      }
+
+                      const listValidation = validateCommaSeparatedList(value);
+                      if (listValidation !== true) {
+                        return listValidation;
+                      }
+
+                      const entries = value.split(",");
+                      const invalid = entries.filter(
+                        (entry) =>
+                          !ALLOWED_CRYPTO_BINDING_METHODS.includes(
+                            entry.trim() as (typeof ALLOWED_CRYPTO_BINDING_METHODS)[number],
+                          ),
+                      );
+                      if (invalid.length > 0) {
+                        return t(
+                          "cryptographicBindingMethodsSupportedInvalid",
+                          {
+                            invalid: invalid.join(","),
+                          },
+                        );
+                      }
+
+                      return true;
+                    },
+                  }}
+                />
+                <TextControl
+                  name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                    "attributes.vc.binding_required_proof_types",
+                  )}
+                  label={t("bindingSupportedProofTypes")}
+                  labelIcon={t("bindingSupportedProofTypesHelp")}
+                  rules={{
+                    validate: (value: string | undefined) => {
+                      if (!value || value.trim() === "") {
+                        return t("required");
+                      }
+
+                      const listValidation = validateCommaSeparatedList(value);
+                      if (listValidation !== true) {
+                        return listValidation;
+                      }
+
+                      const entries = value.split(",");
+                      const invalid = entries.filter(
+                        (entry) =>
+                          !ALLOWED_PROOF_TYPES.includes(
+                            entry.trim() as (typeof ALLOWED_PROOF_TYPES)[number],
+                          ),
+                      );
+                      if (invalid.length > 0) {
+                        return t("bindingSupportedProofTypesInvalid", {
+                          invalid: invalid.join(","),
+                        });
+                      }
+
+                      return true;
+                    },
+                  }}
+                />
+              </>
             )}
             <TextAreaControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
