@@ -55,6 +55,8 @@ import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VCT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS;
@@ -139,6 +141,9 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                 clientScope.addProtocolMapper(builtins.get(EMAIL_MAPPER));
                 clientScope.addProtocolMapper(builtins.get(FIRST_NAME_MAPPER));
                 clientScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
+                clientScope.getAttributes().put(VC_BINDING_REQUIRED, "true");
+                clientScope.getAttributes().put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
+                clientScope.getAttributes().put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
 
                 ClientScopeRepresentation clientScopeRep = ModelToRepresentation.toRepresentation(clientScope);
                 addClientScopeDefaults(clientScopeRep);
@@ -172,7 +177,6 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         clientScope.getAttributes().putIfAbsent(VC_SUPPORTED_TYPES, credentialType);
         clientScope.getAttributes().putIfAbsent(VC_CONTEXTS, credentialType);
         clientScope.getAttributes().putIfAbsent(VCT, credentialType);
-        clientScope.getAttributes().putIfAbsent(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
         clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_HASH_ALGORITHM, VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT);
         clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_TOKEN_JWS_TYPE, getDefaultTokenJwsTypeForFormat(format));
         clientScope.getAttributes().putIfAbsent(VC_EXPIRY_IN_SECONDS, String.valueOf(VC_EXPIRY_IN_SECONDS_DEFAULT));
