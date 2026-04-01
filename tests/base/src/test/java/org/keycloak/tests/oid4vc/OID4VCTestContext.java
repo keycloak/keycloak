@@ -13,6 +13,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -27,17 +28,15 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
  */
 public class OID4VCTestContext {
 
+    static final AttachmentKey<OIDCConfigurationRepresentation> AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY = new AttachmentKey<>(OIDCConfigurationRepresentation.class);
     static final AttachmentKey<CredentialIssuer> ISSUER_METADATA_ATTACHMENT_KEY = new AttachmentKey<>(CredentialIssuer.class);
-    static final AttachmentKey<CredentialOfferURI> CREDENTIAL_OFFER_URI_ATTACHMENT_KEY = new AttachmentKey<>(CredentialOfferURI.class);
+    static final AttachmentKey<CredentialOfferURI> CREDENTIALS_OFFER_URI_ATTACHMENT_KEY = new AttachmentKey<>(CredentialOfferURI.class);
     static final AttachmentKey<CredentialsOffer> CREDENTIALS_OFFER_ATTACHMENT_KEY = new AttachmentKey<>(CredentialsOffer.class);
     static final AttachmentKey<AccessTokenResponse> ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(AccessTokenResponse.class);
     static final AttachmentKey<CredentialResponse> CREDENTIAL_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(CredentialResponse.class);
 
-    private String clientId;
     private String issuer;      // Issuing username (i.e. agent who creates credential offers)
     private String holder;      // Holder who requests the credential
-    private String credConfigId;
-    private String credScopeName;
 
     private ClientRepresentation client;
     private CredentialScopeRepresentation credentialScope;
@@ -46,12 +45,9 @@ public class OID4VCTestContext {
 
     public OID4VCTestContext(ClientRepresentation client, CredentialScopeRepresentation credentialScope) {
         this.client = client;
-        this.clientId = client.getClientId();
         this.issuer = "john";
         this.holder = "alice";
         this.credentialScope = credentialScope;
-        this.credScopeName = credentialScope.getName();
-        this.credConfigId = credentialScope.getCredentialConfigurationId();
     }
 
     public List<String> getAuthorizedCredentialIdentifiers() {
@@ -93,14 +89,6 @@ public class OID4VCTestContext {
         this.client = client;
     }
 
-    public String getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
-    }
-
     public String getIssuer() {
         return issuer;
     }
@@ -117,28 +105,24 @@ public class OID4VCTestContext {
         this.holder = holder;
     }
 
-    public String getCredConfigId() {
-        return credConfigId;
-    }
-
-    public void setCredConfigId(String credConfigId) {
-        this.credConfigId = credConfigId;
-    }
-
-    public String getCredScopeName() {
-        return credScopeName;
-    }
-
-    public void setCredScopeName(String credScopeName) {
-        this.credScopeName = credScopeName;
-    }
-
     public CredentialScopeRepresentation getCredentialScope() {
         return credentialScope;
     }
 
     public void setCredentialScope(CredentialScopeRepresentation credentialScope) {
         this.credentialScope = credentialScope;
+    }
+
+    public String getCredentialConfigurationId() {
+        return credentialScope.getCredentialConfigurationId();
+    }
+
+    public String getCredentialIdentifier() {
+        return credentialScope.getCredentialIdentifier();
+    }
+
+    public String getScope() {
+        return credentialScope.getName();
     }
 
     // Attachment Support ----------------------------------------------------------------------------------------------

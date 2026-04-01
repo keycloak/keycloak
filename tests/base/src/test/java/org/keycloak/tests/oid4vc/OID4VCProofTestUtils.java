@@ -30,7 +30,10 @@ public final class OID4VCProofTestUtils {
     }
 
     public static String generateJwtProof(String audience, String nonce) {
-        KeyWrapper keyWrapper = getEcKey();
+        return generateJwtProof(audience, createEcKeyPair(), nonce);
+    }
+
+    public static String generateJwtProof(String audience, KeyWrapper keyWrapper, String nonce) {
         keyWrapper.setKid(null);
         JWK jwk = JWKBuilder.create().ec(keyWrapper.getPublicKey());
 
@@ -85,14 +88,14 @@ public final class OID4VCProofTestUtils {
     }
 
     public static KeyWrapper newEcSigningKey(String keyId) {
-        KeyWrapper kw = getEcKey();
+        KeyWrapper kw = createEcKeyPair();
         if (keyId != null && !keyId.isBlank()) {
             kw.setKid(keyId);
         }
         return kw;
     }
 
-    private static KeyWrapper getEcKey() {
+    public static KeyWrapper createEcKeyPair() {
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", BouncyIntegration.PROVIDER);
             kpg.initialize(256);

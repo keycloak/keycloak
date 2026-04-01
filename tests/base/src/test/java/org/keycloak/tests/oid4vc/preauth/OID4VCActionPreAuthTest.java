@@ -12,7 +12,6 @@ import org.keycloak.testframework.realm.ManagedUser;
 import org.keycloak.testframework.ui.annotations.InjectPage;
 import org.keycloak.testframework.ui.page.OID4VCCredentialOfferPage;
 import org.keycloak.tests.common.TestRealmUserConfig;
-import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -44,11 +43,9 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
     ManagedUser user;
 
     OID4VCTestContext ctx;
-    OID4VCBasicWallet wallet;
 
     @BeforeEach
     void beforeEach() {
-        wallet = new OID4VCBasicWallet(keycloak, oauth);
         ctx = new OID4VCTestContext(client, minimalJwtTypeCredentialScope);
         user.admin().logout();
     }
@@ -104,7 +101,7 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
 
         // Redeem Pre-Authorized Code for AccessToken
         //
-        AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode).send();
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
