@@ -35,7 +35,7 @@
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-api</artifactId>
-            <version>4.25.0</version>
+            <version>${selenium.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
