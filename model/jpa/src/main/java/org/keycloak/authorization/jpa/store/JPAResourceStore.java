@@ -95,7 +95,11 @@ public class JPAResourceStore implements ResourceStore {
         }
 
         ResourceEntity entity = entityManager.find(ResourceEntity.class, id);
-        if (entity == null) return null;
+
+        if (entity == null || (resourceServer != null && !resourceServer.getId().equals(entity.getResourceServer()))) {
+            return null;
+        }
+
         return new ResourceAdapter(entity, entityManager, provider.getStoreFactory());
     }
 
@@ -186,7 +190,8 @@ public class JPAResourceStore implements ResourceStore {
                     break;
                 case NAME:
                 case TYPE:
-                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + value[0].toLowerCase() + "%"));
+                    String escapedValue = value[0].toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+                    predicates.add(builder.like(builder.lower(root.get(filterOption.getName())), "%" + escapedValue + "%", '\\'));
                     break;
                 case EXACT_NAME:
                     predicates.add(builder.equal(builder.lower(root.get(filterOption.getName())), value[0].toLowerCase()));

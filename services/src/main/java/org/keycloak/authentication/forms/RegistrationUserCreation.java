@@ -319,6 +319,11 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
                 return false;
             }
 
+            if (!organization.isEnabled()) {
+                error.accept(List.of(new FormMessage("The organization is not available at this time.")));
+                return false;
+            }
+
             // make sure the organization is set to the session so that UP org-related validators can run
             session.getContext().setOrganization(organization);
             session.setAttribute(InviteOrgActionToken.class.getName(), token);

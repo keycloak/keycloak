@@ -59,11 +59,13 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
+import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.oauth.AbstractHttpResponse;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
+import org.keycloak.testsuite.util.oauth.ParRequest;
 import org.keycloak.testsuite.util.oauth.ParResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -99,6 +101,8 @@ public class ParTest extends AbstractClientPoliciesTest {
     private static final String VALID_CORS_URL = "http://localtest.me:8180";
     private static final String INVALID_CORS_URL = "http://invalid.localtest.me:8180";
 
+    private static final String IDENTITY_PROVIDER_ALIAS = "test-idp";
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
@@ -132,6 +136,8 @@ public class ParTest extends AbstractClientPoliciesTest {
 
         realm.getClients().add(ClientBuilder.create().redirectUris(VALID_CORS_URL + "/realms/master/app")
                 .addWebOrigin(VALID_CORS_URL).clientId("test-app2").publicClient().directAccessGrants().build());
+
+        realm.addIdentityProvider(IdentityProviderBuilder.create().alias(IDENTITY_PROVIDER_ALIAS).providerId("oidc").build());
 
         testRealms.add(realm);
     }
@@ -1223,6 +1229,90 @@ public class ParTest extends AbstractClientPoliciesTest {
         assertEquals(400, response.getStatusCode());
         assertEquals(ClientPolicyEvent.PUSHED_AUTHORIZATION_REQUEST.toString(), response.getError());
         assertEquals("Exception thrown intentionally", response.getErrorDescription());
+    }
+
+    // Successful redirection to identity provider when including kc_idp_hint in the PAR request.
+    @Test
+    public void testSuccessfulIdpRedirectUsingIdpHintInParRequest() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // create client dynamically
+            String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+                clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+                clientRep.setRedirectUris(new ArrayList<String>(Arrays.asList(CLIENT_REDIRECT_URI)));
+            });
+            OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+            String clientSecret = oidcCRep.getClientSecret();
+            assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+            assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+            assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
+
+            // Pushed Authorization Request
+            oauth.client(clientId, clientSecret);
+            oauth.redirectUri(CLIENT_REDIRECT_URI);
+            ParRequest parRequest = oauth.pushedAuthorizationRequest()
+                                         .idpHint(IDENTITY_PROVIDER_ALIAS);
+            ParResponse pResp = parRequest.send();
+            assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+            assertEquals(requestUriLifespan, pResp.getExpiresIn());
+
+            // Authorization Request with request_uri of PAR
+            // remove parameters as query strings of uri
+            oauth.redirectUri(null);
+            oauth.scope(null);
+            oauth.responseType(null);
+            String state = "testSuccessfulIdpRedirectUsingIdpHintInParRequest";
+            oauth.loginForm().requestUri(requestUri).state(state).open();
+            assertThat(driver.getCurrentUrl(), startsWith(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + oauth.getRealm() + "/broker/%s/login".formatted(IDENTITY_PROVIDER_ALIAS)));
+        } finally {
+            restoreParRealmSettings();
+        }
+    }
+
+    // No identity provider redirection when including an invalid alias as kc_idp_hint in the PAR request.
+    @Test
+    public void testNoIdpRedirectUsingInvalidIdpHintInParRequest() throws Exception {
+        try {
+            // setup PAR realm settings
+            int requestUriLifespan = 45;
+            setParRealmSettings(requestUriLifespan);
+
+            // create client dynamically
+            String clientId = createClientDynamically(generateSuffixedName(CLIENT_NAME), (OIDCClientRepresentation clientRep) -> {
+                clientRep.setRequirePushedAuthorizationRequests(Boolean.TRUE);
+                clientRep.setRedirectUris(new ArrayList<String>(Arrays.asList(CLIENT_REDIRECT_URI)));
+            });
+            OIDCClientRepresentation oidcCRep = getClientDynamically(clientId);
+            String clientSecret = oidcCRep.getClientSecret();
+            assertEquals(Boolean.TRUE, oidcCRep.getRequirePushedAuthorizationRequests());
+            assertTrue(oidcCRep.getRedirectUris().contains(CLIENT_REDIRECT_URI));
+            assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, oidcCRep.getTokenEndpointAuthMethod());
+
+            // Pushed Authorization Request
+            oauth.client(clientId, clientSecret);
+            oauth.redirectUri(CLIENT_REDIRECT_URI);
+            ParRequest parRequest = oauth.pushedAuthorizationRequest()
+                                         .idpHint("invalid-idp-alias");
+            ParResponse pResp = parRequest.send();
+            assertEquals(201, pResp.getStatusCode());
+            String requestUri = pResp.getRequestUri();
+            assertEquals(requestUriLifespan, pResp.getExpiresIn());
+
+            // Authorization Request with request_uri of PAR
+            // remove parameters as query strings of uri
+            oauth.redirectUri(null);
+            oauth.scope(null);
+            oauth.responseType(null);
+            String state = "testNoIdpRedirectUsingInvalidIdpHintInParRequest";
+            oauth.loginForm().requestUri(requestUri).state(state).open();
+            assertThat(driver.getCurrentUrl(), startsWith(OAuthClient.AUTH_SERVER_ROOT + "/realms/" + oauth.getRealm() + "/login-actions/authenticate"));
+        } finally {
+            restoreParRealmSettings();
+        }
     }
 
     private void doNormalAuthzProcess(String requestUri, String redirectUrl, String clientId, String clientSecret) {

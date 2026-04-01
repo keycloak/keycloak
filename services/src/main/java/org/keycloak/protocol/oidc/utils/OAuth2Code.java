@@ -35,6 +35,7 @@ public class OAuth2Code {
     private static final String EXPIRATION_NOTE = "exp";
     private static final String NONCE_NOTE = "nonce";
     private static final String SCOPE_NOTE = "scope";
+    private static final String RESOURCE_NOTE = "resource";
     private static final String REDIRECT_URI_PARAM_NOTE = "redirectUri";
     private static final String CODE_CHALLENGE_NOTE = "code_challenge";
     private static final String CODE_CHALLENGE_METHOD_NOTE = "code_challenge_method";
@@ -48,6 +49,7 @@ public class OAuth2Code {
     private final String nonce;
 
     private final String scope;
+    private final String resource;
 
     private final String redirectUriParam;
 
@@ -64,6 +66,7 @@ public class OAuth2Code {
         this.expiration = expiration;
         this.nonce = nonce;
         this.scope = scope;
+        this.resource = null;
         this.redirectUriParam = null;
         this.codeChallenge = null;
         this.codeChallengeMethod = null;
@@ -71,12 +74,13 @@ public class OAuth2Code {
         this.userSessionId = userSessionId;
     }
 
-    public OAuth2Code(String id, int expiration, String nonce, String scope, String redirectUriParam,
+    public OAuth2Code(String id, int expiration, String nonce, String scope, String resource, String redirectUriParam,
                       String codeChallenge, String codeChallengeMethod, String dpopJkt, String userSessionId) {
         this.id = id;
         this.expiration = expiration;
         this.nonce = nonce;
         this.scope = scope;
+        this.resource = resource;
         this.redirectUriParam = redirectUriParam;
         this.codeChallenge = codeChallenge;
         this.codeChallengeMethod = codeChallengeMethod;
@@ -89,6 +93,7 @@ public class OAuth2Code {
         expiration = Integer.parseInt(data.get(EXPIRATION_NOTE));
         nonce = data.get(NONCE_NOTE);
         scope = data.get(SCOPE_NOTE);
+        resource = data.get(RESOURCE_NOTE);
         redirectUriParam = data.get(REDIRECT_URI_PARAM_NOTE);
         codeChallenge = data.get(CODE_CHALLENGE_NOTE);
         codeChallengeMethod = data.get(CODE_CHALLENGE_METHOD_NOTE);
@@ -109,6 +114,7 @@ public class OAuth2Code {
         result.put(EXPIRATION_NOTE, String.valueOf(expiration));
         result.put(NONCE_NOTE, nonce);
         result.put(SCOPE_NOTE, scope);
+        result.put(RESOURCE_NOTE, resource);
         result.put(REDIRECT_URI_PARAM_NOTE, redirectUriParam);
         result.put(CODE_CHALLENGE_NOTE, codeChallenge);
         result.put(CODE_CHALLENGE_METHOD_NOTE, codeChallengeMethod);
@@ -132,6 +138,10 @@ public class OAuth2Code {
 
     public String getScope() {
         return scope;
+    }
+
+    public String getResource() {
+        return resource;
     }
 
     public String getRedirectUriParam() {

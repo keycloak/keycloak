@@ -38,6 +38,18 @@ languages:
     maintainers:
       - GioviQ
       - EdoardoTona
+  hy:
+    name: Armenian
+    maintainers:
+      - mikron
+      - roubkar
+  id:
+    name: Indonesian
+    maintainers:
+      - atriwidada
+      - princeofgiri
+      - syahmins
+      - raniaamina
   ja:
     name: Japanese
     maintainers:
@@ -71,6 +83,11 @@ languages:
     maintainers:
       - mathmul
       - SaraPristovnik
+  sv:
+    name: Swedish
+    maintainers:
+      - yeager
+      - haaninjo
   tr:
     name: Turkish
     maintainers:

@@ -11,6 +11,7 @@ import org.keycloak.testframework.database.TestDatabase;
 import org.keycloak.testframework.injection.LifeCycle;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.tests.suites.DatabaseTest;
 
 @KeycloakIntegrationTest(config = PreserveSchemaCaseLiquibaseTest.PreserveSchemaCaseServerConfig.class)
 // Remotely running databases do not support running SQL init scripts.
@@ -18,6 +19,7 @@ import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 // TiDb does not support setting the default schema per session.
 // Oracle image does not support configuring user/databases with '-'
 @DisabledForDatabases({ "remote", "mssql", "oracle", "tidb" })
+@DatabaseTest
 public class PreserveSchemaCaseLiquibaseTest extends AbstractDBSchemaTest {
 
     @InjectTestDatabase(config = PreserveSchemaCaseDatabaseConfig.class, lifecycle = LifeCycle.CLASS)

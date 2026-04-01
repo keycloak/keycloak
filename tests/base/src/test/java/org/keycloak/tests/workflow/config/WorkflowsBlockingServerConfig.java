@@ -17,12 +17,12 @@
 
 package org.keycloak.tests.workflow.config;
 
+import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-public class WorkflowsBlockingServerConfig extends WorkflowsServerConfig {
+public class WorkflowsBlockingServerConfig implements KeycloakServerConfig {
 
     @Override
     public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
-        return super.configure(config)
-                .option("spi-workflow--default--executor-blocking", Boolean.TRUE.toString());    }
+        return config.option("spi-workflow--default--executor-blocking", Boolean.TRUE.toString());    }
 }

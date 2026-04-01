@@ -17,6 +17,7 @@
 
 package org.keycloak.organization.admin.resource;
 
+import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -94,8 +95,10 @@ public class OrganizationGroupResource {
     @APIResponses(value = {
         @APIResponse(responseCode = "200", description = "OK")
     })
-    public GroupRepresentation getGroup() {
-        return ModelToRepresentation.toRepresentation(group, true);
+    public GroupRepresentation getGroup(@Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount) {
+        GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, true);
+        if (subGroupsCount) rep.setSubGroupCount(group.getSubGroupsCount());
+        return rep;
     }
 
     @DELETE
@@ -180,10 +183,17 @@ public class OrganizationGroupResource {
             @Parameter(description = "A String representing either an exact group name or a partial name") @QueryParam("search") String search,
             @Parameter(description = "Boolean which defines whether the params \"search\" must match exactly or not") @QueryParam("exact") Boolean exact,
             @Parameter(description = "The position of the first result to be returned (pagination offset).") @QueryParam("first") @DefaultValue("0") Integer first,
-            @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max) {
+            @Parameter(description = "The maximum number of results that are to be returned. Defaults to 10") @QueryParam("max") @DefaultValue("10") Integer max,
+            @Parameter(description = "Whether to return the count of subgroups (default: false)") @QueryParam("subGroupsCount") boolean subGroupsCount) {
 
         return group.getSubGroupsStream(search, exact, first, max)
-                .map(ModelToRepresentation::groupToBriefRepresentation);
+                .map(group -> {
+                    GroupRepresentation rep = ModelToRepresentation.groupToBriefRepresentation(group);
+                    if (subGroupsCount) {
+                        rep.setSubGroupCount(group.getSubGroupsCount());
+                    }
+                    return rep;
+                });
     }
 
     @POST
@@ -242,7 +252,9 @@ public class OrganizationGroupResource {
             } else {
                 // CREATE new subgroup
                 child = organizationProvider.createGroup(organization, groupName, group);
-                builder.status(201);
+                URI uri = session.getContext().getUri().getAbsolutePathBuilder()
+                        .path(child.getId()).build();
+                builder.status(201).location(uri);
                 rep.setId(child.getId());
                 adminEvent.operation(OperationType.CREATE);
             }

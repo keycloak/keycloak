@@ -126,9 +126,7 @@ public class MicrometerUserEventMetricsEventListenerProvider implements EventLis
     }
 
     private void addTag(List<Tag> tags, String tagName, String value) {
-        if (value != null && !value.isEmpty()) {
-            tags.add(Tag.of(tagName, value));
-        }
+        tags.add(Tag.of(tagName, value != null ? value : ""));
     }
 
     public static String format(EventType type) {

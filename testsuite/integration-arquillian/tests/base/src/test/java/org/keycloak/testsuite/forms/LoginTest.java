@@ -910,6 +910,36 @@ public class LoginTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     @Test
+    public void loginWithClientDisabledInActiveAuthenticationSession() {
+        ClientResource clientResource = findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRepresentation = clientResource.toRepresentation();
+        boolean wasEnabled = clientRepresentation.isEnabled();
+
+        try {
+            oauth.clientId("test-app");
+            oauth.openLoginForm();
+            loginPage.assertCurrent();
+
+            clientRepresentation.setEnabled(false);
+            clientResource.update(clientRepresentation);
+
+            loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
+
+            errorPage.assertCurrent();
+            assertEquals("Login requester not enabled", errorPage.getError());
+            events.expect(EventType.LOGIN)
+                    .client("test-app")
+                    .user((String) null)
+                    .session((String) null)
+                    .error(Errors.CLIENT_DISABLED)
+                    .assertEvent();
+        } finally {
+            clientRepresentation.setEnabled(wasEnabled);
+            clientResource.update(clientRepresentation);
+        }
+    }
+
+    @Test
     public void openLoginFormWithDifferentApplication() throws Exception {
         oauth.clientId("root-url-client");
         oauth.redirectUri(SERVER_ROOT + "/foo/bar/");

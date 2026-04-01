@@ -8,6 +8,7 @@ import org.keycloak.broker.provider.ClientAssertionIdentityProviderFactory;
 import org.keycloak.cache.AlternativeLookupProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.IdentityProviderType;
 
 public class DefaultClientAssertionStrategy implements ClientAssertionIdentityProviderFactory.ClientAssertionStrategy {
 
@@ -24,7 +25,7 @@ public class DefaultClientAssertionStrategy implements ClientAssertionIdentityPr
         String issuer = clientAssertionState.getToken().getIssuer();
         String federatedClientId =  clientAssertionState.getToken().getSubject();
 
-        IdentityProviderModel identityProvider = lookupProvider.lookupIdentityProviderFromIssuer(context.getSession(), issuer);
+        IdentityProviderModel identityProvider = lookupProvider.lookupIdentityProviderFromIssuer(context.getSession(), IdentityProviderType.CLIENT_ASSERTION, issuer);
         if (identityProvider == null) {
             return null;
         }

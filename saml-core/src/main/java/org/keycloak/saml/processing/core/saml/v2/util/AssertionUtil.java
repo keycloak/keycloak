@@ -23,7 +23,6 @@ import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.stream.XMLEventReader;
@@ -71,6 +70,7 @@ import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * Utility to deal with assertions
@@ -572,6 +572,30 @@ public class AssertionUtil {
         return responseType.getAssertions().get(0).getAssertion();
     }
 
+    public static Element getAssertionElement(SAMLDocumentHolder holder) throws ProcessingException {
+        Document doc = holder.getSamlDocument();
+        Element response = doc.getDocumentElement();
+        if (!JBossSAMLConstants.RESPONSE__PROTOCOL.getNsUri().get().equals(response.getNamespaceURI())
+             || !JBossSAMLConstants.RESPONSE__PROTOCOL.get().equals(response.getLocalName())) {
+            throw new ProcessingException("No response type.");
+        }
+
+        // get the first assertion in the response
+        NodeList children = response.getChildNodes();
+        for(int i = 0; i < children.getLength(); i++) {
+            Node childNode = children.item(i);
+            if (childNode instanceof Element) {
+                Element childElement = (Element) childNode;
+                if (JBossSAMLConstants.ASSERTION.getNsUri().get().equals(childElement.getNamespaceURI())
+                        && JBossSAMLConstants.ASSERTION.get().equals(childElement.getLocalName())) {
+                    return childElement;
+                }
+            }
+        }
+
+        throw new ProcessingException("No assertion from response.");
+    }
+
     public static boolean isAssertionEncrypted(ResponseType responseType) throws ProcessingException {
         List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
 
@@ -596,13 +620,17 @@ public class AssertionUtil {
      * @return the assertion element as it was decrypted. This can be used in signature verification.
      */
     public static Element decryptAssertion(ResponseType responseType, XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator) throws ParsingException, ProcessingException, ConfigurationException {
-        Element enc = responseType.getAssertions().stream()
-                .map(ResponseType.RTChoiceType::getEncryptedAssertion)
-                .filter(Objects::nonNull)
-                .findFirst()
-                .map(EncryptedElementType::getEncryptedElement)
-                .orElseThrow(() -> new ProcessingException("No encrypted assertion found."));
+        List<ResponseType.RTChoiceType> assertions = responseType.getAssertions();
+        if (assertions.isEmpty()) {
+            throw new ProcessingException("No encrypted assertion found.");
+        }
 
+        ResponseType.RTChoiceType rtChoiceType = assertions.get(0);
+        if (rtChoiceType.getEncryptedAssertion() == null || rtChoiceType.getEncryptedAssertion().getEncryptedElement() == null) {
+            throw new ProcessingException("No encrypted assertion found.");
+        }
+
+        Element enc = rtChoiceType.getEncryptedAssertion().getEncryptedElement();
         String oldID = enc.getAttribute(JBossSAMLConstants.ID.get());
         Document newDoc = DocumentUtil.createDocument();
         Node importedNode = newDoc.importNode(enc, true);

@@ -16,5 +16,12 @@ public @interface InjectTimeOffSet {
 
     LifeCycle lifecycle() default LifeCycle.METHOD;
 
+    /**
+     * Specifies whether time-offset should be integrated with underlying caches (EG. infinispan)
+     *
+     * @return
+     */
+    boolean enableForCaches() default false;
+
     int offset() default 0;
 }

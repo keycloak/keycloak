@@ -3,12 +3,15 @@ package org.keycloak.cache;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderQuery;
+import org.keycloak.models.IdentityProviderType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.services.resources.IdentityBrokerService;
 
 import org.jboss.logging.Logger;
 
@@ -25,13 +28,13 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
     }
 
     @Override
-    public IdentityProviderModel lookupIdentityProviderFromIssuer(KeycloakSession session, String issuerUrl) {
-        String alternativeKey = ComputedKey.computeKey(session.getContext().getRealm().getId(), "idp", issuerUrl);
+    public IdentityProviderModel lookupIdentityProviderFromIssuer(KeycloakSession session, IdentityProviderType type, String issuerUrl) {
+        String alternativeKey = ComputedKey.computeKey(session.getContext().getRealm().getId(), type.toString(), issuerUrl);
 
         CachedValue cachedIdpAlias = lookupCache.get(alternativeKey);
         if (cachedIdpAlias instanceof CachedValue.CachedString cachedString) {
             IdentityProviderModel idp = session.identityProviders().getByAlias(cachedString.value());
-            if (idp != null && issuerUrl.equals(idp.getConfig().get(IdentityProviderModel.ISSUER))) {
+            if (idp != null && issuerUrl.equals(idp.getConfig().get(IdentityProviderModel.ISSUER)) && idp.isEnabled() && isType(session, idp, type)) {
                 return idp;
             } else {
                 lookupCache.invalidate(alternativeKey);
@@ -39,7 +42,7 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
         }
 
         List<IdentityProviderModel> idps = session.identityProviders().getAllStream(IdentityProviderQuery.any())
-                .filter(i -> issuerUrl.equals(i.getConfig().get(IdentityProviderModel.ISSUER)))
+                .filter(i -> issuerUrl.equals(i.getConfig().get(IdentityProviderModel.ISSUER)) && i.isEnabled() && isType(session, i, type))
                 .limit(2)
                 .toList();
         IdentityProviderModel idp = null;
@@ -62,7 +65,7 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
         CachedValue cachedClientId = lookupCache.get(alternativeKey);
         if (cachedClientId instanceof CachedValue.CachedString cachedString) {
             ClientModel client = session.clients().getClientByClientId(session.getContext().getRealm(), cachedString.value());
-            boolean match = client != null;
+            boolean match = client != null && client.isEnabled();
             if (match) {
                 for (Map.Entry<String, String> e : attributes.entrySet()) {
                     if (!e.getValue().equals(client.getAttribute(e.getKey()))) {
@@ -79,7 +82,10 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
         }
 
         ClientModel client = null;
-        List<ClientModel> clients = session.clients().searchClientsByAttributes(session.getContext().getRealm(), attributes, 0, 2).toList();
+        List<ClientModel> clients = session.clients().searchClientsByAttributes(session.getContext().getRealm(), attributes, null, null)
+                .filter(ClientModel::isEnabled)
+                .limit(2)
+                .toList();
         if (clients.size() == 1) {
             client = clients.get(0);
             lookupCache.put(alternativeKey, CachedValue.ofId(client.getClientId()));
@@ -176,5 +182,10 @@ public class DefaultAlternativeLookupProvider implements AlternativeLookupProvid
 
     private static String cachedRoleKey(RealmModel realm, String roleName) {
         return realm.getId() + roleName;
+    }
+
+    private static boolean isType(KeycloakSession session, IdentityProviderModel idp, IdentityProviderType type) {
+        IdentityProvider provider = IdentityBrokerService.getIdentityProvider(session, idp, IdentityProvider.class);
+        return provider != null ? provider.isType(session, type) : false;
     }
 }

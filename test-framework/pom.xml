@@ -106,7 +106,8 @@
         <module>db-postgres</module>
         <module>db-tidb</module>
         <module>email-server</module>
-        <module>examples</module>
+        <module>test-providers</module>
+        <module>tests</module>
         <module>infinispan-server</module>
         <module>oauth</module>
         <module>remote</module>

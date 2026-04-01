@@ -50,6 +50,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -99,7 +100,7 @@ import org.jboss.resteasy.reactive.NoCache;
 @Extension(name = KeycloakOpenAPI.Profiles.ADMIN , value = "")
 public class ServerInfoAdminResource {
 
-    private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class);
+    private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class, GroupModel.Type.class);
 
     private final KeycloakSession session;
     private final AdminAuth auth;

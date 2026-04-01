@@ -103,6 +103,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.Booleans;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.JsonUtils;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
@@ -279,13 +280,6 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         return exp != null && exp != 0 && exp < Time.currentTime() + getConfig().getMinValidityToken();
     }
 
-    protected SimpleHttpRequest getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
-        SimpleHttpRequest refreshTokenRequest = SimpleHttp.create(session).doPost(getConfig().getTokenUrl())
-                .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
-                .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
-        return authenticateTokenRequest(refreshTokenRequest);
-    }
-
     private OAuthResponse refreshToken(OAuthResponse previousResponse, KeycloakSession session) throws IOException {
         try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
             SimpleHttpRequest refreshTokenRequest = getRefreshTokenRequest(session, previousResponse.getRefreshToken(), getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
@@ -310,6 +304,41 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 return newResponse;
             }
         }
+    }
+
+    @Override
+    public Response retrieveToken(KeycloakSession session, FederatedIdentityModel identity, UserSessionModel userSession, UserModel user) {
+        UriInfo uriInfo = session.getContext().getUri();
+        Response response = null;
+        if (userSession != null && getConfig().isStoreTokenInSession()) {
+            // use the session if present and configured to be used, only in V2
+            String brokerId = userSession.getNote(Details.IDENTITY_PROVIDER);
+            brokerId = brokerId == null ? userSession.getNote(UserAuthenticationIdentityProvider.EXTERNAL_IDENTITY_PROVIDER) : brokerId;
+            String federatedAccessToken = userSession.getNote(FEDERATED_ACCESS_TOKEN);
+            if (getConfig().getAlias().equals(brokerId) && federatedAccessToken != null) {
+                response = exchangeSessionToken(uriInfo, null, null, userSession, user);
+                if (Response.Status.Family.familyOf(response.getStatus()) == Response.Status.Family.SUCCESSFUL) {
+                    return response;
+                }
+            }
+        }
+
+        if (Booleans.isTrue(getConfig().isStoreToken())) {
+            response = exchangeStoredToken(uriInfo, null, null, userSession, user);
+        }
+
+        if (response == null) {
+            return exchangeErrorResponse(uriInfo, null, userSession, "token_expired", "No token stored.");
+        }
+
+        return response;
+    }
+
+    protected SimpleHttpRequest getRefreshTokenRequest(KeycloakSession session, String refreshToken, String clientId, String clientSecret) {
+        SimpleHttpRequest refreshTokenRequest = SimpleHttp.create(session).doPost(getConfig().getTokenUrl())
+                .param(OAUTH2_GRANT_TYPE_REFRESH_TOKEN, refreshToken)
+                .param(OAUTH2_PARAMETER_GRANT_TYPE, OAUTH2_GRANT_TYPE_REFRESH_TOKEN);
+        return authenticateTokenRequest(refreshTokenRequest);
     }
 
     @Override
@@ -391,14 +420,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 if (accessToken != null) {
                     AccessTokenResponse tokenResponse = new AccessTokenResponse();
                     tokenResponse.setToken(accessToken);
-                    tokenResponse.setIdToken(null);
-                    tokenResponse.setRefreshToken(null);
-                    tokenResponse.setRefreshExpiresIn(0);
-                    tokenResponse.setExpiresIn(0);
-                    tokenResponse.getOtherClaims().clear();
-                    tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
-                    event.success();
-                    return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+                    return buildTokenResponse(session.getContext().getUri(), event, null, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
                 }
             } else if (OAuth2Constants.ID_TOKEN_TYPE.equals(requestedType)) {
                 String idToken = tokenUserSession.getNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
@@ -422,51 +444,48 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     protected Response exchangeStoredToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
-        FederatedIdentityModel model = session.users().getFederatedIdentity(authorizedClient.getRealm(), tokenSubject, getConfig().getAlias());
+        RealmModel realm = authorizedClient != null ? authorizedClient.getRealm() : session.getContext().getRealm();
+        FederatedIdentityModel model = session.users().getFederatedIdentity(realm, tokenSubject, getConfig().getAlias());
+
         if (model == null || model.getToken() == null) {
-            event.detail(Details.REASON, "requested_issuer is not linked");
-            event.error(Errors.INVALID_TOKEN);
+            if (event != null) {
+                event.detail(Details.REASON, "requested_issuer is not linked");
+                event.error(Errors.INVALID_TOKEN);
+            }
             return exchangeNotLinked(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
+
         String accessToken = extractTokenFromResponse(model.getToken(), getAccessTokenResponseParameter());
         if (accessToken == null) {
             model.setToken(null);
-            session.users().updateFederatedIdentity(authorizedClient.getRealm(), tokenSubject, model);
-            event.detail(Details.REASON, "requested_issuer token expired");
-            event.error(Errors.INVALID_TOKEN);
+            session.users().updateFederatedIdentity(realm, tokenSubject, model);
+            if (event != null) {
+                event.detail(Details.REASON, "requested_issuer token expired");
+                event.error(Errors.INVALID_TOKEN);
+            }
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
+
         AccessTokenResponse tokenResponse = new AccessTokenResponse();
         tokenResponse.setToken(accessToken);
-        tokenResponse.setIdToken(null);
-        tokenResponse.setRefreshToken(null);
-        tokenResponse.setRefreshExpiresIn(0);
-        tokenResponse.getOtherClaims().clear();
-        tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
-        tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
-        event.success();
-        return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+        return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
     }
 
     protected Response exchangeSessionToken(UriInfo uriInfo, EventBuilder event, ClientModel authorizedClient, UserSessionModel tokenUserSession, UserModel tokenSubject) {
         String accessToken = tokenUserSession.getNote(FEDERATED_ACCESS_TOKEN);
+
         if (accessToken == null) {
-            event.detail(Details.REASON, "requested_issuer is not linked");
-            event.error(Errors.INVALID_TOKEN);
+            if (event != null) {
+                event.detail(Details.REASON, "requested_issuer is not linked");
+                event.error(Errors.INVALID_TOKEN);
+            }
             return exchangeTokenExpired(uriInfo, authorizedClient, tokenUserSession, tokenSubject);
         }
+
         AccessTokenResponse tokenResponse = new AccessTokenResponse();
         tokenResponse.setToken(accessToken);
-        tokenResponse.setIdToken(null);
-        tokenResponse.setRefreshToken(null);
-        tokenResponse.setRefreshExpiresIn(0);
-        tokenResponse.getOtherClaims().clear();
-        tokenResponse.getOtherClaims().put(OAuth2Constants.ISSUED_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE);
-        tokenResponse.getOtherClaims().put(ACCOUNT_LINK_URL, getLinkingUrl(uriInfo, authorizedClient, tokenUserSession));
-        event.success();
-        return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
+        return buildTokenResponse(uriInfo, event, authorizedClient, tokenUserSession, tokenResponse, OAuth2Constants.ACCESS_TOKEN_TYPE);
     }
-
 
     public BrokeredIdentityContext getFederatedIdentity(String response) {
         String accessToken = extractTokenFromResponse(response, getAccessTokenResponseParameter());
@@ -574,22 +593,22 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
     }
 
     /**
-     * Get JSON property as text. JSON numbers and booleans are converted to text. Empty string is converted to null.
+     * Get JSON property as text.
+     *
+     * <p>Supports literal keys containing dots and nested lookup via dot-notation (e.g. "data.id" resolves
+     * json.data.id). Use backslash escaping for literal dots in nested paths (e.g. "data\.id" matches key "data.id").
+     * See {@link org.keycloak.utils.JsonUtils#splitClaimPath(String)}.
+     *
+     * <p>Resolution order: 1) Exact key match (literal) 2) Nested path lookup
+     *
+     * <p>JSON numbers and booleans are converted to text. Empty string is converted to null.
      *
      * @param jsonNode to get property from
-     * @param name of property to get
+     * @param name of property to get (supports dot-notation for nested paths, backslash-escaped dots for literal keys)
      * @return string value of the property or null.
      */
     public String getJsonProperty(JsonNode jsonNode, String name) {
-        if (jsonNode.has(name) && !jsonNode.get(name).isNull()) {
-            String s = jsonNode.get(name).asText();
-            if(s != null && !s.isEmpty())
-                return s;
-            else
-                return null;
-        }
-
-        return null;
+        return Optional.ofNullable(JsonUtils.getJsonValue(jsonNode, name)).map(Object::toString).orElse(null);
     }
 
     public JsonNode asJsonNode(String json) throws IOException {
@@ -1078,12 +1097,15 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
 
     @Override
     public void exchangeExternalComplete(UserSessionModel userSession, BrokeredIdentityContext context, MultivaluedMap<String, String> params) {
-        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ACCESS_TOKEN))
-            userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
-        if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN))
-            userSession.setNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
-        userSession.setNote(OIDCIdentityProvider.EXCHANGE_PROVIDER, getConfig().getAlias());
-
+        if (getConfig().isStoreTokenInSession()) {
+            if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ACCESS_TOKEN)) {
+                userSession.setNote(FEDERATED_ACCESS_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+            }
+            if (context.getContextData().containsKey(OIDCIdentityProvider.VALIDATED_ID_TOKEN)) {
+                userSession.setNote(OIDCIdentityProvider.FEDERATED_ID_TOKEN, params.getFirst(OAuth2Constants.SUBJECT_TOKEN));
+            }
+            userSession.setNote(OIDCIdentityProvider.EXCHANGE_PROVIDER, getConfig().getAlias());
+        }
     }
 
     @Override

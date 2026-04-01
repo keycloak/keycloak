@@ -250,6 +250,21 @@ public abstract class AbstractPermissionTest {
                 .username(username)
                 .build();
 
+        return createUser(user);
+    }
+
+    protected UserRepresentation createUser(String username, String password) {
+        UserRepresentation user = UserConfigBuilder.create()
+                .username(username)
+                .firstName(username)
+                .lastName(username)
+                .email(username + "@test")
+                .password(password)
+                .build();
+        return createUser(user);
+    }
+
+    private UserRepresentation createUser(UserRepresentation user) {
         try (Response response = realm.admin().users().create(user)) {
             user.setId(ApiUtil.getCreatedId(response));
             return user;

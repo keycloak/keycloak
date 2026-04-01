@@ -392,6 +392,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     }
 
     @Override
+    public int getMaxSecondaryAuthFailures() {
+        return getAttribute("maxSecondaryAuthFailures", 0);
+    }
+
+    @Override
+    public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+        setAttribute("maxSecondaryAuthFailures", maxSecondaryAuthFailures);
+    }
+
+    @Override
     public boolean isVerifyEmail() {
         return realm.isVerifyEmail();
     }
@@ -1309,6 +1319,16 @@ public class RealmAdapter implements StorageProviderRealmModel, JpaModel<RealmEn
     @Override
     public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
         setAttribute(RealmAttributes.VERIFIABLE_CREDENTIALS_ENABLED, verifiableCredentialsEnabled);
+    }
+
+    @Override
+    public void setScimApiEnabled(boolean enabled) {
+        setAttribute(RealmAttributes.SCIM_API_ENABLED, enabled);
+    }
+
+    @Override
+    public boolean isScimApiEnabled() {
+        return getAttribute(RealmAttributes.SCIM_API_ENABLED, Boolean.FALSE);
     }
 
     @Override

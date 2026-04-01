@@ -20,12 +20,14 @@ package org.keycloak.protocol.oidc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.MapperTypeSerializer;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
 
@@ -280,6 +282,21 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         return allowedIDPs == null ? Collections.emptyList() : allowedIDPs;
     }
 
+    public Map<String, List<String>> getJWTAuthorizationGrantAudience() {
+        String audiences = getAttribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_AUDIENCE);
+        return MapperTypeSerializer.deserialize(audiences);
+    }
+
+    public boolean getExternalTokenEnabled() {
+        String val = getAttribute(OIDCConfigAttributes.EXTERNAL_TOKEN_ENABLED, "false");
+        return Boolean.parseBoolean(val);
+    }
+
+    public List<String> getExternalAllowedIdentityProviders() {
+        List<String> allowedIDPs = getAttributeMultivalued(OIDCConfigAttributes.EXTERNAL_TOKEN_IDP);
+        return allowedIDPs == null ? Collections.emptyList() : allowedIDPs;
+    }
+
     public String getTlsClientAuthSubjectDn() {
         return getAttribute(X509ClientAuthenticator.ATTR_SUBJECT_DN);
      }
@@ -455,6 +472,10 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
     public void setTosUri(String tosUri) {
         setAttribute(ClientModel.TOS_URI, tosUri);
+    }
+
+    public void setSectorIdentifierUri(String sectorIdentifierUri) {
+        setAttribute(OIDCConfigAttributes.SECTOR_IDENTIFIER_URI, sectorIdentifierUri);
     }
 
     public List<String> getPostLogoutRedirectUris() {

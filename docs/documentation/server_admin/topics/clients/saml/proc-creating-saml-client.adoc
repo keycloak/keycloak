@@ -180,3 +180,7 @@ This tab has many fields for specific situations.  Some fields are covered in ot
 === Advanced settings
 
 *Assertion Lifespan*:: Specific client lifespan set in the SAML assertion conditions. After that time the assertion will be invalid. If not specified the realm *Access Token Lifespan* is used. The `SessionNotOnOrAfter` attribute is not modified and continue using the *SSO Session Max* time defined at realm level.
+
+*ACR to LoA Mapping*:: Define which ACR (Authentication Context Class Reference) value is mapped to which LoA (Level of Authentication). The ACR for SAML is an URI, whereas the LoA must be numeric. This mapping overrides the <<_mapping-acr-to-loa-realm,ACR to Level of Authentication (LoA) Mapping>> defined at realm level. Only present if <<_step-up-authentication-saml,Step-up authentication for SAML>> feature is enabled.
+
+*Minimum ACR Value*:: Minimum ACR to be enforced by Keycloak. If the resulting authentication context for the request is as strong as this ACR the request is valid, otherwise Keycloak returns the `NoAuthnContext` status error. Only present if <<_step-up-authentication-saml,Step-up authentication for SAML>> feature is enabled.

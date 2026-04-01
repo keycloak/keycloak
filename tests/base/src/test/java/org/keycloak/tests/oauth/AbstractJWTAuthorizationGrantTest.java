@@ -4,17 +4,21 @@ import java.util.Collections;
 import java.util.List;
 
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
 import org.keycloak.testframework.oauth.OAuthIdentityProvider;
+import org.keycloak.testframework.realm.ManagedClient;
+import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.hamcrest.MatcherAssert;
@@ -309,7 +313,7 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
 
         String jwt = getIdentityProvider().encodeToken(createDefaultAuthorizationGrantToken());
         AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
-        assertFailure("Identity Provider is not enabled", response, events.poll());
+        assertFailure("No Identity Provider for provided issuer", response, events.poll());
     }
 
     @Test
@@ -339,5 +343,46 @@ public abstract class AbstractJWTAuthorizationGrantTest extends BaseAbstractJWTA
         userRep = user.admin().toRepresentation();
         userRep.setRequiredActions(Collections.emptyList());
         user.admin().update(userRep);
+    }
+
+    @Test
+    public void testCustomAudiences() throws Exception {
+        // set attribute for custom audiences
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(realm.admin(), "test-app");
+        ManagedClient client = new ManagedClient(clientResource.toRepresentation(), clientResource);
+        client.updateWithCleanup(c -> c.attribute(OIDCConfigAttributes.JWT_AUTHORIZATION_GRANT_AUDIENCE,
+                String.format("[{\"key\":\"%s\",\"value\":\"allowed-aud1\"},{\"key\":\"%s\",\"value\":\"allowed-aud2\"}]", IDP_ALIAS, IDP_ALIAS)));
+
+        // test normal issuer audience is not valid
+        String jwt = identityProvider.encodeToken(createDefaultAuthorizationGrantToken());
+        AccessTokenResponse response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Invalid token audience", response, events.poll());
+
+        // test allowed-aud1 is valid
+        jwt = identityProvider.encodeToken(createAuthorizationGrantToken("basic-user-id", "allowed-aud1", IDP_ISSUER));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
+
+        // test allowed-aud2 is valid
+        jwt = identityProvider.encodeToken(createAuthorizationGrantToken("basic-user-id", "allowed-aud2", IDP_ISSUER));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertSuccess("test-app", response);
+
+        // test any other audience is wrong
+        jwt = identityProvider.encodeToken(createAuthorizationGrantToken("basic-user-id", "other-aud", IDP_ISSUER));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Invalid token audience", response, events.poll());
+
+        // test client-id audience is wrong
+        jwt = getIdentityProvider().encodeToken(createAuthorizationGrantToken("basic-user-id", "test-client", IDP_ISSUER));
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Invalid token audience", response, events.poll());
+
+        // test two audiences are always wrong
+        JsonWebToken jwtToken = createDefaultAuthorizationGrantToken();
+        jwtToken.addAudience("allowed-aud2");
+        jwt = getIdentityProvider().encodeToken(jwtToken);
+        response = oAuthClient.jwtAuthorizationGrantRequest(jwt).send();
+        assertFailure("Multiple audiences not allowed", response, events.poll());
     }
 }

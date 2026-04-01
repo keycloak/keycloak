@@ -221,7 +221,7 @@ public class OrganizationGroupUserQueryTest extends AbstractOrganizationTest {
         OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
 
         try {
-            orgResource.groups().group("non-existent-id").toRepresentation();
+            orgResource.groups().group("non-existent-id").toRepresentation(false);
         } catch (Exception e) {
             assertThat(e.getMessage(), containsString(Response.Status.NOT_FOUND.toString()));
         }

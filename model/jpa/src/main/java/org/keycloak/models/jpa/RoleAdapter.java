@@ -92,7 +92,9 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public boolean isComposite() {
-        return getChildRoles().findAny().isPresent();
+        return StreamsUtil.closing(em.createNamedQuery("getChildRoles", RoleEntity.class)
+                .setMaxResults(1)
+                .setParameter("parentRoleId", getId()).getResultStream()).findAny().isPresent();
     }
 
     @Override
@@ -114,7 +116,8 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public Stream<RoleModel> getCompositesStream() {
-        Stream<RoleModel> composites = getChildRoles().map(c -> new RoleAdapter(session, realm, em, c));
+        // look up the roles via the session to allow returning cached entries
+        Stream<RoleModel> composites = getChildRoles().map(c -> session.roles().getRoleById(realm, c.getId()));
         return composites.filter(Objects::nonNull);
     }
 

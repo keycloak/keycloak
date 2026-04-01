@@ -20,6 +20,8 @@ package org.keycloak.testsuite.forms;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.crypto.SecretKey;
 
@@ -27,6 +29,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
@@ -134,6 +137,34 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testRestartCookieRotateAes() {
+        loginPage.open();
+        String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
+        rotateAesKeys();
+        assertRestartCookie(restartCookie);
+    }
+
+    @Test
+    public void testRestartCookieParsedOldA128CBCHS256() throws IOException {
+        loginPage.open();
+        String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
+        getTestingClient().server(TEST_REALM_NAME).run(session -> {
+            try {
+                RestartLoginCookie restartLoginCookie = RestartLoginCookie.decryptAndDecode(session, restartCookie);
+                String sigAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
+                String algAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.INTERNAL);
+                SecretKey encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, algAlgorithm).getSecretKey();
+                SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
+                String encodedJwt = session.tokens().encode(restartLoginCookie);
+                String oldRestartCookie = TokenUtil.jweDirectEncode(encKey, signKey, encodedJwt.getBytes(StandardCharsets.UTF_8));
+                Assert.assertNotNull(RestartLoginCookie.decryptAndDecode(session, oldRestartCookie));
+            } catch (Exception e) {
+                Assert.fail();
+            }
+        });
+    }
+
+    @Test
     public void testRestartCookieWithPar() {
         String clientId = "par-confidential-client";
         adminClient.realm("test").clients().create(ClientBuilder.create()
@@ -163,20 +194,42 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         assertRestartCookie(restartCookie);
     }
 
+    private void rotateAesKeys() {
+        RealmResource realm = adminClient.realm(TEST_REALM_NAME);
+        String activeKid = realm.keys().getKeyMetadata().getActive().get(Algorithm.AES);
+
+        // Rotate public keys on the parent broker
+        String realmId = realm.toRepresentation().getId();
+        ComponentRepresentation keys = createComponentRep(Algorithm.AES, "aes-generated", realmId,
+                new MultivaluedHashMap<>(Map.of("secretSize", List.of("16"))));
+        try (Response response = realm.components().add(keys)) {
+            assertEquals(201, response.getStatus());
+        }
+
+        String updatedActiveKid = realm.keys().getKeyMetadata().getActive().get(Algorithm.AES);
+        Assert.assertNotEquals(activeKid, updatedActiveKid);
+    }
+
+    private ComponentRepresentation createComponentRep(String algorithm, String providerId, String realmId, MultivaluedHashMap<String,String> extra) {
+        ComponentRepresentation keys = new ComponentRepresentation();
+        keys.setName("generated");
+        keys.setProviderType(KeyProvider.class.getName());
+        keys.setProviderId(providerId);
+        keys.setParentId(realmId);
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>(extra);
+        keys.setConfig(config);
+        config.putSingle("priority", Long.toString(System.currentTimeMillis()));
+        config.putSingle("algorithm", algorithm);
+        return keys;
+    }
+
     private void assertRestartCookie(String restartCookie) {
         getTestingClient()
                 .server(TEST_REALM_NAME)
                 .run(session ->
                 {
                     try {
-                        String sigAlgorithm = session.tokens().signatureAlgorithm(TokenCategory.INTERNAL);
-                        String encAlgorithm = session.tokens().cekManagementAlgorithm(TokenCategory.INTERNAL);
-                        SecretKey encKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.ENC, encAlgorithm).getSecretKey();
-                        SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
-
-                        byte[] contentBytes = TokenUtil.jweDirectVerifyAndDecode(encKey, signKey, restartCookie);
-                        String jwt = new String(contentBytes, StandardCharsets.UTF_8);
-                        RestartLoginCookie restartLoginCookie = session.tokens().decode(jwt, RestartLoginCookie.class);
+                        RestartLoginCookie restartLoginCookie = RestartLoginCookie.decryptAndDecode(session, restartCookie);
                         Assert.assertFalse(restartLoginCookie.getNotes().keySet().stream().anyMatch(sensitiveNotes::contains));
                     } catch (Exception e) {
                         Assert.fail();

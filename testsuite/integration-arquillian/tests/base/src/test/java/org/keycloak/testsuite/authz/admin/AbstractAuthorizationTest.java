@@ -134,6 +134,13 @@ public abstract class AbstractAuthorizationTest extends AbstractClientTest {
                         .authorizationServicesEnabled(true)
                         .redirectUris("http://localhost/" + RESOURCE_SERVER_CLIENT_ID)
                         .defaultRoles("uma_protection")
+                        .directAccessGrants())
+                .client(ClientBuilder.create().clientId("another-resource-server-other")
+                        .name("another-resource-server-other")
+                        .secret("secret")
+                        .authorizationServicesEnabled(true)
+                        .redirectUris("http://localhost/" + "another-resource-server-other")
+                        .defaultRoles("uma_protection")
                         .directAccessGrants());
     }
 }

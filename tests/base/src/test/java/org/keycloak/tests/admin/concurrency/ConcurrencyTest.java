@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 
 import org.junit.jupiter.api.Disabled;
@@ -95,6 +96,7 @@ public class ConcurrencyTest extends AbstractConcurrencyTest {
     }
 
     @Test
+    @DatabaseTest
     public void testAllConcurrently() throws Throwable {
         AtomicInteger uniqueCounter = new AtomicInteger(100000);
         concurrentTest(

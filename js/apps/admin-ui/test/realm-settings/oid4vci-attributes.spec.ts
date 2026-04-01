@@ -253,16 +253,18 @@ test("should save signed metadata, encryption, and batch issuance settings", asy
   const signedMetadataSwitch = page.getByTestId(
     "attributes.oid4vci.signed_metadata.enabled",
   );
-  await signedMetadataSwitch.click({ force: true });
+  await expect(signedMetadataSwitch).toHaveCount(0);
 
   const signedMetadataLifespan = page.getByTestId(
     "attributes.oid4vci🍺signed_metadata🍺lifespan",
   );
+  await expect(signedMetadataLifespan).toBeVisible();
   await signedMetadataLifespan.fill("120");
 
   const signedMetadataAlgField = page.locator(
     '[id="attributes.oid4vci🍺signed_metadata🍺alg"]',
   );
+  await expect(signedMetadataAlgField).toBeVisible();
   await selectItem(page, signedMetadataAlgField, "ES256");
 
   const requireEncryptionSwitch = page.getByTestId(
@@ -282,9 +284,9 @@ test("should save signed metadata, encryption, and batch issuance settings", asy
   ).toBeVisible();
 
   const realmData = await adminClient.getRealm(testBed.realm);
-  expect(realmData?.attributes?.["oid4vci.signed_metadata.enabled"]).toBe(
-    "true",
-  );
+  expect(
+    realmData?.attributes?.["oid4vci.signed_metadata.enabled"],
+  ).toBeUndefined();
   expect(realmData?.attributes?.["oid4vci.signed_metadata.lifespan"]).toBe(
     "7200",
   );

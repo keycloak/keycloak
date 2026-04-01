@@ -45,7 +45,9 @@ import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponseEncryption;
 import org.keycloak.protocol.oid4vc.model.ErrorResponse;
+import org.keycloak.protocol.oid4vc.model.ErrorType;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AppAuthManager;
@@ -60,7 +62,7 @@ import org.junit.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
-import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_ENCRYPTION_PARAMETERS;
+import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getCredentialIssuer;
 import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
 import static org.junit.Assert.assertEquals;
@@ -81,7 +83,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     @Test
     public void testRequestCredentialWithEncryption() {
         final String scopeName = jwtTypeCredentialClientScope.getName();
-        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
@@ -91,11 +93,12 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
         assertNotNull("credential_identifier should be present", credentialIdentifier);
+        String cNonce = getCNonce();
 
         testingClient
                 .server(TEST_REALM_NAME)
@@ -115,6 +118,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
                     CredentialRequest credentialRequest = new CredentialRequest()
                             .setCredentialIdentifier(credentialIdentifier)
+                            .setProofs(new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce))))
                             .setCredentialResponseEncryption(
                                     new CredentialResponseEncryption()
                                             .setEnc(A256GCM)
@@ -177,7 +181,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     fail("Expected BadRequestException due to unencrypted request when encryption is required");
                 } catch (BadRequestException e) {
                     ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                    assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                    assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
                     assertEquals("Encryption is required but request is not a valid JWE: Not a JWE String", error.getErrorDescription());
                 }
             } finally {
@@ -190,7 +194,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     @Test
     public void testEncryptedCredentialRequest() {
         final String scopeName = jwtTypeCredentialClientScope.getName();
-        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
@@ -200,11 +204,12 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
         assertNotNull("credential_identifier should be present", credentialIdentifier);
+        String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             try {
@@ -231,6 +236,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
                 CredentialRequest credentialRequest = new CredentialRequest()
                         .setCredentialIdentifier(credentialIdentifier)
+                        .setProofs(new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce))))
                         .setCredentialResponseEncryption(
                                 new CredentialResponseEncryption()
                                         .setEnc(A256GCM)
@@ -270,7 +276,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     @Test
     public void testEncryptedCredentialRequestWithCompression() {
         final String scopeName = jwtTypeCredentialClientScope.getName();
-        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
@@ -280,11 +286,12 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
         assertNotNull("credential_identifier should be present", credentialIdentifier);
+        String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             try {
@@ -314,6 +321,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 // Create credential request with response encryption parameters
                 CredentialRequest credentialRequest = new CredentialRequest()
                         .setCredentialIdentifier(credentialIdentifier)
+                        .setProofs(new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce))))
                         .setCredentialResponseEncryption(
                                 new CredentialResponseEncryption()
                                         .setEnc(A256GCM)
@@ -378,7 +386,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 Assert.fail("Expected BadRequestException due to missing encryption parameter 'enc'");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
                 assertTrue("Error message should specify missing parameter 'enc'",
                         error.getErrorDescription().contains("Missing required parameters: enc"));
             }
@@ -389,7 +397,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     public void testCredentialIssuanceWithEncryption() throws Exception {
         // Integration test for the full credential issuance flow with encryption
         String scopeName = jwtTypeCredentialClientScope.getName();
-        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
 
         testCredentialIssuanceWithAuthZCodeFlow(jwtTypeCredentialClientScope,
@@ -408,6 +416,8 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     String accessToken = (String) m.get("accessToken");
                     WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
                     CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
+                    String cNonce = getCNonce();
+                    credentialRequest.setProofs(new Proofs().setJwt(List.of(generateJwtProof(credentialIssuer.getCredentialIssuer(), cNonce))));
 
                     Map<String, Object> jwkPair;
                     try {
@@ -492,7 +502,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                  fail("Expected BadRequestException due to unsupported encryption algorithm");
              } catch (BadRequestException e) {
                  ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                 assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                 assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
                  assertTrue(error.getErrorDescription().contains("Unsupported content encryption algorithm"));
              }
         });
@@ -528,7 +538,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 fail("Expected BadRequestException due to unsupported compression algorithm");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
             }
         });
     }
@@ -536,7 +546,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
     @Test
     public void testRequestCredentialWithInvalidJWK() throws Throwable {
         final String scopeName = jwtTypeCredentialClientScope.getName();
-        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credConfigId = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
@@ -546,11 +556,12 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
         assertNotNull("credential_identifier should be present", credentialIdentifier);
+        String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
             AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(session);
@@ -561,6 +572,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
             JWK jwk = JWKParser.create().parse("{\"kty\":\"RSA\",\"alg\":\"RSA-OAEP-256\",\"e\":\"AQAB\"}").getJwk();
             CredentialRequest credentialRequest = new CredentialRequest()
                     .setCredentialIdentifier(credentialIdentifier)
+                    .setProofs(new Proofs().setJwt(List.of(generateJwtProof(getCredentialIssuer(session), cNonce))))
                     .setCredentialResponseEncryption(
                             new CredentialResponseEncryption()
                                     .setEnc("A256GCM")
@@ -573,7 +585,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 Assert.fail("Expected BadRequestException due to invalid JWK missing modulus");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
                 assertTrue("Error should mention invalid JWK. Actual: " + error.getErrorDescription(),
                         error.getErrorDescription().contains("Invalid JWK"));
             }
@@ -603,7 +615,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     fail("Expected BadRequestException due to missing request encryption when required");
                 } catch (BadRequestException e) {
                     ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                    assertEquals(INVALID_ENCRYPTION_PARAMETERS, error.getError());
+                    assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
                     assertEquals("Encryption is required but request is not a valid JWE: Not a JWE String", error.getErrorDescription());
                 }
             } finally {

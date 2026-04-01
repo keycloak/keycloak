@@ -127,6 +127,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * If no parameters are set via this property, the tests derived from this class are skipped.
  * @author hmlnarik
  */
+@Deprecated(forRemoval = true)
 public abstract class KeycloakModelTest {
     private static final Logger LOG = Logger.getLogger(KeycloakModelParameters.class);
     private static final AtomicInteger FACTORY_COUNT = new AtomicInteger();

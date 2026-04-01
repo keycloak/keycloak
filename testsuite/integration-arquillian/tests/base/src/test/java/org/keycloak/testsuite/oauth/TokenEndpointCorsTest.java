@@ -112,7 +112,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         // Invalid password
         response = oauth.doPasswordGrantRequest("test-user@localhost", "invalid");
 
-        assertEquals(401, response.getStatusCode());
+        assertEquals(400, response.getStatusCode());
         assertCors(response);
     }
 

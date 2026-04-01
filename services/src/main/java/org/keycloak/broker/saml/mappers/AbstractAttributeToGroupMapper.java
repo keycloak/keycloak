@@ -18,15 +18,12 @@ package org.keycloak.broker.saml.mappers;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
-import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-
-import org.jboss.logging.Logger;
 
 /**
  * Abstract class that handles the logic for importing and updating brokered users for all mappers that map a SAML
@@ -36,12 +33,9 @@ import org.jboss.logging.Logger;
  */
 public abstract class AbstractAttributeToGroupMapper extends AbstractIdentityProviderMapper {
 
-    private static final Logger LOG = Logger.getLogger(AbstractAttributeToGroupMapper.class);
-
-
     @Override
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        GroupModel group = this.getGroup(session, realm, mapperModel);
+        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, mapperModel, context);
         if (group == null) {
             return;
         }
@@ -53,7 +47,7 @@ public abstract class AbstractAttributeToGroupMapper extends AbstractIdentityPro
 
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        GroupModel group = this.getGroup(session, realm, mapperModel);
+        GroupModel group = KeycloakModelUtils.getGroupForIdpMapper(session, realm, mapperModel, context);
         if (group == null) {
             return;
         }
@@ -79,25 +73,4 @@ public abstract class AbstractAttributeToGroupMapper extends AbstractIdentityPro
      */
     protected abstract boolean applies(final IdentityProviderMapperModel mapperModel, final BrokeredIdentityContext context);
 
-    /**
-     * Obtains the {@link GroupModel} corresponding the group configured in the specified
-     * {@link IdentityProviderMapperModel}.
-     * If the group doesn't correspond to one of the realm's client group or to one of the realm's group, this method
-     * returns {@code null}.
-     *
-     * @param session
-     * @param realm       a reference to the realm.
-     * @param mapperModel a reference to the {@link IdentityProviderMapperModel} containing the configured group.
-     * @return the {@link GroupModel} that corresponds to the mapper model group or {@code null}, if the group could not be found
-     */
-
-    private GroupModel getGroup(KeycloakSession session, final RealmModel realm, final IdentityProviderMapperModel mapperModel) {
-        String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
-        GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, groupPath);
-
-        if (group == null) {
-            LOG.warnf("Unable to find group by path '%s' referenced by mapper '%s' on realm '%s'.", groupPath, mapperModel.getName(), realm.getName());
-        }
-        return group;
-    }
 }

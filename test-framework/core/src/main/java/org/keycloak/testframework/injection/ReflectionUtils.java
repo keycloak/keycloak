@@ -24,13 +24,24 @@ public class ReflectionUtils {
 
     public static List<Method> listMethods(Class<?> clazz, Class<? extends Annotation> annotationClass) {
         List<Method> methods = new LinkedList<>();
+        List<Class<?>> hierarchy = new LinkedList<>();
 
-        Arrays.stream(clazz.getDeclaredMethods()).filter(m -> m.getAnnotation(annotationClass) != null).forEach(methods::add);
+        Class<?> current = clazz;
+        while (current != null && !current.equals(Object.class)) {
+            hierarchy.add(current);
+            current = current.getSuperclass();
+        }
 
-        Class<?> superclass = clazz.getSuperclass();
-        while (superclass != null && !superclass.equals(Object.class)) {
-            Arrays.stream(superclass.getDeclaredMethods()).filter(m -> m.getAnnotation(annotationClass) != null).forEach(methods::add);
-            superclass = superclass.getSuperclass();
+        for (Class<?> c : hierarchy) {
+            for (Method m : c.getDeclaredMethods()) {
+                if (m.getAnnotation(annotationClass) == null) {
+                    continue;
+                }
+
+                if (methods.stream().noneMatch(e -> e.getName().equals(m.getName()) && Arrays.equals(e.getParameterTypes(), m.getParameterTypes()))) {
+                    methods.add(0, m);
+                }
+            }
         }
 
         return methods;

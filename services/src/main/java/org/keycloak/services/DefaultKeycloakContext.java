@@ -37,6 +37,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.Permissions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -52,7 +53,6 @@ import io.opentelemetry.api.trace.Span;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public abstract class DefaultKeycloakContext implements KeycloakContext {
-
     private RealmModel realm;
 
     private ClientModel client;
@@ -69,9 +69,11 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
     private HttpResponse response;
     private ClientConnection clientConnection;
     private Token bearerToken;
+    private final Permissions permissions;
 
     public DefaultKeycloakContext(KeycloakSession session) {
         this.session = session;
+        this.permissions = new DefaultPermissions(session, this);
     }
 
     @Override
@@ -321,5 +323,10 @@ public abstract class DefaultKeycloakContext implements KeycloakContext {
 
     private MappedDiagnosticContextProvider mdc() {
         return MappedDiagnosticContextUtil.getMappedDiagnosticContextProvider(session);
+    }
+
+    @Override
+    public Permissions getPermissions() {
+        return permissions;
     }
 }

@@ -832,6 +832,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         groupEntity.setRealm(realm.getId());
         groupEntity.setParentId(toParent == null? GroupEntity.TOP_PARENT_ID : toParent.getId());
         groupEntity.setType(type == null ? Type.REALM.intValue() : type.intValue());
+        long now = Time.currentTimeMillis();
+        groupEntity.setCreatedTimestamp(now);
+        groupEntity.setLastModifiedTimestamp(now);
         em.persist(groupEntity);
         em.flush();
 
@@ -1398,7 +1401,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (Boolean.TRUE.equals(exact)) {
             predicates.add(builder.equal(root.get("name"), search));
         } else {
-            predicates.add(builder.like(builder.lower(root.get("name")), builder.lower(builder.literal("%" + search + "%"))));
+            String escapedSearch = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+            predicates.add(builder.like(builder.lower(root.get("name")), builder.lower(builder.literal("%" + escapedSearch + "%")), '\\'));
         }
 
         predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, realm, builder, queryBuilder, root));

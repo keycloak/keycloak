@@ -20,13 +20,13 @@ package org.keycloak.testsuite.oid4vc.issuance.signing;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -44,7 +44,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Test class for Authorization Code Flow with PAR (Pushed Authorization Request) containing authorization_details.
@@ -106,7 +105,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         Oid4vcTestContext ctx = prepareOid4vcTestContext();
 
         // Step 1: Create PAR request with authorization_details
-        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String credentialConfigurationId = getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
 
         // Create authorization details with claims
         ClaimsDescription claim = new ClaimsDescription();
@@ -152,7 +151,7 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
         // Step 4: Verify authorization_details is present in token response
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertEquals("Should have exactly one authorization detail", 1, authDetailsResponse.size());
 
@@ -175,17 +174,12 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         assertNotNull("Credential identifier should not be null", credentialIdentifier);
         assertFalse("Credential identifier should not be empty", credentialIdentifier.isEmpty());
 
-        // Verify it's a valid UUID
-        try {
-            UUID.fromString(credentialIdentifier);
-        } catch (IllegalArgumentException e) {
-            fail("Credential identifier should be a valid UUID, but was: " + credentialIdentifier);
-        }
-
         // Step 5: Request the actual credential using the identifier
         // When authorization_details are present in the token, credential_identifier must be used
+        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
                 .credentialIdentifier(credentialIdentifier)
+                .proofs(new Proofs().setJwt(List.of(generateJwtProof(ctx.credentialIssuer.getCredentialIssuer(), cNonce))))
                 .bearerToken(tokenResponse.getAccessToken())
                 .send();
 
@@ -284,10 +278,16 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
                 .send();
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
 
-        // Step 4: Verify NO authorization_details in token response (since none was in PAR request)
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
-        assertTrue("authorization_details should NOT be present in the response when not used in PAR request",
-                authDetailsResponse == null || authDetailsResponse.isEmpty());
+        // Step 4: Verify authorization_details are derived from requested OID4VC scope
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
+        assertNotNull("authorization_details should be present in the token response", authDetailsResponse);
+        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        OID4VCAuthorizationDetail firstAuthorizationDetail = authDetailsResponse.get(0);
+        assertEquals("credential_configuration_id should match requested scope",
+                getCredentialClientScope().getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID),
+                firstAuthorizationDetail.getCredentialConfigurationId());
+        assertNotNull("credential_identifiers should be present", firstAuthorizationDetail.getCredentialIdentifiers());
+        assertFalse("credential_identifiers should not be empty", firstAuthorizationDetail.getCredentialIdentifiers().isEmpty());
     }
 
     /**

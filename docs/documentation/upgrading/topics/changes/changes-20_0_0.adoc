@@ -118,7 +118,7 @@ Stream<GroupModel> getGroupsStream(RealmModel realm);
 ----
 +
 More details on streamification work can be found in
-https://issues.redhat.com/browse/KEYCLOAK-14011[KEYCLOAK-14011].
+https://redhat.atlassian.net/browse/KEYCLOAK-14011[KEYCLOAK-14011].
 
 * Consistent parameter ordering - methods now have strict parameter
 ordering where `RealmModel` is always the first parameter.

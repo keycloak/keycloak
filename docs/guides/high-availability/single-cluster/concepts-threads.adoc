@@ -21,7 +21,7 @@ For a configuration where this is applied, visit <@links.ha id="single-cluster-d
 JGroups communications, which is used in single-cluster setups for the communication between {project_name} nodes,
 benefits from the use of virtual threads which are available in OpenJDK 21 or later when at least four cores are available for {project_name}.
 This reduces the memory usage and removes the need to configure thread pool sizes.
-For best performance, use OpenJDK {jdk_version_recommended} or later.
+For best performance, use OpenJDK {jdk_version_latest} or later.
 
 <#include "/high-availability/partials/concepts/threads.adoc" />
 

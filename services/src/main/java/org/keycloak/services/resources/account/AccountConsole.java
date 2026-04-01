@@ -49,6 +49,7 @@ import org.keycloak.services.util.ViteManifest;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.theme.FreeMarkerException;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
@@ -159,6 +160,7 @@ public class AccountConsole implements AccountResourceProvider {
         Locale locale = session.getContext().resolveLocale(user);
         map.put("locale", locale.toLanguageTag());
         Properties messages = theme.getEnhancedMessages(realm, locale);
+        map.put("localeDir", new LocaleBean(realm, locale, session.getContext().getUri().getRequestUriBuilder(), messages).isRtl() ? "rtl" : "ltr");
         map.put("msg", new MessageFormatterMethod(locale, messages));
         map.put("msgJSON", messagesToJsonString(messages));
         map.put("supportedLocales", supportedLocales(messages));

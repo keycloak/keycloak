@@ -64,6 +64,7 @@ import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.representations.idm.MembershipType;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
 
@@ -102,7 +103,7 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             try {
                 ReservedCharValidator.validateNoSpace(name);
             } catch (ReservedCharValidator.ReservedCharException e) {
-                throw new ModelValidationException("Name contains a reserved character and cannot be used as alias");
+                throw new ModelValidationException("Name cannot be used as alias: " + e.getMessage());
             }
             alias = name;
         }
@@ -427,11 +428,15 @@ public class JpaOrganizationProvider implements OrganizationProvider {
             orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
             orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
         } else {
-            value = "%" + value + "%";
-            orPredicates.add(builder.like(from.get(USERNAME), value));
-            orPredicates.add(builder.like(from.get(EMAIL), value));
-            orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value));
-            orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value));
+            boolean startsWithWildcard = value.startsWith("*");
+            boolean endsWithWildcard = value.endsWith("*");
+            value = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_").replace("*", "%");
+            if (!startsWithWildcard) value = "%" + value;
+            if (value.isEmpty() || !endsWithWildcard) value += "%";
+            orPredicates.add(builder.like(from.get(USERNAME), value, '\\'));
+            orPredicates.add(builder.like(from.get(EMAIL), value, '\\'));
+            orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value, '\\'));
+            orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value, '\\'));
         }
 
         return orPredicates.toArray(Predicate[]::new);
@@ -696,6 +701,11 @@ public class JpaOrganizationProvider implements OrganizationProvider {
 
     @Override
     public Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member) {
+        return getOrganizationGroupsByMember(organization, member, null, null, null);
+    }
+
+    @Override
+    public Stream<GroupModel> getOrganizationGroupsByMember(OrganizationModel organization, UserModel member, String search, Integer first, Integer max) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         throwExceptionIfObjectIsNull(member, "Member");
 
@@ -704,19 +714,43 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         }
 
         RealmModel realm = getRealm();
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<String> queryBuilder = builder.createQuery(String.class);
 
-        TypedQuery<String> query = em.createNamedQuery(StorageId.isLocalStorage(member.getId()) ?
-                        "getOrgGroupsByMember" :
-                        "getOrgGroupsByFederatedMember"
-                , String.class);
+        Root<?> memberRoot;
+        Predicate userPredicate;
 
-        query.setParameter("userId", member.getId());
-        query.setParameter("realmId", realm.getId());
-        query.setParameter("type", Type.ORGANIZATION.intValue());
-        query.setParameter("orgId", organization.getId());
-        query.setParameter("internalOrgGroupId", getOrganizationGroup(organization).getId());
+        if (StorageId.isLocalStorage(member.getId())) {
+            memberRoot = queryBuilder.from(UserGroupMembershipEntity.class);
+            userPredicate = builder.equal(memberRoot.get("user").get("id"), member.getId());
+        } else {
+            memberRoot = queryBuilder.from(FederatedUserGroupMembershipEntity.class);
+            userPredicate = builder.equal(memberRoot.get("userId"), member.getId());
+        }
 
-        return closing(query.getResultStream()
+        Root<GroupEntity> groupRoot = queryBuilder.from(GroupEntity.class);
+
+        queryBuilder.select(groupRoot.get("id"));
+
+        List<Predicate> predicates = new ArrayList<>();
+        predicates.add(builder.equal(groupRoot.get("id"), memberRoot.get("groupId")));
+        predicates.add(userPredicate);
+        predicates.add(builder.equal(groupRoot.get("realm"), realm.getId()));
+        predicates.add(builder.equal(groupRoot.get("type"), Type.ORGANIZATION.intValue()));
+        predicates.add(builder.equal(groupRoot.get("organization").get("id"), organization.getId()));
+        predicates.add(builder.notEqual(groupRoot.get("id"), getOrganizationGroup(organization).getId()));
+
+        if (search != null && !search.isBlank()) {
+            String searchLower = search.trim().toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+            searchLower = searchLower.replace("*", "%");
+            if (searchLower.isEmpty() || searchLower.charAt(searchLower.length() - 1) != '%') searchLower += "%";
+            predicates.add(builder.like(builder.lower(groupRoot.get("name")), searchLower));
+        }
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+        queryBuilder.orderBy(builder.asc(groupRoot.get("name")));
+
+        return closing(paginateQuery(em.createQuery(queryBuilder), first, max).getResultStream()
                 .map(realm::getGroupById)
                 .filter(Objects::nonNull));
     }
@@ -810,7 +844,8 @@ public class JpaOrganizationProvider implements OrganizationProvider {
         return groupProvider.createGroup(getRealm(), null, Type.ORGANIZATION, orgId, null);
     }
 
-    private GroupModel getOrganizationGroup(OrganizationModel organization) {
+    @Override
+    public GroupModel getOrganizationGroup(OrganizationModel organization) {
         throwExceptionIfObjectIsNull(organization, "Organization");
         OrganizationEntity entity = getEntity(organization.getId());
         GroupModel group = getOrganizationGroup(entity);

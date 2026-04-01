@@ -299,7 +299,7 @@ public class PicocliTest extends AbstractConfigurationTest {
                 containsString(Help.defaultColorScheme(nonRunningPicocli.getColorMode())
                         .errorText("Unknown option: '--db-pasword'").toString()));
         assertThat(nonRunningPicocli.getErrString(), containsString(
-                "Possible solutions: --db-url, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-pool-max-lifetime, --db-debug-jpql, --db-log-slow-queries-threshold, --db-driver, --db"));
+                "Possible solutions: --db-url, --db-connect-timeout, --db-url-host, --db-url-database, --db-url-port, --db-url-properties, --db-username, --db-password, --db-schema, --db-pool-initial-size, --db-pool-min-size, --db-pool-max-size, --db-pool-max-lifetime, --db-debug-jpql, --db-log-slow-queries-threshold, --db-tls-mode, --db-tls-trust-store-file, --db-tls-trust-store-type, --db-tls-trust-store-password, --db-driver, --db, --db-url-full-<datasource>, --db-url-host-<datasource>, --db-url-database-<datasource>, --db-url-port-<datasource>, --db-url-properties-<datasource>, --db-username-<datasource>, --db-password-<datasource>, --db-schema-<datasource>, --db-pool-initial-size-<datasource>, --db-pool-min-size-<datasource>, --db-pool-max-size-<datasource>, --db-debug-jpql-<datasource>, --db-log-slow-queries-threshold-<datasource>, --db-tls-mode-<datasource>, --db-tls-trust-store-file-<datasource>, --db-tls-trust-store-type-<datasource>, --db-tls-trust-store-password-<datasource>, --db-enabled-<datasource>, --db-driver-<datasource>, --db-kind-<datasource>"));
     }
 
     @Test
@@ -333,6 +333,7 @@ public class PicocliTest extends AbstractConfigurationTest {
         build("build", "--db=postgres");
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("show-config");
         assertThat(nonRunningPicocli.getOutString(), containsString("postgres (Persisted)"));
+        assertThat(nonRunningPicocli.getOutString(), not(containsString("null")));
     }
 
     @Test
@@ -755,7 +756,26 @@ public class PicocliTest extends AbstractConfigurationTest {
     public void derivedPropertyUsage() {
         NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--hostname=localhost", "--spi-hostname-v2-hostname=second-class");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getOutString(), containsString("Please use the first-class option `kc.hostname` instead of `kc.spi-hostname-v2-hostname`"));
+        assertThat(nonRunningPicocli.getOutString(), containsString("With the first-class option `kc.hostname` set, you should remove the usage of `kc.spi-hostname-v2-hostname`"));
+    }
+
+    @Test
+    public void quarkusPropertyInQuarkusPropertiesWarning() {
+        putEnvVar("QUARKUS_HTTP_PORT", "9090");
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                containsString("Please use the first-class option `kc.http-port` instead of `quarkus.http.port`"));
+    }
+
+    @Test
+    public void quarkusPropertyInQuarkusPropertiesWarningWhenKcOptionSet() {
+        putEnvVar("QUARKUS_HTTP_PORT", "9090");
+        // When kc.http-port is explicitly set, should still warn about quarkus.http.port
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--http-port=7070");
+        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
+        assertThat(nonRunningPicocli.getOutString(),
+                containsString("With the first-class option `kc.http-port` set, you should remove the usage of `quarkus.http.port`"));
     }
 
     @Test
@@ -1955,6 +1975,30 @@ public class PicocliTest extends AbstractConfigurationTest {
         KeycloakMain.main(new String[] {"tools", "windows-service"}, nonRunningPicocli);
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
         assertTrue(nonRunningPicocli.getErrString().contains("Unknown option"));
+    }
+
+    @Test
+    public void failPoolMaxSizeTooLowForJdbcPing() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=postgres", "--db-pool-max-size=3", "--cache=ispn");
+        assertError(nonRunningPicocli, "db-pool-max-size");
+    }
+
+    @Test
+    public void failPoolMaxSizeTooLowForExplicitJdbcPingStack() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start", "--db=postgres", "--db-pool-max-size=3", "--cache=ispn", "--cache-stack=jdbc-ping");
+        assertError(nonRunningPicocli, "db-pool-max-size");
+    }
+
+    @Test
+    public void poolMaxSizeLowAllowedWithoutJdbcPing() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-pool-max-size=3", "--cache=local");
+        assertNoError(nonRunningPicocli);
+    }
+
+    @Test
+    public void poolMaxSizeLowAllowedWithKubernetesStack() {
+        NonRunningPicocli nonRunningPicocli = pseudoLaunch("start-dev", "--db-pool-max-size=3", "--cache=ispn", "--cache-stack=kubernetes");
+        assertNoError(nonRunningPicocli);
     }
 
 }

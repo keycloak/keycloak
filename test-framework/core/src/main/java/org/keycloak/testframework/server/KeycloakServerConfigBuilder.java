@@ -27,6 +27,8 @@ public class KeycloakServerConfigBuilder {
     private final Set<KeycloakDependency> dependencies = new HashSet<>();
     private CacheType cacheType = CacheType.LOCAL;
     private boolean externalInfinispan = false;
+    private String shutdownDelay = "0s";
+    private String shutdownTimeout = "1s";
 
     private KeycloakServerConfigBuilder(String command) {
         this.command = command;
@@ -91,6 +93,16 @@ public class KeycloakServerConfigBuilder {
 
     public boolean isExternalInfinispanEnabled() {
         return this.externalInfinispan;
+    }
+
+    public KeycloakServerConfigBuilder shutdownDelay(String shutdownDelay) {
+        this.shutdownDelay = shutdownDelay;
+        return this;
+    }
+
+    public KeycloakServerConfigBuilder shutdownTimeout(String shutdownTimeout) {
+        this.shutdownTimeout = shutdownTimeout;
+        return this;
     }
 
     /**
@@ -287,6 +299,10 @@ public class KeycloakServerConfigBuilder {
     List<String> toArgs() {
         // Cache setup -> supported values: local or ispn
         option("cache", cacheType.name().toLowerCase());
+
+        // Shutdown options - defaults optimised for test speed
+        option("shutdown-delay", shutdownDelay);
+        option("shutdown-timeout", shutdownTimeout);
 
         log.build();
 

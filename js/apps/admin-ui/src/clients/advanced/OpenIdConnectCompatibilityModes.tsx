@@ -7,6 +7,7 @@ import { HelpItem, SelectControl } from "@keycloak/keycloak-ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
+import { MapComponent } from "../../components/dynamic/MapComponent";
 
 type OpenIdConnectCompatibilityModesProps = {
   save: () => void;
@@ -30,6 +31,17 @@ export const OpenIdConnectCompatibilityModes = ({
   const useRefreshTokens = watch(
     convertAttributeNameToForm<FormFields>("attributes.use.refresh.tokens"),
     "true",
+  );
+  const jwtAuthorizationGrantEnabled = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.oauth2.jwt.authorization.grant.enabled",
+    ),
+    false,
+  );
+  const jwtAuthorizationGrantIdP = watch(
+    convertAttributeNameToForm<FormFields>(
+      "attributes.oauth2.jwt.authorization.grant.idp",
+    ),
   );
   return (
     <FormAccess
@@ -204,6 +216,17 @@ export const OpenIdConnectCompatibilityModes = ({
           ]}
         />
       )}
+      {isFeatureEnabled(Feature.JWTAuthorizationGrant) &&
+        jwtAuthorizationGrantEnabled.toString() === "true" &&
+        jwtAuthorizationGrantIdP && (
+          <MapComponent
+            name="attributes.oauth2.jwt.authorization.grant.audience"
+            label="jwtAuthorizationGrantAudience"
+            helpText="jwtAuthorizationGrantAudienceHelp"
+            convertToName={convertAttributeNameToForm}
+            options={jwtAuthorizationGrantIdP.split("##")}
+          />
+        )}
       <ActionGroup>
         <Button
           variant="secondary"

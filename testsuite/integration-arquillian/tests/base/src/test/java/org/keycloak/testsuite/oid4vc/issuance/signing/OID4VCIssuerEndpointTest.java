@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
 
@@ -71,7 +72,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.issuance.JWTVCIssuerWellKnownProviderFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.credentialbuilder.CredentialBuilder;
@@ -130,6 +130,8 @@ import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
 import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_URI_CODE_SCOPE;
 import static org.keycloak.protocol.oid4vc.model.ProofType.JWT;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.UP_COMPONENT_CONFIG_KEY;
@@ -217,24 +219,45 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         // Add additional client scopes
         //
         List<ClientScopeRepresentation> clientScopes = Optional.ofNullable(testRealm.getClientScopes()).orElse(new ArrayList<>());
-        clientScopes.add(createOptionalClientScope(sdJwtTypeCredentialScopeName,
+
+        ClientScopeRepresentation sdJwtScope = createOptionalClientScope(sdJwtTypeCredentialScopeName,
                 null,
                 sdJwtTypeCredentialConfigurationIdName,
                 sdJwtTypeCredentialScopeName,
                 sdJwtCredentialVct,
                 VCFormat.SD_JWT_VC,
                 null,
-                List.of(KeyAttestationResistanceLevels.HIGH, KeyAttestationResistanceLevels.MODERATE))
-        );
-        clientScopes.add(createOptionalClientScope(jwtTypeCredentialScopeName,
+                List.of(KeyAttestationResistanceLevels.HIGH, KeyAttestationResistanceLevels.MODERATE));
+
+        // For the SD-JWT VC test credential, explicitly enable cryptographic binding with JWT proofs
+        // so that key binding related tests (including invalid key binding) have a well-defined
+        // configuration that advertises this capability in metadata.
+        Map<String, String> sdJwtAttributes = Optional.ofNullable(sdJwtScope.getAttributes())
+                .orElseGet(HashMap::new);
+        sdJwtAttributes.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
+        sdJwtAttributes.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
+        sdJwtAttributes.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS,
+                CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        sdJwtScope.setAttributes(sdJwtAttributes);
+
+        clientScopes.add(sdJwtScope);
+        ClientScopeRepresentation jwtVcScope = createOptionalClientScope(jwtTypeCredentialScopeName,
                 TEST_DID.toString(),
                 jwtTypeCredentialConfigurationIdName,
                 jwtTypeCredentialScopeName,
                 null,
                 VCFormat.JWT_VC,
                 TEST_CREDENTIAL_MAPPERS_FILE,
-                Collections.emptyList())
-        );
+                Collections.emptyList());
+        Map<String, String> jwtVcAttributes = Optional.ofNullable(jwtVcScope.getAttributes())
+                .orElseGet(HashMap::new);
+        jwtVcAttributes.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
+        jwtVcAttributes.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt,attestation");
+        jwtVcAttributes.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS,
+                CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+        jwtVcScope.setAttributes(jwtVcAttributes);
+
+        clientScopes.add(jwtVcScope);
         clientScopes.add(createOptionalClientScope(minimalJwtTypeCredentialScopeName,
                 null,
                 null,
@@ -341,16 +364,16 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         clientScope.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
         Map<String, String> attributes =
                 new HashMap<>(Map.of(ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE, "true",
-                        CredentialScopeModel.EXPIRY_IN_SECONDS, "15"));
+                        CredentialScopeModel.VC_EXPIRY_IN_SECONDS, "15"));
         BiConsumer<String, String> addAttribute = (attributeName, value) -> {
             if (value != null) {
                 attributes.put(attributeName, value);
             }
         };
-        addAttribute.accept(CredentialScopeModel.ISSUER_DID, issuerDid);
-        addAttribute.accept(CredentialScopeModel.CONFIGURATION_ID, credentialConfigurationId);
-        addAttribute.accept(CredentialScopeModel.CREDENTIAL_IDENTIFIER, credentialIdentifier);
-        addAttribute.accept(CredentialScopeModel.FORMAT, format);
+        addAttribute.accept(CredentialScopeModel.VC_ISSUER_DID, issuerDid);
+        addAttribute.accept(VC_CONFIGURATION_ID, credentialConfigurationId);
+        addAttribute.accept(CredentialScopeModel.VC_IDENTIFIER, credentialIdentifier);
+        addAttribute.accept(VC_FORMAT, format);
         addAttribute.accept(CredentialScopeModel.VCT, Optional.ofNullable(vct).orElse(credentialIdentifier));
         if (credentialConfigurationId != null) {
             String vcDisplay;
@@ -365,11 +388,11 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
             addAttribute.accept(CredentialScopeModel.VC_DISPLAY, vcDisplay);
         }
         if (acceptedKeyAttestationValues != null) {
-            attributes.put(CredentialScopeModel.KEY_ATTESTATION_REQUIRED, "true");
+            attributes.put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED, "true");
             if (!acceptedKeyAttestationValues.isEmpty()) {
-                attributes.put(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_KEY_STORAGE,
+                attributes.put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_KEY_STORAGE,
                         String.join(",", acceptedKeyAttestationValues));
-                attributes.put(CredentialScopeModel.KEY_ATTESTATION_REQUIRED_USER_AUTH,
+                attributes.put(CredentialScopeModel.VC_KEY_ATTESTATION_REQUIRED_USER_AUTH,
                         String.join(",", acceptedKeyAttestationValues));
             }
         }
@@ -554,12 +577,43 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     // 2. Using the code to get access token
     // 3. Get the credential configuration id from issuer metadata at .wellKnown
     // 4. With the access token, get the credential
-    protected void testCredentialIssuanceWithAuthZCodeFlow(ClientScopeRepresentation clientScope,
+    protected void testCredentialIssuanceWithAuthZCodeFlow(ClientScopeRepresentation credScope,
                                                            BiFunction<String, String, String> f,
                                                            Consumer<Map<String, Object>> c) {
-        String testScope = clientScope.getName();
-        String testFormat = clientScope.getAttributes().get(CredentialScopeModel.FORMAT);
-        String testCredentialConfigurationId = clientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+
+        // Use credential_identifier if available, otherwise use configuration_id for error testing
+        String testCredentialConfigurationId = credScope.getAttributes().get(VC_CONFIGURATION_ID);
+        testCredentialIssuanceWithAuthZCodeFlow(credScope, f, c, (credentialIdentifier) -> {
+            CredentialRequest request = new CredentialRequest();
+            if (credentialIdentifier != null) {
+                request.setCredentialIdentifier(credentialIdentifier);
+            } else {
+                request.setCredentialConfigurationId(testCredentialConfigurationId);
+            }
+            return request;
+        });
+    }
+
+    protected void testCredentialIssuanceWithAuthZCodeFlow(ClientScopeRepresentation credScope,
+                                                           BiFunction<String, String, String> f,
+                                                           Consumer<Map<String, Object>> c,
+                                                           Function<String, CredentialRequest> crf) {
+        String testScope = credScope.getName();
+        String testFormat = credScope.getAttributes().get(VC_FORMAT);
+        String testCredentialConfigurationId = credScope.getAttributes().get(VC_CONFIGURATION_ID);
+
+        // Use credential_identifier if available, otherwise use configuration_id for error testing
+        if (crf == null) {
+            crf = (credentialIdentifier) -> {
+                CredentialRequest request = new CredentialRequest();
+                if (credentialIdentifier != null) {
+                    request.setCredentialIdentifier(credentialIdentifier);
+                } else {
+                    request.setCredentialConfigurationId(testCredentialConfigurationId);
+                }
+                return request;
+            };
+        }
 
         try (Client client = AdminClientUtil.createResteasyClient()) {
             String metadataUrl = getRealmMetadataPath(TEST_REALM_NAME);
@@ -604,13 +658,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
                     URI credentialUri = credentialUriBuilder.build();
                     WebTarget credentialTarget = clientForCredentialRequest.target(credentialUri);
 
-                    CredentialRequest request = new CredentialRequest();
-                    // Use credential_identifier if available, otherwise use configuration_id for error testing
-                    if (credentialIdentifier != null) {
-                        request.setCredentialIdentifier(credentialIdentifier);
-                    } else {
-                        request.setCredentialConfigurationId(testCredentialConfigurationId);
-                    }
+                    CredentialRequest request = crf.apply(credentialIdentifier);
 
                     assertEquals(testFormat,
                             oid4vciIssuerConfig.getCredentialsSupported()
@@ -645,21 +693,6 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
         var contextRoot = suiteContext.getAuthServerInfo().getContextRoot();
         // [TODO] This should be contextRoot/.well-known/openid-credential-issuer/auth/realms/...
         return contextRoot + "/auth/.well-known/openid-credential-issuer/realms/" + realm;
-    }
-
-    protected String getSpecCompliantRealmMetadataPath(String realm) {
-        var contextRoot = suiteContext.getAuthServerInfo().getContextRoot();
-        // [TODO] This should be contextRoot/.well-known/jwt-vc-issuer/auth/realms/...
-        return contextRoot + "/auth/.well-known/" + JWTVCIssuerWellKnownProviderFactory.PROVIDER_ID + "/realms/" + realm;
-    }
-
-    protected String getLegacyJwtVcRealmMetadataPath(String realm) {
-        var contextRoot = suiteContext.getAuthServerInfo().getContextRoot();
-        return contextRoot + "/auth/realms/" + realm + "/.well-known/" + JWTVCIssuerWellKnownProviderFactory.PROVIDER_ID;
-    }
-
-    protected String getCredentialOfferUrl(String nonce) {
-        return getBasePath("test") + "credential-offer/" + nonce;
     }
 
     protected void requestCredentialWithIdentifier(String token,

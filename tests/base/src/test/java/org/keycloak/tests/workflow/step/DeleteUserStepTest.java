@@ -50,11 +50,11 @@ import org.keycloak.testframework.ui.page.ConsentPage;
 import org.keycloak.testframework.ui.page.LoginPage;
 import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.providers.federation.DummyUserFederationProvider;
+import org.keycloak.tests.providers.federation.DummyUserFederationProviderFactory;
 import org.keycloak.tests.workflow.AbstractWorkflowTest;
 import org.keycloak.tests.workflow.config.WorkflowsBlockingServerConfig;
 import org.keycloak.tests.workflow.step.DeleteUserStepTest.DeleteUserWorkflowServerConf;
-import org.keycloak.testsuite.federation.DummyUserFederationProvider;
-import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;

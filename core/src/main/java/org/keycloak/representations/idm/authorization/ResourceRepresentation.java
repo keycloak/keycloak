@@ -41,6 +41,10 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  */
 public class ResourceRepresentation {
 
+    public static Builder create() {
+        return new Builder();
+    }
+
     @JsonProperty("_id")
     private String id;
 
@@ -291,5 +295,23 @@ public class ResourceRepresentation {
 
     public int hashCode() {
         return Objects.hash(getName());
+    }
+
+    public static final class Builder {
+
+        private final ResourceRepresentation rep;
+
+        private Builder() {
+            rep = new ResourceRepresentation();
+        }
+
+        public Builder name(String name) {
+            rep.setName(name);
+            return this;
+        }
+
+        public ResourceRepresentation build() {
+            return rep;
+        }
     }
 }

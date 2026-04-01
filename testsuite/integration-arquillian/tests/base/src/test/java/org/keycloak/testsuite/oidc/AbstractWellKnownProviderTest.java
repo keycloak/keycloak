@@ -147,9 +147,10 @@ public abstract class AbstractWellKnownProviderTest extends AbstractKeycloakTest
 
             // Support standard + implicit + hybrid flow
             assertContains(oidcConfig.getResponseTypesSupported(), OAuth2Constants.CODE, OIDCResponseType.ID_TOKEN, "id_token token", "code id_token", "code token", "code id_token token");
-            assertEquals(9, oidcConfig.getGrantTypesSupported().size());
-            assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.IMPLICIT,
-                    OAuth2Constants.DEVICE_CODE_GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE);
+            assertEquals(10, oidcConfig.getGrantTypesSupported().size());
+            assertContains(oidcConfig.getGrantTypesSupported(), OAuth2Constants.AUTHORIZATION_CODE, OAuth2Constants.CLIENT_CREDENTIALS, OAuth2Constants.IMPLICIT,
+                    OAuth2Constants.PASSWORD, OAuth2Constants.REFRESH_TOKEN, OAuth2Constants.DEVICE_CODE_GRANT_TYPE,
+                    OAuth2Constants.JWT_AUTHORIZATION_GRANT, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE, OAuth2Constants.UMA_GRANT_TYPE, OAuth2Constants.CIBA_GRANT_TYPE);
             assertContains(oidcConfig.getResponseModesSupported(), "query", "fragment", "form_post", "jwt", "query.jwt", "fragment.jwt", "form_post.jwt");
 
             Assert.assertNames(oidcConfig.getSubjectTypesSupported(), "pairwise", "public");

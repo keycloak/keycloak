@@ -49,14 +49,9 @@ public class AuthenticationFlowResolver {
             }
         }
 
-        String clientFlow = client.getAuthenticationFlowBindingOverride(AuthenticationFlowBindings.BROWSER_BINDING);
-        if (clientFlow != null) {
-            flow = authSession.getRealm().getAuthenticationFlowById(clientFlow);
-            if (flow != null) {
-                return flow;
-            }
-            logger.warnf("Client %s has browser flow override, but this flow '%s' does not exist, " +
-                    "fallback to browser flow", client.getClientId(), clientFlow);
+        flow = resolveBindingOverrideFlowForClient(client, AuthenticationFlowBindings.BROWSER_BINDING);
+        if (flow != null) {
+            return flow;
         }
         return authSession.getRealm().getBrowserFlow();
     }
@@ -76,15 +71,23 @@ public class AuthenticationFlowResolver {
             }
         }
 
-        String clientFlow = client.getAuthenticationFlowBindingOverride(AuthenticationFlowBindings.DIRECT_GRANT_BINDING);
+        flow = resolveBindingOverrideFlowForClient(client, AuthenticationFlowBindings.DIRECT_GRANT_BINDING);
+        if (flow != null) {
+            return flow;
+        }
+        return authSession.getRealm().getDirectGrantFlow();
+    }
+
+    public static AuthenticationFlowModel resolveBindingOverrideFlowForClient(ClientModel client, String flowBindingType) {
+        String clientFlow = client.getAuthenticationFlowBindingOverride(flowBindingType);
         if (clientFlow != null) {
-            flow = authSession.getRealm().getAuthenticationFlowById(clientFlow);
+            AuthenticationFlowModel flow = client.getRealm().getAuthenticationFlowById(clientFlow);
             if (flow != null) {
                 return flow;
             }
-            logger.warnf("Client %s has direct grant flow override, but this flow '%s' does not exist, " +
-                    "fallback to direct grant flow", client.getClientId(), clientFlow);
+            logger.warnf("Client %s has %s flow override, but configured override flow '%s' does not exist, " +
+                    "fallback to realm %s flow", client.getClientId(), flowBindingType, clientFlow, flowBindingType);
         }
-        return authSession.getRealm().getDirectGrantFlow();
+        return null;
     }
 }

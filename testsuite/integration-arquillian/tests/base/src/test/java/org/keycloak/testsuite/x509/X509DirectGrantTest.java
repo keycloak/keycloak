@@ -127,7 +127,7 @@ public class X509DirectGrantTest extends AbstractX509AuthenticationTest {
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
 
-        assertEquals(401, response.getStatusCode());
+        assertEquals(400, response.getStatusCode());
         assertEquals("invalid_grant", response.getError());
         assertEquals("Invalid user credentials", response.getErrorDescription());
     }

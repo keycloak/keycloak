@@ -78,7 +78,7 @@ public class JwtProofValidator extends AbstractProofValidator {
         try {
             return validateJwtProof(vcIssuanceContext);
         } catch (JWSInputException | VerificationException | IOException e) {
-            throw new VCIssuerException("Could not validate JWT proof", e);
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Could not validate JWT proof", e);
         }
     }
 
@@ -115,18 +115,13 @@ public class JwtProofValidator extends AbstractProofValidator {
 
         for (int i = 0; i < jwtProofs.size(); i++) {
             String jwt = jwtProofs.get(i);
-            try {
-                JWK jwk = validateSingleJwtProof(vcIssuanceContext, jwt);
-                validJwks.add(jwk);
-                LOGGER.debugf("Successfully validated JWT proof at index %d", i);
-            } catch (VCIssuerException e) {
-                // If any proof fails validation, throw the exception
-                throw new VCIssuerException(String.format("Failed to validate JWT proof at index %d: %s", i, e.getMessage()), e);
-            }
+            JWK jwk = validateSingleJwtProof(vcIssuanceContext, jwt);
+            validJwks.add(jwk);
+            LOGGER.debugf("Successfully validated JWT proof at index %d", i);
         }
 
         if (validJwks.isEmpty()) {
-            throw new VCIssuerException("No valid JWT proof found in the proofs array");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "No valid JWT proof found in the proofs array");
         }
 
         LOGGER.debugf("Successfully validated %d JWT proofs", validJwks.size());
@@ -149,12 +144,12 @@ public class JwtProofValidator extends AbstractProofValidator {
                     });
 
             if (!headerClaims.containsKey(KEY_ATTESTATION_CLAIM)) {
-                throw new VCIssuerException("Key ID provided but no key_attestation in header to resolve it");
+                throw new VCIssuerException(ErrorType.INVALID_PROOF, "Key ID provided but no key_attestation in header to resolve it");
             }
 
             Object keyAttestation = headerClaims.get(KEY_ATTESTATION_CLAIM);
             if (keyAttestation == null) {
-                throw new VCIssuerException("The 'key_attestation' claim is present in JWT header but is null.");
+                throw new VCIssuerException(ErrorType.INVALID_PROOF, "The 'key_attestation' claim is present in JWT header but is null.");
             }
 
             List<JWK> attestedKeys = AttestationValidatorUtil.validateAttestationJwt(
@@ -164,10 +159,10 @@ public class JwtProofValidator extends AbstractProofValidator {
             jwk = attestedKeys.stream()
                     .filter(k -> jwsHeader.getKeyId().equals(k.getKeyId()))
                     .findFirst()
-                    .orElseThrow(() -> new VCIssuerException(
+                    .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF,
                             "No attested key found matching kid: " + jwsHeader.getKeyId()));
         } else {
-            throw new VCIssuerException("Missing binding key. JWT must contain either jwk or kid in header.");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Missing binding key. JWT must contain either jwk or kid in header.");
         }
 
         // Rest of the validation
@@ -176,21 +171,28 @@ public class JwtProofValidator extends AbstractProofValidator {
 
         SignatureVerifierContext signatureVerifierContext = getVerifier(jwk, jwsHeader.getAlgorithm().name());
         if (signatureVerifierContext == null) {
-            throw new VCIssuerException("No verifier configured for " + jwsHeader.getAlgorithm());
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "No verifier configured for " + jwsHeader.getAlgorithm());
         }
         if (!signatureVerifierContext.verify(jwsInput.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8),
                 jwsInput.getSignature())) {
-            throw new VCIssuerException("Could not verify signature of provided proof");
+            throw new VCIssuerException(ErrorType.INVALID_PROOF, "Could not verify signature of provided proof");
         }
 
         return jwk;
     }
 
     private void checkCryptographicKeyBinding(VCIssuanceContext vcIssuanceContext) {
-        // Make sure we are dealing with a jwk proof.
+        // If the credential configuration does not require cryptographic holder binding, the metadata will omit
+        // cryptographic_binding_methods_supported and proof_types_supported. In that case, we must not enforce
+        // JWT-based cryptographic binding.
         if (vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported() == null ||
-                !vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported()
-                        .contains(CRYPTOGRAPHIC_BINDING_METHOD_JWK)) {
+                vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported().isEmpty()) {
+            return;
+        }
+
+        // If binding is required, this implementation currently only supports the "jwk" method.
+        if (!vcIssuanceContext.getCredentialConfig().getCryptographicBindingMethodsSupported()
+                .contains(CRYPTOGRAPHIC_BINDING_METHOD_JWK)) {
             throw new IllegalStateException("This SD-JWT implementation only supports jwk as cryptographic binding method");
         }
     }
@@ -199,12 +201,30 @@ public class JwtProofValidator extends AbstractProofValidator {
         return Optional.ofNullable(vcIssuanceContext.getCredentialConfig())
                 .map(SupportedCredentialConfiguration::getProofTypesSupported)
                 .flatMap(proofTypesSupported -> {
-                    Optional.ofNullable(proofTypesSupported.getSupportedProofTypes().get("jwt"))
-                            .orElseThrow(() -> new VCIssuerException("SD-JWT supports only jwt proof type."));
-
                     Proofs proofs = vcIssuanceContext.getCredentialRequest().getProofs();
+
+                    // If no proof types are configured for this credential configuration, cryptographic binding is
+                    // not required and we must not enforce presence of proofs. However, if a JWT proof is supplied,
+                    // reject it explicitly rather than silently ignoring an unconfigured proof input.
+                    if (proofTypesSupported == null ||
+                            proofTypesSupported.getSupportedProofTypes() == null ||
+                            proofTypesSupported.getSupportedProofTypes().isEmpty()) {
+                        if (proofs != null && proofs.getJwt() != null && !proofs.getJwt().isEmpty()) {
+                            throw new VCIssuerException(
+                                    ErrorType.INVALID_PROOF,
+                                    "Proof type " + ProofType.JWT + " is not supported for this credential configuration"
+                            );
+                        }
+                        return Optional.<List<String>>empty();
+                    }
+
+                    Map<String, SupportedProofTypeData> supportedProofTypes = proofTypesSupported.getSupportedProofTypes();
+                    Optional.ofNullable(supportedProofTypes.get(ProofType.JWT))
+                            .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "SD-JWT supports only jwt proof type."));
+
+                    // At this point, JWT is an explicitly supported proof type and must be enforced.
                     if (proofs == null || proofs.getJwt() == null || proofs.getJwt().isEmpty()) {
-                        throw new VCIssuerException("Credential configuration requires a proof of type: " + ProofType.JWT);
+                        throw new VCIssuerException(ErrorType.INVALID_PROOF, "Credential configuration requires a proof of type: " + ProofType.JWT);
                     }
 
                     return Optional.of(proofs.getJwt());
@@ -225,7 +245,7 @@ public class JwtProofValidator extends AbstractProofValidator {
      */
     private void validateJwsHeader(VCIssuanceContext vcIssuanceContext, JWSHeader jwsHeader) throws VCIssuerException {
         Optional.ofNullable(jwsHeader.getAlgorithm())
-                .orElseThrow(() -> new VCIssuerException("Missing jwsHeader claim alg"));
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing jwsHeader claim alg"));
 
         // As we limit accepted algorithm to the ones listed by the server, we can omit checking for "none"
         // The Algorithm enum class does not list the none value anyway.
@@ -235,16 +255,16 @@ public class JwtProofValidator extends AbstractProofValidator {
                 .map(proofTypeData -> proofTypeData.get("jwt"))
                 .map(SupportedProofTypeData::getSigningAlgorithmsSupported)
                 .filter(supportedAlgs -> supportedAlgs.contains(jwsHeader.getAlgorithm().name()))
-                .orElseThrow(() -> new VCIssuerException("Proof signature algorithm not supported: " + jwsHeader.getAlgorithm().name()));
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Proof signature algorithm not supported: " + jwsHeader.getAlgorithm().name()));
 
         Optional.ofNullable(jwsHeader.getType())
                 .filter(type -> Objects.equals(PROOF_JWT_TYP, type))
-                .orElseThrow(() -> new VCIssuerException("JWT type must be: " + PROOF_JWT_TYP));
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "JWT type must be: " + PROOF_JWT_TYP));
 
         // KeyId shall not be present alongside the jwk.
         Optional.ofNullable(jwsHeader.getKeyId())
                 .ifPresent(keyId -> {
-                    throw new VCIssuerException("KeyId not expected in this JWT. Use the jwk claim instead.");
+                    throw new VCIssuerException(ErrorType.INVALID_PROOF, "KeyId not expected in this JWT. Use the jwk claim instead.");
                 });
     }
 
@@ -264,13 +284,13 @@ public class JwtProofValidator extends AbstractProofValidator {
         Optional.ofNullable(proofPayload.getAudience()) // Ensure null-safety with Optional
                 .map(Arrays::asList) // Convert to List<String>
                 .filter(audiences -> audiences.contains(credentialIssuer)) // Check if the issuer is in the audience list
-                .orElseThrow(() -> new VCIssuerException(
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF,
                         "Proof not produced for this audience. Audience claim must be: " + credentialIssuer + " but are " + Arrays.asList(proofPayload.getAudience())));
 
         // Validate mandatory iat.
         // I do not understand the rationale behind requiring an issue time if we are not checking expiration.
         Optional.ofNullable(proofPayload.getIat())
-                .orElseThrow(() -> new VCIssuerException("Missing proof issuing time. iat claim must be provided."));
+                .orElseThrow(() -> new VCIssuerException(ErrorType.INVALID_PROOF, "Missing proof issuing time. iat claim must be provided."));
 
         KeycloakContext keycloakContext = keycloakSession.getContext();
         CNonceHandler cNonceHandler = keycloakSession.getProvider(CNonceHandler.class);
@@ -280,8 +300,7 @@ public class JwtProofValidator extends AbstractProofValidator {
                     Map.of(JwtCNonceHandler.SOURCE_ENDPOINT,
                             OID4VCIssuerWellKnownProvider.getNonceEndpoint(keycloakContext)));
         } catch (VerificationException e) {
-            throw new VCIssuerException(ErrorType.INVALID_NONCE,
-                    "The proofs parameter in the Credential Request uses an invalid nonce", e);
+            throw new VCIssuerException(ErrorType.INVALID_NONCE, e.getMessage());
         }
     }
 }

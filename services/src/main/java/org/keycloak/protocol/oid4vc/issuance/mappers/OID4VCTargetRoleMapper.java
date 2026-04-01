@@ -152,6 +152,9 @@ public class OID4VCTargetRoleMapper extends OID4VCMapper {
 	public void setClaim(Map<String, Object> claims,
 						 UserSessionModel userSessionModel) {
 		List<String> attributePath = getMetadataAttributePath();
+		if (attributePath.isEmpty()) {
+			return;
+		}
 		String propertyName = attributePath.get(attributePath.size() - 1);
 		String client = mapperModel.getConfig().get(CLIENT_CONFIG_KEY);
 		ClientModel clientModel = userSessionModel.getRealm().getClientByClientId(client);

@@ -9,6 +9,10 @@ includedOptions="">
 
 The Federal Information Processing Standard Publication 140-2, (FIPS 140-2), is a U.S. government computer security standard used to approve cryptographic modules. {project_name} supports running in FIPS 140-2 compliant mode. In this case, {project_name} will use only FIPS approved cryptography algorithms for its functionality.
 
+NOTE: {project_name} FIPS 140-2 integration is tested with OpenJDK 25, however the underlying BouncyCastle
+FIPS library is not officially validated with OpenJDK 25. Hence for FIPS 140-2 compliance, it is still recommended to use
+{project_name} on OpenJDK 21.
+
 To run in FIPS 140-2, {project_name} should run on a FIPS 140-2 enabled system. This requirement usually assumes RHEL or Fedora where FIPS was enabled during installation.
 See https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/html-single/security_hardening/index#assembly_installing-the-system-in-fips-mode_security-hardening[RHEL documentation]
 for the details. When the system is in FIPS mode, it makes sure that the underlying OpenJDK is in FIPS mode as well and would use only
@@ -27,6 +31,8 @@ If the system is not in FIPS mode, you can enable it with the following command,
 ----
 fips-mode-setup --enable
 ----
+
+WARNING: Due to OpenJDK limitations, FIPS mode is only supported with OpenJDK 17 and 21 in {project_name}. Consider this when choosing the Java version for your production deployment.
 
 == BouncyCastle library
 

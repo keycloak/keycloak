@@ -69,28 +69,28 @@ public class ClientScopeTestOid4Vci extends AbstractClientScopeTest {
 
             ClientScopeRepresentation createdClientScope = clientScopes().get(clientScopeId).toRepresentation();
             Assertions.assertNotNull(createdClientScope);
-            Assertions.assertEquals(CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS_DEFAULT,
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.SD_JWT_VISIBLE_CLAIMS));
-            Assertions.assertEquals(String.valueOf(CredentialScopeModel.SD_JWT_DECOYS_DEFAULT),
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.SD_JWT_NUMBER_OF_DECOYS));
-            Assertions.assertEquals(CredentialScopeModel.FORMAT_DEFAULT,
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.FORMAT));
-            Assertions.assertEquals(CredentialScopeModel.HASH_ALGORITHM_DEFAULT,
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.HASH_ALGORITHM));
-            Assertions.assertEquals(CredentialScopeModel.TOKEN_TYPE_DEFAULT,
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.TOKEN_JWS_TYPE));
-            Assertions.assertEquals(String.valueOf(CredentialScopeModel.EXPIRY_IN_SECONDS_DEFAULT),
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.EXPIRY_IN_SECONDS));
+            Assertions.assertEquals(CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT,
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS));
+            Assertions.assertEquals(String.valueOf(CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT),
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS));
+            Assertions.assertEquals(CredentialScopeModel.VC_FORMAT_DEFAULT,
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_FORMAT));
+            Assertions.assertEquals(CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT,
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM));
+            Assertions.assertEquals(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT,
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE));
+            Assertions.assertEquals(String.valueOf(CredentialScopeModel.VC_EXPIRY_IN_SECONDS_DEFAULT),
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_EXPIRY_IN_SECONDS));
             Assertions.assertEquals(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT,
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS));
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS));
             Assertions.assertEquals(clientScope.getName(),
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID));
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID));
             Assertions.assertEquals(clientScope.getName(),
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.CREDENTIAL_IDENTIFIER));
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_IDENTIFIER));
             Assertions.assertEquals(clientScope.getName(),
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.TYPES));
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_SUPPORTED_TYPES));
             Assertions.assertEquals(clientScope.getName(),
-                                    createdClientScope.getAttributes().get(CredentialScopeModel.CONTEXTS));
+                                    createdClientScope.getAttributes().get(CredentialScopeModel.VC_CONTEXTS));
             Assertions.assertEquals(clientScope.getName(),
                                     createdClientScope.getAttributes().get(CredentialScopeModel.VCT));
             // Note: ISSUER_DID is intentionally not set by default, as there's no sensible default

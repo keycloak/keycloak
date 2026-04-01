@@ -28,8 +28,24 @@ public interface TimerProvider extends Provider {
 
     public void schedule(Runnable runnable, long intervalMillis, String taskName);
 
+    /**
+     * Schedule a task with an initial delay that differs from the interval.
+     *
+     * @param runnable the task to run
+     * @param initialDelayMillis delay before the first execution
+     * @param intervalMillis interval between subsequent executions
+     * @param taskName unique name for the task
+     */
+    default void schedule(Runnable runnable, long initialDelayMillis, long intervalMillis, String taskName) {
+        schedule(runnable, intervalMillis, taskName);
+    }
+
     default void schedule(TaskRunner runner, long intervalMillis) {
         schedule(runner, intervalMillis, runner.getTaskName());
+    }
+
+    default void schedule(TaskRunner runner, long initialDelayMillis, long intervalMillis) {
+        schedule(runner, initialDelayMillis, intervalMillis, runner.getTaskName());
     }
 
     public void scheduleTask(ScheduledTask scheduledTask, long intervalMillis, String taskName);

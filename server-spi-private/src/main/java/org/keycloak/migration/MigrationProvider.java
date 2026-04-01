@@ -93,4 +93,11 @@ public interface MigrationProvider extends Provider {
      * @return created or already existing client scope 'service_account'
      */
     ClientScopeModel addOIDCServiceAccountClientScope(RealmModel realm);
+
+    /**
+     * Add the SAML mapper for the step-up <em>AuthnContextClassRef</em> authentication to the realm.
+     * @param realm
+     * @return created, already existing client scope or null if not step-up not enabled
+     */
+    ClientScopeModel addSamlAuthnContextClassRefClientScope(RealmModel realm);
 }

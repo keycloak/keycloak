@@ -569,7 +569,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
 
         response = oauth.doPasswordGrantRequest("johnkeycloak", "");
-        Assert.assertEquals(401, response.getStatusCode());
+        Assert.assertEquals(400, response.getStatusCode());
     }
 
     @Test

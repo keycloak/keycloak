@@ -25,6 +25,7 @@ import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
+import org.keycloak.tests.suites.DatabaseTest;
 
 import com.google.common.collect.Sets;
 import org.hamcrest.CoreMatchers;
@@ -183,6 +184,7 @@ public class RealmAttributesTest extends AbstractRealmTest {
     }
 
     @Test
+    @DatabaseTest
     public void updateRealmAttributes() {
         // first change
         RealmRepresentation rep = new RealmRepresentation();

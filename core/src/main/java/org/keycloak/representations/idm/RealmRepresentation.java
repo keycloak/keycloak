@@ -100,6 +100,7 @@ public class RealmRepresentation {
     protected Long quickLoginCheckMilliSeconds;
     protected Integer maxDeltaTimeSeconds;
     protected Integer failureFactor;
+    protected Integer maxSecondaryAuthFailures;
     //--- end brute force settings
 
     @Deprecated
@@ -239,6 +240,8 @@ public class RealmRepresentation {
     protected List<OAuthClientRepresentation> oauthClients;
     @Deprecated
     protected List<ClientTemplateRepresentation> clientTemplates;
+
+    private Boolean scimApiEnabled;
 
     public String getId() {
         return id;
@@ -849,6 +852,14 @@ public class RealmRepresentation {
 
     public void setFailureFactor(Integer failureFactor) {
         this.failureFactor = failureFactor;
+    }
+
+    public Integer getMaxSecondaryAuthFailures() {
+        return maxSecondaryAuthFailures;
+    }
+
+    public void setMaxSecondaryAuthFailures(Integer maxSecondaryAuthFailures) {
+        this.maxSecondaryAuthFailures = maxSecondaryAuthFailures;
     }
 
     public Boolean isEventsEnabled() {
@@ -1499,6 +1510,14 @@ public class RealmRepresentation {
             organizations = new ArrayList<>();
         }
         organizations.add(org);
+    }
+
+    public void setScimApiEnabled(Boolean scimApiEnabled) {
+        this.scimApiEnabled = scimApiEnabled;
+    }
+
+    public Boolean isScimApiEnabled() {
+        return scimApiEnabled;
     }
 
     public enum BruteForceStrategy {

@@ -99,6 +99,7 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
     public static final String CACHE_CONFIG_FILE_MOUNT_NAME = "cache-config-file-configmap";
 
     public static final String KC_TRUSTSTORE_PATHS = "KC_TRUSTSTORE_PATHS";
+    public static final String KC_TRUSTSTORE_KUBERNETES_ENABLED = "KC_TRUSTSTORE_KUBERNETES_ENABLED";
 
     // Telemetry
     public static final String KC_TELEMETRY_SERVICE_NAME = "KC_TELEMETRY_SERVICE_NAME";
@@ -475,16 +476,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         LinkedHashMap<String, EnvVar> varMap = Stream.concat(Stream.concat(unsupportedEnv.stream(), firstClasssEnvVars.stream()), Stream.concat(additionalEnvVars.stream(), env))
                 .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
 
-
-        if (!Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken())) {
-            String truststores = SERVICE_ACCOUNT_DIR + "ca.crt";
-
-            if (useServiceCaCrt) {
-                truststores += "," + SERVICE_CA_CRT;
-            }
-
-            // include the kube CA if the user is not controlling KC_TRUSTSTORE_PATHS via the unsupported or the additional
-            varMap.putIfAbsent(KC_TRUSTSTORE_PATHS, new EnvVarBuilder().withName(KC_TRUSTSTORE_PATHS).withValue(truststores).build());
+        // Turn Kubernetes CA autodiscovery off
+        if (Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken())) {
+            varMap.putIfAbsent(KC_TRUSTSTORE_KUBERNETES_ENABLED, new EnvVarBuilder().withName(KC_TRUSTSTORE_KUBERNETES_ENABLED).withValue("false").build());
         }
 
         setTelemetryEnvVars(keycloakCR, varMap);

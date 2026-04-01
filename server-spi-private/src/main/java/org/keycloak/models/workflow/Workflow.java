@@ -39,7 +39,6 @@ import static java.util.Optional.ofNullable;
 
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_CONDITIONS;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ENABLED;
-import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_ERROR;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_NAME;
 import static org.keycloak.representations.workflows.WorkflowConstants.CONFIG_SUPPORTS;
 
@@ -117,13 +116,6 @@ public class Workflow {
             config = new MultivaluedHashMap<>();
         }
         config.putSingle(CONFIG_ENABLED, String.valueOf(enabled));
-    }
-
-    public void setError(String message) {
-        if (config == null) {
-            config = new MultivaluedHashMap<>();
-        }
-        config.putSingle(CONFIG_ERROR, message);
     }
 
     public void setSupportedType(ResourceType resourceType) {

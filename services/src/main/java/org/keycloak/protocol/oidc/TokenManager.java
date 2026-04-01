@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,6 +56,7 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
+import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.HashProvider;
@@ -66,6 +69,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.migration.migrators.MigrationUtils;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -73,6 +77,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -98,6 +103,9 @@ import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCIDTokenMapper;
 import org.keycloak.protocol.oidc.mappers.TokenIntrospectionTokenMapper;
 import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
+import org.keycloak.protocol.oidc.token.TokenPostProcessor;
+import org.keycloak.protocol.oidc.token.TokenPostProcessorContext;
+import org.keycloak.protocol.oidc.utils.OAuth2Code;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.rar.AuthorizationRequestContext;
@@ -299,8 +307,14 @@ public class TokenManager {
 
 
     public AccessTokenResponseBuilder refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient,
-                                            String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, String scopeParameter) throws OAuthErrorException {
+                                            String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, String scopeParameter, String resourceParameter) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
+
+        if (realm.isRevokeRefreshToken()) {
+            // If refresh tokens are revoked, we need to serialize all requests to avoid wrong conclusions.
+            // This needs to be called before we load the user session from the database or the cache
+            createTemporaryExclusiveLockForTokenRefreshOperation(session, refreshToken);
+        }
 
         event.session(refreshToken.getSessionState())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
@@ -350,6 +364,8 @@ public class TokenManager {
                             .toArray(ClientModel[]::new));
         }
 
+        validation.clientSessionCtx.setAttribute(OAuth2Constants.RESOURCE, resourceParameter);
+
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
             validation.userSession, validation.clientSessionCtx).offlineToken( TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType())).accessToken(validation.newToken);
 
@@ -359,7 +375,7 @@ public class TokenManager {
             validation.newToken.setAuthorizationDetails(authorizationDetails);
             validation.clientSessionCtx.setAttribute(AUTHORIZATION_DETAILS_RESPONSE, authorizationDetails);
         }
-        
+
         if (clientConfig.isUseRefreshToken()) {
             //refresh token must have same scope as old refresh token (type, scope, expiration)
             responseBuilder.generateRefreshToken(refreshToken, clientSession);
@@ -377,7 +393,35 @@ public class TokenManager {
 
         storeRefreshTimingInformation(event, refreshToken, validation.newToken);
 
+        responseBuilder.requestRefreshToken(refreshToken);
+
         return responseBuilder;
+    }
+
+    private void createTemporaryExclusiveLockForTokenRefreshOperation(KeycloakSession session, RefreshToken refreshToken) {
+        String lockId = "refreshLock:" + refreshToken.getSessionId() + ":" + getReuseIdKey(refreshToken);
+        Retry.executeWithBackoff((int iteration) -> {
+            // This assumes that 60 seconds is the maximum time this operation will take
+            if (!session.singleUseObjects().putIfAbsent(lockId, 60)) {
+                throw new RuntimeException("Unable to acquire serialization lock for token refresh");
+            }
+
+            // Trigger the session provider, to ensure that it enlists first for enlistAfterCompletion
+            session.sessions();
+
+            KeycloakSessionFactory factory = session.getKeycloakSessionFactory();
+            session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+                @Override
+                protected void commitImpl() {
+                    KeycloakModelUtils.runJobInTransaction(factory, s -> s.singleUseObjects().remove(lockId));
+                }
+
+                @Override
+                protected void rollbackImpl() {
+                    KeycloakModelUtils.runJobInTransaction(factory, s -> s.singleUseObjects().remove(lockId));
+                }
+            });
+        }, Duration.of(10, ChronoUnit.SECONDS), 10);
     }
 
     private Function<String, String> transformScopes(KeycloakSession session, Set<String> requestedScopes) {
@@ -1107,6 +1151,9 @@ public class TokenManager {
         UserSessionModel userSession;
         ClientSessionContext clientSessionCtx;
 
+        OAuth2Code code;
+        RefreshToken requestRefreshToken;
+
         AccessToken accessToken;
         RefreshToken refreshToken;
         IDToken idToken;
@@ -1141,6 +1188,16 @@ public class TokenManager {
 
         public IDToken getIdToken() {
             return idToken;
+        }
+
+        public AccessTokenResponseBuilder code(OAuth2Code code) {
+            this.code = code;
+            return this;
+        }
+
+        public AccessTokenResponseBuilder requestRefreshToken(RefreshToken requestRefreshToken) {
+            this.requestRefreshToken = requestRefreshToken;
+            return this;
         }
 
         public AccessTokenResponseBuilder accessToken(AccessToken accessToken) {
@@ -1333,7 +1390,14 @@ public class TokenManager {
             return offlineToken;
         }
 
+        private void invokeTokenPostProcessors() {
+            TokenPostProcessorContext context = new TokenPostProcessorContext(code, requestRefreshToken, refreshToken, accessToken, clientSessionCtx);
+            session.getAllProviders(TokenPostProcessor.class).forEach(processor -> processor.process(context));
+        }
+
         public AccessTokenResponse build() {
+            invokeTokenPostProcessors();
+
             if (response != null) return response;
 
             if (accessToken != null) {

@@ -116,6 +116,16 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
     }
 
     @Override
+    public Long getLastModifiedTimestamp() {
+        return user.getLastModifiedTimestamp();
+    }
+
+    @Override
+    public void setLastModifiedTimestamp(Long timestamp) {
+        user.setLastModifiedTimestamp(timestamp);
+    }
+
+    @Override
     public boolean isEnabled() {
         return user.isEnabled();
     }
@@ -142,7 +152,7 @@ public class UserAdapter implements UserModel, JpaModel<UserEntity> {
         }
         // Remove all existing
         if (value == null) {
-            user.getAttributes().removeIf(a -> a.getName().equals(name));
+            removeAttribute(name);
         } else {
             Set<String> oldEntries = getAttributeStream(name).collect(Collectors.toSet());
             Set<String> newEntries = Set.of(value);

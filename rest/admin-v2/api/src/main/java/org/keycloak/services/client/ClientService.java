@@ -46,7 +46,9 @@ public interface ClientService extends Service {
 
     void deleteClient(RealmModel realm, String clientId) throws ServiceException;
 
-    CreateOrUpdateResult createOrUpdate(RealmModel realm, BaseClientRepresentation client, boolean allowUpdate) throws ServiceException;
+    CreateOrUpdateResult createOrUpdateClient(RealmModel realm, String clientId, BaseClientRepresentation client) throws ServiceException;
+
+    BaseClientRepresentation createClient(RealmModel realm, BaseClientRepresentation client) throws ServiceException;
 
     BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, JsonNode patch) throws ServiceException;
 }

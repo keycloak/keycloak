@@ -227,7 +227,7 @@ If you have a custom organization attribute named `id` and rely on its value in 
 
 The following sections provide details on deprecated features.
 
-=== New centralized OpenTelementry options
+=== New centralized OpenTelemetry options
 
 {project_name} now provides centralized telemetry configuration options that can be shared across all telemetry (OpenTelemetry) components - traces and logs, with future support planned for metrics.
 Individual components can override these global settings when needed.

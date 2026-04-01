@@ -256,6 +256,14 @@ public class RealmModelDelegate implements RealmModel {
         delegate.setFailureFactor(failureFactor);
     }
 
+    public int getMaxSecondaryAuthFailures() {
+        return delegate.getMaxSecondaryAuthFailures();
+    }
+
+    public void setMaxSecondaryAuthFailures(int maxSecondaryAuthFailures) {
+        delegate.setMaxSecondaryAuthFailures(maxSecondaryAuthFailures);
+    }
+
     public boolean isVerifyEmail() {
         return delegate.isVerifyEmail();
     }
@@ -1189,5 +1197,15 @@ public class RealmModelDelegate implements RealmModel {
     @Override
     public void setVerifiableCredentialsEnabled(boolean verifiableCredentialsEnabled) {
         delegate.setVerifiableCredentialsEnabled(verifiableCredentialsEnabled);
+    }
+
+    @Override
+    public void setScimApiEnabled(boolean enabled) {
+        delegate.setScimApiEnabled(enabled);
+    }
+
+    @Override
+    public boolean isScimApiEnabled() {
+        return delegate.isScimApiEnabled();
     }
 }

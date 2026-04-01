@@ -35,7 +35,9 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -56,7 +58,7 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
             groupId = ApiUtil.getCreatedId(response);
         }
 
-        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation();
+        GroupRepresentation retrieved = orgResource.groups().group(groupId).toRepresentation(false);
         assertNotNull(retrieved);
         assertThat(retrieved.getName(), is("Engineering"));
 
@@ -92,7 +94,7 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
         }
 
         // Backend.getParent() -> Engineering
-        GroupRepresentation backend = orgResource.groups().group(backendId).toRepresentation();
+        GroupRepresentation backend = orgResource.groups().group(backendId).toRepresentation(false);
         assertThat(backend.getParentId(), is(engineeringId));
 
         // Verify Engineering contains Backend as subgroup
@@ -136,13 +138,13 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
         }
 
         // Verify the full chain
-        GroupRepresentation platform = orgResource.groups().group(platformId).toRepresentation();
+        GroupRepresentation platform = orgResource.groups().group(platformId).toRepresentation(false);
         assertThat(platform.getParentId(), is(backendId));
 
-        GroupRepresentation backend = orgResource.groups().group(backendId).toRepresentation();
+        GroupRepresentation backend = orgResource.groups().group(backendId).toRepresentation(false);
         assertThat(backend.getParentId(), is(engineeringId));
 
-        GroupRepresentation engineering = orgResource.groups().group(engineeringId).toRepresentation();
+        GroupRepresentation engineering = orgResource.groups().group(engineeringId).toRepresentation(false);
         assertThat(engineering.getParentId(), notNullValue()); // parent is internal group
     }
 
@@ -169,8 +171,8 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
         }
 
         // Both should have the same parent (internal group)
-        GroupRepresentation engineering = orgResource.groups().group(engineeringId).toRepresentation();
-        GroupRepresentation sales = orgResource.groups().group(salesId).toRepresentation();
+        GroupRepresentation engineering = orgResource.groups().group(engineeringId).toRepresentation(false);
+        GroupRepresentation sales = orgResource.groups().group(salesId).toRepresentation(false);
 
         assertThat(engineering.getParentId(), notNullValue());
         assertThat(sales.getParentId(), notNullValue());
@@ -231,6 +233,23 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
 
         List<GroupRepresentation> salesSubGroups = orgResource.groups().group(salesId).getSubGroups(null, null, null, null);
         assertThat(salesSubGroups, hasSize(2));
+
+        // Test subGroupsCount parameter = true
+        GroupRepresentation engineeringWithCount = orgResource.groups().group(engineeringId).toRepresentation(true);
+        assertThat(engineeringWithCount.getSubGroupCount(), is(2L)); // Backend, Frontend
+
+        GroupRepresentation salesWithCount = orgResource.groups().group(salesId).toRepresentation(true);
+        assertThat(salesWithCount.getSubGroupCount(), is(2L)); // Enterprise, SMB
+
+        // Test subGroupsCount parameter = false (default)
+        GroupRepresentation engineeringWithoutCount = orgResource.groups().group(engineeringId).toRepresentation(false);
+        assertThat(engineeringWithoutCount.getSubGroupCount(), is(nullValue()));
+
+        // Test getAll() with subGroupsCount
+        List<GroupRepresentation> allWithCount = orgResource.groups().getAll(null, null, null, null, null, true, true);
+        assertThat(allWithCount, hasSize(2));
+        assertThat(allWithCount.get(0).getSubGroupCount(), notNullValue());
+        assertThat(allWithCount.get(1).getSubGroupCount(), notNullValue());
     }
 
     @Test
@@ -261,11 +280,44 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
 
         // Backend should also be deleted
         try {
-            orgResource.groups().group(backendId).toRepresentation();
+            orgResource.groups().group(backendId).toRepresentation(false);
             fail("Backend group should have been deleted when Engineering was deleted");
         } catch (Exception e) {
             assertThat(e.getMessage(), containsString(Response.Status.NOT_FOUND.toString()));
         }
+    }
+
+    @Test
+    public void testSearchWithPopulateHierarchyExcludesInternalGroup() {
+        // Verify that searching with populateHierarchy=true does not expose
+        // the internal organization root group (named by org UUID)
+        OrganizationRepresentation orgRep = createOrganization();
+        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+
+        // Create Engineering -> Backend
+        GroupRepresentation engineeringRep = new GroupRepresentation();
+        engineeringRep.setName("Engineering");
+        String engineeringId;
+        try (Response response = orgResource.groups().addTopLevelGroup(engineeringRep)) {
+            engineeringId = ApiUtil.getCreatedId(response);
+        }
+
+        GroupRepresentation backendRep = new GroupRepresentation();
+        backendRep.setName("Backend");
+        try (Response response = orgResource.groups().group(engineeringId).addSubGroup(backendRep)) {
+            assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
+        }
+
+        // Search for "Backend" with populateHierarchy=true
+        List<GroupRepresentation> results = orgResource.groups().getAll("Backend", null, false, null, null, true, true, false);
+
+        // Should return Engineering as the root with Backend nested inside
+        assertThat(results, hasSize(1));
+        assertThat(results.get(0).getName(), is("Engineering"));
+        // The root must NOT be the internal org group (UUID-named)
+        assertThat(results.get(0).getName(), is(not(orgRep.getId())));
+        assertThat(results.get(0).getSubGroups(), hasSize(1));
+        assertThat(results.get(0).getSubGroups().get(0).getName(), is("Backend"));
     }
 
     @Test
@@ -296,7 +348,7 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
         }
 
         // getAll() should return 2 groups (Engineering, Sales), not 3 (Backend is nested)
-        List<GroupRepresentation> topLevelGroups = orgResource.groups().getAll(null, null, null, null, true);
+        List<GroupRepresentation> topLevelGroups = orgResource.groups().getAll(null, null, null, null, null, true, false);
         assertThat(topLevelGroups, hasSize(2));
     }
 }

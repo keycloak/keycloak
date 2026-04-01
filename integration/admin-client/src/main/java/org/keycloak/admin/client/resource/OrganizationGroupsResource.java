@@ -32,6 +32,8 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.idm.GroupRepresentation;
 
 /**
+ * @since Keycloak server 26.6.0. All the child endpoints are also available since that version unless mentioned otherwise<p>
+ *
  * Organization groups resource for managing groups within an organization.
  */
 public interface OrganizationGroupsResource {
@@ -44,10 +46,33 @@ public interface OrganizationGroupsResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<GroupRepresentation> getAll(
             @QueryParam("search") String search,
+            @QueryParam("q") String searchQuery,
             @QueryParam("exact") Boolean exact,
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max,
-            @QueryParam("briefRepresentation") boolean briefRepresentation
+            @QueryParam("briefRepresentation") boolean briefRepresentation,
+            @QueryParam("subGroupsCount") boolean subGroupsCount
+    );
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> getAll(
+            @QueryParam("search") String search,
+            @QueryParam("q") String searchQuery,
+            @QueryParam("exact") Boolean exact,
+            @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max,
+            @QueryParam("briefRepresentation") boolean briefRepresentation,
+            @QueryParam("populateHierarchy") boolean populateHierarchy,
+            @QueryParam("subGroupsCount") boolean subGroupsCount
+    );
+
+    @GET
+    @Path("group-by-path/{path: .*}")
+    @Produces(MediaType.APPLICATION_JSON)
+    GroupRepresentation getGroupByPath(
+            @PathParam("path") String path,
+            @QueryParam("subGroupsCount") boolean subGroupsCount
     );
 
     @Path("{group-id}")

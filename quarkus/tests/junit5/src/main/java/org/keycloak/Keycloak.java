@@ -32,7 +32,6 @@ import org.keycloak.config.HttpOptions;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.SecurityOptions;
-import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.Picocli;
@@ -56,8 +55,8 @@ import io.quarkus.bootstrap.workspace.WorkspaceModuleId;
 import io.quarkus.maven.dependency.Dependency;
 import io.quarkus.maven.dependency.DependencyBuilder;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
-import picocli.CommandLine;
 
 import static java.util.Optional.ofNullable;
 
@@ -115,7 +114,7 @@ public class Keycloak {
 
         public Keycloak start(List<String> rawArgs) {
             if (homeDir == null) {
-                homeDir = Platform.getPlatform().getTmpDirectory().toPath();
+                homeDir = initTempDirectory("keycloak-home");
             }
 
             List<String> args = new ArrayList<>(rawArgs);
@@ -346,14 +345,6 @@ public class Keycloak {
             }
 
             @Override
-            protected int execute(CommandLine cmd, String[] argArray) {
-                if (this.getParsedCommand().filter(ac -> ac instanceof AbstractAutoBuildCommand).isPresent()) {
-                    return super.execute(cmd, argArray);
-                }
-                return 0;
-            }
-
-            @Override
             public void exit(int exitCode) {
                 result.set(exitCode == AbstractAutoBuildCommand.REBUILT_EXIT_CODE);
             }
@@ -362,4 +353,24 @@ public class Keycloak {
         System.setProperty(Environment.KC_CONFIG_BUILT, "true");
         return result.get();
     }
+
+    public static Path initTempDirectory(String name) {
+        String buildDir = System.getProperty("project.build.directory");
+        if (buildDir == null) {
+            try {
+                return Files.createTempDirectory(name).toAbsolutePath();
+            } catch (IOException e) {
+                throw new RuntimeException("Could not create temporary directory", e);
+            }
+        } else {
+            Path homeDir = Path.of(buildDir, name);
+            try {
+                FileUtils.deleteDirectory(homeDir.toFile());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return homeDir;
+        }
+    }
+
 }

@@ -106,6 +106,26 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     }
 
     @Override
+    public Long getCreatedTimestamp() {
+        return group.getCreatedTimestamp();
+    }
+
+    @Override
+    public void setCreatedTimestamp(Long timestamp) {
+        group.setCreatedTimestamp(timestamp);
+    }
+
+    @Override
+    public Long getLastModifiedTimestamp() {
+        return group.getLastModifiedTimestamp();
+    }
+
+    @Override
+    public void setLastModifiedTimestamp(Long timestamp) {
+        group.setLastModifiedTimestamp(timestamp);
+    }
+
+    @Override
     public GroupModel getParent() {
         String parentId = this.getParentId();
         return parentId == null? null : realm.getGroupById(parentId);
@@ -183,7 +203,9 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
             predicates.add(builder.like(builder.lower(root.get("name")), search.toLowerCase(), '\\'));
         }
 
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session), realm, builder, queryBuilder, root));
+        if (Type.REALM.intValue() == group.getType()) {
+            predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session), realm, builder, queryBuilder, root));
+        }
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
         queryBuilder.orderBy(builder.asc(root.get("name")));
@@ -206,9 +228,12 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
         List<Predicate> predicates = new ArrayList<>();
 
         predicates.add(builder.equal(root.get("realm"), realm.getId()));
-        predicates.add(builder.equal(root.get("type"), Type.REALM.intValue()));
+        predicates.add(builder.equal(root.get("type"), group.getType()));
         predicates.add(builder.equal(root.get("parentId"), group.getId()));
-        predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session), realm, builder, queryBuilder, root));
+
+        if (Type.REALM.intValue() == group.getType()) {
+            predicates.addAll(AdminPermissionsSchema.SCHEMA.applyAuthorizationFilters(session, AdminPermissionsSchema.GROUPS, (PartialEvaluationStorageProvider) UserStoragePrivateUtil.userLocalStorage(session), realm, builder, queryBuilder, root));
+        }
 
         queryBuilder.where(predicates.toArray(new Predicate[0]));
 

@@ -1,5 +1,6 @@
 package org.keycloak.testframework.realm;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +12,9 @@ import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -70,6 +73,11 @@ public class RealmConfigBuilder {
         return UserConfigBuilder.update(user).enabled(true).username(username);
     }
 
+    public UserConfigBuilder addUser(UserRepresentation user) {
+        rep.setUsers(Collections.combine(rep.getUsers(), user));
+        return UserConfigBuilder.update(user);
+    }
+
     public GroupConfigBuilder addGroup(String name) {
         GroupRepresentation group = new GroupRepresentation();
         rep.setGroups(Collections.combine(rep.getGroups(), group));
@@ -77,13 +85,18 @@ public class RealmConfigBuilder {
     }
 
     public RoleConfigBuilder addRole(String name) {
+        RoleRepresentation role = new RoleRepresentation();
+        role.setName(name);
+        return addRole(role);
+    }
+
+    public RoleConfigBuilder addRole(RoleRepresentation roleRepresentation) {
         if (rep.getRoles() == null) {
             rep.setRoles(new RolesRepresentation());
         }
 
-        RoleRepresentation role = new RoleRepresentation();
-        rep.getRoles().setRealm(Collections.combine(rep.getRoles().getRealm(), role));
-        return RoleConfigBuilder.update(role).name(name);
+        rep.getRoles().setRealm(Collections.combine(rep.getRoles().getRealm(), roleRepresentation));
+        return RoleConfigBuilder.update(roleRepresentation).name(roleRepresentation.getName());
     }
 
     public RoleConfigBuilder addClientRole(String clientName, String roleName) {
@@ -229,6 +242,46 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder revokeRefreshToken(boolean enabled) {
+        rep.setRevokeRefreshToken(enabled);
+        return this;
+    }
+
+    public RealmConfigBuilder refreshTokenMaxReuse(Integer refreshTokenMaxReuse) {
+        rep.setRefreshTokenMaxReuse(refreshTokenMaxReuse);
+        return this;
+    }
+
+    public RealmConfigBuilder ssoSessionIdleTimeout(Integer ssoSessionIdleTimeout) {
+        rep.setSsoSessionIdleTimeout(ssoSessionIdleTimeout);
+        return this;
+    }
+
+    public RealmConfigBuilder ssoSessionIdleTimeoutRememberMe(Integer ssoSessionIdleTimeoutRememberMe) {
+        rep.setSsoSessionIdleTimeoutRememberMe(ssoSessionIdleTimeoutRememberMe);
+        return this;
+    }
+
+    public RealmConfigBuilder ssoSessionMaxLifespan(Integer ssoSessionMaxLifespan) {
+        rep.setSsoSessionMaxLifespan(ssoSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmConfigBuilder ssoSessionMaxLifespanRememberMe(Integer ssoSessionMaxLifespanRememberMe) {
+        rep.setSsoSessionMaxLifespanRememberMe(ssoSessionMaxLifespanRememberMe);
+        return this;
+    }
+
+    public RealmConfigBuilder clientSessionMaxLifespan(Integer clientSessionMaxLifespan) {
+        rep.setClientSessionMaxLifespan(clientSessionMaxLifespan);
+        return this;
+    }
+
+    public RealmConfigBuilder clientSessionIdleTimeout(Integer clientSessionIdleTimeout) {
+        rep.setClientSessionIdleTimeout(clientSessionIdleTimeout);
+        return this;
+    }
+
     public RealmConfigBuilder bruteForceProtected(boolean enabled) {
         rep.setBruteForceProtected(enabled);
         return this;
@@ -254,6 +307,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder identityProviderMapper(IdentityProviderMapperRepresentation identityProviderMapper) {
+        rep.addIdentityProviderMapper(identityProviderMapper);
+        return this;
+    }
+
     public RealmConfigBuilder setRememberMe(boolean enabled) {
         rep.setRememberMe(enabled);
         return this;
@@ -264,14 +322,24 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public RealmConfigBuilder clientPolicy(ClientPolicyRepresentation clienPolicyRep) {
+    public RealmConfigBuilder resetClientPolicies() {
+        rep.setParsedClientPolicies(null);
+        return this;
+    }
+
+    public RealmConfigBuilder clientPolicy(ClientPolicyRepresentation clientPolicyRep) {
         ClientPoliciesRepresentation clientPolicies = rep.getParsedClientPolicies();
         if (clientPolicies == null) {
             clientPolicies = new ClientPoliciesRepresentation();
         }
         List<ClientPolicyRepresentation> policies = clientPolicies.getPolicies();
-        policies.add(clienPolicyRep);
+        policies.add(clientPolicyRep);
         rep.setParsedClientPolicies(clientPolicies);
+        return this;
+    }
+
+    public RealmConfigBuilder resetClientProfiles() {
+        rep.setParsedClientProfiles(null);
         return this;
     }
 
@@ -293,6 +361,11 @@ public class RealmConfigBuilder {
 
     public RealmConfigBuilder requiredAction(RequiredActionProviderRepresentation requiredAction) {
         rep.setRequiredActions(Collections.combine(rep.getRequiredActions(), requiredAction));
+        return this;
+    }
+
+    public RealmConfigBuilder verifiableCredentialsEnabled(boolean enabled) {
+        rep.setVerifiableCredentialsEnabled(enabled);
         return this;
     }
 
@@ -384,6 +457,25 @@ public class RealmConfigBuilder {
     public RealmConfigBuilder webAuthnPolicyAcceptableAaguids(List<String> aaguids) {
         rep.setWebAuthnPolicyAcceptableAaguids(aaguids);
         return this;
+    }
+
+    public RealmConfigBuilder scimEnabled(boolean enabled) {
+        rep.setScimApiEnabled(enabled);
+        return this;
+    }
+
+    public void attribute(String key, String value) {
+        if (rep.getAttributes() == null) {
+            rep.setAttributes(new HashMap<>());
+        }
+        rep.getAttributes().put(key, value);
+    }
+
+    public void addClientScope(ClientScopeRepresentation clientScope) {
+        if (rep.getClientScopes() == null) {
+            rep.setClientScopes(new ArrayList<>());
+        }
+        rep.getClientScopes().add(clientScope);
     }
 
     /**

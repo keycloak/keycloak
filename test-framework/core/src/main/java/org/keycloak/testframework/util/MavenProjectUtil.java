@@ -5,16 +5,18 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.keycloak.it.utils.Maven;
+import org.keycloak.testframework.server.KeycloakDependency;
 
 import io.quarkus.bootstrap.resolver.maven.BootstrapMavenContext;
 import io.quarkus.bootstrap.resolver.maven.workspace.LocalProject;
+import org.eclipse.aether.artifact.Artifact;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-
 
 public final class MavenProjectUtil {
 
@@ -46,6 +48,32 @@ public final class MavenProjectUtil {
     public static LocalProject getCurrentModule() {
         BootstrapMavenContext ctx = Maven.bootstrapCurrentMavenContext();
         return ctx.getCurrentProject();
+    }
+
+    public static KeycloakDependency updateDependencyDetails(KeycloakDependency dependency) {
+        KeycloakDependency.Builder updatedDependency = new KeycloakDependency.Builder()
+                .hotDeployable(dependency.isHotDeployable())
+                .dependencyCurrentProject(dependency.dependencyCurrentProject());
+
+        if (dependency.dependencyCurrentProject()) {
+            LocalProject localProject = getCurrentModule();
+
+            updatedDependency
+                    .setGroupId(localProject.getGroupId())
+                    .setArtifactId(localProject.getArtifactId())
+                    .setVersion(localProject.getVersion());
+        } else {
+            String version = Optional.ofNullable(Maven.getArtifact(dependency.getGroupId(), dependency.getArtifactId()))
+                    .map(Artifact::getVersion)
+                    .orElse("");
+
+            updatedDependency
+                    .setGroupId(dependency.getGroupId())
+                    .setArtifactId(dependency.getArtifactId())
+                    .setVersion(version);
+        }
+
+        return updatedDependency.build();
     }
 
     /**

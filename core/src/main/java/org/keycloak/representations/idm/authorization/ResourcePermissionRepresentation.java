@@ -16,10 +16,16 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import java.util.Set;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 public class ResourcePermissionRepresentation extends AbstractPolicyRepresentation {
+
+    public static Builder create() {
+        return new Builder();
+    }
 
     private String resourceType;
 
@@ -34,5 +40,45 @@ public class ResourcePermissionRepresentation extends AbstractPolicyRepresentati
 
     public String getResourceType() {
         return resourceType;
+    }
+
+    public static final class Builder {
+
+        private final ResourcePermissionRepresentation rep;
+
+        private Builder() {
+            rep = new ResourcePermissionRepresentation();
+        }
+
+        public Builder name(String name) {
+            rep.setName(name);
+            return this;
+        }
+
+        public Builder resources(Set<String> ids) {
+            rep.setResources(ids);
+            return this;
+        }
+
+        public Builder policies(Set<String> ids) {
+            rep.setPolicies(ids);
+            return this;
+        }
+
+        public Builder policy(AbstractPolicyRepresentation policy) {
+            String id = policy.getId();
+
+            if (id == null) {
+                throw new IllegalArgumentException("Policy must have an id");
+            }
+
+            rep.addPolicy(id);
+
+            return this;
+        }
+
+        public ResourcePermissionRepresentation build() {
+            return rep;
+        }
     }
 }

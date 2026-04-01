@@ -142,7 +142,7 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
     @Test
     public void testCredentialIssuanceWithAttestationProof() {
         final String scopeName = jwtTypeCredentialClientScope.getName();
-        String configIdFromScope = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.CONFIGURATION_ID);
+        String configIdFromScope = jwtTypeCredentialClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
         final String credConfigId = configIdFromScope != null ? configIdFromScope : scopeName;
         CredentialIssuer credentialIssuer = getCredentialIssuerMetadata();
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
@@ -153,7 +153,7 @@ public class OID4VCAttestationProofTest extends OID4VCIssuerEndpointTest {
         String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOid4vcAuthorizationDetails();
+        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull("authorization_details should be present in the response", authDetailsResponse);
         assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);

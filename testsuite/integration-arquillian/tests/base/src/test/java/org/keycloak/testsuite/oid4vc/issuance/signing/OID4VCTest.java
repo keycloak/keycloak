@@ -70,7 +70,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.OID4VCLoginProtocolFactory;
-import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsProcessor;
+import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
@@ -122,6 +122,7 @@ import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingE
  * Super class for all OID4VC tests. Provides convenience methods to ease the testing.
  */
 @EnableFeature(value = Profile.Feature.OID4VC_VCI, skipRestart = true)
+@EnableFeature(value = Profile.Feature.OID4VC_VCI_PREAUTH_CODE, skipRestart = true)
 public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
 	private static final Logger LOGGER = Logger.getLogger(OID4VCTest.class);
@@ -150,7 +151,7 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 
     @BeforeClass
     public static void beforeClass() {
-        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsProcessor.OID4VCAuthorizationDetailsParser());
+        AuthorizationDetailsParser.registerParser(OPENID_CREDENTIAL, new OID4VCAuthorizationDetailsParser());
     }
 
     @Override

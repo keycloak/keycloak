@@ -160,6 +160,20 @@ public class AuthorizationTokenService {
                 throw new CorsErrorResponseException(request.getCors(), "unauthorized_client", "Invalid signature", Status.BAD_REQUEST);
             }
 
+            String clientId = keycloakSession.getContext().getClient().getClientId();
+
+            if (!clientId.equals(idToken.getIssuedFor())) {
+                CorsErrorResponseException exception = new CorsErrorResponseException(request.getCors(), "invalid_claim_token", "Token issued to a different client", Status.BAD_REQUEST);
+                fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, exception);
+                throw exception;
+            }
+
+            if (idToken.isExpired()) {
+                CorsErrorResponseException exception = new CorsErrorResponseException(request.getCors(), "invalid_claim_token", "Expired token", Status.BAD_REQUEST);
+                fireErrorEvent(request.getEvent(), Errors.INVALID_REQUEST, exception);
+                throw exception;
+            }
+
             KeycloakIdentity identity;
 
             try {
@@ -213,6 +227,7 @@ public class AuthorizationTokenService {
 
             if (identity != null) {
                 event.user(identity.getId());
+                request.getKeycloakSession().getContext().setBearerToken(identity.getAccessToken());
             }
 
             ResourceServer resourceServer = getResourceServer(ticket, request);

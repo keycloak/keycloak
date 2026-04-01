@@ -41,6 +41,7 @@ import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.services.PatchTypeNames;
+import org.keycloak.services.client.ClientServiceHelper;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditionFactory;
@@ -54,11 +55,10 @@ import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
-import org.keycloak.testsuite.client.policies.TrackEventsClientPolicyExecutor;
+import org.keycloak.tests.providers.client.policies.TrackEventsClientPolicyExecutor;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
@@ -514,7 +514,12 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         setupAlwaysAppliedTestPolicy();
         cleanupClient(rep.getClientId());
 
-        assertClientPolicyEventIsEmitted(ClientPolicyEvent.UNREGISTER);
+        if (ClientServiceHelper.isLegacyClientServiceEnabled()) {
+            // for now, the VIEW is also present, but it is not required for delete
+            assertClientPolicyEventIsEmitted(ClientPolicyEvent.VIEW, ClientPolicyEvent.UNREGISTER);
+        } else {
+            assertClientPolicyEventIsEmitted(ClientPolicyEvent.UNREGISTER);
+        }
     }
 
     private void assertClientPolicyEventIsEmitted(ClientPolicyEvent... events) {
@@ -677,11 +682,6 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         } catch (Exception e) {
             // Ignore cleanup errors
         }
-    }
-
-    private void setAuthHeader(HttpMessage request) {
-        String token = adminClient.tokenManager().getAccessTokenString();
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
     }
 
     public static class AdminV2Config implements KeycloakServerConfig {

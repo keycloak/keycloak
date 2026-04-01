@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
  *
  * @author rmartinc
  */
-@KeycloakIntegrationTest(config = JWTAuthorizationGrantTest.JWTAuthorizationGrantServerConfig.class)
+@KeycloakIntegrationTest
 public class JWTAuthorizationGrantDownscopeClientPoliciesTest extends BaseAbstractJWTAuthorizationGrantTest {
 
     @InjectRealm(config = JWTAuthorizationGranthRealmConfig.class)

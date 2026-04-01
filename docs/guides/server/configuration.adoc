@@ -43,6 +43,9 @@ Based on the priority of application, the value that is used at startup is `cliV
 
 If `--db-url=cliValue` had not been used, the applied value would be `KC_DB_URL=envVarValue`. If the value were not applied by either the command line or an environment variable, `db-url=confFileValue` would be used. If none of the previous values were applied, the value `kc.db-url=keystoreValue` would be used due to the lowest priority among the available configuration sources.
 
+{project_name} configuration options often map to lower-level Quarkus or spi options. We refer to these as first-class and second-class configuration respectively. 
+There are startup warnings to indicate if you are using a second-class option. For example if you try to directly use `quarkus.http.port`, you will be warned to use `kc.http-port` instead.
+
 == Formats for configuration
 The configuration uses a _unified-per-source_ format, which simplifies translation of a key/value pair from one configuration source to another. Note that these formats apply to spi options as well.
 
@@ -143,8 +146,6 @@ You can use only a https://github.com/keycloak/keycloak/blob/main/quarkus/runtim
 * No lock icon for a property in the Quarkus guide indicates a runtime property for Quarkus and {project_name}.
 
 You can also store Quarkus properties in a Java KeyStore.
-
-Note that some Quarkus properties are already mapped in the {project_name} configuration, such as `quarkus.http.port` and similar essential properties. If the property is used by {project_Name}, defining that property key in `quarkus.properties` has no effect. The {project_Name} configuration value takes precedence over the Quarkus property value.
 
 === Using special characters in values
 
