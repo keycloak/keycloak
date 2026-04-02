@@ -71,6 +71,20 @@ public class QuarkusKeycloakApplication extends KeycloakApplication<QuarkusKeycl
     }
 
     void onShutdownEvent(@Observes ShutdownEvent event) {
+        if (!KeycloakApplication.isBootstrapCompleted()) {
+            // Even if we check here that the Liquibase migration hasn't been started yet, it might start unless we lock it first.
+            // When asynchronous startup is not enabled, Quarkus will wait for the startup to complete first, so this a good fallback.
+            // Waiting for the full startup to be complete also avoids any error messages that would otherwise occur.
+            logger.debug("Bootstrap still in progress. Deferring shutdown to ensure that possible database schema migrations can complete.");
+            while (!KeycloakApplication.isBootstrapCompleted()) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e);
+                }
+            }
+        }
         shutdown();
     }
 
