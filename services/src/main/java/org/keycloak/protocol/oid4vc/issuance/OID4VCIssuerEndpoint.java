@@ -960,8 +960,7 @@ public class OID4VCIssuerEndpoint {
             String proofType = originalProofs != null ? originalProofs.getProofType() : null;
 
             for (String currentProof : allProofs) {
-                Proofs proofForIteration = new Proofs();
-                proofForIteration.setProofByType(proofType, currentProof);
+                Proofs proofForIteration = Proofs.create(proofType, currentProof);
                 // Creating credential with keybinding to the current proof
                 credentialRequest.setProofs(proofForIteration);
                 Object theCredential = getCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);

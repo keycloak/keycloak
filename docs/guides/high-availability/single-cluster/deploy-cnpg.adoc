@@ -19,10 +19,10 @@ CloudNativePG is an opensource operator that manages PostgreSQL clusters on {kub
 
 image::high-availability/cnpg-multi-az.dio.svg[]
 
-== Installing CloudNativePG
+== Install CloudNativePG
 
-[#single-cluster-cnpg-installing-operator]
-=== Installing the CloudNativePG Operator
+[#single-cluster-cnpg-install-operator]
+=== Install the CloudNativePG Operator
 
 Install the operator directly using the operator manifest:
 
@@ -50,7 +50,7 @@ deployment "cnpg-controller-manager" successfully rolled out
 
 It is possible to install the operator using other supported methods such as Helm Chart, OLM, or `cnpg` plugin for `kubectl`. See the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/installation_upgrade[CloudNativePG documentation] for details.
 
-=== Installing CloudNativePG Cluster
+=== Install CloudNativePG Cluster
 
 [IMPORTANT]
 ====
@@ -151,7 +151,7 @@ cnpg-keycloak-3   1/1     Running   0          10m   replica
 ----
 
 
-=== Monitoring of the CloudNativePG cluster
+=== Monitor the CloudNativePG cluster
 
 Monitoring of CloudNativePG clusters leverages https://prometheus.io/[Prometheus] and https://grafana.com/[Grafana].
 

@@ -35,12 +35,12 @@ Perform these steps once for each ROSA cluster that contains a {project_name} de
 
 include::../partials/aurora/aurora-create-peering-connections.adoc[]
 
-== Verifying the connection
+== Verify the connection
 
 include::../partials/aurora/aurora-verify-peering-connections.adoc[]
 
-[#multi-cluster-aurora-connecting]
-== Connecting Aurora database with {project_name}
+[#multi-cluster-aurora-connect]
+== Connect Aurora database with {project_name}
 
 Now that an Aurora database has been established and linked with all of your ROSA clusters, here are the relevant {project_name} CR options to connect the Aurora database with {project_name}. These changes will be required in the <@links.ha id="multi-cluster-deploy-keycloak-kubernetes" /> {section}. The JDBC url is configured to use the Aurora database writer endpoint.
 

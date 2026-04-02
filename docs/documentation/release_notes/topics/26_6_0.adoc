@@ -52,6 +52,14 @@ endif::[]
 
 = Administration
 
+== Workflows (supported)
+
+Workflows allow administrators to automate and orchestrate realm administrative tasks, bringing key capabilities of Identity Governance and Administration (IGA) to {project_name}. By defining workflows in YAML format, you can automate the lifecycle of realm resources such as users and clients based on events, conditions, and schedules.
+
+In this release, Workflows is promoted from preview to supported. This release also includes new built-in steps, a troubleshooting guide, and various improvements to the workflow engine.
+
+For more details, see the link:{adminguide_link}#_managing_workflows[Managing workflows] chapter in the {adminguide_name}.
+
 == Organization groups
 
 Organizations now support isolated group hierarchies, allowing each organization to manage its own teams and departments without naming conflicts across the realm. This update includes Identity Provider mappers to automatically assign federated users to organization groups based on external claims. Group membership is automatically included in OIDC tokens and SAML assertions when an organization context is requested.
@@ -85,6 +93,10 @@ Thank you to https://github.com/tsaarni[Tero Saarni] for contributing this chang
 == Java 25 support
 
 {project_name} now supports running with OpenJDK 25.
+Please note that due to OpenJDK limitations, FIPS mode is only supported with OpenJDK 17 and 21 at the moment.
+FIPS support for OpenJDK 25 will come in later {project_name} releases.
+
+The server container image remains to use OpenJDK 21 for this release.
 
 == Zero-downtime patch releases (supported)
 

@@ -12,6 +12,7 @@ import java.util.Set;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -22,10 +23,12 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse.Credential;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oid4vc.model.ProofType;
+import org.keycloak.protocol.oid4vc.model.Proofs;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.oauth.OAuthClient;
-import org.keycloak.testsuite.util.oauth.AbstractOAuthClient;
 import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
@@ -44,9 +47,12 @@ import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.TEST_PASSWORD;
 import static org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestRealmConfig.TEST_REALM_NAME;
+import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createEcKeyPair;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.AttachmentKey;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_ATTACHMENT_KEY;
-import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIAL_OFFER_URI_ATTACHMENT_KEY;
+import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIALS_OFFER_URI_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CREDENTIAL_RESPONSE_ATTACHMENT_KEY;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.ISSUER_METADATA_ATTACHMENT_KEY;
 
@@ -69,8 +75,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class OID4VCBasicWallet {
 
-    final Keycloak keycloak;
-    final OAuthClient oauth;
+    private final Keycloak keycloak;
+    private final OAuthClient oauth;
 
     final Set<String> loginUsers = new HashSet<>();
 
@@ -79,25 +85,26 @@ public class OID4VCBasicWallet {
         this.oauth = oauth;
     }
 
-    // Composite Actions -----------------------------------------------------------------------------------------------
-
-    public CredentialsOffer createAuthCodeCredentialOffer(OID4VCTestContext ctx, String targetUser) {
+    /**
+     * A composite action to create a credential offer with 'authorization_code' grant
+     */
+    public CredentialsOffer createCredentialOfferAuthCode(OID4VCTestContext ctx, String targetUser) {
 
         // Get Issuer AccessToken
         //
-        AccessTokenResponse issTokenResponse = getIssuerAccessToken(ctx.getIssuer());
+        AccessTokenResponse issTokenResponse = getAccessToken(ctx.getIssuer());
 
         // Exclude scope: <credScope>
         // Require role: credential-offer-create
         String issToken = validateIssuerAccessToken(issTokenResponse,
-                List.of(), List.of(ctx.getCredScopeName()),
+                List.of(), List.of(ctx.getScope()),
                 List.of(CREDENTIAL_OFFER_CREATE.getName()), List.of());
 
         // Create Authorized Code CredentialOffer
         //
         CredentialOfferURI credOfferUri;
         try {
-            credOfferUri = createCredentialOffer(ctx, ctx.getCredConfigId())
+            credOfferUri = createCredentialOffer(ctx, ctx.getCredentialConfigurationId())
                     .preAuthorized(false)
                     .targetUser(targetUser)
                     .bearerToken(issToken)
@@ -108,7 +115,7 @@ public class OID4VCBasicWallet {
 
         // Fetch the CredentialsOffer
         //
-        CredentialsOffer credOffer = getCredentialOffer(ctx, credOfferUri)
+        CredentialsOffer credOffer = credentialsOfferRequest(ctx, credOfferUri)
                 .send().getCredentialsOffer();
 
         String issuerState = credOffer.getIssuerState();
@@ -117,24 +124,27 @@ public class OID4VCBasicWallet {
         return credOffer;
     }
 
-    public CredentialsOffer createPreAuthCredentialOffer(OID4VCTestContext ctx, String targetUser) {
+    /**
+     * A composite actions to create a credential offer with 'pre-authorized_code' grant
+     */
+    public CredentialsOffer createCredentialOfferPreAuth(OID4VCTestContext ctx, String targetUser) {
 
         // Get Issuer AccessToken
         //
-        AccessTokenResponse issTokenResponse = getIssuerAccessToken(ctx.getIssuer());
+        AccessTokenResponse issTokenResponse = getAccessToken(ctx.getIssuer());
         assertNotNull(issTokenResponse.getAccessToken(), "No accessToken");
 
         // Exclude scope: <credScope>
         // Require role: credential-offer-create
         String issToken = validateIssuerAccessToken(issTokenResponse,
-                List.of(), List.of(ctx.getCredScopeName()),
+                List.of(), List.of(ctx.getScope()),
                 List.of(CREDENTIAL_OFFER_CREATE.getName()), List.of());
 
         // Create Pre-Authorized CredentialOffer
         //
         CredentialOfferURI credOfferUri;
         try {
-            credOfferUri = createCredentialOffer(ctx, ctx.getCredConfigId())
+            credOfferUri = createCredentialOffer(ctx, ctx.getCredentialConfigurationId())
                     .preAuthorized(true)
                     .targetUser(targetUser)
                     .bearerToken(issToken)
@@ -145,7 +155,7 @@ public class OID4VCBasicWallet {
 
         // Fetch the CredentialsOffer
         //
-        CredentialsOffer credOffer = getCredentialOffer(ctx, credOfferUri)
+        CredentialsOffer credOffer = credentialsOfferRequest(ctx, credOfferUri)
                 .send().getCredentialsOffer();
 
         String preAuthCode = credOffer.getPreAuthorizedCode();
@@ -154,38 +164,72 @@ public class OID4VCBasicWallet {
         return credOffer;
     }
 
-    // Low Level Messages ----------------------------------------------------------------------------------------------
-
     public CredentialOfferUriRequest createCredentialOffer(OID4VCTestContext ctx, String credConfigId) {
         CredentialOfferUriRequest request = new CredentialOfferUriRequest(oauth, credConfigId) {
             public CredentialOfferUriResponse send() {
                 CredentialOfferUriResponse response = super.send();
-                ctx.putAttachment(CREDENTIAL_OFFER_URI_ATTACHMENT_KEY, response.getCredentialOfferURI());
+                ctx.putAttachment(CREDENTIALS_OFFER_URI_ATTACHMENT_KEY, response.getCredentialOfferURI());
                 return response;
             }
         };
         return request;
     }
 
-    public CredentialOfferRequest getCredentialOffer(OID4VCTestContext ctx, CredentialOfferURI credOfferUri) {
-        CredentialOfferRequest request = new CredentialOfferRequest(oauth, credOfferUri) {
-            public CredentialOfferResponse send() {
-                CredentialOfferResponse response = super.send();
-                ctx.putAttachment(CREDENTIALS_OFFER_ATTACHMENT_KEY, response.getCredentialsOffer());
-                return response;
-            }
-        };
-        return request;
+    public AccessTokenResponse getAccessToken(String username, String... scope) {
+        PkceGenerator pkce = PkceGenerator.s256();
+        AuthorizationEndpointResponse authResponse = authorizationRequest()
+                .scope(scope)
+                .codeChallenge(pkce)
+                .send(username, TEST_PASSWORD);
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No auth code");
+        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authCode)
+                .codeVerifier(pkce)
+                .send();
+        assertNotNull(tokenResponse.getAccessToken(), "No AccessToken");
+        return tokenResponse;
+    }
+
+    public CredentialIssuer getIssuerMetadata(OID4VCTestContext ctx) {
+        var issuerMetadata = Optional.ofNullable(ctx.getAttachment(ISSUER_METADATA_ATTACHMENT_KEY))
+                .orElse(oauth.oid4vc().doIssuerMetadataRequest().getMetadata());
+        ctx.putAttachment(ISSUER_METADATA_ATTACHMENT_KEY, issuerMetadata);
+        return issuerMetadata;
+    }
+
+    public OIDCConfigurationRepresentation getAuthorizationServerMetadata(OID4VCTestContext ctx) {
+        var authServerMetadata = Optional.ofNullable(ctx.getAttachment(AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY))
+                .orElse(oauth.doWellKnownRequest());
+        ctx.putAttachment(AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY, authServerMetadata);
+        return authServerMetadata;
     }
 
     public AuthorizationEndpointRequest authorizationRequest() {
-        AuthorizationEndpointRequest request = new AuthorizationEndpointRequest(oauth) {
+        AuthorizationEndpointRequest request = new AuthorizationEndpointRequest() {
             public AuthorizationEndpointResponse send(String username, String password) {
                 loginUsers.add(username);
                 return super.send(username, password);
             }
         };
         return request;
+    }
+
+    public Proofs generateJwtProof(OID4VCTestContext ctx, String user) {
+        String aud = getIssuerMetadata(ctx).getCredentialIssuer();
+        String nonce = oauth.oid4vc().nonceRequest().send().getNonce();
+        KeyWrapper kw = getECKeyPair(ctx, user, null);
+        return Proofs.create(ProofType.JWT, OID4VCProofTestUtils.generateJwtProof(aud, kw, nonce));
+    }
+
+    public KeyWrapper getECKeyPair(OID4VCTestContext ctx, String user, String keyId) {
+        String cacheKey = user + (keyId != null ? "_" + keyId : "");
+        AttachmentKey<KeyWrapper> attachmentKey = new AttachmentKey<>(cacheKey, KeyWrapper.class);
+        KeyWrapper kw = ctx.getAttachment(attachmentKey);
+        if (kw == null) {
+            kw = createEcKeyPair();
+            ctx.putAttachment(attachmentKey, kw);
+        }
+        return kw;
     }
 
     public AccessTokenRequest accessTokenRequest(OID4VCTestContext ctx, String authCode) {
@@ -199,11 +243,22 @@ public class OID4VCBasicWallet {
         return request;
     }
 
-    public PreAuthorizedCodeGrantRequest preAuthAccessTokenRequest(OID4VCTestContext ctx, String preAuthCode) {
+    public PreAuthorizedCodeGrantRequest accessTokenRequestPreAuth(OID4VCTestContext ctx, String preAuthCode) {
         PreAuthorizedCodeGrantRequest request = new PreAuthorizedCodeGrantRequest(oauth, preAuthCode) {
             public AccessTokenResponse send() {
                 AccessTokenResponse response = super.send();
                 ctx.putAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY, response);
+                return response;
+            }
+        };
+        return request;
+    }
+
+    public CredentialOfferRequest credentialsOfferRequest(OID4VCTestContext ctx, CredentialOfferURI credOfferUri) {
+        CredentialOfferRequest request = new CredentialOfferRequest(oauth, credOfferUri) {
+            public CredentialOfferResponse send() {
+                CredentialOfferResponse response = super.send();
+                ctx.putAttachment(CREDENTIALS_OFFER_ATTACHMENT_KEY, response.getCredentialsOffer());
                 return response;
             }
         };
@@ -221,28 +276,6 @@ public class OID4VCBasicWallet {
         };
         request.bearerToken(accessToken);
         return request;
-    }
-
-    public AccessTokenResponse getIssuerAccessToken(String username) {
-        PkceGenerator pkce = PkceGenerator.s256();
-        AuthorizationEndpointResponse authResponse = authorizationRequest()
-                .codeChallenge(pkce)
-                .send(username, TEST_PASSWORD);
-
-        String authCode = authResponse.getCode();
-        assertNotNull(authCode, "Authorization code (issuer) should not be null");
-        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authCode)
-                .codeVerifier(pkce)
-                .send();
-        assertNotNull(tokenResponse.getAccessToken(), "Issuer AccessToken should not be null");
-        return tokenResponse;
-    }
-
-    public CredentialIssuer getIssuerMetadata(OID4VCTestContext ctx) {
-        CredentialIssuer issuerMetadata = Optional.ofNullable(ctx.getAttachment(ISSUER_METADATA_ATTACHMENT_KEY))
-                .orElse(oauth.oid4vc().doIssuerMetadataRequest().getMetadata());
-        ctx.putAttachment(ISSUER_METADATA_ATTACHMENT_KEY, issuerMetadata);
-        return issuerMetadata;
     }
 
     /**
@@ -364,20 +397,39 @@ public class OID4VCBasicWallet {
         assertEquals(1, jwtAuthDetails.size(), "Expected one authorization_details entry");
         var jwtAuthDetail = jwtAuthDetails.get(0);
 
-        assertEquals(ctx.getCredConfigId(), tokenAuthDetail.getCredentialConfigurationId());
+        assertEquals(ctx.getCredentialConfigurationId(), tokenAuthDetail.getCredentialConfigurationId());
         assertEquals(tokenAuthDetail, jwtAuthDetail);
 
         return accessToken;
     }
 
-    public static class AuthorizationEndpointRequest {
+    /**
+     * The Authorization request/response follows the known pattern that we have for other message exchanges on
+     * 'OID4VCClient'. The response does not only capture a successful authorization, but (like the other APIs)
+     * also error cases, like ...
+     *
+     *      - login page does not get displayed, because of an invalid request
+     *      - invalid credentials on login page (i.e. redirect url without code)
+     *
+     * In all three cases (i.e. success + 2x error cases), we like to return a response as soon as we have it,
+     * instead of waiting for a timeout like we currently have with authorization through the 'OAuthClient'.
+     *
+     * This API also abstracts to the low level details of web driver and login forms that are specific for the interactive
+     * Authorization Code Flow. In future, we can use the same API for non-interactive flows (e.g. as required by EBSI)
+     *
+     * Historically, this Authorization request abstractions was with the 'OID4VCClient', rather than with the 'OAuthClient'
+     * because we did not want to expose all Keycloak tests to go through this still experimental code. It never got
+     * approved there and is now only available through the Wallet. We can assume that code similar to this would be found
+     * in a real OID4VCI Wallet.
+     *
+     * 'OID4VCPublicClientTest' covers authorization success and the error cases.
+     */
+    public class AuthorizationEndpointRequest {
 
-        protected final AbstractOAuthClient<?> client;
         protected final LoginUrlBuilder loginForm;
 
-        public AuthorizationEndpointRequest(AbstractOAuthClient<?> client) {
-            this.client = client;
-            this.loginForm = client.loginForm();
+        public AuthorizationEndpointRequest() {
+            this.loginForm = oauth.loginForm();
         }
 
         public AuthorizationEndpointRequest authorizationDetails(OID4VCAuthorizationDetail authDetail) {
@@ -401,7 +453,9 @@ public class OID4VCBasicWallet {
         }
 
         public AuthorizationEndpointRequest scope(String... scopes) {
-            loginForm.scope(scopes);
+            if (scopes != null && scopes.length > 0) {
+                loginForm.scope(scopes);
+            }
             return this;
         }
 
@@ -410,9 +464,11 @@ public class OID4VCBasicWallet {
         }
 
         public AuthorizationEndpointResponse send(String username, String password) {
+            // [TODO #47649] OAuthClient cannot handle invalid authorization requests
+            // https://github.com/keycloak/keycloak/issues/47649
             openLoginForm();
-            client.fillLoginForm(username, password);
-            return client.parseLoginResponse();
+            oauth.fillLoginForm(username, password);
+            return oauth.parseLoginResponse();
         }
     }
 }

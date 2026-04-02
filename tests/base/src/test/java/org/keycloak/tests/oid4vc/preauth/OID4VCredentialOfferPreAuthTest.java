@@ -13,13 +13,11 @@ import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.jwtProofs;
@@ -45,14 +43,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest(config = OID4VCIssuerTestBase.VCTestServerWithPreAuthCodeEnabled.class)
 public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
-    OID4VCBasicWallet wallet;
-
-    @BeforeEach
-    void beforeEach() {
-        wallet = new OID4VCBasicWallet(keycloak, oauth);
-        wallet.logout();
-    }
-
     @Test
     public void testPreAuthOffer_DisabledUser() {
 
@@ -66,7 +56,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         try {
             IllegalStateException error = assertThrows(IllegalStateException.class,
-                    () -> wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder()));
+                    () -> wallet.createCredentialOfferPreAuth(ctx, ctx.getHolder()));
             assertTrue(error.getMessage().contains("User 'alice' disabled"), error.getMessage());
         } finally {
             userRep.setEnabled(true);
@@ -81,12 +71,12 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         // Create Pre-Authorized CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, null);
+        CredentialsOffer credOffer = wallet.createCredentialOfferPreAuth(ctx, null);
         String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken
         //
-        AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode).send();
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
@@ -111,12 +101,12 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         // Create Pre-Authorized CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createPreAuthCredentialOffer(ctx, ctx.getHolder());
+        CredentialsOffer credOffer = wallet.createCredentialOfferPreAuth(ctx, ctx.getHolder());
         String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken
         //
-        AccessTokenResponse tokenResponse = wallet.preAuthAccessTokenRequest(ctx, preAuthCode).send();
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
         assertTrue(tokenResponse.isSuccess(), tokenResponse.getErrorDescription());
 
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);

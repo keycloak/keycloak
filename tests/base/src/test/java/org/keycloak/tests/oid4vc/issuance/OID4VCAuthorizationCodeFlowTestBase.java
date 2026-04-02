@@ -25,7 +25,6 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testframework.events.EventAssertion;
-import org.keycloak.tests.oid4vc.OID4VCBasicWallet;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
@@ -62,7 +61,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
     private static final Logger logger = Logger.getLogger(OID4VCAuthorizationCodeFlowTestBase.class);
 
-    protected OID4VCBasicWallet wallet;
     protected OID4VCTestContext ctx;
 
     /** Returns the credential format supported by this test (e.g. {@code "jwt_vc"} or {@code "sd_jwt_vc"}). */
@@ -82,7 +80,6 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
     @BeforeEach
     void setUp() {
-        wallet = new OID4VCBasicWallet(keycloak, oauth);
         ctx = new OID4VCTestContext(client, getCredentialScope());
         // Clean up before starting
         cleanupState();
@@ -224,7 +221,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         AccessTokenResponse tokenResponse = authzCodeFlow(issuer);
 
         CredentialRequest credentialRequest = new CredentialRequest();
-        credentialRequest.setCredentialConfigurationId(ctx.getCredConfigId());
+        credentialRequest.setCredentialConfigurationId(ctx.getCredentialConfigurationId());
         credentialRequest.setProofs(newJwtProofs());
 
         Oid4vcCredentialResponse credentialResponse = oauth.oid4vc()
@@ -350,13 +347,13 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         // We USE SSO here instead of wallet.logout() because logout would invalidate tokenWithoutMandatory's session.
         OID4VCAuthorizationDetail authDetailWithMandatory = new OID4VCAuthorizationDetail();
         authDetailWithMandatory.setType(OPENID_CREDENTIAL);
-        authDetailWithMandatory.setCredentialConfigurationId(ctx.getCredConfigId());
+        authDetailWithMandatory.setCredentialConfigurationId(ctx.getCredentialConfigurationId());
         authDetailWithMandatory.setClaims(mandatoryLastNameClaims());
         authDetailWithMandatory.setLocations(Collections.singletonList(issuer.getCredentialIssuer()));
 
         // Manually navigate to the authorization URL (exploiting SSO session from Flow 1)
         wallet.authorizationRequest()
-                .scope(ctx.getCredScopeName())
+                .scope(ctx.getScope())
                 .authorizationDetails(authDetailWithMandatory)
                 .openLoginForm();
         
@@ -537,7 +534,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
         // Login with scope only, no explicit authorization_details
         AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
-                .scope(ctx.getCredScopeName())
+                .scope(ctx.getScope())
                 .send(TEST_USER, TEST_PASSWORD);
         String code = authResponse.getCode();
         assertNotNull(code, "Authorization code should not be null");
@@ -551,7 +548,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         List<OID4VCAuthorizationDetail> authDetails = tokenResponse.getOID4VCAuthorizationDetails();
         assertNotNull(authDetails, "authorization_details should be derived from requested OID4VC scope");
         assertFalse(authDetails.isEmpty(), "authorization_details should not be empty");
-        assertEquals(ctx.getCredConfigId(),
+        assertEquals(ctx.getCredentialConfigurationId(),
                 authDetails.get(0).getCredentialConfigurationId(),
                 "credential_configuration_id should match requested scope");
         assertNotNull(authDetails.get(0).getCredentialIdentifiers(), "credential_identifiers should be present");
@@ -701,7 +698,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
         // Use loginForm directly to inject the malformed JSON as a raw parameter
         AuthorizationEndpointResponse authResponse = oauth.loginForm()
-                .scope(ctx.getCredScopeName())
+                .scope(ctx.getScope())
                 .param(OAuth2Constants.AUTHORIZATION_DETAILS, "invalid-json")
                 .doLogin(TEST_USER, TEST_PASSWORD);
         String code = authResponse.getCode();
@@ -851,12 +848,12 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
 
         OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
         authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialConfigurationId(ctx.getCredConfigId());
+        authDetail.setCredentialConfigurationId(ctx.getCredentialConfigurationId());
         authDetail.setClaims(claimsForAuthorizationDetailsParameter);
         authDetail.setLocations(Collections.singletonList(issuer.getCredentialIssuer()));
 
         AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
-                .scope(ctx.getCredScopeName())
+                .scope(ctx.getScope())
                 .authorizationDetails(authDetail)
                 .send(TEST_USER, TEST_PASSWORD);
         String code = authResponse.getCode();
@@ -951,7 +948,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         authDetail.setType(OPENID_CREDENTIAL);
         authDetail.setCredentialConfigurationId(credentialConfigurationId != null
                 ? credentialConfigurationId
-                : ctx.getCredConfigId());
+                : ctx.getCredentialConfigurationId());
         authDetail.setLocations(Collections.singletonList(issuer.getCredentialIssuer()));
         return authDetail;
     }
@@ -959,7 +956,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
     /** Performs an authorization code login with the given authorization detail. */
     protected String performAuthorizationCodeLoginWithAuthorizationDetails(OID4VCAuthorizationDetail authDetail) {
         AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
-                .scope(ctx.getCredScopeName())
+                .scope(ctx.getScope())
                 .authorizationDetails(authDetail)
                 .send(TEST_USER, TEST_PASSWORD);
         String code = authResponse.getCode();
