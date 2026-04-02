@@ -126,6 +126,11 @@ public class LDAPConfig {
         return vendor != null && vendor.equals(LDAPConstants.VENDOR_ACTIVE_DIRECTORY);
     }
 
+    public boolean isRHDS() {
+        String vendor = getVendor();
+        return vendor != null && vendor.equals(LDAPConstants.VENDOR_RHDS);
+    }
+
     public boolean isValidatePasswordPolicy() {
         String validatePPolicy = config.getFirst(LDAPConstants.VALIDATE_PASSWORD_POLICY);
         return Boolean.parseBoolean(validatePPolicy);
