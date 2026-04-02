@@ -30,6 +30,10 @@ of the realm.
 
 Texts of these message bundles can be overwritten by realm-specific values, which are manageable by the UI and API.
 
+Each theme can have a locale specific description in the message key `theme.<theme-name>.<type>.description`.
+For example, use the key `theme.keycloak.v3.account.description` to provide a description for the `keycloak.v3` theme for the Account Console.
+As usual, the English message will be the fallback for all other languages.
+
 == Adding a language to a theme
 
 .Procedure
