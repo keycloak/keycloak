@@ -28,7 +28,12 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.SchedulingSpec;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
@@ -72,6 +77,12 @@ public final class Utils {
     public static Map<String, String> allInstanceLabels(HasMetadata primary) {
         var labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
         labels.put(Constants.INSTANCE_LABEL, primary.getMetadata().getName());
+        if (primary instanceof Keycloak) {
+            Optional.ofNullable(((Keycloak) primary).getSpec())
+                    .map(KeycloakSpec::getSchedulingSpec)
+                    .map(SchedulingSpec::getPodLabels)
+                    .ifPresent(labels::putAll);
+        }
         return labels;
     }
 

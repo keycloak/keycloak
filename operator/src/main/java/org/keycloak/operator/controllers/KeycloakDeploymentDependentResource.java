@@ -299,7 +299,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
 
     private StatefulSet createBaseDeployment(Keycloak keycloakCR, Context<Keycloak> context, Config operatorConfig) {
         Map<String, String> labels = Utils.allInstanceLabels(keycloakCR);
-        labels.put("app.kubernetes.io/component", "server");
+        if (!labels.containsKey("app.kubernetes.io/component")) {
+            labels.put("app.kubernetes.io/component", "server");
+        }
         Map<String, String> schedulingLabels = new LinkedHashMap<>(labels);
         if (operatorConfig.keycloak().podLabels() != null) {
             labels.putAll(operatorConfig.keycloak().podLabels());
