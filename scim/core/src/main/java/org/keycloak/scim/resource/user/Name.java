@@ -1,4 +1,4 @@
-package org.keycloak.scim.resource.common;
+package org.keycloak.scim.resource.user;
 
 import java.util.Optional;
 

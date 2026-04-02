@@ -1,4 +1,6 @@
-package org.keycloak.scim.resource.common;
+package org.keycloak.scim.resource.user;
+
+import org.keycloak.scim.resource.common.MultiValuedAttribute;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

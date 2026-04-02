@@ -25,11 +25,12 @@ import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
-import org.keycloak.scim.resource.common.Email;
-import org.keycloak.scim.resource.common.Name;
+import org.keycloak.scim.resource.Scim;
+import org.keycloak.scim.resource.user.Email;
 import org.keycloak.scim.resource.user.EnterpriseUser;
 import org.keycloak.scim.resource.user.EnterpriseUser.Manager;
 import org.keycloak.scim.resource.user.GroupMembership;
+import org.keycloak.scim.resource.user.Name;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
@@ -39,6 +40,7 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.util.ApiUtil;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -1193,6 +1195,50 @@ public class UserTest extends AbstractScimTest {
         user.setNickName("mynickname");
 
         return user;
+    }
+
+    @Test
+    public void testCreateWithInvalidAttribute() {
+        User user = new User() {
+            @Override
+            public Set<String> getSchemas() {
+                return Set.of(Scim.USER_CORE_SCHEMA);
+            }
+
+            @JsonProperty("invalidAttribute")
+            public String getInvalidAttribute() {
+                return "invalidValue";
+            }
+        };
+
+        try {
+            client.users().create(user);
+            fail("should fail because of invalid attribute");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertNotNull(error.getDetail());
+            assertTrue(error.getDetail().contains("invalidAttribute"));
+        }
+    }
+
+    @Test
+    public void testCreateDuplicate() {
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        client.users().create(user);
+
+        try {
+            client.users().create(user);
+            fail("should fail because of duplicate user");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(409, error.getStatusInt());
+            assertEquals("uniqueness", error.getScimType());
+            assertNotNull(error.getDetail());
+        }
     }
 
     private void addEnterpriseUserUserProfileAttributes() {

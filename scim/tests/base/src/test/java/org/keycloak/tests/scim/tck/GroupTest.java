@@ -9,7 +9,9 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.scim.client.ResourceFilter;
+import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
+import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.group.Group;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -24,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @KeycloakIntegrationTest(config = ScimServerConfig.class)
 public class GroupTest extends AbstractScimTest {
@@ -212,5 +215,23 @@ public class GroupTest extends AbstractScimTest {
         assertFalse(response.getResources().isEmpty());
         assertThat(response.getTotalResults(), is(1));
         assertThat(response.getResources().get(0).getExternalId(), is(group2.getExternalId()));
+    }
+
+    @Test
+    public void testCreateDuplicate() {
+        Group group = new Group();
+        group.setDisplayName(KeycloakModelUtils.generateId());
+        client.groups().create(group);
+
+        try {
+            client.groups().create(group);
+            fail("should fail because of duplicate group");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(409, error.getStatusInt());
+            assertEquals("uniqueness", error.getScimType());
+            assertNotNull(error.getDetail());
+        }
     }
 }
