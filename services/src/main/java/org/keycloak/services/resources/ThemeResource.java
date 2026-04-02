@@ -46,6 +46,7 @@ import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.Provider;
 
 import org.keycloak.common.Version;
+import org.keycloak.common.util.Environment;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.encoding.ResourceEncodingHelper;
 import org.keycloak.encoding.ResourceEncodingProvider;
@@ -92,6 +93,10 @@ public class ThemeResource {
         final Optional<Theme.Type> type = getThemeType(themeType);
 
         if (type.isEmpty()) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+
+        if (path.endsWith(".js.map") && !Environment.isDevMode()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
