@@ -1312,40 +1312,6 @@
             </build>
         </profile>
 
-        <profile>
-            <id>clean-jpa</id>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.liquibase</groupId>
-                            <artifactId>liquibase-maven-plugin</artifactId>
-                            <configuration>
-                                <changeLogFile>META-INF/jpa-changelog-master.xml</changeLogFile>
-
-                                <url>${keycloak.connectionsJpa.url}</url>
-                                <driver>${keycloak.connectionsJpa.driver}</driver>
-                                <username>${keycloak.connectionsJpa.user}</username>
-                                <password>${keycloak.connectionsJpa.password}</password>
-
-                                <promptOnNonLocalDatabase>false</promptOnNonLocalDatabase>
-                                <databaseClass>${keycloak.connectionsJpa.liquibaseDatabaseClass}</databaseClass>
-                            </configuration>
-                            <executions>
-                                <execution>
-                                    <id>clean-jpa</id>
-                                    <phase>clean</phase>
-                                    <goals>
-                                        <goal>dropAll</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
-
         <!-- Profiles for migration tests-->
         <profile>
             <id>auth-server-migration</id>
@@ -1746,10 +1712,6 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>xml-maven-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.liquibase</groupId>
-                        <artifactId>liquibase-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
