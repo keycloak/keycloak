@@ -38,12 +38,14 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -945,6 +947,29 @@ public class StandardBaseTokenExchangeV2Test extends AbstractBaseTokenExchangeTe
             // Cleanup: remove client scope
             realm.admin().clientScopes().get(clientScopeId).remove();
         }
+    }
+
+    @Test
+    public void testSenderConstrainedTokenRejection() throws Exception {
+        // Create a protocol mapper that adds the cnf claim
+        ProtocolMapperModel mapper = HardcodedClaim.create("test-cnf-mapper", "cnf", "{\"jkt\":\"test-thumbprint-12345\"}", "JSON", true,  false, false);
+
+        Response mapperResponse = subjectClient.admin().getProtocolMappers().createMapper(ModelToRepresentation.toRepresentation(mapper));
+        String mapperId = ApiUtil.getCreatedId(mapperResponse);
+
+        // Get a new token with the cnf claim
+        String senderConstrainedToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
+        AccessToken token = TokenVerifier.create(senderConstrainedToken, AccessToken.class).parse().getToken();
+        assertNotNull(token.getConfirmation());
+
+        AccessTokenResponse response = tokenExchange(senderConstrainedToken, "requester-client", "secret", null, null);
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+        assertEquals("Sender-constrained tokens are not supported as subject_token. Use a Bearer token instead.", response.getErrorDescription());
+
+        subjectClient.admin().getProtocolMappers().delete(mapperId);
+
     }
 
 }

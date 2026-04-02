@@ -57,7 +57,6 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
 import org.hamcrest.MatcherAssert;
-import org.junit.jupiter.api.BeforeEach;
 
 import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
 
