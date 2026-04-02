@@ -74,20 +74,40 @@ cnpg-keycloak-3  0/8000000    Standby (sync)    OK      BestEffort  1.28.0      
 
 . Find a candidate for a new primary instance.
 +
-In the _Streaming Replication status_ section note the values in the columns: `State` and `Sync State`.
+In the _Streaming Replication status_ table note the values in the columns: `State` and `Sync State`.
 +
 Before performing the switchover it is important to ensure that the candidate instance is in the `streaming` state, which means that it is actively receiving data from the primary, and that its Sync State is either `quorum` or `sync`.
 +
 [IMPORTANT]
 ====
-For replicas with the Sync State value of `potential` or `async` the replication is _asynchronous,_ which means that there is no guaranty that the particular replica has all the changes confirmed by the primary instance as commited. When selecting a new primary instance these replicas should be avoided.
+For replicas with the Sync State value of `potential` or `async` the replication is _asynchronous,_ which means that there is no guarantee that the particular replica has all the changes confirmed by the primary instance as committed. When selecting a new primary instance these replicas should be avoided.
 ====
 +
 In case the cluster is configured for a _quorum-based synchronous replication_ as described in the <@links.ha id="single-cluster-deploy-cnpg" /> {section}, it is possible to promote any of the available replicas.
 +
-In case the cluster is configured for a _priority-based synchronous replication_, select the replica which the Sync State value of `sync`.
+In case the cluster is configured for a _priority-based synchronous replication_, select the replica with the Sync State value of `sync`.
++
+.Sync State
+[%autowidth]
+|===
+| Sync State | Replication | Safe to promote
+
+| `quorum` | Quorum Synchronous | Safe
+| `sync` | Synchronous | Safe
+| `potential` | Asynchronous ^1^ | Unsafe 
+| `async` | Asynchronous | Unsafe
+|===
+.Table footnotes:
+^1^ May be promoted to a synchronous standby if the current synchronous standby fails.
 
 . Promote a new primary instance.
++
+[IMPORTANT]
+====
+Initiating a switchover terminates existing connections to the primary instance. It is expected that the service will be unavailable until the new primary instance is promoted.
+
+Shutdown of the primary instance may take some time, depending on how long it takes to finish its replication and possible archiving tasks. The maximum duration of this process can be controlled with the `.spec.switchoverDelay` setting. See the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/instance_manager#shutdown-of-the-primary-during-a-switchover[CloudNativePG documentation] for details.
+====
 +
 Once a candidate for the new primary instance is identified, for example `cnpg-keycloak-2` from the above example, use the following command to promote it.
 +
@@ -118,12 +138,6 @@ kubectl -n cnpg-keycloak wait --for condition=Ready --timeout=30s cluster cnpg-k
 cluster.postgresql.cnpg.io/cnpg-keycloak condition met
 ----
 +
-The shutdown of the primary instance may take some time, depending on how long it takes to finish its replication and possible archiving tasks. The maximum duration of this process can be controlled with the `.spec.switchoverDelay` setting. See the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/instance_manager#shutdown-of-the-primary-during-a-switchover[CloudNativePG documentation] for details.
-+
-[IMPORTANT]
-====
-Initiating a switchover terminates existing connections to the primary instance. It is expected that the service will be unavailable until the new primary instance is promoted.
-====
 
 . Verify the switchover by checking the cluster status again.
 +
@@ -166,5 +180,7 @@ cnpg-keycloak-3  1/2B011FB0   Standby (sync)    OK      BestEffort  1.28.0      
 ----
 <1> Note that the role of the _primary writer instance_ has been switched over to `cnpg-keycloak-2`.
 <2> Note that the role of the original primary instance `cnpg-keycloak-1` has changed to replica.
+
+For possible troubleshooting scenarios refer to the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/troubleshooting[CloudNativePG documentation].
 
 </@tmpl.guide>
