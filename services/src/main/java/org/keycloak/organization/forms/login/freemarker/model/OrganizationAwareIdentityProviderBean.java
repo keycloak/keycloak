@@ -71,7 +71,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
 
         Set<String> allBrokerAliases = new HashSet<>(linkedBrokerAliases);
 
-        allBrokerAliases.addAll(getOrganizationBrokersAvailableToUnlinkedMembers(context.getUser()));
+        allBrokerAliases.addAll(getOrgBrokersShownWhenLinkedElsewhere(context.getUser()));
 
         return allBrokerAliases;
     }
@@ -143,7 +143,7 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
         return Booleans.isFalse(idp.isHideOnLogin());
     }
 
-    private Set<String> getOrganizationBrokersAvailableToUnlinkedMembers(UserModel user) {
+    private Set<String> getOrgBrokersShownWhenLinkedElsewhere(UserModel user) {
         OrganizationProvider provider = Organizations.getProvider(session);
 
         if (!Organizations.isEnabledAndOrganizationsPresent(provider)) {
@@ -153,12 +153,12 @@ public class OrganizationAwareIdentityProviderBean extends IdentityProviderBean 
         return provider.getByMember(user)
                 .filter(OrganizationModel::isEnabled)
                 .flatMap(OrganizationModel::getIdentityProviders)
-                .filter(this::isAvailableToUnlinkedMembers)
+                .filter(this::isShownWhenLinkedElsewhere)
                 .map(IdentityProviderModel::getAlias)
                 .collect(Collectors.toSet());
     }
 
-    private boolean isAvailableToUnlinkedMembers(IdentityProviderModel idp) {
+    private boolean isShownWhenLinkedElsewhere(IdentityProviderModel idp) {
         if (idp.getOrganizationId() == null) {
             return false;
         }
