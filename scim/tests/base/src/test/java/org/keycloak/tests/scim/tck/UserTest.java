@@ -629,7 +629,7 @@ public class UserTest extends AbstractScimTest {
 
         // patch a multivalued attribute using a filter in the path that matches an existing value
         client.users().patch(expected.getId(), PatchRequest.create()
-                .replace("emails[value ew \"patched4.org\"].value", expected.getEmail().replace("patched4.org", "filtered.org"))
+                .replace("emails[value eq \"patched4.org\"].value", expected.getEmail().replace("patched4.org", "filtered.org"))
                 .build());
         actual = client.users().get(expected.getId());
         expected.setEmail(expected.getEmail().replace("patched4.org", "filtered.org"));
@@ -757,7 +757,7 @@ public class UserTest extends AbstractScimTest {
         user.addGroup(groupC1.getId());
 
         User expected = client.users().create(user);
-        User actual = client.users().get(expected.getId());
+        User actual = client.users().get(expected.getId(), List.of("groups"));
 
         List<GroupMembership> groups = actual.getGroups();
 
@@ -769,7 +769,7 @@ public class UserTest extends AbstractScimTest {
         client.users().patch(expected.getId(), PatchRequest.create()
                 .remove("groups[value eq \"" + groupC1.getId() + "\"]")
                 .build());
-        actual = client.users().get(expected.getId());
+        actual = client.users().get(expected.getId(), List.of("groups"));
         groups = actual.getGroups();
         assertNotNull(groups);
         assertEquals(5, groups.size());
@@ -777,7 +777,7 @@ public class UserTest extends AbstractScimTest {
         client.users().patch(expected.getId(), PatchRequest.create()
                 .remove("groups[value eq \"" + groupA1.getId() + "\" or value eq \"" + groupB.getId() + "\"]")
                 .build());
-        actual = client.users().get(expected.getId());
+        actual = client.users().get(expected.getId(), List.of("groups"));
         groups = actual.getGroups();
         assertNotNull(groups);
         assertEquals(3, groups.size());
@@ -785,7 +785,7 @@ public class UserTest extends AbstractScimTest {
         client.users().patch(expected.getId(), PatchRequest.create()
                 .add("groups", groupC1.getId())
                 .build());
-        actual = client.users().get(expected.getId());
+        actual = client.users().get(expected.getId(), List.of("groups"));
         groups = actual.getGroups();
         assertNotNull(groups);
         assertEquals(5, groups.size());
@@ -794,7 +794,7 @@ public class UserTest extends AbstractScimTest {
                 .add("groups", groupA1.getId())
                 .add("groups", groupB.getId())
                 .build());
-        actual = client.users().get(expected.getId());
+        actual = client.users().get(expected.getId(), List.of("groups"));
         groups = actual.getGroups();
         assertNotNull(groups);
         assertEquals(7, groups.size());
@@ -803,7 +803,7 @@ public class UserTest extends AbstractScimTest {
         expected.getGroups().clear();
         expected.addGroup(groupA.getId());
         client.users().update(expected);
-        actual = client.users().get(expected.getId());
+        actual = client.users().get(expected.getId(), List.of("groups"));
         groups = actual.getGroups();
         assertNotNull(groups);
         assertEquals(1, groups.size());

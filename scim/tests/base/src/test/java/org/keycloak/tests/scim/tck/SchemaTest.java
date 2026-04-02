@@ -102,10 +102,11 @@ public class SchemaTest extends AbstractScimTest {
                 .map(Schema.Attribute::getName)
                 .collect(Collectors.toSet());
 
-        assertEquals(2, attributeNames.size(), "Group schema should have exactly 2 attributes");
+        assertEquals(3, attributeNames.size(), "Group schema should have exactly 3 attributes");
 
         assertAttribute(findAttribute(schema, "displayName"), "string", false, false, false, "readWrite", "none");
         assertAttribute(findAttribute(schema, "externalId"), "string", false, false, true, "immutable", "none");
+        assertAttribute(findAttribute(schema, "members"), "complex", true, false, true, "readWrite", "none");
     }
 
     @Test

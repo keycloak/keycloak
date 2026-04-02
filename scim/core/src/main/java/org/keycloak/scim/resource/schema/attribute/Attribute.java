@@ -239,7 +239,7 @@ public class Attribute<M extends Model, R extends ResourceTypeRepresentation> {
 
         if (Attribute.RETURNED_REQUEST.equals(returned)) {
             // No attributes parameter specified - returned: request attributes are not returned by default
-            return true;
+            return !isPresent(schema, requestedAttributes);
         }
 
         return isPresent(schema, excludedAttributes);
