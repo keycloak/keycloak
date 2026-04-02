@@ -32,8 +32,6 @@ If the system is not in FIPS mode, you can enable it with the following command,
 fips-mode-setup --enable
 ----
 
-WARNING: Due to OpenJDK limitations, FIPS mode is only supported with OpenJDK 17 and 21 in {project_name}. Consider this when choosing the Java version for your production deployment.
-
 == BouncyCastle library
 
 {project_name} internally uses the BouncyCastle library for many cryptography utilities. Please note that the default version of the BouncyCastle library that shipped with {project_name} is not FIPS compliant;

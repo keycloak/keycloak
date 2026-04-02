@@ -93,10 +93,8 @@ Thank you to https://github.com/tsaarni[Tero Saarni] for contributing this chang
 == Java 25 support
 
 {project_name} now supports running with OpenJDK 25.
-Please note that due to OpenJDK limitations, FIPS mode is only supported with OpenJDK 17 and 21 at the moment.
-FIPS support for OpenJDK 25 will come in later {project_name} releases.
-
-The server container image remains to use OpenJDK 21 for this release.
+The server container image remains to use OpenJDK 21 for now to support FIPS mode. For details see the
+note in the FIPS guide.
 
 == Zero-downtime patch releases (supported)
 
