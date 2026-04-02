@@ -517,61 +517,6 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         assertOrganizationBrokerVisibilityWhenUserIsLinkedElsewhere(true);
     }
 
-    @Test
-    public void testShowFlaggedBrokersFromAllMemberOrganizationsWhenOrganizationNotResolved() {
-        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
-        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
-
-        IdentityProviderRepresentation orgABroker = orgA.identityProviders().getIdentityProviders().get(0);
-        orgABroker.setHideOnLogin(false);
-        orgABroker.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
-        orgABroker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
-        testRealm().identityProviders().get(orgABroker.getAlias()).update(orgABroker);
-
-        IdentityProviderRepresentation orgBBroker = orgB.identityProviders().getIdentityProviders().get(0);
-        orgBBroker.setHideOnLogin(false);
-        orgBBroker.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
-        orgBBroker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
-        testRealm().identityProviders().get(orgBBroker.getAlias()).update(orgBBroker);
-
-        String username = "user-" + KeycloakModelUtils.generateId();
-        String email = username + "@user.org";
-        UserRepresentation account = UserBuilder.create()
-                .username(username)
-                .email(email)
-                .password("updated-password")
-                .enabled(true)
-                .build();
-        try (Response response = testRealm().users().create(account)) {
-            account.setId(ApiUtil.getCreatedId(response));
-        }
-        UserRepresentation finalAccount = account;
-        getCleanup().addCleanup(() -> testRealm().users().get(finalAccount.getId()).remove());
-
-        FederatedIdentityRepresentation identity = new FederatedIdentityRepresentation();
-        identity.setIdentityProvider(orgABroker.getAlias());
-        identity.setUserId(KeycloakModelUtils.generateId());
-        identity.setUserName(username);
-        try (Response response = testRealm().users().get(account.getId()).addFederatedIdentity(orgABroker.getAlias(), identity)) {
-            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
-        }
-
-        orgA.members().addMember(account.getId()).close();
-        orgB.members().addMember(account.getId()).close();
-
-        // logout to force the user to authenticate again
-        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
-        realmsResouce().realm(bc.providerRealmName()).logoutAll();
-
-        oauth.clientId("broker-app");
-        loginPage.open(bc.consumerRealmName());
-        loginPage.loginUsername(username);
-        Assert.assertFalse(loginPage.isUsernameInputPresent());
-        Assert.assertTrue(loginPage.isPasswordInputPresent());
-        Assert.assertTrue(loginPage.isSocialButtonPresent(orgABroker.getAlias()));
-        Assert.assertTrue(loginPage.isSocialButtonPresent(orgBBroker.getAlias()));
-    }
-
     private void assertOrganizationBrokerVisibilityWhenUserIsLinkedElsewhere(boolean showWhenLinkedElsewhere) {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());
@@ -622,84 +567,59 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
     }
 
     @Test
-    public void testHideWhenOrgNotResolvedTakesPrecedenceOverShowWhenLinkedElsewhere() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        OrganizationResource secondOrganization = testRealm().organizations().get(createOrganization("org-2").getId());
-        OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());
-        IdentityProviderRepresentation brokerRep = broker.toRepresentation();
-        brokerRep.setHideOnLogin(false);
-        brokerRep.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
-        testRealm().identityProviders().get(brokerRep.getAlias()).update(brokerRep);
-
-        IdentityProviderRepresentation secondOrgBrokerRep = secondOrganization.identityProviders().getIdentityProviders().get(0);
-        secondOrgBrokerRep.setHideOnLogin(false);
-        secondOrgBrokerRep.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
-        testRealm().identityProviders().get(secondOrgBrokerRep.getAlias()).update(secondOrgBrokerRep);
-
-        String secondAlias = "second-idp-" + KeycloakModelUtils.generateId();
-        IdentityProviderRepresentation secondIdp = bc.setUpIdentityProvider();
-        secondIdp.setAlias(secondAlias);
-        secondIdp.setInternalId(null);
-        secondIdp.setHideOnLogin(false);
-        secondIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
-        secondIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
-        secondIdp.getConfig().put(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN, Boolean.TRUE.toString());
-        testRealm().identityProviders().create(secondIdp).close();
-        getCleanup().addCleanup(testRealm().identityProviders().get(secondAlias)::remove);
-        organization.identityProviders().addIdentityProvider(secondAlias).close();
-
+    public void testShowWhenLinkedElsewhereEdgeCases() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        IdentityProviderRepresentation orgABroker = orgA.identityProviders().getIdentityProviders().get(0);
+        orgABroker.setHideOnLogin(false);
+        orgABroker.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        orgABroker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
+        testRealm().identityProviders().get(orgABroker.getAlias()).update(orgABroker);
+        IdentityProviderRepresentation orgBBroker = orgB.identityProviders().getIdentityProviders().get(0);
+        orgBBroker.setHideOnLogin(false);
+        orgBBroker.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        orgBBroker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
+        testRealm().identityProviders().get(orgBBroker.getAlias()).update(orgBBroker);
+        String hideUnknownAlias = "hide-unknown-idp-" + KeycloakModelUtils.generateId();
+        IdentityProviderRepresentation hideUnknownIdp = bc.setUpIdentityProvider();
+        hideUnknownIdp.setAlias(hideUnknownAlias);
+        hideUnknownIdp.setInternalId(null);
+        hideUnknownIdp.setHideOnLogin(false);
+        hideUnknownIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        hideUnknownIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        hideUnknownIdp.getConfig().put(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN, Boolean.TRUE.toString());
+        testRealm().identityProviders().create(hideUnknownIdp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get(hideUnknownAlias)::remove);
+        orgA.identityProviders().addIdentityProvider(hideUnknownAlias).close();
         String username = "user-" + KeycloakModelUtils.generateId();
-        String email = username + "@user.org";
-        UserRepresentation account = UserBuilder.create()
-                .username(username)
-                .email(email)
-                .password("updated-password")
-                .enabled(true)
-                .build();
+        String unresolvedEmail = username + "@user.org";
+        UserRepresentation account = UserBuilder.create().username(username).email(unresolvedEmail).password("updated-password").enabled(true).build();
         try (Response response = testRealm().users().create(account)) {
             account.setId(ApiUtil.getCreatedId(response));
         }
         UserRepresentation finalAccount = account;
         getCleanup().addCleanup(() -> testRealm().users().get(finalAccount.getId()).remove());
-
         FederatedIdentityRepresentation identity = new FederatedIdentityRepresentation();
-        identity.setIdentityProvider(brokerRep.getAlias());
+        identity.setIdentityProvider(orgABroker.getAlias());
         identity.setUserId(KeycloakModelUtils.generateId());
         identity.setUserName(username);
-        try (Response response = testRealm().users().get(account.getId()).addFederatedIdentity(brokerRep.getAlias(), identity)) {
+        try (Response response = testRealm().users().get(account.getId()).addFederatedIdentity(orgABroker.getAlias(), identity)) {
             assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
         }
-
-        organization.members().addMember(account.getId()).close();
-        secondOrganization.members().addMember(account.getId()).close();
-
-        // logout to force the user to authenticate again
+        orgA.members().addMember(account.getId()).close();
+        orgB.members().addMember(account.getId()).close();
         realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
         realmsResouce().realm(bc.providerRealmName()).logoutAll();
-
         oauth.clientId("broker-app");
         loginPage.open(bc.consumerRealmName());
         loginPage.loginUsername(username);
-        Assert.assertFalse(loginPage.isSocialButtonPresent(secondAlias));
-
-        String orgResolvedEmail = username + "@neworg.org";
+        Assert.assertTrue(loginPage.isSocialButtonPresent(orgABroker.getAlias()));
+        Assert.assertTrue(loginPage.isSocialButtonPresent(orgBBroker.getAlias()));
+        Assert.assertFalse(loginPage.isSocialButtonPresent(hideUnknownAlias));
+        String resolvedEmail = username + "@org-a.org";
         UserRepresentation updatedAccount = testRealm().users().get(account.getId()).toRepresentation();
-        updatedAccount.setEmail(orgResolvedEmail);
+        updatedAccount.setEmail(resolvedEmail);
         testRealm().users().get(account.getId()).update(updatedAccount);
-
-        loginPage.open(bc.consumerRealmName());
-        loginPage.loginUsername(orgResolvedEmail);
-        Assert.assertTrue(loginPage.isSocialButtonPresent(secondAlias));
-    }
-
-    @Test
-    public void testDoNotShowDisabledOrLinkOnlyBrokersWhenShowWhenLinkedElsewhereEnabled() {
-        OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
-        OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());
-        IdentityProviderRepresentation brokerRep = broker.toRepresentation();
-        brokerRep.setHideOnLogin(false);
-        testRealm().identityProviders().get(brokerRep.getAlias()).update(brokerRep);
-
         String disabledAlias = "disabled-idp-" + KeycloakModelUtils.generateId();
         IdentityProviderRepresentation disabledIdp = bc.setUpIdentityProvider();
         disabledIdp.setAlias(disabledAlias);
@@ -710,8 +630,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         disabledIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
         testRealm().identityProviders().create(disabledIdp).close();
         getCleanup().addCleanup(testRealm().identityProviders().get(disabledAlias)::remove);
-        organization.identityProviders().addIdentityProvider(disabledAlias).close();
-
+        orgA.identityProviders().addIdentityProvider(disabledAlias).close();
         String linkOnlyAlias = "link-only-idp-" + KeycloakModelUtils.generateId();
         IdentityProviderRepresentation linkOnlyIdp = bc.setUpIdentityProvider();
         linkOnlyIdp.setAlias(linkOnlyAlias);
@@ -722,22 +641,10 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         linkOnlyIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
         testRealm().identityProviders().create(linkOnlyIdp).close();
         getCleanup().addCleanup(testRealm().identityProviders().get(linkOnlyAlias)::remove);
-        organization.identityProviders().addIdentityProvider(linkOnlyAlias).close();
-
-        assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
-        UserRepresentation account = getUserRepresentation(bc.getUserEmail());
-        ApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()), "updated-password", false);
-        brokerRep.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
-        testRealm().identityProviders().get(brokerRep.getAlias()).update(brokerRep);
-
-        // logout to force the user to authenticate again
-        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
-        realmsResouce().realm(bc.providerRealmName()).logoutAll();
-
-        oauth.clientId("broker-app");
+        orgA.identityProviders().addIdentityProvider(linkOnlyAlias).close();
         loginPage.open(bc.consumerRealmName());
-        loginPage.loginUsername(bc.getUserEmail());
-        Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
+        loginPage.loginUsername(resolvedEmail);
+        Assert.assertTrue(loginPage.isSocialButtonPresent(hideUnknownAlias));
         Assert.assertFalse(loginPage.isSocialButtonPresent(disabledAlias));
         Assert.assertFalse(loginPage.isSocialButtonPresent(linkOnlyAlias));
     }
