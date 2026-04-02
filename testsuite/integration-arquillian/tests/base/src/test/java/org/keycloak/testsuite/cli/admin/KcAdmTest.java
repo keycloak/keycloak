@@ -52,7 +52,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         List<String> lines = exe.stdoutLines();
         Assert.assertTrue("stdout output not empty", lines.size() > 0);
         Assert.assertEquals("stdout first line", "Keycloak Admin CLI", lines.get(0));
-        Assert.assertEquals("stdout one but last line", "Use '" + KcAdmExec.CMD + " help <command>' for more information about a given command.", lines.get(lines.size() - 2));
+        Assert.assertEquals("stdout one but last line", "Use '" + CMD + " help <command>' for more information about a given command.", lines.get(lines.size() - 2));
         Assert.assertEquals("stdout last line", "", lines.get(lines.size() - 1));
 
 
@@ -62,7 +62,7 @@ public class KcAdmTest extends AbstractAdmCliTest {
         exe = KcAdmExec.execute("config");
         assertExitCodeAndStreamSizes(exe, 2, 8, 0);
         Assert.assertEquals("error message",
-                "Usage: kcadm.sh config SUB_COMMAND [ARGUMENTS]",
+                "Usage: " + CMD + " config SUB_COMMAND [ARGUMENTS]",
                 exe.stdoutLines().get(0));
 
         exe = KcAdmExec.execute("config credentials");
