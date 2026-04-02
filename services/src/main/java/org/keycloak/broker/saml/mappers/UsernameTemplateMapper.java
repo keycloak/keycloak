@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
+import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.broker.saml.SAMLEndpoint;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -197,9 +198,15 @@ public class UsernameTemplateMapper extends AbstractIdentityProviderMapper {
 
         }
         m.appendTail(sb);
+        
+        String result = sb.toString();
+        
+        if (result == null || result.trim().isEmpty()) {
+        		throw new IdentityBrokerException("Username template resulted in empty value. Check the mapping attributes.");
+        }
 
         Target t = getTarget(mapperModel.getConfig().get(TARGET));
-        t.set(context, sb.toString());
+        t.set(context, result);
     }
 
     @Override
