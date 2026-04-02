@@ -1,0 +1,97 @@
+= ServiceMonitor
+A `ServiceMonitor` resource is used to define how a service's metrics are discovered and scraped by Prometheus.
+The {project_name} Operator automatically generates a `ServiceMonitor` resource for your deployment. In order for the
+`ServiceMonitor` resource to be created, at least version `v0.72.0` of the `monitoring.coreos.com/v1:ServiceMonitor`
+Custom Resource Definition (CRD) must be installed on your {kubernetes} cluster.
+
+A ServiceMonitor is only created if the `metrics-enabled` option is set.
+
+.Enable Keycloak metrics
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  additionalOptions:
+    - name: metrics-enabled
+      value: "true"
+----
+
+The Operator generates a `ServiceMonitor` with the following spec:
+
+.Default ServiceMonitor
+[source,yaml]
+----
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: example-kc # <1>
+  namespace: example-namespace # <2>
+spec:
+  endpoints:
+  - interval: 30s
+    path: /metrics # <3>
+    port: management
+    scheme: https # <4>
+    scrapeTimeout: 10s
+    tlsConfig:
+      insecureSkipVerify: true
+  namespaceSelector:
+    matchNames:
+    - example-namespace # <2>
+  selector:
+    matchLabels:
+      app: keycloak
+      app.kubernetes.io/instance: example-kc # <2>
+      app.kubernetes.io/managed-by: keycloak-operator
+  scrapeProtocols:
+    - OpenMetricsText1.0.0
+----
+<1> The `ServiceMonitor` is created with the same name as the Keycloak CR.
+<2> The `ServiceMonitor` is always deployed to the same namespace as the Keycloak CR and will only match a Service
+in that namespace.
+<3> The configured path defaults to `/metrics`, but respects the `http-management-relative-path` value if configured.
+<4> The configured scheme is changed automatically depending on whether TLS is enabled or not.
+
+
+== Modify ServiceMonitor configuration
+You can configure the `interval` and `scrapeTimeout` fields and also `annotations` and `labels` of the generated `ServiceMonitor` by modifying the Keycloak CR spec.
+
+.Modified ServiceMonitor
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  serviceMonitor:
+    interval: 10s
+    scrapeTimeout: 5s
+    labels:
+      label1: label-value1
+      label2: label-value2
+    annotations:
+      annotation1: annotation-value1
+      annotation2: annotation-value2
+----
+
+NOTE: You can use service monitor labels to determine which Prometheus instance will scrape metrics from {project_name}.
+
+== Disable ServiceMonitor creation
+You can prevent the Operator from creating a ServiceMonitor by configuring the Keycloak CR as follows:
+
+.Disabled ServiceMonitor
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  serviceMonitor:
+    enabled: false
+----
+

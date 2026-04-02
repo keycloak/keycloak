@@ -1,0 +1,21 @@
+= Parameterizing service labels and annotations
+
+If you need to set custom labels or annotations to keycloak service you can do that through `spec.http.labels` and `spec.http.annotations`
+
+.Custom service labels and annotations
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  http:
+    labels:
+      label1: label-value1
+      label2: label-value2
+    annotations:
+      annotation1: annotation-value1
+      annotation2: annotation-value2
+----
+

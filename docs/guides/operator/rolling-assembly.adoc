@@ -1,0 +1,25 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+
+<@tmpl.guide
+title="Avoiding downtime with rolling updates"
+summary="Avoid downtime when changing themes, providers, or configurations in optimized images.">
+
+By default, the {project_name} Operator will perform rolling updates on configuration changes without downtime, and recreate updates with downtime when the image name or tag changes.
+
+This {section} describes how to minimize downtimes by configuring the {project_name} Operator to perform rolling updates of {project_name} automatically where possible, and how to override automatic detection for rolling updates.
+
+Use it, for example, avoid downtimes when rolling out
+
+* an update to a theme,
+* provider or build time configuration in a custom or optimized image, or
+* patch releases of {project_name}.
+
+include::rolling/software-update.adoc[leveloffset=2]
+
+include::rolling/configure-updates.adoc[leveloffset=2]
+
+</@tmpl.guide>

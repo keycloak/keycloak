@@ -1,0 +1,119 @@
+= Server configuration details
+
+Many server options are exposed as first-class citizen fields in the Keycloak CR. The structure of the CR is based on the configuration structure of {project_name}. For example, to configure the `https-port` of the server, follow a
+similar pattern in the CR and use the `httpsPort` field. The following example is a complex server configuration; however, it illustrates the relationship between server options and the Keycloak CR:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  db:
+    vendor: postgres
+    usernameSecret:
+      name: usernameSecret
+      key: usernameSecretKey
+    passwordSecret:
+      name: passwordSecret
+      key: passwordSecretKey
+    host: host
+    database: database
+    port: 123
+    schema: schema
+    poolInitialSize: 1
+    poolMinSize: 2
+    poolMaxSize: 30
+  http:
+    httpEnabled: true
+    httpPort: 8180
+    httpsPort: 8543
+    tlsSecret: my-tls-secret
+  hostname:
+    hostname: https://my-hostname.tld
+    admin: https://my-hostname.tld/admin
+    strict: false
+    backchannelDynamic: true
+  features:
+    enabled:
+      - docker
+      - authorization
+    disabled:
+      - admin
+      - step-up-authentication
+  transaction:
+    xaEnabled: false
+----
+
+WARNING: These values are illustrative; choose values appropriate for your environment and workload.
+
+For a list of options, see the Keycloak CRD, and for guidance on each option and its acceptable values, see <@links.server id="all-config"/>.
+
+== Additional options
+
+Some expert server options are unavailable as dedicated fields in the Keycloak CR. The following are examples of omitted fields:
+
+* Fields that require deep understanding of the underlying {project_name} implementation
+* Fields that are not relevant to
+<@profile.ifCommunity>
+a Kubernetes
+</@profile.ifCommunity>
+<@profile.ifProduct>
+an OpenShift
+</@profile.ifProduct>
+environment
+* Fields for provider configuration because they are dynamic based on the used provider implementation
+
+The `additionalOptions` field of the Keycloak CR enables {project_name} to accept any available configuration in the form of key-value pairs.
+You can use this field to include any option that is omitted in the Keycloak CR.
+For details on configuring options, see <@links.server id="all-config"/>.
+
+The values can be expressed as plain text strings or Secret object references as shown in this example:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  additionalOptions:
+    - name: spi-connections-http-client--default--connection-pool-size
+      secret: # Secret reference
+        name: http-client-secret # Name of the Secret
+        key: poolSize # Name of the Key in the Secret
+    - name: spi-email-template--mycustomprovider--enabled
+      value: 'true' # Plain text value. Use quotes for numbers and boolean values.
+----
+NOTE:  The name format of options defined in this way is identical to the key format of options specified in the configuration file.
+       For details on various configuration formats, see <@links.server id="configuration"/>.
+
+NOTE: If you configure mTLS with `https-client-auth` set to `required`, this configuration is inherited by the management interface.
+If you have not otherwise configured the usage of HTTP for the health endpoints, you will likely want to also set the additionalOption `https-management-client-auth` to `request` or `none` so that a valid client certificate is not required for probe requests.
+
+== Custom environment variables
+
+You may find a need to set custom environment variables - such as for theme properties or `kc.[sh|bat]` script variables.
+The `spec.env` field of the Keycloak CR allows you to directly set any environment variable.
+Logic in the operator based upon looking for value of a particular setting does not consult `spec.env`,
+therefore do not use `spec.env` for anything that has a first-class configuration in the CR or may be specified as an `additionalOption`.
+
+Here's an example setting JAVA_OPTS_APPEND:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  ...
+  env:
+    - name: JAVA_OPTS_APPEND
+      value: -Djava.net.preferIPv6Addresses=true
+----
+
+Similar to `additionalOptions` you may specify either a value or reference a Secret.
+

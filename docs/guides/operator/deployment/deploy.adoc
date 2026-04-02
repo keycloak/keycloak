@@ -1,0 +1,74 @@
+= Deploying {project_name}
+
+To deploy {project_name}, you create a Custom Resource (CR) based on the Keycloak Custom Resource Definition (CRD).
+
+[NOTE]
+====
+If you are on OpenShift, you cannot use wildcard certificates on passthrough Routes with HTTP/2 enabled. The following Keycloak CR on OpenShift if you are using a wildcard certificate with the default IngressClass, creates such a Route. In this situation, modify the yaml based on "Accessing the {project_name} deployment" later in this topic to use TLS Termination or an OpenShift re-encrypt Route.
+====
+
+Consider storing the Database credentials in a separate Secret. Enter the following commands:
+[source,bash]
+----
+kubectl create secret generic keycloak-db-secret \
+  --from-literal=username=[your_database_username] \
+  --from-literal=password=[your_database_password]
+----
+
+You can customize several fields using the Keycloak CRD. For a basic deployment, you can stick to the following approach:
+
+Create YAML file `example-kc.yaml`:
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  instances: 1
+  db:
+    vendor: postgres
+    host: postgres-db
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  http:
+    tlsSecret: example-tls-secret
+  hostname:
+    hostname: test.keycloak.org
+  proxy:
+    headers: xforwarded # double check your reverse proxy sets and overwrites the X-Forwarded-* headers
+----
+
+Apply the changes:
+
+[source,bash]
+----
+kubectl apply -f example-kc.yaml
+----
+
+To check that the {project_name} instance has been provisioned in the cluster, check the status of the created CR by entering the following command:
+
+[source,bash]
+----
+kubectl get keycloaks/example-kc -o go-template='{{range .status.conditions}}CONDITION: {{.type}}{{"\n"}}  STATUS: {{.status}}{{"\n"}}  MESSAGE: {{.message}}{{"\n"}}{{end}}'
+----
+
+When the deployment is ready, look for output similar to the following:
+
+[source,bash]
+----
+CONDITION: Ready
+  STATUS: true
+  MESSAGE:
+CONDITION: HasErrors
+  STATUS: false
+  MESSAGE:
+CONDITION: RollingUpdate
+  STATUS: false
+  MESSAGE:
+----
+

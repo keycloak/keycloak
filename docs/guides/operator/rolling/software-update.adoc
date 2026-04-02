@@ -1,0 +1,8 @@
+= Supported Update Strategies
+
+The Operator supports the following update strategies:
+
+Rolling Updates:: Update the StatefulSet in a rolling fashion, avoiding a downtime when at least two replicas are running.
+
+Recreate Updates:: Scale down the StatefulSet before applying updates, causing temporary downtime.
+

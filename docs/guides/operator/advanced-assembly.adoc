@@ -1,0 +1,41 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
+
+<@tmpl.guide
+title="Advanced configuration"
+summary="Tune advanced aspects of the Keycloak CR.">
+
+This {section} describes how to use Custom Resources (CRs) for advanced configuration of your {project_name} deployment.
+
+include::advanced/server-config.adoc[leveloffset=2]
+
+include::advanced/secret-refs.adoc[leveloffset=2]
+
+include::advanced/unsupported.adoc[leveloffset=2]
+
+include::advanced/disabling-options.adoc[leveloffset=2]
+
+include::advanced/resource-reqs.adoc[leveloffset=2]
+
+include::advanced/scheduling.adoc[leveloffset=2]
+
+include::advanced/management.adoc[leveloffset=2]
+
+include::advanced/truststores.adoc[leveloffset=2]
+
+include::advanced/admin-boot.adoc[leveloffset=2]
+
+include::advanced/tracing.adoc[leveloffset=2]
+
+include::advanced/network-policies.adoc[leveloffset=2]
+
+include::advanced/param-service.adoc[leveloffset=2]
+
+include::advanced/kubernetes.adoc[leveloffset=2]
+
+include::advanced/service-monitor.adoc[leveloffset=2]
+
+</@tmpl.guide>
