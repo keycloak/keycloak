@@ -615,13 +615,42 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
             Assertions.assertTrue(sessions.get(0).isRememberMe(), "User session should have rememberMe enabled");
 
             // Also verify the login event records remember_me
-            events.expectLogin()
+            EventRepresentation loginEvent = events.expectLogin()
                     .client("broker-app")
                     .user(member.getId())
                     .detail(Details.USERNAME, email)
                     .detail(Details.REMEMBER_ME, "true")
                     .removeDetail(Details.REDIRECT_URI)
                     .assertEvent();
+            String sessionId = loginEvent.getSessionId();
+            // Expire the user session
+            testingClient.testing(bc.consumerRealmName()).removeUserSession(bc.consumerRealmName(), sessionId);
+            // After session expiry, opening login should show rememberMe pre-checked and email prefilled
+            loginPage.open(bc.consumerRealmName());
+            Assertions.assertTrue(loginPage.isRememberMeChecked(), "rememberMe should be pre-checked after session expiry");
+            assertEquals(member.getEmail(), loginPage.getUsername());
+
+            // disable rememberMe
+            loginPage.setRememberMe(false);
+            Assertions.assertFalse(loginPage.isRememberMeChecked());
+            loginPage.loginUsername(email);
+            waitForPage(driver, "sign in to", true);
+            Assertions.assertTrue(loginPage.isPasswordInputPresent());
+            Assertions.assertFalse(loginPage.isRememberMeCheckboxPresent());
+            loginPage.login(memberPassword);
+            appPage.assertCurrent();
+            loginEvent = events.expectLogin()
+                    .client("broker-app")
+                    .user(member.getId())
+                    .detail(Details.USERNAME, email)
+                    .removeDetail(Details.REDIRECT_URI)
+                    .assertEvent();
+            sessionId = loginEvent.getSessionId();
+            // Expire the user session
+            testingClient.testing(bc.consumerRealmName()).removeUserSession(bc.consumerRealmName(), sessionId);
+            loginPage.open(bc.consumerRealmName());
+            Assertions.assertFalse(loginPage.isRememberMeChecked(), "rememberMe should not be pre-checked as it was disabled");
+            assertEquals("", loginPage.getUsername());
         }
     }
 

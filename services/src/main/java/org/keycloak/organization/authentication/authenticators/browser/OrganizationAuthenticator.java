@@ -57,11 +57,13 @@ import org.keycloak.organization.forms.login.freemarker.model.OrganizationAwareR
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
 import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.Booleans;
 
 import static org.keycloak.authentication.AuthenticatorUtil.isSSOAuthentication;
+import static org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator.USER_SET_BEFORE_USERNAME_PASSWORD_AUTH;
 import static org.keycloak.models.OrganizationDomainModel.ANY_DOMAIN;
 import static org.keycloak.models.utils.KeycloakModelUtils.findUserByNameOrEmail;
 import static org.keycloak.organization.utils.Organizations.getEmailDomain;
@@ -441,6 +443,17 @@ public class OrganizationAuthenticator extends IdentityProviderAuthenticator {
 
         if (loginHint != null) {
             form.setFormData(new MultivaluedHashMap<>(Map.of(UserModel.USERNAME, loginHint)));
+        } else {
+            context.getAuthenticationSession().removeAuthNote(USER_SET_BEFORE_USERNAME_PASSWORD_AUTH);
+            String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getSession());
+            MultivaluedHashMap<String, String> formData = new MultivaluedHashMap<>();
+
+            if (rememberMeUsername != null) {
+                formData.add(AuthenticationManager.FORM_USERNAME, rememberMeUsername);
+                formData.add("rememberMe", "on");
+                context.form().setFormData(formData);
+            }
+
         }
 
         return formCreator == null ? form.createLoginUsername() : formCreator.apply(form);
