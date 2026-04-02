@@ -33,6 +33,7 @@ public class MigrateTest {
             OAuthClientRewrite.class,
             WebDriverRewrite.class,
             PageObjectRewrite.class,
+            LoginPageRewrite.class,
             RunOnServerRewrite.class,
             CommonStatementsRewrite.class,
             TestRealmRewrite.class
