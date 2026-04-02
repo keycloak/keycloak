@@ -27,6 +27,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.BadRequestException;
+
 import org.keycloak.common.util.TriFunction;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -77,7 +79,7 @@ public enum OrganizationScope {
                 
                 // Reject ANY scope requests - they require user selection which isn't available during refresh
                 if (isAnyScope(currentScope)) {
-                    return null;
+                    throw new BadRequestException("ANY organization scope is not allowed in this context");
                 }
                 
                 // Allow SINGLE (narrowing) or ALL (maintaining) scopes

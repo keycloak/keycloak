@@ -606,7 +606,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         orgScope = "organization";
         oauth.scope(orgScope).openid(false);
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-        assertResponseMissingOrganizationScopeAndClaims(response);
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        assertEquals("ANY organization scope is not allowed in this context", response.getError());
     }
 
     @Test
@@ -946,10 +947,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
             tabUtil.switchToTab(0);
             oauth.scope("organization");
             response = oauth.doRefreshTokenRequest(tab1RefreshToken);
-            assertThat(response.getScope(), not(containsString("organization")));
-            accessToken = oauth.verifyToken(response.getAccessToken());
-            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
-            assertThat(organizations, is(nullValue()));
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            assertEquals("ANY organization scope is not allowed in this context", response.getError());
 
             // try to refresh first tab changing scopes SINGLE -> ALL
             tabUtil.switchToTab(0);
@@ -975,10 +974,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
             tabUtil.switchToTab(1);
             oauth.scope("organization");
             response = oauth.doRefreshTokenRequest(tab1RefreshToken);
-            assertThat(response.getScope(), not(containsString("organization")));
-            accessToken = oauth.verifyToken(response.getAccessToken());
-            organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
-            assertThat(organizations, is(nullValue()));
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            assertEquals("ANY organization scope is not allowed in this context", response.getError());
 
             // refresh second tab resetting scopes so that the scopes from the last successful refresh are respected
             tabUtil.switchToTab(1);
