@@ -30,6 +30,15 @@ public class OAuthClientRewrite extends TestRewrite {
                 info(managedRealm + 2, "Injecting: OAuthClient");
             }
             addImport("org.keycloak.testframework.oauth.annotations.InjectOAuthClient");
+
+            int startingLine = findClassDeclaration();
+            for (int i = startingLine; i < content.size(); i++) {
+                String l = content.get(i);
+                if (l.trim().contains("oauth.clientId(")) {
+                    replaceLine(i, l.replace("oauth.clientId(", "oauth.client("));
+                    info(i, "Statement rewritten: 'oauth.clientId(' --> 'oauth.client('");
+                }
+            }
         }
     }
 
