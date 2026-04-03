@@ -407,7 +407,7 @@ public class KcAdmV2ClientCLITest {
         assertThat("should fail without server", result.exitCode(), is(not(0)));
         assertThat(result.err(), containsString("No server URL configured"));
         assertThat("error hint should include --v2",
-                result.err(), containsString("kcadm.sh --v2 config credentials"));
+                result.err(), containsString(KcAdmMain.CMD + " --v2 config credentials"));
     }
 
     @Test
