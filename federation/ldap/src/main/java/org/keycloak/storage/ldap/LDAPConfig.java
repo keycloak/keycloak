@@ -37,6 +37,14 @@ public class LDAPConfig {
 
     public static final String DEFAULT_CONNECTION_TIMEOUT = "5000";
 
+    public static final String EXISTING_USER_HANDLING = "existingUserHandling";
+
+    public enum ExistingUserHandling {
+        LINK,   // Link existing local user to the LDAP user — preserves OTP, credentials, roles
+        SKIP,   // Log a warning and skip — local user is left unlinked
+        FAIL    // Throw an exception — admin must resolve the conflict manually
+    }
+
     private final MultivaluedHashMap<String, String> config;
     private final Set<String> binaryAttributeNames = new HashSet<>();
 
@@ -250,6 +258,18 @@ public class LDAPConfig {
             return UserStorageProvider.EditMode.READ_ONLY;
         } else {
             return UserStorageProvider.EditMode.valueOf(editModeString);
+        }
+    }
+
+    public ExistingUserHandling getExistingUserHandling() {
+        String value = config.getFirst(EXISTING_USER_HANDLING);
+        if (value == null) {
+            return ExistingUserHandling.LINK;
+        }
+        try {
+            return ExistingUserHandling.valueOf(value.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ExistingUserHandling.LINK;
         }
     }
 

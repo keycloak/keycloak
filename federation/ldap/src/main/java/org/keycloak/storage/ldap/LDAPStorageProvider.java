@@ -728,7 +728,31 @@ public class LDAPStorageProvider implements UserStorageProvider,
                         UserStorageUtil.userCache(session).evict(realm, existingLocalUser);
                     }
                 } else {
-                    imported = userProvider.addUser(realm, ldapUsername);
+                    // Check if a local user with the same username exists but has no federation link yet.
+                    // This happens when users were created in Keycloak before LDAP federation was added.
+                    UserModel localUserByUsername = userProvider.getUserByUsername(realm, ldapUsername);
+                    if (localUserByUsername != null && localUserByUsername.getFederationLink() == null) {
+                        LDAPConfig.ExistingUserHandling handling = ldapIdentityStore.getConfig().getExistingUserHandling();
+                        if (handling == LDAPConfig.ExistingUserHandling.LINK) {
+                            logger.debugf("Linking existing local user '%s' to LDAP federation provider '%s'",
+                                    ldapUsername, model.getName());
+                            imported = localUserByUsername;
+                            if (UserStorageUtil.userCache(session) != null) {
+                                UserStorageUtil.userCache(session).evict(realm, localUserByUsername);
+                            }
+                        } else if (handling == LDAPConfig.ExistingUserHandling.SKIP) {
+                            logger.warnf("Skipping LDAP import for user '%s': a local user exists without a federation link. " +
+                                    "Set 'Existing Local User Handling' to LINK to enable automatic linking.", ldapUsername);
+                            return null;
+                        } else {
+                            // FAIL — preserve previous exception-based behaviour but with a clear message
+                            throw new ModelDuplicateException("Cannot import LDAP user '" + ldapUsername +
+                                    "': a local user with the same username exists without a federation link. " +
+                                    "Set 'Existing Local User Handling' to LINK or SKIP to resolve.");
+                        }
+                    } else {
+                        imported = userProvider.addUser(realm, ldapUsername);
+                    }
                 }
             } else {
                 InMemoryUserAdapter adapter = new InMemoryUserAdapter(session, realm, new StorageId(model.getId(), ldapUsername).getId());
