@@ -27,11 +27,12 @@ jobs:
         id: version-compatibility
         env:
           GH_TOKEN: ${{ github.token }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             BRANCH="${{ github.base_ref }}"
           else
-            BRANCH="${{ github.ref_name }}"
+            BRANCH="${REF_NAME}"
           fi
           MATRIX_JSON=$(./.github/scripts/version-compatibility.sh "${BRANCH}")
           echo "${MATRIX_JSON}"
