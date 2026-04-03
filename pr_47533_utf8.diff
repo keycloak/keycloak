@@ -1,0 +1,290 @@
+﻿diff --git a/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/admin/cli/v2/KcAdmV2RequestExecutor.java b/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/admin/cli/v2/KcAdmV2RequestExecutor.java
+index 95e9750aa7c6..ddff989c0c0e 100644
+--- a/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/admin/cli/v2/KcAdmV2RequestExecutor.java
++++ b/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/admin/cli/v2/KcAdmV2RequestExecutor.java
+@@ -165,7 +165,8 @@ public void run() {
+             HeadersBodyStatus response = HttpUtil.doRequest(
+                     descriptor.getHttpMethod().toLowerCase(),
+                     url,
+-                    new HeadersBody(headers, bodyStream));
++                    new HeadersBody(headers, bodyStream),
++                    true);
+ 
+             response.checkSuccess();
+             String responseBody = response.getBody() != null ? readFully(response.getBody()) : "";
+diff --git a/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/cli/util/HeadersBodyStatus.java b/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/cli/util/HeadersBodyStatus.java
+index b686b1fb9fa6..ea5469641f20 100644
+--- a/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/cli/util/HeadersBodyStatus.java
++++ b/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/cli/util/HeadersBodyStatus.java
+@@ -27,12 +27,18 @@
+ public class HeadersBodyStatus extends HeadersBody {
+ 
+     private final String status;
++    private boolean allowJakartaValidationErrors;
+ 
+     public HeadersBodyStatus(String status, Headers headers, InputStream body) {
+         super(headers, body);
+         this.status = status;
+     }
+ 
++    public HeadersBodyStatus(String status, Headers headers, InputStream body, boolean allowJakartaValidationErrors) {
++        this(status, headers, body);
++        this.allowJakartaValidationErrors = allowJakartaValidationErrors;
++    }
++
+     public String getStatus() {
+         return status;
+     }
+@@ -45,7 +51,7 @@ public void checkSuccess() {
+         int code = getStatusCode();
+         if (code < 200 || code >= 300) {
+             String content = readBodyString();
+-            Map<String, String> error = null;
++            Map<String, Object> error = null;
+             try {
+                 error = JsonSerialization.readValue(content, Map.class);
+             } catch (Exception ignored) {
+@@ -53,10 +59,24 @@ public void checkSuccess() {
+ 
+             String message = null;
+             if (error != null) {
+-                String description = error.get("error_description");
+-                String err = error.get("error");
+-                String msg = error.get("errorMessage");
+-                message = msg != null ? msg : err != null ? (description + " ["+ error.get("error") + "]") : null;
++                String description = (String) error.get("error_description");
++                String err = (String) error.get("error");
++                String msg = (String) error.get("errorMessage");
++
++                if (allowJakartaValidationErrors) {
++                    Object violations = error.get("violations");
++                    if (violations instanceof Iterable<?> violationList) {
++                        StringBuilder violationsString = new StringBuilder();
++                        for (Object v : violationList) {
++                            violationsString.append("\n\t- ").append(v);
++                        }
++                        message = "%s:%s".formatted(err != null ? err : "Invalid data", violationsString.toString());
++                    }
++                }
++
++                if (message == null) {
++                    message = msg != null ? msg : err != null ? (description + " [" + error.get("error") + "]") : null;
++                }
+             }
+             throw new HttpResponseException(getStatusCodeAndReason(), message, new RuntimeException(content));
+         }
+diff --git a/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/cli/util/HttpUtil.java b/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/cli/util/HttpUtil.java
+index 937354af67bc..c63fd5a71927 100644
+--- a/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/cli/util/HttpUtil.java
++++ b/integration/client-cli/admin-cli/src/main/java/org/keycloak/client/cli/util/HttpUtil.java
+@@ -122,6 +122,10 @@ public static HeadersBodyStatus doDelete(String url, HeadersBody request) throws
+     }
+ 
+     public static HeadersBodyStatus doRequest(String type, String url, HeadersBody request) throws IOException {
++        return doRequest(type, url, request, false);
++    }
++
++    public static HeadersBodyStatus doRequest(String type, String url, HeadersBody request, boolean allowJakartaValidation) throws IOException {
+         HttpRequestBase req;
+         switch (type) {
+             case "get":
+@@ -177,7 +181,7 @@ public int read () throws IOException {
+             headers.add(header.getName(), header.getValue());
+         }
+ 
+-        return new HeadersBodyStatus(res.getStatusLine().toString(), headers, responseStream);
++        return new HeadersBodyStatus(res.getStatusLine().toString(), headers, responseStream, allowJakartaValidation);
+     }
+ 
+     private static void addHeaders(HttpRequestBase request, Headers headers) {
+diff --git a/js/libs/keycloak-admin-client/openapi.yaml b/js/libs/keycloak-admin-client/openapi.yaml
+index 55053809ed25..013b08ae44a6 100644
+--- a/js/libs/keycloak-admin-client/openapi.yaml
++++ b/js/libs/keycloak-admin-client/openapi.yaml
+@@ -26,6 +26,7 @@ components:
+           readOnly: true
+         clientId:
+           type: string
++          pattern: \S
+           description: ID uniquely identifying this client
+         displayName:
+           type: string
+@@ -54,6 +55,10 @@ components:
+           description: Roles associated with this client
+         protocol:
+           type: string
++          pattern: \S
++      required:
++      - clientId
++      - protocol
+       discriminator:
+         propertyName: protocol
+         mapping:
+diff --git a/rest/admin-v2/api/src/main/java/org/keycloak/representations/admin/v2/BaseClientRepresentation.java b/rest/admin-v2/api/src/main/java/org/keycloak/representations/admin/v2/BaseClientRepresentation.java
+index ec9f7851d58b..2b80f1e45e0e 100644
+--- a/rest/admin-v2/api/src/main/java/org/keycloak/representations/admin/v2/BaseClientRepresentation.java
++++ b/rest/admin-v2/api/src/main/java/org/keycloak/representations/admin/v2/BaseClientRepresentation.java
+@@ -7,7 +7,6 @@
+ import jakarta.validation.constraints.NotBlank;
+ 
+ import org.keycloak.representations.admin.v2.validation.ClientUuidProvider;
+-import org.keycloak.representations.admin.v2.validation.CreateClient;
+ import org.keycloak.representations.admin.v2.validation.PatchClient;
+ import org.keycloak.representations.admin.v2.validation.ProtocolUnmodified;
+ import org.keycloak.representations.admin.v2.validation.PutClient;
+@@ -39,7 +38,7 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
+     @Schema(description = "UUID generated by the server", readOnly = true)
+     protected String uuid;
+ 
+-    @NotBlank(groups = CreateClient.class)
++    @NotBlank
+     @JsonPropertyDescription("ID uniquely identifying this client")
+     protected String clientId;
+ 
+@@ -129,6 +128,7 @@ public void setRoles(Set<String> roles) {
+         this.roles = roles;
+     }
+ 
++    @NotBlank
+     public abstract String getProtocol();
+ 
+     void setProtocol(String protocol) {
+diff --git a/rest/admin-v2/api/src/main/java/org/keycloak/services/client/DefaultClientService.java b/rest/admin-v2/api/src/main/java/org/keycloak/services/client/DefaultClientService.java
+index a6735170036c..fcfa7ef1b972 100644
+--- a/rest/admin-v2/api/src/main/java/org/keycloak/services/client/DefaultClientService.java
++++ b/rest/admin-v2/api/src/main/java/org/keycloak/services/client/DefaultClientService.java
+@@ -268,6 +268,10 @@ public void deleteClient(RealmModel realm, String clientId) throws ServiceExcept
+     }
+ 
+     protected void assertSameClientIds(String pathId, String payloadId) {
++        if (payloadId == null) {
++            // When the payload clientId is null, it is not part of the payload at all - validated via @NotBlank validator annotation
++            return;
++        }
+         if (!Objects.equals(pathId, payloadId)) {
+             throw new ServiceException("Field 'clientId' in payload does not match the provided 'clientId'", Response.Status.BAD_REQUEST);
+         }
+diff --git a/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/cli/v2/KcAdmV2ClientCLITest.java b/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/cli/v2/KcAdmV2ClientCLITest.java
+index 2147fddd1c88..bf1510fc0049 100644
+--- a/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/cli/v2/KcAdmV2ClientCLITest.java
++++ b/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/cli/v2/KcAdmV2ClientCLITest.java
+@@ -38,12 +38,12 @@
+ @KeycloakIntegrationTest(config = KcAdmV2ClientCLITest.V2ApiServerConfig.class)
+ public class KcAdmV2ClientCLITest {
+ 
+-    @InjectKeycloakUrls
+-    KeycloakUrls keycloakUrls;
+-
+     @InjectRealm
+     ManagedRealm realm;
+ 
++    @InjectKeycloakUrls
++    KeycloakUrls keycloakUrls;
++
+     @TempDir
+     static File tempDir;
+ 
+@@ -69,8 +69,10 @@ void testCreateClientValidationError() {
+         CommandResult result = kcAdmV2Cmd("client", "create", "oidc");
+ 
+         assertThat("create without clientId should fail", result.exitCode(), is(not(0)));
+-        assertThat("error should clarify that provided data are invalid: " + result.err(),
+-                result.err().toLowerCase(), containsString("invalid"));
++        assertThat("error should clarify that provided data are invalid: ", result.err(), is("""
++                Provided data is invalid:
++                	- clientId: must not be blank
++                """));
+     }
+ 
+     @Test
+@@ -530,7 +532,10 @@ void testUpdateWithoutClientIdFails() throws Exception {
+ 
+         CommandResult result = kcAdmV2Cmd("client", "update", "oidc", "some-id", "-f", jsonFile.toString());
+         assertThat("PUT without clientId should fail", result.exitCode(), is(not(0)));
+-        assertThat(result.err(), containsString("does not match"));
++        assertThat(result.err(), is("""
++                Provided data is invalid:
++                	- clientId: must not be blank
++                """));
+     }
+ 
+     @Test
+diff --git a/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/client/v2/validation/AbstractClientValidationTest.java b/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/client/v2/validation/AbstractClientValidationTest.java
+index 87b40c6eaeba..b6ff71957097 100644
+--- a/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/client/v2/validation/AbstractClientValidationTest.java
++++ b/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/client/v2/validation/AbstractClientValidationTest.java
+@@ -119,14 +119,8 @@ public void clientWithoutClientIdFails(String protocol) throws Exception {
+ 
+         try (var response = client.execute(request)) {
+             switch (getHttpMethod()) {
+-                case HttpPatch.METHOD_NAME -> {
+-                    assertThat(response.getStatusLine().getStatusCode(), is(200));
+-                }
+-                case HttpPut.METHOD_NAME -> {
+-                    assertThat(response.getStatusLine().getStatusCode(), is(400));
+-                    var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+-                    assertThat(body.error(), is("Field 'clientId' in payload does not match the provided 'clientId'"));
+-                }
++                // the clientId is checked on the patched object, so the clientId is present
++                case HttpPatch.METHOD_NAME -> assertThat(response.getStatusLine().getStatusCode(), is(200));
+                 default -> {
+                     assertThat(response.getStatusLine().getStatusCode(), is(400));
+                     var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+@@ -169,6 +163,42 @@ public void clientWithBlankClientIdFails(String protocol) throws Exception {
+         }
+     }
+ 
++    // Tests that {@code @NotBlank} validation on {@code clientId} fires as first the path and payload clientIds are checked and throw error.
++    @ParameterizedTest
++    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
++    public void clientWithBlankClientIdMatchingPathFails(String protocol) throws Exception {
++        var request = switch (getHttpMethod()) {
++            case HttpPost.METHOD_NAME -> {
++                var r = new HttpPost(getClientsApiUrl());
++                r.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
++                yield r;
++            }
++            case HttpPut.METHOD_NAME -> {
++                var r = new HttpPut(getClientApiUrl("%20"));
++                r.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
++                yield r;
++            }
++            default -> throw new IllegalStateException("Unexpected value: " + getHttpMethod());
++        };
++        setAuthHeader(request);
++
++        request.setEntity(new StringEntity("""
++                {
++                    "protocol": "%s",
++                    "clientId": " ",
++                    "enabled": true
++                }
++                """.formatted(protocol)));
++
++        try (var response = client.execute(request)) {
++            assertThat(response.getStatusLine().getStatusCode(), is(400));
++
++            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
++            assertThat(body.error(), is("Provided data is invalid"));
++            assertThat(body.violations(), hasItem("clientId: must not be blank"));
++        }
++    }
++
+     // ===========================================
+     // Protocol validation tests
+     // ===========================================
+diff --git a/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/client/v2/validation/PatchClientValidationTest.java b/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/client/v2/validation/PatchClientValidationTest.java
+index 3584632175e1..63120e731ba5 100644
+--- a/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/client/v2/validation/PatchClientValidationTest.java
++++ b/rest/admin-v2/tests/src/test/java/org/keycloak/tests/admin/client/v2/validation/PatchClientValidationTest.java
+@@ -107,4 +107,10 @@ public void validSAMLClientSucceeds() {
+     @Disabled("Only for PUT/POST")
+     public void validOIDCClientSucceeds() {
+     }
++
++    @Test
++    @Override
++    @Disabled("Only for PUT/POST - client needs to exist")
++    public void clientWithBlankClientIdMatchingPathFails(String protocol) {
++    }
+ }

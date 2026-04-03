@@ -31,8 +31,9 @@ public class OIDCClientModelMapper extends BaseClientModelMapper<OIDCClientRepre
             OIDCClientRepresentation.Auth auth = new OIDCClientRepresentation.Auth();
             auth.setMethod(model.getClientAuthenticatorType());
             auth.setSecret(model.getSecret());
+            auth.setCertificate(model.getAttribute(ClientModel.X509CERTIFICATE));
+            auth.setPrivateKey(model.getAttribute(ClientModel.PRIVATE_KEY));
             rep.setAuth(auth);
-            // TODO: auth.certificate
         }
 
         rep.setWebOrigins(new HashSet<>(model.getWebOrigins()));
@@ -45,6 +46,19 @@ public class OIDCClientModelMapper extends BaseClientModelMapper<OIDCClientRepre
             model.setPublicClient(false);
             model.setClientAuthenticatorType(rep.getAuth().getMethod());
             model.setSecret(rep.getAuth().getSecret());
+
+            String certificate = rep.getAuth().getCertificate();
+            if (certificate != null) {
+                model.setAttribute(ClientModel.X509CERTIFICATE, certificate);
+            }
+
+            String privateKey = rep.getAuth().getPrivateKey();
+            if (privateKey != null) {
+                if (!privateKey.startsWith("-----BEGIN")) {
+                    privateKey = org.keycloak.common.util.PemUtils.addPrivateKeyBeginEnd(privateKey);
+                }
+                model.setAttribute(ClientModel.PRIVATE_KEY, privateKey);
+            }
         } else {
             model.setPublicClient(true);
         }

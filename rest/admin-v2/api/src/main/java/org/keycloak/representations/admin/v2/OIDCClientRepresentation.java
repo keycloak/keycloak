@@ -101,6 +101,9 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
         @JsonPropertyDescription("Public key used to authenticate this client with Signed JWT authentication")
         private String certificate;
 
+        @JsonPropertyDescription("Private key used to authenticate this client with Signed JWT authentication")
+        private String privateKey;
+
         public String getMethod() {
             return method;
         }
@@ -125,17 +128,25 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
             this.certificate = certificate;
         }
 
+        public String getPrivateKey() {
+            return privateKey;
+        }
+
+        public void setPrivateKey(String privateKey) {
+            this.privateKey = privateKey;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof Auth auth)) {
                 return false;
             }
-            return Objects.equals(method, auth.method) && Objects.equals(secret, auth.secret) && Objects.equals(certificate, auth.certificate);
+            return Objects.equals(method, auth.method) && Objects.equals(secret, auth.secret) && Objects.equals(certificate, auth.certificate) && Objects.equals(privateKey, auth.privateKey);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(method, secret, certificate);
+            return Objects.hash(method, secret, certificate, privateKey);
         }
     }
 
