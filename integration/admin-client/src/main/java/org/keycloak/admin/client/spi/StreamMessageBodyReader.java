@@ -64,8 +64,15 @@ public class StreamMessageBodyReader implements MessageBodyReader<Stream<?>> {
             throw new IOException("Expected Object");
         }
 
-        Iterator<?> iter = codec.readValues(parser, (Class)((ParameterizedType)genericType).getActualTypeArguments()[0]);
+        Class<?> elementType = Object.class;
+        if (genericType instanceof ParameterizedType) {
+            Type[] typeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
+            if (typeArguments.length > 0 && typeArguments[0] instanceof Class<?>) {
+                elementType = (Class<?>) typeArguments[0];
+            }
+        }
 
+        Iterator<?> iter = codec.readValues(parser, elementType);
         Stream<?> targetStream = StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(iter, Spliterator.ORDERED),
                 false);
