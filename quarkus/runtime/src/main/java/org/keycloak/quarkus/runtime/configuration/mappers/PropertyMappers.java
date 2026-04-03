@@ -97,7 +97,13 @@ public final class PropertyMappers {
 
     public static boolean isSpiBuildTimeProperty(String name) {
         // we can't require the new property formant until we're ok with a breaking change
-        //return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("--provider") || name.endsWith("--enabled") || name.endsWith("--provider-default"));
+        return isSpiBuildTimeProperty(name, false);
+    }
+
+    public static boolean isSpiBuildTimeProperty(String name, boolean strict) {
+        if (strict) {
+            return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("--provider") || name.endsWith("--enabled") || name.endsWith("--provider-default"));
+        }
         return name.startsWith(KC_SPI_PREFIX) && (name.endsWith("-provider") || name.endsWith("-enabled") || name.endsWith("-provider-default"));
     }
 

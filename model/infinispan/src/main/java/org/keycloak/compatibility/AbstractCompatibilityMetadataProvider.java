@@ -28,9 +28,13 @@ public abstract class AbstractCompatibilityMetadataProvider implements Compatibi
         configKeys().forEach(key -> {
             String value = config.get(key);
             if (value != null)
-                metadata.put(key, value);
+                metadata.put(remapConfigKey(key), value);
         });
         return metadata;
+    }
+
+    protected String remapConfigKey(String key) {
+        return key;
     }
 
     @Override
