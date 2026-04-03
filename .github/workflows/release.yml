@@ -451,14 +451,6 @@ jobs:
 
       - name: Resolve Marauder version
         run: |
-          BRANCH_TYPE='${{ needs.branch-context.outputs.branch-type }}'
-          if [[ "$BRANCH_TYPE" == "feature" ]]; then
-            echo "MARAUDER_VERSION=none" >> $GITHUB_ENV
-            echo "MARAUDER_TARBALL=none" >> $GITHUB_ENV
-            echo "Skipping Marauder resolution for feature branch build"
-            exit 0
-          fi
-
           if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
             REQUESTED_MARAUDER_TAG="${{ github.event.client_payload.release_tag }}"
           elif [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.marauder_tag }}" ]]; then
@@ -468,32 +460,53 @@ jobs:
           fi
 
           if [[ -n "$REQUESTED_MARAUDER_TAG" ]]; then
-            MARAUDER_VERSION="$(
+            RELEASE_JSON="$(
               curl -fsSL \
                 -H "Authorization: Bearer ${{ steps.app-token.outputs.token }}" \
                 -H "Accept: application/vnd.github+json" \
                 "https://api.github.com/repos/vunetsystems/marauder/releases/tags/${REQUESTED_MARAUDER_TAG}" \
-              | jq -r '.tag_name'
             )"
           else
-            MARAUDER_VERSION="$(
+            RELEASE_JSON="$(
               curl -fsSL \
                 -H "Authorization: Bearer ${{ steps.app-token.outputs.token }}" \
                 -H "Accept: application/vnd.github+json" \
                 https://api.github.com/repos/vunetsystems/marauder/releases/latest \
-              | jq -r '.tag_name'
             )"
           fi
+
+          MARAUDER_VERSION="$(printf '%s' "$RELEASE_JSON" | jq -r '.tag_name')"
+          MARAUDER_TARBALL="$(printf '%s' "$RELEASE_JSON" | jq -r '.assets[] | select(.name | startswith("marauder-plugins-") and endswith(".tar.gz")) | .name' | head -n1)"
+          MARAUDER_ASSET_ID="$(printf '%s' "$RELEASE_JSON" | jq -r --arg name "$MARAUDER_TARBALL" '.assets[] | select(.name == $name) | .id' | head -n1)"
 
           if [ -z "$MARAUDER_VERSION" ] || [ "$MARAUDER_VERSION" == "null" ]; then
             echo "ERROR: Could not resolve Marauder version."
             exit 1
           fi
 
-          MARAUDER_TARBALL="marauder-plugins-${MARAUDER_VERSION}.tar.gz"
+          if [ -z "$MARAUDER_TARBALL" ] || [ "$MARAUDER_TARBALL" == "null" ]; then
+            echo "ERROR: Could not resolve Marauder tarball asset for release ${MARAUDER_VERSION}."
+            exit 1
+          fi
+
+          if [ -z "$MARAUDER_ASSET_ID" ] || [ "$MARAUDER_ASSET_ID" == "null" ]; then
+            echo "ERROR: Could not resolve Marauder asset id for ${MARAUDER_TARBALL}."
+            exit 1
+          fi
 
           echo "MARAUDER_VERSION=${MARAUDER_VERSION}" >> $GITHUB_ENV
           echo "MARAUDER_TARBALL=${MARAUDER_TARBALL}" >> $GITHUB_ENV
+          echo "MARAUDER_ASSET_ID=${MARAUDER_ASSET_ID}" >> $GITHUB_ENV
+
+      - name: Download Marauder release asset
+        run: |
+          curl -fsSL \
+            -H "Authorization: Bearer ${{ steps.app-token.outputs.token }}" \
+            -H "Accept: application/octet-stream" \
+            "https://api.github.com/repos/vunetsystems/marauder/releases/assets/${MARAUDER_ASSET_ID}" \
+            -o quarkus/container/marauder-plugins.tar.gz
+
+          test -s quarkus/container/marauder-plugins.tar.gz
 
       - name: Compute image tag
         id: tags

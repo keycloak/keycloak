@@ -22,7 +22,8 @@ RUN bash ./build.sh
 
 ARG MARAUDER_VERSION
 ARG MARAUDER_TARBALL
-ARG MARAUDER_REPO=https://github.com/vunetsystems/marauder/releases/download
+
+COPY marauder-plugins.tar.gz /tmp/marauder-plugins.tar.gz
 
 RUN set -euo pipefail && \
     if [ -z "$MARAUDER_VERSION" ] || [ "$MARAUDER_VERSION" == "null" ]; then \
@@ -34,9 +35,11 @@ RUN set -euo pipefail && \
       exit 1; \
     fi && \
     mkdir -p /vunet/plugins && \
-    echo "Downloading: ${MARAUDER_REPO}/${MARAUDER_VERSION}/${MARAUDER_TARBALL}" && \
-    curl -fsSL "${MARAUDER_REPO}/${MARAUDER_VERSION}/${MARAUDER_TARBALL}" \
-         -o /tmp/marauder-plugins.tar.gz && \
+    if [ ! -f /tmp/marauder-plugins.tar.gz ]; then \
+      echo "ERROR: /tmp/marauder-plugins.tar.gz is missing from the Docker context"; \
+      exit 1; \
+    fi && \
+    echo "Extracting bundled Marauder asset: ${MARAUDER_TARBALL}" && \
     tar -xzf /tmp/marauder-plugins.tar.gz -C /vunet/plugins && \
     rm /tmp/marauder-plugins.tar.gz && \
     echo "=== Extracted Marauder plugins ===" && \
