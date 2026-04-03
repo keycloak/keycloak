@@ -39,6 +39,7 @@ import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
 import org.keycloak.spi.infinispan.CacheEmbeddedConfigProviderSpi;
 import org.keycloak.spi.infinispan.impl.embedded.DefaultCacheEmbeddedConfigProviderFactory;
 
+import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Expressions;
 import io.smallrye.config.PropertiesConfigSource;
@@ -106,6 +107,21 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("debug", createConfig().getRawValue("kc.log-level"));
         Environment.setRebuild();
         assertNull(Expressions.withoutExpansion(() -> Configuration.getConfigValue("kc.log-level")).getValue());
+    }
+
+    @Test
+    public void testDevModeAugmentationHidesRuntimeDefaults() {
+        ConfigArgsConfigSource.setCliArgs("--log-console-output=default");
+        createConfig();
+        LaunchMode.set(LaunchMode.DEVELOPMENT);
+        try {
+            // runtime values should be hidden when Quarkus probes for defaults during dev-mode augmentation
+            assertNull(Expressions.withoutExpansion(() -> Configuration.getConfigValue("kc.log-console-output")).getValue());
+            // but visible during normal dev-mode runtime (expressions enabled)
+            assertNotNull(Configuration.getConfigValue("kc.log-console-output").getValue());
+        } finally {
+            LaunchMode.set(LaunchMode.NORMAL);
+        }
     }
 
     @Test

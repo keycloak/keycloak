@@ -30,6 +30,7 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
+import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.Expressions;
@@ -86,6 +87,11 @@ public final class PropertyMappers {
                 && (NestedPropertyMappingInterceptor.getResolvingRoot().or(() -> Optional.of(name))
                         .filter(n -> n.startsWith("quarkus.log.") || n.startsWith("quarkus.console.")).isEmpty()
                         || !Expressions.isEnabled())) {
+            return ConfigValue.builder().withName(name).build();
+        }
+
+        // In Quarkus dev mode, also hide runtime defaults during augmentation probing (fixes #47659)
+        if (LaunchMode.current() == LaunchMode.DEVELOPMENT && !Expressions.isEnabled() && isKeycloakRuntime(name, mapper)) {
             return ConfigValue.builder().withName(name).build();
         }
 
