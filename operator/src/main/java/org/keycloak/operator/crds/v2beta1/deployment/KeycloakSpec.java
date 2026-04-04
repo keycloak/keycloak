@@ -35,6 +35,7 @@ import org.keycloak.operator.crds.v2beta1.deployment.spec.NetworkPolicySpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.ProbeSpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.ProxySpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.SchedulingSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceAccountSpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceMonitorSpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.TelemetrySpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.TracingSpec;
@@ -174,6 +175,10 @@ public class KeycloakSpec {
     @JsonProperty("admin")
     @JsonPropertyDescription("In this section you can find all properties related to making admin connections from the operator to the server. These settings are not used by the server.")
     private AdminSpec adminSpec;
+
+    @JsonProperty("serviceAccount")
+    @JsonPropertyDescription("In this section you can configure the ServiceAccount created for the Keycloak pods.")
+    private ServiceAccountSpec serviceAccountSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -422,5 +427,13 @@ public class KeycloakSpec {
 
     public void setAdminSpec(AdminSpec adminSpec) {
         this.adminSpec = adminSpec;
+    }
+
+    public ServiceAccountSpec getServiceAccountSpec() {
+        return serviceAccountSpec;
+    }
+
+    public void setServiceAccountSpec(ServiceAccountSpec serviceAccountSpec) {
+        this.serviceAccountSpec = serviceAccountSpec;
     }
 }
