@@ -1,0 +1,157 @@
+package org.keycloak.tests.client.authentication.external;
+
+import java.util.UUID;
+
+import org.keycloak.authentication.authenticators.client.FederatedJWTClientAuthenticator;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
+import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
+import org.keycloak.common.util.Time;
+import org.keycloak.events.EventType;
+import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.testframework.annotations.InjectEvents;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.events.EventAssertion;
+import org.keycloak.testframework.events.Events;
+import org.keycloak.testframework.injection.LifeCycle;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.OAuthIdentityProvider;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthIdentityProvider;
+import org.keycloak.testframework.realm.ClientConfigBuilder;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+@KeycloakIntegrationTest
+public class FederatedClientAuthConflictsTest {
+
+    @InjectOAuthIdentityProvider
+    OAuthIdentityProvider identityProvider;
+
+    @InjectRealm(lifecycle = LifeCycle.METHOD)
+    ManagedRealm realm;
+
+    @InjectOAuthClient
+    OAuthClient oAuthClient;
+
+    @InjectEvents
+    Events events;
+
+    @Test
+    public void testDuplicatedIssuers() {
+        createIdp("idp1", "http://127.0.0.1:8500", false);
+        createIdp("idp2", "http://127.0.0.1:8500", false);
+
+        createClient("myclient", "external1", "idp1");
+
+        // Should fail as there are two IdPs with the same issuer URL
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
+        Assertions.assertFalse(response.isSuccess());
+        Assertions.assertEquals("Invalid client or Invalid client credentials", response.getErrorDescription());
+    }
+
+    @Test
+    public void testChangedIssuer() {
+        IdentityProviderRepresentation idp1 = createIdp("idp1", "http://127.0.0.1:8500");
+
+        ClientRepresentation clientRep = createClient("myclient", "external1", "idp1");
+
+        // Should fail as there are two IdPs with the same issuer URL
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
+        Assertions.assertTrue(response.isSuccess());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient");
+
+        IdentityProviderRepresentation idp2 = createIdp("idp2", "http://127.0.0.1:8500", false);
+
+        clientRep.getAttributes().put(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, "idp2");
+        realm.admin().clients().get(clientRep.getId()).update(clientRep);
+
+        // Should fail since the old entry is still cached
+        response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
+        Assertions.assertFalse(response.isSuccess());
+        Assertions.assertEquals("Invalid client or Invalid client credentials", response.getErrorDescription());
+
+        // Update old entry, so next read will invalidate it
+        idp1.getConfig().put(IdentityProviderModel.ISSUER, "http://127.0.0.1:8501");
+        idp1.getConfig().put(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, "false");
+        realm.admin().identityProviders().get(idp1.getAlias()).update(idp1);
+
+        idp2.getConfig().put(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, "true");
+        realm.admin().identityProviders().get(idp2.getAlias()).update(idp2);
+
+        // Should succeed as entry is updated in the cache
+        events.clear();
+        response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500")).send();
+        Assertions.assertTrue(response.isSuccess());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient");
+    }
+
+    @Test
+    public void testDuplicatedClientExternalId() {
+        createIdp("idp1", "http://127.0.0.1:8500/one");
+        createIdp("idp2", "http://127.0.0.1:8500/two");
+
+        createClient("myclient1", "external1", "idp1");
+        createClient("myclient2", "external1", "idp2");
+
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500/one")).send();
+        Assertions.assertTrue(response.isSuccess());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient1");
+
+        response = oAuthClient.clientCredentialsGrantRequest().clientJwt(createDefaultToken("external1", "http://127.0.0.1:8500/two")).send();
+        Assertions.assertTrue(response.isSuccess());
+
+        EventAssertion.assertSuccess(events.poll()).type(EventType.CLIENT_LOGIN).clientId("myclient2");
+    }
+
+    private String createDefaultToken(String externalClientId, String issuer) {
+        JsonWebToken token = new JsonWebToken();
+        token.id(UUID.randomUUID().toString());
+        token.issuer(issuer);
+        token.audience(oAuthClient.getEndpoints().getIssuer());
+        token.exp((long) (Time.currentTime() + 300));
+        token.subject(externalClientId);
+        return identityProvider.encodeToken(token);
+    }
+
+    private IdentityProviderRepresentation createIdp(String alias, String issuer) {
+        return createIdp(alias, issuer, true);
+    }
+
+    private IdentityProviderRepresentation createIdp(String alias, String issuer, boolean supportsClientAssertions) {
+        IdentityProviderRepresentation rep = IdentityProviderBuilder.create()
+                .providerId(OIDCIdentityProviderFactory.PROVIDER_ID)
+                .alias(alias)
+                .setAttribute(IdentityProviderModel.ISSUER, issuer)
+                .setAttribute(OIDCIdentityProviderConfig.SUPPORTS_CLIENT_ASSERTIONS, String.valueOf(supportsClientAssertions))
+                .setAttribute(OIDCIdentityProviderConfig.USE_JWKS_URL, "true")
+                .setAttribute(OIDCIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
+                .setAttribute(OIDCIdentityProviderConfig.JWKS_URL, "http://127.0.0.1:8500/idp/jwks")
+                .build();
+        rep.setInternalId(ApiUtil.getCreatedId(realm.admin().identityProviders().create(rep)));
+        return rep;
+    }
+
+    private ClientRepresentation createClient(String clientId, String externalClientId, String idpAlias) {
+        ClientRepresentation rep = ClientConfigBuilder.create().clientId(clientId)
+                .serviceAccountsEnabled(true)
+                .authenticatorType(FederatedJWTClientAuthenticator.PROVIDER_ID)
+                .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_ISSUER_KEY, idpAlias)
+                .attribute(FederatedJWTClientAuthenticator.JWT_CREDENTIAL_SUBJECT_KEY, externalClientId)
+                .build();
+        rep.setId(ApiUtil.getCreatedId(realm.admin().clients().create(rep)));
+        return rep;
+    }
+
+}

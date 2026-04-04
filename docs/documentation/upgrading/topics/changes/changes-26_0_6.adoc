@@ -1,0 +1,5 @@
+= Security improvements for the key resolvers
+
+While using the `REALM_FILESEPARATOR_KEY` key resolver, {project_name} now restricts access to FileVault secrets outside of its realm. Characters that could cause path traversal when specifying the expression placeholder in the Administration Console are now prohibited.
+
+Additionally, the `KEY_ONLY` key resolver now escapes the `+_+` character to prevent reading secrets that would otherwise be linked to another realm when the `REALM_UNDERSCORE_KEY` resolver is used. The escaping simply replaces `+_+` with `+__+`, so, for example, `${vault.my_secret}` now looks for a file named `my++__++secret`. We recognize that this is a breaking change; therefore, a warning is logged to ease the transition.

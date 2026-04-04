@@ -1,0 +1,38 @@
+name: Version Compatibility Matrix
+
+# This workflow generates the version compatibility matrix for mixed-cluster tests.
+# It is separated from the main CI workflow to avoid multiline secret masking issues.
+# See: https://github.com/keycloak/keycloak/issues/45745
+
+on:
+  workflow_call:
+    outputs:
+      matrix:
+        description: 'Version compatibility matrix JSON for mixed-cluster tests'
+        value: ${{ jobs.generate-matrix.outputs.matrix }}
+
+permissions:
+  contents: read
+
+jobs:
+  generate-matrix:
+    name: Generate Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.version-compatibility.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Version Compatibility Matrix
+        id: version-compatibility
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BRANCH="${{ github.base_ref }}"
+          else
+            BRANCH="${{ github.ref_name }}"
+          fi
+          MATRIX_JSON=$(./.github/scripts/version-compatibility.sh "${BRANCH}")
+          echo "${MATRIX_JSON}"
+          echo "matrix=${MATRIX_JSON}" >> $GITHUB_OUTPUT

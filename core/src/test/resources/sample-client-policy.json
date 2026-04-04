@@ -1,0 +1,20 @@
+{
+  "policies": [
+    {
+      "name": "some-policy",
+      "description": "This is some client policy.",
+      "enabled": true,
+      "conditions": [
+        {
+          "condition": "some-condition",
+          "configuration": {
+            "is-negative-logic": true,
+            "string-option": "val1",
+            "int-option": 14,
+            "bool-option": true
+          }
+        }
+      ]
+    }
+  ]
+}

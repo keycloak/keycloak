@@ -1,0 +1,29 @@
+<#import "/templates/guide.adoc" as tmpl>
+
+<@tmpl.guide
+title="Docker"
+summary="Get started with {project_name} on Docker.">
+
+:containerCommand: docker
+
+:links-local: true
+:links-admin-console: http://localhost:8080/admin[{project_name} Admin Console]
+:links-account-console: http://localhost:8080/realms/myrealm/account[{project_name} Account Console]
+
+== Before you start
+
+include::templates/hw-requirements.adoc[]
+
+Make sure you have Docker installed.
+
+<#include "templates/start-keycloak-container.adoc" />
+
+include::templates/realm-config.adoc[]
+
+include::templates/login-to-account.adoc[]
+
+include::templates/first-app.adoc[]
+
+include::templates/next.adoc[]
+
+</@tmpl.guide>

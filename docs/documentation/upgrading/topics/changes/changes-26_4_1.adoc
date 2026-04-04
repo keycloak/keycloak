@@ -1,0 +1,10 @@
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes where an internal behavior changed to prevent common misconfigurations, fix bugs or simplify running {project_name}.
+
+=== User sessions created with "Remember Me" are no longer valid if "Remember Me" is disabled for the realm
+
+When the "Remember Me" option is disabled in the realm settings, all user sessions previously created with the "Remember Me" flag are now considered invalid.
+Users will be required to log in again, and any associated refresh tokens will no longer be usable.
+User sessions created without selecting "Remember Me" are not affected.

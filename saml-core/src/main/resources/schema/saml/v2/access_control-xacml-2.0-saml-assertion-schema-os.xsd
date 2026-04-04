@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema
+        targetNamespace="urn:oasis:xacml:2.0:saml:assertion:schema:os"
+        xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+        xmlns:xacml-context="urn:oasis:names:tc:xacml:2.0:context:schema:os"
+        xmlns:xacml="urn:oasis:names:tc:xacml:2.0:policy:schema:os"
+        xmlns:xacml-saml="urn:oasis:xacml:2.0:saml:assertion:schema:os"
+        elementFormDefault="unqualified"
+        attributeFormDefault="unqualified"
+        blockDefault="substitution"
+        version="2.0">
+  <xs:import namespace="urn:oasis:names:tc:SAML:2.0:assertion"
+             schemaLocation="http://www.oasis-open.org/committees/download.php/11027/sstc-saml-schema-assertion-2.0.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:SAML:2.0:protocol"
+             schemaLocation="http://www.oasis-open.org/committees/download.php/11026/sstc-saml-schema-protocol-2.0.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:xacml:2.0:context:schema:os"
+             schemaLocation="http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-context-schema-os.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:xacml:2.0:policy:schema:os"
+             schemaLocation="http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-policy-schema-os.xsd"/>
+  <xs:annotation>
+    <xs:documentation>
+      Document identifier: access_control-xacml-2.0-saml-assertion-schema-cd-02.xsd
+      Location: http://docs.oasis-open.org/xacml/2.0/access_control-xacml-2.0-saml-assertion-schema-cd-os.xsd
+    </xs:documentation>
+  </xs:annotation>
+  <!--    -->
+  <xs:element name="XACMLAuthzDecisionStatement"
+              type="xacml-saml:XACMLAuthzDecisionStatementType"/>
+  <xs:complexType name="XACMLAuthzDecisionStatementType">
+    <xs:complexContent>
+      <xs:extension base="saml:StatementAbstractType">
+        <xs:sequence>
+          <xs:element ref="xacml-context:Response"/>
+          <xs:element ref="xacml-context:Request" minOccurs="0"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <!--    -->
+  <xs:element name="XACMLPolicyStatement"
+              type="xacml-saml:XACMLPolicyStatementType"/>
+  <xs:complexType name="XACMLPolicyStatementType">
+    <xs:complexContent>
+      <xs:extension base="saml:StatementAbstractType">
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element ref="xacml:Policy"/>
+          <xs:element ref="xacml:PolicySet"/>
+        </xs:choice>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</schema>

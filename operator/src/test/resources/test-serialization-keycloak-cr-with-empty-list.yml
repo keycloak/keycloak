@@ -1,0 +1,14 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: test-serialization-kc
+spec:
+  features:
+    enabled:
+      -
+  http:
+    tlsSecret: my-tls-secret
+  resources:
+    limits:
+      cpu: 3
+      memory: 5Gi

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<databaseChangeLog logicalFilePath="META-INF/db2-jpa-changelog-1.2.0.CR1.xml" xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <changeSet author="bburke@redhat.com" id="1.2.0.RC1">
+        <validCheckSum>7:a77ea2ad226b345e7d689d366f185c8c</validCheckSum>
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <dbms type="db2" />
+        </preConditions>
+
+        <delete tableName="CLIENT_SESSION_ROLE"/>
+        <delete tableName="CLIENT_SESSION_NOTE"/>
+        <delete tableName="CLIENT_SESSION"/>
+        <delete tableName="USER_SESSION_NOTE"/>
+        <delete tableName="USER_SESSION"/>
+
+        <createTable tableName="MIGRATION_MODEL">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VERSION" type="VARCHAR(36)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="IDENTITY_PROVIDER_MAPPER">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="IDP_ALIAS" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="IDP_MAPPER_NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="IDP_MAPPER_CONFIG">
+            <column name="IDP_MAPPER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="VALUE" type="CLOB"/>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addColumn tableName="CREDENTIAL">
+            <column name="CREATED_DATE" type="BIGINT"/>
+        </addColumn>
+        <createTable tableName="USER_CONSENT">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="USER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="USER_CONSENT_ROLE">
+            <column name="USER_CONSENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="USER_CONSENT_PROT_MAPPER">
+            <column name="USER_CONSENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PROTOCOL_MAPPER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createTable tableName="CLIENT_SESSION_PROT_MAPPER">
+            <column name="PROTOCOL_MAPPER_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLIENT_SESSION" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_MIGMOD" tableName="MIGRATION_MODEL"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_IDPM" tableName="IDENTITY_PROVIDER_MAPPER"/>
+        <addPrimaryKey columnNames="IDP_MAPPER_ID, NAME" constraintName="CONSTRAINT_IDPMConfig" tableName="IDP_MAPPER_CONFIG"/>
+        <addPrimaryKey columnNames="ID" constraintName="CONSTRAINT_GRNTCSNT_PM" tableName="USER_CONSENT"/>
+        <addPrimaryKey columnNames="USER_CONSENT_ID, ROLE_ID" constraintName="CONSTRAINT_GRNTCSNT_ROLE_PM" tableName="USER_CONSENT_ROLE"/>
+        <addPrimaryKey columnNames="USER_CONSENT_ID, PROTOCOL_MAPPER_ID" constraintName="CONSTRAINT_GRNTCSNT_PRM_PM" tableName="USER_CONSENT_PROT_MAPPER"/>
+        <addPrimaryKey columnNames="CLIENT_SESSION, PROTOCOL_MAPPER_ID" constraintName="CONSTRAINT_CS_PMP_PK" tableName="CLIENT_SESSION_PROT_MAPPER"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="IDENTITY_PROVIDER_MAPPER" constraintName="FK_IDPM_REALM" referencedColumnNames="ID" referencedTableName="REALM"/>
+        <addForeignKeyConstraint baseColumnNames="IDP_MAPPER_ID" baseTableName="IDP_MAPPER_CONFIG" constraintName="FK_IDPMConfig" referencedColumnNames="ID" referencedTableName="IDENTITY_PROVIDER_MAPPER"/>
+        <addForeignKeyConstraint baseColumnNames="USER_ID" baseTableName="USER_CONSENT" constraintName="FK_GRNTCSNT_USER" referencedColumnNames="ID" referencedTableName="USER_ENTITY"/>
+        <addForeignKeyConstraint baseColumnNames="USER_CONSENT_ID" baseTableName="USER_CONSENT_ROLE" constraintName="FK_GRNTCSNT_ROLE_GR" referencedColumnNames="ID" referencedTableName="USER_CONSENT"/>
+        <addForeignKeyConstraint baseColumnNames="USER_CONSENT_ID" baseTableName="USER_CONSENT_PROT_MAPPER" constraintName="FK_GRNTCSNT_PRM_GR" referencedColumnNames="ID" referencedTableName="USER_CONSENT"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_SESSION" baseTableName="CLIENT_SESSION_PROT_MAPPER" constraintName="FK_33A8SGQW18I532811V7O2DK89" referencedColumnNames="ID" referencedTableName="CLIENT_SESSION"/>
+
+        <renameColumn tableName="CLIENT" newColumnName="CLIENT_ID" oldColumnName="NAME" columnDataType="VARCHAR(255)"/>
+        <!-- DB2 specific. Original changelog has this in 1.0.0.Final -->
+        <addUniqueConstraint columnNames="REALM_ID,CLIENT_ID" constraintName="UK_B71CJLBENV945RB6GCON438AT" tableName="CLIENT"/>
+
+        <addColumn tableName="CLIENT">
+            <column name="CONSENT_REQUIRED" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)" />
+        </addColumn>
+        <addColumn tableName="IDENTITY_PROVIDER">
+            <column name="ADD_TOKEN_ROLE" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <update tableName="CLIENT">
+            <column name="CONSENT_REQUIRED" valueBoolean="true"/>
+            <where>DTYPE = 'OAuthClientEntity'</where>
+        </update>
+        <dropColumn tableName="CLIENT" columnName="DTYPE"/>
+
+        <dropForeignKeyConstraint baseTableName="REALM" constraintName="FK_RSAF444KK6QRKMS7N56AIWQ5Y" />
+        <renameColumn tableName="REALM" newColumnName="MASTER_ADMIN_CLIENT" oldColumnName="MASTER_ADMIN_APP" columnDataType="VARCHAR(36)"/>
+        <addForeignKeyConstraint baseColumnNames="MASTER_ADMIN_CLIENT" baseTableName="REALM" constraintName="FK_TRAF444KK6QRKMS7N56AIWQ5Y" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+
+        <!--<dropForeignKeyConstraint baseTableName="REALM_APPLICATION" constraintName="FK_82S3P0DIUXAWWQQSA528UBY2Q" />-->
+        <renameTable oldTableName="REALM_APPLICATION" newTableName="REALM_CLIENT"/>
+        <renameColumn tableName="REALM_CLIENT" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID" columnDataType="VARCHAR(36)"/>
+        <addUniqueConstraint columnNames="CLIENT_ID" constraintName="UK_M6QGA3RFME47335JY8JXYXH3I" tableName="REALM_CLIENT" />
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="REALM_CLIENT" constraintName="FK_93S3P0DIUXAWWQQSA528UBY2Q" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="REALM_ID" baseTableName="REALM_CLIENT" constraintName="FK_M6QGA3RFME47335JY8JXYXH3I" referencedColumnNames="ID" referencedTableName="REALM" />
+
+        <!--<dropForeignKeyConstraint baseTableName="APPLICATION_DEFAULT_ROLES" constraintName="FK_MAYLTS7KLWQW2H8M2B5JOYTKY" />-->
+        <renameTable oldTableName="APPLICATION_DEFAULT_ROLES" newTableName="CLIENT_DEFAULT_ROLES"/>
+        <renameColumn tableName="CLIENT_DEFAULT_ROLES" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID" columnDataType="VARCHAR(36)"/>
+        <addUniqueConstraint columnNames="ROLE_ID" constraintName="UK_8AELWNIBJI49AVXSRTUF6XJOW" tableName="CLIENT_DEFAULT_ROLES"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_DEFAULT_ROLES" constraintName="FK_NUILTS7KLWQW2H8M2B5JOYTKY" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+        <addForeignKeyConstraint baseColumnNames="ROLE_ID" baseTableName="CLIENT_DEFAULT_ROLES" constraintName="FK_8AELWNIBJI49AVXSRTUF6XJOW" referencedColumnNames="ID" referencedTableName="KEYCLOAK_ROLE"/>
+
+        <dropForeignKeyConstraint baseTableName="APP_NODE_REGISTRATIONS" constraintName="FK8454723BA992F594" />
+        <dropPrimaryKey constraintName="CONSTRAINT_84" tableName="APP_NODE_REGISTRATIONS"/>
+        <renameTable oldTableName="APP_NODE_REGISTRATIONS" newTableName="CLIENT_NODE_REGISTRATIONS"/>
+        <renameColumn tableName="CLIENT_NODE_REGISTRATIONS" newColumnName="CLIENT_ID" oldColumnName="APPLICATION_ID" columnDataType="VARCHAR(36)"/>
+        <addPrimaryKey columnNames="CLIENT_ID, NAME" constraintName="CONSTRAINT_84_2" tableName="CLIENT_NODE_REGISTRATIONS"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT_ID" baseTableName="CLIENT_NODE_REGISTRATIONS" constraintName="FK4129723BA992F594" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+
+        <dropForeignKeyConstraint baseTableName="KEYCLOAK_ROLE" constraintName="FK_PIMO5LE2C0RAL09FL8CM9WFW9" />
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT" oldColumnName="APPLICATION" columnDataType="VARCHAR(36)"/>
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT_ROLE" oldColumnName="APPLICATION_ROLE" columnDataType="BOOLEAN"/>
+        <renameColumn tableName="KEYCLOAK_ROLE" newColumnName="CLIENT_REALM_CONSTRAINT" oldColumnName="APP_REALM_CONSTRAINT" columnDataType="VARCHAR(36)"/>
+        <addForeignKeyConstraint baseColumnNames="CLIENT" baseTableName="KEYCLOAK_ROLE" constraintName="FK_KJHO5LE2C0RAL09FL8CM9WFW9" referencedColumnNames="ID" referencedTableName="CLIENT"/>
+
+        <!--<dropUniqueConstraint tableName="KEYCLOAK_ROLE" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2"/>-->
+        <addUniqueConstraint columnNames="NAME,CLIENT_REALM_CONSTRAINT" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="KEYCLOAK_ROLE"/>
+        <addUniqueConstraint columnNames="CLIENT_ID, USER_ID" constraintName="UK_JKUWUVD56ONTGSUHOGM8UEWRT" tableName="USER_CONSENT"/>
+
+        <customChange class="org.keycloak.connections.jpa.updater.liquibase.custom.JpaUpdate1_2_0_CR1"/>
+
+    </changeSet>
+</databaseChangeLog>

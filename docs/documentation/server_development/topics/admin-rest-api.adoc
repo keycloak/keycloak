@@ -1,0 +1,73 @@
+== Admin REST API
+
+{project_name} comes with a fully functional Admin REST API with all features provided by the Admin Console.
+
+To invoke the API you need to obtain an access token with the appropriate permissions. The required permissions are described in the link:{adminguide_link}[{adminguide_name}].
+
+You can obtain a token by enabling authentication for your application using {project_name}; see the Securing Applications and Services Guide. You can also use direct access grant to obtain an access token.
+
+=== Examples of using CURL
+
+==== Authenticating with a username and password
+
+NOTE: The following example assumes that you created the user `admin` with the password `password` in the `master` realm as shown in the link:{gettingstarted_link}[{gettingstarted_name}] tutorial.
+
+.Procedure
+
+. Obtain an access token for the user in the realm `master` with username `admin` and password `password`:
++
+[source,bash,subs=+attributes]
+----
+curl \
+  -d "client_id=admin-cli" \
+  -d "username=admin" \
+  -d "password=password" \
+  -d "grant_type=password" \
+  "http://localhost:8080{kc_realms_path}/master/protocol/openid-connect/token"
+----
++
+NOTE: By default this token expires in 1 minute
++
+The result will be a JSON document.
+
+. Invoke the API you need by extracting the value of the `access_token` property.
+
+. Invoke the API by including the value in the `Authorization` header of requests to the API.
++
+The following example shows how to get the details of the master realm:
++
+[source,bash,subs="attributes+"]
+----
+curl \
+  -H "Authorization: bearer eyJhbGciOiJSUz..." \
+  "http://localhost:8080{kc_admins_path}/realms/master"
+----
+
+==== Authenticating with a service account
+
+To authenticate against the Admin REST API using a `client_id` and a `client_secret`, perform this procedure.
+
+.Procedure
+
+. Make sure the client is configured as follows:
+
+* `client_id` belongs to the realm *master*
+* `client_id` has *Client authentication* set to *On*
+* `client_id` has the *Service account roles* option enabled
+* Assign `client_id` the `admin` realm role in the *Service accounts roles* tab.
+
+. Use the *Client Secret* from the *Credentials* tab to verify the service account access:
+
+[source,bash,subs="attributes+"]
+----
+curl \
+  -d "client_id=<YOUR_CLIENT_ID>" \
+  -d "client_secret=<YOUR_CLIENT_SECRET>" \
+  -d "grant_type=client_credentials" \
+  "http://localhost:8080{kc_realms_path}/master/protocol/openid-connect/token"
+----
+
+=== Additional resources
+[role="_additional-resources"]
+* {adminguide_link}[{adminguide_name}]
+* {apidocs_link}[{apidocs_name}]

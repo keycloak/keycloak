@@ -1,0 +1,7 @@
+.keycloak__authentication__header-drag-button svg {
+  fill: var(--pf-v5-global--BackgroundColor--100);
+}
+
+.keycloak__authentication__header .pf-v5-c-data-list__cell {
+  font-weight: 700;
+}
