@@ -267,12 +267,15 @@ public class ServerInfoAdminResource {
         Locale locale = session.getContext().resolveLocale(null);
 
         Properties enhancedMessages = theme.getEnhancedMessages(session.getContext().getRealm(), locale);
-        if (enhancedMessages == null) {
-            return null;
+        if (enhancedMessages != null) {
+            String descriptionKey = "theme." + theme.getName() + "." + theme.getType().name().toLowerCase(Locale.ROOT) + ".description";
+            String description = enhancedMessages.getProperty(descriptionKey);
+            if (description != null) {
+                return description;
+            }
         }
 
-        String descriptionKey = "theme." + theme.getName() + "." + theme.getType().name().toLowerCase(Locale.ROOT) + ".description";
-        return enhancedMessages.getProperty(descriptionKey);
+        return theme.getProperties().getProperty("description");
     }
 
     private LinkedList<String> filterThemes(Theme.Type type, LinkedList<String> themeNames) {
