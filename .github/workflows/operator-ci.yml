@@ -178,8 +178,10 @@ jobs:
       - name: Deploy an example Keycloak and wait for it to be ready
         working-directory: operator/scripts
         run: |
-          ./check-crd-installed.sh keycloaks
-          ./check-crd-installed.sh keycloakrealmimports
+          ./check-crd-installed.sh keycloaks.v2alpha1.k8s.keycloak.org
+          ./check-crd-installed.sh keycloakrealmimports.v2alpha1.k8s.keycloak.org
+          ./check-crd-installed.sh keycloaks.v2beta1.k8s.keycloak.org
+          ./check-crd-installed.sh keycloakrealmimports.v2beta1.k8s.keycloak.org
           ./deploy-examples.sh
           
       - name: Single namespace cleanup

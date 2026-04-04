@@ -318,6 +318,13 @@ Running {project_name} on a database that is not using UTF-8 as a charset is now
 
 In the current version {project_name} will log a warning if the database is not configured to use UTF-8 encoding. Future versions might refuse to work with database that is not configured to use UTF-8 encoding.
 
+=== `Keycloak` and `KeycloakRealmImport` CRDs v2beta1 version
+
+To better capture the maturity of Operator CRDs for the `Keycloak` and `KeycloakRealmImport`, the resources now include a `v2beta1` version.
+The previous `v2alpha1` version for these resources is deprecated but still served. You can keep using it but we recommend upgrading to `v2beta1` at your earliest convenience.
+There are currently no differences in the schema between the two versions,
+so you will just need to update the relevant `apiVersion` references.
+
 // ------------------------ Removed features ------------------------ //
 == Removed features
 

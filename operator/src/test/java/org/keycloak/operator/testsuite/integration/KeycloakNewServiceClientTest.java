@@ -1,7 +1,7 @@
 package org.keycloak.operator.testsuite.integration;
 
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
 import org.keycloak.utils.StringUtil;
 
 import io.quarkus.test.junit.QuarkusTest;
