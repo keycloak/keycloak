@@ -1,0 +1,5 @@
+# Workspace on the localhost
+local_workspace: files/keycloak
+
+# Workspace on the remote hosts
+kc_home: /opt/keycloak

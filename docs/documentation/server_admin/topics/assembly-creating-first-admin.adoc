@@ -1,0 +1,31 @@
+
+[id="creating-first-admin_{context}"]
+== Creating the first administrator
+
+After installing {project_name}, you need an administrator account that can act as a _super_ admin with full permissions to manage {project_name}. With this account, you can log in to the {project_name} Admin Console where you create realms and users and register applications that are secured by {project_name}.
+
+=== Creating the account on the local host
+
+If your server is accessible from `localhost`, perform these steps.
+
+.Procedure
+
+. In a web browser, go to the http://localhost:8080{kc_base_path} URL.
+
+. Supply a username and password that you can recall.
++
+.Welcome page
+image:images/initial-welcome-page.png[Welcome page]
+
+=== Creating the account remotely
+
+If you cannot access the server from a `localhost` address or just want to start {project_name} from the command line, use the `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` environment variables to create an initial admin account.
+
+For example:
+[source,bash]
+----
+export KC_BOOTSTRAP_ADMIN_USERNAME=<username>
+export KC_BOOTSTRAP_ADMIN_PASSWORD=<password>
+
+bin/kc.[sh|bat] start
+----

@@ -1,0 +1,10 @@
+
+=== Open redirectors
+
+An open redirector is an endpoint using a parameter to automatically redirect a user agent to the location specified by the parameter value without validation. An attacker can use the end-user authorization endpoint and the redirect URI parameter to use the authorization server as an open redirector, using a user's trust in an authorization server to launch a phishing attack.
+
+{project_name} requires that all registered applications and clients register at least one redirection URI pattern. When a client requests that {project_name} performs a redirect, {project_name} checks the redirect URI against the list of valid registered URI patterns. Clients and applications must register as specific a URI pattern as possible to mitigate open redirector attacks.
+
+If an application requires a non http(s) custom scheme, it should be an explicit part of the validation pattern (for example `custom:/app/\*`). For security reasons a general pattern like `*` does not cover non http(s) schemes.
+
+By using <<_client_policies, Client Policies>>, an administrator can make sure that clients cannot register open redirect URLs such as `*`.

@@ -1,0 +1,9 @@
+= Changes in jboss-logging event messages
+
+Because of issue https://github.com/keycloak/keycloak/issues/25078[#25078], the `jboss-logging` message values are now quoted (character `"` by default) and sanitized to prevent any line break. There are two new options in the provider (`spi-events-listener-jboss-logging-sanitize` and `spi-events-listener-jboss-logging-quotes`) that allow you to customize the new behavior. For example, to avoid both sanitization and quoting, the server can be started in this manner:
+
+```
+./kc.sh start --spi-events-listener-jboss-logging-sanitize=false --spi-events-listener-jboss-logging-quotes=none ...
+```
+
+For more information about the options, see https://www.keycloak.org/server/all-provider-config#_jboss_logging[all provider configuration guide].

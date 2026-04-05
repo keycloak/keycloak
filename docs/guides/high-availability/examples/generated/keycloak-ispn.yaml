@@ -1,0 +1,222 @@
+---
+# Source: keycloak/templates/infinispan/remote-store-secret.yaml
+# tag::keycloak-ispn-secret[]
+apiVersion: v1
+kind: Secret
+metadata:
+  name: remote-store-secret
+  namespace: keycloak
+type: Opaque
+data:
+  username: ZGV2ZWxvcGVy # base64 encoding for 'developer'
+  password: c2VjdXJlX3Bhc3N3b3Jk # base64 encoding for 'secure_password'
+# end::keycloak-ispn-secret[]
+---
+# Source: keycloak/templates/keycloak-db-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-db-secret
+  namespace: keycloak
+type: Opaque
+data:
+  username: a2V5Y2xvYWs= # keycloak
+  password: c2VjcmV0OTk= # secret99
+---
+# Source: keycloak/templates/keycloak-initial-admin-secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak-preconfigured-admin
+  namespace: keycloak
+type: kubernetes.io/basic-auth
+data:
+  password: YWRtaW4= # admin by default
+  username: YWRtaW4= # admin
+---
+# Source: keycloak/templates/keycloak-tls-secret.yaml
+apiVersion: v1
+data:
+  tls.crt: ...
+  tls.key: ...
+kind: Secret
+metadata:
+  name: keycloak-tls-secret
+  namespace: keycloak
+type: kubernetes.io/tls
+---
+# Source: keycloak/templates/keycloak-aurora-rootcert.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-aurora-rootcert
+  namespace: keycloak
+binaryData:
+  # https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/UsingWithRDS.SSL.html
+  aurora.pem: ...
+---
+# Source: keycloak/templates/keycloak-providers-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: keycloak-providers
+  namespace: keycloak
+binaryData:
+  keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar: ...
+---
+# Source: keycloak/templates/keycloak-jvmdebug-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak-jvmdebug
+  namespace: keycloak
+spec:
+  type: NodePort
+  ports:
+    - name: jvmdebug
+      port: 8787
+      protocol: TCP
+      nodePort: 30012
+  selector:
+    app: keycloak
+  sessionAffinity: None
+---
+# Source: keycloak/templates/keycloak.yaml
+# There are several callouts in this YAML marked with `# <1>' etc. See 'running/keycloak-deployment.adoc` for the details.
+# tag::keycloak[]
+# tag::keycloak-ispn[]
+apiVersion: k8s.keycloak.org/v2beta1
+kind: Keycloak
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak
+  namespace: keycloak
+spec:
+  # end::keycloak-ispn[]
+  hostname:
+    hostname: <KEYCLOAK_URL_HERE>
+  resources:
+    requests:
+      memory: "1024M"
+    limits:
+      memory: "1024M"
+  db:
+    vendor: postgres
+    url: jdbc:aws-wrapper:postgresql://<AWS_AURORA_URL_HERE>:5432/keycloak # <1>
+    poolMinSize: 15 # <2>
+    poolInitialSize: 15
+    poolMaxSize: 15
+    usernameSecret:
+      name: keycloak-db-secret
+      key: username
+    passwordSecret:
+      name: keycloak-db-secret
+      key: password
+  image: <KEYCLOAK_IMAGE_HERE> # <3>
+  startOptimized: false # <3>
+  update:
+    strategy: Auto
+  features:
+    enabled:
+      - rolling-updates:v2
+      - multi-site # <4>
+  # tag::keycloak-ispn[]
+  additionalOptions:
+    # end::keycloak-ispn[]
+    # end::keycloak[]
+    - name: http-metrics-histograms-enabled
+      value: 'true'
+    - name: http-metrics-slos
+      value: '5,10,25,50,250,500'
+    # tag::keycloak[]
+    # end::keycloak[]
+    # tag::keycloak-queue-size[]
+    - name: http-max-queued-requests
+      value: "1000"
+    # end::keycloak-queue-size[]
+    # tag::keycloak[]
+    - name: log-console-output
+      value: json
+    - name: metrics-enabled # <5>
+      value: 'true'
+    - name: event-metrics-user-enabled
+      value: 'true'
+    # tag::keycloak-ispn[]
+    - name: cache-remote-host # <1>
+      value: "infinispan.keycloak.svc"
+    - name: cache-remote-port # <2>
+      value: "11222"
+    - name: cache-remote-username # <3>
+      secret:
+        name: remote-store-secret
+        key: username
+    - name: cache-remote-password # <4>
+      secret:
+        name: remote-store-secret
+        key: password
+    - name: db-driver
+      # end::keycloak-ispn[]
+
+      value: software.amazon.jdbc.Driver
+    - name: db-tls-mode
+      value: verify-server
+  http:
+    tlsSecret: keycloak-tls-secret
+  instances: 1
+  # end::keycloak[]
+  serviceMonitor:
+    enabled: true
+  # tag::keycloak[]
+  truststores:
+    aurora:
+      configMap:
+        name: keycloak-aurora-rootcert # <6>
+  # end::keycloak[]
+  unsupported:
+    podTemplate:
+      metadata:
+        annotations:
+          checksum/config: 9a64736b87fb375f9d49ccd588c92d7ceca493d025339a849ef7000135147efc-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b-<KEYCLOAK_IMAGE_HERE>-01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+      spec:
+        containers:
+          - env:
+              # We want to have an externally provided username and password, therefore, we override those two environment variables
+              - name: KC_BOOTSTRAP_ADMIN_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: keycloak-preconfigured-admin
+                    key: username
+                    optional: false
+              - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: keycloak-preconfigured-admin
+                    key: password
+                    optional: false
+              - name: JAVA_OPTS_APPEND
+                value: >
+                  -Djdk.tracePinnedThreads=full
+
+            ports:
+            # readinessProbe:
+            #   exec:
+            #     command:
+            #       - 'true'
+            # livenessProbe:
+            #   exec:
+            #     command:
+            #       - 'true'
+            volumeMounts:
+              - name: keycloak-providers
+                mountPath: /opt/keycloak/providers/keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar
+                subPath: keycloak-benchmark-dataset-999.0.0-SNAPSHOT.jar
+                readOnly: true
+        volumes:
+          - name: keycloak-providers
+            configMap:
+              name: keycloak-providers

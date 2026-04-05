@@ -1,0 +1,4 @@
+<#import "/templates/links.adoc" as links>
+
+Make sure your machine or container platform can provide sufficient memory and CPU for your desired usage of {project_name}.
+See <@links.ha id="single-cluster-concepts-memory-and-cpu-sizing" /> for more on how to get started with production sizing.

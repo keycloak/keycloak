@@ -1,0 +1,138 @@
+
+[#_oidc_available_endpoints]
+== Available Endpoints
+
+As a fully-compliant OpenID Connect Provider implementation, {project_name} exposes a set of endpoints that applications
+and services can use to authenticate and authorize their users.
+
+This section describes some of the key endpoints that your application and service should use when
+interacting with {project_name}.
+
+=== Endpoints
+
+The most important endpoint to understand is the `well-known` configuration endpoint. It lists endpoints and other configuration options relevant to the OpenID Connect implementation in {project_name}. The endpoint is:
+
+....
+/realms/{realm-name}/.well-known/openid-configuration
+....
+
+To obtain the full URL, add the base URL for {project_name} and replace `+{realm-name}+` with the name of your realm. For example:
+
+[subs="attributes,quotes+"]
+....
+http://localhost:8080{kc_realms_path}/\{realm-name}/.well-known/openid-configuration
+....
+
+Some RP libraries retrieve all required endpoints from this endpoint, but for others you might need to list the endpoints individually.
+
+==== Authorization endpoint
+....
+/realms/{realm-name}/protocol/openid-connect/auth
+....
+
+The authorization endpoint performs authentication of the end-user. This authentication is done by redirecting the user agent to this endpoint.
+
+For more details see the https://openid.net/specs/openid-connect-core-1_0.html#AuthorizationEndpoint[Authorization Endpoint] section in the OpenID Connect specification.
+
+==== Token endpoint
+....
+/realms/{realm-name}/protocol/openid-connect/token
+....
+
+The token endpoint is used to obtain tokens. Tokens can either be obtained by exchanging an authorization code or by supplying credentials directly depending on what flow is used.
+The token endpoint is also used to obtain new access tokens when they expire.
+
+For more details, see the https://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint[Token Endpoint] section in the OpenID Connect specification.
+
+==== Userinfo endpoint
+....
+/realms/{realm-name}/protocol/openid-connect/userinfo
+....
+
+The userinfo endpoint returns standard claims about the authenticated user; this endpoint is protected by a bearer token.
+
+For more details, see the https://openid.net/specs/openid-connect-core-1_0.html#UserInfo[Userinfo Endpoint] section in the OpenID Connect specification.
+
+==== Logout endpoint
+....
+/realms/{realm-name}/protocol/openid-connect/logout
+....
+
+The logout endpoint logs out the authenticated user.
+
+The user agent can be redirected to the endpoint, which causes the active user session to be logged out. The user agent is then redirected back to the application.
+This is described in more details in the link:{adminguide_link}#rp-initiated-logout[RP-Initiated logout section of the Server administration guide].
+
+WARNING: The endpoint can also be invoked directly by the application. To invoke this endpoint directly, the refresh token needs to be included as well as the credentials required to authenticate the client.
+However this is non-standard legacy format of the logout message supported only because of the legacy {project_name} OIDC Java adapters
+or https://docs.wildfly.org/37/WildFly_Elytron_Security.html#Keycloak_Integration[Elytron Wildfly OIDC adapter]. It is not recommended to use it directly from your applications.
+For logout users, it is recommended to use either OIDC/SAML protocol standard logout or link:{adminguide_link}#viewing-user-sessions[{project_name} Admin console] (or other way of admin REST API)
+or link:{adminguide_link}#_account-service[{project_name} Account console] (or other way of account REST API).
+
+[[_certificate_endpoint]]
+==== Certificate endpoint
+....
+/realms/{realm-name}/protocol/openid-connect/certs
+....
+
+The certificate endpoint returns the public keys enabled by the realm, encoded as a JSON Web Key (JWK). Depending on the realm settings, one or more keys can be enabled for verifying tokens. For more information, see the link:{adminguide_link}[{adminguide_name}] and the https://datatracker.ietf.org/doc/html/rfc7517[JSON Web Key specification].
+
+For more details, see the https://openid.net/specs/openid-connect-discovery-1_0.html[OpenID Connect Discovery] specification.
+
+[[_token_introspection_endpoint]]
+==== Introspection endpoint
+....
+/realms/{realm-name}/protocol/openid-connect/token/introspect
+....
+
+The introspection endpoint is used to retrieve the active state of a token. In other words, you can use it to validate an access or refresh token.
+This endpoint can only be invoked by confidential clients.
+
+For more details on how to invoke on this endpoint, see https://datatracker.ietf.org/doc/html/rfc7662[OAuth 2.0 Token Introspection specification].
+
+===== Introspection endpoint triggered with application/jwt header
+
+You can invoke an introspection endpoint with the HTTP header `Accept: application/jwt` instead of `Accept: application/json`. In case of `application/jwt`, the response
+may contain the additional claim `jwt` with the full JWT access token, which can be useful especially if the token to be introspected was a link:{adminguide_link}#_using_lightweight_access_token[lightweight access token]. This requires that you enable `Support JWT claim in Introspection Response`
+on the client advanced settings, which triggers the token introspection.
+
+==== Dynamic Client Registration endpoint
+....
+/realms/{realm-name}/clients-registrations/openid-connect
+....
+
+The dynamic client registration endpoint is used to dynamically register clients.
+
+For more details, see the <@links.securingapps id="client-registration" /> {section} and the
+https://openid.net/specs/openid-connect-registration-1_0.html[OpenID Connect Dynamic Client Registration specification].
+
+[[_token_revocation_endpoint]]
+==== Token Revocation endpoint
+....
+/realms/{realm-name}/protocol/openid-connect/revoke
+....
+
+The token revocation endpoint is used to revoke tokens. Both refresh tokens and access tokens are supported by this endpoint. When revoking a refresh token, the user consent for the corresponding client is also revoked.
+
+For more details on how to invoke on this endpoint, see https://datatracker.ietf.org/doc/html/rfc7009[OAuth 2.0 Token Revocation specification].
+
+==== Device Authorization endpoint
+....
+/realms/{realm-name}/protocol/openid-connect/auth/device
+....
+
+The device authorization endpoint is used to obtain a device code and a user code. It can be invoked by confidential or public clients.
+
+For more details on how to invoke on this endpoint, see https://datatracker.ietf.org/doc/html/rfc8628[OAuth 2.0 Device Authorization Grant specification].
+
+[[_backchannel_authentication_endpoint]]
+==== Backchannel Authentication endpoint
+....
+/realms/{realm-name}/protocol/openid-connect/ext/ciba/auth
+....
+
+The backchannel authentication endpoint is used to obtain an auth_req_id that identifies the authentication request made by the client. It can only be invoked by confidential clients.
+
+For more details on how to invoke on this endpoint, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html[OpenID Connect Client Initiated Backchannel Authentication Flow specification].
+
+Also refer to other places of {project_name} documentation like <<_client_initiated_backchannel_authentication_grant,Client Initiated Backchannel Authentication Grant section of this guide>> and link:{adminguide_link}#_client_initiated_backchannel_authentication_grant[Client Initiated Backchannel Authentication Grant section] of {adminguide_name}.

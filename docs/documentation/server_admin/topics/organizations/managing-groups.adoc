@@ -1,0 +1,275 @@
+[id="managing-organization-groups_{context}"]
+
+[[_managing_groups_]]
+=  Managing groups
+[role="_abstract"]
+
+Organization groups let you organize members into logical teams, departments, or any hierarchical structure that makes sense for your organization. Think of them as folders for your users—simple, flexible, and powerful.
+
+Unlike realm groups that are shared across your entire realm, organization groups belong exclusively to one organization. This means `orgA` and `orgB` can each have a `/Engineering/Backend` group without any conflict—each is a completely separate group with its own unique identifier.
+
+== Creating groups
+
+Navigate to your organization and click the *Groups* tab.
+
+.Managing organization groups
+image:images/organizations-manage-groups.png[alt="Managing organization groups"]
+
+.Procedure
+
+. Click *Create group*.
+. Provide a *Name* for the group.
+. Click *Create*.
+. Optionally, before creating the group, navigate to *Parent group* to create nested structures.
+
+Your group is ready. You can now add members, nest more groups under it, or set attributes.
+
+=== Building hierarchies
+
+Groups can be nested to create organizational structures that mirror your real-world teams:
+
+[source]
+----
+/Engineering
+  /Engineering/Backend
+  /Engineering/Frontend
+/Sales
+  /Sales/APAC
+  /Sales/EMEA
+  /Sales/LATAM
+  /Sales/NA
+----
+
+Create a child group by selecting its parent before creation, or move groups, by clicking *Move to* in the UI to reorganize them.
+
+== Adding members to groups
+
+Members join groups the same way they join realm groups.
+
+.Procedure
+
+. Select the group.
+. Click the *Members* tab.
+. Click *Add member*.
+. Select one or more organization members.
+. Click *Add*.
+
+NOTE: To automatically assign members to these groups when they authenticate via an Identity Provider, see <<_managing_identity_provider_,Mapping federated users to organization groups>>.
+
+TIP: To view which organization groups a specific member belongs to, use the kebab menu (⋮) next to the member and select *Show group memberships*. For details, see <<viewing-organization-group-memberships,Viewing organization group memberships>>.
+
+== Understanding group paths
+
+Every group has a path that describes its location in the hierarchy. Paths are *relative to the organization*, not the realm.
+
+For example:
+
+- Organization A has `/Engineering/Backend`
+- Organization B has `/Engineering/Backend`
+- The realm also has `/Engineering/Backend`
+
+These are three completely separate groups. When you reference `/Engineering/Backend` in the context of Organization A, you're talking about Organization A's group—period.
+
+This isolation is intentional. Your organizations remain independent, and you can structure each one however you need without worrying about naming conflicts.
+
+== Mapping groups to tokens
+
+Organization group membership can appear in tokens for both OIDC and SAML protocols. The setup differs between protocols.
+
+=== OIDC: Organization groups in tokens
+
+Organization groups are added to the `organization` claim alongside other organization data. To include groups in OIDC tokens, you must configure the mapper AND request the appropriate scope.
+
+IMPORTANT: The *Organization Group Membership* mapper alone is NOT sufficient. It only works when combined with the *Organization Membership* mapper in the same scope.
+
+==== Option 1: Add mapper to built-in organization scope (Recommended)
+
+The built-in `organization` scope already has the Organization Membership mapper. Simply add the group mapper to it.
+
+.Procedure
+
+. Click *Client scopes* in the menu.
+. Select the *organization* scope.
+. Click the *Mappers* tab.
+. Click *Add mapper* → *By configuration*.
+. Select *Organization Group Membership*.
+. Configure the mapper:
+
+Add to ID token::
+Include groups in ID tokens.
+
+Add to access token::
+Include groups in access tokens.
+
+Add to lightweight access token::
+Include groups in lightweight access tokens.
+
+Add to userinfo::
+Include groups in the UserInfo endpoint response.
+
+Add to introspection::
+Include groups in the Introspection endpoint response.
+
+. Click *Save*.
+
+The `organization` scope is added as an optional scope to all clients by default. Applications request it using `scope=organization` (or `scope=organization:alias` for a specific organization).
+
+==== Option 2: Create custom scope with both mappers
+
+If you need a dedicated scope for organization data, create one with BOTH required mappers.
+
+.Procedure
+
+. Click *Client scopes* in the menu.
+. Click *Create client scope*.
+. Provide a *Name* (for example, `my-org-scope`).
+. Set *Protocol* to *OpenID Connect*.
+. Click *Save*.
+. Click the *Mappers* tab.
+. Add BOTH mappers:
+.. Click *Configure a new mapper* → *Organization Membership*
+.. Configure and save
+.. Click *Add mapper* → *By configuration* → *Organization Group Membership*
+.. Configure and save
+. Go to your client.
+. Click *Client scopes* tab.
+. Click *Add client scope*.
+. Select your custom scope.
+. Click *Add*.
+. Choose *Default* or *Optional*.
+
+Applications request it using `scope=my-org-scope`.
+
+==== Token structure
+
+When a user from Organization A's `/Engineering/Backend` group authenticates and requests the organization scope, the token includes:
+
+[source,json]
+----
+{
+  "organization": {
+    "orgA": {
+      "id": "f8d3c4e1-...",
+      "groups": [ "/Engineering/Backend" ]
+    }
+  }
+}
+----
+
+Notice:
+
+- Groups appear within the organization claim, not as a separate top-level claim
+- Group paths are relative to the organization
+- Multiple organizations can be included if the user is a member of multiple organizations and uses `scope=organization:*`
+
+=== SAML: Organization groups in assertions
+
+SAML automatically includes groups for all organizations the user is a member of. Like OIDC, the group mapper requires the organization membership mapper to be present in the same scope.
+
+==== Option 1: Add mapper to built-in saml_organization scope (Recommended)
+
+The built-in `saml_organization` scope already has the Organization Membership mapper and is added as a default scope to all SAML clients. Simply add the group mapper to it.
+
+.Procedure
+
+. Click *Client scopes* in the menu.
+. Select the *saml_organization* scope.
+. Click the *Mappers* tab.
+. Click *Add mapper* → *By configuration*.
+. Select *Organization Group Membership*.
+. Click *Save*.
+
+The mapper has no additional configuration options. Groups are automatically included for all SAML clients.
+
+==== Option 2: Create custom SAML scope with both mappers
+
+If you need a dedicated scope, create one with both the membership and group mappers.
+
+.Procedure
+
+. Click *Client scopes* in the menu.
+. Click *Create client scope*.
+. Provide a *Name* (for example, `my-saml-org-scope`).
+. Set *Protocol* to *SAML*.
+. Click *Save*.
+. Click the *Mappers* tab.
+. Add BOTH mappers:
+.. Click *Configure a new mapper* → *Organization Membership*
+.. Click *Save*
+.. Click *Add mapper* → *By configuration* → *Organization Group Membership*
+.. Click *Save*
+. Go to your SAML client.
+. Click *Client scopes* tab.
+. Click *Add client scope*.
+. Select your custom scope.
+. Click *Add*.
+. Choose *Default* or *Optional*.
+
+==== SAML assertion structure
+
+When a user from Organization A's `/Engineering/Backend` group authenticates, the assertion includes attributes for each organization they belong to:
+
+[source,xml]
+----
+<Attribute Name="organization.orgA.groups">
+  <AttributeValue>/Engineering/Backend</AttributeValue>
+</Attribute>
+----
+
+Each organization gets its own attribute named `+organization.{alias}.groups+` with group paths as values, where `alias` is the organization alias.
+
+NOTE: Unlike OIDC, SAML clients don't need to request a scope at runtime. The `saml_organization` scope is added as a default scope, so groups are automatically included in assertions for all organizations the user is a member of.
+
+== Managing group attributes
+
+Groups can carry attributes—key/value metadata stored at the group level.
+
+.Procedure
+
+. Select a group.
+. Click the *Attributes* tab.
+. Add attributes with keys and values.
+. Click *Save*.
+
+Group attributes are stored separately from user attributes. To include group attributes in tokens, configure a *User Attribute* mapper with the *Aggregate attributes* option enabled. The mapper will then combine matching attributes from both the user and all their groups.
+
+== Important distinctions
+
+=== Organization groups vs realm groups
+
+[cols="1,2", options="header"]
+|===
+|Feature
+|Organization groups
+
+|Scope
+|Belong to a single organization
+
+|Isolation
+|Fully isolated—same paths can exist across organizations
+
+|Role assignment
+|Not supported (coming in future releases)
+
+|Authorization policies
+|Cannot be used in authorization policies—use realm groups instead
+
+|Token mapping
+|Appear in tokens when using organization context
+|===
+
+=== Authorization policies restriction
+
+Organization groups *cannot* be used in Keycloak authorization policies. Only realm groups are supported for fine-grained authorization.
+
+If you try to select an organization group when configuring a group-based policy, you'll receive an error. This is intentional—authorization policies operate at the realm level, not the organization level.
+
+== Deleting groups
+
+Deleting a group removes it and all its child groups. Members are *not* deleted—they simply lose their group membership.
+
+.Procedure
+
+. Select the group.
+. Click *Delete group*.
+. Confirm the deletion.

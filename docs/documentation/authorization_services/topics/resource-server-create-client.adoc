@@ -1,0 +1,38 @@
+[[_resource_server_create_client]]
+= Creating a client application
+
+The first step to enable {project_name} Authorization Services is to create the client application that you want to turn into a resource server.
+
+.Procedure
+
+. Click *Clients*.
++
+.Clients
+image:images/resource-server/client-list.png[Clients]
+
+ifeval::[{project_community}==true]
+. On this page, click *Create client*.
+endif::[]
+ifeval::[{project_product}==true]
+. On this page, click *Create*.
+endif::[]
++
+.Add Client
+image:images/resource-server/client-create.png[Add Client]
+
+. Type the `Client ID` of the client. For example, _my-resource-server_.
+ifeval::[{project_community}==true]
+. Click *Next*.
+. Toggle *Client authentication* to ON.
+. Click *Save*.
+endif::[]
+. Type the `Root URL` for your application. For example:
++
+```
+http://${host}:${port}/my-resource-server
+```
+
+. Click *Save*. The client is created and the client Settings page opens. A page similar to the following is displayed:
++
+.Client Settings
+image:images/resource-server/client-settings.png[alt="Client Settings"]

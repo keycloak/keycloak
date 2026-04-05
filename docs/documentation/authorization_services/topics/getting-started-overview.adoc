@@ -1,0 +1,10 @@
+[[_getting_started_overview]]
+= Getting Started
+
+For certain applications, you can look at the following resources to quickly
+get started with {project_name} Authorization Services:
+
+* {quickstartRepo_link}/tree/main/jakarta/servlet-authz-client[Securing a JakartaEE Application in Wildfly]
+* {quickstartRepo_link}/tree/main/spring/rest-authz-resource-server[Securing a Spring Boot Application]
+* link:https://quarkus.io/guides/security-keycloak-authorization[Securing Quarkus Applications]
+* link:https://www.keycloak.org/securing-apps/nodejs-adapter[Keycloak Node.js adapter]

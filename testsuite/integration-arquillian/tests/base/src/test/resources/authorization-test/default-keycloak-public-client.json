@@ -1,0 +1,5 @@
+{
+    "realm": "authz-test",
+    "auth-server-url" : "http://localhost:8180/auth",
+    "resource" : "test-public-client"
+}

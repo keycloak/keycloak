@@ -1,0 +1,20 @@
+[[_saml-jboss-adapter-samesite-setting]]
+=== Setting SameSite value for JSESSIONID cookie
+
+Browsers are planning to set the default value for the `SameSite` attribute for cookies to `Lax`. This setting means
+that cookies will be sent to applications only if the request originates in the same domain. This behavior can affect
+the SAML POST binding which may become non-functional. To preserve full functionality of the SAML adapter, we recommend
+setting the `SameSite` value to `None` for the `JSESSIONID` cookie created by your container. Not doing so may result in
+resetting the container's session with each request to {project_name}.
+
+NOTE: To avoid setting the `SameSite` attribute to `None`, consider switching to the REDIRECT binding
+if it is acceptable, or to OIDC protocol where this workaround is not necessary.
+
+To set the `SameSite` value to `None` for the `JSESSIONID` cookie in Wildfly/EAP, add a file `undertow-handlers.conf`
+with the following content to the `WEB-INF` directory of your application.
+
+ samesite-cookie(mode=None, cookie-pattern=JSESSIONID)
+
+The support for this configuration is available in Wildfly from version 19.1.0.
+
+

@@ -1,0 +1,183 @@
+[[audience-support]]
+= Audience support
+[role="_abstract"]
+Typically, the environment where {project_name} is deployed consists of a set of _confidential_ or _public_ client applications that use {project_name} for authentication.
+These clients are _frontend clients_, which may directly redirect user to {project_name} to request browser authentication. The particular client would then receive set of tokens after successful authentication.
+
+_Services_ (_Resource Servers_ in the https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-4.2[OAuth 2 specification]) are also available that serve requests from client applications and provide resources to these applications.
+These services require an _Access token_ (Bearer token) to be sent to them from _frontend application_ or from other service to authenticate a request.
+
+The care must be taken to make sure that access tokens have limited privileges and the particular access token cannot be misused by the service to access other third-party services.
+In the environment where trust among services is low, you may encounter this example scenario:
+
+. A frontend client application `frontend-client` requires authentication against {project_name}.
+
+. {project_name} authenticates a user.
+
+. {project_name} issues a token to the application `frontend-client`.
+
+. The `frontend-client` application uses the token to invoke a service `service1`.
+
+. The `service1` service returns the response to the application. But assume that this service will try to misuse the token and keep it for the further use.
+
+. The `service1` then invokes another service `service2` using the applications token, which was previously sent to it. The `service2` does not check that token was not supposed to be
+used to invoke it and it will serve the request and return successful response. This results in broken security as the `service1` misused the token to access other services on behalf of the client application `frontend-client`.
+
+This scenario is unlikely in environments with a high level of trust between services but not in environments where trust is low.
+
+To prevent any misuse of the access token, the access token can contain the claim `aud`, which represents the audience. The claim `aud` should typically represent client ids of all services where the token
+is supposed to be used. In the environments with low trust among services, it is recommended to:
+
+* Limit the audience on the token to make sure that access tokens contain just limited amount of audiences.
+
+* Configure your services to verify the audience on the token.
+
+To prevent `service1` from the example above to misuse the token, the secure variant of the flow may instead look like this:
+
+. A frontend application `frontend-client` authenticates against {project_name}.
+
+. {project_name} authenticates a user.
+
+. {project_name} issues a token to the `frontend-client` application. The `frontend-client` knows that it will need to invoke `service1` so it places `scope=service1-scope` in the authentication request sent to {project_name}.
+The scope `service1-scope` is a <<_client_scopes,Client scope>>, which may need to be created by administrator. In the <<_audience_setup,sections below>> there are some options how to setup such a client scope.
+The token claim will look like:
++
+[source,json]
+----
+"aud": "service1"
+----
++
+This declares that the client can use this access token to invoke the `service1`.
+
+. The `frontend-client` application uses the token to invoke a service `service1`.
+
+. The `service1` serves the request to the client application `frontend-application`. But assume that this service will try to misuse the token and keep it for the further use.
+
+. The `service1` will then try to invoke a `service2` with the token. Invocation is not successful because the `service2` service checks the audience on the token and find that its audience is only for the `service1`. Hence `service2` will reject the request and will return an error to `service1`. This behavior is expected and security is not broken.
+
+== Ability for the service to call another service
+
+In some environments, it may be desired that the `service1` may have to retrieve additional data from a `service2` to return data to the original client application `frontend-client`. In order to make this
+possible to work, there are few possibilities:
+
+* Make sure that initial access token issued to `frontend-client` will contain both `service1` and `service2` as audiences. Assuming that there are proper client scopes set, the `frontend-client` can possibly use
+the `scope=service1-scope service2-scope` as a value of the `scope` parameter. The issued token would then contain the `aud` claim like:
++
+[source,json]
+----
+"aud": [ "service1", "service2" ]
+----
++
+Such access token can be used to invoke both `service1` or `service2`. Hence `service1` will be able to successfully use such token to invoke `service2` to retrieve additional data.
+
+* The previous approach with both services in the token audience allows that `service1` is allowed to invoke `service2`. However it means that `frontend-client` can also directly use his access token to invoke `service2`.
+This may not be desired in some cases. You may want `service1` to be able to invoke `service2`, but at the same time, you do not want `frontend-client` to be able to directly invoke `service2`. The solution
+to such scenario might be the use of the link:{securing_apps_token_exchange_link}[Token exchange]. In that case, the initial token would still have only `service1` as an audience.
+However once the token is sent to `service1`, the `service1` may send Token exchange request to exchange the token for another token, which would have `service2` as an audience. Please see
+the link:{securing_apps_token_exchange_link}[{securing_apps_token_exchange_name}] for the details on how to use it.
+
+[[_audience_setup]]
+== Setup
+
+When setting up audience checking:
+
+* Ensure that services are configured to check audience on the access token sent to them. This may be done in a way specific to your client OIDC adapter, which you are using to secure your OIDC client application.
+
+* Ensure that access tokens issued by {project_name} contain all necessary audiences.
++
+Audiences can be added to the token by two ways:
++
+** Using the client roles as described in the <<_audience_resolve, Audience resolve section>>.
++
+** Hardcoded audience as described in the <<_audience_hardcoded, Hardcoded audience section>>.
+
+[[_audience_resolve]]
+== Automatically add audience based on client roles
+
+An _Audience Resolve_ protocol mapper is defined in the default client scope _roles_. The mapper checks for clients that have at least one client role available for the current token. The client ID of each such client is then added as an audience, which is useful
+if your service clients rely on client roles. Service client could be usually a client without any flows enabled, which may not have any tokens issued directly to itself. It represents an OAuth 2 _Resource Server_.
+
+The <<_oidc_token_role_mappings,Token role mappings section>> contains the details about how are client roles added into the token. Please also see the example below.
+
+=== Example - token role mappings and audience claim
+
+Here are the example steps how to use the client roles to make `aud` claim added to the token:
+
+. Create a <<proc-creating-oidc-client_{context},OIDC client>> `service1`. It may be possible to disable *Standard flow* or any other flows for this client
+as it is a service client, which may never directly authenticate by itself. The possible exception might be *Standard Token Exchange* switch if needed as described above.
+
+. Go to *Roles* tab of that client and create client role `service1-role`.
+
+. Create user `john` in the same realm and assign him the client role `service1-role` of client `service1` created in the previous step.
+<<proc-assigning-role-mappings_{context},This section>> contains some details on how to do it.
+
+. Create client scope named `service1-scope`. It can be marked with *Include in token scope* as *ON*. See <<_client_scopes,this section>> for the details on how to create and set new client scope.
+
+. Go to the tab *Scope* of the `service1-scope` and add the role `service1-role` of the client `service1` to the <<_role_scope_mappings,Role scope mappings>> of this client scope
+
+. Create another client `frontend-client` in the realm.
+
+. Click to the tab *Client scopes* of this client and select the first dedicated client scope `frontend-client-dedicated` and then go to the tab *Scope* and disable *Full scope allowed* switch
+
+. Go back to the tab *Client scopes* of this client and click *Add client scope* and link the `service1-scope` as *Optional*. See <<_client_scopes_linking, Client Scopes Linking section>> for more details.
+
+. Click the sub-tab *Evaluate* in the *Client scopes* as described in <<_client_scopes_evaluate,this section>>. When filling user `john` and the subtab *Generated access token*, it can be seen that
+there is not any `aud` claim as there are not any client roles in the generated example token. However when adding also the scope `service1-scope` to the *Scope* field, it can be seen that there is client
+role `service1-role` as it is in *Role scope mappings* of the `service1-scope` and also in the role mappings of the user `john`. Due to that the `aud` claim will also contain `service1`.
+
+.Audience resolve example
+image:images/audience_resolving_evaluate.png[]
+
+If you want the `service1` audience to be always applied for the tokens issued to the `frontend-client` client (without using the parameter `scope=service1-scope`), it can be fine to instead do any of these:
+
+* Assign the `service1-scope` as *Default* client scope rather than *Optional*
+
+* Add the role scope mapping of the `service1-role` directly to the <<_client_scopes_dedicated,Dedicated client scope>> of the client. In this case, you will not need the `service1-scope` at all.
+
+Note that since this approach is based on client roles, it also requires that user himself (user `john` in the example above) is a member of some client role of the client `service1`. Otherwise if there
+are not any client roles assigned, the audience `service1` will not be included. If you want audience to be included regardless of client roles, see the <<_audience_hardcoded,Hardcoded audience>> section instead.
+
+[NOTE]
+====
+The frontend client itself is not automatically added to the access token audience, therefore allowing easy differentiation between the access token and the ID token, since the access token will not contain the client for which the token is issued as an audience.
+
+If you need the client itself as an audience, see the
+<<_audience_hardcoded, hardcoded audience>> option. However, using the same client as both frontend and REST service is not recommended.
+====
+
+[[_audience_hardcoded]]
+== Hardcoded audience
+
+When your service relies on realm roles or does not rely on the roles in the token at all, it can be useful to use a hardcoded audience. A hardcoded audience is a protocol mapper, that will add the client ID of the specified service client as an audience to the token.
+You can use any custom value, for example a URL, if you want to use a different audience than the client ID.
+
+You can add the protocol mapper directly to the frontend client. If the protocol mapper is added directly, the audience will always be added as well.
+
+For more control over the protocol mapper, you can create the protocol mapper on the dedicated client scope, which will be called for example *service2*.
+
+Here the example steps for the hardcoded audience
+
+. Create a client `service2`
+
+. Create a client scope `service2-scope`.
+
+. In the tab *Mappers* of that client scope, select *Configure a new mapper* and select *Audience*
+
+. Select *Included Client Audience* as a `service2` and save the mapper
++
+.Audience protocol mapper
+image:images/audience_mapper.png[]
++
+. Link the newly created client scope with some client. For example it can be linked as *Optional* client scope to the client `frontend-client` created in the <<_audience_resolve,previous example>>.
+
+. You can optionally <<_client_scopes_evaluate, Evaluate Client Scopes>> for the client where the client scope was linked (For example `frontend-client`) and generate an example access token.
+The audience `service2` will be added to the audience of the generated access token if `service2-scope` is included in the _scope_ parameter, when you assigned it as an optional client scope.
+
+In your confidential client application, ensure that the _scope_ parameter is used. The value like _scope=service2-scope_ must be included when you want to issue the token for accessing `service2`.
+
+See in the link:{securing_apps_base_link}/javascript-adapter[{project_name} JavaScript adapter] section if your application uses the javascript adapter for how to send the _scope_ parameter with the desired value.
+
+If you prefer to not include `scope` parameter in your requests, you can instead link the `service2-scope` as a *Default* client scope or use the client dedicated scope where you configure this mapper.
+This is useful if you want to always apply the audience for all the authentication request of OIDC client `frontend-client`.
+
+NOTE: Both the _Audience_ and _Audience Resolve_ protocol mappers add the audiences to the access token only, by default. The ID Token typically contains only a single audience, the client ID for which the token was issued, a requirement of the OpenID Connect specification. However, the access token does not necessarily have the client ID, which was the token issued for, unless the _Audience_ mapper added it.

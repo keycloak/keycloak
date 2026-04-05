@@ -1,0 +1,138 @@
+[[_email]]
+
+= Configuring email for a realm
+
+{project_name} sends emails to users to verify their email addresses, when they forget their passwords, or when an administrator needs to receive notifications about a server event. To enable {project_name} to send emails, you provide {project_name} with your SMTP server settings.
+
+.Procedure
+
+. Click *Realm settings* in the menu.
+. Click the *Email* tab.
++
+.Email tab
+image:images/email-tab.png[Email Tab]
+
+. Fill in the fields and toggle the switches as needed.
+
+.Template
+From::
+  *From* denotes the address used for the *From* SMTP-Header for the emails sent.
+
+From display name::
+  *From display name* allows to configure a user-friendly email address aliases (optional). If not set the plain *From* email address will be displayed in email clients.
+
+Reply to::
+  *Reply to* denotes the address used for the *Reply-To* SMTP-Header for the mails sent (optional). If not set the plain *From* email address will be used.
+
+Reply to display name::
+  *Reply to display name* allows to configure a user-friendly email address aliases (optional). If not set the plain *Reply To* email address will be displayed.
+
+Envelope from::
+  *Envelope from* denotes the https://en.wikipedia.org/wiki/Bounce_address[Bounce Address] used for the *Return-Path* SMTP-Header for the mails sent (optional).
+
+.Connection & Authentication
+Host::
+  *Host* denotes the SMTP server hostname used for sending emails.
+
+Port::
+  *Port* denotes the SMTP server port.
+
+Encryption::
+  Tick one of these checkboxes to support sending emails for recovering usernames and passwords, especially if the SMTP server is on an external network. You will most likely need to change the *Port* to 465, the default port for SSL/TLS.
+
+Authentication::
+  Set this switch to *ON* if your SMTP server requires authentication.
+
+Username::
+  All authentication-mechanisms require a username.
+
+Authentication Type::
+  Choose the kind of authentication: 'password' or 'token'.
+
+Password::
+  Only needed when *Authentication Type* 'password' is selected.
+  Supply the *Password*. The value of the *Password* field can refer a value from an external <<_vault-administration,vault>>.
+
+Auth Token URL::
+  Only needed when *Authentication Type* 'token' is selected.
+  Supply the *Auth Token URL* that is used to fetch a token via client credentials grant.
+
+Auth Token Scope::
+  Only needed when *Authentication Type* 'token' is selected.
+  Supply the *Auth Token Scope* that is used to fetch a token from the *Auth Token URL*.
+
+Auth Token ClientId::
+  Only needed when *Authentication Type* 'token' is selected.
+  Supply the *Auth ClientId* that is used to fetch a token from the *Auth Token URL*.
+
+Auth Token Client Secret::
+  Only needed when *Authentication Type* 'token' is selected.
+  Supply the *Auth Client Secret* that authenticates the client to fetch a token from the *Auth Token URL*. The value of the *Auth Client Secret* field can refer a value from an external <<_vault-administration,vault>>.
+
+Allow UTF-8::
+  Enable to UTF-8-encode email address when sending them to the server. This should only be enabled if the mail server supports UTF-8 via the SMTPUTF8 extension. If disabled, domain names containing non-ASCII characters will be encoded using punycode, and addresses containing non-ASCII characters in the local part of the address will return an error.
++
+If the realm is configured to send emails (this SMTP configuration is setup) and *Allow UTF-8* option is disabled, the built-in <<user-profile, user profile>> email validator checks the local part of the address contains only ASCII characters. This way, {project_name} prevents user emails that cannot be notified.
+
+ifeval::[{project_community}==true]
+
+== XOAUTH2 email configuration with third-party vendors
+
+The following section contains some hints on how to configure {project_name} email settings to use XOAUTH2 based authentication with some known third-party software SMTP servers.
+
+NOTE: This section has been contributed by the Keycloak community. As the Keycloak core team does not have means to test third-party providers, it is provided as-is. If you find this documentation outdated or incomplete, please contribute to improve it.
+
+=== Configuration for Microsoft Azure and Office365
+
+Microsoft Azure allows 'Client Credentials Grant' using a client secret to gather an access token.
+Microsoft Office365 supports SMTP with XOAUTH2 to authenticate with the gathered token.
+
+Links to relevant Microsoft documentation:
+
+- https://learn.microsoft.com/en-us/exchange/permissions-exo/application-rbac[Usage of role base access control for applications in exchange online]
+- Settings in https://learn.microsoft.com/en-us/exchange/client-developer/legacy-protocols/how-to-authenticate-an-imap-pop-smtp-application-by-using-oauth[Authenticate an IMAP, POP or SMTP connection using OAuth]
+
+The following method for setting up {project_name} to send email with Azure and Office365 has been verified by a test.
+There might be other variants to achieve the same depending on your environment.
+
+From::
+`<some>@<domain>`
+
+Host::
+`smtp.office365.com`
+
+Port::
+`587`
+
+Encryption::
+Check Start TLS
+
+Username::
+`<some>@<domain>` (might be the same of a different value than the sender value)
+
+Auth Token Url::
+`+https://login.microsoftonline.com/<TenantID>/oauth2/v2.0/token+`
++
+Replace TenantID with the id of your Microsoft tenant, usually a UUID, in Azure or just copy the token url from the list of endpoints displayed in the Azure Console.
+
+Auth Token Scope::
+`+https://outlook.office.com/.default+`
+
+Auth Token ClientId::
+`<ApplicationId>`
++
+Replace ApplicationId with the id of your application in Azure, usually a UUID.
+
+Auth Token ClientSecret::
+`<Secret configured>`
+
+=== Configuration for Google Mail
+
+This feature is not yet supported by {project_name}, because Google does not allow client-secrets for the Client Credentials Grant.
+
+=== Configuration for AWS
+
+XOAUTH2 is not supported by the AWS-SMTP service.
+The AWS-service requires the use of a password.
+
+endif::[]

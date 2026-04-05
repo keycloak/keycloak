@@ -1,0 +1,87 @@
+. Disable the replication from {stale-site} site to the {keep-site} site by running the following command.
+It prevents the clear request to reach the {keep-site} site and delete all the correct cached data.
++
+.Command:
+[source,bash,subs="+attributes"]
+----
+site take-offline --all-caches --site={keep-site-name}
+----
++
+.Output:
+[source,bash,subs="+attributes"]
+----
+{
+  "authenticationSessions" : "ok",
+  "work" : "ok",
+  "loginFailures" : "ok",
+  "actionTokens" : "ok"
+}
+----
+
+. Check the replication status is `offline`.
++
+.Command:
+[source,bash,subs="+attributes"]
+----
+site status --all-caches --site={keep-site-name}
+----
++
+.Output:
+[source,bash,subs="+attributes"]
+----
+{
+  "status" : "offline"
+}
+----
++
+If the status is not `offline`, repeat the previous step.
++
+WARNING: Make sure the replication is `offline` otherwise the clear data will clear both sites.
+
+. Clear all the cached data in {stale-site} site using the following commands:
++
+.Command:
+[source,bash,subs="+attributes"]
+----
+clearcache actionTokens
+clearcache authenticationSessions
+clearcache loginFailures
+clearcache work
+----
++
+These commands do not print any output.
+
+. Re-enable the cross-site replication from {stale-site} site to the {keep-site} site.
++
+.Command:
+[source,bash,subs="+attributes"]
+----
+site bring-online --all-caches --site={keep-site-name}
+----
++
+.Output:
+[source,bash,subs="+attributes"]
+----
+{
+  "authenticationSessions" : "ok",
+  "work" : "ok",
+  "loginFailures" : "ok",
+  "actionTokens" : "ok"
+}
+----
+
+. Check the replication status is `online`.
++
+.Command:
+[source,bash,subs="+attributes"]
+----
+site status --all-caches --site={keep-site-name}
+----
++
+.Output:
+[source,bash,subs="+attributes"]
+----
+{
+  "status" : "online"
+}
+----

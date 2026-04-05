@@ -1,0 +1,121 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>keycloak-test-framework-parent</artifactId>
+        <groupId>org.keycloak.testframework</groupId>
+        <version>999.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>keycloak-test-framework-tests</artifactId>
+    <name>Keycloak Test Framework - Tests</name>
+    <packaging>jar</packaging>
+    <description>Tests testing the new test framework functionality</description>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.keycloak.testframework</groupId>
+                <artifactId>keycloak-test-framework-bom</artifactId>
+                <version>${project.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-junit5-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-db-mariadb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-db-mssql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-db-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-db-tidb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-db-oracle</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-db-postgres</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-oauth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-email-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-ui</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-remote</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.testframework</groupId>
+            <artifactId>keycloak-test-framework-test-providers</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.logmanager</groupId>
+            <artifactId>jboss-logmanager</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
