@@ -38,22 +38,14 @@ final class EmptyCollectionHelper {
         }
 
         ECollectionSubType newtype = determineCollectionSubType((char) _sigb[_currentOffset]);
-        switch (newtype) {
-            case ARRAY:
-                // array in array so look at the next type
-                return determineSignatureOffsetArray(_sigb, _currentOffset + 1);
-            case DICT:
-                return determineSignatureOffsetDict(_sigb, _currentOffset);
-            case STRUCT:
-                return determineSignatureOffsetStruct(_sigb, _currentOffset);
-            case PRIMITIVE:
-                //primitive is always one element so no need to skip more
-                return _currentOffset;
-            default:
-                break;
-
-        }
-        throw new IllegalStateException("Unable to parse signature for empty collection");
+        return switch (newtype) {
+            // array in array so look at the next type
+            case ARRAY -> determineSignatureOffsetArray(_sigb, _currentOffset + 1);
+            case DICT -> determineSignatureOffsetDict(_sigb, _currentOffset);
+            case STRUCT -> determineSignatureOffsetStruct(_sigb, _currentOffset);
+            case PRIMITIVE -> _currentOffset; //primitive is always one element so no need to skip more
+            default -> throw new IllegalStateException("Unable to parse signature for empty collection");
+        };
     }
 
     private static int determineSignatureOffsetStruct(byte[] _sigb, int _currentOffset) {
@@ -100,17 +92,14 @@ final class EmptyCollectionHelper {
      * @param _sig the signature letter of the type
      */
     private static ECollectionSubType determineCollectionSubType(char _sig) {
-        switch (_sig) {
-            case '(':
-                return ECollectionSubType.STRUCT;
-            case '{':
-                return ECollectionSubType.DICT;
-            case 'a':
-                return ECollectionSubType.ARRAY;
-            default:
+        return switch (_sig) {
+            case '(' -> ECollectionSubType.STRUCT;
+            case '{' -> ECollectionSubType.DICT;
+            case 'a' -> ECollectionSubType.ARRAY;
+            default ->
                 // of course there can be other types but those shouldn't be allowed in this part of the signature
-                return ECollectionSubType.PRIMITIVE;
-        }
+                ECollectionSubType.PRIMITIVE;
+        };
     }
 
     /**

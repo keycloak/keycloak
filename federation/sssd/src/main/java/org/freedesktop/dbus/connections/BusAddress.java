@@ -1,12 +1,10 @@
 package org.freedesktop.dbus.connections;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.InvalidBusAddressException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,38 +18,6 @@ public class BusAddress {
 
     private String                    type;
     private final Map<String, String> parameters = new LinkedHashMap<>();
-
-    /**
-     * Creates a new instance from String.
-     *
-     * @param _address address String
-     * @throws DBusException
-     *
-     * @deprecated Use BusAddress.of instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0 - 2022-07-18")
-    public BusAddress(String _address) throws DBusException {
-        if (_address == null || _address.isEmpty()) {
-            throw new DBusException("Bus address is blank");
-        }
-
-        String[] ss = _address.split(":", 2);
-        if (ss.length < 2) {
-            throw new DBusException("Bus address is invalid: " + _address);
-        }
-
-        type = ss[0] != null ? ss[0].toLowerCase(Locale.US) : null;
-        if (type == null) {
-            throw new DBusException("Unsupported transport type: " + ss[0]);
-        }
-
-        String[] ps = ss[1].split(",");
-        for (String p : ps) {
-            String[] kv = p.split("=", 2);
-            parameters.put(kv[0], kv[1]);
-        }
-
-    }
 
     protected BusAddress(BusAddress _obj) {
         if (_obj != null) {
@@ -161,17 +127,6 @@ public class BusAddress {
         return parameters.get("guid");
     }
 
-    /**
-     * String version of the BusAddress.
-     * @return String
-     *
-     * @deprecated use {@link #toString()}
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0 - 2022-07-18")
-    public String getRawAddress() {
-        return toString();
-    }
-
     @Override
     public final String toString() {
         return type + ":" + parameters.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(","));
@@ -224,19 +179,6 @@ public class BusAddress {
      */
     public boolean hasParameter(String _parameter) {
         return parameters.containsKey(_parameter);
-    }
-
-    /**
-     * Returns a read-only view of the parameters currently configured.
-     *
-     * @return Map, maybe empty
-     * @since 4.2.0 - 2022-07-18
-     *
-     * @deprecated will be removed in future, use {@link #getParameterValue(String)} or {@link #hasParameter(String)}
-     */
-    @Deprecated(forRemoval = true, since = "4.2.2 - 2023-01-11")
-    public Map<String, String> getParameters() {
-        return Collections.unmodifiableMap(parameters);
     }
 
     /**

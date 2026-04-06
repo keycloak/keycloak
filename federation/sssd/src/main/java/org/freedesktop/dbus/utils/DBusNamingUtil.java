@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+import org.freedesktop.dbus.annotations.DBusBoundProperty;
 import org.freedesktop.dbus.annotations.DBusInterfaceName;
 import org.freedesktop.dbus.annotations.DBusMemberName;
 
@@ -25,7 +26,7 @@ public final class DBusNamingUtil {
      * @see DBusInterfaceName
      */
     public static String getInterfaceName(Class<?> _clazz) {
-        Objects.requireNonNull(_clazz, "clazz must not be null");
+        Objects.requireNonNull(_clazz, "Class must not be null");
 
         if (_clazz.isAnnotationPresent(DBusInterfaceName.class)) {
             return _clazz.getAnnotation(DBusInterfaceName.class).value();
@@ -50,6 +51,35 @@ public final class DBusNamingUtil {
     }
 
     /**
+     * Get a property name for a method (annotated with {@link DBusBoundProperty}. These
+     * would typically be setter / getter type methods. If {@link DBusBoundProperty#name()} is
+     * provided, that will take precedence.
+     *
+     * @param _method input method
+     * @return property name
+     * @see DBusMemberName
+     */
+    public static String getPropertyName(Method _method) {
+        Objects.requireNonNull(_method, "method must not be null");
+
+        if (_method.isAnnotationPresent(DBusBoundProperty.class)) {
+            String defName = _method.getAnnotation(DBusBoundProperty.class).name();
+            if (!"".equals(defName)) {
+                return defName;
+            }
+        }
+        String name = _method.getName();
+        String lowerCaseName = name.toLowerCase();
+        if ((lowerCaseName.startsWith("get") && !"get".equals(lowerCaseName))
+         || (lowerCaseName.startsWith("set") && !"set".equals(lowerCaseName))) {
+            name = name.substring(3);
+        } else if (lowerCaseName.startsWith("is") && !"is".equals(lowerCaseName)) {
+            name = name.substring(2);
+        }
+        return name;
+    }
+
+    /**
      * Get DBus signal name for specified signal class.
      *
      * @param _clazz input DBus signal class
@@ -57,7 +87,7 @@ public final class DBusNamingUtil {
      * @see DBusMemberName
      */
     public static String getSignalName(Class<?> _clazz) {
-        Objects.requireNonNull(_clazz, "clazz must not be null");
+        Objects.requireNonNull(_clazz, "Class must not be null");
 
         if (_clazz.isAnnotationPresent(DBusMemberName.class)) {
             return _clazz.getAnnotation(DBusMemberName.class).value();
@@ -73,7 +103,7 @@ public final class DBusNamingUtil {
      * @see DBusInterfaceName
      */
     public static String getAnnotationName(Class<? extends Annotation> _clazz) {
-        Objects.requireNonNull(_clazz, "clazz must not be null");
+        Objects.requireNonNull(_clazz, "Class must not be null");
 
         if (_clazz.isAnnotationPresent(DBusInterfaceName.class)) {
             return _clazz.getAnnotation(DBusInterfaceName.class).value();

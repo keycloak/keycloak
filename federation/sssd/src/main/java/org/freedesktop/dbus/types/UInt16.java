@@ -69,7 +69,7 @@ public class UInt16 extends Number implements Comparable<UInt16> {
     /** Test two UInt16s for equality. */
     @Override
     public boolean equals(Object _o) {
-        return _o instanceof UInt16 && ((UInt16) _o).value == this.value;
+        return _o instanceof UInt16 ui && ui.value == this.value;
     }
 
     @Override

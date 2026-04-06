@@ -17,10 +17,9 @@ public class RemoteObject {
 
     @Override
     public boolean equals(Object _o) {
-        if (!(_o instanceof RemoteObject)) {
+        if (!(_o instanceof RemoteObject them)) {
             return false;
         }
-        RemoteObject them = (RemoteObject) _o;
 
         if (!them.objectpath.equals(this.objectpath)) {
             return false;

@@ -3,44 +3,32 @@ package org.freedesktop.dbus;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
+import org.freedesktop.dbus.utils.PrimitiveUtils;
 import org.slf4j.LoggerFactory;
 
 public final class ArrayFrob {
-    private static final Map<Class<?>, Class<?>> PRIMITIVE_TO_WRAPPER = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, Class<?>> WRAPPER_TO_PRIMITIVE = new ConcurrentHashMap<>();
-    static {
-        PRIMITIVE_TO_WRAPPER.put(Boolean.TYPE, Boolean.class);
-        PRIMITIVE_TO_WRAPPER.put(Byte.TYPE, Byte.class);
-        PRIMITIVE_TO_WRAPPER.put(Short.TYPE, Short.class);
-        PRIMITIVE_TO_WRAPPER.put(Character.TYPE, Character.class);
-        PRIMITIVE_TO_WRAPPER.put(Integer.TYPE, Integer.class);
-        PRIMITIVE_TO_WRAPPER.put(Long.TYPE, Long.class);
-        PRIMITIVE_TO_WRAPPER.put(Float.TYPE, Float.class);
-        PRIMITIVE_TO_WRAPPER.put(Double.TYPE, Double.class);
-        WRAPPER_TO_PRIMITIVE.put(Boolean.class, Boolean.TYPE);
-        WRAPPER_TO_PRIMITIVE.put(Byte.class, Byte.TYPE);
-        WRAPPER_TO_PRIMITIVE.put(Short.class, Short.TYPE);
-        WRAPPER_TO_PRIMITIVE.put(Character.class, Character.TYPE);
-        WRAPPER_TO_PRIMITIVE.put(Integer.class, Integer.TYPE);
-        WRAPPER_TO_PRIMITIVE.put(Long.class, Long.TYPE);
-        WRAPPER_TO_PRIMITIVE.put(Float.class, Float.TYPE);
-        WRAPPER_TO_PRIMITIVE.put(Double.class, Double.TYPE);
-    }
-
     private ArrayFrob() {
     }
 
+    /**
+     * @deprecated use {@link PrimitiveUtils#getPrimitiveToWrapperTypes()}
+     * @return Map with primitive type and wrapper types
+     */
+    @Deprecated(since = "5.1.1 - 2024-09-15")
     public static Map<Class<?>, Class<?>> getPrimitiveToWrapperTypes() {
-        return Collections.unmodifiableMap(PRIMITIVE_TO_WRAPPER);
+        return PrimitiveUtils.getPrimitiveToWrapperTypes();
     }
 
+    /**
+     * @deprecated use {@link PrimitiveUtils#getWrapperToPrimitiveTypes()}
+     * @return Map with wrapper type and primitive type
+     */
+    @Deprecated(since = "5.1.1 - 2024-09-15")
     public static Map<Class<?>, Class<?>> getWrapperToPrimitiveTypes() {
-        return Collections.unmodifiableMap(WRAPPER_TO_PRIMITIVE);
+        return PrimitiveUtils.getWrapperToPrimitiveTypes();
     }
 
     @SuppressWarnings("unchecked")
@@ -50,7 +38,7 @@ public final class ArrayFrob {
             throw new IllegalArgumentException("Not an array");
         }
         Class<? extends Object> cc = ac.getComponentType();
-        Class<? extends Object> ncc = PRIMITIVE_TO_WRAPPER.get(cc);
+        Class<? extends Object> ncc = PrimitiveUtils.getPrimitiveToWrapperTypes().get(cc);
         if (null == ncc) {
             throw new IllegalArgumentException("Not a primitive type");
         }
@@ -65,7 +53,7 @@ public final class ArrayFrob {
     public static <T> Object unwrap(T[] _ns) throws IllegalArgumentException {
         Class<? extends T[]> ac = (Class<? extends T[]>) _ns.getClass();
         Class<T> cc = (Class<T>) ac.getComponentType();
-        Class<? extends Object> ncc = WRAPPER_TO_PRIMITIVE.get(cc);
+        Class<? extends Object> ncc =  PrimitiveUtils.getWrapperToPrimitiveTypes().get(cc);
         if (null == ncc) {
             throw new IllegalArgumentException("Not a wrapper type");
         }
@@ -169,7 +157,7 @@ public final class ArrayFrob {
             throw new IllegalArgumentException(_ex);
         }
 
-        throw new IllegalArgumentException(String.format("Not An Expected Conversion type from %s to %s", _o.getClass(), _c));
+        throw new IllegalArgumentException(String.format("Not An Expected Convertion type from %s to %s", _o.getClass(), _c));
     }
 
     public static Object[] type(Object[] _old, Class<Object> _c) {
@@ -177,4 +165,5 @@ public final class ArrayFrob {
         System.arraycopy(_old, 0, ns, 0, ns.length);
         return ns;
     }
+
 }

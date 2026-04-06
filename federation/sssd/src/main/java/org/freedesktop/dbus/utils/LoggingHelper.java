@@ -53,16 +53,49 @@ public final class LoggingHelper {
             if (object == null) {
                 result.add("(null)");
             } else if (object.getClass().isArray()) {
-                result.add(arraysVeryDeepStringRecursive((Object[]) object).toString());
-            } else if (object instanceof Collection<?>) {
-                Collection<?> c = (Collection<?>) object;
-                result.add(arraysVeryDeepStringRecursive(c.toArray()).toString());
+                if (object.getClass().getComponentType().isPrimitive()) {
+                    result.add(convertToString(object));
+                } else {
+                    result.add(convertToString(arraysVeryDeepStringRecursive((Object[]) object)));
+                }
+            } else if (object instanceof Collection<?> col) {
+                result.add(convertToString(arraysVeryDeepStringRecursive(col.toArray())));
             } else {
-                result.add(Objects.toString(object));
+                result.add(convertToString(object));
             }
         }
 
         return result;
+    }
+
+    /**
+     * Converts an object to String and handles primitive array types.
+     *
+     * @param _obj object to convert
+     * @return String or null if input was null
+     */
+    static String convertToString(Object _obj) {
+        if (_obj == null) {
+            return null;
+        } else if (_obj.getClass().isArray() && _obj.getClass().getComponentType().isPrimitive()) {
+            if (_obj.getClass().getComponentType() == Boolean.TYPE) {
+                return Arrays.toString((boolean[]) _obj);
+            } else if (_obj.getClass().getComponentType() == Character.TYPE) {
+                return Arrays.toString((char[]) _obj);
+            } else if (_obj.getClass().getComponentType() == Integer.TYPE) {
+                return Arrays.toString((int[]) _obj);
+            } else if (_obj.getClass().getComponentType() == Float.TYPE) {
+                return Arrays.toString((float[]) _obj);
+            } else if (_obj.getClass().getComponentType() == Double.TYPE) {
+                return Arrays.toString((double[]) _obj);
+            } else if (_obj.getClass().getComponentType() == Byte.TYPE) {
+                return Arrays.toString((byte[]) _obj);
+            } else if (_obj.getClass().getComponentType() == Long.TYPE) {
+                return Arrays.toString((long[]) _obj);
+            }
+        }
+
+        return Objects.toString(_obj);
     }
 
     /**

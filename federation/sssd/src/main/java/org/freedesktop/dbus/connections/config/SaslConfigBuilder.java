@@ -1,7 +1,6 @@
 package org.freedesktop.dbus.connections.config;
 
 import java.util.OptionalLong;
-import java.util.function.Supplier;
 
 import org.freedesktop.dbus.connections.transports.TransportBuilder.SaslAuthMode;
 
@@ -13,12 +12,12 @@ import org.freedesktop.dbus.connections.transports.TransportBuilder.SaslAuthMode
  */
 public final class SaslConfigBuilder<R> {
 
-    private final SaslConfig saslConfig;
+    private SaslConfig                         saslConfig;
 
-    private final Supplier<TransportConfigBuilder<?, R>> transportBuilder;
+    private final TransportConfigBuilder<?, R> transportBuilder;
 
-    SaslConfigBuilder(SaslConfig _saslConfig, Supplier<TransportConfigBuilder<?, R>> _transportBuilder) {
-        saslConfig = _saslConfig;
+    SaslConfigBuilder(TransportConfigBuilder<?, R> _transportBuilder) {
+        saslConfig = new SaslConfig();
         transportBuilder = _transportBuilder;
     }
 
@@ -32,7 +31,7 @@ public final class SaslConfigBuilder<R> {
      * @return previous builder, maybe null
      */
     public TransportConfigBuilder<?, R> back() {
-        return transportBuilder.get();
+        return transportBuilder;
     }
 
     /**
@@ -53,7 +52,7 @@ public final class SaslConfigBuilder<R> {
      * Setup the user ID to use for authentication when using unix sockets.<br>
      * Will default to the user ID of the user running the current process.
      *
-     * @param _guid guid to use
+     * @param _saslUid uid to use
      * @return this
      */
     public SaslConfigBuilder<R> withSaslUid(Long _saslUid) {
@@ -80,5 +79,19 @@ public final class SaslConfigBuilder<R> {
      */
     public SaslConfig build() {
         return saslConfig;
+    }
+
+    /**
+     * Replace the current {@link SaslConfig} with the given instance.<br>
+     * Will do nothing if <code>null</code> is given.
+     *
+     * @param _cfg sasl config
+     * @return this
+     */
+    SaslConfigBuilder<R> withConfig(SaslConfig _cfg) {
+        if (_cfg != null) {
+            saslConfig = _cfg;
+        }
+        return this;
     }
 }

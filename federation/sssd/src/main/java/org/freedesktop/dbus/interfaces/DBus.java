@@ -107,7 +107,7 @@ public interface DBus extends DBusInterface {
     UInt32 GetConnectionUnixUser(String _connectionName);
 
     /**
-    * Returns the process ID associated with a connection.
+    * Returns the proccess ID associated with a connection.
     * @param _connectionName The name of the connection
     * @return The PID of the connection.
     */
@@ -212,13 +212,17 @@ public interface DBus extends DBusInterface {
         public final String newOwner;
 
         public NameOwnerChanged(String _path, String _name, String _oldOwner, String _newOwner) throws DBusException {
-            super(_path, new Object[] {
-                    _name, _oldOwner, _newOwner
-            });
+            super(_path, _name, _oldOwner, _newOwner);
             name = _name;
             oldOwner = _oldOwner;
             newOwner = _newOwner;
         }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + " [name=" + name + ", oldOwner=" + oldOwner + ", newOwner=" + newOwner + "]";
+        }
+
     }
 
     /**
@@ -232,6 +236,12 @@ public interface DBus extends DBusInterface {
             super(_path, _name);
             name = _name;
         }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + " [name=" + name + "]";
+        }
+
     }
 
     /**
@@ -245,6 +255,12 @@ public interface DBus extends DBusInterface {
             super(_path, _name);
             name = _name;
         }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + " [name=" + name + "]";
+        }
+
     }
 
 }

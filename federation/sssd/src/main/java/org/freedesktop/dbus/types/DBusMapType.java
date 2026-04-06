@@ -38,4 +38,10 @@ public class DBusMapType implements ParameterizedType {
     public Type getOwnerType() {
         return null;
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + " [keyType=" + k + ", valType=" + v + "]";
+    }
+
 }

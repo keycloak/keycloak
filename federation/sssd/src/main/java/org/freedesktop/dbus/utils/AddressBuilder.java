@@ -3,6 +3,7 @@ package org.freedesktop.dbus.utils;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 
 import org.freedesktop.dbus.config.DBusSysProps;
@@ -10,21 +11,6 @@ import org.freedesktop.dbus.connections.BusAddress;
 import org.freedesktop.dbus.exceptions.AddressResolvingException;
 
 public final class AddressBuilder {
-    /**
-     * @deprecated Constant has been moved to {@link DBusSysProps}.
-     */
-    @Deprecated(forRemoval = true, since = "v4.2.2 - 2023-01-20")
-    public static final String  DBUS_SYSTEM_BUS_ADDRESS        = "DBUS_SYSTEM_BUS_ADDRESS";
-    /**
-     * @deprecated Constant has been moved to {@link DBusSysProps}.
-     */
-    @Deprecated(forRemoval = true, since = "v4.2.2 - 2023-01-20")
-    public static final String  DEFAULT_SYSTEM_BUS_ADDRESS     = "unix:path=/var/run/dbus/system_bus_socket";
-    /**
-     * @deprecated Constant has been moved to {@link DBusSysProps}.
-     */
-    @Deprecated(forRemoval = true, since = "v4.2.2 - 2023-01-20")
-    public static final String  DBUS_SESSION_BUS_ADDRESS       = "DBUS_SESSION_BUS_ADDRESS";
 
     private AddressBuilder() {}
 
@@ -144,8 +130,8 @@ public final class AddressBuilder {
         List<String> locationPriorityList = Arrays.asList(System.getenv(DBusSysProps.DBUS_MACHINE_ID_SYS_VAR), _dbusMachineIdFile,
                 "/var/lib/dbus/machine-id", "/usr/local/var/lib/dbus/machine-id", "/etc/machine-id");
         return locationPriorityList.stream()
-                .filter(s -> s != null)
-                .map(s -> new File(s))
+                .filter(Objects::nonNull)
+                .map(File::new)
                 .filter(f -> f.exists() && f.length() > 0)
                 .findFirst()
                 .orElse(null);

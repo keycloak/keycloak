@@ -69,7 +69,7 @@ public class UInt32 extends Number implements Comparable<UInt32> {
     /** Test two UInt32s for equality. */
     @Override
     public boolean equals(Object _o) {
-        return _o instanceof UInt32 && ((UInt32) _o).value == this.value;
+        return _o instanceof UInt32 ui && ui.value == this.value;
     }
 
     @Override

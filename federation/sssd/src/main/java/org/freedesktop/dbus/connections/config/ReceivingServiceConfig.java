@@ -1,9 +1,9 @@
 package org.freedesktop.dbus.connections.config;
 
-import org.freedesktop.dbus.connections.ReceivingService.IThreadPoolRetryHandler;
+import org.freedesktop.dbus.connections.shared.IThreadPoolRetryHandler;
 
 /**
- * Bean which holds configuration for {@link org.freedesktop.dbus.connections.ReceivingService}.
+ * Bean which holds configuration for {@link org.freedesktop.dbus.connections.base.ReceivingService}.
  *
  * @author hypfvieh
  * @since 4.2.0 - 2022-07-14

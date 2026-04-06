@@ -4,9 +4,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.MessageFormatException;
+import org.freedesktop.dbus.messages.constants.ArgumentType;
+import org.freedesktop.dbus.messages.constants.HeaderField;
+import org.freedesktop.dbus.messages.constants.MessageTypes;
 
 public class MethodCall extends MethodBase {
     private static long replyWaitTimeout = Duration.ofSeconds(20).toMillis();
@@ -18,19 +20,19 @@ public class MethodCall extends MethodBase {
     MethodCall() {
     }
 
-    public MethodCall(String _dest, String _path, String _iface, String _member, byte _flags, String _sig, Object... _args) throws DBusException {
-        this(null, _dest, _path, _iface, _member, _flags, _sig, _args);
+    protected MethodCall(byte _endianess, String _dest, String _path, String _iface, String _member, byte _flags, String _sig, Object... _args) throws DBusException {
+        this(_endianess, null, _dest, _path, _iface, _member, _flags, _sig, _args);
     }
 
-    public MethodCall(String _source, String _dest, String _path, String _iface, String _member, byte _flags, String _sig, Object... _args) throws DBusException {
-        super(DBusConnection.getEndianness(), Message.MessageType.METHOD_CALL, _flags);
+    protected MethodCall(byte _endianess, String _source, String _dest, String _path, String _iface, String _member, byte _flags, String _sig, Object... _args) throws DBusException {
+        super(_endianess, MessageTypes.METHOD_CALL.getId(), _flags);
 
         if (null == _member || null == _path) {
             throw new MessageFormatException("Must specify destination, path and function name to MethodCalls.");
         }
         Object[] header = getHeader();
-        header[Message.HeaderField.PATH] = _path;
-        header[Message.HeaderField.MEMBER] = _member;
+        header[HeaderField.PATH] = _path;
+        header[HeaderField.MEMBER] = _member;
 
         List<Object> hargs = new ArrayList<>();
 
@@ -56,7 +58,7 @@ public class MethodCall extends MethodBase {
             setArgs(_args);
         }
 
-        appendFileDescriptors(hargs, _sig, _args);
+        appendFileDescriptors(hargs, _args);
         padAndMarshall(hargs, getSerial(), _sig, _args);
     }
 
@@ -74,7 +76,7 @@ public class MethodCall extends MethodBase {
     }
 
     /**
-    * Block (if necessary) for a reply.
+    * Block (if neccessary) for a reply.
     * @return The reply to this MethodCall, or null if a timeout happens.
     * @param _timeout The length of time to block before timing out (ms).
     */
@@ -83,17 +85,18 @@ public class MethodCall extends MethodBase {
         if (null != reply) {
             return reply;
         }
+
         try {
             wait(_timeout);
-            return reply;
         } catch (InterruptedException _exI) {
             Thread.currentThread().interrupt(); // keep interrupted state
-            return reply;
         }
+
+        return reply;
     }
 
     /**
-    * Block (if necessary) for a reply.
+    * Block (if neccessary) for a reply.
     * Default timeout is 20s, or can be configured with setDefaultTimeout()
     * @return The reply to this MethodCall, or null if a timeout happens.
     */

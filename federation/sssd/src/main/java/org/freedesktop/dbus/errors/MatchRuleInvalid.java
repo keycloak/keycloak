@@ -11,4 +11,9 @@ public class MatchRuleInvalid extends DBusExecutionException {
     public MatchRuleInvalid(String _message) {
         super(_message);
     }
+
+    public MatchRuleInvalid(String _message, Exception _ex) {
+        super(_message, _ex);
+    }
+
 }

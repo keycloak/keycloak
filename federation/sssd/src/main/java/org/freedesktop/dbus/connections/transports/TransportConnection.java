@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.freedesktop.dbus.messages.MessageFactory;
 import org.freedesktop.dbus.spi.message.IMessageReader;
 import org.freedesktop.dbus.spi.message.IMessageWriter;
+import org.freedesktop.dbus.spi.message.ISocketProvider;
 
 /**
  * Represents one transport connection of any type.<br>
@@ -22,13 +24,18 @@ import org.freedesktop.dbus.spi.message.IMessageWriter;
 public class TransportConnection implements Closeable {
     private static final AtomicLong TRANSPORT_ID_GENERATOR = new AtomicLong(0);
 
-    private final long id = TRANSPORT_ID_GENERATOR.incrementAndGet();
-    private final SocketChannel channel;
-    private final IMessageWriter writer;
-    private final IMessageReader reader;
+    private final long              id                     = TRANSPORT_ID_GENERATOR.incrementAndGet();
+    private final SocketChannel     channel;
+    private final IMessageWriter    writer;
+    private final IMessageReader    reader;
+    private final ISocketProvider   socketProviderImpl;
 
-    public TransportConnection(SocketChannel _channel, IMessageWriter _writer, IMessageReader _reader) {
+    private final MessageFactory    messageFactory;
+
+    public TransportConnection(MessageFactory _factory, SocketChannel _channel, ISocketProvider _socketProviderImpl, IMessageWriter _writer, IMessageReader _reader) {
+        messageFactory = _factory;
         channel = _channel;
+        socketProviderImpl = _socketProviderImpl;
         writer = _writer;
         reader = _reader;
     }
@@ -45,14 +52,23 @@ public class TransportConnection implements Closeable {
         return reader;
     }
 
+    public ISocketProvider getSocketProviderImpl() {
+        return socketProviderImpl;
+    }
+
     public long getId() {
         return id;
     }
 
+    public MessageFactory getMessageFactory() {
+        return messageFactory;
+    }
+
     @Override
     public String toString() {
-        return getClass().getSimpleName() + " [id=" + id + ", channel=" + channel + ", writer=" + writer + ", reader="
-                + reader + "]";
+        return getClass().getSimpleName()
+            + " [id=" + id + ", channel=" + channel + ", writer=" + writer
+            + ", reader=" + reader + "]";
     }
 
     @Override

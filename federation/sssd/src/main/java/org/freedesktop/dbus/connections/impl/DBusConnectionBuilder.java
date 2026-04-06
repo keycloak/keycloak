@@ -1,7 +1,5 @@
 package org.freedesktop.dbus.connections.impl;
 
-import java.nio.ByteOrder;
-
 import org.freedesktop.dbus.connections.BusAddress;
 import org.freedesktop.dbus.connections.config.ReceivingServiceConfig;
 import org.freedesktop.dbus.connections.config.TransportConfig;
@@ -9,7 +7,6 @@ import org.freedesktop.dbus.connections.impl.DBusConnection.DBusBusType;
 import org.freedesktop.dbus.connections.transports.TransportBuilder;
 import org.freedesktop.dbus.exceptions.AddressResolvingException;
 import org.freedesktop.dbus.exceptions.DBusException;
-import org.freedesktop.dbus.messages.Message;
 import org.freedesktop.dbus.utils.AddressBuilder;
 
 import static org.freedesktop.dbus.utils.AddressBuilder.getDbusMachineId;
@@ -23,7 +20,6 @@ import static org.freedesktop.dbus.utils.AddressBuilder.getDbusMachineId;
 public final class DBusConnectionBuilder extends BaseConnectionBuilder<DBusConnectionBuilder, DBusConnection> {
 
     private final String        machineId;
-    private boolean             registerSelf            = true;
     private boolean             shared                  = true;
 
     private DBusConnectionBuilder(BusAddress _address, String _machineId) {
@@ -39,10 +35,8 @@ public final class DBusConnectionBuilder extends BaseConnectionBuilder<DBusConne
      * @return {@link DBusConnectionBuilder}
      */
     public static DBusConnectionBuilder forSessionBus(String _machineIdFileLocation) {
-        BusAddress address = AddressBuilder.getSessionConnection(_machineIdFileLocation);
-        address = validateTransportAddress(address);
-        DBusConnectionBuilder instance = new DBusConnectionBuilder(address, getDbusMachineId(_machineIdFileLocation));
-        return instance;
+        BusAddress address = validateTransportAddress(AddressBuilder.getSessionConnection(_machineIdFileLocation));
+        return new DBusConnectionBuilder(address, getDbusMachineId(_machineIdFileLocation));
     }
 
     /**
@@ -51,8 +45,7 @@ public final class DBusConnectionBuilder extends BaseConnectionBuilder<DBusConne
      * @return {@link DBusConnectionBuilder}
      */
     public static DBusConnectionBuilder forSystemBus() {
-        BusAddress address = AddressBuilder.getSystemConnection();
-        address = validateTransportAddress(address);
+        BusAddress address = validateTransportAddress(AddressBuilder.getSystemConnection());
         return new DBusConnectionBuilder(address, getDbusMachineId(null));
     }
 
@@ -101,8 +94,7 @@ public final class DBusConnectionBuilder extends BaseConnectionBuilder<DBusConne
      * @return this
      */
     public static DBusConnectionBuilder forAddress(String _address) {
-        DBusConnectionBuilder instance = new DBusConnectionBuilder(BusAddress.of(_address), getDbusMachineId(null));
-        return instance;
+        return new DBusConnectionBuilder(BusAddress.of(_address), getDbusMachineId(null));
     }
 
     /**
@@ -114,8 +106,7 @@ public final class DBusConnectionBuilder extends BaseConnectionBuilder<DBusConne
      * @since 4.2.0 - 2022-07-18
      */
     public static DBusConnectionBuilder forAddress(BusAddress _address) {
-        DBusConnectionBuilder instance = new DBusConnectionBuilder(_address, getDbusMachineId(null));
-        return instance;
+        return new DBusConnectionBuilder(_address, getDbusMachineId(null));
     }
 
     /**
@@ -149,16 +140,6 @@ public final class DBusConnectionBuilder extends BaseConnectionBuilder<DBusConne
         return address;
 
     }
-    /**
-     * Register the new connection on DBus using 'hello' message. Default is true.
-     *
-     * @param _register boolean
-     * @return this
-     */
-    public DBusConnectionBuilder withRegisterSelf(boolean _register) {
-        registerSelf = _register;
-        return this;
-    }
 
     /**
      * Use this connection as shared connection. Shared connection means that the same connection is used multiple times
@@ -180,43 +161,49 @@ public final class DBusConnectionBuilder extends BaseConnectionBuilder<DBusConne
      */
     @Override
     public DBusConnection build() throws DBusException {
-        ReceivingServiceConfig cfg = buildThreadConfig();
+        ReceivingServiceConfig rcvSvcCfg = buildThreadConfig();
         TransportConfig transportCfg = buildTransportConfig();
-
+        ConnectionConfig connectionConfig = getConnectionConfig();
         DBusConnection c;
         if (shared) {
             synchronized (DBusConnection.CONNECTIONS) {
                 String busAddressStr = transportCfg.getBusAddress().toString();
-                c = DBusConnection.CONNECTIONS.get(busAddressStr);
+                c = getSharedConnection(busAddressStr);
                 if (c != null) {
                     c.concurrentConnections.incrementAndGet();
                     return c; // this connection already exists, do not change anything
                 } else {
-                    c = new DBusConnection(shared, machineId, transportCfg, cfg);
+                    c = new DBusConnection(shared, machineId, connectionConfig, transportCfg, rcvSvcCfg);
                     DBusConnection.CONNECTIONS.put(busAddressStr, c);
                 }
             }
         } else {
-            c = new DBusConnection(shared, machineId, transportCfg, cfg);
+            c = new DBusConnection(shared, machineId, connectionConfig, transportCfg, rcvSvcCfg);
         }
 
-        c.setDisconnectCallback(getDisconnectCallback());
-        c.setWeakReferences(isWeakReference());
-        DBusConnection.setEndianness(getEndianess());
-        c.connect(registerSelf);
+        c.connectImpl();
         return c;
     }
 
     /**
-     * Get the default system endianness.
-     *
-     * @return LITTLE or BIG
-     * @deprecated if required, use {@link BaseConnectionBuilder#getSystemEndianness()}
+     * Retrieve a existing shared connection.
+     * Will remove existing shared connections when underlying transport is disconnected.
+     * @param _busAddr bus address
+     * @return connection if a valid shared connection found or
+     *      null if no connection found or found connection was invalid
      */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public static byte getSystemEndianness() {
-       return ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN)
-                ? Message.Endian.BIG
-                : Message.Endian.LITTLE;
+    private DBusConnection getSharedConnection(String _busAddr) {
+        synchronized (DBusConnection.CONNECTIONS) {
+            DBusConnection c = DBusConnection.CONNECTIONS.get(_busAddr);
+            if (c != null) {
+                if (!c.isConnected()) {
+                    DBusConnection.CONNECTIONS.remove(_busAddr);
+                    return null;
+                } else {
+                    return c;
+                }
+            }
+        }
+        return null;
     }
 }

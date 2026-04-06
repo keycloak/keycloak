@@ -27,10 +27,21 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @DBusInterfaceName("org.freedesktop.DBus.Property.EmitsChangedSignal")
 public @interface PropertiesEmitsChangedSignal {
+
     EmitChangeSignal value();
 
+    /**
+     * The different values which are supported for emitting a signal.
+     */
     enum EmitChangeSignal {
-        TRUE, INVALIDATES, CONST, FALSE;
+        /** The signal is emitted with the value included. */
+        TRUE,
+        /** The signal is emitted but the value is not included in the signal. */
+        INVALIDATES,
+        /** The property never changes value during the lifetime of the object it belongs to, and hence the signal is never emitted for it. */
+        CONST,
+        /** It is not guaranteed to emit a signal if the property changes. */
+        FALSE;
 
         @Override
         public String toString() {

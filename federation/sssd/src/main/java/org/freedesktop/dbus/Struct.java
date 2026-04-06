@@ -8,6 +8,4 @@ package org.freedesktop.dbus;
  * annotation, in the order they should appear in to Struct to DBus.
  */
 public abstract class Struct extends Container {
-    public Struct() {
-    }
 }

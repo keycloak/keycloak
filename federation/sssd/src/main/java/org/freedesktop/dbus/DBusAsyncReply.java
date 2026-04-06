@@ -3,10 +3,10 @@ package org.freedesktop.dbus;
 import java.lang.reflect.Method;
 
 import org.freedesktop.dbus.connections.AbstractConnection;
-import org.freedesktop.dbus.errors.Error;
 import org.freedesktop.dbus.errors.NoReply;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
+import org.freedesktop.dbus.messages.Error;
 import org.freedesktop.dbus.messages.Message;
 import org.freedesktop.dbus.messages.MethodCall;
 import org.freedesktop.dbus.messages.MethodReturn;
@@ -36,18 +36,19 @@ public class DBusAsyncReply<T> {
     private synchronized void checkReply() {
         if (mc.hasReply()) {
             Message m = mc.getReply();
-            if (m instanceof Error) {
-                error = ((Error) m).getException();
+            if (m instanceof Error err) {
+                error = err.getException();
             } else if (m instanceof MethodReturn) {
                 try {
-                    Object obj = RemoteInvocationHandler.convertRV(m.getSig(), m.getParameters(), me, conn);
+                    Object obj = RemoteInvocationHandler.convertRV(m.getParameters(), me, conn);
 
                     rval = (T) obj;
                 } catch (DBusExecutionException _ex) {
+                    logger.trace("DBusExecutionException while creating message from MethodReturn", _ex);
                     error = _ex;
                 } catch (DBusException _ex) {
-                    logger.debug("", _ex);
-                    error = new DBusExecutionException(_ex.getMessage());
+                    logger.debug("RemoteInvocationHandler failed", _ex);
+                    error = new DBusExecutionException(_ex.getMessage(), _ex);
                 }
             }
         }
@@ -104,19 +105,4 @@ public class DBusAsyncReply<T> {
         return mc;
     }
 
-    /**
-    * Check if any of a set of asynchronous calls have had a reply.
-    * @param _replies A Collection of handles to replies to check.
-    * @return A Collection only containing those calls which have had replies.
-    */
-//    public static Collection<DBusAsyncReply<?>> hasReply(Collection<DBusAsyncReply<?>> _replies) {
-//        Collection<DBusAsyncReply<?>> c = new ArrayList<>(_replies);
-//        Iterator<DBusAsyncReply<?>> i = c.iterator();
-//        while (i.hasNext()) {
-//            if (!i.next().hasReply()) {
-//                i.remove();
-//            }
-//        }
-//        return c;
-//    }
 }

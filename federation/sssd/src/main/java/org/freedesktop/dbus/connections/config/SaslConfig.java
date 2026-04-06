@@ -27,16 +27,6 @@ public class SaslConfig {
         saslUid = OptionalLong.empty();
     }
 
-    /**
-     * Creates a new empty SaslConfig object
-     * @return SaslConfig
-     * @deprecated only intended for internal backward compatibility, will be removed soon
-     */
-    @Deprecated(forRemoval = true, since = "4.2.2 - 2023-02-03")
-    public static SaslConfig create() {
-        return new SaslConfig();
-    }
-
     public SaslMode getMode() {
         return mode;
     }
@@ -84,7 +74,6 @@ public class SaslConfig {
      * Enable/disable checking of file permissions of the cookie files (used for DBUS_COOKIE_SHA1).<br>
      * Cookie permission check will only be used on Linux/Unix like OSes.
      *
-     * @return boolean
      * @since v4.2.2 - 2023-02-03
      */
     public void setStrictCookiePermissions(boolean _strictCookiePermissions) {
@@ -104,11 +93,19 @@ public class SaslConfig {
     /**
      * Enable/disable support of file descriptor passing.
      *
-     * @return boolean
      * @since v4.2.2 - 2023-02-03
      */
     public void setFileDescriptorSupport(boolean _fileDescriptorSupport) {
         fileDescriptorSupport = _fileDescriptorSupport;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + " [mode=" + mode + ", authMode=" + authMode
+            + ", guid=" + guid + ", saslUid=" + saslUid
+            + ", strictCookiePermissions=" + strictCookiePermissions
+            + ", fileDescriptorSupport="
+            + fileDescriptorSupport + "]";
     }
 
 }

@@ -3,10 +3,10 @@ package org.freedesktop.dbus.connections.config;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import org.freedesktop.dbus.connections.ReceivingService;
-import org.freedesktop.dbus.connections.ReceivingService.ExecutorNames;
-import org.freedesktop.dbus.connections.ReceivingService.IThreadPoolRetryHandler;
+import org.freedesktop.dbus.connections.base.ReceivingService;
 import org.freedesktop.dbus.connections.impl.BaseConnectionBuilder;
+import org.freedesktop.dbus.connections.shared.ExecutorNames;
+import org.freedesktop.dbus.connections.shared.IThreadPoolRetryHandler;
 import org.freedesktop.dbus.utils.Util;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +25,7 @@ public final class ReceivingServiceConfigBuilder<R extends BaseConnectionBuilder
     private static final ReceivingServiceConfig DEFAULT_CFG = new ReceivingServiceConfig();
 
     private static final IThreadPoolRetryHandler DEFAULT_RETRYHANDLER = new IThreadPoolRetryHandler() {
-        private AtomicInteger retries = new AtomicInteger(0);
+        private final AtomicInteger retries = new AtomicInteger(0);
         @Override
         public boolean handle(ExecutorNames _executor, Exception _ex) {
             if (retries.incrementAndGet() < DEFAULT_HANDLER_RETRIES) {

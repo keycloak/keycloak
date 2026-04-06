@@ -8,8 +8,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,10 +21,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.freedesktop.dbus.annotations.Position;
 import org.freedesktop.dbus.connections.AbstractConnection;
+import org.freedesktop.dbus.connections.base.AbstractConnectionBase;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.exceptions.DBusTypeConversationRuntimeException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.interfaces.DBusSerializable;
-import org.freedesktop.dbus.messages.Message;
+import org.freedesktop.dbus.messages.constants.ArgumentType;
 import org.freedesktop.dbus.types.DBusListType;
 import org.freedesktop.dbus.types.DBusMapType;
 import org.freedesktop.dbus.types.DBusStructType;
@@ -37,50 +42,60 @@ import org.slf4j.LoggerFactory;
  * Contains static methods for marshalling values.
  */
 public final class Marshalling {
+
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+    private static final Type[] EMPTY_TYPE_ARRAY = new Type[0];
+
+    /** Used as initial and incremental size of StringBuffer array when resolving DBusTypes recursively. */
+    private static final int INITIAL_BUFFER_SZ = 10;
+
+    private static final String MTH_NAME_DESERIALIZE = "deserialize";
+    private static final String ERROR_MULTI_VALUED_ARRAY = "Multi-valued array types not permitted";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(Marshalling.class);
 
     private static final Map<Type, String[]> TYPE_CACHE = new ConcurrentHashMap<>();
 
     private static final Map<Class<?>, Byte> CLASS_TO_ARGUMENTTYPE = new LinkedHashMap<>();
     static {
-        CLASS_TO_ARGUMENTTYPE.put(Boolean.class, Message.ArgumentType.BOOLEAN); // class
-        CLASS_TO_ARGUMENTTYPE.put(Boolean.TYPE, Message.ArgumentType.BOOLEAN); // primitive type
+        CLASS_TO_ARGUMENTTYPE.put(Boolean.class, ArgumentType.BOOLEAN); // class
+        CLASS_TO_ARGUMENTTYPE.put(Boolean.TYPE, ArgumentType.BOOLEAN); // primitive type
 
-        CLASS_TO_ARGUMENTTYPE.put(Byte.class, Message.ArgumentType.BYTE);
-        CLASS_TO_ARGUMENTTYPE.put(Byte.TYPE, Message.ArgumentType.BYTE);
+        CLASS_TO_ARGUMENTTYPE.put(Byte.class, ArgumentType.BYTE);
+        CLASS_TO_ARGUMENTTYPE.put(Byte.TYPE, ArgumentType.BYTE);
 
-        CLASS_TO_ARGUMENTTYPE.put(Short.class, Message.ArgumentType.INT16);
-        CLASS_TO_ARGUMENTTYPE.put(Short.TYPE, Message.ArgumentType.INT16);
+        CLASS_TO_ARGUMENTTYPE.put(Short.class, ArgumentType.INT16);
+        CLASS_TO_ARGUMENTTYPE.put(Short.TYPE, ArgumentType.INT16);
 
-        CLASS_TO_ARGUMENTTYPE.put(Integer.class, Message.ArgumentType.INT32);
-        CLASS_TO_ARGUMENTTYPE.put(Integer.TYPE, Message.ArgumentType.INT32);
+        CLASS_TO_ARGUMENTTYPE.put(Integer.class, ArgumentType.INT32);
+        CLASS_TO_ARGUMENTTYPE.put(Integer.TYPE, ArgumentType.INT32);
 
-        CLASS_TO_ARGUMENTTYPE.put(Long.class, Message.ArgumentType.INT64);
-        CLASS_TO_ARGUMENTTYPE.put(Long.TYPE, Message.ArgumentType.INT64);
+        CLASS_TO_ARGUMENTTYPE.put(Long.class, ArgumentType.INT64);
+        CLASS_TO_ARGUMENTTYPE.put(Long.TYPE, ArgumentType.INT64);
 
-        CLASS_TO_ARGUMENTTYPE.put(Double.class, Message.ArgumentType.DOUBLE);
-        CLASS_TO_ARGUMENTTYPE.put(Double.TYPE, Message.ArgumentType.DOUBLE);
+        CLASS_TO_ARGUMENTTYPE.put(Double.class, ArgumentType.DOUBLE);
+        CLASS_TO_ARGUMENTTYPE.put(Double.TYPE, ArgumentType.DOUBLE);
 
         if (AbstractConnection.FLOAT_SUPPORT) {
-            CLASS_TO_ARGUMENTTYPE.put(Float.class, Message.ArgumentType.FLOAT);
-            CLASS_TO_ARGUMENTTYPE.put(Float.TYPE, Message.ArgumentType.FLOAT);
+            CLASS_TO_ARGUMENTTYPE.put(Float.class, ArgumentType.FLOAT);
+            CLASS_TO_ARGUMENTTYPE.put(Float.TYPE, ArgumentType.FLOAT);
         } else {
-            CLASS_TO_ARGUMENTTYPE.put(Float.class, Message.ArgumentType.DOUBLE);
-            CLASS_TO_ARGUMENTTYPE.put(Float.TYPE, Message.ArgumentType.DOUBLE);
+            CLASS_TO_ARGUMENTTYPE.put(Float.class, ArgumentType.DOUBLE);
+            CLASS_TO_ARGUMENTTYPE.put(Float.TYPE, ArgumentType.DOUBLE);
         }
 
-        CLASS_TO_ARGUMENTTYPE.put(UInt16.class, Message.ArgumentType.UINT16);
-        CLASS_TO_ARGUMENTTYPE.put(UInt32.class, Message.ArgumentType.UINT32);
-        CLASS_TO_ARGUMENTTYPE.put(UInt64.class, Message.ArgumentType.UINT64);
+        CLASS_TO_ARGUMENTTYPE.put(UInt16.class, ArgumentType.UINT16);
+        CLASS_TO_ARGUMENTTYPE.put(UInt32.class, ArgumentType.UINT32);
+        CLASS_TO_ARGUMENTTYPE.put(UInt64.class, ArgumentType.UINT64);
 
-        CLASS_TO_ARGUMENTTYPE.put(CharSequence.class, Message.ArgumentType.STRING);
-        CLASS_TO_ARGUMENTTYPE.put(Variant.class, Message.ArgumentType.VARIANT);
+        CLASS_TO_ARGUMENTTYPE.put(CharSequence.class, ArgumentType.STRING);
+        CLASS_TO_ARGUMENTTYPE.put(Variant.class, ArgumentType.VARIANT);
 
-        CLASS_TO_ARGUMENTTYPE.put(FileDescriptor.class, Message.ArgumentType.FILEDESCRIPTOR);
+        CLASS_TO_ARGUMENTTYPE.put(FileDescriptor.class, ArgumentType.FILEDESCRIPTOR);
 
-        CLASS_TO_ARGUMENTTYPE.put(DBusInterface.class, Message.ArgumentType.OBJECT_PATH);
-        CLASS_TO_ARGUMENTTYPE.put(DBusPath.class, Message.ArgumentType.OBJECT_PATH);
-        CLASS_TO_ARGUMENTTYPE.put(ObjectPath.class, Message.ArgumentType.OBJECT_PATH);
+        CLASS_TO_ARGUMENTTYPE.put(DBusInterface.class, ArgumentType.OBJECT_PATH);
+        CLASS_TO_ARGUMENTTYPE.put(DBusPath.class, ArgumentType.OBJECT_PATH);
+        CLASS_TO_ARGUMENTTYPE.put(ObjectPath.class, ArgumentType.OBJECT_PATH);
     }
 
     private Marshalling() {
@@ -90,9 +105,9 @@ public final class Marshalling {
     * Will return the DBus type corresponding to the given Java type.
     * Note, container type should have their ParameterizedType not their
     * Class passed in here.
+    *
     * @param _javaType The Java types.
     * @return The DBus types.
-    * @throws DBusException If the given type cannot be converted to a DBus type.
     */
     public static String getDBusType(Type[] _javaType) throws DBusException {
         StringBuilder sb = new StringBuilder();
@@ -102,6 +117,63 @@ public final class Marshalling {
             }
         }
         return sb.toString();
+    }
+
+    /**
+    * Will return the DBus type corresponding to the given Java type.
+    * Note, container type should have their ParameterizedType not their
+    * Class passed in here.
+    *
+    * @param _javaType The Java types.
+    * @return The DBus types
+    *
+    * @throws DBusTypeConversationRuntimeException when conversation fails
+    *
+    * @since 5.1.0 - 2024-05-19
+    */
+    public static String convertJavaClassesToSignature(Class<?>... _javaType) throws DBusTypeConversationRuntimeException {
+        if (_javaType == null || _javaType.length == 0) {
+            throw new DBusTypeConversationRuntimeException("No types to convert given");
+        }
+        StringBuilder sig = new StringBuilder();
+        convertToSig(sig, 0, _javaType);
+
+        return sig.toString();
+    }
+
+    private static int convertToSig(StringBuilder _sig, int _idx, Class<?>... _javaType) {
+        for (int i = _idx; i < _javaType.length; i++) {
+            Class<?> clz = _javaType[i];
+            if (Collection.class.isAssignableFrom(clz)) {
+                _sig.append(ArgumentType.ARRAY_STRING);
+            } else if (Map.class.isAssignableFrom(clz)) {
+                _sig.append(ArgumentType.ARRAY_STRING).append(ArgumentType.DICT_ENTRY1_STRING);
+                i = convertToSig(_sig, i + 1, _javaType) - 1;
+                _sig.append(ArgumentType.DICT_ENTRY2_STRING);
+                return i;
+            } else if (CharSequence.class.isAssignableFrom(clz)) {
+                _sig.append(ArgumentType.STRING_STRING);
+            } else if (Struct.class.isAssignableFrom(clz)) {
+                _sig.append(ArgumentType.STRUCT1_STRING);
+
+                Class<?>[] structure = Arrays.stream(clz.getDeclaredFields())
+                    .map(Field::getType)
+                    .toArray(Class<?>[]::new);
+
+                convertToSig(_sig, 0, structure);
+                _sig.append(ArgumentType.STRUCT2_STRING);
+                return i;
+            } else if (Tuple.class.isAssignableFrom(clz)) {
+                continue; // simply ignore Tuple types
+            } else if (CLASS_TO_ARGUMENTTYPE.containsKey(clz)) {
+                char val = (char) CLASS_TO_ARGUMENTTYPE.get(clz).byteValue();
+                _sig.append(val);
+            } else {
+                throw new DBusTypeConversationRuntimeException("Unsupported class type " + clz);
+            }
+
+        }
+        return 0;
     }
 
     /**
@@ -132,13 +204,13 @@ public final class Marshalling {
     * @throws DBusException If the given type cannot be converted to a DBus type.
     */
     public static String[] getDBusType(Type _dataType, boolean _basic) throws DBusException {
-        return recursiveGetDBusType(new StringBuffer[10], _dataType, _basic, 0);
+        return recursiveGetDBusType(new StringBuffer[INITIAL_BUFFER_SZ], _dataType, _basic, 0);
     }
 
     @SuppressWarnings("checkstyle:parameterassignment")
     private static String[] recursiveGetDBusType(StringBuffer[] _out, Type _dataType, boolean _basic, int _level) throws DBusException {
         if (_out.length <= _level) {
-            StringBuffer[] newout = new StringBuffer[_out.length];
+            StringBuffer[] newout = new StringBuffer[_level + INITIAL_BUFFER_SZ];
             System.arraycopy(_out, 0, newout, 0, _out.length);
             _out = newout;
         }
@@ -152,29 +224,31 @@ public final class Marshalling {
             throw new DBusException(_dataType + " is not a basic type");
         }
 
-        if (_dataType instanceof TypeVariable) {
-            _out[_level].append((char) Message.ArgumentType.VARIANT);
-        } else if (_dataType instanceof GenericArrayType) {
-            _out[_level].append((char) Message.ArgumentType.ARRAY);
-            String[] s = recursiveGetDBusType(_out, ((GenericArrayType) _dataType).getGenericComponentType(), false, _level + 1);
+        if (_dataType instanceof WildcardType wildcardType && wildcardType.getUpperBounds().length > 0) {
+            return recursiveGetDBusType(_out, wildcardType.getUpperBounds()[0], _basic, _level);
+        } else if (_dataType instanceof TypeVariable) {
+            _out[_level].append((char) ArgumentType.VARIANT);
+        } else if (_dataType instanceof GenericArrayType gat) {
+            _out[_level].append((char) ArgumentType.ARRAY);
+            String[] s = recursiveGetDBusType(_out, gat.getGenericComponentType(), false, _level + 1);
             if (s.length != 1) {
-                throw new DBusException("Multi-valued array types not permitted");
+                throw new DBusException(ERROR_MULTI_VALUED_ARRAY);
             }
             _out[_level].append(s[0]);
         } else if (_dataType instanceof Class<?> && DBusSerializable.class.isAssignableFrom((Class<?>) _dataType)
-                || _dataType instanceof ParameterizedType
-                && DBusSerializable.class.isAssignableFrom((Class<?>) ((ParameterizedType) _dataType).getRawType())) {
+            || _dataType instanceof ParameterizedType pt
+                && DBusSerializable.class.isAssignableFrom((Class<?>) pt.getRawType())) {
             // it's a custom serializable type
             Type[] newtypes = null;
-            if (_dataType instanceof Class) {
-                for (Method m : ((Class<?>) _dataType).getDeclaredMethods()) {
-                    if (m.getName().equals("deserialize")) {
+            if (_dataType instanceof Class<?> clz) {
+                for (Method m : clz.getDeclaredMethods()) {
+                    if (m.getName().equals(MTH_NAME_DESERIALIZE)) {
                         newtypes = m.getGenericParameterTypes();
                     }
                 }
             } else {
                 for (Method m : ((Class<?>) ((ParameterizedType) _dataType).getRawType()).getDeclaredMethods()) {
-                    if (m.getName().equals("deserialize")) {
+                    if (m.getName().equals(MTH_NAME_DESERIALIZE)) {
                         newtypes = m.getGenericParameterTypes();
                     }
                 }
@@ -193,74 +267,71 @@ public final class Marshalling {
                 sigs[j] = ss[0];
             }
             return sigs;
-        } else if (_dataType instanceof ParameterizedType) {
-            ParameterizedType p = (ParameterizedType) _dataType;
+        } else if (_dataType instanceof ParameterizedType p) {
             if (p.getRawType().equals(Map.class)) {
-                _out[_level].append("a{");
+                _out[_level].append(ArgumentType.ARRAY_STRING)
+                    .append(ArgumentType.DICT_ENTRY1_STRING);
                 Type[] t = p.getActualTypeArguments();
                 try {
                     String[] s = recursiveGetDBusType(_out, t[0], true, _level + 1);
                     if (s.length != 1) {
-                        throw new DBusException("Multi-valued array types not permitted");
+                        throw new DBusException(ERROR_MULTI_VALUED_ARRAY);
                     }
                     _out[_level].append(s[0]);
                     s = recursiveGetDBusType(_out, t[1], false, _level + 1);
                     if (s.length != 1) {
-                        throw new DBusException("Multi-valued array types not permitted");
+                        throw new DBusException(ERROR_MULTI_VALUED_ARRAY);
                     }
                     _out[_level].append(s[0]);
                 } catch (ArrayIndexOutOfBoundsException _ex) {
                     LOGGER.debug("", _ex);
                     throw new DBusException("Map must have 2 parameters");
                 }
-                _out[_level].append('}');
+                _out[_level].append(ArgumentType.DICT_ENTRY2_STRING);
             } else if (List.class.isAssignableFrom((Class<?>) p.getRawType())) {
                 for (Type t : p.getActualTypeArguments()) {
                     if (Type.class.equals(t)) {
-                        _out[_level].append((char) Message.ArgumentType.SIGNATURE);
+                        _out[_level].append((char) ArgumentType.SIGNATURE);
                     } else {
                         String[] s = recursiveGetDBusType(_out, t, false, _level + 1);
                         if (s.length != 1) {
-                            throw new DBusException("Multi-valued array types not permitted");
+                            throw new DBusException(ERROR_MULTI_VALUED_ARRAY);
                         }
-                        _out[_level].append((char) Message.ArgumentType.ARRAY);
+                        _out[_level].append((char) ArgumentType.ARRAY);
                         _out[_level].append(s[0]);
                     }
                 }
             } else if (p.getRawType().equals(Variant.class)) {
-                _out[_level].append((char) Message.ArgumentType.VARIANT);
+                _out[_level].append((char) ArgumentType.VARIANT);
             } else if (DBusInterface.class.isAssignableFrom((Class<?>) p.getRawType())) {
-                _out[_level].append((char) Message.ArgumentType.OBJECT_PATH);
+                _out[_level].append((char) ArgumentType.OBJECT_PATH);
             } else if (Struct.class.isAssignableFrom((Class<?>) p.getRawType())) {
-                _out[_level].append((char) Message.ArgumentType.STRUCT1);
+                _out[_level].append((char) ArgumentType.STRUCT1);
             } else if (Tuple.class.isAssignableFrom((Class<?>) p.getRawType())) {
                 Type[] ts = p.getActualTypeArguments();
                 List<String> vs = new ArrayList<>();
                 for (Type t : ts) {
-                    for (String s : recursiveGetDBusType(_out, t, false, _level + 1)) {
-                        vs.add(s);
-                    }
+                    Collections.addAll(vs, recursiveGetDBusType(_out, t, false, _level + 1));
                 }
-                return vs.toArray(new String[0]);
+                return vs.toArray(EMPTY_STRING_ARRAY);
             } else {
                 throw new DBusException("Exporting non-exportable parameterized type " + _dataType);
             }
-        } else if (_dataType instanceof Class<?>) {
-            Class<?> dataTypeClazz = (Class<?>) _dataType;
+        } else if (_dataType instanceof Class<?> dataTypeClazz) {
 
             if (dataTypeClazz.isArray()) {
                 if (Type.class.equals(((Class<?>) _dataType).getComponentType())) {
-                    _out[_level].append((char) Message.ArgumentType.SIGNATURE);
+                    _out[_level].append((char) ArgumentType.SIGNATURE);
                 } else {
-                    _out[_level].append((char) Message.ArgumentType.ARRAY);
+                    _out[_level].append((char) ArgumentType.ARRAY);
                     String[] s = recursiveGetDBusType(_out, ((Class<?>) _dataType).getComponentType(), false, _level + 1);
                     if (s.length != 1) {
-                        throw new DBusException("Multi-valued array types not permitted");
+                        throw new DBusException(ERROR_MULTI_VALUED_ARRAY);
                     }
                     _out[_level].append(s[0]);
                 }
             } else if (Struct.class.isAssignableFrom((Class<?>) _dataType)) {
-                _out[_level].append((char) Message.ArgumentType.STRUCT1);
+                _out[_level].append((char) ArgumentType.STRUCT1);
                 Type[] ts = Container.getTypeCache(_dataType);
                 if (null == ts) {
                     Field[] fs = ((Class<?>) _dataType).getDeclaredFields();
@@ -282,10 +353,10 @@ public final class Marshalling {
                         }
                     }
                 }
-                _out[_level].append(')');
+                _out[_level].append(ArgumentType.STRUCT2_STRING);
 
             } else if (Enum.class.isAssignableFrom(dataTypeClazz)) {
-                _out[_level].append((char) Message.ArgumentType.STRING);
+                _out[_level].append((char) ArgumentType.STRING);
             } else {
                 boolean found = false;
 
@@ -326,83 +397,83 @@ public final class Marshalling {
             int idx = 0;
             for (; idx < _dbusType.length() && (-1 == _limit || _limit > _resultValue.size()); idx++) {
                 switch (_dbusType.charAt(idx)) {
-                case Message.ArgumentType.STRUCT1:
+                case ArgumentType.STRUCT1:
                     int structIdx = idx + 1;
                     for (int structLen = 1; structLen > 0; structIdx++) {
-                        if (Message.ArgumentType.STRUCT2 == _dbusType.charAt(structIdx)) {
+                        if (ArgumentType.STRUCT2 == _dbusType.charAt(structIdx)) {
                             structLen--;
-                        } else if (Message.ArgumentType.STRUCT1 == _dbusType.charAt(structIdx)) {
+                        } else if (ArgumentType.STRUCT1 == _dbusType.charAt(structIdx)) {
                             structLen++;
                         }
                     }
 
                     List<Type> contained = new ArrayList<>();
-                    int javaType = getJavaType(_dbusType.substring(idx + 1, structIdx - 1), contained, -1);
-                    _resultValue.add(new DBusStructType(contained.toArray(new Type[0])));
+                    getJavaType(_dbusType.substring(idx + 1, structIdx - 1), contained, -1);
+                    _resultValue.add(new DBusStructType(contained.toArray(EMPTY_TYPE_ARRAY)));
                     idx = structIdx - 1; //-1 because j already points to the next signature char
                     break;
-                case Message.ArgumentType.ARRAY:
-                    if (Message.ArgumentType.DICT_ENTRY1 == _dbusType.charAt(idx + 1)) {
+                case ArgumentType.ARRAY:
+                    if (ArgumentType.DICT_ENTRY1 == _dbusType.charAt(idx + 1)) {
                         contained = new ArrayList<>();
-                        javaType = getJavaType(_dbusType.substring(idx + 2), contained, 2);
+                        int javaType = getJavaType(_dbusType.substring(idx + 2), contained, 2);
                         _resultValue.add(new DBusMapType(contained.get(0), contained.get(1)));
                         idx += javaType + 2;
                     } else {
                         contained = new ArrayList<>();
-                        javaType = getJavaType(_dbusType.substring(idx + 1), contained, 1);
+                        int javaType = getJavaType(_dbusType.substring(idx + 1), contained, 1);
                         _resultValue.add(new DBusListType(contained.get(0)));
                         idx += javaType;
                     }
                     break;
-                case Message.ArgumentType.VARIANT:
+                case ArgumentType.VARIANT:
                     _resultValue.add(Variant.class);
                     break;
-                case Message.ArgumentType.BOOLEAN:
+                case ArgumentType.BOOLEAN:
                     _resultValue.add(Boolean.class);
                     break;
-                case Message.ArgumentType.INT16:
+                case ArgumentType.INT16:
                     _resultValue.add(Short.class);
                     break;
-                case Message.ArgumentType.BYTE:
+                case ArgumentType.BYTE:
                     _resultValue.add(Byte.class);
                     break;
-                case Message.ArgumentType.OBJECT_PATH:
+                case ArgumentType.OBJECT_PATH:
                     _resultValue.add(DBusPath.class);
                     break;
-                case Message.ArgumentType.UINT16:
+                case ArgumentType.UINT16:
                     _resultValue.add(UInt16.class);
                     break;
-                case Message.ArgumentType.INT32:
+                case ArgumentType.INT32:
                     _resultValue.add(Integer.class);
                     break;
-                case Message.ArgumentType.UINT32:
+                case ArgumentType.UINT32:
                     _resultValue.add(UInt32.class);
                     break;
-                case Message.ArgumentType.INT64:
+                case ArgumentType.INT64:
                     _resultValue.add(Long.class);
                     break;
-                case Message.ArgumentType.UINT64:
+                case ArgumentType.UINT64:
                     _resultValue.add(UInt64.class);
                     break;
-                case Message.ArgumentType.DOUBLE:
+                case ArgumentType.DOUBLE:
                     _resultValue.add(Double.class);
                     break;
-                case Message.ArgumentType.FLOAT:
+                case ArgumentType.FLOAT:
                     _resultValue.add(Float.class);
                     break;
-                case Message.ArgumentType.STRING:
+                case ArgumentType.STRING:
                     _resultValue.add(CharSequence.class);
                     break;
-                case Message.ArgumentType.FILEDESCRIPTOR:
+                case ArgumentType.FILEDESCRIPTOR:
                     _resultValue.add(FileDescriptor.class);
                     break;
-                case Message.ArgumentType.SIGNATURE:
+                case ArgumentType.SIGNATURE:
                     _resultValue.add(Type[].class);
                     break;
-                case Message.ArgumentType.DICT_ENTRY1:
-                    _resultValue.add(Map.Entry.class);
+                case ArgumentType.DICT_ENTRY1:
                     contained = new ArrayList<>();
-                    javaType = getJavaType(_dbusType.substring(idx + 1), contained, 2);
+                    int javaType = getJavaType(_dbusType.substring(idx + 1), contained, 2);
+                    _resultValue.add(new DBusMapType(contained.get(0), contained.get(1)));
                     idx += javaType + 1;
                     break;
                 default:
@@ -417,37 +488,49 @@ public final class Marshalling {
     }
 
     /**
-    * Recursively converts types for serialization onto DBus.
-    * @param _parameters The parameters to convert.
-    * @param _types The (possibly generic) types of the parameters.
-    * @param _conn the connection
-    * @return The converted parameters.
-    * @throws DBusException Thrown if there is an error in converting the objects.
-    */
-    public static Object[] convertParameters(Object[] _parameters, Type[] _types, AbstractConnection _conn) throws DBusException {
-        if (null == _parameters) {
+     * Recursively converts types for serialization onto DBus.<br>
+     * <br>
+     * When _customSignature is not empty or null, it will be used to wrap the given parameters to a {@link Variant}<br>
+     * of the type defined in the _customSignature array.<br>
+     * It is required that every {@link Variant} passed has a signature definition in _customSignature.<br>
+     * E.g. 3 Objects are given in _parameters: String, Variant, Variant.<br>
+     * Then it is expected that _customSignature (if used) contains 2 entries one for each {@link Variant}.<br>
+     * <br>
+     * If the _customSignature is smaller than the count of {@link Variant}s in _parameters, all remaining {@link Variant}s<br>
+     * are created without a explicit signature (Variant constructor will try to determine type automatically).<br>
+     * If more entries are given then {@link Variant}s found in _parameters, the additional signatures are ignored.
+     *
+     * @param _parameters The parameters to convert.
+     * @param _types The (possibly generic) types of the parameters.
+     * @param _customSignatures custom signatures used for variants found in _types, each found variant must have one matching custom signature
+     * @param _conn the connection
+     * @return The converted parameters.
+     * @throws DBusException Thrown if there is an error in converting the objects.
+     */
+    public static Object[] convertParameters(Object[] _parameters, Type[] _types, String[] _customSignatures, AbstractConnectionBase _conn) throws DBusException {
+        if (_parameters == null) {
             return null;
         }
 
         Object[] parameters = _parameters;
         Type[] types = _types;
-
+        int lastCustomSig = 0;
         for (int i = 0; i < parameters.length; i++) {
             if (null == parameters[i]) {
                 continue;
             }
             LOGGER.trace("Converting {} from '{}' to {}", i, parameters[i], types[i]);
 
-            if (parameters[i] instanceof DBusSerializable) {
+            if (parameters[i] instanceof DBusSerializable ds) {
                 for (Method m : parameters[i].getClass().getDeclaredMethods()) {
-                    if (m.getName().equals("deserialize")) {
+                    if (m.getName().equals(MTH_NAME_DESERIALIZE)) {
                         Type[] newtypes = m.getParameterTypes();
                         Type[] expand = new Type[types.length + newtypes.length - 1];
                         System.arraycopy(types, 0, expand, 0, i);
                         System.arraycopy(newtypes, 0, expand, i, newtypes.length);
                         System.arraycopy(types, i + 1, expand, i + newtypes.length, types.length - i - 1);
                         types = expand;
-                        Object[] newparams = ((DBusSerializable) parameters[i]).serialize();
+                        Object[] newparams = ds.serialize();
                         Object[] exparams = new Object[parameters.length + newparams.length - 1];
                         System.arraycopy(parameters, 0, exparams, 0, i);
                         System.arraycopy(newparams, 0, exparams, i, newparams.length);
@@ -456,43 +539,61 @@ public final class Marshalling {
                     }
                 }
                 i--;
-            } else if (parameters[i] instanceof Tuple) {
+            } else if (parameters[i] instanceof Tuple tup) {
                 Type[] newtypes = ((ParameterizedType) types[i]).getActualTypeArguments();
                 Type[] expand = new Type[types.length + newtypes.length - 1];
                 System.arraycopy(types, 0, expand, 0, i);
                 System.arraycopy(newtypes, 0, expand, i, newtypes.length);
                 System.arraycopy(types, i + 1, expand, i + newtypes.length, types.length - i - 1);
                 types = expand;
-                Object[] newparams = ((Tuple) parameters[i]).getParameters();
+                Object[] newparams = tup.getParameters();
                 Object[] exparams = new Object[parameters.length + newparams.length - 1];
                 System.arraycopy(parameters, 0, exparams, 0, i);
                 System.arraycopy(newparams, 0, exparams, i, newparams.length);
                 System.arraycopy(parameters, i + 1, exparams, i + newparams.length, parameters.length - i - 1);
                 parameters = exparams;
 
-                LoggingHelper.logIf(LOGGER.isTraceEnabled(), () -> {
-                    LOGGER.trace("New params: {}, new types: {}", Arrays.deepToString(exparams), Arrays.deepToString(expand));
-                });
+                LoggingHelper.logIf(LOGGER.isTraceEnabled(),
+                    () -> LOGGER.trace("New params: {}, new types: {}", Arrays.deepToString(exparams), Arrays.deepToString(expand)));
 
                 i--;
             } else if (types[i] instanceof TypeVariable && !(parameters[i] instanceof Variant)) {
                 // its an unwrapped variant, wrap it
-                parameters[i] = new Variant<>(parameters[i]);
-            } else if (parameters[i] instanceof DBusInterface) {
-                parameters[i] = _conn.getExportedObject((DBusInterface) parameters[i]);
+                if (_customSignatures != null && _customSignatures.length > 0 && _customSignatures.length > lastCustomSig) {
+                    parameters[i] = new Variant<>(parameters[i], _customSignatures[lastCustomSig]);
+                    lastCustomSig++;
+                } else {
+                    parameters[i] = new Variant<>(parameters[i]);
+                }
+
+            } else if (parameters[i] instanceof DBusInterface di) {
+                parameters[i] = _conn.getExportedObject(di);
             }
         }
         return parameters;
     }
 
+    /**
+     * Recursively converts types for serialization onto DBus.
+     *
+     * @param _parameters The parameters to convert.
+     * @param _types The (possibly generic) types of the parameters.
+     * @param _conn the connection
+     * @return The converted parameters.
+     * @throws DBusException Thrown if there is an error in converting the objects.
+     */
+    public static Object[] convertParameters(Object[] _parameters, Type[] _types, AbstractConnectionBase _conn) throws DBusException {
+        return convertParameters(_parameters, _types, null, _conn);
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    static Object deSerializeParameter(Object _parameter, Type _type, AbstractConnection _conn) throws Exception {
+    static Object deSerializeParameter(Object _parameter, Type _type, AbstractConnectionBase _conn) throws Exception {
         LOGGER.trace("Deserializing from {} to {}", _parameter.getClass(), _type);
 
         Object parameter = _parameter;
         // its a wrapped variant, unwrap it
-        if (_type instanceof TypeVariable && parameter instanceof Variant) {
-            parameter = ((Variant<?>) parameter).getValue();
+        if (_type instanceof TypeVariable && parameter instanceof Variant<?> variant) {
+            parameter = variant.getValue();
             LOGGER.trace("Type is variant, unwrapping to {}", parameter);
         }
 
@@ -500,30 +601,39 @@ public final class Marshalling {
         if (_type instanceof Class && ((Class<?>) _type).isArray() && ((Class<?>) _type).getComponentType().equals(Type.class) && parameter instanceof String) {
             List<Type> rv = new ArrayList<>();
             getJavaType((String) parameter, rv, -1);
-            parameter = rv.toArray(new Type[0]);
+            parameter = rv.toArray(EMPTY_TYPE_ARRAY);
         }
 
         // its an object path, get/create the proxy
-        if (parameter instanceof ObjectPath) {
+        if (parameter instanceof ObjectPath op) {
             LOGGER.trace("Parameter is ObjectPath");
             if (_type instanceof Class && DBusInterface.class.isAssignableFrom((Class<?>) _type)) {
-                parameter = _conn.getExportedObject(((ObjectPath) parameter).getSource(), ((ObjectPath) parameter).getPath(), (Class<DBusInterface>) _type);
+                parameter = _conn.getExportedObject(op.getSource(), op.getPath(), (Class<DBusInterface>) _type);
             } else {
-                parameter = new DBusPath(((ObjectPath) parameter).getPath());
+                parameter = new DBusPath(op.getPath());
+            }
+        }
+
+        if (parameter instanceof DBusPath op) {
+            LOGGER.trace("Parameter is DBusPath");
+            if (_type instanceof Class && DBusInterface.class.isAssignableFrom((Class<?>) _type)) {
+                parameter = _conn.getExportedObject(op.getSource(), op.getPath(), (Class<DBusInterface>) _type);
+            } else {
+                parameter = new DBusPath(op.getPath());
             }
         }
 
         // its an enum, parse either as the string name or the ordinal
-        if (parameter instanceof String && _type instanceof Class && Enum.class.isAssignableFrom((Class<?>) _type)) {
+        if (parameter instanceof String str && _type instanceof Class && Enum.class.isAssignableFrom((Class<?>) _type)) {
             LOGGER.trace("Type seems to be an enum");
-            parameter = Enum.valueOf((Class<Enum>) _type, (String) parameter);
+            parameter = Enum.valueOf((Class<Enum>) _type, str);
         }
 
         // it should be a struct. create it
-        if (parameter instanceof Object[] && _type instanceof Class && Struct.class.isAssignableFrom((Class<?>) _type)) {
+        if (parameter instanceof Object[] objArr && _type instanceof Class && Struct.class.isAssignableFrom((Class<?>) _type)) {
             LOGGER.trace("Creating Struct {} from {}", _type, parameter);
             Type[] ts = Container.getTypeCache(_type);
-            if (null == ts) {
+            if (ts == null) {
                 Field[] fs = ((Class<?>) _type).getDeclaredFields();
                 ts = new Type[fs.length];
                 for (Field f : fs) {
@@ -537,10 +647,10 @@ public final class Marshalling {
             }
 
             // recurse over struct contents
-            parameter = deSerializeParameters((Object[]) parameter, ts, _conn);
+            parameter = deSerializeParameters(objArr, ts, _conn);
             for (Constructor<?> con : ((Class<?>) _type).getDeclaredConstructors()) {
                 try {
-                    parameter = con.newInstance((Object[]) parameter);
+                    parameter = con.newInstance(objArr);
                     break;
                 } catch (IllegalArgumentException _exIa) {
                     LOGGER.trace("Could not create new instance", _exIa);
@@ -549,24 +659,25 @@ public final class Marshalling {
         }
 
         // recurse over arrays
-        if (parameter instanceof Object[]) {
+        if (parameter instanceof Object[] oa) {
             LOGGER.trace("Parameter is object array");
-            Type[] ts = new Type[((Object[]) parameter).length];
+            Type[] ts = new Type[oa.length];
             Arrays.fill(ts, parameter.getClass().getComponentType());
-            parameter = deSerializeParameters((Object[]) parameter, ts, _conn);
+            parameter = deSerializeParameters(oa, ts, _conn);
         }
         if (parameter instanceof List) {
             LOGGER.trace("Parameter is List");
             Type type2;
-            if (_type instanceof ParameterizedType) {
-                type2 = ((ParameterizedType) _type).getActualTypeArguments()[0];
-            } else if (_type instanceof GenericArrayType) {
-                type2 = ((GenericArrayType) _type).getGenericComponentType();
-            } else if (_type instanceof Class && ((Class<?>) _type).isArray()) {
-                type2 = ((Class<?>) _type).getComponentType();
+            if (_type instanceof ParameterizedType pt) {
+                type2 = pt.getActualTypeArguments()[0];
+            } else if (_type instanceof GenericArrayType gat) {
+                type2 = gat.getGenericComponentType();
+            } else if (_type instanceof Class<?> clz && ((Class<?>) _type).isArray()) {
+                type2 = clz.getComponentType();
             } else {
                 type2 = null;
             }
+            LOGGER.trace("Type is: {}", type2);
             if (null != type2) {
                 parameter = deSerializeParameters((List<Object>) parameter, type2, _conn);
             }
@@ -579,27 +690,26 @@ public final class Marshalling {
         }
 
         // make sure arrays are in the correct format
-        if (parameter instanceof Object[] || parameter instanceof List || parameter.getClass().isArray()) {
-            if (_type instanceof ParameterizedType) {
-                parameter = ArrayFrob.convert(parameter, (Class<? extends Object>) ((ParameterizedType) _type).getRawType());
-            } else if (_type instanceof GenericArrayType) {
-                Type ct = ((GenericArrayType) _type).getGenericComponentType();
+        if (parameter instanceof Object[] || parameter instanceof Collection<?> || parameter.getClass().isArray()) {
+            if (_type instanceof ParameterizedType pt) {
+                parameter = ArrayFrob.convert(parameter, (Class<? extends Object>) pt.getRawType());
+            } else if (_type instanceof GenericArrayType gat) {
+                Type ct = gat.getGenericComponentType();
                 Class<?> cc = null;
-                if (ct instanceof Class) {
-                    cc = (Class<?>) ct;
+                if (ct instanceof Class<?> clz) {
+                    cc = clz;
                 }
-                if (ct instanceof ParameterizedType) {
-                    cc = (Class<?>) ((ParameterizedType) ct).getRawType();
+                if (ct instanceof ParameterizedType pt) {
+                    cc = (Class<?>) pt.getRawType();
                 }
                 Object o = Array.newInstance(cc, 0);
                 parameter = ArrayFrob.convert(parameter, o.getClass());
-            } else if (_type instanceof Class && ((Class<?>) _type).isArray()) {
-                Class<?> cc = ((Class<?>) _type).getComponentType();
-                if ((cc.equals(Float.class) || cc.equals(Float.TYPE)) && parameter instanceof double[]) {
-                    double[] tmp1 = (double[]) parameter;
-                    float[] tmp2 = new float[tmp1.length];
-                    for (int i = 0; i < tmp1.length; i++) {
-                        tmp2[i] = (float) tmp1[i];
+            } else if (_type instanceof Class<?> clz && ((Class<?>) _type).isArray()) {
+                Class<?> cc = clz.getComponentType();
+                if ((cc.equals(Float.class) || cc.equals(Float.TYPE)) && parameter instanceof double[] dbArr) {
+                    float[] tmp2 = new float[dbArr.length];
+                    for (int i = 0; i < dbArr.length; i++) {
+                        tmp2[i] = (float) dbArr[i];
                     }
                     parameter = tmp2;
                 }
@@ -607,32 +717,34 @@ public final class Marshalling {
                 parameter = ArrayFrob.convert(parameter, o.getClass());
             }
         }
-        if (parameter instanceof DBusMap) {
+        if (parameter instanceof Map<?, ?> dmap) {
             LOGGER.trace("Deserializing a Map");
-            DBusMap<?, ?> dmap = (DBusMap<?, ?>) parameter;
 
             Type[] maptypes;
-            if (_type instanceof ParameterizedType) {
-                maptypes = ((ParameterizedType) _type).getActualTypeArguments();
+            if (_type instanceof ParameterizedType pt) {
+                maptypes = pt.getActualTypeArguments();
             } else {
                 maptypes = parameter.getClass().getTypeParameters();
             }
 
-            for (int i = 0; i < dmap.entries.length; i++) {
-                dmap.entries[i][0] = deSerializeParameter(dmap.entries[i][0], maptypes[0], _conn);
-                dmap.entries[i][1] = deSerializeParameter(dmap.entries[i][1], maptypes[1], _conn);
+            Map<Object, Object> map = new LinkedHashMap<>();
+            for (Entry<?, ?> e : dmap.entrySet()) {
+                map.put(deSerializeParameter(e.getKey(), maptypes[0], _conn),
+                    deSerializeParameter(e.getValue(), maptypes[1], _conn));
             }
+
+            parameter = map;
         }
         return parameter;
     }
 
-    static List<Object> deSerializeParameters(List<Object> _parameters, Type _type, AbstractConnection _conn) throws Exception {
+    static List<Object> deSerializeParameters(List<Object> _parameters, Type _type, AbstractConnectionBase _conn) throws Exception {
         LOGGER.trace("Deserializing from {} to {}", _parameters, _type);
-        if (null == _parameters) {
+        if (_parameters == null) {
             return null;
         }
         for (int i = 0; i < _parameters.size(); i++) {
-            if (null == _parameters.get(i)) {
+            if (_parameters.get(i) == null) {
                 continue;
             }
 
@@ -642,7 +754,7 @@ public final class Marshalling {
     }
 
     @SuppressWarnings("unchecked")
-    public static Object[] deSerializeParameters(Object[] _parameters, Type[] _types, AbstractConnection _conn) throws Exception {
+    public static Object[] deSerializeParameters(Object[] _parameters, Type[] _types, AbstractConnectionBase _conn) throws Exception {
         LoggingHelper.logIf(LOGGER.isTraceEnabled(), () -> LOGGER.trace("Deserializing from {} to {} ", Arrays.deepToString(_parameters), Arrays.deepToString(_types)));
 
         if (null == _parameters) {
@@ -652,11 +764,12 @@ public final class Marshalling {
         Object[] parameters = _parameters;
         Type[] types = _types;
 
-        if (types.length == 1 && types[0] instanceof ParameterizedType && Tuple.class.isAssignableFrom((Class<?>) ((ParameterizedType) types[0]).getRawType())) {
-            types = ((ParameterizedType) types[0]).getActualTypeArguments();
+        if (types.length == 1 && types[0] instanceof ParameterizedType pt
+            && Tuple.class.isAssignableFrom((Class<?>) pt.getRawType())) {
+            types = pt.getActualTypeArguments();
         }
 
-        if (types.length == 1 && types[0] instanceof Class && Tuple.class.isAssignableFrom((Class<?>) types[0])) {
+        if (types.length == 1 && types[0] instanceof Class<?> clz && Tuple.class.isAssignableFrom(clz)) {
             String typeName = types[0].getTypeName();
             Constructor<?>[] constructors = Class.forName(typeName).getDeclaredConstructors();
             if (constructors.length != 1) {
@@ -679,9 +792,9 @@ public final class Marshalling {
             // CHECK IF ARRAYS HAVE THE SAME LENGTH <-- has to happen after expanding parameters
             if (i >= types.length) {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.error("Parameter length differs, expected {} but got {}", parameters.length, types.length);
+                    LOGGER.debug("Parameter length differs, expected {} but got {}", parameters.length, types.length);
                     for (int j = 0; j < parameters.length; j++) {
-                        LOGGER.error("Error, Parameters differ: {}, '{}'", j, parameters[j].toString());
+                        LOGGER.debug("Error, Parameters differ: {}, '{}'", j, parameters[j]);
                     }
                 }
                 throw new DBusException("Error deserializing message: number of parameters didn't match receiving signature");
@@ -692,8 +805,8 @@ public final class Marshalling {
 
             if (types[i] instanceof Class
                     && DBusSerializable.class.isAssignableFrom((Class<? extends Object>) types[i])
-                    || types[i] instanceof ParameterizedType
-                    && DBusSerializable.class.isAssignableFrom((Class<? extends Object>) ((ParameterizedType) types[i]).getRawType())) {
+                || types[i] instanceof ParameterizedType pt
+                    && DBusSerializable.class.isAssignableFrom((Class<? extends Object>) pt.getRawType())) {
                 Class<? extends DBusSerializable> dsc;
                 if (types[i] instanceof Class) {
                     dsc = (Class<? extends DBusSerializable>) types[i];
@@ -701,7 +814,7 @@ public final class Marshalling {
                     dsc = (Class<? extends DBusSerializable>) ((ParameterizedType) types[i]).getRawType();
                 }
                 for (Method m : dsc.getDeclaredMethods()) {
-                    if (m.getName().equals("deserialize")) {
+                    if (m.getName().equals(MTH_NAME_DESERIALIZE)) {
                         Type[] newtypes = m.getGenericParameterTypes();
                         try {
                             Object[] sub = new Object[newtypes.length];

@@ -6,6 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.freedesktop.dbus.annotations.PropertiesEmitsChangedSignal.EmitChangeSignal;
 import org.freedesktop.dbus.types.Variant;
 
 /**
@@ -26,11 +27,14 @@ import org.freedesktop.dbus.types.Variant;
  *   }
  * }
  * </pre>
+ * <p>As an alternative to this annotation, you might consider using {@link DBusBoundProperty}. This
+ * allows you to achieve the same results with less code.</p>.
  *
  * @see org.freedesktop.dbus.interfaces.DBusInterface
+ * @see org.freedesktop.dbus.annotations.DBusBoundProperty
  * @see org.freedesktop.dbus.TypeRef
  */
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Repeatable(DBusProperties.class)
 public @interface DBusProperty {
@@ -43,16 +47,16 @@ public @interface DBusProperty {
     String name();
 
     /**
-     * type of the property, in case of complex types please create custom interface that extends {@link org.freedesktop.dbus.TypeRef}
+     * type of the property, in case of complex types please create custom interface that extends {@link org.freedesktop.dbus.TypeRef}.
      *
      * @return type
      */
     Class<?> type() default Variant.class;
 
     /**
-     * Property access type
+     * Specifies the access type of this property.
      *
-     * @return access
+     * @return access type, never null
      */
     Access access() default Access.READ_WRITE;
 
@@ -71,4 +75,12 @@ public @interface DBusProperty {
             return accessName;
         }
     }
+
+    /**
+     * Property which defines if a signal is emitted when the annotated property was changed.
+     *
+     * @return emitChangeSignal, never null
+     */
+    EmitChangeSignal emitChangeSignal() default EmitChangeSignal.TRUE;
+
 }

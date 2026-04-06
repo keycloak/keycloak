@@ -2,15 +2,17 @@ package org.freedesktop.dbus.connections.config;
 
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.freedesktop.dbus.connections.BusAddress;
 import org.freedesktop.dbus.connections.transports.AbstractTransport;
-import org.freedesktop.dbus.connections.transports.TransportBuilder.SaslAuthMode;
+import org.freedesktop.dbus.messages.constants.Endian;
+import org.freedesktop.dbus.spi.transport.ITransportProvider;
 
 public class TransportConfigBuilder<X extends TransportConfigBuilder<?, R>, R> {
-    private final Supplier<R> connectionBuilder;
+    private final Supplier<R>          connectionBuilder;
 
     private TransportConfig   config = new TransportConfig();
 
@@ -18,7 +20,7 @@ public class TransportConfigBuilder<X extends TransportConfigBuilder<?, R>, R> {
 
     public TransportConfigBuilder(Supplier<R> _sup) {
         connectionBuilder = _sup;
-        saslConfigBuilder = new SaslConfigBuilder<>(config.getSaslConfig(), () -> this);
+        saslConfigBuilder = new SaslConfigBuilder<>(this);
     }
 
     /**
@@ -41,8 +43,8 @@ public class TransportConfigBuilder<X extends TransportConfigBuilder<?, R>, R> {
      * @return this
      */
     public X withConfig(TransportConfig _config) {
-        Objects.requireNonNull(_config, "TransportConfig required");
-        config = _config;
+        config = Objects.requireNonNull(_config, "TransportConfig required");
+        saslConfigBuilder.withConfig(_config.getSaslConfig());
         return self();
     }
 
@@ -85,9 +87,32 @@ public class TransportConfigBuilder<X extends TransportConfigBuilder<?, R>, R> {
     }
 
     /**
+     * Set a callback which will be called after {@code bindImpl()} on a server connection was called.<br>
+     * This method is only called if the transport is configured as server connection.
+     * <p>
+     * The given consumer will receive the created {@link AbstractTransport} object which is not yet
+     * accepting connections. A callback should <b>NEVER</b> call accept on the transport, but is allowed to do further
+     * configuration if needed.
+     * </p>
+     *
+     * @param _callback consumer to call, null to remove any callback
+     *
+     * @return this
+     * @since 5.0.0 - 2023-10-20
+     */
+    public X withAfterBindCallback(Consumer<AbstractTransport> _callback) {
+        config.setAfterBindCallback(_callback);
+        return self();
+    }
+
+    /**
      * Instantly connect to DBus when {@link #build()} is called.
      * <p>
+     * This option will be ignored when this is a listening (server) socket.
+     * </p>
+     * <p>
      * default: true
+     * </p>
      *
      * @param _connect boolean
      *
@@ -99,20 +124,15 @@ public class TransportConfigBuilder<X extends TransportConfigBuilder<?, R>, R> {
     }
 
     /**
-     * Set a different SASL authentication mode.
-     * <p>
-     * Usually when a unixsocket based transport is used, {@link SaslAuthMode#AUTH_EXTERNAL} will be used.
-     * For TCP based transport {@link SaslAuthMode#AUTH_COOKIE} will be used.
-     * <p>
+     * Register the new connection on DBus using 'hello' message. Default is true.
      *
-     * @param _authMode authmode to use, if null is given, default mode will be used
-     *
+     * @param _register boolean
      * @return this
-     * @deprecated use {@link #configureSasl()} instead
+     *
+     * @since 5.0.0 - 2023-10-11
      */
-    @Deprecated(forRemoval = true, since = "4.2.2 - 2023-02-03")
-    public X withSaslAuthMode(SaslAuthMode _authMode) {
-        configureSasl().withAuthMode(_authMode);
+    public X withRegisterSelf(boolean _register) {
+        config.setRegisterSelf(_register);
         return self();
     }
 
@@ -154,22 +174,6 @@ public class TransportConfigBuilder<X extends TransportConfigBuilder<?, R>, R> {
         if (_timeout >= 0) {
             config.setTimeout(_timeout);
         }
-        return self();
-    }
-
-    /**
-     * Set to UID to present during SASL authentication.
-     * <p>
-     * Default is the user of the running JVM process on Unix-like operating systems. On Windows, the default is zero.<br><br>
-     *
-     * @param _saslUid UID to set, if a negative long is given the default is used
-     *
-     * @return this
-     * @deprecated use {@link #configureSasl()} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.2 - 2023-02-03")
-    public X withSaslUid(long _saslUid) {
-        configureSasl().withSaslUid(_saslUid);
         return self();
     }
 
@@ -239,6 +243,32 @@ public class TransportConfigBuilder<X extends TransportConfigBuilder<?, R>, R> {
     }
 
     /**
+     * Configure parent class loader used for {@link ServiceLoader} to find {@link ITransportProvider} implementations.<br>
+     * If {@link #withServiceLoaderModuleLayer(ModuleLayer)} is also configured, {@link ModuleLayer} will take precedence.
+     * <br><br>
+     * Defaults to {@code TransportBuilder.class.getClassLoader()}.
+     * @param _ldr class loader
+     *
+     * @return this
+     */
+    public X withServiceLoaderClassLoader(ClassLoader _ldr) {
+        config.setServiceLoaderClassLoader(_ldr);
+        return self();
+    }
+
+    /**
+     * Configure {@link ModuleLayer} used for {@link ServiceLoader} to find {@link ITransportProvider} implementations.
+     *
+     * @param _layer module layer
+     *
+     * @return this
+     */
+    public X withServiceLoaderModuleLayer(ModuleLayer _layer) {
+        config.setServiceLoaderModuleLayer(_layer);
+        return self();
+    }
+
+    /**
      * Removes an additional config key to of transport config.<br>
      * Will do nothing if key does not exist.
      *
@@ -252,10 +282,23 @@ public class TransportConfigBuilder<X extends TransportConfigBuilder<?, R>, R> {
     }
 
     /**
+     * Set the endianess for the connection Default is based on system endianess.
+     *
+     * @param _endianess {@link Endian#BIG} or {@value Endian#LITTLE}
+     * @return this
+     */
+    public X withEndianess(byte _endianess) {
+        if (_endianess == Endian.BIG || _endianess == Endian.LITTLE) {
+            config.setEndianess(_endianess);
+        }
+        return self();
+    }
+
+    /**
      * Return to the previous builder.
      * <p>
-     * This allows you to return from the this builder to the builder which
-     * started this builder so you can continue using the previous builder.
+     * This allows you to return from the this builder to the builder which started this builder so you can continue
+     * using the previous builder.
      * </p>
      *
      * @return previous builder, maybe null
@@ -266,9 +309,12 @@ public class TransportConfigBuilder<X extends TransportConfigBuilder<?, R>, R> {
 
     /**
      * Returns the transport config.
+     *
      * @return config
      */
     public TransportConfig build() {
+        SaslConfig saslCfg = saslConfigBuilder.build();
+        config.setSaslConfig(saslCfg);
         return config;
     }
 

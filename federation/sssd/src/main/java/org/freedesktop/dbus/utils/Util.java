@@ -9,6 +9,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
@@ -20,7 +24,9 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.attribute.UserPrincipalLookupService;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
@@ -31,6 +37,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.freedesktop.dbus.TypeRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +48,10 @@ import org.slf4j.LoggerFactory;
  * @since v3.2.5 - 2020-12-28
  */
 public final class Util {
+    private static final String SYSPROP_OS_NAME = "os.name";
+
+    private static final Random RANDOM = new SecureRandom();
+
     private static final Logger LOGGER = LoggerFactory.getLogger(Util.class);
 
     /** Characters used for random strings */
@@ -71,7 +82,7 @@ public final class Util {
     public static Properties readProperties(File _file) {
         if (_file.exists()) {
             try (FileInputStream fle = new FileInputStream(_file)) {
-                return readProperties(fle);
+                return readProperties(new FileInputStream(_file));
             } catch (FileNotFoundException _ex) {
                 LOGGER.info("Could not load properties file: " + _file, _ex);
             } catch (IOException e) {
@@ -114,11 +125,7 @@ public final class Util {
      * @return true if string is blank or null, false otherwise
      */
     public static boolean isBlank(String _str) {
-        if (_str == null) {
-            return true;
-        }
-
-        return _str.isBlank();
+        return _str == null || _str.isBlank();
     }
 
     /**
@@ -152,11 +159,7 @@ public final class Util {
      * @return true if string is empty or null, false otherwise
      */
     public static boolean isEmpty(String _str) {
-        if (_str == null) {
-            return true;
-        }
-
-        return _str.isEmpty();
+        return _str == null || _str.isEmpty();
     }
 
     /**
@@ -168,10 +171,9 @@ public final class Util {
         if (_length <= 0) {
             return "";
         }
-        Random random = new Random();
         char[] buf = new char[_length];
         for (int idx = 0; idx < buf.length; ++idx) {
-            buf[idx] = SYMBOLS[random.nextInt(SYMBOLS.length)];
+            buf[idx] = SYMBOLS[RANDOM.nextInt(SYMBOLS.length)];
         }
         return new String(buf);
     }
@@ -236,9 +238,7 @@ public final class Util {
             return _str;
         }
 
-        String abbr = _str.substring(0, _length - 3) + "...";
-
-        return abbr;
+        return _str.substring(0, _length - 3) + "...";
     }
 
     /**
@@ -262,10 +262,7 @@ public final class Util {
      * @return true if valid port, false otherwise
      */
     public static boolean isValidNetworkPort(String _str, boolean _allowWellKnown) {
-        if (isInteger(_str, false)) {
-            return isValidNetworkPort(Integer.parseInt(_str), _allowWellKnown);
-        }
-        return false;
+        return isInteger(_str, false) && isValidNetworkPort(Integer.parseInt(_str), _allowWellKnown);
     }
 
     /**
@@ -297,8 +294,7 @@ public final class Util {
      * @return list containing text
      */
     public static List<String> readFileToList(String _fileName) {
-        List<String> localText = getTextfileFromUrl(_fileName, Charset.defaultCharset(), false);
-        return localText;
+        return getTextfileFromUrl(_fileName, Charset.defaultCharset(), false);
     }
 
     /**
@@ -458,8 +454,8 @@ public final class Util {
      */
     public static String getCurrentUser() {
         String[] sysPropParms = new String[] {"user.name", "USER", "USERNAME"};
-        for (int i = 0; i < sysPropParms.length; i++) {
-            String val = System.getProperty(sysPropParms[i]);
+        for (String sysPropParm : sysPropParms) {
+            String val = System.getProperty(sysPropParm);
             if (!isEmpty(val)) {
                 return val;
             }
@@ -472,12 +468,12 @@ public final class Util {
      * @return true if MacOS (or MacOS X), false otherwise
      */
     public static boolean isMacOs() {
-        String osName = System.getProperty("os.name");
+        String osName = System.getProperty(SYSPROP_OS_NAME);
         return osName != null && osName.toLowerCase(Locale.US).startsWith("mac");
     }
 
     public static boolean isFreeBsd() {
-        String osName = System.getProperty("os.name");
+        String osName = System.getProperty(SYSPROP_OS_NAME);
         return osName != null && osName.toLowerCase(Locale.US).startsWith("freebsd");
     }
 
@@ -486,7 +482,7 @@ public final class Util {
      * @return true if Windows, false otherwise
      */
     public static boolean isWindows() {
-        String osName = System.getProperty("os.name");
+        String osName = System.getProperty(SYSPROP_OS_NAME);
         return osName != null && osName.toLowerCase(Locale.US).startsWith("windows");
     }
 
@@ -514,9 +510,8 @@ public final class Util {
      * @return String
      */
     public static String genGUID() {
-        Random r = new Random();
         byte[] buf = new byte[16];
-        r.nextBytes(buf);
+        RANDOM.nextBytes(buf);
         return Hexdump.toHex(buf, false);
     }
 
@@ -531,12 +526,11 @@ public final class Util {
     public static String createDynamicSessionAddress(boolean _listeningSocket, boolean _abstract) {
         String address = "unix:";
         String path = new File(System.getProperty("java.io.tmpdir"), "dbus-XXXXXXXXXX").getAbsolutePath();
-        Random r = new Random();
 
         do {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 10; i++) {
-                sb.append((char) (Math.abs(r.nextInt()) % 26) + 65);
+                sb.append((char) (Math.abs(RANDOM.nextInt(0, Integer.MAX_VALUE)) % 26) + 65);
             }
             path = path.replaceAll("..........$", sb.toString());
             LoggerFactory.getLogger(Util.class).trace("Trying path {}", path);
@@ -552,7 +546,7 @@ public final class Util {
             address += ",listen=true";
         }
 
-        address += ",guid=" + Util.genGUID();
+        address += ",guid=" + genGUID();
 
         LoggerFactory.getLogger(Util.class).debug("Created Session address: {}", address);
 
@@ -593,9 +587,10 @@ public final class Util {
 
         if (userPrincipalLookupService == null) {
             LOGGER.error("Unable to set user/group permissions on {}", _path);
+            return;
         }
 
-        if (!Util.isBlank(_fileOwner)) {
+        if (!isBlank(_fileOwner)) {
             try {
                 UserPrincipal userPrincipal = userPrincipalLookupService.lookupPrincipalByName(_fileOwner);
                 if (userPrincipal != null) {
@@ -606,7 +601,7 @@ public final class Util {
             }
         }
 
-        if (!Util.isBlank(_fileGroup)) {
+        if (!isBlank(_fileGroup)) {
             try {
                 GroupPrincipal groupPrincipal = userPrincipalLookupService.lookupPrincipalByGroupName(_fileGroup);
                 if (groupPrincipal != null) {
@@ -617,7 +612,7 @@ public final class Util {
             }
         }
 
-        if (!Util.isWindows() && _fileUnixPermissions != null) {
+        if (!isWindows() && _fileUnixPermissions != null) {
             try {
                 Files.setPosixFilePermissions(_path, _fileUnixPermissions);
             } catch (Exception _ex) {
@@ -671,10 +666,97 @@ public final class Util {
                 Thread.sleep(_sleepTime);
             } catch (InterruptedException _ex) {
                 LOGGER.debug("Interrupted while waiting for {}", _lockName);
+                Thread.currentThread().interrupt();
                 break;
             }
             waited += _sleepTime;
             LOGGER.debug("Waiting for {} to be available: {} of {} ms waited", _lockName, waited, _timeoutMs);
         } while (!wait);
     }
+
+    /**
+     * Gets the type wrapped by a {@link TypeRef} interface.
+     *
+     * @param _type class to unwrap
+     * @return Type used in TypeRef if class is extending TypeRef interface, null otherwise
+     */
+    public static Type unwrapTypeRef(Class<?> _type) {
+        return Arrays.stream(_type.getGenericInterfaces())
+            .filter(ParameterizedType.class::isInstance)
+            .map(ParameterizedType.class::cast)
+            .filter(t -> TypeRef.class.equals(t.getRawType()))
+            .map(t -> t.getActualTypeArguments()[0]) // TypeRef has one generic argument
+            .findFirst().orElse(null);
+    }
+
+    /**
+     * Convert a object of arbitrary type to an object array.<br>
+     * If input is null or not an array, an empty array will be returned.
+     *
+     * @param _obj object of arbitrary type
+     * @return object array
+     */
+    public static Object[] toObjectArray(Object _obj) {
+        if (_obj == null || !_obj.getClass().isArray()) {
+            return new Object[0];
+        }
+
+        int length = Array.getLength(_obj);
+        Object[] ret = new Object[length];
+        for (int i = 0; i < length; i++) {
+            ret[i] = Array.get(_obj, i);
+        }
+        return ret;
+    }
+
+    /**
+     * Return a default String if input is null.
+     *
+     * @param _input input string
+     * @param _default default to use if input is null
+     *
+     * @return input string or default
+     */
+    public static String defaultString(String _input, String _default) {
+        return _input == null ? _default : _input;
+    }
+
+    /**
+     * Tries to find a constructor of the given class with the given signature.
+     * Will catch all exceptions and return <code>null</code> in doubt.
+     *
+     * @param _clz class to query for constructor
+     * @param _args parameter classes used in constructor
+     * @param <C> type of input class
+     *
+     * @return constructor matching given pattern or <code>null</code>
+     */
+    public static <C> Constructor<? extends C> getConstructor(Class<? extends C> _clz, Class<?>... _args) {
+        try {
+            return _clz.getConstructor(_args);
+        } catch (NoSuchMethodException | SecurityException _ex) {
+            return null;
+        }
+    }
+
+    /**
+     * Extracts the class name from a fully qualified class name (FQCN).
+     * <p>
+     * If the FQCN is {@code null} or empty, {@code null} will be returned.
+     * If the FQCN does not contain any dots, the FQCN itself will be returned.
+     *
+     * @param _fqcn fully qualified class name
+     * @return class name or null if input was null/empty
+     */
+    public static String extractClassNameFromFqcn(String _fqcn) {
+        if (isBlank(_fqcn)) {
+            return null;
+        }
+        int lastDot = _fqcn.lastIndexOf('.');
+        if (lastDot < 0) {
+            return _fqcn;
+        }
+        return _fqcn.substring(lastDot + 1);
+    }
+
 }

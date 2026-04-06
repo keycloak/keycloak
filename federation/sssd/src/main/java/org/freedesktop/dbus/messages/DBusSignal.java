@@ -12,21 +12,23 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import org.freedesktop.dbus.DBusMatchRule;
+import org.freedesktop.dbus.DBusPath;
 import org.freedesktop.dbus.Marshalling;
 import org.freedesktop.dbus.ObjectPath;
 import org.freedesktop.dbus.Struct;
-import org.freedesktop.dbus.connections.AbstractConnection;
-import org.freedesktop.dbus.connections.impl.DBusConnection;
+import org.freedesktop.dbus.connections.base.AbstractConnectionBase;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.MessageFormatException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
+import org.freedesktop.dbus.matchrules.DBusMatchRule;
+import org.freedesktop.dbus.messages.constants.ArgumentType;
+import org.freedesktop.dbus.messages.constants.HeaderField;
+import org.freedesktop.dbus.messages.constants.MessageTypes;
 import org.freedesktop.dbus.utils.CommonRegexPattern;
 import org.freedesktop.dbus.utils.DBusNamingUtil;
+import org.freedesktop.dbus.utils.DBusObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.freedesktop.dbus.connections.AbstractConnection.OBJECT_REGEX_PATTERN;
 
 public class DBusSignal extends Message {
     private static final Logger                                                    LOGGER              =
@@ -53,9 +55,9 @@ public class DBusSignal extends Message {
     DBusSignal() {
     }
 
-    public DBusSignal(String _source, String _path, String _iface, String _member, String _sig, Object... _args)
+    protected DBusSignal(byte _endianess, String _source, String _path, String _iface, String _member, String _sig, Object... _args)
             throws DBusException {
-        super(DBusConnection.getEndianness(), Message.MessageType.SIGNAL, (byte) 0);
+        super(_endianess, MessageTypes.SIGNAL.getId(), (byte) 0);
 
         if (null == _path || null == _member || null == _iface) {
             throw new MessageFormatException("Must specify object path, interface and signal name to Signals.");
@@ -75,25 +77,34 @@ public class DBusSignal extends Message {
             setArgs(_args);
         }
 
-        setSerial(getSerial() + 1);
         padAndMarshall(hargs, getSerial(), _sig, _args);
         bodydone = true;
     }
 
     /**
-     * Create a new signal. This contructor MUST be called by all sub classes.
+     * Create a new signal. This constructor MUST be called by all sub classes.
      *
      * @param _objectPath The path to the object this is emitted from.
      * @param _args The parameters of the signal.
      * @throws DBusException This is thrown if the subclass is incorrectly defined.
      */
-    @SuppressWarnings("unchecked")
     protected DBusSignal(String _objectPath, Object... _args) throws DBusException {
-        super(DBusConnection.getEndianness(), Message.MessageType.SIGNAL, (byte) 0);
+        this((byte) 0, _objectPath, _args);
+    }
 
-        if (!OBJECT_REGEX_PATTERN.matcher(_objectPath).matches()) {
-            throw new DBusException("Invalid object path: " + _objectPath);
-        }
+    /**
+     * Create a new signal. This contructor MUST be called by all sub classes.
+     *
+     * @param _endianess message endianess
+     * @param _objectPath The path to the object this is emitted from.
+     * @param _args The parameters of the signal.
+     * @throws DBusException This is thrown if the subclass is incorrectly defined.
+     */
+    @SuppressWarnings("unchecked")
+    protected DBusSignal(byte _endianess, String _objectPath, Object... _args) throws DBusException {
+        super(_endianess, MessageTypes.SIGNAL.getId(), (byte) 0);
+
+        DBusObjects.requireObjectPath(_objectPath);
 
         Class<? extends DBusSignal> tc = getClass();
         String member = DBusNamingUtil.getSignalName(tc);
@@ -131,16 +142,14 @@ public class DBusSignal extends Message {
                 hargs.add(createHeaderArgs(HeaderField.SIGNATURE, ArgumentType.SIGNATURE_STRING, sig));
                 setArgs(_args);
             } catch (Exception _ex) {
-                logger.debug("", _ex);
+                logger.debug("Error adding signal parameters", _ex);
                 throw new DBusException("Failed to add signal parameters: " + _ex.getMessage());
             }
         }
 
         blen = new byte[4];
         appendBytes(blen);
-        long newSerial = getSerial() + 1;
-        setSerial(newSerial);
-        append("ua(yv)", newSerial, hargs.toArray());
+        append("ua(yv)", getSerial(), hargs.toArray());
         pad((byte) 8);
     }
 
@@ -177,7 +186,15 @@ public class DBusSignal extends Message {
         return c;
     }
 
-    public DBusSignal createReal(AbstractConnection _conn) throws DBusException {
+    /**
+     * Called to create signal objects for object handlers.
+     *
+     * @param _conn connection on which the signal was received
+     * @return DBusSignal or null
+     *
+     * @throws DBusException when reading signal fails
+     */
+    public DBusSignal createReal(AbstractConnectionBase _conn) throws DBusException {
         String intname = INT_NAMES.get(getInterface());
         String signame = SIGNAL_NAMES.get(getName());
         if (null == intname) {
@@ -201,14 +218,16 @@ public class DBusSignal extends Message {
         Constructor<? extends DBusSignal> con = null;
         Type[] types = null;
 
-        Object[] parameters = getParameters();
+        List<Type[]> constructorArgs = list.stream().map(c -> c.types).toList();
+
+        Object[] parameters = getParameters(constructorArgs);
 
         // Get all classes required in constructor in order
         // Primitives will always be wrapped in their wrapper classes
         // because the parameters are received on the bus and will be converted
         // in 'Message.extractOne' method which will always return Object and not primitives
         List<Class<?>> wantedArgs = Arrays.stream(parameters)
-                .map(p -> p.getClass())
+                .map(Object::getClass)
                 .collect(Collectors.toList());
 
         // find suitable constructor (by checking if parameter types are equal)
@@ -237,8 +256,11 @@ public class DBusSignal extends Message {
                 s = con.newInstance(params);
             }
 
+            // we have to setup endianess after construction otherwise all
+            // signal implementations needs a new constructor :-\
+            s.updateEndianess(_conn.getMessageFactory().getEndianess());
             s.setHeader(getHeader());
-            s.setWiredata(getWireData());
+            s.setWireData(getWireData());
             s.setByteCounter(getWireData().length);
             return s;
         } catch (Exception _ex) {
@@ -257,7 +279,7 @@ public class DBusSignal extends Message {
         CACHED_CONSTRUCTORS.put(_clazz, list);
     }
 
-    public void appendbody(AbstractConnection _conn) throws DBusException {
+    public void appendbody(AbstractConnectionBase _conn) throws DBusException {
         if (bodydone) {
             return;
         }
@@ -291,7 +313,7 @@ public class DBusSignal extends Message {
                         }
                         return c;
                     })
-                    .collect(Collectors.toList());
+                    .toList();
             types = createTypes(constructor);
         }
 
@@ -309,9 +331,11 @@ public class DBusSignal extends Message {
 
                 if (Enum.class.isAssignableFrom(class1) && String.class.equals(_wantedArgs.get(i))) {
                     continue;
-                } else  if (DBusInterface.class.isAssignableFrom(class1) && ObjectPath.class.equals(_wantedArgs.get(i))) {
+                } else if (DBusInterface.class.isAssignableFrom(class1) && ObjectPath.class.equals(_wantedArgs.get(i))) {
                     continue;
-                } else  if (Struct.class.isAssignableFrom(class1) && Object[].class.equals(_wantedArgs.get(i))) {
+                } else if (DBusInterface.class.isAssignableFrom(class1) && DBusPath.class.equals(_wantedArgs.get(i))) {
+                    continue;
+                } else if (Struct.class.isAssignableFrom(class1) && Object[].class.equals(_wantedArgs.get(i))) {
                     continue;
                 } else if (class1.isAssignableFrom(_wantedArgs.get(i))) {
                     continue;

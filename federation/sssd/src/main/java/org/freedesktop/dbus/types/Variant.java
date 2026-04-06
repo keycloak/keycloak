@@ -7,6 +7,7 @@ import java.util.Objects;
 
 import org.freedesktop.dbus.Marshalling;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.utils.DBusObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,9 +29,7 @@ public class Variant<T> {
     * @throws IllegalArgumentException If you try and wrap Null or an object of a non-basic type.
     */
     public Variant(T _value) throws IllegalArgumentException {
-        if (null == _value) {
-            throw new IllegalArgumentException("Can't wrap Null in a Variant");
-        }
+        DBusObjects.requireNotNull(_value, () -> new IllegalArgumentException("Can't wrap Null in a Variant"));
         type = _value.getClass();
         try {
             String[] ss = Marshalling.getDBusType(_value.getClass(), true);
@@ -39,7 +38,7 @@ public class Variant<T> {
             }
             this.sig = ss[0];
         } catch (DBusException _ex) {
-            logger.debug("", _ex);
+            logger.debug("Cannot create variant", _ex);
             throw new IllegalArgumentException(String.format("Can't wrap %s in an unqualified Variant (%s).", _value.getClass(), _ex.getMessage()));
         }
         this.value = _value;
@@ -52,9 +51,7 @@ public class Variant<T> {
     * @throws IllegalArgumentException If you try and wrap Null or an object which cannot be sent over DBus.
     */
     public Variant(T _value, Type _type) throws IllegalArgumentException {
-        if (null == _value) {
-            throw new IllegalArgumentException("Can't wrap Null in a Variant");
-        }
+        DBusObjects.requireNotNull(_value, () -> new IllegalArgumentException("Can't wrap Null in a Variant"));
         this.type = _type;
         try {
             String[] ss = Marshalling.getDBusType(_type);
@@ -63,22 +60,26 @@ public class Variant<T> {
             }
             this.sig = ss[0];
         } catch (DBusException _ex) {
-            logger.debug("", _ex);
+            logger.debug("Cannot create variant", _ex);
             throw new IllegalArgumentException(String.format("Can't wrap %s in an unqualified Variant (%s).", _type, _ex.getMessage()));
         }
         this.value = _value;
     }
 
     /**
-    * Create a Variant.
+    * Create a Variant.<br>
+    * It is expected that the given value is compatible with the provided DBus signature String.<br>
+    * This constructor is intended to be used when a generic using class/interface should be wrapped.<br>
+    * Map or List are two examples where it is not possible to determine the internal data type
+    * (the type represented by a generic placeholder) due to type erasure.<br>
+    * Therefore the only way to properly serialize these Maps/Lists is by providing a suitable signature manually.
+    *
     * @param _value The wrapped value.
     * @param _sig The explicit type of the value, as a dbus type string.
     * @throws IllegalArgumentException If you try and wrap Null or an object which cannot be sent over DBus.
     */
     public Variant(T _value, String _sig) throws IllegalArgumentException {
-        if (null == _value) {
-            throw new IllegalArgumentException("Can't wrap Null in a Variant");
-        }
+        DBusObjects.requireNotNull(_value, () -> new IllegalArgumentException("Can't wrap Null in a Variant"));
         this.sig = _sig;
         try {
             List<Type> ts = new ArrayList<>();
@@ -88,7 +89,7 @@ public class Variant<T> {
             }
             this.type = ts.get(0);
         } catch (DBusException _ex) {
-            logger.debug("", _ex);
+            logger.debug("Cannot create variant", _ex);
             throw new IllegalArgumentException(String.format("Can''t wrap %s in an unqualified Variant (%s).", _sig, _ex.getMessage()));
         }
         this.value = _value;
@@ -133,14 +134,7 @@ public class Variant<T> {
      */
     @Override
     public boolean equals(Object _obj) {
-        if (this == _obj) {
-            return true;
-        }
-        if (!(_obj instanceof Variant)) {
-            return false;
-        }
-        Variant<?> other = (Variant<?>) _obj;
-        return  Objects.equals(value, other.value);
+        return this == _obj || (_obj instanceof Variant<?> other) && Objects.equals(value, other.value);
     }
 
 }

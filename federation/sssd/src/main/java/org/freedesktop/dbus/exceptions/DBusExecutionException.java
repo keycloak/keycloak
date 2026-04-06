@@ -7,8 +7,6 @@ package org.freedesktop.dbus.exceptions;
 public class DBusExecutionException extends RuntimeException {
     private static final long serialVersionUID = 6327661667731344250L;
 
-    private String type;
-
     /**
     * Create an exception with the specified message
     * @param _message message
@@ -17,21 +15,27 @@ public class DBusExecutionException extends RuntimeException {
         super(_message);
     }
 
-    public void setType(String _type) {
-        this.type = _type;
+    /**
+    * Create an exception with the specified message
+    * @param _message message
+    * @param _cause cause
+    */
+    public DBusExecutionException(String _message, Throwable _cause) {
+        super(_message, _cause);
     }
 
     /**
-    * Get the DBus type of this exception. Use if this
-    * was an exception we don't have a class file for.
-    *
-    * @return string
+     * @deprecated the configured type is never used
+     */
+    @Deprecated(forRemoval = true, since = "5.1.0 - 2024-07-12")
+    public void setType(String _type) {
+    }
+
+    /**
+    * @deprecated type is never used
     */
+    @Deprecated(forRemoval = true, since = "5.1.0 - 2024-07-12")
     public String getType() {
-        if (null == type) {
-            return getClass().getName();
-        } else {
-            return type;
-        }
+        return getClass().getName();
     }
 }

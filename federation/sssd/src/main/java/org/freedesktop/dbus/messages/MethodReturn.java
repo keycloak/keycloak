@@ -3,8 +3,10 @@ package org.freedesktop.dbus.messages;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.freedesktop.dbus.connections.impl.DBusConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
+import org.freedesktop.dbus.messages.constants.ArgumentType;
+import org.freedesktop.dbus.messages.constants.HeaderField;
+import org.freedesktop.dbus.messages.constants.MessageTypes;
 
 public class MethodReturn extends MethodBase {
 
@@ -13,12 +15,12 @@ public class MethodReturn extends MethodBase {
     MethodReturn() {
     }
 
-    public MethodReturn(String _dest, long _replyserial, String _sig, Object... _args) throws DBusException {
-        this(null, _dest, _replyserial, _sig, _args);
+    protected MethodReturn(byte _endianess, String _dest, long _replyserial, String _sig, Object... _args) throws DBusException {
+        this(_endianess, null, _dest, _replyserial, _sig, _args);
     }
 
-    public MethodReturn(String _source, String _dest, long _replyserial, String _sig, Object... _args) throws DBusException {
-        super(DBusConnection.getEndianness(), Message.MessageType.METHOD_RETURN, (byte) 0);
+    protected MethodReturn(byte _endianess, String _source, String _dest, long _replyserial, String _sig, Object... _args) throws DBusException {
+        super(_endianess, MessageTypes.METHOD_REPLY.getId(), (byte) 0);
 
         List<Object> hargs = new ArrayList<>();
         hargs.add(createHeaderArgs(HeaderField.REPLY_SERIAL, ArgumentType.UINT32_STRING, _replyserial));
@@ -36,16 +38,16 @@ public class MethodReturn extends MethodBase {
             setArgs(_args);
         }
 
-        appendFileDescriptors(hargs, _sig, _args);
+        appendFileDescriptors(hargs, _args);
         padAndMarshall(hargs, getSerial(), _sig, _args);
     }
 
-    public MethodReturn(MethodCall _mc, String _sig, Object... _args) throws DBusException {
+    protected MethodReturn(MethodCall _mc, String _sig, Object... _args) throws DBusException {
         this(null, _mc, _sig, _args);
     }
 
-    public MethodReturn(String _source, MethodCall _mc, String _sig, Object... _args) throws DBusException {
-        this(_source, _mc.getSource(), _mc.getSerial(), _sig, _args);
+    protected MethodReturn(String _source, MethodCall _mc, String _sig, Object... _args) throws DBusException {
+        this(_mc.getEndianess(), _source, _mc.getSource(), _mc.getSerial(), _sig, _args);
         this.call = _mc;
     }
 

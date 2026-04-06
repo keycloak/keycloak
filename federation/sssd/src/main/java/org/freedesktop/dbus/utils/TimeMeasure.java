@@ -31,12 +31,7 @@ public class TimeMeasure {
      * Create a new instance, used a formatter converting everything &gt;= 5000 ms to seconds (X.Y -&gt; 6.1).
      */
     public TimeMeasure() {
-        this(new ITimeMeasureFormat() {
-            @Override
-            public String format(long _durationInMillis) {
-                return _durationInMillis >= 5000 ? ((long) ((_durationInMillis / 1000d) * 10) / 10d) + "s" : _durationInMillis + "ms";
-            }
-        });
+        this(durationInMillis -> durationInMillis >= 5000 ? (durationInMillis / 1000d * 10 / 10d) + "s" : durationInMillis + "ms");
     }
 
     /**

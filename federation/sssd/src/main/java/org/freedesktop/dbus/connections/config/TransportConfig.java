@@ -10,7 +10,9 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import org.freedesktop.dbus.connections.BusAddress;
+import org.freedesktop.dbus.connections.impl.BaseConnectionBuilder;
 import org.freedesktop.dbus.connections.transports.AbstractTransport;
+import org.freedesktop.dbus.connections.transports.TransportBuilder;
 import org.freedesktop.dbus.utils.Util;
 
 /**
@@ -21,11 +23,12 @@ import org.freedesktop.dbus.utils.Util;
  */
 public final class TransportConfig {
 
-    private final SaslConfig            saslConfig;
+    private SaslConfig                  saslConfig;
 
     private BusAddress                  busAddress;
 
     private Consumer<AbstractTransport> preConnectCallback;
+    private Consumer<AbstractTransport> afterBindCallback;
 
     private int                         timeout          = 10000;
     private boolean                     autoConnect      = true;
@@ -34,6 +37,12 @@ public final class TransportConfig {
     private String                      fileOwner;
     /** group to set on socket file if this is a server transport (null to do nothing). */
     private String                      fileGroup;
+
+    private byte                        endianess        = BaseConnectionBuilder.getSystemEndianness();
+    private boolean                     registerSelf     = true;
+
+    private ClassLoader                 serviceLoaderClassLoader = TransportBuilder.class.getClassLoader();
+    private ModuleLayer                 serviceLoaderModuleLayer;
 
     /**
      * Unix file permissions to set on socket file if this is a server transport (ignored on Windows, does nothing if
@@ -48,7 +57,6 @@ public final class TransportConfig {
 
     public TransportConfig(BusAddress _address) {
         busAddress = _address;
-        saslConfig = new SaslConfig();
     }
 
     public TransportConfig() {
@@ -77,6 +85,14 @@ public final class TransportConfig {
 
     public void setPreConnectCallback(Consumer<AbstractTransport> _preConnectCallback) {
         preConnectCallback = _preConnectCallback;
+    }
+
+    public Consumer<AbstractTransport> getAfterBindCallback() {
+        return afterBindCallback;
+    }
+
+    public void setAfterBindCallback(Consumer<AbstractTransport> _afterBindCallback) {
+        afterBindCallback = _afterBindCallback;
     }
 
     public boolean isAutoConnect() {
@@ -136,7 +152,46 @@ public final class TransportConfig {
     }
 
     public SaslConfig getSaslConfig() {
+        if (saslConfig == null) {
+            saslConfig = new SaslConfig();
+        }
         return saslConfig;
+    }
+
+    void setSaslConfig(SaslConfig _saslCfg) {
+        saslConfig = _saslCfg;
+    }
+
+    public byte getEndianess() {
+        return endianess;
+    }
+
+    public void setEndianess(byte _endianess) {
+        endianess = _endianess;
+    }
+
+    public boolean isRegisterSelf() {
+        return registerSelf;
+    }
+
+    public void setRegisterSelf(boolean _registerSelf) {
+        registerSelf = _registerSelf;
+    }
+
+    public ClassLoader getServiceLoaderClassLoader() {
+        return serviceLoaderClassLoader;
+    }
+
+    public void setServiceLoaderClassLoader(ClassLoader _serviceLoaderClassLoader) {
+        serviceLoaderClassLoader = _serviceLoaderClassLoader;
+    }
+
+    public ModuleLayer getServiceLoaderModuleLayer() {
+        return serviceLoaderModuleLayer;
+    }
+
+    public void setServiceLoaderModuleLayer(ModuleLayer _serviceLoaderModuleLayer) {
+        serviceLoaderModuleLayer = _serviceLoaderModuleLayer;
     }
 
     /**

@@ -13,11 +13,7 @@ public class MethodTuple {
 
     public MethodTuple(String _name, String _sig) {
         name = _name;
-        if (null != _sig) {
-            sig = _sig;
-        } else {
-            sig = "";
-        }
+        sig = Objects.requireNonNullElse(_sig, "");
         logger.trace("new MethodTuple({}, {})", name, sig);
     }
 
@@ -31,10 +27,9 @@ public class MethodTuple {
         if (this == _obj) {
             return true;
         }
-        if (!(_obj instanceof MethodTuple)) {
+        if (!(_obj instanceof MethodTuple other)) {
             return false;
         }
-        MethodTuple other = (MethodTuple) _obj;
         return Objects.equals(name, other.name) && Objects.equals(sig, other.sig);
     }
 

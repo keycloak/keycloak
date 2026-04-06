@@ -5,49 +5,67 @@ import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 
+import org.freedesktop.dbus.Container;
 import org.freedesktop.dbus.Marshalling;
 import org.freedesktop.dbus.MethodTuple;
 import org.freedesktop.dbus.StrongReference;
-import org.freedesktop.dbus.Tuple;
 import org.freedesktop.dbus.TypeRef;
+import org.freedesktop.dbus.annotations.DBusBoundProperty;
 import org.freedesktop.dbus.annotations.DBusIgnore;
 import org.freedesktop.dbus.annotations.DBusInterfaceName;
 import org.freedesktop.dbus.annotations.DBusMemberName;
 import org.freedesktop.dbus.annotations.DBusProperties;
 import org.freedesktop.dbus.annotations.DBusProperty;
+import org.freedesktop.dbus.annotations.DBusProperty.Access;
+import org.freedesktop.dbus.annotations.Position;
+import org.freedesktop.dbus.annotations.PropertiesEmitsChangedSignal;
+import org.freedesktop.dbus.annotations.PropertiesEmitsChangedSignal.EmitChangeSignal;
 import org.freedesktop.dbus.connections.AbstractConnection;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.freedesktop.dbus.exceptions.DBusExecutionException;
 import org.freedesktop.dbus.interfaces.DBusInterface;
 import org.freedesktop.dbus.interfaces.Introspectable;
 import org.freedesktop.dbus.interfaces.Peer;
+import org.freedesktop.dbus.interfaces.Properties;
+import org.freedesktop.dbus.propertyref.PropertyRef;
 import org.freedesktop.dbus.utils.DBusNamingUtil;
+import org.freedesktop.dbus.utils.Util;
 import org.slf4j.LoggerFactory;
 
 public class ExportedObject {
-    private final Map<MethodTuple, Method> methods = new HashMap<>();
+    private final Map<MethodTuple, Method> methods;
+    private final Map<PropertyRef, Method> propertyMethods;
     private final String                   introspectionData;
     private final Reference<DBusInterface> object;
+    private final Set<Class<?>>            implementedInterfaces;
 
     public ExportedObject(DBusInterface _object, boolean _weakreferences) throws DBusException {
         object = _weakreferences ? new WeakReference<>(_object) : new StrongReference<>(_object);
 
-        Set<Class<?>> implementedInterfaces = getDBusInterfaces(_object.getClass());
+        methods = new HashMap<>();
+        propertyMethods = new HashMap<>();
+
+        implementedInterfaces = getDBusInterfaces(_object.getClass());
         implementedInterfaces.add(Introspectable.class);
         implementedInterfaces.add(Peer.class);
 
@@ -74,9 +92,7 @@ public class ExportedObject {
             String value = "";
             try {
                 Method m = t.getMethod("value");
-                if (m != null) {
-                    value = m.invoke(a).toString();
-                }
+                value = m.invoke(a).toString();
             } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException _ex) {
                 LoggerFactory.getLogger(getClass()).trace("Could not find value", _ex);
             }
@@ -96,31 +112,43 @@ public class ExportedObject {
      * @throws DBusException in case of unknown data types
      */
     protected String generatePropertyXml(DBusProperty _property) throws DBusException {
-        Class<?> propertyTypeClass = _property.type();
+        return generatePropertyXml(_property.name(), _property.type(), _property.access(), _property.emitChangeSignal());
+    }
+
+    /**
+     * Generates the introspection data for the single property.
+     *
+     * @param _propertyName name
+     * @param _propertyTypeClass type class
+     * @param _access type access
+     * @return xml with property definition
+     * @throws DBusException in case of unknown data types
+     */
+    protected String generatePropertyXml(String _propertyName, Class<?> _propertyTypeClass, Access _access, EmitChangeSignal _emitChangeSignal) throws DBusException {
         String propertyTypeString;
-        if (TypeRef.class.isAssignableFrom(propertyTypeClass)) {
-            Type actualType = Arrays.stream(propertyTypeClass.getGenericInterfaces())
-                    .filter(t -> t instanceof ParameterizedType)
-                    .map(t -> (ParameterizedType) t)
-                    .filter(t -> TypeRef.class.equals(t.getRawType()))
-                    .map(t -> t.getActualTypeArguments()[0]) // TypeRef has one generic argument
-                    .findFirst()
-                    .orElseThrow(() ->
-                            new DBusException("Could not read TypeRef type for property '" + _property.name() + "'")
-                    );
+        if (TypeRef.class.isAssignableFrom(_propertyTypeClass)) {
+            Type actualType = Optional.ofNullable(Util.unwrapTypeRef(_propertyTypeClass))
+                .orElseThrow(() ->
+                    new DBusException("Could not read TypeRef type for property '" + _propertyName + "'")
+            );
             propertyTypeString = Marshalling.getDBusType(new Type[]{actualType});
-        } else if (List.class.equals(propertyTypeClass)) {
+        } else if (List.class.equals(_propertyTypeClass)) {
             // default non generic list types
             propertyTypeString = "av";
-        } else if (Map.class.equals(propertyTypeClass)) {
+        } else if (Map.class.equals(_propertyTypeClass)) {
             // default non generic map type
             propertyTypeString = "a{vv}";
         } else {
-            propertyTypeString = Marshalling.getDBusType(new Type[]{propertyTypeClass});
+            propertyTypeString = Marshalling.getDBusType(new Type[]{_propertyTypeClass});
         }
 
-        String access = _property.access().getAccessName();
-        return "<property name=\"" + _property.name() + "\" type=\"" + propertyTypeString + "\" access=\"" + access + "\" />";
+        String access = _access.getAccessName();
+        if (_emitChangeSignal != null && _emitChangeSignal != EmitChangeSignal.TRUE) {
+            return "<property name=\"" + _propertyName + "\" type=\"" + propertyTypeString + "\" access=\"" + access + "\">"
+                    + "\n    <annotation name=\"org.freedesktop.DBus.Property.EmitsChangedSignal\" value=\"" + _emitChangeSignal.name().toLowerCase()
+                    + "\"/>\n  </property>\n";
+        }
+        return "<property name=\"" + _propertyName + "\" type=\"" + propertyTypeString + "\" access=\"" + access + "\" />";
     }
 
     /**
@@ -131,17 +159,67 @@ public class ExportedObject {
      * @throws DBusException in case of unknown data types
      */
     protected String generatePropertiesXml(Class<?> _clz) throws DBusException {
+
+        EmitChangeSignal globalChangeSignal = Optional.ofNullable(_clz.getAnnotation(PropertiesEmitsChangedSignal.class))
+            .map(e -> e.value())
+            .orElse(EmitChangeSignal.TRUE);
+
         StringBuilder xml = new StringBuilder();
+        Map<String, PropertyRef> map = new HashMap<>();
         DBusProperties properties = _clz.getAnnotation(DBusProperties.class);
         if (properties != null) {
             for (DBusProperty property : properties.value()) {
-                xml.append("  ").append(generatePropertyXml(property)).append("\n");
+                if (map.containsKey(property.name())) {
+                    throw new DBusException(MessageFormat.format(
+                        "Property ''{0}'' defined multiple times.", property.name()));
+                }
+                map.put(property.name(), new PropertyRef(property));
             }
         }
+
         DBusProperty property = _clz.getAnnotation(DBusProperty.class);
         if (property != null) {
-            xml.append("  ").append(generatePropertyXml(property)).append("\n");
+            if (map.containsKey(property.name())) {
+                throw new DBusException(MessageFormat.format(
+                    "Property ''{0}'' defined multiple times.", property.name()));
+            }
+            map.put(property.name(), new PropertyRef(property));
         }
+
+        for (Method method : _clz.getDeclaredMethods()) {
+            DBusBoundProperty propertyAnnot = method.getAnnotation(DBusBoundProperty.class);
+            if (propertyAnnot != null) {
+                String name = DBusNamingUtil.getPropertyName(method);
+                Access access = PropertyRef.accessForMethod(method);
+                PropertyRef.checkMethod(method);
+                Class<?> type = PropertyRef.typeForMethod(method);
+                PropertyRef ref = new PropertyRef(name, type, access);
+                propertyMethods.put(ref, method);
+                if (map.containsKey(name)) {
+                    PropertyRef existing = map.get(name);
+                    if (access.equals(existing.getAccess())) {
+                        throw new DBusException(MessageFormat.format(
+                            "Property ''{0}'' has access mode ''{1}'' defined multiple times.", name, access));
+                    } else {
+                        // if the signal of the annotation is null or the same as the default (TRUE),
+                        // use whatever the global annotation defines
+                        // this means DBusBoundProperty has precedence over the global annotation
+                        EmitChangeSignal emitSignal = Optional.ofNullable(propertyAnnot.emitChangeSignal())
+                            .filter(s -> s == globalChangeSignal)
+                            .orElse(globalChangeSignal);
+
+                        map.put(name, new PropertyRef(name, type, Access.READ_WRITE, emitSignal));
+                    }
+                } else {
+                    map.put(name, ref);
+                }
+            }
+        }
+
+        for (PropertyRef ref : map.values()) {
+            xml.append("  ").append(generatePropertyXml(ref.getName(), ref.getType(), ref.getAccess(), ref.getEmitChangeSignal())).append("\n");
+        }
+
         return xml.toString();
     }
 
@@ -159,7 +237,6 @@ public class ExportedObject {
             if (isExcluded(meth)) {
                 continue;
             }
-            String ms = "";
             String methodName = DBusNamingUtil.getMethodName(meth);
             if (methodName.length() > AbstractConnection.MAX_NAME_LENGTH) {
                 throw new DBusException(
@@ -175,24 +252,16 @@ public class ExportedObject {
                             .append("\" />\n");
                 }
             }
+            StringBuilder ms = new StringBuilder();
             for (Type pt : meth.getGenericParameterTypes()) {
                 for (String s : Marshalling.getDBusType(pt)) {
                     sb.append("   <arg type=\"").append(s).append("\" direction=\"in\"/>\n");
-                    ms += s;
+                    ms.append(s);
                 }
             }
             if (!Void.TYPE.equals(meth.getGenericReturnType())) {
-                if (Tuple.class.isAssignableFrom(meth.getReturnType())) {
-                    ParameterizedType tc = (ParameterizedType) meth.getGenericReturnType();
-                    Type[] ts = tc.getActualTypeArguments();
-
-                    for (Type t : ts) {
-                        if (t != null) {
-                            for (String s : Marshalling.getDBusType(t)) {
-                                sb.append("   <arg type=\"").append(s).append("\" direction=\"out\"/>\n");
-                            }
-                        }
-                    }
+                if (Container.class.isAssignableFrom(meth.getReturnType())) {
+                    createReturnArguments(meth, sb);
                 } else if (Object[].class.equals(meth.getGenericReturnType())) {
                     throw new DBusException("Return type of Object[] cannot be introspected properly");
                 } else {
@@ -202,10 +271,56 @@ public class ExportedObject {
                 }
             }
             sb.append("  </method>\n");
-            methods.putIfAbsent(new MethodTuple(methodName, ms), meth);
+            methods.putIfAbsent(new MethodTuple(methodName, ms.toString()), meth);
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Creates the XML parameters for return types of {@link Container} based classes.
+     * This method supports both, parameterized and regular return types.
+     *
+     * @param _meth method which return value is investigated
+     * @param _sb StringBuilder to append arguments to
+     *
+     * @throws DBusException when converting signature fails
+     */
+    private void createReturnArguments(Method _meth, StringBuilder _sb) throws DBusException {
+        // ignore non-existing and void methods
+        if (_meth == null || _sb == null || Void.TYPE.equals(_meth.getGenericReturnType())) {
+            return;
+        }
+
+        List<Type> argTypes = new ArrayList<>();
+        if (_meth.getGenericReturnType() instanceof ParameterizedType pt) {
+            argTypes = Arrays.asList(pt.getActualTypeArguments());
+
+            for (Type t : pt.getActualTypeArguments()) {
+                if (t != null) {
+                    for (String s : Marshalling.getDBusType(t)) {
+                        _sb.append("   <arg type=\"").append(s).append("\" direction=\"out\"/>\n");
+                    }
+                }
+            }
+        } else if (_meth.getGenericReturnType() instanceof Class<?> clz) {
+            argTypes = Arrays.stream(clz.getDeclaredFields())
+                .filter(f -> f.isAnnotationPresent(Position.class))
+                .filter(Objects::nonNull)
+                .map(f -> Map.entry(f.getAnnotation(Position.class).value(), f))
+                .sorted(Comparator.comparingInt(k -> k.getKey()))
+                .map(f -> f.getValue())
+                .map(Field::getType)
+                .map(Type.class::cast)
+                .toList();
+        }
+
+        for (Type f : argTypes) {
+            for (String s : Marshalling.getDBusType(f)) {
+                _sb.append("   <arg type=\"").append(s).append("\" direction=\"out\"/>\n");
+            }
+        }
+
     }
 
     /**
@@ -277,6 +392,12 @@ public class ExportedObject {
                 result.add(clazz);
             }
 
+            // if clazz is using @DBusBoundProperty, always expose the Properties interface
+            Arrays.stream(clazz.getDeclaredMethods())
+                .filter(method -> method.isAnnotationPresent(DBusBoundProperty.class))
+                .findAny()
+                .ifPresent(x -> toCheck.add(Properties.class));
+
             // iterate over the sub-interfaces and select the ones that extend DBusInterface
             // this is required especially for nested interfaces
             interfaces.stream()
@@ -323,6 +444,10 @@ public class ExportedObject {
         return methods;
     }
 
+    public Map<PropertyRef, Method> getPropertyMethods() {
+        return propertyMethods;
+    }
+
     public Reference<DBusInterface> getObject() {
         return object;
     }
@@ -331,9 +456,26 @@ public class ExportedObject {
         return introspectionData;
     }
 
+    public Set<Class<?>> getImplementedInterfaces() {
+        return implementedInterfaces;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName()
+            + " [methodCount=" + methods.size()
+            + ", propertyMethodCount=" + propertyMethods.size()
+            + ", object=" + (object.get() != null ? Objects.toString(object) : "<no object referenced>") + "]";
+    }
+
     public static boolean isExcluded(Method _meth) {
-        return !Modifier.isPublic(_meth.getModifiers())
+        return _meth == null
+                || !Modifier.isPublic(_meth.getModifiers())
+                || _meth.isSynthetic() // method created by compiler
+                || _meth.isDefault() // method with default implementation (in interfaces), won't work anyway
+                || _meth.isBridge() // bridge method created by compiler
                 || _meth.getAnnotation(DBusIgnore.class) != null
+                || _meth.getAnnotation(DBusBoundProperty.class) != null
                 || _meth.getName().equals("getObjectPath") && _meth.getReturnType().equals(String.class)
                         && _meth.getParameterCount() == 0;
     }

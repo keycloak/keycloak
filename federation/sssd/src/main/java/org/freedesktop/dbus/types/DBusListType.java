@@ -35,4 +35,10 @@ public class DBusListType implements ParameterizedType {
     public Type getOwnerType() {
         return null;
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + " [type=" + v + "]";
+    }
+
 }

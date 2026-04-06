@@ -3,9 +3,9 @@ package org.freedesktop.dbus;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.freedesktop.dbus.annotations.Position;
@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
  * and holds common methods.
  */
 public abstract class Container {
-    private static final Map<Type, Type[]> TYPE_CACHE = new HashMap<>();
+    private static final Map<Type, Type[]> TYPE_CACHE = new ConcurrentHashMap<>();
     private Object[]                       parameters = null;
 
     Container() {
@@ -28,13 +28,13 @@ public abstract class Container {
 
         int diff = 0;
         for (Field f : fs) {
-            Position p = f.getAnnotation(Position.class);
-            f.setAccessible(true);
-
-            if (null == p) {
+            if (!f.isAnnotationPresent(Position.class)) {
                 diff++;
                 continue;
             }
+            Position p = f.getAnnotation(Position.class);
+            f.setAccessible(true);
+
             try {
                 args[p.value()] = f.get(this);
             } catch (IllegalAccessException _exIa) {
@@ -69,7 +69,7 @@ public abstract class Container {
         if (0 == parameters.length) {
             return sb.append(">").toString();
         }
-        sb.append(Arrays.stream(parameters).map(o -> Objects.toString(o)).collect(Collectors.joining(", ")));
+        sb.append(Arrays.stream(parameters).map(Objects::toString).collect(Collectors.joining(", ")));
         return sb.append(">").toString();
     }
 
@@ -82,13 +82,8 @@ public abstract class Container {
             return false;
         }
 
-        if (_other instanceof Container) {
-            Container that = (Container) _other;
-            if (this.getClass().equals(that.getClass())) {
-                return Arrays.equals(this.getParameters(), that.getParameters());
-            } else {
-                return false;
-            }
+        if (_other instanceof Container cont) {
+            return this.getClass().equals(cont.getClass()) && Arrays.equals(this.getParameters(), cont.getParameters());
         } else {
             return false;
         }

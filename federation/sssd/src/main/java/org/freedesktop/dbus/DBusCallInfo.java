@@ -1,6 +1,7 @@
 package org.freedesktop.dbus;
 
 import org.freedesktop.dbus.messages.Message;
+import org.freedesktop.dbus.messages.constants.Flags;
 
 /**
  * Holds information on a method call
@@ -9,7 +10,7 @@ public class DBusCallInfo {
     /**
     * Indicates the caller won't wait for a reply (and we won't send one).
     */
-    public static final int NO_REPLY = Message.Flags.NO_REPLY_EXPECTED;
+    public static final int NO_REPLY = Flags.NO_REPLY_EXPECTED;
     public static final int ASYNC    = 0x100;
     private final String    source;
     private final String    destination;
