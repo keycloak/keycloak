@@ -779,6 +779,19 @@ public class PodTemplateTest {
         assertThat(startupPodTemplate.getSpec().getContainers().get(0).getStartupProbe().getFailureThreshold()).isEqualTo(startupProbe.getFailureThreshold());
     }
 
+    @Test
+    public void testServiceAccountNameSetWhenSpecPresent() {
+        var ss = getDeployment(null, new StatefulSet(),
+                spec -> spec.withServiceAccountSpec(new org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceAccountSpec()));
+        assertEquals("instance", ss.getSpec().getTemplate().getSpec().getServiceAccountName());
+    }
+
+    @Test
+    public void testServiceAccountNameAbsentWhenSpecNotPresent() {
+        var ss = getDeployment(null);
+        assertNull(ss.getSpec().getTemplate().getSpec().getServiceAccountName());
+    }
+
     private Job getUpdateJob(Consumer<KeycloakSpecBuilder> newSpec, Consumer<KeycloakSpecBuilder> oldSpec, Consumer<StatefulSetBuilder> existingModifier) {
         // create an existing from the old spec and modifier
         StatefulSetBuilder existingBuilder = getDeployment(null, null, oldSpec).toBuilder();

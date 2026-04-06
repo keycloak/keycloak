@@ -340,6 +340,9 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
         boolean automount = !Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken());
         specBuilder.withAutomountServiceAccountToken(automount);
+        if (keycloakCR.getSpec().getServiceAccountSpec() != null) {
+            specBuilder.withServiceAccountName(keycloakCR.getMetadata().getName());
+        }
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
 
         // there isn't currently an editOrNewFirstContainer, so we need to do this manually
