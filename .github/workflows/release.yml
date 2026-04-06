@@ -96,10 +96,10 @@ jobs:
               exit 0
             fi
             echo "branch-type=release"        >> $GITHUB_OUTPUT
-            echo "should-build=false"         >> $GITHUB_OUTPUT
+            echo "should-build=true"          >> $GITHUB_OUTPUT
             echo "run-release-retag=true"     >> $GITHUB_OUTPUT
-            echo "run-versioning=false"       >> $GITHUB_OUTPUT
-            echo "run-release=false"          >> $GITHUB_OUTPUT
+            echo "run-versioning=true"        >> $GITHUB_OUTPUT
+            echo "run-release=true"           >> $GITHUB_OUTPUT
             echo "ref-name=$REF"              >> $GITHUB_OUTPUT
             RELEASE_SLUG=$(echo "$REF" | sed 's|release/||' | sed 's|[^a-zA-Z0-9]|-|g')
             echo "concurrency-group=washington-release-${RELEASE_SLUG}" >> $GITHUB_OUTPUT
@@ -274,13 +274,24 @@ jobs:
         env:
           VERSION: ${{ steps.rel.outputs.version }}
 
-      - name: Commit and push .version to release branch
+      - name: Update pom.xml version for release branch
+        env:
+          VERSION: ${{ steps.rel.outputs.version }}
+        run: |
+          if [ -x "./set-version.sh" ]; then
+            ./set-version.sh "${VERSION}"
+            echo "Updated pom.xml to ${VERSION}"
+          else
+            echo "set-version.sh not found; skipping pom.xml update"
+          fi
+
+      - name: Commit and push version changes to release branch
         env:
           VERSION: ${{ steps.rel.outputs.version }}
         run: |
           git config user.name "vunet-new-ci-cd-bot[bot]"
           git config user.email "vunet-new-ci-cd-bot@users.noreply.github.com"
-          git add resources/.version
+          git add -A
           git diff --cached --quiet || {
             git commit -m "chore: bump washington version to v${VERSION} [skip ci]"
             git push origin HEAD:${{ needs.branch-context.outputs.ref-name }}
@@ -306,12 +317,13 @@ jobs:
   # ---------------------------------------------------------------------------
   versioning:
     name: Versioning
-    needs: [branch-context, gate]
+    needs: [branch-context, gate, release-retag]
     if: |
       always() &&
       needs.branch-context.outputs.should-build == 'true' &&
       needs.branch-context.outputs.is-test-run == 'false' &&
-      needs.gate.result == 'success'
+      needs.gate.result == 'success' &&
+      !contains(fromJSON('["failure", "cancelled"]'), needs.release-retag.result)
     runs-on: ubuntu-latest
     outputs:
       # Track A — Keycloak version
@@ -329,7 +341,8 @@ jobs:
       - name: Checkout Washington
         uses: actions/checkout@v4
         with:
-          ref: ${{ needs.branch-context.outputs.checkout-ref }}
+          ref: ${{ needs.branch-context.outputs.ref-name }}
+          fetch-depth: 0
 
       - name: Extract Jira Ticket
         id: extract-jira
@@ -673,6 +686,7 @@ jobs:
           git diff --quiet || {
             git add .
             git commit -m "chore: update keycloak image tag to $TAG"
+            git pull --rebase origin "$(git branch --show-current)" || true
             git push origin "$(git branch --show-current)"
           }
 
