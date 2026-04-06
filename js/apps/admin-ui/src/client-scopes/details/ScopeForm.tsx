@@ -1,6 +1,12 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
-import { ActionGroup, Button } from "@patternfly/react-core";
+import {
+  ActionGroup,
+  Button,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
+} from "@patternfly/react-core";
 import { useEffect, useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -34,6 +40,8 @@ import { removeEmptyOid4vcAttributes } from "./oid4vciAttributes";
 const OID4VC_PROTOCOL = "oid4vc";
 const VC_FORMAT_JWT_VC = "jwt_vc_json";
 const VC_FORMAT_SD_JWT = "dc+sd-jwt";
+const VC_FORMAT_JWT_VC_TYP = "vc+jwt";
+const VC_FORMAT_SD_JWT_TYP = "dc+sd-jwt";
 
 // Allowed values for OID4VCI cryptographic binding methods and proof types.
 // Keep these in sync with server-side support in CredentialScopeModel / ProofType.
@@ -157,12 +165,31 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     ),
     defaultValue: clientScope?.attributes?.["vc.format"] ?? VC_FORMAT_SD_JWT,
   });
+  const selectedTokenJwsType = useWatch({
+    control,
+    name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.vc.credential_build_config.token_jws_type",
+    ),
+    defaultValue:
+      clientScope?.attributes?.["vc.credential_build_config.token_jws_type"] ??
+      "",
+  });
 
   const isOid4vcProtocol = selectedProtocol === OID4VC_PROTOCOL;
   const isOid4vcEnabled =
     isFeatureEnabled(Feature.OpenId4VCI) &&
     realmRepresentation?.verifiableCredentialsEnabled;
   const isNotSaml = selectedProtocol != "saml";
+  const recommendedTokenJwsType =
+    selectedFormat === VC_FORMAT_SD_JWT
+      ? VC_FORMAT_SD_JWT_TYP
+      : selectedFormat === VC_FORMAT_JWT_VC
+        ? VC_FORMAT_JWT_VC_TYP
+        : undefined;
+  const showTokenJwsTypeWarning =
+    Boolean(selectedTokenJwsType?.trim()) &&
+    Boolean(recommendedTokenJwsType) &&
+    selectedTokenJwsType.trim() !== recommendedTokenJwsType;
 
   const bindingRequired = useWatch({
     control,
@@ -415,9 +442,20 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               defaultValue={
                 clientScope?.attributes?.[
                   "vc.credential_build_config.token_jws_type"
-                ] ?? "JWS"
+                ] ?? ""
               }
             />
+            {showTokenJwsTypeWarning && (
+              <FormHelperText>
+                <HelperText>
+                  <HelperTextItem variant="warning">
+                    {t("tokenJwsTypeFormatWarning", {
+                      recommended: recommendedTokenJwsType,
+                    })}
+                  </HelperTextItem>
+                </HelperText>
+              </FormHelperText>
+            )}
             {realmKeys && realmKeys.length > 0 && (
               <SelectControl
                 id="kc-signing-key-id"
