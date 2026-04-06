@@ -8,7 +8,6 @@ import java.util.Optional;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceAccountSpec;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
