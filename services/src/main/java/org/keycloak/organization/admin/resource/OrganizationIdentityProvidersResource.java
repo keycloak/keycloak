@@ -42,6 +42,7 @@ import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
@@ -99,11 +100,8 @@ public class OrganizationIdentityProvidersResource {
                 throw ErrorResponse.error("Identity provider not found with the given alias", Status.BAD_REQUEST);
             }
 
-            if (organizationProvider.addIdentityProvider(organization, identityProvider)) {
-                return Response.noContent().build();
-            }
-
-            throw ErrorResponse.error("Identity provider already associated to the organization", Status.CONFLICT);
+            organizationProvider.addIdentityProvider(organization, identityProvider);
+            return Response.noContent().build();
         } catch (ModelException me) {
             throw ErrorResponse.error(me.getMessage(), Status.BAD_REQUEST);
         }
@@ -186,6 +184,37 @@ public class OrganizationIdentityProvidersResource {
 
         OrganizationGroupsResource groupsResource = new OrganizationGroupsResource(session, organization, adminEvent);
         return groupsResource.getGroups(search, searchQuery, exact, first, max, briefRepresentation, false, subGroupsCount);
+    }
+
+    @Path("{alias}/domains")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ORGANIZATIONS)
+    @Operation(summary = "Returns organization domains for the identity provider",
+        description = "Returns the domains associated with the organization linked to the identity provider. " +
+                "Only returns domains if the identity provider is associated with the organization.")
+    @APIResponses(value = {
+        @APIResponse(responseCode = "200", description = "", content = @Content(schema = @Schema(implementation = OrganizationDomainRepresentation.class, type = SchemaType.ARRAY))),
+        @APIResponse(responseCode = "404", description = "Not Found")
+    })
+    public Stream<OrganizationDomainRepresentation> getDomains(
+            @Parameter(description = "The alias of the identity provider") @PathParam("alias") String alias) {
+        IdentityProviderModel identityProviderModel = organization.getIdentityProviders()
+                .filter(identityProvider -> alias.equals(identityProvider.getAlias()))
+                .findFirst()
+                .orElseThrow(() -> ErrorResponse.error("Identity provider not found with the given alias", Status.NOT_FOUND));
+
+        boolean matchWithAnyDomain = "ANY".equalsIgnoreCase(identityProviderModel.getConfig().get("kc.org.domain"));
+
+        if (matchWithAnyDomain) {
+            return organization.getDomains()
+                    .map(ModelToRepresentation::toRepresentation);
+        }
+
+        return organization.getDomains()
+                .filter(organizationDomainModel -> identityProviderModel.getInternalId().equals(organizationDomainModel.getIdpId()))
+                .map(ModelToRepresentation::toRepresentation);
     }
 
     @Path("{alias}")

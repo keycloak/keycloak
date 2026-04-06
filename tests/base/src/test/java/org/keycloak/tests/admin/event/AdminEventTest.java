@@ -437,6 +437,32 @@ public class AdminEventTest {
         Assertions.assertNull(eventUserRep.getCredentials());
     }
 
+    @Test
+    public void testDomainUpdateAdminEvent() {
+        managedRealm.updateWithCleanup(r -> r.organizationsEnabled(true));
+
+        OrganizationRepresentation org = new OrganizationRepresentation();
+        org.setName("domainUpdateOrd");
+        org.setAlias("domainUpdateOrd");
+        org.addDomain(new OrganizationDomainRepresentation("example.com"));
+        String orgId = ApiUtil.getCreatedId(managedRealm.admin().organizations().create(org));
+        managedRealm.cleanup().add(r -> r.organizations().get(orgId).delete());
+
+        managedRealm.admin().clearAdminEvents();
+
+        OrganizationDomainRepresentation domainUpdate = new OrganizationDomainRepresentation();
+        domainUpdate.setIdpId("test-idp-id");
+        managedRealm.admin().organizations().get(orgId).domains().updateDomain("example.com", domainUpdate);
+
+        List<AdminEventRepresentation> events = events();
+        Assertions.assertEquals(1, events.size());
+        AdminEventRepresentation event = events.get(0);
+        AdminEventAssertion.assertSuccess(event)
+                .operationType(OperationType.UPDATE)
+                .resourcePath("organizations/" + orgId + "/domains/example.com");
+        Assertions.assertEquals(managedRealm.getId(), event.getRealmId());
+    }
+
     private static class AdminEventRealmConfig implements RealmConfig {
 
         @Override

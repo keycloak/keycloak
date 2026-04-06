@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 
 public interface OrganizationIdentityProviderResource {
 
@@ -66,4 +67,16 @@ public interface OrganizationIdentityProviderResource {
                                         @QueryParam("max") Integer max,
                                         @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
                                         @QueryParam("subGroupsCount") @DefaultValue("false") boolean subGroupsCount);
+
+    /**
+     * Returns organization domains for the identity provider with the specified alias.
+     * Only returns domains if the identity provider is associated with the organization.
+     *
+     * @return a list of organization domains associated with the organization
+     * @since Keycloak server 26.6.0
+     */
+    @Path("domains")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<OrganizationDomainRepresentation> getDomains();
 }
