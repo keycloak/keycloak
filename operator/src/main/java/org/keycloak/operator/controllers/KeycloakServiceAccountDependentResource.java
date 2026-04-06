@@ -43,7 +43,7 @@ public class KeycloakServiceAccountDependentResource
     public ServiceAccount desired(Keycloak primary, Context<Keycloak> context) {
         var optionalSpec = Optional.ofNullable(primary.getSpec().getServiceAccountSpec());
         Map<String,String> annotations = optionalSpec.map(ServiceAccountSpec::getAnnotations).orElse(new HashMap<>());
-        List<LocalObjectReference> imagePullSecrets = optionalSpec.map(ServiceAccountSpec::getImagePullSecrets).orElse(null)
+        List<LocalObjectReference> imagePullSecrets = optionalSpec.map(ServiceAccountSpec::getImagePullSecrets).orElse(null);
 
 
         ServiceAccountBuilder builder = new ServiceAccountBuilder()
