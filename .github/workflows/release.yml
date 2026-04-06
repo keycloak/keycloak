@@ -10,8 +10,7 @@ on:
   push:
     branches:
       - 'release/**'
-
-  create:
+      - 'feature/**'
 
   workflow_dispatch:
     inputs:
@@ -85,25 +84,26 @@ jobs:
           echo "ref-name=$REF"           >> $GITHUB_OUTPUT
           echo "checkout-ref=$DEFAULT_CHECKOUT_REF" >> $GITHUB_OUTPUT
 
-          if [[ "$EVENT" == "push" && "$COMMIT_MSG" == chore:\ bump\ washington\ version\ to\ v* ]]; then
-            echo "Detected CI bump commit; skipping."
+          if [[ "$EVENT" == "push" && "$COMMIT_MSG" == *"[skip ci]"* ]]; then
+            echo "Detected skip-ci commit; skipping."
             exit 0
           fi
 
-          if [[ "$EVENT" == "create" ]]; then
-            if [[ "$REF" != release/* ]]; then
-              echo "create event for non-release ref ($REF); skipping."
-              exit 0
-            fi
-            echo "branch-type=release"        >> $GITHUB_OUTPUT
-            echo "should-build=true"          >> $GITHUB_OUTPUT
-            echo "run-release-retag=true"     >> $GITHUB_OUTPUT
-            echo "run-versioning=true"        >> $GITHUB_OUTPUT
-            echo "run-release=true"           >> $GITHUB_OUTPUT
-            echo "ref-name=$REF"              >> $GITHUB_OUTPUT
-            RELEASE_SLUG=$(echo "$REF" | sed 's|release/||' | sed 's|[^a-zA-Z0-9]|-|g')
-            echo "concurrency-group=washington-release-${RELEASE_SLUG}" >> $GITHUB_OUTPUT
-            echo "checkout-ref=$REF"         >> $GITHUB_OUTPUT
+          if [[ "$EVENT" == "push" && "$REF" == feature/* ]]; then
+            JIRA_TICKET=$(echo "$REF" | sed 's|feature/||' | grep -oP '^[A-Z]+-[0-9]+' || true)
+            BRANCH_SLUG=$(echo "$REF" | sed 's|feature/||' | sed 's|[^a-zA-Z0-9]|-|g')
+            TAG_SLUG="${JIRA_TICKET:-$BRANCH_SLUG}"
+            echo "branch-type=feature"                                              >> $GITHUB_OUTPUT
+            echo "image-tag-prefix=feat-${TAG_SLUG}-b${{ github.run_number }}"     >> $GITHUB_OUTPUT
+            echo "hanoi-target=$REF"                                                >> $GITHUB_OUTPUT
+            echo "should-build=true"                                                >> $GITHUB_OUTPUT
+            echo "is-test-run=false"                                                >> $GITHUB_OUTPUT
+            echo "run-versioning=false"                                             >> $GITHUB_OUTPUT
+            echo "run-release=false"                                                >> $GITHUB_OUTPUT
+            echo "run-release-retag=false"                                          >> $GITHUB_OUTPUT
+            echo "concurrency-group=washington-feature-${BRANCH_SLUG}"             >> $GITHUB_OUTPUT
+            echo "ref-name=$REF"                                                    >> $GITHUB_OUTPUT
+            echo "checkout-ref=$DEFAULT_CHECKOUT_REF"                              >> $GITHUB_OUTPUT
             exit 0
           fi
 
@@ -123,9 +123,9 @@ jobs:
               echo "run-versioning=false"  >> $GITHUB_OUTPUT
               echo "run-release=false"     >> $GITHUB_OUTPUT
             else
-              # Full release flow — identical to PR merged to develop
+              # Full develop flow ? build + Hanoi update, no version bump
               echo "is-test-run=false"     >> $GITHUB_OUTPUT
-              echo "run-versioning=true"   >> $GITHUB_OUTPUT
+              echo "run-versioning=false"  >> $GITHUB_OUTPUT
               echo "run-release=true"      >> $GITHUB_OUTPUT
             fi
             exit 0
@@ -137,7 +137,7 @@ jobs:
             echo "hanoi-target=develop"                            >> $GITHUB_OUTPUT
             echo "should-build=true"                               >> $GITHUB_OUTPUT
             echo "is-test-run=false"                               >> $GITHUB_OUTPUT
-            echo "run-versioning=true"                             >> $GITHUB_OUTPUT
+            echo "run-versioning=false"                            >> $GITHUB_OUTPUT
             echo "run-release=true"                                >> $GITHUB_OUTPUT
             echo "concurrency-group=washington-develop"            >> $GITHUB_OUTPUT
             echo "ref-name=develop"                                >> $GITHUB_OUTPUT
@@ -146,17 +146,19 @@ jobs:
           fi
 
           if [[ "$EVENT" == "push" && "$REF" == release/* ]]; then
-            RELEASE_SLUG=$(echo "$REF" | sed 's|release/||' | sed 's|[^a-zA-Z0-9]|-|g')
-            echo "branch-type=release"                                   >> $GITHUB_OUTPUT
-            echo "image-tag-prefix="                                     >> $GITHUB_OUTPUT
-            echo "hanoi-target=$REF"                                    >> $GITHUB_OUTPUT
-            echo "should-build=true"                                     >> $GITHUB_OUTPUT
-            echo "is-test-run=false"                                     >> $GITHUB_OUTPUT
-            echo "run-versioning=true"                                   >> $GITHUB_OUTPUT
-            echo "run-release=true"                                      >> $GITHUB_OUTPUT
-            echo "concurrency-group=washington-release-${RELEASE_SLUG}" >> $GITHUB_OUTPUT
-            echo "ref-name=$REF"                                        >> $GITHUB_OUTPUT
-            echo "checkout-ref=$DEFAULT_CHECKOUT_REF"                   >> $GITHUB_OUTPUT
+            RELEASE_LINE=$(echo "$REF" | sed 's|release/||')
+            RELEASE_SLUG=$(echo "$RELEASE_LINE" | sed 's|[^a-zA-Z0-9]|-|g')
+            echo "branch-type=release"                                              >> $GITHUB_OUTPUT
+            echo "image-tag-prefix=NG-${RELEASE_LINE}.0-b${{ github.run_number }}" >> $GITHUB_OUTPUT
+            echo "hanoi-target=$REF"                                                >> $GITHUB_OUTPUT
+            echo "should-build=true"                                                >> $GITHUB_OUTPUT
+            echo "is-test-run=false"                                                >> $GITHUB_OUTPUT
+            echo "run-versioning=true"                                              >> $GITHUB_OUTPUT
+            echo "run-release=true"                                                 >> $GITHUB_OUTPUT
+            echo "run-release-retag=true"                                           >> $GITHUB_OUTPUT
+            echo "concurrency-group=washington-release-${RELEASE_SLUG}"            >> $GITHUB_OUTPUT
+            echo "ref-name=$REF"                                                    >> $GITHUB_OUTPUT
+            echo "checkout-ref=$DEFAULT_CHECKOUT_REF"                              >> $GITHUB_OUTPUT
             exit 0
           fi
 
@@ -196,11 +198,13 @@ jobs:
             echo "should-build=true"     >> $GITHUB_OUTPUT
 
             if [[ "$ACTUAL_REF" == feature/* ]]; then
+              JIRA_TICKET=$(echo "$ACTUAL_REF" | sed 's|feature/||' | grep -oP '^[A-Z]+-[0-9]+' || true)
               BRANCH_SLUG=$(echo "$ACTUAL_REF" | sed 's|feature/||' | sed 's|[^a-zA-Z0-9]|-|g')
-              echo "branch-type=feature"                                             >> $GITHUB_OUTPUT
-              echo "image-tag-prefix=feat-${BRANCH_SLUG}-b${{ github.run_number }}" >> $GITHUB_OUTPUT
-              echo "hanoi-target=$ACTUAL_REF"                                        >> $GITHUB_OUTPUT
-              echo "concurrency-group=washington-feature-${BRANCH_SLUG}"            >> $GITHUB_OUTPUT
+              TAG_SLUG="${JIRA_TICKET:-$BRANCH_SLUG}"
+              echo "branch-type=feature"                                              >> $GITHUB_OUTPUT
+              echo "image-tag-prefix=feat-${TAG_SLUG}-b${{ github.run_number }}"     >> $GITHUB_OUTPUT
+              echo "hanoi-target=$ACTUAL_REF"                                         >> $GITHUB_OUTPUT
+              echo "concurrency-group=washington-feature-${BRANCH_SLUG}"             >> $GITHUB_OUTPUT
 
             elif [[ "$ACTUAL_REF" == "develop" ]]; then
               echo "branch-type=develop"                              >> $GITHUB_OUTPUT
@@ -225,10 +229,10 @@ jobs:
   # 2. RELEASE RETAG
   # ---------------------------------------------------------------------------
   release-retag:
-    name: Release Retag (on release branch create)
+    name: Release Retag (align .version on release branch)
     needs: [branch-context]
     if: |
-      github.event_name == 'create' &&
+      github.event_name == 'push' &&
       needs.branch-context.outputs.run-release-retag == 'true' &&
       startsWith(needs.branch-context.outputs.ref-name, 'release/')
     runs-on: ubuntu-latest
@@ -252,7 +256,7 @@ jobs:
       - name: Derive platform version from branch name
         id: rel
         run: |
-          # release/3.2 → REL=3.2 → VERSION=3.2.0
+          # release/3.2 ? REL=3.2 ? VERSION=3.2.0
           REL="${{ needs.branch-context.outputs.ref-name }}"
           REL="${REL#release/}"
           VERSION="${REL}.0"
@@ -273,17 +277,6 @@ jobs:
           print(f"Written .version: NG {version}")
         env:
           VERSION: ${{ steps.rel.outputs.version }}
-
-      - name: Update pom.xml version for release branch
-        env:
-          VERSION: ${{ steps.rel.outputs.version }}
-        run: |
-          if [ -x "./set-version.sh" ]; then
-            ./set-version.sh "${VERSION}"
-            echo "Updated pom.xml to ${VERSION}"
-          else
-            echo "set-version.sh not found; skipping pom.xml update"
-          fi
 
       - name: Commit and push version changes to release branch
         env:
@@ -321,18 +314,19 @@ jobs:
     if: |
       always() &&
       needs.branch-context.outputs.should-build == 'true' &&
+      needs.branch-context.outputs.run-versioning == 'true' &&
       needs.branch-context.outputs.is-test-run == 'false' &&
       needs.gate.result == 'success' &&
       !contains(fromJSON('["failure", "cancelled"]'), needs.release-retag.result)
     runs-on: ubuntu-latest
     outputs:
-      # Track A — Keycloak version
+      # Track A ? Keycloak version
       keycloak-version: ${{ steps.patch-version.outputs.version }}
       cur-version:      ${{ steps.cur-version.outputs.version }}
       sem-version:      ${{ steps.cur-version.outputs.sem-version }}
       release-type:     ${{ steps.release-type.outputs.type }}
       jira-ticket:      ${{ steps.extract-jira.outputs.ticket }}
-      # Track B — Platform version
+      # Track B ? Platform version
       platform-version: ${{ steps.platform-version.outputs.version }}
     env:
       MINOR_RELEASE: ${{ contains(github.event.head_commit.message, '[release]') || contains(github.event.pull_request.title, '[release]') }}
@@ -361,15 +355,14 @@ jobs:
           echo "Jira ticket: ${TICKET:-none}"
 
 
-      - name: Read current Keycloak MAJOR.MINOR from pom.xml
+      - name: Read current Keycloak MAJOR.MINOR from .version
         id: cur-version
         run: |
           MAJOR_MINOR=$(python3 -c "
-          import xml.etree.ElementTree as ET
-          tree = ET.parse('pom.xml')
-          root = tree.getroot()
-          ns = {'m': 'http://maven.apache.org/POM/4.0.0'}
-          ver = root.find('m:version', ns).text.replace('-SNAPSHOT', '')
+          import json
+          with open('resources/.version') as f:
+            data = json.load(f)
+          ver = data['application_info']['version']
           parts = ver.split('.')
           print('.'.join(parts[:2]))
           ")
@@ -426,7 +419,7 @@ jobs:
           next_ver = f"{major}.{minor}.{patch}"
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             f.write(f"version={next_ver}\n")
-          print(f"Platform version: {current} → {next_ver}")
+          print(f"Platform version: {current} ? {next_ver}")
         env:
           MINOR_RELEASE: ${{ env.MINOR_RELEASE }}
 
@@ -521,21 +514,49 @@ jobs:
 
           test -s quarkus/container/marauder-plugins.tar.gz
 
+      - name: Download Keycloak dist from latest develop build
+        if: github.event_name == 'repository_dispatch'
+        run: |
+          RUN_ID=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/release.yml/runs?branch=develop&status=success&per_page=10" \
+            --jq '[.workflow_runs[] | select(.conclusion == "success")] | .[0].id')
+
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" == "null" ]; then
+            echo "ERROR: No successful develop build found to download keycloak-dist artifact from."
+            exit 1
+          fi
+
+          echo "Downloading keycloak-dist artifact from run $RUN_ID"
+          gh run download "$RUN_ID" --name keycloak-dist --dir quarkus/container/
+
+          test -n "$(ls quarkus/container/keycloak-*.tar.gz 2>/dev/null)" || {
+            echo "ERROR: keycloak-dist artifact not found in run $RUN_ID"
+            exit 1
+          }
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve Keycloak version for build
+        id: resolved-kc
+        run: |
+          VERSIONING_KC='${{ needs.versioning.outputs.keycloak-version }}'
+          if [ -n "$VERSIONING_KC" ]; then
+            echo "version=$VERSIONING_KC" >> $GITHUB_OUTPUT
+          else
+            python3 -c "import json; d=json.load(open('resources/.version')); print('version='+d['application_info']['version'])" >> $GITHUB_OUTPUT
+          fi
+
       - name: Compute image tag
         id: tags
         run: |
           IMAGE_TAG_PREFIX='${{ needs.branch-context.outputs.image-tag-prefix }}'
           BRANCH_TYPE='${{ needs.branch-context.outputs.branch-type }}'
-          KEYCLOAK_VER='${{ needs.versioning.outputs.keycloak-version }}'
 
-          # Release real run  → Keycloak version e.g. 25.0.4
-          # Release test run  → image-tag-prefix e.g. release-3-2-b210 (never empty)
-          # Develop / feature → image-tag-prefix e.g. main-b210
-          if [ "$BRANCH_TYPE" == "release" ] && [ -n "$KEYCLOAK_VER" ]; then
-            COMBINED_TAG="$KEYCLOAK_VER"
-          else
-            COMBINED_TAG="$IMAGE_TAG_PREFIX"
-          fi
+          # All branch types use image-tag-prefix as the Docker tag:
+          # develop  ? main-b<run>
+          # feature  ? feat-<jira>-b<run>
+          # release  ? NG-5.1.0-b<run>
+          COMBINED_TAG="$IMAGE_TAG_PREFIX"
 
           echo "combined_tag=$COMBINED_TAG" >> $GITHUB_OUTPUT
           echo "tags<<EOF" >> $GITHUB_OUTPUT
@@ -546,18 +567,17 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Set Keycloak version in pom.xml
-        # Runs for BOTH develop and release on real (non-test) runs.
-        # Keeps pom.xml in sync with the calculated Keycloak version so the
-        # Maven build compiles with the correct version before Docker packaging.
-        if: needs.branch-context.outputs.is-test-run == 'false'
+        if: github.event_name != 'repository_dispatch'
         run: |
           [ -x "./set-version.sh" ] || { echo "ERROR: set-version.sh not found or not executable"; exit 1; }
-          ./set-version.sh ${{ needs.versioning.outputs.keycloak-version }}
+          ./set-version.sh ${{ steps.resolved-kc.outputs.version }}
 
       - name: Build Keycloak
+        if: github.event_name != 'repository_dispatch'
         uses: ./.github/actions/build-keycloak
 
       - name: Copy Keycloak dist into Docker context
+        if: github.event_name != 'repository_dispatch'
         run: cp quarkus/dist/target/keycloak-*.tar.gz quarkus/container/
 
       - name: Set up Docker Buildx
@@ -579,7 +599,7 @@ jobs:
           push: true
           tags: ${{ steps.tags.outputs.tags }}
           build-args: |
-            KEYCLOAK_VERSION=${{ steps.tags.outputs.combined_tag }}
+            KEYCLOAK_VERSION=${{ steps.resolved-kc.outputs.version }}
             MARAUDER_VERSION=${{ env.MARAUDER_VERSION }}
             MARAUDER_TARBALL=${{ env.MARAUDER_TARBALL }}
 
@@ -597,7 +617,7 @@ jobs:
           rm -f cosign.key
 
       - name: Upload release artifact
-        if: needs.branch-context.outputs.run-release == 'true'
+        if: needs.branch-context.outputs.branch-type == 'release'
         uses: actions/upload-artifact@v4
         with:
           name: keycloak-dist
@@ -668,13 +688,13 @@ jobs:
           TAG='${{ needs.build.outputs.combined-tag }}'
           MAP_FILE="../washington/.ci/helm-map.json"
           CHART_PATHS="helm-charts/keycloak"
-          IMAGE_NAME="${{ github.repository_owner }}/infra-keycloak"
+          IMAGE_NAME="${{ github.repository_owner }}/keycloak"
 
           if [ -f "$MAP_FILE" ]; then
             MAPPED_PATHS=$(jq -r '.keycloak.chart_paths[]? // empty' "$MAP_FILE")
             MAPPED_SUFFIX=$(jq -r '.keycloak.image_suffix // empty' "$MAP_FILE")
             [ -n "$MAPPED_PATHS" ] && CHART_PATHS="$MAPPED_PATHS"
-            [ -n "$MAPPED_SUFFIX" ] && IMAGE_NAME="${{ github.repository_owner }}/infra-${MAPPED_SUFFIX}"
+            [ -n "$MAPPED_SUFFIX" ] && IMAGE_NAME="${{ github.repository_owner }}/${MAPPED_SUFFIX}"
           fi
 
           for chart in $CHART_PATHS; do
@@ -699,7 +719,7 @@ jobs:
     if: |
       always() &&
       needs.branch-context.outputs.is-test-run == 'false' &&
-      (needs.branch-context.outputs.branch-type == 'release' || needs.branch-context.outputs.branch-type == 'develop') &&
+      needs.branch-context.outputs.branch-type == 'release' &&
       needs.versioning.outputs.keycloak-version != '' &&
       needs.build.result == 'success' &&
       needs.helm-update.result == 'success' &&
@@ -727,6 +747,21 @@ jobs:
           [ -x "./set-version.sh" ] || { echo "ERROR: set-version.sh not found or not executable"; exit 1; }
           ./set-version.sh ${{ needs.versioning.outputs.keycloak-version }}
 
+      - name: Update .version with new Keycloak version
+        shell: python
+        run: |
+          import json, os
+          version = os.environ["KEYCLOAK_VERSION"]
+          with open("resources/.version") as f:
+            data = json.load(f)
+          data.setdefault("application_info", {})
+          data["application_info"]["version"] = version
+          with open("resources/.version", "w") as f:
+            json.dump(data, f, indent=2)
+          print(f"Updated application_info.version to {version}")
+        env:
+          KEYCLOAK_VERSION: ${{ needs.versioning.outputs.keycloak-version }}
+
       - name: Update .version with new platform version
         if: needs.branch-context.outputs.branch-type == 'release'
         shell: python
@@ -750,6 +785,7 @@ jobs:
           git add pom.xml resources/.version
           git diff --cached --quiet || {
             git commit -m "chore: bump washington version to v${{ needs.versioning.outputs.platform-version }} [skip ci]"
+            git pull --rebase origin ${{ needs.branch-context.outputs.ref-name }}
             git push origin HEAD:${{ needs.branch-context.outputs.ref-name }}
           }
 
@@ -761,10 +797,8 @@ jobs:
     needs: [branch-context, gate, build, versioning, helm-update]
     if: |
       always() &&
-      github.event_name != 'create' &&
-      needs.branch-context.outputs.run-release == 'true' &&
+      needs.branch-context.outputs.branch-type == 'release' &&
       needs.branch-context.outputs.is-test-run == 'false' &&
-      needs.branch-context.outputs.branch-type != 'feature' &&
       needs.gate.result == 'success' &&
       needs.build.result == 'success' &&
       needs.helm-update.result == 'success'
@@ -788,44 +822,30 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BRANCH_TYPE="${{ needs.branch-context.outputs.branch-type }}"
+          VERSION="${{ needs.versioning.outputs.platform-version }}"
           ARTIFACTS=$(ls dist/keycloak-*.tar.gz 2>/dev/null | xargs -I{} echo "{}" || true)
 
-          if [[ "$BRANCH_TYPE" == "release" ]]; then
-            # Platform version from .version file e.g. 3.2.1
-            # Completely separate from the Keycloak Docker image tag
-            VERSION="${{ needs.versioning.outputs.platform-version }}"
+          git config user.email "github-actions@noreply.github.com"
+          git config user.name "github-actions[bot]"
 
-            git config user.email "github-actions@noreply.github.com"
-            git config user.name "github-actions[bot]"
-
-            # Guard against duplicate releases before creating or pushing tags.
-            if gh release view "v${VERSION}" > /dev/null 2>&1; then
-              echo "Release v${VERSION} already exists, skipping."
-              exit 0
-            fi
-
-            # Only create and push the tag if it does not already exist remotely.
-            if git ls-remote --tags origin "refs/tags/v${VERSION}" | grep -q "refs/tags/v${VERSION}$"; then
-              echo "Remote tag v${VERSION} already exists, reusing it."
-            else
-              git tag "v${VERSION}"
-              git push origin "v${VERSION}"
-            fi
-
-            gh release create "v${VERSION}" \
-              --title "Release v${VERSION}" \
-              --generate-notes \
-              $ARTIFACTS
-
-          else
-            # develop → prerelease tagged develop-<run_number>
-            gh release create "develop-${{ github.run_number }}" \
-              --title "Develop Build ${{ github.run_number }}" \
-              --prerelease \
-              --generate-notes \
-              $ARTIFACTS
+          # Guard against duplicate releases before creating or pushing tags.
+          if gh release view "v${VERSION}" > /dev/null 2>&1; then
+            echo "Release v${VERSION} already exists, skipping."
+            exit 0
           fi
+
+          # Only create and push the tag if it does not already exist remotely.
+          if git ls-remote --tags origin "refs/tags/v${VERSION}" | grep -q "refs/tags/v${VERSION}$"; then
+            echo "Remote tag v${VERSION} already exists, reusing it."
+          else
+            git tag "v${VERSION}"
+            git push origin "v${VERSION}"
+          fi
+
+          gh release create "v${VERSION}" \
+            --title "Release v${VERSION}" \
+            --generate-notes \
+            $ARTIFACTS
 
   # ---------------------------------------------------------------------------
   # 9. JIRA SUCCESS
