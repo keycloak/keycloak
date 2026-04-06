@@ -243,7 +243,7 @@ Create a JSON file (e.g., `client-scopes.json`) with the following content:
     "vc.issuer_did": "did:web:vc.example.com",
     "vc.credential_configuration_id": "my-credential-configuration-id",
     "vc.credential_identifier": "my-credential-identifier",
-    "vc.format": "jwt_vc",
+    "vc.format": "jwt_vc_json",
     "vc.expiry_in_seconds": 31536000,
     "vc.verifiable_credential_type": "my-vct",
     "vc.supported_credential_types": "credential-type-1,credential-type-2",
@@ -255,7 +255,7 @@ Create a JSON file (e.g., `client-scopes.json`) with the following content:
     "vc.sd_jwt.number_of_decoys": "2",
     "vc.credential_build_config.sd_jwt.visible_claims": "iat,jti,nbf,exp,given_name",
     "vc.credential_build_config.hash_algorithm": "SHA-256",
-    "vc.credential_build_config.token_jws_type": "JWS",
+    "vc.credential_build_config.token_jws_type": "vc+jwt",
     "vc.include_in_metadata": "true"
   },
   "protocolMappers": [
@@ -396,7 +396,7 @@ _Default_: `SHA-256`
 | `vc.credential_build_config.token_jws_type`
 | optional
 | JWT type written into the `typ` header of the token. +
-_Default_: `JWS`
+_Default_: format-specific (`dc+sd-jwt` for `dc+sd-jwt`, `vc+jwt` for `jwt_vc_json`)
 
 | `vc.expiry_in_s`
 | optional

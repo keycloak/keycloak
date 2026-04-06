@@ -99,6 +99,8 @@ const TEST_VALUES = {
   SUPPORTED_CREDENTIAL_TYPES: "VerifiableCredential,UniversityDegreeCredential",
   VERIFIABLE_CREDENTIAL_TYPE: "TestCredentialType",
 } as const;
+const TOKEN_JWS_TYPE_WARNING_PREFIX =
+  "The configured Token JWS Type does not match the recommended value for the selected credential format.";
 
 test.describe("OID4VCI Client Scope Functionality", () => {
   test("should display OID4VCI fields when protocol is selected", async ({
@@ -547,6 +549,61 @@ test.describe("OID4VCI Client Scope Functionality", () => {
     await page.waitForLoadState("domcontentloaded");
 
     await expect(page.getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE)).toBeVisible();
+  });
+
+  test("should show warning for mismatched token_jws_type based on selected format", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "JWT VC (jwt_vc_json)",
+    );
+
+    const tokenJwsType = page.getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE);
+    await tokenJwsType.fill("dc+sd-jwt");
+
+    await expect(page.getByText(TOKEN_JWS_TYPE_WARNING_PREFIX)).toBeVisible();
+    await expect(page.getByText("Recommended value: vc+jwt.")).toBeVisible();
+
+    await tokenJwsType.fill("vc+jwt");
+    await expect(page.getByText(TOKEN_JWS_TYPE_WARNING_PREFIX)).toHaveCount(0);
+
+    await selectItem(page, "#kc-vc-format", "SD-JWT VC (dc+sd-jwt)");
+    await page.waitForLoadState("domcontentloaded");
+
+    await tokenJwsType.fill("vc+jwt");
+    await expect(page.getByText(TOKEN_JWS_TYPE_WARNING_PREFIX)).toBeVisible();
+    await expect(page.getByText("Recommended value: dc+sd-jwt.")).toBeVisible();
+
+    await tokenJwsType.fill("dc+sd-jwt");
+    await expect(page.getByText(TOKEN_JWS_TYPE_WARNING_PREFIX)).toHaveCount(0);
+  });
+
+  test("should not show token_jws_type warning when the value is empty", async ({
+    page,
+  }) => {
+    await using testBed = await createTestBed({
+      verifiableCredentialsEnabled: true,
+    });
+    await createClientScopeAndSelectProtocolAndFormat(
+      page,
+      testBed,
+      "SD-JWT VC (dc+sd-jwt)",
+    );
+
+    const tokenJwsType = page.getByTestId(OID4VCI_FIELDS.TOKEN_JWS_TYPE);
+    await tokenJwsType.fill("");
+    await expect(page.getByText(TOKEN_JWS_TYPE_WARNING_PREFIX)).toHaveCount(0);
+
+    await selectItem(page, "#kc-vc-format", "JWT VC (jwt_vc_json)");
+    await page.waitForLoadState("domcontentloaded");
+
+    await tokenJwsType.fill("");
+    await expect(page.getByText(TOKEN_JWS_TYPE_WARNING_PREFIX)).toHaveCount(0);
   });
 
   test("should display signing algorithm dropdown with available algorithms", async ({
