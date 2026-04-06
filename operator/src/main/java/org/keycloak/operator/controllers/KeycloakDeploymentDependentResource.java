@@ -61,6 +61,7 @@ import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.PodSpecFluent;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
@@ -340,7 +341,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         }
         boolean automount = !Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken());
         specBuilder.withAutomountServiceAccountToken(automount);
-        if (keycloakCR.getSpec().getServiceAccountSpec() != null) {
+        if (keycloakCR.getSpec().getServiceAccountSpec() != null
+                && context.getSecondaryResource(ServiceAccount.class).isPresent()) {
             specBuilder.withServiceAccountName(keycloakCR.getMetadata().getName());
         }
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
