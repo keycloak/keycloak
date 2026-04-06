@@ -41,10 +41,10 @@ public class KeycloakServiceAccountDependentResource
 
     @Override
     public ServiceAccount desired(Keycloak primary, Context<Keycloak> context) {
-        ServiceAccountSpec spec = primary.getSpec().getServiceAccountSpec();
-        List<LocalObjectReference> imagePullSecrets = spec.getImagePullSecrets();
         var optionalSpec = Optional.ofNullable(primary.getSpec().getServiceAccountSpec());
         Map<String,String> annotations = optionalSpec.map(ServiceAccountSpec::getAnnotations).orElse(new HashMap<>());
+        List<LocalObjectReference> imagePullSecrets = optionalSpec.map(ServiceAccountSpec::getImagePullSecrets).orElse(null)
+
 
         ServiceAccountBuilder builder = new ServiceAccountBuilder()
                 .withNewMetadata()
