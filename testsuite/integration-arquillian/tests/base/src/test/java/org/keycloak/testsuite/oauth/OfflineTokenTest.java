@@ -48,6 +48,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -75,6 +76,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.LogoutResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.TokenUtil;
 
@@ -1648,6 +1650,37 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                     .detail(Details.REFRESH_TOKEN_ID, offlineToken.getId())
                     .detail(Details.REASON, "Offline session invalid because offline access not granted anymore")
                     .assertEvent();
+        }
+    }
+
+    @Test
+    public void userInfoWithRefreshedAccessTokenFromOfflineRefreshToken() {
+        oauth.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+
+        AccessTokenResponse initialTokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        assertEquals(200, initialTokenResponse.getStatusCode());
+
+        String initialAccessToken = initialTokenResponse.getAccessToken();
+        String offlineRefreshToken = initialTokenResponse.getRefreshToken();
+        setTimeOffset(20);
+
+        try {
+            UserInfoResponse expiredResponse = oauth.doUserInfoRequest(initialAccessToken);
+            assertEquals(401, expiredResponse.getStatusCode());
+
+            oauth.scope("openid email profile basic");
+            AccessTokenResponse refreshedTokenResponse = oauth.doRefreshTokenRequest(offlineRefreshToken);
+            assertEquals(200, refreshedTokenResponse.getStatusCode());
+
+            AccessToken refreshedAccessToken = oauth.verifyToken(refreshedTokenResponse.getAccessToken());
+            AccessTokenContext refreshedCtx = testingClient.testing("test").getTokenContext(refreshedAccessToken.getId());
+            assertEquals(AccessTokenContext.SessionType.OFFLINE, refreshedCtx.getSessionType());
+
+            UserInfoResponse refreshedUserInfoResponse = oauth.doUserInfoRequest(refreshedTokenResponse.getAccessToken());
+            assertEquals(200, refreshedUserInfoResponse.getStatusCode());
+        } finally {
+            setTimeOffset(0);
         }
     }
 }
