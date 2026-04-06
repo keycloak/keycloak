@@ -1,6 +1,5 @@
 package org.keycloak.operator.controllers;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,7 +40,7 @@ public class KeycloakServiceAccountDependentResource
     @Override
     public ServiceAccount desired(Keycloak primary, Context<Keycloak> context) {
         var optionalSpec = Optional.ofNullable(primary.getSpec().getServiceAccountSpec());
-        Map<String,String> annotations = optionalSpec.map(ServiceAccountSpec::getAnnotations).orElse(new HashMap<>());
+        Map<String,String> annotations = optionalSpec.map(ServiceAccountSpec::getAnnotations).orElse(null);
         List<LocalObjectReference> imagePullSecrets = optionalSpec.map(ServiceAccountSpec::getImagePullSecrets).orElse(null);
 
 
