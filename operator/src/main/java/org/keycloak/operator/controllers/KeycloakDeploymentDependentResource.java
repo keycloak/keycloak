@@ -344,6 +344,8 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         if (keycloakCR.getSpec().getServiceAccountSpec() != null
                 && context.getSecondaryResource(ServiceAccount.class).isPresent()) {
             specBuilder.withServiceAccountName(keycloakCR.getMetadata().getName());
+        } else {
+            specBuilder.withServiceAccountName(null);
         }
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
 
