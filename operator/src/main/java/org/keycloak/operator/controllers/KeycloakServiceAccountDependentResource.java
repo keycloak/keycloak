@@ -1,10 +1,14 @@
 package org.keycloak.operator.controllers;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpec;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceAccountSpec;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
@@ -39,13 +43,15 @@ public class KeycloakServiceAccountDependentResource
     public ServiceAccount desired(Keycloak primary, Context<Keycloak> context) {
         ServiceAccountSpec spec = primary.getSpec().getServiceAccountSpec();
         List<LocalObjectReference> imagePullSecrets = spec.getImagePullSecrets();
+        var optionalSpec = Optional.ofNullable(primary.getSpec().getServiceAccountSpec());
+        Map<String,String> annotations = optionalSpec.map(ServiceAccountSpec::getAnnotations).orElse(new HashMap<>());
 
         ServiceAccountBuilder builder = new ServiceAccountBuilder()
                 .withNewMetadata()
                 .withName(primary.getMetadata().getName())
                 .withNamespace(primary.getMetadata().getNamespace())
                 .withLabels(Utils.allInstanceLabels(primary))
-                .withAnnotations(spec.getAnnotations())
+                .withAnnotations(annotations)
                 .endMetadata();
 
         if (imagePullSecrets != null) {
