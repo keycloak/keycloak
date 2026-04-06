@@ -17,6 +17,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.encode.AccessTokenContext;
+import org.keycloak.protocol.oidc.encode.TokenContextEncoderProvider;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -48,6 +50,7 @@ import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
+import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 import org.keycloak.util.TokenUtil;
 
 import org.junit.jupiter.api.AfterEach;
@@ -496,6 +499,40 @@ public class OfflineTokenRefreshTest {
             offlineClientResource.addOptionalClientScope(offlineAccessScope.getId());
         }
     }
+
+    @Test
+    public void userInfoWithRefreshedAccessTokenFromOfflineRefreshToken() {
+        oauth.scope("openid " + OAuth2Constants.OFFLINE_ACCESS);
+        oauth.client("offline-client", "secret1");
+
+        AccessTokenResponse initialTokenResponse = oauth.doPasswordGrantRequest("test-user@localhost", "password");
+        assertEquals(200, initialTokenResponse.getStatusCode());
+
+        String initialAccessToken = initialTokenResponse.getAccessToken();
+        String offlineRefreshToken = initialTokenResponse.getRefreshToken();
+        timeOffSet.set(20);
+
+        try {
+            UserInfoResponse expiredResponse = oauth.doUserInfoRequest(initialAccessToken);
+            assertEquals(401, expiredResponse.getStatusCode());
+
+            oauth.scope("openid email profile basic");
+            AccessTokenResponse refreshedTokenResponse = oauth.doRefreshTokenRequest(offlineRefreshToken);
+            assertEquals(200, refreshedTokenResponse.getStatusCode());
+
+            AccessToken refreshedAccessToken = oauth.verifyToken(refreshedTokenResponse.getAccessToken());
+            AccessTokenContext refreshedCtx = runOnServer.fetch(session ->
+                    session.getProvider(TokenContextEncoderProvider.class)
+                            .getTokenContextFromTokenId(refreshedAccessToken.getId()), AccessTokenContext.class);
+            assertEquals(AccessTokenContext.SessionType.OFFLINE, refreshedCtx.getSessionType());
+
+            UserInfoResponse refreshedUserInfoResponse = oauth.doUserInfoRequest(refreshedTokenResponse.getAccessToken());
+            assertEquals(200, refreshedUserInfoResponse.getStatusCode());
+        } finally {
+            timeOffSet.set(0);
+        }
+    }
+
 
     // KEYCLOAK-7688 Offline Session Max for Offline Token
     private int[] changeOfflineSessionSettings(boolean isEnabled, int sessionMax, int sessionIdle, int clientSessionMax, int clientSessionIdle) {
