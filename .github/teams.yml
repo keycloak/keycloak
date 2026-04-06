@@ -9,7 +9,7 @@ team/continuous-delivery:
   - area/ci
   - area/testsuite
 
-team/core-clients:
+team/core-protocols:
   - area/adapter/fuse
   - area/adapter/java-cli
   - area/adapter/jee
@@ -32,6 +32,16 @@ team/core-iam:
   - area/organizations
   - area/user-profile
   - area/workflows
+
+team/core-authn:
+  - area/account/ui
+  - area/admin/ui
+  - area/authentication
+  - area/core
+  - area/identity-brokering
+  - area/saml
+  - area/test-framework
+  - area/token-exchange/subject-impersonation
 
 team/core-shared:
   - area/account/api
