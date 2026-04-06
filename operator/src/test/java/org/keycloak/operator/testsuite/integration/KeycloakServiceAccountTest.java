@@ -22,7 +22,6 @@ import java.util.Map;
 
 import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceAccountSpec;
-import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
