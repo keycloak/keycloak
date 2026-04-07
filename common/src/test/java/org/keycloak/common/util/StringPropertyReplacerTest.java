@@ -41,6 +41,11 @@ public class StringPropertyReplacerTest {
         System.setProperty("prop2", "val2");
         Assert.assertEquals("foo-val2", replaceProperties("foo-${prop2:def}"));
 
+        // nesting curly braces
+        Assert.assertEquals("This is a default text with a {0} substitute", replaceProperties("${prop3:This is a default text with a {0} substitute}"));
+        // stops at first unmatched, then the rest is regular text - matches the original implementation
+        Assert.assertEquals("This is a default text with a {0} substitute}", replaceProperties("${prop3:This is a default text with a {0}} substitute}"));
+
         // It looks for the property "prop3", then fallback to "prop4", then fallback to "prop5" and finally default value.
         // This syntax is supported by Quarkus (and underlying Microprofile)
         Assert.assertEquals("foo-def", replaceProperties("foo-${prop3:${prop4:${prop5:def}}}"));
