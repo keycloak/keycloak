@@ -156,6 +156,11 @@ bin/kc.[sh|bat] start --optimized
 
 WARNING: The examples above include the minimum settings needed to connect to the database but it exposes the database password and is not recommended. Use the `conf/keycloak.conf` as shown above, environment variables, or keystore for at least the password.
 
+[NOTE]
+====
+If your database password contains `$` or `$\{...}` characters, use the `KCRAW_DB_PASSWORD` environment variable instead of `KC_DB_PASSWORD`. The `KCRAW_` prefix ensures `$` characters are preserved as-is. See the _Preserving literal values with the KCRAW_ prefix_ section in <@links.server id="configuration"/> for details.
+====
+
 By default, no schema is explicitly set and {project_name} uses the default schema of the chosen database.
 You can override this by using the `db-schema` configuration option.
 

@@ -145,6 +145,17 @@ This is a common setup, for example, in Kubernetes environments.
 Users should adjust those values depending on their proxy setup.
 See the section https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown[Graceful HTTP shutdown] in the reverse proxy guide for more information.
 
+== New `KCRAW_` prefix for environment variables to preserve literal values
+
+{project_name} now supports a `KCRAW_` prefix for environment variables to preserve values containing `$` characters exactly as written, without expression evaluation.
+
+When using the standard `KC_` prefix, {project_name} (via SmallRye Config) evaluates expressions in values (for example, `${some_key}` is resolved and `$$` is collapsed to `$`).
+This can silently modify passwords or secrets injected by a secrets manager or orchestration tool where manual escaping is not feasible.
+
+Setting `KCRAW_<KEY>` instead of `KC_<KEY>` preserves the value exactly as provided.
+
+See the link:{server_guide_base_link}/configuration#kcraw-prefix[Preserving literal values with the KCRAW_ prefix] section in the Server Configuration guide for details.
+
 == Automatic reload of lists with disallowed passwords
 
 When a list of disallowed passwords (also known as blacklist) changes, it is automatically reloaded. This avoids the need for a server restart when the list changes.

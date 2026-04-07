@@ -267,6 +267,13 @@ See the https://www.keycloak.org/server/db#_secure_the_database_connection[Secur
 A new CLI option `--db-connect-timeout` sets the JDBC driver connection timeout and login timeout.
 It defaults to `10s` to improve failover behavior and startup resilience during network issues.
 
+=== New `KCRAW_` prefix for environment variables to preserve literal values
+
+{project_name} now supports a `KCRAW_` prefix for environment variables as an alternative to the standard `KC_` prefix.
+If you are already using the KCRAW_ prefix for another purpose, please migrate to a new key prefix.
+
+See the link:{server_guide_base_link}/configuration#kcraw-prefix[Preserving literal values with the KCRAW_ prefix] section in the Server Configuration guide for details.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
