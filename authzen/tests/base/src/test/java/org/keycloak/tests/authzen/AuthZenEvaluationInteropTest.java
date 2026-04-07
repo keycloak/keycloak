@@ -23,15 +23,16 @@ import java.util.Map;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.keycloak.authorization.authzen.AuthZen;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.authzen.client.AuthZenClient;
 import org.keycloak.testframework.authzen.client.AuthZenClient.EvaluationResult;
+import org.keycloak.testframework.authzen.client.AuthZenClient.EvaluationsResult;
 import org.keycloak.testframework.authzen.client.annotations.InjectAuthZenClient;
 import org.keycloak.testframework.oauth.OAuthClient;
 import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
 import org.keycloak.testframework.realm.ManagedRealm;
-import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -42,10 +43,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Runs the AuthZen interop evaluation test suite defined in the OpenID AuthZen interop project.
- * Test scenarios are loaded from the decisions-authorization-api-1_0-01.json resource file.
- * Each entry in the JSON defines an AuthZen evaluation request and its expected decision.
+ * Test scenarios are loaded from the decisions-authorization-api-1_0-02.json resource file.
+ * The JSON file defines AuthZen evaluation and evaluations requests, as well as the expected decision.
  * <p>
- * All required Realm configuration including users, roles, client, and authorization settings is loaded from interop-realm.json.
+ * All required Realm configuration including users, roles, client, and authorization settings are loaded from interop-realm.json.
  */
 @KeycloakIntegrationTest(config = AuthZenServerConfig.class)
 public class AuthZenEvaluationInteropTest {
@@ -73,44 +74,83 @@ public class AuthZenEvaluationInteropTest {
 
     @TestFactory
     Stream<DynamicTest> interopEvaluationTests() throws IOException {
-        List<InteropDecision> decisions = loadDecisions();
+        JsonNode root = loadDecisions();
+        AuthZenClient.Authenticated client = authenticatedClient();
 
-        AccessTokenResponse tokenResponse = oauth
-              .client(PDP_CLIENT_ID, PDP_CLIENT_SECRET)
-              .doClientCredentialsGrantAccessTokenRequest();
-        AuthZenClient.Authenticated client = authZenClient.withAccessToken(tokenResponse.getAccessToken());
-
-        return decisions.stream().map(decision -> {
-            String testName = buildTestName(decision);
-            return DynamicTest.dynamicTest(testName, () -> {
-                EvaluationResult result = client.evaluate(decision.request());
-                assertEquals(200, result.statusCode(), "Expected 200 OK for: " + testName);
-                assertEquals(decision.expected(), result.decision(), "Expected decision=" + decision.expected() + " for: " + testName);
-            });
-        });
+        return StreamSupport.stream(root.path("evaluation").spliterator(), false)
+              .map(node -> {
+                  JsonNode request = node.get("request");
+                  boolean expected = node.get("expected").asBoolean();
+                  String testName = buildEvaluationTestName(request, expected);
+                  return DynamicTest.dynamicTest(testName, () -> {
+                      EvaluationResult result = client.evaluate(request);
+                      assertEquals(200, result.statusCode(), "Expected 200 OK for: " + testName);
+                      assertEquals(expected, result.decision(), "Expected decision=" + expected + " for: " + testName);
+                  });
+              });
     }
 
-    private static String buildTestName(InteropDecision decision) {
-        JsonNode req = decision.request();
-        String subjectId = req.path("subject").path("id").asText();
-        String userName = USER_NAMES.getOrDefault(subjectId, subjectId);
-        String action = req.path("action").path("name").asText();
-        String resourceType = req.path("resource").path("type").asText();
-        String resourceId = req.path("resource").path("id").asText();
-        String expected = decision.expected() ? "ALLOW" : "DENY";
-        return String.format("%s | %s %s:%s => %s", userName, action, resourceType, resourceId, expected);
-    }
+    @TestFactory
+    Stream<DynamicTest> interopEvaluationsTests() throws IOException {
+        JsonNode root = loadDecisions();
+        JsonNode evaluationsNode = root.path("evaluations");
 
-    private static List<InteropDecision> loadDecisions() throws IOException {
-        try (InputStream is = AuthZenEvaluationInteropTest.class.getResourceAsStream(
-              "decisions-authorization-api-1_0-01.json")) {
-            JsonNode root = JsonSerialization.mapper.readTree(is);
-            return StreamSupport.stream(root.path("evaluation").spliterator(), false)
-                  .map(node -> new InteropDecision(node.get("request"), node.get("expected").asBoolean()))
-                  .toList();
+        if (evaluationsNode.isMissingNode() || !evaluationsNode.isArray() || evaluationsNode.isEmpty()) {
+            return Stream.empty();
         }
+
+        AuthZenClient.Authenticated client = authenticatedClient();
+        return StreamSupport.stream(evaluationsNode.spliterator(), false)
+              .map(node -> {
+                  JsonNode request = node.get("request");
+                  JsonNode expectedArray = node.get("expected");
+                  String testName = buildEvaluationsTestName(request);
+                  return DynamicTest.dynamicTest(testName, () -> {
+                      EvaluationsResult result = client.evaluations(request);
+                      assertEquals(200, result.statusCode(), "Expected 200 OK for: " + testName);
+
+                      List<AuthZen.EvaluationResponse> actualEvaluations = result.evaluations();
+                      assertEquals(expectedArray.size(), actualEvaluations.size(), "Evaluations count mismatch for: " + testName);
+
+                      for (int i = 0; i < expectedArray.size(); i++) {
+                          boolean expectedDecision = expectedArray.get(i).get("decision").asBoolean();
+                          assertEquals(expectedDecision, actualEvaluations.get(i).decision(),
+                                "Decision mismatch at index " + i + " for: " + testName);
+                      }
+                  });
+              });
     }
 
-    public record InteropDecision(JsonNode request, boolean expected) {
+    private AuthZenClient.Authenticated authenticatedClient() {
+        return authZenClient.withAccessToken(
+              oauth.client(PDP_CLIENT_ID, PDP_CLIENT_SECRET)
+                    .doClientCredentialsGrantAccessTokenRequest()
+                    .getAccessToken()
+        );
+    }
+
+    private static String buildEvaluationTestName(JsonNode json, boolean expected) {
+        String subjectId = json.path("subject").path("id").asText();
+        String userName = USER_NAMES.getOrDefault(subjectId, subjectId);
+        String action = json.path("action").path("name").asText();
+        String resourceType = json.path("resource").path("type").asText();
+        String resourceId = json.path("resource").path("id").asText();
+        String expectedStr = expected ? "ALLOW" : "DENY";
+        return String.format("%s | %s %s:%s => %s", userName, action, resourceType, resourceId, expectedStr);
+    }
+
+    private static String buildEvaluationsTestName(JsonNode json) {
+        String subjectId = json.path("subject").path("id").asText();
+        String userName = USER_NAMES.getOrDefault(subjectId, subjectId);
+        String action = json.path("action").path("name").asText();
+        int count = json.path("evaluations").size();
+        return String.format("batch | %s | %s x%d", userName, action, count);
+    }
+
+    private static JsonNode loadDecisions() throws IOException {
+        try (InputStream is = AuthZenEvaluationInteropTest.class.getResourceAsStream(
+              "decisions-authorization-api-1_0-02.json")) {
+            return JsonSerialization.mapper.readTree(is);
+        }
     }
 }

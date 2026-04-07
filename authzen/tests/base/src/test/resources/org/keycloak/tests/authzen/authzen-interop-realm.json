@@ -157,7 +157,7 @@
                         ]
                     },
                     {
-                        "name": "240d0db-8ff0-41ec-98b2-34a096273b95",
+                        "name": "7240d0db-8ff0-41ec-98b2-34a096273b95",
                         "type": "todo",
                         "scopes": [
                             { "name": "can_read_todos" },
@@ -254,7 +254,7 @@
                         "logic": "POSITIVE",
                         "decisionStrategy": "UNANIMOUS",
                         "config": {
-                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"240d0db-8ff0-41ec-98b2-34a096273b95\"]",
+                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"7240d0db-8ff0-41ec-98b2-34a096273b95\"]",
                             "scopes": "[\"can_read_todos\"]",
                             "applyPolicies": "[\"any-role-policy\"]"
                         }
@@ -265,7 +265,7 @@
                         "logic": "POSITIVE",
                         "decisionStrategy": "UNANIMOUS",
                         "config": {
-                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"240d0db-8ff0-41ec-98b2-34a096273b95\"]",
+                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"7240d0db-8ff0-41ec-98b2-34a096273b95\"]",
                             "scopes": "[\"can_create_todo\"]",
                             "applyPolicies": "[\"admin-or-editor-policy\"]"
                         }
@@ -276,7 +276,7 @@
                         "logic": "POSITIVE",
                         "decisionStrategy": "UNANIMOUS",
                         "config": {
-                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"240d0db-8ff0-41ec-98b2-34a096273b95\"]",
+                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"7240d0db-8ff0-41ec-98b2-34a096273b95\"]",
                             "scopes": "[\"can_update_todo\"]",
                             "applyPolicies": "[\"admin-or-editor-owner-policy\"]"
                         }
@@ -287,7 +287,7 @@
                         "logic": "POSITIVE",
                         "decisionStrategy": "UNANIMOUS",
                         "config": {
-                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"240d0db-8ff0-41ec-98b2-34a096273b95\"]",
+                            "resources": "[\"todo-1\",\"7240d0db-8ff0-41ec-98b2-34a096273b92\",\"7240d0db-8ff0-41ec-98b2-34a096273b91\",\"7240d0db-8ff0-41ec-98b2-34a096273b93\",\"7240d0db-8ff0-41ec-98b2-34a096273b94\",\"7240d0db-8ff0-41ec-98b2-34a096273b95\"]",
                             "scopes": "[\"can_delete_todo\"]",
                             "applyPolicies": "[\"admin-or-editor-owner-policy\"]"
                         }
