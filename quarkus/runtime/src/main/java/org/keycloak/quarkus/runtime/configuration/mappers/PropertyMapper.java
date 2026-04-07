@@ -590,6 +590,9 @@ public class PropertyMapper<T> {
             if (wildcardKeysTransformer != null || wildcardMapFrom != null) {
                 throw new AssertionError("Wildcard operations not expected with non-wildcard mapper");
             }
+            if (!option.isBuildTime() && to != null && PropertyMappers.isSpiBuildTimeProperty(to, true)) {
+                throw new AssertionError("A runtime option should not map to a build time spi option");
+            }
             return new PropertyMapper<>(option, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, null, null);
         }
     }

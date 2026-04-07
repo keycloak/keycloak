@@ -1080,4 +1080,11 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         SmallRyeConfig config = createConfig();
         assertEquals("trail\\", config.getConfigValue("kc.db-password").getValue());
     }
+
+    @Test
+    public void testMtlsEnabledMapsToRuntimeProperty() {
+        var config = createConfigFromCliArguments("--cache-embedded-mtls-enabled=false");
+        assertEquals("false", config.getConfigValue("kc.spi-jgroups-mtls--default--activated").getValue());
+        assertNull(config.getConfigValue("kc.spi-jgroups-mtls--default--enabled").getValue());
+    }
 }
