@@ -33,6 +33,7 @@ import org.keycloak.quarkus.runtime.cli.command.DryRunMixin;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
 
 import io.quarkus.arc.Arc;
@@ -146,7 +147,8 @@ public class KeycloakMain implements QuarkusApplication {
     public int run(String... args) throws Exception {
         if (COMMAND != null) {
             QuarkusKeycloakApplication application = Arc.container().instance(QuarkusKeycloakApplication.class).get();
-            COMMAND.onStart(application);
+            QuarkusKeycloakSessionFactory sessionFactory = Arc.container().instance(QuarkusKeycloakSessionFactory.class).get();
+            COMMAND.onStart(application, sessionFactory);
         }
         if (isTestLaunchMode() || isNonServerMode()) {
             // in test mode we exit immediately

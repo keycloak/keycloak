@@ -457,7 +457,7 @@ public class KeycloakServer {
 
             server.deploy(di);
 
-            sessionFactory = (DefaultKeycloakSessionFactory) KeycloakApplication.getSessionFactory();
+            sessionFactory = KeycloakApplication.getSessionFactory();
 
             registerScriptProviders(sessionFactory);
 
