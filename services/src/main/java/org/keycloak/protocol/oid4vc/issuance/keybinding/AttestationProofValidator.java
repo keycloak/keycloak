@@ -21,9 +21,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.keycloak.common.util.Time;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
@@ -74,9 +76,11 @@ public class AttestationProofValidator extends AbstractProofValidator {
             //
             String nonce = attestationBody.getNonce();
             if (nonce != null) {
+                RealmModel realmModel = keycloakSession.getContext().getRealm();
                 SingleUseObjectProvider singleUseCache = keycloakSession.singleUseObjects();
                 String hashString = Hex.encodeHexString(HashUtils.hash("SHA1", nonce.getBytes()));
-                if (!singleUseCache.putIfAbsent(hashString, Time.currentTime() + 3600 * 24 * 3)) {
+                Long nonceLifetimeSeconds = realmModel.getAttribute(OID4VCIConstants.C_NONCE_LIFETIME_IN_SECONDS, 60L);
+                if (!singleUseCache.putIfAbsent(hashString, Time.currentTime() + 10 * nonceLifetimeSeconds)) {
                     throw new VCIssuerException(INVALID_NONCE, "Nonce in proof has already been used");
                 }
             }
