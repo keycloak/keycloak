@@ -18,7 +18,7 @@
     "commander": "^14.0.2",
     "fs-extra": "^11.3.3",
     "mustache": "^4.2.0",
-    "simple-git": "^3.30.0"
+    "simple-git": "^3.32.3"
   },
   "author": {
     "name": "Red Hat, Inc.",

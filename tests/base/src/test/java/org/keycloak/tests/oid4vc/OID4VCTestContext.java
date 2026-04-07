@@ -13,13 +13,14 @@ import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
+import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 
 /**
  * A context that can maintain state across OID4VCI message flows.
- *
+ * <p>
  * It uses a typed in-memory value store based on attachment keys.
  * Values can be accessed by type and when there are multiple values - by name+type.
  *
@@ -27,30 +28,26 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
  */
 public class OID4VCTestContext {
 
+    static final AttachmentKey<OIDCConfigurationRepresentation> AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY = new AttachmentKey<>(OIDCConfigurationRepresentation.class);
     static final AttachmentKey<CredentialIssuer> ISSUER_METADATA_ATTACHMENT_KEY = new AttachmentKey<>(CredentialIssuer.class);
-    static final AttachmentKey<CredentialOfferURI> CREDENTIAL_OFFER_URI_ATTACHMENT_KEY = new AttachmentKey<>(CredentialOfferURI.class);
+    static final AttachmentKey<CredentialOfferURI> CREDENTIALS_OFFER_URI_ATTACHMENT_KEY = new AttachmentKey<>(CredentialOfferURI.class);
     static final AttachmentKey<CredentialsOffer> CREDENTIALS_OFFER_ATTACHMENT_KEY = new AttachmentKey<>(CredentialsOffer.class);
     static final AttachmentKey<AccessTokenResponse> ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(AccessTokenResponse.class);
     static final AttachmentKey<CredentialResponse> CREDENTIAL_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(CredentialResponse.class);
 
-    ClientRepresentation client;
-    String clientId;
-    String issuer;      // Issuing username (i.e. agent who creates credential offers)
-    String holder;      // Holder who requests the credential
-    String credConfigId;
-    String credScopeName;
-    CredentialScopeRepresentation credentialScope;
+    private String issuer;      // Issuing username (i.e. agent who creates credential offers)
+    private String holder;      // Holder who requests the credential
 
-    Map<AttachmentKey<?>, Object> attachments = new HashMap<>();
+    private ClientRepresentation client;
+    private CredentialScopeRepresentation credentialScope;
+
+    private final Map<AttachmentKey<?>, Object> attachments = new HashMap<>();
 
     public OID4VCTestContext(ClientRepresentation client, CredentialScopeRepresentation credentialScope) {
         this.client = client;
-        this.clientId = client.getClientId();
         this.issuer = "john";
         this.holder = "alice";
         this.credentialScope = credentialScope;
-        this.credScopeName = credentialScope.getName();
-        this.credConfigId = credentialScope.getCredentialConfigurationId();
     }
 
     public List<String> getAuthorizedCredentialIdentifiers() {
@@ -82,6 +79,50 @@ public class OID4VCTestContext {
     public OID4VCAuthorizationDetail getOID4VCAuthorizationDetail() {
         List<OID4VCAuthorizationDetail> tokenAuthDetails = getOID4VCAuthorizationDetails();
         return tokenAuthDetails.size() == 1 ? tokenAuthDetails.get(0) : null;
+    }
+
+    public ClientRepresentation getClient() {
+        return client;
+    }
+
+    public void setClient(ClientRepresentation client) {
+        this.client = client;
+    }
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
+    }
+
+    public String getHolder() {
+        return holder;
+    }
+
+    public void setHolder(String holder) {
+        this.holder = holder;
+    }
+
+    public CredentialScopeRepresentation getCredentialScope() {
+        return credentialScope;
+    }
+
+    public void setCredentialScope(CredentialScopeRepresentation credentialScope) {
+        this.credentialScope = credentialScope;
+    }
+
+    public String getCredentialConfigurationId() {
+        return credentialScope.getCredentialConfigurationId();
+    }
+
+    public String getCredentialIdentifier() {
+        return credentialScope.getCredentialIdentifier();
+    }
+
+    public String getScope() {
+        return credentialScope.getName();
     }
 
     // Attachment Support ----------------------------------------------------------------------------------------------

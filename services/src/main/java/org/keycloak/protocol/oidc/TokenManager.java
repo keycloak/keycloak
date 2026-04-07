@@ -42,6 +42,7 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriInfo;
 
 import org.keycloak.OAuth2Constants;
@@ -78,6 +79,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderQuery;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -90,8 +92,10 @@ import org.keycloak.models.light.LightweightUserAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.models.utils.SessionExpirationUtils;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationMembershipMapper;
 import org.keycloak.organization.protocol.mappers.oidc.OrganizationScope;
+import org.keycloak.organization.utils.Organizations;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.ProtocolMapper;
@@ -230,6 +234,8 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Unmatching clients", "Unmatching clients");
         }
 
+        validateSelectedOrganization(session, oldToken, user);
+
         try {
             TokenVerifier.createWithoutSignature(oldToken)
                     .withChecks(NotBeforeCheck.forModel(client), NotBeforeCheck.forModel(session, realm, user))
@@ -335,7 +341,6 @@ public class TokenManager {
                     .filter(Objects::nonNull)
                     .collect(Collectors.joining(" "));
         }
-
 
         TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope);
         session.getContext().setUserSession(validation.userSession);
@@ -717,6 +722,7 @@ public class TokenManager {
 
         Map<String, ClientScopeModel> allOptionalScopes = client.getClientScopes(false);
 
+        OrganizationScope orgScope = tryResolveOrganizationScope(session, scopeParam, user);
         // Add optional client scopes requested by scope parameter
         return Stream.concat(parseScopeParameter(scopeParam)
                         .map(name -> {
@@ -726,13 +732,13 @@ public class TokenManager {
                                 return scope;
                             }
 
-                            return tryResolveDynamicClientScope(session, scopeParam, user, name);
+                            return tryResolveOrganizationClientScope(session, user, orgScope, name);
                         })
                         .filter(Objects::nonNull),
                 clientScopes).distinct();
     }
 
-    private static ClientScopeModel tryResolveDynamicClientScope(KeycloakSession session, String scopeParam, UserModel user, String name) {
+    private static OrganizationScope tryResolveOrganizationScope(KeycloakSession session, String scopeParam, UserModel user) {
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
             OrganizationScope orgScope = OrganizationScope.valueOfScope(session, scopeParam);
 
@@ -744,10 +750,14 @@ public class TokenManager {
                 return null;
             }
 
-            return orgScope.toClientScope(name, user, session);
+            return orgScope;
+        } else {
+            return null;
         }
+    }
 
-        return null;
+    private static ClientScopeModel tryResolveOrganizationClientScope(KeycloakSession session, UserModel user, OrganizationScope orgScope, String name) {
+        return orgScope == null ? null : orgScope.toClientScope(name, user, session);
     }
 
     /**
@@ -890,10 +900,16 @@ public class TokenManager {
                 });
     }
 
-    public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token,
+    public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken userInfo,
                                                     UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        return transformUserInfoAccessToken(session, null, userInfo, userSession, clientSessionCtx);
+    }
+
+    public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken bearerToken, AccessToken userInfo,
+                                                    UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        validateSelectedOrganization(session, bearerToken, userSession == null ? null : userSession.getUser());
         return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof UserInfoTokenMapper)
-                .collect(new TokenCollector<AccessToken>(token) {
+                .collect(new TokenCollector<AccessToken>(userInfo) {
                     @Override
                     protected AccessToken applyMapper(AccessToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
                         return ((UserInfoTokenMapper) mapper.getValue()).transformUserInfoToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
@@ -901,8 +917,9 @@ public class TokenManager {
                 });
     }
 
-    public AccessToken transformIntrospectionAccessToken(KeycloakSession session, AccessToken token,
+    public AccessToken transformIntrospectionAccessToken(KeycloakSession session, AccessToken bearer, AccessToken token,
                                                          UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        validateSelectedOrganization(session, bearer, userSession == null ? null : userSession.getUser());
         return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof TokenIntrospectionTokenMapper)
                 .collect(new TokenCollector<AccessToken>(token) {
                     @Override
@@ -1668,4 +1685,31 @@ public class TokenManager {
         return Optional.ofNullable(refreshToken.getOtherClaims().get(Constants.REUSE_ID)).map(String::valueOf).orElse("");
     }
 
+    private void validateSelectedOrganization(KeycloakSession session, JsonWebToken token, UserModel user) {
+        if (token == null) {
+            return;
+        }
+
+        List<String> orgAlias = List.of();
+        Object organizations = token.getOtherClaims().get(ORGANIZATION);
+
+        if (organizations instanceof String) {
+            orgAlias = List.of((String) organizations);
+        } else if (organizations instanceof Collection<?> orgList) {
+            orgAlias = orgList.stream().map(String::valueOf).collect(Collectors.toList());
+        } else if (organizations instanceof Map<?,?> orgMap) {
+            orgAlias = orgMap.keySet().stream().map(String::valueOf).collect(Collectors.toList());
+        }
+
+        if (orgAlias.size() == 1) {
+            OrganizationProvider provider = Organizations.getProvider(session);
+            OrganizationModel organization = provider.getByAlias(orgAlias.get(0));
+
+            if (organization == null || !organization.isEnabled() || !organization.isMember(user)) {
+                throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT, "Invalid organization", Status.BAD_REQUEST);
+            }
+
+            session.getContext().setOrganization(organization);
+        }
+    }
 }

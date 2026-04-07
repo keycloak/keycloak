@@ -86,6 +86,9 @@ public class OID4VCGeneratedIdMapper extends OID4VCMapper {
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         // Assign a generated ID
         List<String> attributePath = getMetadataAttributePath();
+        if (attributePath.isEmpty()) {
+            return;
+        }
         String propertyName = attributePath.get(attributePath.size() - 1);
         claims.put(propertyName, String.format("urn:uuid:%s", UUID.randomUUID()));
     }

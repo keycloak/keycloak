@@ -23,12 +23,12 @@ import java.util.function.Predicate;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
-import org.keycloak.operator.crds.v2alpha1.CRDUtils;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpManagementSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.NetworkPolicySpec;
+import org.keycloak.operator.crds.v2beta1.CRDUtils;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpManagementSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.NetworkPolicySpec;
 
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;

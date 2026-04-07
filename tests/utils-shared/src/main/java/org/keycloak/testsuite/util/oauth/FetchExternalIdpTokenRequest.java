@@ -17,14 +17,12 @@
 
 package org.keycloak.testsuite.util.oauth;
 
-import java.io.IOException;
 import java.util.Map;
 
 import jakarta.ws.rs.core.UriBuilder;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
 
-public class FetchExternalIdpTokenRequest extends AbstractHttpGetRequest<FetchExternalIdpTokenRequest, AccessTokenResponse> {
+public abstract class FetchExternalIdpTokenRequest<T extends AbstractHttpResponse> extends AbstractHttpGetRequest<FetchExternalIdpTokenRequest, T> {
 
     private final String providerAlias;
     private final String accessToken;
@@ -47,10 +45,5 @@ public class FetchExternalIdpTokenRequest extends AbstractHttpGetRequest<FetchEx
         if (client.config.getOrigin() != null) {
             header("Origin", client.config.getOrigin());
         }
-    }
-
-    @Override
-    protected AccessTokenResponse toResponse(CloseableHttpResponse response) throws IOException {
-        return new AccessTokenResponse(response);
     }
 }

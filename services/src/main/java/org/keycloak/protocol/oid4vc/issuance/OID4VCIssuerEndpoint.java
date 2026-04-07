@@ -136,6 +136,8 @@ import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerWellKnownProvider.getSupportedCredentials;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
+import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_NONCE;
+import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_PROOF;
 import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH_GRANT_TYPE;
 
 /**
@@ -349,10 +351,10 @@ public class OID4VCIssuerEndpoint {
     }
 
     /**
-     * Creates a Pre-Authorized offer that is bound to the calling user.
+     * Creates an authorization code grant offer that is bound to the calling user.
      */
     public Response createCredentialOffer(String credConfigId) {
-        return createCredentialOffer(credConfigId, true, null);
+        return createCredentialOffer(credConfigId, false, null);
     }
 
     /**
@@ -402,7 +404,7 @@ public class OID4VCIssuerEndpoint {
      * | Type    | Mime-Type        | Notes                                     |
      * +---------+------------------+-------------------------------------------+
      * | uri     | application/json | JSON document that contains the offer uri |
-     * | uri+qr  | application/json | Same as 'uri' plus url encoded qr-code    |
+     * | uri_qr  | application/json | Same as 'uri' plus url encoded qr-code    |
      * | qr      | image/png        | Credential offer encoded as qr-code image |
      * +---------+------------------+---------+---------------------------------+
      * </p>
@@ -416,7 +418,7 @@ public class OID4VCIssuerEndpoint {
      * @param credentialConfigurationId  A valid credential configuration id
      * @param preAuthorized A flag whether the offer should be pre-authorized
      * @param targetUser    The username that the offer is authorized for
-     * @param expiresAt      The date/time when the offer expires (in Unix timestamp seconds)
+     * @param expiresAt     The date/time when the offer expires (in Unix timestamp seconds)
      * @param responseType  The response type, which can be 'uri', 'qr' or 'uri+qr'
      * @param width         The width of the QR code image
      * @param height        The height of the QR code image
@@ -426,7 +428,7 @@ public class OID4VCIssuerEndpoint {
     @Path(CREATE_CREDENTIAL_OFFER_PATH)
     public Response createCredentialOffer(
             @QueryParam("credential_configuration_id") String credentialConfigurationId,
-            @QueryParam("pre_authorized") @DefaultValue("true") Boolean preAuthorized,
+            @QueryParam("pre_authorized") @DefaultValue("false") Boolean preAuthorized,
             @QueryParam("target_user") String targetUser,
             @QueryParam("expire") Integer expiresAt,
             @QueryParam("type") @DefaultValue("uri") OfferResponseType responseType,
@@ -609,7 +611,7 @@ public class OID4VCIssuerEndpoint {
 
         // Remove the nonce entry atomically for replay protection
         // This prevents the same offer URL from being accessed multiple times
-        // while keeping pre-authorized code and credential identifier entries available
+        // while keeping offerId entries available
         Map<String, String> removed = session.singleUseObjects().remove(nonce);
         if (removed == null) {
             var errorMessage = "Credential offer not found or already consumed";
@@ -939,6 +941,8 @@ public class OID4VCIssuerEndpoint {
         SupportedCredentialConfiguration supportedCredential =
                 OID4VCIssuerWellKnownProvider.toSupportedCredentialConfiguration(session, authorizedCredentialScope);
 
+        enforceProofContractForCredential(supportedCredential, credentialRequest.getProofs());
+
         // Get the list of all proofs (handles single proof, multiple proofs, or none)
         List<String> allProofs = getAllProofs(credentialRequest);
 
@@ -956,8 +960,7 @@ public class OID4VCIssuerEndpoint {
             String proofType = originalProofs != null ? originalProofs.getProofType() : null;
 
             for (String currentProof : allProofs) {
-                Proofs proofForIteration = new Proofs();
-                proofForIteration.setProofByType(proofType, currentProof);
+                Proofs proofForIteration = Proofs.create(proofType, currentProof);
                 // Creating credential with keybinding to the current proof
                 credentialRequest.setProofs(proofForIteration);
                 Object theCredential = getCredential(authResult, supportedCredential, tokenAuthDetail, credentialRequest, eventBuilder);
@@ -1250,6 +1253,26 @@ public class OID4VCIssuerEndpoint {
         return proofs.getAllProofs();
     }
 
+    private void enforceProofContractForCredential(SupportedCredentialConfiguration credentialConfiguration, Proofs proofs) {
+        boolean proofConfigured = credentialConfiguration != null
+                && credentialConfiguration.getProofTypesSupported() != null
+                && credentialConfiguration.getProofTypesSupported().getSupportedProofTypes() != null
+                && !credentialConfiguration.getProofTypesSupported().getSupportedProofTypes().isEmpty();
+        boolean proofProvided = proofs != null && !proofs.getPresentProofTypes().isEmpty();
+
+        if (proofConfigured && !proofProvided) {
+            String message = "The 'proofs' parameter is required for this credential configuration.";
+            LOGGER.debug(message);
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF, message));
+        }
+
+        if (!proofConfigured && proofProvided) {
+            String message = "The 'proofs' parameter is not supported for this credential configuration.";
+            LOGGER.debug(message);
+            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF, message));
+        }
+    }
+
     private void validateProofTypes(Proofs proofs) {
         if (proofs == null) {
             return;
@@ -1260,7 +1283,7 @@ public class OID4VCIssuerEndpoint {
 
         if (hasJwtProofs && hasAttestationProofs) {
             LOGGER.debug("The 'proofs' object must not contain multiple proof types.");
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_PROOF,
+            throw new BadRequestException(getErrorResponse(INVALID_PROOF,
                     "The 'proofs' object must not contain multiple proof types."));
         }
     }
@@ -1651,14 +1674,14 @@ public class OID4VCIssuerEndpoint {
                 vcIssuanceContext.getCredentialBody().addKeyBinding(jwks.get(0));
             }
         } catch (VCIssuerException e) {
-            if (e.getErrorType() == ErrorType.INVALID_NONCE) {
-                throw new ErrorResponseException(
-                        ErrorType.INVALID_NONCE.getValue(),
-                        "The proofs parameter in the Credential Request uses an invalid nonce",
-                        Response.Status.BAD_REQUEST
-                );
+            switch (e.getErrorType()) {
+                case INVALID_NONCE:
+                    throw new ErrorResponseException(INVALID_NONCE.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
+                case INVALID_PROOF:
+                    throw new ErrorResponseException(INVALID_PROOF.getValue(), e.getMessage(), Response.Status.BAD_REQUEST);
+                default:
+                    throw new BadRequestException("Could not validate provided proof", e);
             }
-            throw new BadRequestException("Could not validate provided proof", e);
         }
     }
 

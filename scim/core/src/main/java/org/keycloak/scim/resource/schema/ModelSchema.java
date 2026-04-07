@@ -1,5 +1,6 @@
 package org.keycloak.scim.resource.schema;
 
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.models.Model;
@@ -51,6 +52,19 @@ public interface ModelSchema<M extends Model, R extends ResourceTypeRepresentati
      * @param representation the representation to populate from
      */
     void populate(R representation, M model);
+
+    /**
+     * Populates the given {@code representation} with the attributes from the given {@code model},
+     * filtering based on the {@code attributes} and {@code excludedAttributes} parameters.
+     *
+     * @param representation the representation to populate
+     * @param model the model to populate from
+     * @param attributes the list of attributes to include (may be null for no inclusion filter)
+     * @param excludedAttributes the list of attributes to exclude (may be null for no exclusion filter)
+     */
+    default void populate(R representation, M model, List<String> attributes, List<String> excludedAttributes) {
+        populate(representation, model);
+    }
 
     /**
      * Validates the given {@code representation} against the schema. It should throw an exception if the representation is not valid.

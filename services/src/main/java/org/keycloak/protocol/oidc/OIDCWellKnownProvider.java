@@ -44,6 +44,7 @@ import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
@@ -282,13 +283,18 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
     }
 
     private List<String> getGrantTypesSupported() {
-        Stream<String> supportedGrantTypes = session.getKeycloakSessionFactory().getProviderFactoriesStream(OAuth2GrantType.class)
-                    .map(ProviderFactory::getId);
 
-        // Implicit not available as OAuth2GrantType implementation, but should be included. It is served from OIDC authentication endpoint directly
-        return Stream.concat(supportedGrantTypes, Stream.of(OAuth2Constants.IMPLICIT))
-                .sorted()
-                .collect(Collectors.toList());
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        Stream<String> providerFactoryStream = sessionFactory
+                .getProviderFactoriesStream(OAuth2GrantType.class)
+                .map(ProviderFactory::getId);
+
+        // Implicit not available as OAuth2GrantType implementation, but should be included.
+        // It is served from OIDC authentication endpoint directly
+        List<String> supportedGrantTypes = Stream.concat(providerFactoryStream, Stream.of(OAuth2Constants.IMPLICIT))
+                .sorted().toList();
+
+        return supportedGrantTypes;
     }
 
     private List<String> getAcrValuesSupported(RealmModel realm) {

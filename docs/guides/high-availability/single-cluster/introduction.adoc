@@ -141,7 +141,10 @@ Additional performance tuning and security hardening are still recommended when 
 == Blueprints for building blocks
 * <@links.ha id="single-cluster-deploy-aurora" />
 * <@links.ha id="single-cluster-deploy-cnpg" />
+* <@links.ha id="single-cluster-deploy-cnpg-with-backup" />
+* <@links.ha id="single-cluster-deploy-cnpg-recovery" />
 * <@links.ha id="single-cluster-deploy-keycloak" />
+* <@links.ha id="single-cluster-operate-cnpg-switchover" />
 </@profile.ifCommunity>
 
 </@tmpl.guide>

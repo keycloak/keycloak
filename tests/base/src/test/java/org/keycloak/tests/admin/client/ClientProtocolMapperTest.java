@@ -36,6 +36,7 @@ import org.keycloak.testframework.realm.ClientConfig;
 import org.keycloak.testframework.realm.ClientConfigBuilder;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
 import org.junit.jupiter.api.Assertions;
@@ -75,6 +76,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
+    @DatabaseTest
     public void test02CreateOidcMappersFromList() {
         testAddAllBuiltinMappers(oidcMappersRsc, "openid-connect", AdminEventPaths.clientProtocolMappersPath(oidcClient.getId()));
     }
@@ -110,6 +112,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
+    @DatabaseTest
     public void test05CreateOidcProtocolMapper() {
         //{"protocol":"openid-connect",
         // "config":{"role":"myrole"},
@@ -153,6 +156,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
+    @DatabaseTest
     public void test07UpdateOidcMapper() {
         ProtocolMapperRepresentation rep = makeOidcMapper("oidc-hardcoded-role-mapper2");
 
@@ -191,6 +195,7 @@ public class ClientProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
+    @DatabaseTest
     public void test09DeleteOidcMapper() {
         ProtocolMapperRepresentation rep = makeOidcMapper("oidc-hardcoded-role-mapper3");
 

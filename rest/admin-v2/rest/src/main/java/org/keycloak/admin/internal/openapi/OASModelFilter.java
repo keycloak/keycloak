@@ -11,6 +11,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.keycloak.OAuth2Constants;
+
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,16 +23,20 @@ import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.PathItem;
 import org.eclipse.microprofile.openapi.models.media.Discriminator;
 import org.eclipse.microprofile.openapi.models.media.Schema;
+import org.eclipse.microprofile.openapi.models.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.models.security.SecurityScheme;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationValue;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
+import org.jboss.jandex.FieldInfo;
 import org.jboss.jandex.IndexView;
 import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.services.PatchTypeNames.JSON_MERGE;
+import static org.keycloak.utils.StringUtil.isNullOrEmpty;
 
 public class OASModelFilter implements OASFilter {
 
@@ -80,6 +87,9 @@ public class OASModelFilter implements OASFilter {
                 }
             });
         });
+
+        addDescriptionsToSchemasProperties(openAPI);
+        addSecurityScheme(openAPI);
     }
 
     /**
@@ -87,7 +97,7 @@ public class OASModelFilter implements OASFilter {
      * from all remaining schemas.
      */
     private void removeSchemaAndRefs(OpenAPI openAPI, String schemaName) {
-        if (openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null) {
+        if (hasNoSchemas(openAPI)) {
             return;
         }
 
@@ -176,7 +186,7 @@ public class OASModelFilter implements OASFilter {
      * hierarchies with inheritance.
      */
     private void addDiscriminatorsToParentSchemas(OpenAPI openAPI, Map<String, Set<Schema>> discriminatorPropertiesToBeAdded) {
-        if (openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null) {
+        if (hasNoSchemas(openAPI)) {
             return;
         }
 
@@ -264,6 +274,30 @@ public class OASModelFilter implements OASFilter {
         }
     }
 
+    /**
+     * Adds a Bearer token security scheme and applies it globally to all operations.
+     * This documents the 401 (Unauthorized) and 403 (Forbidden) responses at the API level
+     * rather than repeating them on every endpoint.
+     */
+    private void addSecurityScheme(OpenAPI openAPI) {
+        String schemeName = "bearer-auth";
+
+        SecurityScheme bearerScheme = OASFactory.createSecurityScheme()
+                .type(SecurityScheme.Type.HTTP)
+                .scheme("bearer")
+                .bearerFormat(OAuth2Constants.JWT)
+                .description("Bearer token authentication using a Keycloak access token");
+
+        if (openAPI.getComponents() == null) {
+            openAPI.setComponents(OASFactory.createComponents());
+        }
+        openAPI.getComponents().addSecurityScheme(schemeName, bearerScheme);
+
+        SecurityRequirement securityRequirement = OASFactory.createSecurityRequirement()
+                .addScheme(schemeName);
+        openAPI.addSecurityRequirement(securityRequirement);
+    }
+
     private PathItem sortOperationsByMethod(PathItem pathItem) {
         PathItem sortedPathItem = OASFactory.createPathItem();
 
@@ -299,5 +333,41 @@ public class OASModelFilter implements OASFilter {
         sortedPathItem.setParameters(pathItem.getParameters());
 
         return sortedPathItem;
+    }
+
+    private void addDescriptionsToSchemasProperties(OpenAPI openAPI) {
+        if (hasNoSchemas(openAPI)) {
+            return;
+        }
+
+        openAPI.getComponents().getSchemas().forEach((schemaName, schema) -> {
+            if (schema.getProperties() != null) {
+                ClassInfo classInfo = simpleNameToClassInfoMap.get(schemaName);
+                if (classInfo == null) {
+                    log.debugf("No Java class found for schema '%s' — property descriptions from  the '%s' annotation will not be added", schemaName, JsonPropertyDescription.class.getName());
+                } else {
+                    schema.getProperties().forEach((propertyName, propertySchema) -> {
+                        if (isNullOrEmpty(propertySchema.getDescription())) {
+                            propertySchema.setDescription(findJsonPropertyDescription(classInfo, propertyName));
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    private String findJsonPropertyDescription(ClassInfo classInfo, String fieldName) {
+        FieldInfo field = classInfo.field(fieldName);
+        if (field != null) {
+            AnnotationInstance annotation = field.annotation(JsonPropertyDescription.class);
+            if (annotation != null && annotation.value() != null && !annotation.value().asString().isBlank()) {
+                return annotation.value().asString();
+            }
+        }
+        return null;
+    }
+
+    private static boolean hasNoSchemas(OpenAPI openAPI) {
+        return openAPI.getComponents() == null || openAPI.getComponents().getSchemas() == null;
     }
 }

@@ -209,6 +209,31 @@ public class PermissionRESTTest extends AbstractPermissionTest {
                 .resourceType(AdminPermissionsSchema.USERS.getType())
                 .scopes(Set.of("edit", "write", "token-exchange"))
                 .build(), Response.Status.BAD_REQUEST);
+
+        // valid resourceType, valid scopes, non-existent resource ID
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .resources(Set.of("non-existent-id"))
+                .scopes(AdminPermissionsSchema.USERS.getScopes())
+                .build(), Response.Status.BAD_REQUEST);
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.GROUPS.getType())
+                .resources(Set.of("non-existent-id"))
+                .scopes(AdminPermissionsSchema.GROUPS.getScopes())
+                .build(), Response.Status.BAD_REQUEST);
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.CLIENTS.getType())
+                .resources(Set.of("non-existent-id"))
+                .scopes(AdminPermissionsSchema.CLIENTS.getScopes())
+                .build(), Response.Status.BAD_REQUEST);
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.ROLES.getType())
+                .resources(Set.of("non-existent-id"))
+                .scopes(AdminPermissionsSchema.ROLES.getScopes())
+                .build(), Response.Status.BAD_REQUEST);
     }
 
     @Test

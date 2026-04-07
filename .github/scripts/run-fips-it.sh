@@ -2,9 +2,9 @@
 set -x
 
 rm -f /etc/system-fips
-dnf install -y java-21-openjdk-devel
+dnf install -y java-25-openjdk-devel
 fips-mode-setup --enable --no-bootcfg
-fips-mode-setup --is-enabled
+fips-mode-setup --check | grep "FIPS mode is enabled."
 if [ $? -ne 0 ]; then
   exit 1
 fi
@@ -16,8 +16,12 @@ if [ "$1" = "strict" ]; then
 fi
 echo "STRICT_OPTIONS: $STRICT_OPTIONS"
 TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
+if [ $? -ne 0 ]; then
+  echo "Invalid tests to execute: $TESTS"
+  exit 1
+fi
 echo "Tests: $TESTS"
-export JAVA_HOME=/etc/alternatives/java_sdk_21
+export JAVA_HOME=/etc/alternatives/java_sdk_25
 set -o pipefail
 
 # Build adapter distributions
@@ -39,7 +43,10 @@ if [ $? -ne 0 ]; then
 fi
 
 # Profile app-server-wildfly needs to be explicitly set for FIPS tests
-./mvnw test -Dsurefire.rerunFailingTestsCount=$SUREFIRE_RERUN_FAILING_COUNT -nsu -B -Pauth-server-quarkus,auth-server-fips140-2,app-server-wildfly -Dcom.redhat.fips=false $STRICT_OPTIONS -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+./mvnw test -Dsurefire.rerunFailingTestsCount=$SUREFIRE_RERUN_FAILING_COUNT -nsu -B -Pauth-server-quarkus,auth-server-fips140-2,app-server-wildfly -Dredhat.crypto-policies=false $STRICT_OPTIONS -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base 2>&1 | misc/log/trimmer.sh
+if [ $? -ne 0 ]; then
+  exit 1
+fi
 
 # New Base Tests
-./mvnw package -nsu -B -Dcom.redhat.fips=false -Dtest=$TESTSUITE_NAME -pl tests/base
+./mvnw package -nsu -B -Dredhat.crypto-policies=false -Dtest=$TESTSUITE_NAME -pl tests/base

@@ -40,6 +40,22 @@ public interface OrganizationIdentityProviderResource {
     @DELETE
     Response delete();
 
+    /**
+     * Returns organization groups for the identity provider with the specified alias.
+     * It allows filtering and displaying only the organization groups that are valid for the given identity provider.
+     *
+     * Only returns groups if the identity provider is associated with the organization and the organization
+     * is enabled. Otherwise, returns an error or empty stream.
+     *
+     * @param search a string to search for in group names
+     * @param searchQuery a query to search for group attributes, in the format 'key1:value1 key2:value2'
+     * @param exact if true, perform exact match on the search parameter
+     * @param first the position of the first result (pagination offset)
+     * @param max the maximum number of results to return
+     * @param briefRepresentation if true, return brief group representation; otherwise return full representation
+     * @return a stream of organization groups associated with the organization
+     * @since Keycloak server 26.6.0
+     */
     @Path("groups")
     @GET
     @Produces(MediaType.APPLICATION_JSON)

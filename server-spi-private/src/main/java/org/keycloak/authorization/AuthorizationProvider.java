@@ -300,7 +300,7 @@ public final class AuthorizationProvider implements Provider {
 
                 if (resources != null && !resources.isEmpty()) {
                     representation.setResources(resources.stream().map(id -> {
-                        Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(keycloakSession, resourceServer, representation.getType(), representation.getResourceType(), id);
+                        Resource resource = AdminPermissionsSchema.SCHEMA.getOrCreateResource(keycloakSession, resourceServer, representation.getResourceType(), id);
 
                         if (resource == null) {
                             resource = storeFactory.getResourceStore().findById(resourceServer, id);

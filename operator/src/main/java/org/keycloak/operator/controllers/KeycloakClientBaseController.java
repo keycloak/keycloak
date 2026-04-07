@@ -64,11 +64,11 @@ import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientSpec;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatus;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.client.KeycloakClientStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2beta1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.FeatureSpec;
+import org.keycloak.operator.crds.v2beta1.deployment.spec.HttpSpec;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 
 import io.fabric8.kubernetes.api.model.Secret;
@@ -85,7 +85,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.logging.Log;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
+import static org.keycloak.operator.crds.v2beta1.CRDUtils.isTlsConfigured;
 
 /**
  * Base class for Client controllers.
@@ -106,6 +106,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
         KeycloakClientStatus existingStatus;
         Map<String, KeycloakClientStatusCondition> existingConditions;
         Map<String, KeycloakClientStatusCondition> newConditions = new LinkedHashMap<String, KeycloakClientStatusCondition>();
+        String uuid;
 
         KeycloakClientStatusAggregator(CustomResource<?, KeycloakClientStatus> resource) {
             this.generation = resource.getMetadata().getGeneration();
@@ -122,6 +123,10 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
             newConditions.put(type, condition); // No aggregation yet
         }
 
+        void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
         KeycloakClientStatus build() {
             KeycloakClientStatusBuilder statusBuilder = new KeycloakClientStatusBuilder();
             String now = Utils.iso8601Now();
@@ -132,6 +137,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
                     k -> new KeycloakClientStatusCondition(KeycloakStatusCondition.HAS_ERRORS, false, null, now,
                             generation));
             statusBuilder.withConditions(new ArrayList<>(existingConditions.values().stream().sorted(Comparator.comparing(KeycloakClientStatusCondition::getType)).toList()));
+            statusBuilder.withUuid(uuid);
             return statusBuilder.build();
         }
 
@@ -178,10 +184,13 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
                 return clientApi.createOrUpdateClient(rep);
             });
 
-            // if not ok response, throw exception to allow the retry loop
-            // TODO however not all errors (something not validating) should get retried every 10 seconds
-            // that should instead get captured in the status
-            if (response.getStatus() != HttpURLConnection.HTTP_OK && response.getStatus() != HttpURLConnection.HTTP_CREATED) {
+            if (response.getStatus() == HttpURLConnection.HTTP_OK || response.getStatus() == HttpURLConnection.HTTP_CREATED) {
+                BaseClientRepresentation resultingRep = response.readEntity(BaseClientRepresentation.class);
+                statusAggregator.setUuid(resultingRep.getUuid());
+            } else {
+                // if not ok response, throw exception to allow the retry loop
+                // TODO however not all errors (something not validating) should get retried every 10 seconds
+                // that should instead get captured in the status
                 String message = response.hasEntity() ? response.readEntity(String.class) : "";
                 throw new RuntimeException("Client update operation not sucessful with status code " + response.getStatus() + " : " + message);
             }
@@ -205,7 +214,7 @@ public abstract class KeycloakClientBaseController<R extends CustomResource<? ex
 
         return updateControl;
     }
-    
+
     private boolean isServerReady(Context<R> context, R resource) {
         StatefulSet existingDeployment = context.getClient().resources(StatefulSet.class)
                 .inNamespace(resource.getMetadata().getNamespace()).withName(resource.getSpec().getKeycloakCRName())

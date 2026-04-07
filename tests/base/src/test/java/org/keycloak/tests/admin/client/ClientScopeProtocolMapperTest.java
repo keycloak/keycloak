@@ -39,6 +39,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
 import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.suites.DatabaseTest;
 import org.keycloak.tests.utils.admin.AdminApiUtil;
 import org.keycloak.tests.utils.admin.AdminEventPaths;
 
@@ -77,12 +78,14 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
+    @DatabaseTest
     public void test01GetMappersList() {
         Assertions.assertTrue(oidcMappersRsc.getMappers().isEmpty());
         Assertions.assertTrue(samlMappersRsc.getMappers().isEmpty());
     }
 
     @Test
+    @DatabaseTest
     public void test02CreateOidcMappersFromList() {
         testAddAllBuiltinMappers(oidcMappersRsc, "openid-connect", AdminEventPaths.clientScopeProtocolMappersPath(oidcClientScopeId));
     }
@@ -119,6 +122,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
+    @DatabaseTest
     public void test05CreateOidcProtocolMapper() {
         //{"protocol":"openid-connect",
         // "config":{"role":"myrole"},
@@ -162,6 +166,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
+    @DatabaseTest
     public void test07UpdateOidcMapper() {
         ProtocolMapperRepresentation rep = makeOidcMapper("oidc-hardcoded-role-mapper2");
 
@@ -180,6 +185,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
+    @DatabaseTest
     public void test08EffectiveMappers() {
         ClientScopeResource rolesScope = AdminApiUtil.findClientScopeByName(managedRealm.admin(), "roles");
         Assertions.assertNotNull(rolesScope);
@@ -248,6 +254,7 @@ public class ClientScopeProtocolMapperTest extends AbstractProtocolMapperTest {
     }
 
     @Test
+    @DatabaseTest
     public void testDeleteOidcMapper() {
         ProtocolMapperRepresentation rep = makeOidcMapper("oidc-hardcoded-role-mapper3");
 

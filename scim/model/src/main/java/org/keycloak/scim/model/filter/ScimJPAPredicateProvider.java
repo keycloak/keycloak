@@ -133,6 +133,11 @@ public class ScimJPAPredicateProvider {
             basePredicate = cb.equal(join.get("name"), modelAttributeName);
         }
 
+        if (value != null && !attrInfo.isCaseExact() && "string".equals(attrInfo.getType())) {
+            value = value.toString().toLowerCase();
+            expression = cb.lower((Expression<String>) expression);
+        }
+
         Predicate predicate = operatorMap.get(operation).apply(cb, expression, value);
         return (basePredicate != null) ? cb.and(basePredicate, predicate) : predicate;
     }

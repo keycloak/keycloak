@@ -44,9 +44,11 @@ import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.JavaKeystoreKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
+import org.keycloak.representations.idm.KeysMetadataRepresentation.KeyMetadataRepresentation;
 import org.keycloak.testframework.annotations.InjectCryptoHelper;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -69,6 +71,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -152,6 +155,29 @@ public class JavaKeystoreKeyProviderTest {
     }
 
     @Test
+    public void testKidDoesNotChangeOnComponentUpdate() throws Exception {
+        KeystoreUtil.KeystoreFormat keystoreType = cryptoHelper.isFips() ? KeystoreUtil.KeystoreFormat.BCFKS : KeystoreUtil.KeystoreFormat.PKCS12;
+        cryptoHelper.keystore().assumeKeystoreTypeSupported(keystoreType);
+        generateKeystore(keystoreType, AlgorithmType.HMAC, Algorithm.HS256);
+
+        // Record the KID assigned at creation time
+        ComponentRepresentation rep = createRep(KeycloakModelUtils.generateId(), 100, Algorithm.HS256);
+        Response response = realm.admin().components().add(rep);
+        rep.setId(ApiUtil.getCreatedId(response));
+        String providerId = rep.getId();
+        realm.cleanup().add(r -> r.components().component(providerId).remove());
+        String expectedKid = getKeyKID(providerId);
+
+        // Update the component (change priority), re-triggers validateConfiguration
+        rep = realm.admin().components().component(providerId).toRepresentation();
+        rep.getConfig().putSingle("priority", "200");
+        realm.admin().components().component(providerId).update(rep);
+
+        // Verify the KID did not change after the update
+        assertEquals(expectedKid, getKeyKID(providerId));
+    }
+
+    @Test
     public void createJksEdDSA() throws Exception {
         createSuccess(KeystoreUtil.KeystoreFormat.JKS, AlgorithmType.EDDSA, Algorithm.EdDSA, true);
     }
@@ -215,6 +241,7 @@ public class JavaKeystoreKeyProviderTest {
         }
 
         assertEquals(priority, key.getProviderPriority());
+        assertNotNull(key.getKid());
     }
 
     @Test
@@ -389,6 +416,13 @@ public class JavaKeystoreKeyProviderTest {
         Certificate cert = CertificateUtils.generateV1SelfSignedCertificate(
                 keyPair, "test", new BigInteger("1"), Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
         this.generatedKeystore = cryptoHelper.keystore().generateKeystore(folder, keystoreType, "keyalias", "password", "password", keyPair.getPrivate(), cert);
+    }
+
+    private String getKeyKID(String providerId) {
+        KeysMetadataRepresentation metadata = realm.admin().keys().getKeyMetadata();
+        KeyMetadataRepresentation key = metadata.getKeys().stream().filter(k -> k.getProviderId().equals(providerId)).findFirst().orElse(null);
+        assertNotNull(key);
+        return key.getKid();
     }
 
     public static class JavaKeystoreVaultConfig implements KeycloakServerConfig {

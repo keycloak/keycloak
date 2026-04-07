@@ -76,10 +76,10 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      * and should persist the updated resource and return the persisted instance.
      * The returned resource will be used in the response to the client.
      *
-     * @param user the resource to update
+     * @param resource the resource to update
      * @return the updated resource
      */
-    R update(R user);
+    R update(R resource);
 
     /**
      * Retrieves a resource of this type by its identifier. This method is invoked when a client requests a specific resource,
@@ -90,6 +90,19 @@ public interface ScimResourceTypeProvider<R extends ResourceTypeRepresentation> 
      * @return the resource with the given identifier, or null if it does not exist
      */
     R get(String id);
+
+    /**
+     * Retrieves a resource of this type by its identifier, filtering the returned attributes
+     * based on the {@code attributes} and {@code excludedAttributes} parameters.
+     *
+     * @param id the identifier of the resource to retrieve
+     * @param attributes the list of attributes to include (may be null for no inclusion filter)
+     * @param excludedAttributes the list of attributes to exclude (may be null for no exclusion filter)
+     * @return the resource with the given identifier, or null if it does not exist
+     */
+    default R get(String id, List<String> attributes, List<String> excludedAttributes) {
+        return get(id);
+    }
 
     /**
      * Retrieves all resources of this type. This method is invoked when a client requests a list of resources,

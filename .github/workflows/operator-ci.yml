@@ -5,6 +5,7 @@ on:
     branches-ignore:
       - main
       - dependabot/**
+      - copilot/**
   pull_request:
   workflow_dispatch:
 
@@ -90,7 +91,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@8234275e0386fe1cdaf519d28c90f4f03fad89e4 # v2.15.0
+        uses: manusa/actions-setup-minikube@96202dee4ae1c2f46a62fe197273aaf22b83f42d # v2.16.1
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -138,7 +139,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@8234275e0386fe1cdaf519d28c90f4f03fad89e4 # v2.15.0
+        uses: manusa/actions-setup-minikube@96202dee4ae1c2f46a62fe197273aaf22b83f42d # v2.16.1
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -178,8 +179,10 @@ jobs:
       - name: Deploy an example Keycloak and wait for it to be ready
         working-directory: operator/scripts
         run: |
-          ./check-crd-installed.sh keycloaks
-          ./check-crd-installed.sh keycloakrealmimports
+          ./check-crd-installed.sh keycloaks.v2alpha1.k8s.keycloak.org
+          ./check-crd-installed.sh keycloakrealmimports.v2alpha1.k8s.keycloak.org
+          ./check-crd-installed.sh keycloaks.v2beta1.k8s.keycloak.org
+          ./check-crd-installed.sh keycloakrealmimports.v2beta1.k8s.keycloak.org
           ./deploy-examples.sh
           
       - name: Single namespace cleanup

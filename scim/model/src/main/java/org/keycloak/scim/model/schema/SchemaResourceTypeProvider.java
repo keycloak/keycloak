@@ -7,12 +7,14 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.keycloak.authorization.fgap.AdminPermissionsSchema;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.Model;
 import org.keycloak.models.ModelException;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.scim.model.config.ServiceProviderConfigResourceTypeProvider;
 import org.keycloak.scim.model.resourcetype.ResourceTypeProviderFactory;
+import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.SearchRequest;
 import org.keycloak.scim.resource.Scim;
 import org.keycloak.scim.resource.schema.ModelSchema;
@@ -85,6 +87,10 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                         p.setName(k);
                         p.setType("complex");
                         p.setMultiValued(false);
+                        p.setMutability("readWrite");
+                        p.setCaseExact(false);
+                        p.setRequired(false);
+                        p.setUniqueness("none");
                         return p;
                     });
 
@@ -92,6 +98,9 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttr.setName(subName);
                     subAttr.setType(attribute.getType());
                     subAttr.setMultiValued(false);
+                    subAttr.setReturned(attribute.getReturned());
+                    subAttr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                    subAttr.setUniqueness(attribute.getUniqueness());
 
                     List<Attribute> subAttributes = parent.getSubAttributes();
                     if (subAttributes == null) {
@@ -106,6 +115,10 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                         p.setName(k);
                         p.setType("complex");
                         p.setMultiValued(attribute.isMultivalued());
+                        p.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                        p.setRequired(attribute.isRequired());
+                        p.setCaseExact(attribute.isCaseExact());
+                        p.setUniqueness(attribute.getUniqueness());
                         return p;
                     });
 
@@ -113,6 +126,11 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     subAttr.setName(relativeName);
                     subAttr.setType(attribute.getType());
                     subAttr.setMultiValued(false);
+                    subAttr.setReturned(attribute.getReturned());
+                    subAttr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                    subAttr.setRequired(attribute.isRequired());
+                    subAttr.setCaseExact(attribute.isCaseExact());
+                    subAttr.setUniqueness(attribute.getUniqueness());
 
                     List<Attribute> subAttributes = parent.getSubAttributes();
                     if (subAttributes == null) {
@@ -127,6 +145,11 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                         attr.setName(k);
                         attr.setType(attribute.getType());
                         attr.setMultiValued(attribute.isMultivalued());
+                        attr.setReturned(attribute.getReturned());
+                        attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                        attr.setRequired(attribute.isRequired());
+                        attr.setCaseExact(attribute.isCaseExact());
+                        attr.setUniqueness(attribute.getUniqueness());
                         return attr;
                     });
                 }
@@ -137,6 +160,11 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
                     attr.setName(k);
                     attr.setType(attribute.getType());
                     attr.setMultiValued(attribute.isMultivalued());
+                    attr.setReturned(attribute.getReturned());
+                    attr.setMutability(attribute.isImmutable() ? "immutable" : "readWrite");
+                    attr.setRequired(attribute.isRequired());
+                    attr.setCaseExact(attribute.isCaseExact());
+                    attr.setUniqueness(attribute.getUniqueness());
                     return attr;
                 });
             }
@@ -149,14 +177,17 @@ public class SchemaResourceTypeProvider implements ScimResourceTypeProvider<Sche
 
     @Override
     public Schema get(String id) {
-        // TODO: Add `view-realm` role check for schema discovery ??
-        // Currently accessible to any authenticated user with valid bearer token
-        // Should be aligned with other discovery endpoints (ResourceTypes, ServiceProviderConfig)
+        if (!session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
+            throw new ForbiddenException();
+        }
         return schemas.get(id);
     }
 
     @Override
     public Stream<Schema> getAll(SearchRequest searchRequest) {
+        if (!session.getContext().getPermissions().hasPermission(AdminPermissionsSchema.REALMS_RESOURCE_TYPE, AdminPermissionsSchema.VIEW)) {
+            throw new ForbiddenException();
+        }
         // Per RFC 7644 Section 4, /Schemas is a discovery endpoint that SHALL return all schemas.
         // Filtering, sorting, and pagination are not supported for discovery endpoints.
         // The searchRequest parameter is ignored.

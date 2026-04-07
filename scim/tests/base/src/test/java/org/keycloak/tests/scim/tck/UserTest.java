@@ -25,11 +25,12 @@ import org.keycloak.scim.client.ScimClientException;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
-import org.keycloak.scim.resource.common.Email;
-import org.keycloak.scim.resource.common.Name;
+import org.keycloak.scim.resource.Scim;
+import org.keycloak.scim.resource.user.Email;
 import org.keycloak.scim.resource.user.EnterpriseUser;
 import org.keycloak.scim.resource.user.EnterpriseUser.Manager;
 import org.keycloak.scim.resource.user.GroupMembership;
+import org.keycloak.scim.resource.user.Name;
 import org.keycloak.scim.resource.user.User;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.events.AdminEventAssertion;
@@ -39,6 +40,7 @@ import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.testframework.scim.client.annotations.InjectScimClient;
 import org.keycloak.testframework.util.ApiUtil;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -198,23 +200,7 @@ public class UserTest extends AbstractScimTest {
 
     @Test
     public void testCreateEnterpriseUser() {
-        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
-
-        configuration.addOrReplaceAttribute(new UPAttribute("department", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".department")));
-        configuration.addOrReplaceAttribute(new UPAttribute("division", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".division")));
-        configuration.addOrReplaceAttribute(new UPAttribute("costCenter", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".costCenter")));
-        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
-        configuration.addOrReplaceAttribute(new UPAttribute("organization", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".organization")));
-        configuration.addOrReplaceAttribute(new UPAttribute("manager", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.value")));
-        configuration.addOrReplaceAttribute(new UPAttribute("managerName", Map.of(
-                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.displayName")));
-        realm.admin().users().userProfile().update(configuration);
+        addEnterpriseUserUserProfileAttributes();
 
         User expected = createUser();
         EnterpriseUser enterpriseUser = new EnterpriseUser();
@@ -641,6 +627,14 @@ public class UserTest extends AbstractScimTest {
         expected.setActive(false);
         assertRootAttributes(actual, expected);
 
+        // patch a multivalued attribute using a filter in the path that matches an existing value
+        client.users().patch(expected.getId(), PatchRequest.create()
+                .replace("emails[value eq \"patched4.org\"].value", expected.getEmail().replace("patched4.org", "filtered.org"))
+                .build());
+        actual = client.users().get(expected.getId());
+        expected.setEmail(expected.getEmail().replace("patched4.org", "filtered.org"));
+        assertRootAttributes(actual, expected);
+
         // patch a multivalued attribute using a filter in the path that does not resolve to any value, no update should be performed
         String expectedEmail = expected.getEmail();
         expected.setEmail(expected.getEmail().replace("patched4.org", "patched5.org"));
@@ -763,7 +757,7 @@ public class UserTest extends AbstractScimTest {
         user.addGroup(groupC1.getId());
 
         User expected = client.users().create(user);
-        User actual = client.users().get(expected.getId());
+        User actual = client.users().get(expected.getId(), List.of("groups"));
 
         List<GroupMembership> groups = actual.getGroups();
 
@@ -775,16 +769,15 @@ public class UserTest extends AbstractScimTest {
         client.users().patch(expected.getId(), PatchRequest.create()
                 .remove("groups[value eq \"" + groupC1.getId() + "\"]")
                 .build());
-        actual = client.users().get(expected.getId());
+        actual = client.users().get(expected.getId(), List.of("groups"));
         groups = actual.getGroups();
         assertNotNull(groups);
         assertEquals(5, groups.size());
 
         client.users().patch(expected.getId(), PatchRequest.create()
-                .remove("groups[value eq \"" + groupA1.getId() + "\"]")
-                .remove("groups[value eq \"" + groupB.getId() + "\"]")
+                .remove("groups[value eq \"" + groupA1.getId() + "\" or value eq \"" + groupB.getId() + "\"]")
                 .build());
-        actual = client.users().get(expected.getId());
+        actual = client.users().get(expected.getId(), List.of("groups"));
         groups = actual.getGroups();
         assertNotNull(groups);
         assertEquals(3, groups.size());
@@ -792,7 +785,7 @@ public class UserTest extends AbstractScimTest {
         client.users().patch(expected.getId(), PatchRequest.create()
                 .add("groups", groupC1.getId())
                 .build());
-        actual = client.users().get(expected.getId());
+        actual = client.users().get(expected.getId(), List.of("groups"));
         groups = actual.getGroups();
         assertNotNull(groups);
         assertEquals(5, groups.size());
@@ -801,7 +794,7 @@ public class UserTest extends AbstractScimTest {
                 .add("groups", groupA1.getId())
                 .add("groups", groupB.getId())
                 .build());
-        actual = client.users().get(expected.getId());
+        actual = client.users().get(expected.getId(), List.of("groups"));
         groups = actual.getGroups();
         assertNotNull(groups);
         assertEquals(7, groups.size());
@@ -810,7 +803,7 @@ public class UserTest extends AbstractScimTest {
         expected.getGroups().clear();
         expected.addGroup(groupA.getId());
         client.users().update(expected);
-        actual = client.users().get(expected.getId());
+        actual = client.users().get(expected.getId(), List.of("groups"));
         groups = actual.getGroups();
         assertNotNull(groups);
         assertEquals(1, groups.size());
@@ -862,6 +855,228 @@ public class UserTest extends AbstractScimTest {
         assertNotNull(resources.getResources().stream()
                 .filter(u -> u.getId().equals(expected1.getId()))
                 .findFirst().orElse(null));
+    }
+
+    @Test
+    public void testGetWithAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Request only userName
+        User actual = client.users().get(expected.getId(), List.of("userName"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNotNull(actual.getSchemas());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getName());
+        assertNull(actual.getEmails());
+        assertNull(actual.getActive());
+        assertNull(actual.getDisplayName());
+    }
+
+    @Test
+    public void testGetWithParentAttribute() {
+        User expected = client.users().create(createUser());
+
+        // Requesting "name" should return all its sub-attributes (givenName, familyName, etc.)
+        User actual = client.users().get(expected.getId(), List.of("name"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNotNull(actual.getName());
+        assertEquals(expected.getName().getGivenName(), actual.getName().getGivenName());
+        assertEquals(expected.getName().getFamilyName(), actual.getName().getFamilyName());
+        assertNull(actual.getUserName());
+        assertNull(actual.getEmails());
+    }
+
+    @Test
+    public void testGetWithSubAttribute() {
+        User expected = client.users().create(createUser());
+
+        // Request only name.familyName
+        User actual = client.users().get(expected.getId(), List.of("name.familyName"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNotNull(actual.getName());
+        assertEquals(expected.getName().getFamilyName(), actual.getName().getFamilyName());
+        assertNull(actual.getName().getGivenName());
+        assertNull(actual.getUserName());
+    }
+
+    @Test
+    public void testGetWithExcludedAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Exclude emails
+        User actual = client.users().get(expected.getId(), null, List.of("emails"));
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getEmails());
+        assertNotNull(actual.getName());
+    }
+
+    @Test
+    public void testGetWithExcludedAttributesCannotExcludeId() {
+        User expected = client.users().create(createUser());
+
+        // Attempting to exclude id should have no effect (returned: always)
+        User actual = client.users().get(expected.getId(), null, List.of("id"));
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getId(), actual.getId());
+    }
+
+    @Test
+    public void testGetAllWithAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Request only userName for list
+        ListResponse<User> response = client.users().getAll(List.of("userName"), null);
+        assertNotNull(response);
+        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
+
+        User actual = response.getResources().stream()
+                .filter(u -> u.getId().equals(expected.getId()))
+                .findFirst().orElse(null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getName());
+        assertNull(actual.getEmails());
+    }
+
+    @Test
+    public void testGetAllWithExcludedAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Exclude emails from list
+        ListResponse<User> response = client.users().getAll(null, List.of("emails"));
+        assertNotNull(response);
+        assertThat(response.getTotalResults(), greaterThanOrEqualTo(1));
+
+        User actual = response.getResources().stream()
+                .filter(u -> u.getId().equals(expected.getId()))
+                .findFirst().orElse(null);
+        assertNotNull(actual);
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getEmails());
+    }
+
+    @Test
+    public void testGetWithMultipleAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Request userName and emails
+        User actual = client.users().get(expected.getId(), List.of("userName", "emails"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNotNull(actual.getEmails());
+        assertNull(actual.getName());
+        assertNull(actual.getActive());
+    }
+
+    @Test
+    public void testGetWithBothAttributesAndExcludedAttributes() {
+        User expected = client.users().create(createUser());
+
+        // Include userName and emails, then exclude emails
+        // Per issue spec: apply inclusion first, then exclusion
+        User actual = client.users().get(expected.getId(), List.of("userName", "emails"), List.of("emails"));
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getEmails());
+        assertNull(actual.getName());
+    }
+
+    @Test
+    public void testGetWithAttributeInBothIncludeAndExclude() {
+        User expected = client.users().create(createUser());
+
+        // Same attribute in both lists — inclusion first, then exclusion removes it
+        User actual = client.users().get(expected.getId(), List.of("userName"), List.of("userName"));
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNull(actual.getUserName());
+    }
+
+    @Test
+    public void testGetWithNonExistingAttribute() {
+        User expected = client.users().create(createUser());
+
+        // Non-existing attribute should be silently ignored (best-effort)
+        User actual = client.users().get(expected.getId(), List.of("userName", "nonExistingAttr"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getName());
+    }
+
+    @Test
+    public void testGetWithAttributesCaseInsensitive() {
+        User expected = client.users().create(createUser());
+
+        // Attribute names are case insensitive per RFC 7644, Section 3.10
+        User actual = client.users().get(expected.getId(), List.of("USERNAME"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertEquals(expected.getUserName(), actual.getUserName());
+        assertNull(actual.getName());
+        assertNull(actual.getEmails());
+    }
+
+    @Test
+    public void testGetWithExcludedSubAttribute() {
+        User expected = client.users().create(createUser());
+
+        // Exclude a sub-attribute: name.givenName should be excluded but name.familyName kept
+        User actual = client.users().get(expected.getId(), null, List.of("name.givenName"));
+        assertNotNull(actual);
+        assertNotNull(actual.getName());
+        assertNull(actual.getName().getGivenName());
+        assertEquals(expected.getName().getFamilyName(), actual.getName().getFamilyName());
+        assertEquals(expected.getUserName(), actual.getUserName());
+    }
+
+    @Test
+    public void testGetWithExtensionUrnAttribute() {
+        addEnterpriseUserUserProfileAttributes();
+        User expected = createUser();
+        EnterpriseUser enterpriseUser = new EnterpriseUser();
+        enterpriseUser.setEmployeeNumber("12345");
+        enterpriseUser.setDepartment("Engineering");
+        expected.setEnterpriseUser(enterpriseUser);
+        expected = client.users().create(expected);
+
+        // Requesting the extension URN should return all extension attributes
+        User actual = client.users().get(expected.getId(),
+                List.of("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"), null);
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNotNull(actual.getEnterpriseUser());
+        assertEquals("12345", actual.getEnterpriseUser().getEmployeeNumber());
+        assertEquals("Engineering", actual.getEnterpriseUser().getDepartment());
+        assertNull(actual.getUserName());
+        assertNull(actual.getName());
+    }
+
+    @Test
+    public void testGetWithExcludedExtensionUrnAttribute() {
+        addEnterpriseUserUserProfileAttributes();
+        User expected = createUser();
+        EnterpriseUser enterpriseUser = new EnterpriseUser();
+        enterpriseUser.setEmployeeNumber("12345");
+        enterpriseUser.setDepartment("Engineering");
+        expected.setEnterpriseUser(enterpriseUser);
+        expected = client.users().create(expected);
+
+        // Requesting the extension URN should return all extension attributes
+        User actual = client.users().get(expected.getId(),
+                null, List.of("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"));
+        assertNotNull(actual);
+        assertNotNull(actual.getId());
+        assertNull(actual.getEnterpriseUser());
     }
 
     private static void assertGroup(List<GroupMembership> groups, GroupRepresentation group, String type) {
@@ -980,5 +1195,69 @@ public class UserTest extends AbstractScimTest {
         user.setNickName("mynickname");
 
         return user;
+    }
+
+    @Test
+    public void testCreateWithInvalidAttribute() {
+        User user = new User() {
+            @Override
+            public Set<String> getSchemas() {
+                return Set.of(Scim.USER_CORE_SCHEMA);
+            }
+
+            @JsonProperty("invalidAttribute")
+            public String getInvalidAttribute() {
+                return "invalidValue";
+            }
+        };
+
+        try {
+            client.users().create(user);
+            fail("should fail because of invalid attribute");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(400, error.getStatusInt());
+            assertNotNull(error.getDetail());
+            assertTrue(error.getDetail().contains("invalidAttribute"));
+        }
+    }
+
+    @Test
+    public void testCreateDuplicate() {
+        User user = new User();
+        user.setUserName(KeycloakModelUtils.generateId());
+        client.users().create(user);
+
+        try {
+            client.users().create(user);
+            fail("should fail because of duplicate user");
+        } catch (ScimClientException sce) {
+            ErrorResponse error = sce.getError();
+            assertNotNull(error);
+            assertEquals(409, error.getStatusInt());
+            assertEquals("uniqueness", error.getScimType());
+            assertNotNull(error.getDetail());
+        }
+    }
+
+    private void addEnterpriseUserUserProfileAttributes() {
+        UPConfig configuration = realm.admin().users().userProfile().getConfiguration();
+
+        configuration.addOrReplaceAttribute(new UPAttribute("department", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".department")));
+        configuration.addOrReplaceAttribute(new UPAttribute("division", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".division")));
+        configuration.addOrReplaceAttribute(new UPAttribute("costCenter", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".costCenter")));
+        configuration.addOrReplaceAttribute(new UPAttribute("employeeNumber", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".employeeNumber")));
+        configuration.addOrReplaceAttribute(new UPAttribute("organization", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".organization")));
+        configuration.addOrReplaceAttribute(new UPAttribute("manager", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.value")));
+        configuration.addOrReplaceAttribute(new UPAttribute("managerName", Map.of(
+                ANNOTATION_SCIM_SCHEMA_ATTRIBUTE, ENTERPRISE_USER_SCHEMA + ".manager.displayName")));
+        realm.admin().users().userProfile().update(configuration);
     }
 }

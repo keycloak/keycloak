@@ -193,6 +193,23 @@ In order to change the JSON output format, properties in the format `log-<handle
 * `log-file-json-format` - File log handler
 * `log-syslog-json-format` - Syslog log handler
 
+[[customize-service-fields]]
+=== Customize the service fields
+
+When using JSON log output, {project_name} includes `service.name` and potentially `service.environment` fields in the log entries.
+By default, `service.name` is set to `keycloak`, and `service.environment` is not set for the default JSON format.
+For the ECS format, the `service.environment` is set to the Quarkus profile (e.g. `prod`).
+
+You can customize these fields across all log handlers using the following options:
+
+* `log-service-name` - Set the `service.name` field (default: `keycloak`)
+* `log-service-environment` - Set the `service.environment` field
+
+These options apply to all log handlers (`console`, `file`, and `syslog`) that have JSON output enabled.
+
+.Example
+<@kc.start parameters="--log-console-output=json --log-service-name=my-keycloak --log-service-environment=production"/>
+
 === Example
 If you want to have JSON logs in *ECS* (Elastic Common Schema) format for the console log handler, you can enter the following command:
 

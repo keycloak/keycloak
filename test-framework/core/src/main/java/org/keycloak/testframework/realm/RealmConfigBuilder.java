@@ -327,13 +327,13 @@ public class RealmConfigBuilder {
         return this;
     }
 
-    public RealmConfigBuilder clientPolicy(ClientPolicyRepresentation clienPolicyRep) {
+    public RealmConfigBuilder clientPolicy(ClientPolicyRepresentation clientPolicyRep) {
         ClientPoliciesRepresentation clientPolicies = rep.getParsedClientPolicies();
         if (clientPolicies == null) {
             clientPolicies = new ClientPoliciesRepresentation();
         }
         List<ClientPolicyRepresentation> policies = clientPolicies.getPolicies();
-        policies.add(clienPolicyRep);
+        policies.add(clientPolicyRep);
         rep.setParsedClientPolicies(clientPolicies);
         return this;
     }

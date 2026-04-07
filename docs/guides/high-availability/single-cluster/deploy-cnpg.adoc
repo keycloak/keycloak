@@ -19,9 +19,10 @@ CloudNativePG is an opensource operator that manages PostgreSQL clusters on {kub
 
 image::high-availability/cnpg-multi-az.dio.svg[]
 
-== Installing CloudNativePG
+== Install CloudNativePG
 
-=== Installing the CloudNativePG Operator
+[#single-cluster-cnpg-install-operator]
+=== Install the CloudNativePG Operator
 
 Install the operator directly using the operator manifest:
 
@@ -47,11 +48,15 @@ kubectl rollout status deployment \
 deployment "cnpg-controller-manager" successfully rolled out
 ----
 
-
-
 It is possible to install the operator using other supported methods such as Helm Chart, OLM, or `cnpg` plugin for `kubectl`. See the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/installation_upgrade[CloudNativePG documentation] for details.
 
-=== Installing CloudNativePG Cluster
+=== Install CloudNativePG Cluster
+
+[IMPORTANT]
+====
+We recommend enabling backups for the CloudNativePG cluster to protect against data loss.
+See <@links.ha id="single-cluster-deploy-cnpg-with-backup" /> for instructions on configuring scheduled backups to AWS S3.
+====
 
 Installation and configuration of CloudNativePG cluster is done via a `Cluster` resource.
 
@@ -62,44 +67,40 @@ Installation and configuration of CloudNativePG cluster is done via a `Cluster` 
 ----
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
-
 metadata:
   name: cnpg-keycloak
-
 spec:
-
-  instances: 3 <1>
+  instances: 3 # <1>
 
   storage:
-    size: 8Gi <2>
+    size: 8Gi # <2>
 
-  affinity: <3>
+  affinity: # <3>
     podAntiAffinityType: required
     topologyKey: topology.kubernetes.io/zone
 
   postgresql:
-    synchronous: <4>
+    synchronous: # <4>
       method: any
       number: 1
-      dataDurability: required
     parameters:
-      max_connections: "100" <5>
+      max_connections: "100" # <5>
 
   bootstrap:
-    initdb: <6>
+    initdb: # <6>
       database: keycloak
       owner: keycloak
 
   managed:
     services:
-      disabledDefaultServices: ["ro", "r"] <7>
+      disabledDefaultServices: ["ro", "r"] # <7>
 ----
 <1> Number of instances.
 <2> Pod storage size. This setting needs to take into account the expected size of the database and PostgreSQL WAL logs.
 <3> Pod affinity rules for Kubernetes scheduler. The `topology.kubernetes.io/zone` value ensures the scheduler will spread the pods across different availability zones.
 <4> Enable quorum-based synchronous replication with a single standby server. For more information about synchronous replication follow the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/replication/#synchronous-replication[CloudNativePG documentation].
-<5> Database connection limit. This value should be adjusted based on the expected total number of the JDBC connections from the {project_name} cluster.
-<6> Create a database `keycloak` owned by the user `keycloak`.
+<5> Maximum number of concurrent connections to the database server. This value needs to be adjusted based on the expected maximum number of connections from the {project_name} cluster. For example, if the {project_name} cluster has 3 instances with a maximum number of 30 JDBC connections each (see the {project_name} option `db-pool-max-size`), the value of `spec.postgresql.max_connections` needs to be at least `90` to account for the required connection capacity. See <@links.ha id="single-cluster-db-concepts" /> for more details.
+<6> Creates a database `keycloak` owned by the user `keycloak`.
 <7> Disables the `-ro` and `-r` default services which are intended for read-only applications. Since {project_name} requires a read-write access it only connects to the `-rw` service.
 +
 . Create the `cnpg-keycloak` namespace.
@@ -150,9 +151,15 @@ cnpg-keycloak-3   1/1     Running   0          10m   replica
 ----
 
 
-=== Enable Monitoring of the CloudNativePG cluster
+=== Monitor the CloudNativePG cluster
 
-. Create a PodMonitor resource.
+Monitoring of CloudNativePG clusters leverages https://prometheus.io/[Prometheus] and https://grafana.com/[Grafana].
+
+Installation of the Prometheus stack is out of scope of this guide. Basic installation steps can be found in the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/quickstart[Quickstart section of the CloudNativePG documentation]. Additional details on how to customize the monitoring can be found in the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/monitoring#monitoring-instances[Monitoring section of the CloudNativePG documentation].
+
+Assuming Prometheus and Grafana are installed on the {kubernetes} cluster the following steps can be used to enable monitoring for a particular CloudNativePG cluster:
+
+. Enable collection of metrics by creating a PodMonitor resource:
 +
 .Command:
 [source,yaml,indent=0]
@@ -161,59 +168,18 @@ kubectl -n cnpg-keycloak apply -f - <<EOF
 apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
-  name: cnpg-keycloak-pm <1>
+  name: cnpg-keycloak-pod-monitor
 spec:
   selector:
     matchLabels:
-      cnpg.io/cluster: cnpg-keycloak
+      cnpg.io/cluster: cnpg-keycloak # <1>
   podMetricsEndpoints:
   - port: metrics
 EOF
 ----
-<1> The name of the pod monitor resource needs to be different from the name of the cluster.
+<1> Name of the CloudNativePG cluster to be monitored.
 +
-. Add the https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/refs/heads/main/charts/cluster/grafana-dashboard.json[CloudNativePG Grafana Dashboard] to your Grafana instance.
-
-
-[#single-cluster-cnpg-connecting]
-== Connecting {project_name} to CloudNativePG Cluster
-
-Now that a CloudNativePG cluster has been installed, here are the relevant {project_name} CR options to connect the {project_name} to the database service. These changes will be required in the <@links.ha id="single-cluster-deploy-keycloak" /> {section}. The JDBC url is configured to use the CloudNativeDB database writer service.
-
-. Update `spec.db.url` to be `jdbc:postgresql://cnpg-keycloak-rw.cnpg-keycloak.svc.cluster.local:5432/keycloak`, the writer instance of the CloudNativePG cluster.
-
-. Ensure that the Secrets referenced by `spec.db.usernameSecret` and `spec.db.passwordSecret` contain usernames and passwords for the CloudNativePG cluster.
-
-=== Secure the JDBC connection
-
-. Export CloudNativePG CA secret to a file.
-+
-.Command:
-----
-kubectl --namespace cnpg-keycloak get secrets cnpg-keycloak-ca -ojson | jq -r '.data."ca.crt"' | base64 -d > cnpg-keycloak-ca-cert.pem
-----
-+
-. Create a ConfigMap resource `cnpg-keycloak-ca` in the `keycloak` namespace with the database CA secret.
-+
-.Command:
-----
-kubectl --namespace keycloak create configmap cnpg-keycloak-ca --from-file cert.pem=./cnpg-keycloak-ca-cert.pem
-----
-
-
-=== Prepare the secret for accessing the database
-
-Create `keycloak-db-secret` in the `keycloak` namespace based on `cnpg-keycloak-app` secret from the `cnpg-keycloak` namespace by running the following script.
-
-.Script:
-[source,bash]
-----
-secret=$(kubectl get --namespace cnpg-keycloak secret cnpg-keycloak-app -ojson)
-username=$(echo "$secret" | jq -r .data.username | base64 -d)
-password=$(echo "$secret" | jq -r .data.password | base64 -d)
-kubectl --namespace keycloak create secret generic keycloak-db-secret \
-  --from-literal="username=$username" --from-literal="password=$password"
-----
+. Add the https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/refs/heads/main/charts/cluster/grafana-dashboard.json[grafana-dashboard.json] from the https://github.com/cloudnative-pg/grafana-dashboards[cloudnative-pg/grafana-dashboards GitHub project] to your Grafana instance.
 
 == Next steps
 

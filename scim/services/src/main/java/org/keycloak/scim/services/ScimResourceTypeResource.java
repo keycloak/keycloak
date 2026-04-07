@@ -1,15 +1,12 @@
 package org.keycloak.scim.services;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -21,7 +18,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -29,12 +25,9 @@ import jakarta.ws.rs.core.UriBuilder;
 
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelValidationException;
-import org.keycloak.scim.filter.ScimFilterException;
 import org.keycloak.scim.protocol.ForbiddenException;
 import org.keycloak.scim.protocol.request.PatchRequest;
 import org.keycloak.scim.protocol.request.SearchRequest;
-import org.keycloak.scim.protocol.response.ErrorResponse;
 import org.keycloak.scim.protocol.response.ListResponse;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.Scim;
@@ -42,8 +35,15 @@ import org.keycloak.scim.resource.common.Meta;
 import org.keycloak.scim.resource.spi.ScimResourceTypeProvider;
 import org.keycloak.scim.resource.spi.SingletonResourceTypeProvider;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.theme.Theme;
 import org.keycloak.util.JsonSerialization;
+
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+
+import static org.keycloak.scim.services.Error.badRequest;
+import static org.keycloak.scim.services.Error.forbidden;
+import static org.keycloak.scim.services.Error.invalidSyntax;
+import static org.keycloak.scim.services.Error.resourceNotFound;
+import static org.keycloak.scim.services.Error.toResponse;
 
 public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
 
@@ -68,7 +68,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         R resource = parseResourceTypePayload(is);
 
         if (resource.getId() != null) {
-            return badRequest("Unexpected identifier");
+            return invalidSyntax("Unexpected identifier");
         }
 
         return onPersist(resource, Status.CREATED,
@@ -85,8 +85,13 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @Path("{id}")
     @GET
     @Produces(APPLICATION_SCIM_JSON)
-    public Response get(@PathParam("id") String id) {
-        R resource = getResource(id);
+    public Response get(@PathParam("id") String id,
+                        @QueryParam("attributes") String attributes,
+                        @QueryParam("excludedAttributes") String excludedAttributes) {
+        List<String> attrList = attributes != null ? List.of(attributes.split(",")) : null;
+        List<String> excludedList = excludedAttributes != null ? List.of(excludedAttributes.split(",")) : null;
+
+        R resource = getResource(id, attrList, excludedList);
 
         if (resource == null) {
             return resourceNotFound(id);
@@ -121,33 +126,29 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     @Consumes({APPLICATION_SCIM_JSON, MediaType.APPLICATION_JSON})
     @Produces(APPLICATION_SCIM_JSON)
     public Response search(SearchRequest searchRequest) {
-
-        Stream<R> stream;
         try {
-            stream = resourceTypeProvider.getAll(searchRequest)
+            Stream<R> stream = resourceTypeProvider.getAll(searchRequest)
                     .peek(this::setMetadata);
-        } catch (ScimFilterException e) {
-            return badRequest(e.getMessage(), "invalidFilter");
-        } catch (ForbiddenException fe) {
-            return Response.status(Status.FORBIDDEN).build();
+
+            if (resourceTypeProvider instanceof SingletonResourceTypeProvider<R>) {
+                return Response.ok().entity(stream
+                                .findAny().orElseThrow(NotFoundException::new))
+                        .build();
+            }
+
+            List<R> resources = stream.toList();
+            Long totalResults = resourceTypeProvider.count(searchRequest);
+            ListResponse<R> response = new ListResponse<>();
+
+            response.setResources(resources);
+            response.setTotalResults(totalResults.intValue());
+            response.setStartIndex(searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() : 1);
+            response.setItemsPerPage(resources.size());
+
+            return Response.ok().entity(response).build();
+        } catch (Exception e) {
+            return toResponse(session, e);
         }
-
-        if (resourceTypeProvider instanceof SingletonResourceTypeProvider<R>) {
-            return Response.ok().entity(stream
-                            .findAny().orElseThrow(NotFoundException::new))
-                    .build();
-        }
-
-        List<R> resources = stream.toList();
-        Long totalResults = resourceTypeProvider.count(searchRequest);
-
-        ListResponse<R> response = new ListResponse<>();
-        response.setResources(resources);
-        response.setTotalResults(totalResults.intValue());
-        response.setStartIndex(searchRequest.getStartIndex() != null ? searchRequest.getStartIndex() : 1);
-        response.setItemsPerPage(resources.size());
-
-        return Response.ok().entity(response).build();
     }
 
     @Path("{id}")
@@ -170,8 +171,8 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
             }
 
             return badRequest("Could not delete resource not found with id " + id);
-        } catch (ForbiddenException fe) {
-            return Response.status(Status.FORBIDDEN).build();
+        } catch (Exception e) {
+            return toResponse(session, e);
         }
     }
 
@@ -189,7 +190,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         R resource = parseResourceTypePayload(is);
 
         if (!existing.getId().equals(resource.getId())) {
-            return badRequest("Invalid reference to resource");
+            return invalidSyntax("Invalid reference to resource");
         }
 
         return onPersist(resource, Status.OK,
@@ -215,7 +216,7 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         }
 
         if (!request.getSchemas().contains(Scim.PATCH_OP_CORE_SCHEMA)) {
-            return badRequest("Unsupported patch schema: " + Scim.PATCH_OP_CORE_SCHEMA, "invalidPatch");
+            return invalidSyntax("No PATCH op schema provided in request");
         }
 
         return onPersist(existing, Status.OK, (rScimResourceTypeProvider, r) -> {
@@ -233,8 +234,11 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
     private R parseResourceTypePayload(InputStream is) {
         try {
             return  (R) JsonSerialization.readValue(is, resourceTypeClazz);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to deserialize request body", e);
+        } catch (UnrecognizedPropertyException upe) {
+            String message = "Unrecognized attribute: " + upe.getPropertyName();
+            throw new BadRequestException(invalidSyntax(message));
+        } catch (Exception e) {
+            throw new BadRequestException(badRequest("Unknown error parsing the request"));
         }
     }
 
@@ -257,63 +261,31 @@ public class ScimResourceTypeResource<R extends ResourceTypeRepresentation> {
         resource.setMeta(meta);
     }
 
-    private Properties getMessageBundle(String lang) {
-        try {
-            Theme theme = session.theme().getTheme(Theme.Type.ADMIN);
-            Locale locale = lang != null ? Locale.forLanguageTag(lang) : Locale.ENGLISH;
-            return theme.getMessages(locale);
-        } catch (IOException e) {
-            return new Properties();
-        }
-    }
-
     private Response onPersist(R resource, Status status, BiFunction<ScimResourceTypeProvider<R>, R, R> consumer) {
         try {
             R r = consumer.apply(resourceTypeProvider, resource);
+
             setMetadata(r);
 
             return Response.status(status).entity(r).build();
-        } catch (ModelValidationException mve) {
-            String language = session.getContext().getRequestHeaders().getHeaderString(HttpHeaders.ACCEPT_LANGUAGE);
-            Properties messages = getMessageBundle(language);
-            String format = messages.getProperty(mve.getMessage(), mve.getMessage())
-                    .replace("{{", "{").replace("}}", "}")
-                    .replace("'", "");
-            String message = MessageFormat.format(format, mve.getParameters());
-            session.getTransactionManager().setRollbackOnly();
-            return badRequest(message);
-        } catch (ForbiddenException fbe) {
-            return Response.status(Status.FORBIDDEN).build();
+        } catch (Exception e) {
+            return toResponse(session, e);
         }
     }
 
     private R getResource(String id) {
+        return getResource(id, null, null);
+    }
+
+    private R getResource(String id, List<String> attributes, List<String> excludedAttributes) {
         if (id == null) {
             return null;
         }
 
         try {
-            return resourceTypeProvider.get(id);
+            return resourceTypeProvider.get(id, attributes, excludedAttributes);
         } catch (ForbiddenException fe) {
-            throw new jakarta.ws.rs.ForbiddenException(fe);
+            throw new jakarta.ws.rs.ForbiddenException(forbidden());
         }
-    }
-
-    private Response resourceNotFound(String id) {
-        return errorResponse(Status.NOT_FOUND, "Resource not found with id " + id);
-    }
-
-    private Response badRequest(String message) {
-        return errorResponse(Status.BAD_REQUEST, message);
-    }
-
-    private Response badRequest(String message, String scimType) {
-        ErrorResponse error = new ErrorResponse(message, Status.BAD_REQUEST.getStatusCode());
-        error.setScimType(scimType);
-        return Response.status(Status.BAD_REQUEST).entity(error).build();
-    }
-
-    private Response errorResponse(Status status, String message) {
-        return Response.status(status).entity(new ErrorResponse(message, status.getStatusCode())).build();
     }
 }

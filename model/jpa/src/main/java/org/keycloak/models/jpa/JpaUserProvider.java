@@ -1072,6 +1072,12 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore, JpaUs
                     }
                     break;
                 }
+                case UserModel.CREATED_AFTER:
+                    predicates.add(builder.greaterThanOrEqualTo(root.get("createdTimestamp"), Long.parseLong(value)));
+                    break;
+                case UserModel.CREATED_BEFORE:
+                    predicates.add(builder.lessThanOrEqualTo(root.get("createdTimestamp"), Long.parseLong(value)));
+                    break;
                 default:
                     // All unknown attributes will be assumed as custom attributes
                     Join<UserEntity, UserAttributeEntity> attributesJoin = root.join("attributes", JoinType.LEFT);

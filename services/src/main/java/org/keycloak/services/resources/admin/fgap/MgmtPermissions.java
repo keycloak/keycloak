@@ -45,6 +45,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.authorization.Permission;
@@ -192,11 +193,13 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         if (!admin.hasRole(masterAdminRole)) {
             return false;
         }
+        CacheRealmProvider cache = session.getProvider(CacheRealmProvider.class);
+        if (cache == null || !cache.refreshMasterAdminRole(masterAdminRole, clientId)) {
+            return false;
+        }
         Set<String> roleNames = Set.of(adminRoles);
-        ClientModel clientModel = masterRealm.getClientByClientId(clientId);
-        return clientModel != null && masterAdminRole.getCompositesStream()
-                .anyMatch(r -> (r.isClientRole() && r.getContainerId().equals(clientModel.getId())
-                        && roleNames.contains(r.getName())));
+        return masterAdminRole.getCompositesStream().anyMatch(r -> (r.isClientRole()
+                && r.getContainerId().equals(clientId) && roleNames.contains(r.getName())));
     }
 
     public boolean isAdminSameRealm() {

@@ -59,7 +59,6 @@ import org.keycloak.tests.providers.client.policies.TrackEventsClientPolicyExecu
 import org.keycloak.util.JsonSerialization;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPatch;
@@ -683,11 +682,6 @@ public class ClientPoliciesV2Test extends AbstractClientApiV2Test {
         } catch (Exception e) {
             // Ignore cleanup errors
         }
-    }
-
-    private void setAuthHeader(HttpMessage request) {
-        String token = adminClient.tokenManager().getAccessTokenString();
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
     }
 
     public static class AdminV2Config implements KeycloakServerConfig {

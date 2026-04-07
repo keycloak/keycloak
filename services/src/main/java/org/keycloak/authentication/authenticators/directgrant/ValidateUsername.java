@@ -33,9 +33,11 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 
@@ -102,7 +104,11 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
         if (!user.isEnabled()) {
             context.getEvent().user(user);
             context.getEvent().error(Errors.USER_DISABLED);
-            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", "Account disabled");
+            String password = retrievePassword(context);
+            String errorDescription = user.credentialManager().isValid(UserCredentialModel.password(password))
+                    ? "Account disabled"
+                    : "Invalid user credentials";
+            Response challengeResponse = errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_grant", errorDescription);
             context.forceChallenge(challengeResponse);
             return;
         }
@@ -173,5 +179,10 @@ public class ValidateUsername extends AbstractDirectGrantAuthenticator {
     protected String retrieveUsername(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
         return inputData.getFirst(AuthenticationManager.FORM_USERNAME);
+    }
+
+    protected String retrievePassword(AuthenticationFlowContext context) {
+        MultivaluedMap<String, String> inputData = context.getHttpRequest().getDecodedFormParameters();
+        return inputData.getFirst(CredentialRepresentation.PASSWORD);
     }
 }

@@ -7,7 +7,10 @@ single-cluster/concepts-threads
 single-cluster/concepts-memory-and-cpu-sizing
 single-cluster/deploy-aurora
 single-cluster/deploy-cnpg
+single-cluster/deploy-cnpg-with-backup
+single-cluster/deploy-cnpg-recovery
 single-cluster/deploy-keycloak
+single-cluster/operate-cnpg-switchover
 multi-cluster/introduction
 multi-cluster/concepts
 multi-cluster/building-blocks

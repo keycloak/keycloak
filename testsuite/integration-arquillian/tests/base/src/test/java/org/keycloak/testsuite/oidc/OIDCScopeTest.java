@@ -53,11 +53,13 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.TokenUtil;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.keycloak.OAuthErrorException.INVALID_SCOPE;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import static org.junit.Assert.assertEquals;
@@ -654,6 +656,34 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         testApp.removeOptionalClientScope(scopeParentId);
     }
 
+    @Test
+    public void testLengthyScopeParameter() {
+        // Scope parameter too long (longer than 4000 characters). Will be ignored
+        String scope = getLongScopeParameter(1000);
+        oauth.scope(scope);
+        AccessTokenResponse response = oauth.doPasswordGrantRequest("john", "password");
+        assertEquals(200, response.getStatusCode());
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
+        Assert.assertFalse(TokenUtil.isOIDCRequest(token.getScope()));
+
+        // Scope parameter relatively long. Should not be ignored
+        scope = getLongScopeParameter(800);
+        oauth.scope(scope);
+        response = oauth.doPasswordGrantRequest("john", "password");
+        assertEquals(400, response.getStatusCode());
+        assertEquals(INVALID_SCOPE, response.getError());
+    }
+
+    // Get very long "scope" parameter created from big list of some unknown scopes
+    private String getLongScopeParameter(int scopesCount) {
+        StringBuilder scopeParam = new StringBuilder("openid");
+        for (int i = 0 ; i < scopesCount ; i++) {
+            scopeParam.append(" s").append(i);
+        }
+        String scope = scopeParam.toString();
+        getLogger().infof("Scopes count: %d, Scope param length: %d", scopesCount, scope.length());
+        return scope;
+    }
 
     private void testLoginAndClientScopesPermissions(String username, String expectedRoleScopes, String... expectedRoles) {
         String userId = ApiUtil.findUserByUsername(testRealm(), username).getId();

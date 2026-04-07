@@ -1,13 +1,13 @@
 package org.keycloak.scim.resource.schema.path;
 
-import java.util.function.Function;
-
-import org.keycloak.models.ModelValidationException;
+import org.keycloak.scim.filter.FilterUtils;
+import org.keycloak.scim.filter.ScimFilterParser;
 import org.keycloak.scim.resource.ResourceTypeRepresentation;
 import org.keycloak.scim.resource.schema.ModelSchema;
 import org.keycloak.scim.resource.schema.attribute.Attribute;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 
 public final class Path {
 
@@ -49,35 +49,12 @@ public final class Path {
         return path;
     }
 
-    public JsonNode getValue(Attribute<?, ?> attribute, JsonNode rawValue) {
+    public JsonNode getValue(Attribute<?, ?> attribute) {
         if (filter == null) {
-            return rawValue;
+            return NullNode.getInstance();
         }
 
-        return parseFilter(attribute).apply(rawValue);
+        ScimFilterParser.FilterContext filterContext = FilterUtils.parseFilter(filter);
+        return new ScimFilterToJsonNodeConverter(attribute).visit(filterContext);
     }
-
-    private Function<JsonNode, JsonNode> parseFilter(Attribute<?, ?> attribute) {
-        String[] parts = filter.trim().split(" ");
-
-        if (parts.length == 3) {
-            String leftOperand = parts[0];
-            String operator = parts[1];
-            String rightOperand = parts[2];
-
-            if ("eq".equals(operator)) {
-                return new EqualExpression(attribute, leftOperand, rightOperand);
-            }
-
-            // for now, we only support equality filter in the path, and we assume the filter is always in the format "attribute eq "value""
-            throw new ModelValidationException("Unsupported filter operator: " + operator);
-        }
-
-        throw new ModelValidationException("Unsupported filter format: " + filter);
-    }
-
-    public boolean hasFilter() {
-        return filter != null;
-    }
-
 }

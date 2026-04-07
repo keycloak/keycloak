@@ -22,6 +22,7 @@ import java.nio.file.FileSystems;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceConfigurationError;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -714,6 +715,25 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     }
 
     @Test
+    public void testQuarkusPropertyTakesPrecedenceOverDefault() {
+        putEnvVar("QUARKUS_HTTP_PORT", "9090");
+        ConfigArgsConfigSource.setCliArgs("");
+        SmallRyeConfig config = createConfig();
+        assertEquals("9090", config.getConfigValue("quarkus.http.port").getValue());
+        // the kc.http-port still returns the default since no kc.* option was explicitly set
+        assertEquals("8080", config.getConfigValue("kc.http-port").getValue());
+    }
+
+    @Test
+    public void testKcPropertyTakesPrecedenceOverQuarkusProperty() {
+        // Explicitly setting kc.http-port should override the quarkus.properties value (9090)
+        ConfigArgsConfigSource.setCliArgs("--http-port=7070");
+        SmallRyeConfig config = createConfig();
+        assertEquals("7070", config.getConfigValue("quarkus.http.port").getValue());
+        assertEquals("7070", config.getConfigValue("kc.http-port").getValue());
+    }
+
+    @Test
     public void testPostgresTLSOptions() {
         doDatabaseTlsOptionTest("postgres",
                 "jdbc:postgresql://myhost:5432/keycloak",
@@ -845,6 +865,8 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isMysqlConnectTimeoutEnabled());
         assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
         createConfigFromCliArguments("--db=mysql", "--db-url-properties=?connectTimeout=5000");
         assertFalse(DatabasePropertyMappers.isMysqlConnectTimeoutEnabled());
         createConfigFromCliArguments("--db=mysql", "--db-url=jdbc:mysql://localhost:3306/keycloak?connectTimeout=5000");
@@ -853,6 +875,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         config = createConfigFromCliArguments("--db=mysql", "--db-connect-timeout=30s");
         assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         // MariaDB:
         ConfigArgsConfigSource.setCliArgs("--db=mariadb");
@@ -860,6 +883,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
         assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=mariadb", "--db-url=jdbc:mariadb://localhost:3306/keycloak?connectTimeout=5000");
         config = createConfig();
@@ -874,6 +898,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isMariadbConnectTimeoutEnabled());
         assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         // Oracle:
         ConfigArgsConfigSource.setCliArgs("--db=oracle");
@@ -881,8 +906,10 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
         assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=oracle", "--db-url-properties=?oracle.net.CONNECT_TIMEOUT=5000");
+
         config = createConfig();
         assertFalse(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
         ConfigArgsConfigSource.setCliArgs("--db=oracle", "--db-url=jdbc:oracle:thin:@//localhost:1521/keycloak?oracle.net.CONNECT_TIMEOUT=5000");
@@ -894,6 +921,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isOracleConnectTimeoutEnabled());
         assertEquals("30000", config.getConfigValue(DatabasePropertyMappers.ORACLEDB_CONNECT_TIMEOUT).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         // MSSQL:
         ConfigArgsConfigSource.setCliArgs("--db=mssql");
@@ -901,6 +929,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isMssqlLoginTimeoutEnabled());
         assertEquals("10", config.getConfigValue(DatabasePropertyMappers.MSSQL_CONNECT_TIMEOUT).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         ConfigArgsConfigSource.setCliArgs("--db=mssql", "--db-url-properties=;loginTimeout=20");
         config = createConfig();
@@ -914,6 +943,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isMssqlLoginTimeoutEnabled());
         assertEquals("30", config.getConfigValue(DatabasePropertyMappers.MSSQL_CONNECT_TIMEOUT).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         // PostgreSQL:
         resetConfiguration();
@@ -924,6 +954,7 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
         assertEquals("10", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("10s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT20S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
 
         resetConfiguration();
         ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-url-properties=?connectTimeout=5");
@@ -951,5 +982,102 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
         assertEquals("30", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
         assertEquals("30s", config.getConfigValue(DatabasePropertyMappers.JDBC_LOGIN_TIMEOUT).getValue());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-connect-timeout=30s", "--transaction-setup-timeout=30s");
+        config = createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+        assertEquals("PT30S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-connect-timeout=30s", "--transaction-setup-timeout=45s");
+        config = createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+        assertEquals("PT45S", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+
+        resetConfiguration();
+        ConfigArgsConfigSource.setCliArgs("--db=postgres", "--db-connect-timeout=60s", "--transaction-setup-timeout=30s");
+        createConfig();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
+        config = createConfig();
+        assertTrue(DatabasePropertyMappers.isPostgresConnectTimeoutEnabled());
+        assertEquals("PT1M", config.getConfigValue(DatabasePropertyMappers.JDBC_ACQUISITION_TIMEOUT).getValue());
+    }
+
+    @Test
+    public void testRawEnvVarPreservesDoubleDollar() {
+        putEnvVar("KCRAW_DB_PASSWORD", "my$$password");
+        SmallRyeConfig config = createConfig();
+        assertEquals("my$$password", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testRawEnvVarPreservesExpression() {
+        putEnvVar("KCRAW_DB_PASSWORD", "${vault.secret}");
+        SmallRyeConfig config = createConfig();
+        assertEquals("${vault.secret}", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testRawEnvVarStandalone() {
+        // Only KCRAW_ set, no KC_ counterpart — should still register the property
+        putEnvVar("KCRAW_DB_PASSWORD", "standalone-value");
+        SmallRyeConfig config = createConfig();
+        assertEquals("standalone-value", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testRawAndKcConflictThrowsError() {
+        putEnvVar("KC_DB_PASSWORD", "from-kc");
+        putEnvVar("KCRAW_DB_PASSWORD", "from-kcraw");
+        try {
+            createConfig();
+            Assert.fail("Expected error for conflicting KC_ and KCRAW_ env vars");
+        } catch (ServiceConfigurationError e) {
+            assertNotNull(e.getCause());
+            assertTrue(e.getCause() instanceof IllegalArgumentException);
+            assertTrue(e.getCause().getMessage().contains("KC_DB_PASSWORD"));
+            assertTrue(e.getCause().getMessage().contains("KCRAW_DB_PASSWORD"));
+        }
+    }
+
+    @Test
+    public void testNonRawPropertiesUnaffected() {
+        // Standard KC_ env var with $$ should still be subject to expression evaluation (collapsing $$ to $)
+        putEnvVar("KC_DB_PASSWORD", "has$$dollar");
+        SmallRyeConfig config = createConfig();
+        assertEquals("has$dollar", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testRawEnvVarPreservesBackslashDollar() {
+        putEnvVar("KCRAW_DB_PASSWORD", "has\\$dollar");
+        SmallRyeConfig config = createConfig();
+        assertEquals("has\\$dollar", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testRawEnvVarPreservesStandaloneBackslash() {
+        putEnvVar("KCRAW_DB_PASSWORD", "pass\\word");
+        SmallRyeConfig config = createConfig();
+        assertEquals("pass\\word", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testRawEnvVarPreservesMultipleBackslashDollar() {
+        putEnvVar("KCRAW_DB_PASSWORD", "test\\$\\$password");
+        SmallRyeConfig config = createConfig();
+        assertEquals("test\\$\\$password", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testRawEnvVarPreservesTrailingBackslash() {
+        putEnvVar("KCRAW_DB_PASSWORD", "trail\\");
+        SmallRyeConfig config = createConfig();
+        assertEquals("trail\\", config.getConfigValue("kc.db-password").getValue());
     }
 }

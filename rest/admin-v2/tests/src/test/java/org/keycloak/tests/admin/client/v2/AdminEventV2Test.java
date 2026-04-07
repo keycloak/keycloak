@@ -22,7 +22,6 @@ import java.util.List;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
@@ -31,7 +30,6 @@ import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.services.PatchTypeNames;
-import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpClient;
 import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
@@ -41,7 +39,6 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.KeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 
-import org.apache.http.HttpMessage;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
@@ -76,9 +73,6 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
 
     @InjectHttpClient
     CloseableHttpClient client;
-
-    @InjectAdminClient
-    Keycloak adminClient;
 
     @InjectRealm(attachTo = "master", ref = "master")
     ManagedRealm masterRealm;
@@ -379,11 +373,6 @@ public class AdminEventV2Test extends AbstractClientApiV2Test {
         auth.setSecret("ultra-secret");
         rep.setAuth(auth);
         return rep;
-    }
-
-    private void setAuthHeader(HttpMessage request) {
-        String token = adminClient.tokenManager().getAccessTokenString();
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + token);
     }
 
     public static class AdminV2EventConfig implements KeycloakServerConfig {

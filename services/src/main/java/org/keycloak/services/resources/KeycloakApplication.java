@@ -104,7 +104,7 @@ public abstract class KeycloakApplication extends Application {
         return false;
     }
 
-    private void runBootstrap(DefaultKeycloakSessionFactory keycloakSessionFactory) {
+    private synchronized void runBootstrap(DefaultKeycloakSessionFactory keycloakSessionFactory) {
         var startTime = System.nanoTime();
 
         keycloakSessionFactory.init();
@@ -138,7 +138,8 @@ public abstract class KeycloakApplication extends Application {
         return Math.toIntExact(TimeUnit.MINUTES.toSeconds(5));
     }
 
-    protected void shutdown() {
+    // synchronized to prevent shutdown while running bootstrapping
+    protected synchronized void shutdown() {
         if (sessionFactory != null) {
             sessionFactory.close();
             sessionFactory = null;

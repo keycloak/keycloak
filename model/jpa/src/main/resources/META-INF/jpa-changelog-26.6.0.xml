@@ -120,4 +120,16 @@
         </addColumn>
     </changeSet>
 
+    <changeSet author="keycloak" id="26.6.0-43829-user-created-timestamp-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <indexExists tableName="USER_ENTITY" indexName="IDX_USER_CREATED_TIMESTAMP" />
+            </not>
+        </preConditions>
+        <createIndex tableName="USER_ENTITY" indexName="IDX_USER_CREATED_TIMESTAMP">
+            <column name="REALM_ID" type="VARCHAR(255)" />
+            <column name="CREATED_TIMESTAMP" type="BIGINT" />
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>

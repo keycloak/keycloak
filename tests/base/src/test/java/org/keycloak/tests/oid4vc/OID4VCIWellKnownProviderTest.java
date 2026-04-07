@@ -1,19 +1,3 @@
-/*
- * Copyright 2024 Red Hat, Inc. and/or its affiliates
- * and other contributors as indicated by the @author tags.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.keycloak.tests.oid4vc;
 
 import java.util.List;
@@ -43,28 +27,15 @@ public class OID4VCIWellKnownProviderTest extends OID4VCIssuerTestBase {
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
-    boolean configuredAlready;
-
     @TestSetup
     public void configureTestRealm() {
+        super.configureTestRealm();
 
-        // When named differently this method is called before OID4VCIssuerTestBase.configureTestRealm()
-        // When named the same name, it is called twice (i.e. does not override)
-        //
-        // [TODO] IntegrationTest sub class @TestSetup called before super class
-        // https://github.com/keycloak/keycloak/issues/46667
-
-        if (!configuredAlready) {
-            super.configureTestRealm();
-
-            ComponentsResource components = testRealm.admin().components();
-            components.add(getRsaKeyProvider(getRsaKey_Default())).close();
-            components.add(getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100)).close();
-            components.add(getAesKeyProvider(A128KW, "aes-enc", "ENC", "aes-generated")).close();
-            components.add(getAesKeyProvider(Algorithm.HS256, "aes-sig", "SIG", "hmac-generated")).close();
-
-            configuredAlready = true;
-        }
+        ComponentsResource components = testRealm.admin().components();
+        components.add(getRsaKeyProvider(getRsaKey_Default())).close();
+        components.add(getRsaEncKeyProvider(RSA_OAEP_256, "enc-key-oaep256", 100)).close();
+        components.add(getAesKeyProvider(A128KW, "aes-enc", "ENC", "aes-generated")).close();
+        components.add(getAesKeyProvider(Algorithm.HS256, "aes-sig", "SIG", "hmac-generated")).close();
     }
 
     @Test

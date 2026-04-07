@@ -18,6 +18,8 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.xml.namespace.QName;
 
@@ -43,8 +45,10 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCProviderConfig;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.OAuth2GrantType;
 import org.keycloak.protocol.oidc.token.TokenInterceptorException;
@@ -139,6 +143,8 @@ public class TokenEndpoint {
             checkParameterDuplicated();
         }
 
+        checkParameters();
+
         /*
          * To request an access token that is bound to a public key using DPoP, the client MUST provide a valid DPoP
          * proof JWT in a DPoP header when making an access token request to the authorization server's token endpoint.
@@ -222,6 +228,29 @@ public class TokenEndpoint {
             if (entry.getValue().size() != 1 && !grant.getSupportedMultivaluedRequestParameters().contains(entry.getKey())) {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "duplicated parameter",
                         Response.Status.BAD_REQUEST);
+            }
+        }
+    }
+
+    protected void checkParameters() {
+        OIDCLoginProtocol loginProtocol = (OIDCLoginProtocol) session.getProvider(LoginProtocol.class, OIDCLoginProtocol.LOGIN_PROTOCOL);
+        OIDCProviderConfig config = loginProtocol.getConfig();
+
+        Map<String, List<String>> paramsCopy = new HashMap<>(formParams);
+        for (Map.Entry<String, List<String>> param : paramsCopy.entrySet()) {
+            String paramName = param.getKey();
+            int totalLengthOfParamValues = param.getValue().stream()
+                    .map(String::length)
+                    .reduce(0, Integer::sum);
+            int maxLength = config.getMaxLengthForTheParameter(paramName);
+            if (totalLengthOfParamValues > maxLength) {
+                logger.warnf("The size of OIDC parameter '%s' is longer (%d) than allowed (%d). %s", paramName, totalLengthOfParamValues, maxLength, config.isAdditionalReqParamsFailFast() ? "Request not allowed." : "Ignoring the parameter.");
+                if (config.isAdditionalReqParamsFailFast()) {
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "The size of OIDC parameter '" + paramName + "' is longer than allowed.",
+                            Response.Status.BAD_REQUEST);
+                } else {
+                    formParams.remove(paramName);
+                }
             }
         }
     }

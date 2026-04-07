@@ -128,6 +128,9 @@ public class OID4VCSubjectIdMapper extends OID4VCMapper {
     public void setClaim(Map<String, Object> claims, UserSessionModel userSessionModel) {
         UserModel userModel = userSessionModel.getUser();
         List<String> attributePath = getMetadataAttributePath();
+        if (attributePath.isEmpty()) {
+            return;
+        }
         String propertyName = attributePath.get(attributePath.size() - 1);
         String userAttributeName = mapperModel.getConfig().get(OID4VCMapper.USER_ATTRIBUTE_KEY);
         Consumer<String> userIdConsumer = (val) -> claims.put(propertyName, val);

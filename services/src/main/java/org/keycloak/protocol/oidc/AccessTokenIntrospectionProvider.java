@@ -147,7 +147,7 @@ public class AccessTokenIntrospectionProvider<T extends AccessToken> implements 
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, token.getScope(), session);
         AccessToken smallToken = getAccessTokenFromStoredData(token);
-        return tokenManager.transformIntrospectionAccessToken(session, smallToken, userSession, clientSessionCtx);
+        return tokenManager.transformIntrospectionAccessToken(session, token, smallToken, userSession, clientSessionCtx);
     }
 
     private AccessToken getAccessTokenFromStoredData(AccessToken token) {
