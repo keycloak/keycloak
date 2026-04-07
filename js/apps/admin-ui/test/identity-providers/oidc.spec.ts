@@ -9,15 +9,24 @@ import { clickTableRowItem } from "../utils/table.ts";
 import {
   addMapper,
   assertAuthorizationUrl,
+  assertFieldEditable,
+  assertFieldReadOnly,
   assertInvalidUrlNotification,
   assertJwksUrlExists,
   assertOnMappingPage,
   assertPkceMethodExists,
+  assertReloadButtonVisible,
+  captureIdpSavePayload,
   clickCancelMapper,
+  fillOIDCProviderForm,
+  goToAddOidcProvider,
+  toggleSyncField,
+  clickReloadNow,
   clickRevertButton,
   clickSaveButton,
   clickSaveMapper,
   createOIDCProvider,
+  enableKeepSynced,
   goToMappersTab,
   setUrl,
 } from "./main.ts";
@@ -111,5 +120,154 @@ test.describe.serial("Edit OIDC Provider", () => {
     await addMapper(page, "oidc-role", "OIDC Claim to Role");
     await clickCancelMapper(page);
     await assertOnMappingPage(page);
+  });
+});
+
+test.describe.serial("OIDC well-known sync UI", () => {
+  const oidcProviderName = "OpenID Connect v1.0";
+  const alias = `wellknown-sync-${uuid()}`;
+  const secret = "test-secret";
+  // All 7 syncable fields, ##-delimited
+  const ALL_SYNC_FIELDS =
+    "authorizationUrl##tokenUrl##logoutUrl##userInfoUrl##tokenIntrospectionUrl##issuer##jwksUrl";
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToIdentityProviders(page);
+  });
+
+  // Reset IDP sync config to a clean baseline before each test that needs it.
+  // Skip silently if the IDP doesn't exist yet (i.e. before the creation test).
+  async function resetSyncConfig() {
+    try {
+      await adminClient.updateIdentityProviderConfig(alias, {
+        reloadEnabled: "false",
+        includedWellKnownFields: ALL_SYNC_FIELDS,
+      });
+    } catch {
+      // IDP not yet created - creation test will set it up
+    }
+  }
+
+  test.afterAll(() => adminClient.deleteIdentityProvider(alias));
+
+  test("create OIDC provider via UI with discovery URL", async ({ page }) => {
+    await goToAddOidcProvider(page);
+    await fillOIDCProviderForm(page, alias, oidcProviderName, alias, secret);
+    await assertNotificationMessage(
+      page,
+      "Identity provider successfully created",
+    );
+  });
+
+  test("fields are editable before enabling Keep synced", async ({ page }) => {
+    await resetSyncConfig();
+    await clickTableRowItem(page, oidcProviderName);
+    await assertFieldEditable(page, "authorizationUrl");
+    await assertFieldEditable(page, "tokenUrl");
+    await assertFieldEditable(page, "logoutUrl");
+  });
+
+  test("enabling Keep synced makes synced fields read-only", async ({
+    page,
+  }) => {
+    await resetSyncConfig();
+    await clickTableRowItem(page, oidcProviderName);
+    await enableKeepSynced(page);
+    await assertFieldReadOnly(page, "authorizationUrl");
+    await assertFieldReadOnly(page, "tokenUrl");
+    await assertFieldReadOnly(page, "logoutUrl");
+    await assertReloadButtonVisible(page);
+  });
+
+  test("deselecting and re-selecting a field toggles its editability", async ({
+    page,
+  }) => {
+    await resetSyncConfig();
+    await clickTableRowItem(page, oidcProviderName);
+    await enableKeepSynced(page);
+    // Deselect: logoutUrl should become editable, others stay read-only
+    await toggleSyncField(page, "logoutUrl");
+    await assertFieldEditable(page, "logoutUrl");
+    await assertFieldReadOnly(page, "authorizationUrl");
+    // Re-select: logoutUrl should go read-only again
+    await toggleSyncField(page, "logoutUrl");
+    await assertFieldReadOnly(page, "logoutUrl");
+  });
+
+  test("saving with all fields synced sends full ## list in payload", async ({
+    page,
+  }) => {
+    await resetSyncConfig();
+    await clickTableRowItem(page, oidcProviderName);
+    await enableKeepSynced(page);
+    const payloadPromise = captureIdpSavePayload(page, alias);
+    await clickSaveButton(page);
+    const payload = await payloadPromise;
+    const config = payload.config as Record<string, string>;
+    expect(config.reloadEnabled).toBe("true");
+    expect(config.includedWellKnownFields).toBe(ALL_SYNC_FIELDS);
+  });
+
+  test("saving with no fields synced sends empty includedWellKnownFields in payload", async ({
+    page,
+  }) => {
+    await resetSyncConfig();
+    await clickTableRowItem(page, oidcProviderName);
+    await enableKeepSynced(page);
+    for (const field of ALL_SYNC_FIELDS.split("##")) {
+      await toggleSyncField(page, field);
+    }
+    const payloadPromise = captureIdpSavePayload(page, alias);
+    await clickSaveButton(page);
+    const payload = await payloadPromise;
+    const config = payload.config as Record<string, string>;
+    expect(config.reloadEnabled).toBe("true");
+    // Empty or absent both mean "sync nothing"
+    const syncedFields = (config.includedWellKnownFields ?? "")
+      .split("##")
+      .filter(Boolean);
+    expect(syncedFields).toHaveLength(0);
+  });
+
+  test("saving with a subset of fields sends only those fields in payload", async ({
+    page,
+  }) => {
+    await resetSyncConfig();
+    await clickTableRowItem(page, oidcProviderName);
+    await enableKeepSynced(page);
+    // Deselect all except authorizationUrl and tokenUrl
+    for (const field of [
+      "logoutUrl",
+      "userInfoUrl",
+      "tokenIntrospectionUrl",
+      "issuer",
+      "jwksUrl",
+    ]) {
+      await toggleSyncField(page, field);
+    }
+    const payloadPromise = captureIdpSavePayload(page, alias);
+    await clickSaveButton(page);
+    const payload = await payloadPromise;
+    const config = payload.config as Record<string, string>;
+    expect(config.reloadEnabled).toBe("true");
+    const syncedFields = config.includedWellKnownFields.split("##");
+    expect(syncedFields).toContain("authorizationUrl");
+    expect(syncedFields).toContain("tokenUrl");
+    expect(syncedFields).not.toContain("logoutUrl");
+    expect(syncedFields).not.toContain("issuer");
+  });
+
+  test("Reload now button calls backend and updates timestamps", async ({
+    page,
+  }) => {
+    await resetSyncConfig();
+    await clickTableRowItem(page, oidcProviderName);
+    await enableKeepSynced(page);
+    await assertReloadButtonVisible(page);
+    await clickReloadNow(page);
+    await expect(page.getByTestId("well-known-last-sync")).not.toHaveText(
+      "Never synced",
+    );
   });
 });

@@ -23,6 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -57,6 +58,7 @@ import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
+import org.keycloak.representations.idm.IdentityProviderReloadWellKnownRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.services.ErrorResponse;
@@ -66,6 +68,7 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.utils.ProfileHelper;
+import org.keycloak.utils.StringUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
@@ -519,6 +522,42 @@ public class IdentityProviderResource {
 
         IdentityProvider<?> provider = IdentityBrokerService.getIdentityProvider(session, identityProviderModel.getAlias());
         return provider.reloadKeys();
+    }
+
+    @POST
+    @Path("reload-well-known")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation(summary = "Reload IDP configuration from well-known URL. Returns the updated IDP representation.")
+    public IdentityProviderRepresentation reloadWellKnown(IdentityProviderReloadWellKnownRepresentation body) {
+        this.auth.realm().requireManageIdentityProviders();
+
+        if (identityProviderModel == null) {
+            throw new NotFoundException();
+        }
+
+        // Apply request-body overrides to the in-memory model before reloading
+        if (body != null) {
+            if (body.getReloadEnabled() != null) {
+                identityProviderModel.getConfig().put("reloadEnabled", String.valueOf(body.getReloadEnabled()));
+            }
+            if (StringUtil.isNotBlank(body.getMetadataDescriptorUrl())) {
+                identityProviderModel.setMetadataDescriptorUrl(body.getMetadataDescriptorUrl());
+            }
+            if (body.getIncludedWellKnownFields() != null) {
+                identityProviderModel.getConfig().put("includedWellKnownFields", body.getIncludedWellKnownFields());
+            }
+        }
+
+        if (!createIdentityProviderInstance().reloadConfig()) {
+            throw new BadRequestException("IDP configuration reloading disabled or unsupported for this IDP");
+        }
+
+        // Re-fetch after reloadConfig() to get the updated model (reloadConfig persists via a copy)
+        IdentityProviderModel updated = session.identityProviders().getByAlias(identityProviderModel.getAlias());
+        return StripSecretsUtils.stripSecrets(session, ModelToRepresentation.toRepresentation(session, realm, updated));
     }
 
 }

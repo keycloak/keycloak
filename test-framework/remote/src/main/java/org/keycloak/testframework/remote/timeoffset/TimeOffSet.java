@@ -97,4 +97,26 @@ public class TimeOffSet {
     public boolean hasChanged() {
         return currentOffset != 0;
     }
+
+    /**
+     * Sets the time offset for the duration of a try-with-resources block, then restores the previous offset.
+     * Allows arbitrary nesting because it remembers the previous offset each time
+     *
+     * <pre>
+     * try (var ignored = timeOffSet.withOffset(Duration.ofSeconds(60))) {
+     *     // server time is offset by 60s here
+     * }
+     * // offset is restored here
+     * </pre>
+     */
+    public OffsetScope withOffset(Duration duration) {
+        int previous = currentOffset;
+        set(duration);
+        return () -> set(previous);
+    }
+
+    public interface OffsetScope extends AutoCloseable {
+        @Override
+        void close();
+    }
 }

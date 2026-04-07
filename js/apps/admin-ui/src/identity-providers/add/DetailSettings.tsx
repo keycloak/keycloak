@@ -6,8 +6,10 @@ import {
   Action,
   KeycloakDataTable,
   KeycloakSpinner,
+  HelpItem,
   ListEmptyState,
   ScrollForm,
+  TextControl,
   useAlerts,
   useFetch,
 } from "@keycloak/keycloak-ui-shared";
@@ -18,7 +20,10 @@ import {
   Divider,
   DropdownItem,
   Form,
+  FormGroup,
   PageSection,
+  Stack,
+  StackItem,
   Tab,
   TabTitleText,
   Text,
@@ -61,7 +66,12 @@ import {
 import { toIdentityProviders } from "../routes/IdentityProviders";
 import { AdvancedSettings } from "./AdvancedSettings";
 import { DescriptorSettings } from "./DescriptorSettings";
-import { DiscoverySettings } from "./DiscoverySettings";
+import {
+  DiscoverySettings,
+  SyncMultiselect,
+  type SyncedField,
+  SYNCED_FIELDS,
+} from "./DiscoverySettings";
 import { ExtendedNonDiscoverySettings } from "./ExtendedNonDiscoverySettings";
 import { ExtendedOAuth2Settings } from "./ExtendedOAuth2Settings";
 import { GeneralSettings } from "./GeneralSettings";
@@ -418,6 +428,78 @@ export default function DetailSettings() {
     name: "config.jwtAuthorizationGrantEnabled",
   });
 
+  const reloadEnabledVal = useWatch({ control, name: "config.reloadEnabled" });
+  const lastSyncAttempt = useWatch({
+    control,
+    name: "config.wellKnownLastSyncAttempt",
+  });
+  const lastSyncDuration = useWatch({
+    control,
+    name: "config.wellKnownLastSyncAttemptDuration",
+  });
+  const lastSyncErrorMsg = useWatch({
+    control,
+    name: "config.wellKnownLastSyncError",
+  });
+  const includedWellKnownFields = useWatch({
+    control,
+    name: "config.includedWellKnownFields",
+  });
+  const includedFields: SyncedField[] = includedWellKnownFields
+    ? (includedWellKnownFields as string)
+        .split("##")
+        .filter(Boolean)
+        .filter((f): f is SyncedField =>
+          (SYNCED_FIELDS as readonly string[]).includes(f),
+        )
+    : [];
+
+  const [reloading, setReloading] = useState(false);
+  const [reloadError, setReloadError] = useState<string>();
+
+  const handleToggleInclude = (field: SyncedField) => {
+    const next = includedFields.includes(field)
+      ? includedFields.filter((f) => f !== field)
+      : [...includedFields, field];
+    form.setValue("config.includedWellKnownFields", next.join("##"));
+  };
+
+  const handleReloadNow = async () => {
+    setReloading(true);
+    setReloadError(undefined);
+    try {
+      const metadataDescriptorUrl = form.getValues(
+        "config.metadataDescriptorUrl",
+      ) as string | undefined;
+      const reloadEnabled = form.getValues("config.reloadEnabled") as
+        | boolean
+        | undefined;
+      const updated = await adminClient.identityProviders.reloadWellKnown({
+        alias,
+        reloadEnabled: reloadEnabled ?? undefined,
+        metadataDescriptorUrl: metadataDescriptorUrl || undefined,
+        includedWellKnownFields: includedWellKnownFields || undefined,
+      });
+      reset(updated);
+    } catch (error) {
+      setReloadError((error as Error).message);
+    } finally {
+      setReloading(false);
+    }
+  };
+
+  const formatLastSync = (epochMs: string | undefined) => {
+    if (!epochMs || epochMs === "0") return t("wellKnownNeverSynced");
+    const ms = parseInt(epochMs, 10);
+    if (isNaN(ms)) return t("wellKnownNeverSynced");
+    const seconds = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+    if (seconds < 60) return t("wellKnownSecondsAgo", { count: seconds });
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return t("wellKnownMinutesAgo", { count: minutes });
+    const hours = Math.floor(minutes / 60);
+    return t("wellKnownHoursAgo", { count: hours });
+  };
+
   if (!provider) {
     return <KeycloakSpinner />;
   }
@@ -488,7 +570,110 @@ export default function DetailSettings() {
       isHidden: !isOIDC,
       panel: (
         <>
-          <DiscoverySettings readOnly={false} isOIDC={isOIDC} />
+          {provider?.config?.metadataDescriptorUrl && (
+            <div className="pf-v5-c-form pf-m-horizontal">
+              <TextControl
+                name="config.metadataDescriptorUrl"
+                label={t("discoveryEndpoint")}
+                type="url"
+              />
+              <DefaultSwitchControl
+                name="config.reloadEnabled"
+                label={t("reloadEnabled")}
+                labelIcon={t("reloadEnabledHelp")}
+                data-testid="config.reloadEnabled"
+                stringify
+                onChange={(_e, checked) => {
+                  if (checked && !includedWellKnownFields) {
+                    form.setValue(
+                      "config.includedWellKnownFields",
+                      SYNCED_FIELDS.join("##"),
+                    );
+                  }
+                }}
+              />
+              {reloadEnabledVal === "true" && (
+                <SyncMultiselect
+                  id="sync-these-fields"
+                  selected={includedFields}
+                  onSelect={(field) => {
+                    const next = includedFields.includes(field)
+                      ? includedFields.filter((f) => f !== field)
+                      : [...includedFields, field];
+                    form.setValue(
+                      "config.includedWellKnownFields",
+                      next.join("##"),
+                    );
+                  }}
+                />
+              )}
+              {reloadEnabledVal === "true" && (
+                <FormGroup
+                  label={t("wellKnownLastSync")}
+                  fieldId="kc-last-sync"
+                  hasNoPaddingTop
+                  className="pf-v5-u-mb-md"
+                >
+                  <Stack hasGutter>
+                    <StackItem>
+                      <span data-testid="well-known-last-sync">
+                        {formatLastSync(lastSyncAttempt)}
+                        {lastSyncDuration ? ` (${lastSyncDuration}ms)` : ""}
+                      </span>
+                    </StackItem>
+                    <StackItem>
+                      <Button
+                        variant="secondary"
+                        onClick={handleReloadNow}
+                        isLoading={reloading}
+                        isDisabled={reloading}
+                        data-testid="reload-well-known-btn"
+                      >
+                        {t("reloadNow")}
+                      </Button>
+                    </StackItem>
+                  </Stack>
+                </FormGroup>
+              )}
+              {reloadEnabledVal === "true" && lastSyncErrorMsg && (
+                <FormGroup
+                  label={t("wellKnownLastSyncError")}
+                  fieldId="kc-last-sync-error"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("wellKnownLastSyncErrorHelp")}
+                      fieldLabelId="wellKnownLastSyncError"
+                    />
+                  }
+                  hasNoPaddingTop
+                  className="pf-v5-u-mb-md"
+                >
+                  <span data-testid="well-known-sync-error">
+                    {lastSyncErrorMsg}
+                  </span>
+                </FormGroup>
+              )}
+              {reloadEnabledVal === "true" && reloadError && (
+                <FormGroup
+                  label={t("wellKnownLastSyncError")}
+                  fieldId="kc-reload-error"
+                  hasNoPaddingTop
+                  className="pf-v5-u-mb-md"
+                >
+                  <span data-testid="well-known-reload-error">
+                    {t("reloadNowError", { error: reloadError })}
+                  </span>
+                </FormGroup>
+              )}
+            </div>
+          )}
+          <DiscoverySettings
+            readOnly={false}
+            isOIDC={isOIDC}
+            reloadEnabled={reloadEnabledVal === "true"}
+            includedFields={includedFields}
+            onToggleInclude={handleToggleInclude}
+          />
           <Form isHorizontal className="pf-v5-u-py-lg">
             <Divider />
             <OIDCAuthentication create={false} />

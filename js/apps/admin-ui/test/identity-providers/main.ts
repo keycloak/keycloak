@@ -1,4 +1,4 @@
-import { type Page, expect } from "@playwright/test";
+import { type Page, type Request, expect } from "@playwright/test";
 
 const SERVER_URL = "http://localhost:8080";
 const discoveryUrl = `${SERVER_URL}/realms/master/.well-known/openid-configuration`;
@@ -194,4 +194,77 @@ export async function addAuthConstraints(
     .getByTestId("config.singleSignOnServiceUrl")
     .fill(samlDiscoveryUrl);
   await page.getByTestId("idp-details-save").click();
+}
+
+export async function enableKeepSynced(page: Page) {
+  const checkbox = page.getByTestId("config.reloadEnabled");
+  const isChecked = await checkbox.isChecked();
+  if (!isChecked) {
+    await checkbox.click({ force: true });
+  }
+}
+
+export async function assertFieldReadOnly(page: Page, fieldName: string) {
+  await expect(page.getByTestId(`config.${fieldName}`)).toHaveAttribute(
+    "readonly",
+  );
+}
+
+export async function assertFieldEditable(page: Page, fieldName: string) {
+  await expect(page.getByTestId(`config.${fieldName}`)).not.toHaveAttribute(
+    "readonly",
+  );
+}
+
+export async function toggleSyncField(page: Page, field: string) {
+  await page.getByTestId("sync-these-fields-toggle").click();
+  await page.getByTestId(`sync-field-${field}`).click();
+  await page.keyboard.press("Escape");
+}
+
+export async function captureIdpSavePayload(
+  page: Page,
+  alias: string,
+): Promise<Record<string, unknown>> {
+  return new Promise((resolve) => {
+    const handler = (request: Request) => {
+      if (
+        request.method() === "PUT" &&
+        request.url().includes(`/identity-provider/instances/${alias}`)
+      ) {
+        page.off("request", handler);
+        resolve(JSON.parse(request.postData() ?? "{}"));
+      }
+    };
+    page.on("request", handler);
+  });
+}
+
+export async function assertReloadButtonVisible(page: Page) {
+  await expect(page.getByTestId("reload-well-known-btn")).toBeVisible();
+}
+
+export async function clickReloadNow(page: Page) {
+  await page.getByTestId("reload-well-known-btn").click();
+}
+
+const ADD_OIDC_URL = `${SERVER_URL}/admin/master/console#/master/identity-providers/oidc/add`;
+
+export async function goToAddOidcProvider(page: Page) {
+  await page.goto(ADD_OIDC_URL);
+}
+
+export async function fillOIDCProviderForm(
+  page: Page,
+  alias: string,
+  displayName: string,
+  clientId: string,
+  clientSecret: string,
+) {
+  await page.getByTestId("alias").fill(alias);
+  await page.getByTestId("displayName").fill(displayName);
+  await fillDiscoveryUrl(page, discoveryUrl);
+  await page.getByTestId("config.clientId").fill(clientId);
+  await page.getByTestId("config.clientSecret").fill(clientSecret);
+  await clickAddButton(page);
 }

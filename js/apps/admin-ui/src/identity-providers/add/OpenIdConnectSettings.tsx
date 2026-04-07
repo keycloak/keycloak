@@ -1,11 +1,15 @@
 import { FormGroup, Title } from "@patternfly/react-core";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { FormErrorText, HelpItem } from "@keycloak/keycloak-ui-shared";
 import { useAdminClient } from "../../admin-client";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
-import { DiscoverySettings } from "./DiscoverySettings";
+import {
+  DiscoverySettings,
+  SYNCED_FIELDS,
+  type SyncedField,
+} from "./DiscoverySettings";
 
 type OpenIdConnectSettingsProps = {
   isOIDC: boolean;
@@ -15,7 +19,6 @@ export const OpenIdConnectSettings = ({
   isOIDC,
 }: OpenIdConnectSettingsProps) => {
   const { adminClient } = useAdminClient();
-
   const { t } = useTranslation();
   const id = "oidc";
 
@@ -23,18 +26,38 @@ export const OpenIdConnectSettings = ({
     setValue,
     setError,
     clearErrors,
+    control,
     formState: { errors },
   } = useFormContext();
 
-  const setupForm = (result: any) => {
+  const reloadEnabledVal = useWatch({ control, name: "config.reloadEnabled" });
+  const includedRaw = useWatch({
+    control,
+    name: "config.includedWellKnownFields",
+  });
+  const includedFields: SyncedField[] = includedRaw
+    ? (includedRaw as string)
+        .split("##")
+        .filter(Boolean)
+        .filter((f): f is SyncedField =>
+          (SYNCED_FIELDS as readonly string[]).includes(f),
+        )
+    : [];
+
+  const handleToggleInclude = (field: SyncedField) => {
+    const current = includedFields.includes(field)
+      ? includedFields.filter((f) => f !== field)
+      : [...includedFields, field];
+    setValue("config.includedWellKnownFields", current.join("##"));
+  };
+
+  const setupForm = (result: Record<string, string>) => {
     Object.keys(result).map((k) => setValue(`config.${k}`, result[k]));
   };
 
   const fileUpload = async (obj?: object) => {
     clearErrors("discoveryError");
-    if (!obj) {
-      return;
-    }
+    if (!obj) return;
 
     const formData = new FormData();
     formData.append("providerId", id);
@@ -88,7 +111,13 @@ export const OpenIdConnectSettings = ({
         }
       >
         {(readonly) => (
-          <DiscoverySettings readOnly={readonly} isOIDC={isOIDC} />
+          <DiscoverySettings
+            readOnly={readonly}
+            isOIDC={isOIDC}
+            reloadEnabled={reloadEnabledVal === "true"}
+            includedFields={includedFields}
+            onToggleInclude={handleToggleInclude}
+          />
         )}
       </DiscoveryEndpointField>
     </>

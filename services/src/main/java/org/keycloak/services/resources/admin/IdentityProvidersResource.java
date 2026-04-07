@@ -276,6 +276,12 @@ public class IdentityProvidersResource {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
             session.identityProviders().create(identityProvider);
 
+            // If the new IDP supports config reload, do an initial sync immediately so it is not incomplete.
+            // Guard here with reloadEnabled again because IdentityProviderTest creates an OpenShiftv4 IdP, which does network calls in its constructor
+            if ("true".equals(identityProvider.getConfig().get("reloadEnabled"))) {
+                getProviderFactoryById(identityProvider.getProviderId()).create(session, identityProvider).reloadConfig();
+            }
+
             representation.setInternalId(identityProvider.getInternalId());
             representation.setHideOnLogin(identityProvider.isHideOnLogin()); // update in case of legacy hide on login attr was used.
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), identityProvider.getAlias())

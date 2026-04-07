@@ -180,8 +180,8 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 	}
 
 
-
-
-
-
+    @Override
+    public boolean reloadConfig() {
+        return false;
+    }
 }
