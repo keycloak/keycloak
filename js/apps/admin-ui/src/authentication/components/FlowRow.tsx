@@ -16,6 +16,7 @@ import "./flow-row.css";
 type FlowRowProps = {
   builtIn: boolean;
   execution: ExpandableExecution;
+  dropTargetId?: string | null;
   onRowClick: (execution: ExpandableExecution) => void;
   onRowChange: (execution: ExpandableExecution) => void;
   onAddExecution: (
@@ -44,6 +45,7 @@ const convertToType = (execution: ExpandableExecution): FlowType => {
 export const FlowRow = ({
   builtIn,
   execution,
+  dropTargetId,
   onRowClick,
   onRowChange,
   onAddExecution,
@@ -52,6 +54,8 @@ export const FlowRow = ({
 }: FlowRowProps) => {
   const { t } = useTranslation();
   const hasSubList = !!execution.executionList?.length;
+  const isDropTarget =
+    execution.authenticationFlow && dropTargetId === execution.id;
 
   const treeRow = {
     onCollapse: () => onRowClick(execution),
@@ -70,6 +74,7 @@ export const FlowRow = ({
         <TreeRowWrapper
           row={{ props: treeRow.props }}
           className="keycloak__authentication__flow-row"
+          {...(isDropTarget && { "data-drop-target": "true" })}
         >
           <Td
             draggableRow={{
@@ -140,6 +145,7 @@ export const FlowRow = ({
             builtIn={builtIn}
             key={ex.id}
             execution={ex}
+            dropTargetId={dropTargetId}
             onRowClick={onRowClick}
             onRowChange={onRowChange}
             onAddExecution={onAddExecution}

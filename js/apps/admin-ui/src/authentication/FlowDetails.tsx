@@ -19,7 +19,7 @@ import {
 } from "@patternfly/react-core";
 import { DomainIcon, TableIcon } from "@patternfly/react-icons";
 import { Table, Tbody } from "@patternfly/react-table";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
@@ -75,6 +75,41 @@ export default function FlowDetails() {
   const [open, toggleOpen, setOpen] = useToggle();
   const [edit, setEdit] = useState(false);
   const [bindFlowOpen, toggleBindFlow] = useToggle();
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const [isShiftPressed, setIsShiftPressed] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setIsShiftPressed(true);
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setIsShiftPressed(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
+  const getSubflowAtIndex = useCallback(
+    (index: number): ExpandableExecution | undefined => {
+      if (!executionList) return undefined;
+      const target = executionList.findExecution(index);
+      if (target?.authenticationFlow) {
+        return target;
+      }
+      if (index > 0) {
+        const prevTarget = executionList.findExecution(index - 1);
+        if (prevTarget?.authenticationFlow) {
+          return prevTarget;
+        }
+      }
+      return undefined;
+    },
+    [executionList],
+  );
 
   useFetch(
     async () => {
@@ -419,13 +454,50 @@ export default function FlowDetails() {
                   }
                   return true;
                 }}
-                onDragMove={({ index }) => {
-                  const dragged = executionList.findExecution(index);
-                  setLiveText(t("onDragMove", { item: dragged?.displayName }));
+                onDragMove={(source, dest) => {
+                  if (dest) {
+                    const dragged = executionList.findExecution(source.index);
+                    setLiveText(
+                      t("onDragMove", { item: dragged?.displayName }),
+                    );
+                    if (isShiftPressed) {
+                      const subflow = getSubflowAtIndex(dest.index);
+                      if (subflow && subflow.id !== dragged?.id) {
+                        setDropTargetId(subflow.id ?? null);
+                      } else {
+                        setDropTargetId(null);
+                      }
+                    } else {
+                      setDropTargetId(null);
+                    }
+                  } else {
+                    setDropTargetId(null);
+                  }
                 }}
                 onDrop={(source, dest) => {
+                  const wasShiftPressed = isShiftPressed;
+                  setDropTargetId(null);
                   if (dest) {
                     const dragged = executionList.findExecution(source.index)!;
+                    const targetSubflow = getSubflowAtIndex(dest.index);
+
+                    if (
+                      wasShiftPressed &&
+                      targetSubflow &&
+                      targetSubflow.id !== dragged.id
+                    ) {
+                      setLiveText(
+                        t("onDragFinish", { list: dragged.displayName }),
+                      );
+                      const change = new LevelChange(
+                        targetSubflow.executionList?.length || 0,
+                        targetSubflow.index!,
+                        targetSubflow,
+                      );
+                      void executeChange(dragged, change);
+                      return true;
+                    }
+
                     const order = executionList.order().map((ex) => ex.id!);
                     setLiveText(
                       t("onDragFinish", { list: dragged.displayName }),
@@ -451,6 +523,7 @@ export default function FlowDetails() {
                           <FlowRow
                             builtIn={!!builtIn}
                             execution={execution}
+                            dropTargetId={dropTargetId}
                             onRowClick={(execution) => {
                               execution.isCollapsed = !execution.isCollapsed;
                               setExecutionList(executionList.clone());
