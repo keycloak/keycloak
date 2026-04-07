@@ -38,6 +38,7 @@ import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.NoSuchElementException;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
@@ -45,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -692,26 +694,17 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
                 "Error should be invalid_request or invalid_client. Got error: " + errorResponse.getError());
     }
 
-    /** Malformed authorization_details JSON supplied in the authorization request must fail at the token endpoint. */
     @Test
-    public void testTokenExchangeWithMalformedAuthorizationDetails() throws Exception {
+    public void testTokenExchangeWithMalformedAuthorizationDetails() {
 
-        // Use loginForm directly to inject the malformed JSON as a raw parameter
-        AuthorizationEndpointResponse authResponse = oauth.loginForm()
+        NoSuchElementException ex = assertThrows(NoSuchElementException.class, () -> oauth.loginForm()
                 .scope(ctx.getScope())
                 .param(OAuth2Constants.AUTHORIZATION_DETAILS, "invalid-json")
-                .doLogin(TEST_USER, TEST_PASSWORD);
-        String code = authResponse.getCode();
-        assertNotNull(code, "Authorization code should not be null");
+                .doLogin(TEST_USER, TEST_PASSWORD));
 
-        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code).send();
-
-        assertEquals(400, errorResponse.getStatusCode());
-        assertEquals(Errors.INVALID_AUTHORIZATION_DETAILS, errorResponse.getError());
-        assertTrue(
-                errorResponse.getErrorDescription() != null &&
-                errorResponse.getErrorDescription().contains("authorization_details"),
-                "Error description should indicate authorization_details processing error");
+        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
+        assertNotNull(ex.getMessage(), "No error message");
+        assertTrue(ex.getMessage().contains("Unable to locate element with ID: 'username'"), ex.getMessage());
     }
 
     /**

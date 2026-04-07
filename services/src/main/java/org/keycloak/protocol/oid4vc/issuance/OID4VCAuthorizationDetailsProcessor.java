@@ -127,16 +127,17 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
             }
         }
 
-        // credential_identifiers not allowed
-        if (credentialIdentifiers != null && !credentialIdentifiers.isEmpty()) {
-            logger.warnf("Property credential_identifiers not allowed in authorization_details");
-            throw getInvalidRequestException("credential_identifiers not allowed");
-        }
-
         // credential_configuration_id is REQUIRED
-        if (credentialConfigurationId == null) {
+        if (Strings.isEmpty(credentialConfigurationId)) {
             logger.warnf("Missing credential_configuration_id in authorization_details");
             throw getInvalidRequestException("credential_configuration_id is required");
+        }
+
+        // credential_identifiers not allowed
+        if (credentialIdentifiers != null) {
+            // we also reject an empty array of credential identifiers
+            logger.warnf("Property credential_identifiers not allowed in authorization_details");
+            throw getInvalidRequestException("credential_identifiers not allowed");
         }
 
         // Validate credential_configuration_id

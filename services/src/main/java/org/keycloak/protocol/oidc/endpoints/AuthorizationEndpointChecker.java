@@ -18,7 +18,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import java.io.IOException;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -242,19 +242,23 @@ public class AuthorizationEndpointChecker {
             AuthorizationDetailsJSONRepresentation[] authDetails;
             try {
                 authDetails = JsonSerialization.readValue(authDetailsParam, AuthorizationDetailsJSONRepresentation[].class);
-            } catch (IOException e) {
-                ServicesLogger.LOGGER.warn("Cannot parse authorization_details: " + authDetailsParam);
-                return;
+            } catch (Exception e) {
+                event.error(Errors.INVALID_REQUEST);
+                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST,
+                        "Cannot parse authorization_details: " + authDetailsParam);
             }
             for (AuthorizationDetailsJSONRepresentation authDetailJson : authDetails) {
                 if (OPENID_CREDENTIAL.equals(authDetailJson.getType())) {
                     var authDetail = authDetailJson.asSubtype(OID4VCAuthorizationDetail.class);
-                    if (Strings.isEmpty(authDetail.getCredentialConfigurationId())) {
+                    String credentialConfigurationId = authDetail.getCredentialConfigurationId();
+                    List<String> credentialIdentifiers = authDetail.getCredentialIdentifiers();
+                    if (Strings.isEmpty(credentialConfigurationId)) {
                         event.error(Errors.INVALID_REQUEST);
                         throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST,
                                 "No credential_configuration_id in authorization_details: " + authDetailsParam);
                     }
-                    if (authDetail.getCredentialIdentifiers() != null) {
+                    if (credentialIdentifiers != null) {
+                        // we also reject an empty array of credential identifiers
                         event.error(Errors.INVALID_REQUEST);
                         throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST,
                                 "Found invalid credential_identifiers in authorization_details: " + authDetailsParam);
