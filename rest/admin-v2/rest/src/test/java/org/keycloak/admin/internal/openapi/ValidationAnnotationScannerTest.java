@@ -19,6 +19,7 @@ package org.keycloak.admin.internal.openapi;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Set;
 
 import jakarta.validation.constraints.Max;
@@ -29,9 +30,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.PutClient;
+import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
 
 import org.eclipse.microprofile.openapi.OASFactory;
 import org.eclipse.microprofile.openapi.models.media.Schema;
@@ -39,13 +42,13 @@ import org.hibernate.validator.constraints.URL;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.Index;
 import org.jboss.jandex.Indexer;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests for {@link ValidationAnnotationScanner}.
@@ -65,11 +68,14 @@ public class ValidationAnnotationScannerTest {
     private ValidationAnnotationScanner scanner;
     private Index index;
 
-    @Before
+    @BeforeEach
     public void setUp() throws IOException {
         index = createIndex(
                 TestRepresentation.class,
                 TestWithGroups.class,
+                TestWithClassLevelConstraint.class,
+                TestWithClassLevelConstraintAndGroups.class,
+                TestWithClassLevelConstraintAndMessage.class,
                 CreateClient.class,
                 PutClient.class,
                 PatchClient.class,
@@ -80,7 +86,9 @@ public class ValidationAnnotationScannerTest {
                 Pattern.class,
                 Min.class,
                 Max.class,
-                URL.class
+                URL.class,
+                ClientSecretNotBlank.class,
+                UuidUnmodified.class
         );
         scanner = new ValidationAnnotationScanner(index);
     }
@@ -104,6 +112,31 @@ public class ValidationAnnotationScannerTest {
         scanner.applySchemaProperties(classInfo, "urlField", schema);
 
         assertEquals("custom-format", schema.getFormat());
+    }
+
+    @Test
+    public void applySchemaProperties_urlOnTypeArgumentSetsItemsFormatUri() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+        Schema schema = OASFactory.createSchema();
+        Schema itemsSchema = OASFactory.createSchema();
+        schema.setItems(itemsSchema);
+
+        scanner.applySchemaProperties(classInfo, "urlSet", schema);
+
+        assertEquals("uri", itemsSchema.getFormat());
+    }
+
+    @Test
+    public void applySchemaProperties_urlOnTypeArgumentDoesNotOverwriteExistingFormat() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+        Schema schema = OASFactory.createSchema();
+        Schema itemsSchema = OASFactory.createSchema();
+        itemsSchema.setFormat("custom-format");
+        schema.setItems(itemsSchema);
+
+        scanner.applySchemaProperties(classInfo, "urlSet", schema);
+
+        assertEquals("custom-format", itemsSchema.getFormat());
     }
 
     @Test
@@ -226,6 +259,54 @@ public class ValidationAnnotationScannerTest {
         assertTrue(description.contains("on update"));
     }
 
+    @Test
+    public void buildClassLevelDescriptions_returnsDescriptionForClassLevelConstraint() {
+        ClassInfo classInfo = index.getClassByName(TestWithClassLevelConstraint.class);
+
+        Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
+
+        assertNotNull(descriptions);
+        assertEquals(1, descriptions.size());
+        assertTrue(descriptions.containsKey("clientsecretnotblank"));
+        // Falls back to annotation name when message can't be resolved from resource bundle
+        assertEquals("ClientSecretNotBlank", descriptions.get("clientsecretnotblank"));
+    }
+
+    @Test
+    public void buildClassLevelDescriptions_usesExplicitMessage() {
+        ClassInfo classInfo = index.getClassByName(TestWithClassLevelConstraintAndMessage.class);
+
+        Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
+
+        assertNotNull(descriptions);
+        assertTrue(descriptions.containsKey("clientsecretnotblank"));
+        assertEquals("Custom validation message", descriptions.get("clientsecretnotblank"));
+    }
+
+    @Test
+    public void buildClassLevelDescriptions_includesGroupContext() {
+        ClassInfo classInfo = index.getClassByName(TestWithClassLevelConstraintAndGroups.class);
+
+        Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
+
+        assertNotNull(descriptions);
+        assertTrue(descriptions.containsKey("clientsecretnotblank"));
+        String description = descriptions.get("clientsecretnotblank");
+        assertTrue(description.contains("on create"));
+        // Falls back to annotation name when message can't be resolved
+        assertTrue(description.contains("ClientSecretNotBlank"));
+    }
+
+    @Test
+    public void buildClassLevelDescriptions_returnsEmptyMapForClassWithoutConstraints() {
+        ClassInfo classInfo = index.getClassByName(TestRepresentation.class);
+
+        Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
+
+        assertNotNull(descriptions);
+        assertTrue(descriptions.isEmpty());
+    }
+
     private Index createIndex(Class<?>... classes) throws IOException {
         Indexer indexer = new Indexer();
         for (Class<?> clazz : classes) {
@@ -265,6 +346,8 @@ public class ValidationAnnotationScannerTest {
         @URL
         private String urlField;
 
+        private Set<@URL String> urlSet;
+
         private String noConstraints;
     }
 
@@ -281,5 +364,23 @@ public class ValidationAnnotationScannerTest {
 
         @NotBlank(groups = {CreateClient.class, PutClient.class})
         private String createAndUpdate;
+    }
+
+    @ClientSecretNotBlank
+    @SuppressWarnings("unused")
+    public static class TestWithClassLevelConstraint {
+        private String secret;
+    }
+
+    @ClientSecretNotBlank(groups = CreateClient.class)
+    @SuppressWarnings("unused")
+    public static class TestWithClassLevelConstraintAndGroups {
+        private String secret;
+    }
+
+    @ClientSecretNotBlank(message = "Custom validation message")
+    @SuppressWarnings("unused")
+    public static class TestWithClassLevelConstraintAndMessage {
+        private String secret;
     }
 }

@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.StringJoiner;
 
 import jakarta.validation.Constraint;
-import jakarta.validation.Valid;
 
 import org.keycloak.representations.admin.v2.validation.CreateClient;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
@@ -48,9 +47,6 @@ public class ValidationAnnotationScanner {
 
     // Meta-annotation that marks constraint annotations
     private static final DotName CONSTRAINT = DotName.createSimple(Constraint.class);
-
-    // @Valid is not a constraint but useful to document for nested validation
-    private static final DotName VALID = DotName.createSimple(Valid.class);
 
     // Hibernate Validator's @URL annotation (for schema property handling - not supported by SmallRye)
     private static final DotName URL = DotName.createSimple(URL.class);
@@ -197,12 +193,6 @@ public class ValidationAnnotationScanner {
 
             DotName annotationName = annotation.name();
 
-            // Handle @Valid (nested validation) - not a constraint but useful to document
-            if (VALID.equals(annotationName)) {
-                constraints.add("nested fields are validated");
-                continue;
-            }
-
             // Check if this is a constraint annotation
             if (!isConstraintAnnotation(annotationName)) {
                 continue;
@@ -280,11 +270,8 @@ public class ValidationAnnotationScanner {
                 message = annotation.name().withoutPackagePrefix();
             }
 
-            // Try to determine which field(s) this class-level constraint affects
             String affectedField = annotation.name().withoutPackagePrefix().toLowerCase();
-            if (affectedField != null) {
-                fieldDescriptions.put(affectedField, context + message);
-            }
+            fieldDescriptions.put(affectedField, context + message);
         }
 
         return fieldDescriptions;
