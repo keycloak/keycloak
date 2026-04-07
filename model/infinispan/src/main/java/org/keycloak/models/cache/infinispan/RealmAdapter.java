@@ -55,6 +55,7 @@ import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.TrustedDevicePolicy;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.cache.CachedRealmModel;
@@ -825,7 +826,6 @@ public class RealmAdapter implements CachedRealmModel {
     public void setOTPPolicy(OTPPolicy policy) {
         getDelegateForUpdate();
         updated.setOTPPolicy(policy);
-
     }
 
     @Override
@@ -850,6 +850,18 @@ public class RealmAdapter implements CachedRealmModel {
     public void setWebAuthnPolicyPasswordless(WebAuthnPolicy policy) {
         getDelegateForUpdate();
         updated.setWebAuthnPolicyPasswordless(policy);
+    }
+
+    @Override
+    public TrustedDevicePolicy getTrustedDevicePolicy() {
+        if (isUpdated()) return updated.getTrustedDevicePolicy();
+        return cached.getTrustedDevicePolicy();
+    }
+
+    @Override
+    public void setTrustedDevicePolicy(TrustedDevicePolicy policy) {
+        getDelegateForUpdate();
+        updated.setTrustedDevicePolicy(policy);
     }
 
     @Override

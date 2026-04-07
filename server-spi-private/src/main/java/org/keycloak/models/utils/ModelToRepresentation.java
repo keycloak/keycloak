@@ -82,6 +82,7 @@ import org.keycloak.models.RequiredActionConfigModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.TrustedDevicePolicy;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
@@ -589,6 +590,10 @@ public class ModelToRepresentation {
         rep.setWebAuthnPolicyPasswordlessAcceptableAaguids(webAuthnPolicy.getAcceptableAaguids());
         rep.setWebAuthnPolicyPasswordlessExtraOrigins(webAuthnPolicy.getExtraOrigins());
         rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(webAuthnPolicy.isPasskeysEnabled());
+
+        TrustedDevicePolicy trustedDevicePolicy = realm.getTrustedDevicePolicy();
+        rep.setTrustedDeviceEnabled(trustedDevicePolicy.isEnabled());
+        rep.setTrustedDeviceExpiration(trustedDevicePolicy.getTrustExpiration());
 
         CibaConfig cibaPolicy = realm.getCibaPolicy();
         Map<String, String> attrMap = ofNullable(rep.getAttributes()).orElse(new HashMap<>());
