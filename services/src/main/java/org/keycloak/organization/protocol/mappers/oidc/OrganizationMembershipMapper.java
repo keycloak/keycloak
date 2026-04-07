@@ -37,7 +37,6 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
-import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AbstractOIDCProtocolMapper;
@@ -111,20 +110,25 @@ public class OrganizationMembershipMapper extends AbstractOIDCProtocolMapper imp
 
     @Override
     protected void setClaim(IDToken token, ProtocolMapperModel model, UserSessionModel userSession, KeycloakSession session, ClientSessionContext clientSessionCtx) {
-        String orgId = clientSessionCtx.getClientSession().getNote(OrganizationModel.ORGANIZATION_ATTRIBUTE);
-        Stream<OrganizationModel> organizations;
+        KeycloakContext context = session.getContext();
+        OrganizationModel organization = context.getOrganization();
+        List<OrganizationModel> organizations;
 
-        if (orgId == null) {
-            organizations = resolveFromRequestedScopes(session, userSession, clientSessionCtx);
+        if (organization != null) {
+            organizations = List.of(organization);
         } else {
-            organizations = Stream.of(session.getProvider(OrganizationProvider.class).getById(orgId));
+            organizations = resolveFromRequestedScopes(session, userSession, clientSessionCtx).toList();
         }
 
-        KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
         ProtocolMapperModel effectiveModel = getEffectiveModel(session, realm, model);
         UserModel user = userSession.getUser();
-        Object claim = resolveValue(effectiveModel, user, organizations.toList());
+
+        if (organizations.size() == 1) {
+            context.setOrganization(organizations.get(0));
+        }
+
+        Object claim = resolveValue(effectiveModel, user, organizations);
 
         if (claim == null) {
             return;
