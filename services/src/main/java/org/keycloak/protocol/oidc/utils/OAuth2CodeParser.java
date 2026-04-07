@@ -39,6 +39,7 @@ public class OAuth2CodeParser {
     private static final Logger logger = Logger.getLogger(OAuth2CodeParser.class);
 
     private static final Pattern DOT = Pattern.compile("\\.");
+    private static final String CACHE_KEY_PREFIX = "code:";
 
     /**
      * Will persist the code to the cache and return the object with the codeData and code correctly set
@@ -54,7 +55,7 @@ public class OAuth2CodeParser {
         }
 
         Map<String, String> serialized = codeData.serializeCode();
-        codeStore.put(key, clientSession.getUserSession().getRealm().getAccessCodeLifespan(), serialized);
+        codeStore.put(CACHE_KEY_PREFIX + key, clientSession.getUserSession().getRealm().getAccessCodeLifespan(), serialized);
         return key + "." + clientSession.getUserSession().getId() + "." + clientSession.getClient().getId();
     }
 
@@ -94,7 +95,7 @@ public class OAuth2CodeParser {
         result.clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
 
         SingleUseObjectProvider codeStore = session.singleUseObjects();
-        Map<String, String> codeData = codeStore.remove(codeUUID);
+        Map<String, String> codeData = codeStore.remove(CACHE_KEY_PREFIX + codeUUID);
 
         // Either code not available or was already used
         if (codeData == null) {

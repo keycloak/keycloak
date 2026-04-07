@@ -31,8 +31,8 @@ import java.util.Map;
  */
 public class OAuth2Code {
 
-    private static final String ID_NOTE = "id";
-    private static final String EXPIRATION_NOTE = "exp";
+    public static final String ID_NOTE = "id";
+    public static final String EXPIRATION_NOTE = "exp";
     private static final String NONCE_NOTE = "nonce";
     private static final String SCOPE_NOTE = "scope";
     private static final String RESOURCE_NOTE = "resource";
@@ -40,7 +40,7 @@ public class OAuth2Code {
     private static final String CODE_CHALLENGE_NOTE = "code_challenge";
     private static final String CODE_CHALLENGE_METHOD_NOTE = "code_challenge_method";
     private static final String DPOP_JKT_NOTE = "dpop_jkt";
-    private static final String USER_SESSION_ID_NOTE = "user_session_id";
+    public static final String USER_SESSION_ID_NOTE = "user_session_id";
 
     private final String id;
 
