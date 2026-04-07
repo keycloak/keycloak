@@ -1,3 +1,9 @@
 .pf-v5-c-table__tr:hover {
   background-color: var(--pf-v5-global--BackgroundColor--200);
 }
+
+tr[data-drop-target="true"] {
+  outline: 3px solid var(--pf-v5-global--active-color--100);
+  outline-offset: -3px;
+  background-color: var(--pf-v5-global--palette--blue-50);
+}
