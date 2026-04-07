@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime.tracing;
 
+import java.util.Set;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.config.TracingOptions;
@@ -30,7 +32,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.tracing.TracingProvider;
 
-import java.util.Set;
+import io.opentelemetry.instrumentation.apachehttpclient.v4_3.ApacheHttpClientTelemetry;
 
 /**
  * The traced {@link HttpClientFactory} for {@link HttpClientProvider HttpClientProvider's} used by Keycloak for outbound HTTP calls which are traced.
@@ -38,24 +40,15 @@ import java.util.Set;
 public class OTelHttpClientFactory extends DefaultHttpClientFactory implements EnvironmentDependentProviderFactory {
     public static final String PROVIDER_ID = "opentelemetry";
 
-    private static OTelHttpClientBuilder BUILDER_SINGLETON;
-
     @Override
     public String getId() {
         return PROVIDER_ID;
     }
 
     @Override
-    public HttpClientProvider create(KeycloakSession session) {
-        if (BUILDER_SINGLETON == null) {
-            BUILDER_SINGLETON = new OTelHttpClientBuilder((OTelTracingProvider) session.getProvider(TracingProvider.class));
-        }
-        return super.create(session);
-    }
-
-    @Override
-    protected HttpClientBuilder newHttpClientBuilder() {
-        return BUILDER_SINGLETON;
+    protected HttpClientBuilder newHttpClientBuilder(KeycloakSession session) {
+        var provider = (OTelTracingProvider) session.getProvider(TracingProvider.class);
+        return new HttpClientBuilder(ApacheHttpClientTelemetry.builder(provider.getOpenTelemetry()).build().newHttpClientBuilder());
     }
 
     @Override

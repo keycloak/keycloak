@@ -202,7 +202,7 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
                         proxyMappings = ProxyMappings.withFixedProxyMapping(httpProxy, noProxy);
                     }
 
-                    HttpClientBuilder builder = newHttpClientBuilder();
+                    HttpClientBuilder builder = newHttpClientBuilder(session);
 
                     builder.socketTimeout(socketTimeout, TimeUnit.MILLISECONDS)
                             .establishConnectionTimeout(establishConnectionTimeout, TimeUnit.MILLISECONDS)
@@ -249,8 +249,15 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
         }
     }
 
+    /**
+     * @deprecated use {@link #newHttpClientBuilder(KeycloakSession)}
+     */
     protected HttpClientBuilder newHttpClientBuilder() {
         return new HttpClientBuilder();
+    }
+
+    protected HttpClientBuilder newHttpClientBuilder(KeycloakSession session) {
+        return newHttpClientBuilder();
     }
 
     @Override
