@@ -41,6 +41,7 @@ components:
           type: string
           description: URL to the application's homepage that is represented by this
             client
+          format: uri
         redirectUris:
           type: array
           uniqueItems: true
