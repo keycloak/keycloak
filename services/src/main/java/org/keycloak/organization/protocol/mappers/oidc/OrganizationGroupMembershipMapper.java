@@ -31,6 +31,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -46,6 +47,8 @@ import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
 
+import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME;
+
 public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMapper implements OIDCAccessTokenMapper, OIDCIDTokenMapper, UserInfoTokenMapper, TokenIntrospectionTokenMapper, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "oidc-organization-group-membership-mapper";
@@ -53,6 +56,7 @@ public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMappe
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
         List<ProviderConfigProperty> properties = new ArrayList<>();
+        OIDCAttributeMapperHelper.addTokenClaimNameConfig(properties);
         OIDCAttributeMapperHelper.addIncludeInTokensConfig(properties, OrganizationGroupMembershipMapper.class);
         return properties;
     }
@@ -95,7 +99,7 @@ public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMappe
         OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
 
         // Get or create organization claims map for composition
-        final Map<String, Object> orgClaims = OIDCAttributeMapperHelper.getOrInitializeOrganizationClaimAsMap(token, OAuth2Constants.ORGANIZATION);
+        final Map<String, Object> orgClaims = OIDCAttributeMapperHelper.getOrInitializeOrganizationClaimAsMap(token, getEffectiveModel(session, userSession.getRealm(), model));
 
         // Add groups to each organization
         organizations.forEach(org -> {
@@ -138,6 +142,7 @@ public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMappe
         if (accessToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
         if (idToken) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
         if (introspectionEndpoint) config.put(OIDCAttributeMapperHelper.INCLUDE_IN_INTROSPECTION, "true");
+        config.put(TOKEN_CLAIM_NAME, OAuth2Constants.ORGANIZATION);
         mapper.setConfig(config);
 
         return mapper;
@@ -152,5 +157,12 @@ public class OrganizationGroupMembershipMapper extends AbstractOIDCProtocolMappe
     public int getPriority() {
         // Run after OrganizationMembershipMapper (higher number = later execution)
         return 10;
+    }
+
+    @Override
+    public ProtocolMapperModel getEffectiveModel(KeycloakSession session, RealmModel realm, ProtocolMapperModel protocolMapperModel) {
+        ProtocolMapperModel effectiveModel = super.getEffectiveModel(session, realm, protocolMapperModel);
+        effectiveModel.getConfig().putIfAbsent(TOKEN_CLAIM_NAME, OAuth2Constants.ORGANIZATION);
+        return effectiveModel;
     }
 }

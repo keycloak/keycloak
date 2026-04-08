@@ -295,11 +295,11 @@ public class OIDCAttributeMapperHelper {
      * (String type), existing Map, or creates empty Map if null.
      *
      * @param token the token
-     * @param claimName the name of the organization claim
+     * @param effectiveModel the effective model of the protocol mapper to retrieve the name of the organization claim
      * @return a mutable Map that can be manipulated; changes will be reflected in the token
      */
-    public static Map<String, Object> getOrInitializeOrganizationClaimAsMap(IDToken token, String claimName) {
-        Object existingClaim = token.getOtherClaims().get(claimName);
+    public static Map<String, Object> getOrInitializeOrganizationClaimAsMap(IDToken token, ProtocolMapperModel effectiveModel) {
+        Object existingClaim = token.getOtherClaims().get(effectiveModel.getConfig().get(TOKEN_CLAIM_NAME));
         Map<String, Object> result;
 
         if (existingClaim instanceof ObjectNode) {
@@ -317,7 +317,7 @@ public class OIDCAttributeMapperHelper {
             result = new HashMap<>();
         }
 
-        token.setOtherClaims(claimName, result);
+        OIDCAttributeMapperHelper.mapClaim(token, effectiveModel, result);
         return result;
     }
 
