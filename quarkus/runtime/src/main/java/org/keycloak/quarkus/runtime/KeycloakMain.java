@@ -47,7 +47,6 @@ import picocli.CommandLine;
 
 import static org.keycloak.common.util.Environment.isNonServerMode;
 import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
-import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 
 /**
  * <p>The main entry point, responsible for initialize and run the CLI as well as start the server.
@@ -159,9 +158,7 @@ public class KeycloakMain implements QuarkusApplication {
             QuarkusKeycloakSessionFactory sessionFactory = Arc.container().instance(QuarkusKeycloakSessionFactory.class).get();
             COMMAND.onStart(application, sessionFactory);
         }
-        if (isTestLaunchMode() || isNonServerMode()) {
-            // in test mode we exit immediately
-            // we should be managing this behavior more dynamically depending on the tests requirements (short/long lived)
+        if (isNonServerMode()) {
             Quarkus.asyncExit(ApplicationLifecycleManager.getExitCode());
         } else {
             Quarkus.waitForExit();
