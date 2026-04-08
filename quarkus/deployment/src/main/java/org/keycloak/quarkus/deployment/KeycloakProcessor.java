@@ -91,7 +91,6 @@ import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.WildcardPropertyMapper;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
@@ -130,7 +129,6 @@ import io.quarkus.arc.deployment.AnnotationsTransformerBuildItem;
 import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
 import io.quarkus.arc.deployment.SyntheticBeanBuildItem;
 import io.quarkus.bootstrap.logging.InitialConfigurator;
-import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.datasource.runtime.DataSourcesBuildTimeConfig;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -752,35 +750,6 @@ class KeycloakProcessor {
     @BuildStep(onlyIfNot = IsIntegrationTest.class )
     void configureConfigSources(BuildProducer<StaticInitConfigBuilderBuildItem> configSources) {
         configSources.produce(new StaticInitConfigBuilderBuildItem(KeycloakConfigSourceProvider.class.getName()));
-    }
-
-    @BuildStep(onlyIf = IsIntegrationTest.class)
-    void prepareTestEnvironment(BuildProducer< StaticInitConfigBuilderBuildItem> configSources, DevServicesDatasourceResultBuildItem dbConfig) {
-        configSources.produce(new StaticInitConfigBuilderBuildItem("org.keycloak.quarkus.runtime.configuration.test.TestKeycloakConfigSourceProvider"));
-
-        // we do not enable dev services by default and the DevServicesDatasourceResultBuildItem might not be available when discovering build steps
-        // Quarkus seems to allow that when the DevServicesDatasourceResultBuildItem is not the only parameter to the build step
-        // this might be too sensitive and break if Quarkus changes the behavior
-        if (dbConfig != null && dbConfig.getDefaultDatasource() != null) {
-            Map<String, String> configProperties = dbConfig.getDefaultDatasource().getConfigProperties();
-
-            for (Entry<String, String> dbConfigProperty : configProperties.entrySet()) {
-                PropertyMapper<?> mapper = PropertyMappers.getMapper(dbConfigProperty.getKey());
-
-                if (mapper == null) {
-                    continue;
-                }
-
-                String kcProperty = mapper.getFrom();
-
-                if (kcProperty.endsWith("db")) {
-                    // db kind set when running tests
-                    continue;
-                }
-
-                System.setProperty(kcProperty, dbConfigProperty.getValue());
-            }
-        }
     }
 
     /**
