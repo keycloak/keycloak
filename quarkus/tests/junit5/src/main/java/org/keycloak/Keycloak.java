@@ -22,6 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,6 +34,7 @@ import org.keycloak.config.LoggingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.KeycloakMain;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -175,6 +178,8 @@ public class Keycloak {
     private Path homeDir;
     private List<Dependency> dependencies;
     private boolean fipsEnabled;
+    private Properties systemProperties;
+    private CountDownLatch closed;
 
     public Keycloak() {
         this(null, Version.VERSION, List.of(), false);
@@ -192,6 +197,7 @@ public class Keycloak {
     }
 
     private Keycloak start(List<String> args) {
+        systemProperties = (Properties) System.getProperties().clone();
         QuarkusBootstrap.Builder builder = QuarkusBootstrap.builder()
                 .setExistingModel(applicationModel)
                 .setApplicationRoot(applicationModel.getApplicationModule().getModuleDir().toPath())
@@ -208,6 +214,8 @@ public class Keycloak {
                 return this;
             }
             StartupAction startupAction = action.createInitialRuntimeApplication();
+            closed = new CountDownLatch(1);
+            startupAction.addRuntimeCloseTask(closed::countDown);
             application = startupAction.runMainClass(args.toArray(new String[0]));
 
             return this;
@@ -217,8 +225,15 @@ public class Keycloak {
     }
 
     public void stop() throws TimeoutException {
-        if (isRunning()) {
-            closeApplication();
+        try {
+            if (isRunning()) {
+                closeApplication();
+            }
+        } finally {
+            if (systemProperties != null) {
+                KeycloakMain.reset(systemProperties);
+                systemProperties = null;
+            }
         }
     }
 
@@ -292,6 +307,11 @@ public class Keycloak {
                 application.close();
             } catch (Exception cause) {
                 cause.printStackTrace();
+            }
+            try {
+                closed.await(); // wait for an orderly completion of all cleanup in the other thread
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
