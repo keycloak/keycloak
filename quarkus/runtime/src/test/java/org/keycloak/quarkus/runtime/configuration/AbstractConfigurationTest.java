@@ -88,7 +88,6 @@ public abstract class AbstractConfigurationTest {
 
     static protected SmallRyeConfig createConfig() {
         Configuration.resetConfig();
-        KeycloakConfigSourceProvider.reload();
         Environment.getCurrentOrCreateFeatureProfile();
         return Configuration.getConfig();
     }

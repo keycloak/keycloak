@@ -38,7 +38,6 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractAutoBuildCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.configuration.AbstractConfigurationTest;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 import io.smallrye.config.SmallRyeConfig;
@@ -109,7 +108,6 @@ public class PicocliTest extends AbstractConfigurationTest {
 
         @Override
         public void initConfig(AbstractCommand command) {
-            KeycloakConfigSourceProvider.reload();
             boolean checkBuild = Environment.isRebuildCheck();
             super.initConfig(command);
             if (!checkBuild && PersistedConfigSource.getInstance().getConfigValueProperties().isEmpty()) {
