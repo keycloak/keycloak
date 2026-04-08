@@ -565,19 +565,11 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         CredentialIssuer issuer = wallet.getIssuerMetadata(ctx);
 
         OID4VCAuthorizationDetail authDetail = createAuthorizationDetail(issuer, "unknown-credential-config-id");
-        String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetail);
+        NoSuchElementException ex = assertThrows(NoSuchElementException.class, () -> performAuthorizationCodeLoginWithAuthorizationDetails(authDetail));
 
-        AccessTokenResponse errorResponse = oauth.accessTokenRequest(code).send();
-
-        assertEquals(400, errorResponse.getStatusCode());
-        assertTrue(
-                ErrorType.INVALID_CREDENTIAL_REQUEST.getValue().equals(errorResponse.getError()) ||
-                ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue().equals(errorResponse.getError()) ||
-                Errors.INVALID_AUTHORIZATION_DETAILS.equals(errorResponse.getError()) ||
-                (errorResponse.getErrorDescription() != null &&
-                 errorResponse.getErrorDescription().contains("authorization_details")),
-                "Error response should indicate authorization_details processing error. Actual: "
-                        + errorResponse.getError() + " / " + errorResponse.getErrorDescription());
+        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
+        assertNotNull(ex.getMessage(), "No error message");
+        assertTrue(ex.getMessage().contains("Unable to locate element with ID: 'username'"), ex.getMessage());
     }
 
     /** Token exchange without redirect_uri must fail. */

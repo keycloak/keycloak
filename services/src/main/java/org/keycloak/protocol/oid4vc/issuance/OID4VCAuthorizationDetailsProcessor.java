@@ -33,6 +33,7 @@ import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStat
 import org.keycloak.protocol.oid4vc.issuance.credentialoffer.CredentialOfferStorage;
 import org.keycloak.protocol.oid4vc.model.Claim;
 import org.keycloak.protocol.oid4vc.model.ClaimsDescription;
+import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.IssuerState;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
@@ -78,34 +79,20 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
 
     @Override
     public OID4VCAuthorizationDetail process(UserSessionModel userSession, ClientSessionContext clientSessionCtx, AuthorizationDetailsJSONRepresentation authzDetail) {
-
-        // Retrieve authorization servers and issuer identifier for locations check
-        List<String> authorizationServers = OID4VCIssuerWellKnownProvider.getAuthorizationServers(session);
-        String issuerIdentifier = OID4VCIssuerWellKnownProvider.getIssuer(session.getContext());
-
-        // Get supported credential configuration from Issuer metadata
-        Map<String, SupportedCredentialConfiguration> supportedCredentials =
-                OID4VCIssuerWellKnownProvider.getSupportedCredentials(session);
-
-        OID4VCAuthorizationDetail requestedAuthDetail = authzDetail.asSubtype(OID4VCAuthorizationDetail.class);
-        validateAuthorizationDetail(requestedAuthDetail, supportedCredentials, authorizationServers, issuerIdentifier);
-        OID4VCAuthorizationDetail responseAuthDetail = buildAuthorizationDetail(clientSessionCtx, requestedAuthDetail);
-        return responseAuthDetail;
+        OID4VCAuthorizationDetail requestAuthDetail = authzDetail.asSubtype(OID4VCAuthorizationDetail.class);
+        validateAuthorizationDetail(requestAuthDetail);
+        return buildAuthorizationDetailResponse(clientSessionCtx, requestAuthDetail);
     }
 
-    private InvalidAuthorizationDetailsException getInvalidRequestException(String errorDescription) {
-        return new InvalidAuthorizationDetailsException("Invalid authorization_details: " + errorDescription);
-    }
+    @Override
+    public OID4VCAuthorizationDetail validateAuthorizationDetail(AuthorizationDetailsJSONRepresentation authzDetail) throws InvalidAuthorizationDetailsException {
 
-    /**
-     * Validates an authorization detail against supported credentials and other constraints.
-     *
-     * @param requestAuthDetail    the authorization detail to validate
-     * @param supportedCredentials map of supported credential configurations
-     * @param authorizationServers list of authorization servers
-     * @param issuerIdentifier     the issuer identifier
-     */
-    private void validateAuthorizationDetail(OID4VCAuthorizationDetail requestAuthDetail, Map<String, SupportedCredentialConfiguration> supportedCredentials, List<String> authorizationServers, String issuerIdentifier) {
+        OID4VCAuthorizationDetail requestAuthDetail = authzDetail.asSubtype(OID4VCAuthorizationDetail.class);
+
+        CredentialIssuer issuerMetadata = new OID4VCIssuerWellKnownProvider(session).getIssuerMetadata();
+        Map<String, SupportedCredentialConfiguration> supportedCredentials = issuerMetadata.getCredentialsSupported();
+        List<String> authorizationServers = issuerMetadata.getAuthorizationServers();
+        String issuerIdentifier = issuerMetadata.getCredentialIssuer();
 
         String type = requestAuthDetail.getType();
         String credentialConfigurationId = requestAuthDetail.getCredentialConfigurationId();
@@ -121,7 +108,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         // If authorization_servers is present, locations must be set to issuer identifier
         if (authorizationServers != null && !authorizationServers.isEmpty()) {
             List<String> locations = requestAuthDetail.getLocations();
-            if (locations == null || locations.size()!=1 || !issuerIdentifier.equals(locations.get(0))) {
+            if (locations == null || locations.size() != 1 || !issuerIdentifier.equals(locations.get(0))) {
                 logger.warnf("Invalid locations field in authorization_details: %s, expected: %s", locations, issuerIdentifier);
                 throw getInvalidRequestException("locations=" + locations + ", expected=" + issuerIdentifier);
             }
@@ -151,6 +138,14 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         if (claims != null && !claims.isEmpty()) {
             validateClaims(claims, credConfig);
         }
+
+        return requestAuthDetail;
+    }
+
+    // Private ---------------------------------------------------------------------------------------------------------
+
+    private InvalidAuthorizationDetailsException getInvalidRequestException(String errorDescription) {
+        return new InvalidAuthorizationDetailsException("Invalid authorization_details: " + errorDescription);
     }
 
     /**
@@ -205,7 +200,7 @@ public class OID4VCAuthorizationDetailsProcessor implements AuthorizationDetails
         }
     }
 
-    private OID4VCAuthorizationDetail buildAuthorizationDetail(ClientSessionContext clientSessionCtx, OID4VCAuthorizationDetail requestAuthDetail) {
+    private OID4VCAuthorizationDetail buildAuthorizationDetailResponse(ClientSessionContext clientSessionCtx, OID4VCAuthorizationDetail requestAuthDetail) {
 
         String requestedCredentialConfigurationId = requestAuthDetail.getCredentialConfigurationId();
         if (requestedCredentialConfigurationId == null) {

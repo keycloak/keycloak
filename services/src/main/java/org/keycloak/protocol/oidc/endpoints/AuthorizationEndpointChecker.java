@@ -18,7 +18,6 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,7 +33,6 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -42,12 +40,12 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorValidation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
-import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ErrorPageException;
@@ -56,15 +54,12 @@ import org.keycloak.services.cors.Cors;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.util.Strings;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
 
 import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
-import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 /**
  * Implements some checks typical for OIDC Authorization Endpoint. Useful to consolidate various checks on single place to avoid duplicated
@@ -239,31 +234,11 @@ public class AuthorizationEndpointChecker {
     public void checkAuthorizationDetails() throws AuthorizationCheckException {
         String authDetailsParam = request.getAdditionalReqParams().get(AUTHORIZATION_DETAILS);
         if (authDetailsParam != null) {
-            AuthorizationDetailsJSONRepresentation[] authDetails;
             try {
-                authDetails = JsonSerialization.readValue(authDetailsParam, AuthorizationDetailsJSONRepresentation[].class);
+                new AuthorizationDetailsProcessorManager(session).validateAuthorizationDetail(authDetailsParam);
             } catch (Exception e) {
                 event.error(Errors.INVALID_REQUEST);
-                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST,
-                        "Cannot parse authorization_details: " + authDetailsParam);
-            }
-            for (AuthorizationDetailsJSONRepresentation authDetailJson : authDetails) {
-                if (OPENID_CREDENTIAL.equals(authDetailJson.getType())) {
-                    var authDetail = authDetailJson.asSubtype(OID4VCAuthorizationDetail.class);
-                    String credentialConfigurationId = authDetail.getCredentialConfigurationId();
-                    List<String> credentialIdentifiers = authDetail.getCredentialIdentifiers();
-                    if (Strings.isEmpty(credentialConfigurationId)) {
-                        event.error(Errors.INVALID_REQUEST);
-                        throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST,
-                                "No credential_configuration_id in authorization_details: " + authDetailsParam);
-                    }
-                    if (credentialIdentifiers != null) {
-                        // we also reject an empty array of credential identifiers
-                        event.error(Errors.INVALID_REQUEST);
-                        throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST,
-                                "Found invalid credential_identifiers in authorization_details: " + authDetailsParam);
-                    }
-                }
+                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST, e.getMessage());
             }
         }
     }
