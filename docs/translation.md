@@ -72,7 +72,7 @@ Weblate"
 2. If there are any translation pull requests created by Weblate, assure to merge them first to avoid conflicts in Weblate which are difficult to resolve.
 3. If the changes are ok, approve the PR and merge it. If there is an existing issue, reference that in the squash-message, otherwise reference the issue of the pull request.
 
-## Using Weblate to to update translations
+## Using Weblate to update translations
 
 Keycloak uses [Weblate](https://hosted.weblate.org/projects/keycloak/), a web-based translation platform, to manage translations of user interfaces and error messages.
 
