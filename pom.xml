@@ -154,8 +154,8 @@
         <postgresql.container>mirror.gcr.io/postgres:${postgresql.version}</postgresql.container>
         <aurora-postgresql.version>17.5</aurora-postgresql.version>
         <aws-jdbc-wrapper.version>2.5.6</aws-jdbc-wrapper.version>
-        <cnpg.major-minor-version>1.28</cnpg.major-minor-version>
-        <cnpg.patch-version>1</cnpg.patch-version>
+        <cnpg.major-minor-version>1.29</cnpg.major-minor-version>
+        <cnpg.patch-version>0</cnpg.patch-version>
         <cnpg.version>${cnpg.major-minor-version}.${cnpg.patch-version}</cnpg.version>
         <postgresql-jdbc.version>42.7.10</postgresql-jdbc.version>
         <mariadb.version>11.8</mariadb.version>
