@@ -150,11 +150,11 @@ public class NewClientService extends DefaultClientService implements ClientServ
 
     private CreateOrUpdateResult createOrUpdate(RealmModel realm, String clientId, BaseClientRepresentation client, CreateOrUpdateStrategy strategy) throws ServiceException {
         validateUnknownFields(client);
+        ClientModel model = null;
         if (!strategy.equals(CreateOrUpdateStrategy.ONLY_CREATE)) {
             assertSameClientIds(clientId, client.getClientId());
+            model = avoidClientIdPhishing(realm.getClientByClientId(clientId)).orElse(null);
         }
-
-        ClientModel model = avoidClientIdPhishing(realm.getClientByClientId(clientId)).orElse(null);
         boolean alreadyExists = model != null;
         ClientModelMapper mapper = getMapper(client.getProtocol());
 
@@ -211,10 +211,6 @@ public class NewClientService extends DefaultClientService implements ClientServ
             }
         } catch (ClientPolicyException e) {
             throw new ServiceException(e.getErrorDetail(), Response.Status.BAD_REQUEST);
-        }
-
-        if (model == null) {
-            throw new ServiceException("Cannot create/update client");
         }
 
         // Setup roles
