@@ -151,6 +151,8 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
         try (Response response = testRealm.admin().clientScopes().create(scope)) {
             scopeId = ApiUtil.getCreatedId(response);
         }
+        // Scope deletion also removes the optional-scope attachment from the client
+        testRealm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
 
         // Attach scope as optional to the OID4VCI client so it appears in issuer metadata
         testRealm.admin().clients().get(client.getId()).addOptionalClientScope(scopeId);
@@ -191,6 +193,8 @@ public class OID4VCIMapperTest extends OID4VCIssuerTestBase {
         try (Response response = testRealm.admin().clientScopes().create(scope)) {
             scopeId = ApiUtil.getCreatedId(response);
         }
+        // Scope deletion also removes the optional-scope attachment from the client
+        testRealm.cleanup().add(r -> r.clientScopes().get(scopeId).remove());
 
         testRealm.admin().clients().get(client.getId()).addOptionalClientScope(scopeId);
 
