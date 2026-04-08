@@ -75,7 +75,7 @@ public class ClusteredKeycloakServer implements KeycloakServer {
         } catch (TimeoutException e) {
             throw new RuntimeException("Expected %d cluster members".formatted(numServers), e);
         }
-        ReadinessProbe.waitUntilReady(this::getManagementBaseUrl, numServers);
+        ReadinessProbe.waitUntilReady(this::getBaseUrl, numServers);
     }
 
     private void startContainersWithMixedImage(KeycloakServerConfigBuilder configBuilder, String[] imagePeServer, CountdownLatchLoggingConsumer clusterLatch) {
