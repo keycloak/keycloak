@@ -18,3 +18,4 @@
 org.keycloak.quarkus.runtime.configuration.PropertyMappingInterceptor
 org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor
 org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor
+org.keycloak.quarkus.runtime.configuration.JdbcUrlInterceptor
