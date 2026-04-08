@@ -192,12 +192,10 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         try {
             AuthorizationEndpointRequest authRequest = authRequestSupplier.get();
-            authRequest.openLoginForm();
-            String currUrl = oauth.getDriver().getCurrentUrl();
-            if (currUrl != null && !currUrl.contains("error=") && !currUrl.contains("error_description=")) {
-                oauth.fillLoginForm(ctx.getHolder(), TEST_PASSWORD);
+            if (authRequest.openLoginForm()) {
+                authRequest.fillLoginForm(ctx.getHolder(), TEST_PASSWORD);
             }
-            AuthorizationEndpointResponse authResponse = oauth.parseLoginResponse();
+            AuthorizationEndpointResponse authResponse = authRequest.parseLoginResponse();
             if (authResponse.getError() != null)
                 throw new IllegalStateException(authResponse.getErrorDescription());
 
