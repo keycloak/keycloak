@@ -273,7 +273,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
         loginPage.loginUsername(duplicatedUser.getEmail());
         loginPage.clickSignIn();
         loginPage.login(duplicatedUser.getEmail());
-        assertThat(loginPage.getInputError(), is("Invalid password."));
+        assertThat(loginPage.getInputError(), is("Invalid username or password."));
 
         // trying to authenticate to the account that has the email as username is ok
         oauth.loginForm().open();

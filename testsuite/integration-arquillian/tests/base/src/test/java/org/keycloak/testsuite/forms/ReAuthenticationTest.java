@@ -149,7 +149,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         // Try bad password and assert things still hidden
         loginPage.login("bad-password");
         loginPage.assertCurrent();
-        Assert.assertEquals("Invalid password.", loginPage.getInputError());
+        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
         assertUsernameFieldAndOtherFields(false);
         assertInfoMessageAboutReAuthenticate(false);
 
