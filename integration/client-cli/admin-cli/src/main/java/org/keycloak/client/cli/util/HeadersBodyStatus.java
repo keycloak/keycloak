@@ -27,10 +27,16 @@ import org.keycloak.util.JsonSerialization;
 public class HeadersBodyStatus extends HeadersBody {
 
     private final String status;
+    private boolean allowJakartaValidationErrors;
 
     public HeadersBodyStatus(String status, Headers headers, InputStream body) {
         super(headers, body);
         this.status = status;
+    }
+
+    public HeadersBodyStatus(String status, Headers headers, InputStream body, boolean allowJakartaValidationErrors) {
+        this(status, headers, body);
+        this.allowJakartaValidationErrors = allowJakartaValidationErrors;
     }
 
     public String getStatus() {
@@ -45,7 +51,7 @@ public class HeadersBodyStatus extends HeadersBody {
         int code = getStatusCode();
         if (code < 200 || code >= 300) {
             String content = readBodyString();
-            Map<String, String> error = null;
+            Map<String, Object> error = null;
             try {
                 error = JsonSerialization.readValue(content, Map.class);
             } catch (Exception ignored) {
@@ -53,10 +59,24 @@ public class HeadersBodyStatus extends HeadersBody {
 
             String message = null;
             if (error != null) {
-                String description = error.get("error_description");
-                String err = error.get("error");
-                String msg = error.get("errorMessage");
-                message = msg != null ? msg : err != null ? (description + " ["+ error.get("error") + "]") : null;
+                String description = (String) error.get("error_description");
+                String err = (String) error.get("error");
+                String msg = (String) error.get("errorMessage");
+
+                if (allowJakartaValidationErrors) {
+                    Object violations = error.get("violations");
+                    if (violations instanceof Iterable<?> violationList) {
+                        StringBuilder violationsString = new StringBuilder();
+                        for (Object v : violationList) {
+                            violationsString.append("\n\t- ").append(v);
+                        }
+                        message = "%s:%s".formatted(err != null ? err : "Invalid data", violationsString.toString());
+                    }
+                }
+
+                if (message == null) {
+                    message = msg != null ? msg : err != null ? (description + " [" + error.get("error") + "]") : null;
+                }
             }
             throw new HttpResponseException(getStatusCodeAndReason(), message, new RuntimeException(content));
         }

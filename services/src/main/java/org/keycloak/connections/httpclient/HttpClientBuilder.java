@@ -98,10 +98,14 @@ public class HttpClientBuilder {
     protected boolean disableCookies = false;
     protected ProxyMappings proxyMappings;
     protected boolean expectContinueEnabled = false;
-    protected org.apache.http.impl.client.HttpClientBuilder apacheBuilder = createApacheHttpClientBuilder();
+    protected final org.apache.http.impl.client.HttpClientBuilder apacheBuilder;
 
-    protected org.apache.http.impl.client.HttpClientBuilder createApacheHttpClientBuilder() {
-        return HttpClients.custom();
+    public HttpClientBuilder() {
+        this(HttpClients.custom());
+    }
+
+    public HttpClientBuilder(org.apache.http.impl.client.HttpClientBuilder apacheBuilder) {
+        this.apacheBuilder = apacheBuilder;
     }
 
     /**

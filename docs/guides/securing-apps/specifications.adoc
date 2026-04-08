@@ -33,7 +33,8 @@ This {section} presents a list of specifications and standards that {project_nam
 |link:https://openid.net/specs/oauth-v2-multiple-response-types-1_0.html[OAuth 2.0 Multiple Response Type Encoding Practices]|Supported|Certified (18.0.0)|
 |link:https://openid.net/specs/oauth-v2-form-post-response-mode-1_0.html[OAuth 2.0 Form Post Response Mode]|Supported|Certified (18.0.0)|
 |link:https://openid.net/specs/openid-connect-prompt-create-1_0.html[Initiating User Registration via OpenID Connect 1.0]|Supported||
-|link:https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html[OpenID for Verifiable Credential Issuance] (OID4VCI)|Experimental||
+|link:https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-16.html[OpenID for Verifiable Credential Issuance] (OID4VCI)|Experimental|| See link:{adminguide_link}#_oid4vci[Configuring {project_name} as a Verifiable Credential Issuer]
+|link:https://datatracker.ietf.org/doc/html/draft-ietf-oauth-client-id-metadata-document-00[OAuth Client ID Metadata Document]|Experimental|| See <@links.securingapps id="mcp-authz-server" />.
 |===
 
 == OAuth

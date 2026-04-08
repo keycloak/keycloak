@@ -4,7 +4,7 @@
 Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
 In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
 
-=== JavaScript-based policies can only be deployed now if the `scripts` feature is enabled
+=== JavaScript-based policies can now only be deployed if the `scripts` feature is enabled
 
 In this version, JavaScript-based policies can only be deployed if the `scripts` feature is enabled.
 
@@ -27,31 +27,18 @@ Administrators must ensure that all configured URIs for the fields listed above 
 
 === The Identity Provider issuer should be unique for the JWT authorization grant and client assertions
 
-The JWT authorization grant and the client assertion authentication use the `issuer` claim passed in the assertion to locate the Identity Provider defined in {project_name}, and that provider validates the claims and signature in the assertion. Since this version, the `issuer` configuration option should be unique to only identify one provider. The grant operation or the assertion client authentication fail if more providers are returned for a single issuer. In the same way, the Identity Providers, when configured to allow the JWT authorization grant or client assertions, are validated to have a unique issuer defined in its configuration. Any update or add operation will fail if the issuer collides with another provider.
+The JWT authorization grant and the client assertion authentication use the `issuer` claim passed in the assertion to locate the Identity Provider defined in {project_name}, and that provider validates the claims and signature in the assertion. Since this version, the `issuer` configuration option must uniquely identify one provider. The grant operation or the assertion client authentication fails if more providers are returned for a single issuer. In the same way, the Identity Providers, when configured to allow the JWT authorization grant or client assertions, are validated to have a unique issuer defined in their configuration. Any update or add operation will fail if the issuer collides with another provider.
 
 If you have identity providers defined with the same issuer and tested the JWT authorization grants or client assertions features, please update the providers accordingly before the upgrade. You can update the issuer or disable the provider to avoid the duplicates.
 
-=== Stricter access control for fetching user profile configuration and metadata
+=== Endpoints are opened while Keycloak is initializing
 
-In order to improve security, the access control for fetching user profile configuration and metadata from a realm has been made stricter,
-and it is no longer possible to fetch this information if the administrator is granted with any administrative role.
+{project_name} now opens its HTTP(S) and Management ports while initialization is still in progress when the health endpoints are enabled.
+This resolves problems with long-running migrations on platforms like Kubernetes where a migration might otherwise be aborted, leaving the database in a potentially inconsistent state.
 
-Instead, the administrator must have explicit permissions to view or manage users, or by
-having the `view-realm`, or `manage-realm`, or `view-users`, or `manage-users`, or `query-users` roles.
+If you use a proxy or load balancer, configure an HTTP health check with the path `/health/ready` to ensure traffic is only routed to the server once it is fully ready.
 
-=== Stricter access control for listing realm and client roles
-
-In order to improve security, the access control for listing realm and client roles has been made stricter, and granting
-only the `query-*` role to an administrator is no longer sufficient to list roles.
-
-Instead, the administrator must have explicit permissions to view or manage the realm or client for which they want to list roles, or by
-having the `view-realm` or `manage-realm` role for realm roles, or `view-clients` or `manage-clients` role for client roles.
-
-=== Stricter access control for managing permission tickets
-
-In order to improve security, the access control for managing permission tickets has been made stricter where
-only users (or service accounts) granted with the `uma-protection` role can manage permission tickets for a given
-resource server. The only exception is the resource server itself, which can manage its permission tickets without the `uma-protection` role.
+If this behavior is not desired or an HTTP health check is not possible, start {project_name} with `--server-async-bootstrap=false` to revert to the previous behavior where ports are opened only after initialization completes.
 
 // ------------------------ Notable changes ------------------------ //
 == Notable changes
@@ -61,9 +48,9 @@ It also lists significant changes to internal APIs.
 
 === Usage of second-class options
 
-In prior releases the introduction of a first-class option with a default would cause the second-class option (typically spi or quarkus properties) to no longer be used at all.
+In prior releases, the introduction of a first-class option with a default would cause the second-class option (typically spi or quarkus properties) to no longer be used at all.
 
-For example, `spi-truststore--file--hostname-verification-policy` was marked as deprecated after the introduction of `tls-hostname-verifier`. However since
+For example, `spi-truststore--file--hostname-verification-policy` was marked as deprecated after the introduction of `tls-hostname-verifier`. However, since
 `tls-hostname-verifier` included a default, direct usage of `spi-truststore--file--hostname-verification-policy` was no longer considered.
 
 To ensure that the further introduction of new first-class options does not immediately break existing configurations, the logic for determining the value of a second-class option
@@ -76,16 +63,9 @@ Please review the server startup to see if there are any warnings about the cont
 A new option `transaction-default-timeout` has been introduced to configure the default transaction timeout in {project_name}.
 
 While using Quarkus properties directly is not the supported way to configure {project_name}, some users may have used `quarkus.transaction-manager.default-transaction-timeout` to customize the transaction timeout.
-If you are using this Quarkus property, the new `transaction-default-timeout` CLI option when set will take precedence and override your configuration when upgrading to this version.
+If you are using this Quarkus property, the new `transaction-default-timeout` CLI option, when set, will take precedence and override your configuration when upgrading to this version.
 
 To maintain your desired transaction timeout configuration, migrate to using the `transaction-default-timeout` CLI option and remove the `quarkus.transaction-manager.default-transaction-timeout` property from your configuration.
-
-=== Endpoints are opened while Keycloak is initializing
-
-{project_name} now opens its HTTP(S) and Management ports while initialization is still in progress when the health endpoints are enabled.
-If you use a proxy or load balancer, configure an HTTP health check with the path `/health/ready` to ensure traffic is only routed to the server once it is fully ready.
-
-If this behavior is not desired or an HTTP health check is not possible, start {project_name} with `--server-async-bootstrap=false` to revert to the previous behavior where ports are opened only after initialization completes.
 
 === Dev Mode defaults to localhost
 
@@ -106,19 +86,19 @@ With `proxy-headers` set to `xforwarded`, the server can determine the proxy con
 
 === New brute force locking mechanism
 
-There is a new brute force locking mechanism applied to all brute force modes. It is called `Secondary Authentication Failures Lockout`. Brute force protector is counting secondary authentication failures only (for example OTP) and when maximum specified number is reached the account is permanently locked even in temporary locking modes. This prevents attacks on second factor authenticators such as OTP when attacker already guessed the password.
+There is a new brute force locking mechanism applied to all brute force modes. It is called `Secondary Authentication Failures Lockout`. The brute force protector counts secondary authentication failures only (for example OTP), and when the maximum specified number is reached, the account is permanently locked even in temporary locking modes. This prevents attacks on second factor authenticators such as OTP when the attacker has already guessed the password.
 
-This new brute force locking mechanism also changes original behavior of brute force protection. It is applied only to a subset of authentication mechanisms (passwords, OTP and recovery codes).
+This new brute force locking mechanism also changes the original behavior of brute force protection. It is applied only to a subset of authentication mechanisms (passwords, OTP, and recovery codes).
 
 === Client secret authentication method
 
-OIDC specification has multiple client authentication methods. Two of them `client_secret_basic` and `client_secret_post` are implemented in {project_name} by **Client Id and Secret**
+OIDC specification has multiple client authentication methods. Two of them, `client_secret_basic` and `client_secret_post`, are implemented in {project_name} by **Client Id and Secret**
 client authenticator. Until now, when the OIDC client registration request was sent with the attribute `token_endpoint_auth_method` set to `client_secret_basic` or `client_secret_post`,
-the {project_name} allowed to authenticate client with both `client_secret_basic` and `client_secret_post` methods and did not preserve the single method specified in the OIDC client
+{project_name} allowed the client to authenticate with both `client_secret_basic` and `client_secret_post` methods and did not preserve the single method specified in the OIDC client
 registration request. Now the specified method is respected, so for example when the OIDC client registration is sent with `token_endpoint_auth_method` set to `client_secret_post`, then
-it is required to authenticate the client really with the client secret sent as a parameter in the POST request body.
+it is required to authenticate the client with the client secret sent as a parameter in the POST request body.
 
-It is still possible to make the OIDC client allow both methods and clients migrated from previous versions are set by default to allow authentication with both methods.
+It is still possible to make the OIDC client allow both methods, and clients migrated from previous versions are set by default to allow authentication with both methods.
 
 === Zero-downtime patch releases enabled by default
 
@@ -132,9 +112,9 @@ For more details on the Operator configuration, see the https://www.keycloak.org
 
 === Infinispan 16 upgrade
 
-{project_name} now uses Infinispan 16.0 for embedded distributed caching. This upgrade brings improved performance, enhanced security, and better support for zero-downtime upgrade in patch releases.
+{project_name} now uses Infinispan 16.0 for embedded distributed caching. This upgrade brings improved performance, enhanced security, and better support for zero-downtime upgrades in patch releases.
 
-If you are using an external {jdgserver_name} server for example in a multi-cluster setup, you should upgrade to version 16.0 as this is the version {project_name} was tested with.
+If you are using an external {jdgserver_name} server, for example in a multi-cluster setup, you should upgrade to version 16.0 as this is the version {project_name} was tested with.
 
 When upgrading the external {jdgserver_name}, the following changes are necessary:
 
@@ -144,21 +124,21 @@ When upgrading the external {jdgserver_name}, the following changes are necessar
 === Adjusted default clock-skew for not-before JWT token checks
 
 Previous versions of {project_name} tested the issued-at timestamp with a clock-skew of zero seconds by default if this value was provided in a token.
-By default, access tokens issued by {project_name} used for the admin API or for the user info endpoint do not contain a not-before claim in the token, but customized setups might have it.
+By default, access tokens issued by {project_name} used for the admin API or for the user info endpoint do not contain a not-before claim, but customized setups might have it.
 In a setup with such a claim configured and with clocks that were not fully synchronized, this could lead to rejecting tokens on a node that lagged behind, as it would consider the tokens not valid yet.
 
-Starting with this version, {project_name} will honor a clock skew of 10 seconds for the issued-at timestamp by default which is aligned with the best practices for example of the https://openid.net/specs/fapi-security-profile-2_0-final.html#section-5.3.2.1-6[FAPI 2.0 Security Profile].
+Starting with this version, {project_name} will honor a clock skew of 10 seconds for the issued-at timestamp by default, which is aligned with best practices such as the https://openid.net/specs/fapi-security-profile-2_0-final.html#section-5.3.2.1-6[FAPI 2.0 Security Profile].
 
-This applies to all places where no explicit configuration of clock skew is configured except for JWT Client Assertions that have a hardcoded clock skew of 15 seconds.
-It does not affect any explicitly configured clock skew for example in identity providers where an individual clock skew can be configured.
+This applies to all places where no explicit clock skew is configured, except for JWT Client Assertions that have a hardcoded clock skew of 15 seconds.
+It does not affect any explicitly configured clock skew, for example in identity providers, where an individual clock skew can be configured.
 
 === The base themes are now abstract
 
-All the `base` themes are now tagged as **abstract**, and they are not listed in the admin console to be selected (**Realm Settings** -> **Themes** tab). They were always intended to be only extended but not used directly. If you use one of them, it will continue working (or not working) in the same way but cannot be selected using the admin console anymore. Please select one of the available default themes or create your own one.
+All the `base` themes are now tagged as **abstract**, and they are not listed in the admin console to be selected (**Realm Settings** -> **Themes** tab). They were always intended to be only extended but not used directly. If you use one of them, it will continue working (or not working) in the same way, but cannot be selected using the admin console anymore. Please select one of the available default themes or create your own one.
 
 === Truststore initialization moved to the server
 
-Keycloak now automatically discovers and trusts cluster certificate authorities when running on Kubernetes or OpenShift, without relying on the Operator to preconfigure the truststore. Specifically, if present in the container filesystem, the following files are added to the system truststore at runtime:
+{project_name} now automatically discovers and trusts cluster certificate authorities when running on Kubernetes or OpenShift, without relying on the Operator to preconfigure the truststore. Specifically, if present in the container filesystem, the following files are added to the system truststore at runtime:
 
 * `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt` (Kubernetes service account CA)
 * `/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt` (OpenShift service CA)
@@ -204,7 +184,7 @@ The internal `UserSessionProvider` interface received new methods for efficient 
 The streaming instances are read-only, meaning they will not change.
 The previous methods have been deprecated.
 Custom providers should implement these new methods to avoid performance penalties.
-They should avoid keeping the returned items in memory by for example binding them to the current transaction, in case the invoker needs to analyze all data.
+They should avoid keeping the returned items in memory, for example by binding them to the current transaction, in case the invoker needs to analyze all data.
 
 A similar change was done for the `UserSessionPersisterProvider`.
 
@@ -287,6 +267,13 @@ See the https://www.keycloak.org/server/db#_secure_the_database_connection[Secur
 A new CLI option `--db-connect-timeout` sets the JDBC driver connection timeout and login timeout.
 It defaults to `10s` to improve failover behavior and startup resilience during network issues.
 
+=== New `KCRAW_` prefix for environment variables to preserve literal values
+
+{project_name} now supports a `KCRAW_` prefix for environment variables as an alternative to the standard `KC_` prefix.
+If you are already using the KCRAW_ prefix for another purpose, please migrate to a new key prefix.
+
+See the link:{server_guide_base_link}/configuration#kcraw-prefix[Preserving literal values with the KCRAW_ prefix] section in the Server Configuration guide for details.
+
 // ------------------------ Deprecated features ------------------------ //
 == Deprecated features
 
@@ -294,8 +281,8 @@ The following sections provide details on deprecated features.
 
 === Deprecation of specific tracing properties in Keycloak CR
 
-The `tracing.serviceName`, and `tracing.resourceAttributes` fields of the Keycloak CR, are now deprecated.
-You should use the new `telemetry.serviceName`, and `telemetry.resourceAttributes` fields that are shared among all OpenTelemetry components - logs, metrics, and traces.
+The `tracing.serviceName` and `tracing.resourceAttributes` fields of the Keycloak CR are now deprecated.
+You should use the new `telemetry.serviceName` and `telemetry.resourceAttributes` fields that are shared among all OpenTelemetry components - logs, metrics, and traces.
 
 === Deprecation of tracing span attributes for HTTP requests
 
@@ -314,20 +301,14 @@ See the `UserSessionProvider` API changes section in notable changes for further
 
 === Non-UTF-8 database character encoding deprecated
 
-Running {project_name} on a database that is not using UTF-8 as a charset is now deprecated.
+Running {project_name} on a database that is not using UTF-8 as its character set is now deprecated.
 
-In the current version {project_name} will log a warning if the database is not configured to use UTF-8 encoding. Future versions might refuse to work with database that is not configured to use UTF-8 encoding.
+In the current version {project_name} will log a warning if the database is not configured to use UTF-8 encoding. Future versions might refuse to work with a database that is not configured to use UTF-8 encoding.
 
 === `Keycloak` and `KeycloakRealmImport` CRDs v2beta1 version
 
 To better capture the maturity of Operator CRDs for the `Keycloak` and `KeycloakRealmImport`, the resources now include a `v2beta1` version.
-The previous `v2alpha1` version for these resources is deprecated but still served. You can keep using it but we recommend upgrading to `v2beta1` at your earliest convenience.
+The previous `v2alpha1` version for these resources is deprecated but still served. You can keep using it, but we recommend upgrading to `v2beta1` at your earliest convenience.
 There are currently no differences in the schema between the two versions,
 so you will just need to update the relevant `apiVersion` references.
 
-// ------------------------ Removed features ------------------------ //
-== Removed features
-
-The following features have been removed from this release.
-
-=== <TODO>

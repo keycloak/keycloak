@@ -1,12 +1,13 @@
 package org.keycloak.quarkus.runtime.services;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.server.ServerRequestFilter;
@@ -22,6 +23,9 @@ public class BootstrapFilter {
     private boolean ready;
     private volatile boolean warningLogged;
 
+    @Inject
+    QuarkusKeycloakSessionFactory factory;
+
     public BootstrapFilter() {
         startup = System.currentTimeMillis();
     }
@@ -32,7 +36,7 @@ public class BootstrapFilter {
             // JVM branch prediction may optimize this code and saves on reading a static volatile field
             return null;
         }
-        if (KeycloakApplication.isBootstrapCompleted()) {
+        if (factory.isBootstrapCompleted()) {
             // Return null to continue the request chain normally
             ready = true;
             return null;
