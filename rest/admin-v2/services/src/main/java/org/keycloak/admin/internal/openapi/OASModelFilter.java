@@ -304,41 +304,31 @@ public class OASModelFilter implements OASFilter {
                         // Build validation description from field-level annotations
                         String fieldValidation = validationScanner.buildDescription(classInfo, propertyName);
 
-                        // Check for class-level validation that affects this field
-                        String classValidation = classLevelValidations.get(propertyName);
-
-                        // Combine field and class validations
-                        String combinedValidation = combineValidations(fieldValidation, classValidation);
-
                         // Append validation description if any
-                        if (combinedValidation != null) {
+                        if (fieldValidation != null) {
                             String existingDesc = propertySchema.getDescription();
                             String newDesc = isNullOrEmpty(existingDesc)
-                                    ? "Validation: " + combinedValidation
-                                    : existingDesc + ". Validation: " + combinedValidation;
+                                    ? "Validation: " + fieldValidation
+                                    : existingDesc + ". Validation: " + fieldValidation;
                             propertySchema.setDescription(newDesc);
-                            log.debugf("Added validation description to '%s.%s': %s", schemaName, propertyName, combinedValidation);
+                            log.debugf("Added validation description to '%s.%s': %s", schemaName, propertyName, fieldValidation);
                         }
                     });
+
+                    // Add class-level validations to the schema description
+                    if (!classLevelValidations.isEmpty()) {
+                        String validationDesc = classLevelValidations.values().stream()
+                                .collect(Collectors.joining("; "));
+                        String existingDesc = schema.getDescription();
+                        String newDesc = isNullOrEmpty(existingDesc)
+                                ? "Validation: " + validationDesc
+                                : existingDesc + ". Validation: " + validationDesc;
+                        schema.setDescription(newDesc);
+                        log.debugf("Added class-level validation description to '%s': %s", schemaName, validationDesc);
+                    }
                 }
             }
         });
-    }
-
-    /**
-     * Combines field-level and class-level validation descriptions.
-     */
-    private String combineValidations(String fieldValidation, String classValidation) {
-        if (fieldValidation == null && classValidation == null) {
-            return null;
-        }
-        if (fieldValidation == null) {
-            return classValidation;
-        }
-        if (classValidation == null) {
-            return fieldValidation;
-        }
-        return fieldValidation + "; " + classValidation;
     }
 
     private String findJsonPropertyDescription(ClassInfo classInfo, String fieldName) {

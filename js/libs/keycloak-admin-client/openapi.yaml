@@ -15,9 +15,11 @@ components:
           type: string
           description: Public key used to authenticate this client with Signed JWT
             authentication
+      description: "Validation: on update: ClientSecretNotBlank"
     BaseClientRepresentation:
-      description: Base client representation with common properties for all client
-        types
+      description: "Base client representation with common properties for all client\
+        \ types. Validation: on update/on patch: UuidUnmodified; on update/on patch:\
+        \ ProtocolUnmodified"
       type: object
       properties:
         uuid:
