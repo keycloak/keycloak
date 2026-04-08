@@ -77,7 +77,7 @@ public class ClientScopeTestOid4Vci extends AbstractClientScopeTest {
                                     createdClientScope.getAttributes().get(CredentialScopeModel.VC_FORMAT));
             Assertions.assertEquals(CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT,
                                     createdClientScope.getAttributes().get(CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM));
-            Assertions.assertEquals(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT,
+            Assertions.assertEquals(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT_SD_JWT_VC,
                                     createdClientScope.getAttributes().get(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE));
             Assertions.assertEquals(String.valueOf(CredentialScopeModel.VC_EXPIRY_IN_SECONDS_DEFAULT),
                                     createdClientScope.getAttributes().get(CredentialScopeModel.VC_EXPIRY_IN_SECONDS));

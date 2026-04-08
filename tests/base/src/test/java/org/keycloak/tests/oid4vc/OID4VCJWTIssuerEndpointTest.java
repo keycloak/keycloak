@@ -21,6 +21,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -91,6 +92,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.CREDENTIAL_SUBJECT;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.OID4VCConstants.SDJWT_DELIMITER;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProof;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.jwtProofs;
 
@@ -1363,6 +1365,42 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
         testCredentialIssuanceSigningConfiguration(keyMetadata.getActive().get(Constants.DEFAULT_SIGNATURE_ALGORITHM), Constants.DEFAULT_SIGNATURE_ALGORITHM);
     }
 
+    @Test
+    public void testCredentialIssuerUsesDefaultTokenJwsTypeForJwtFormatWhenUnset() {
+        assertDefaultTokenJwsTypeWhenUnset(
+                jwtTypeCredentialScope,
+                VCFormat.JWT_VC,
+                CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT_JWT_VC
+        );
+    }
+
+    @Test
+    public void testCredentialIssuerUsesDefaultTokenJwsTypeForSdJwtFormatWhenUnset() {
+        assertDefaultTokenJwsTypeWhenUnset(
+                sdJwtTypeCredentialScope,
+                VCFormat.SD_JWT_VC,
+                CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT_SD_JWT_VC
+        );
+    }
+
+    @Test
+    public void testCredentialIssuerUsesDefaultTokenJwsTypeForJwtFormatWhenBlank() {
+        assertDefaultTokenJwsTypeWhenBlank(
+                jwtTypeCredentialScope,
+                VCFormat.JWT_VC,
+                CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT_JWT_VC
+        );
+    }
+
+    @Test
+    public void testCredentialIssuerUsesDefaultTokenJwsTypeForSdJwtFormatWhenBlank() {
+        assertDefaultTokenJwsTypeWhenBlank(
+                sdJwtTypeCredentialScope,
+                VCFormat.SD_JWT_VC,
+                CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT_SD_JWT_VC
+        );
+    }
+
     public void testCredentialIssuanceSigningConfiguration(String kid, String alg) {
         String scopeName = jwtTypeCredentialScope.getName();
         String credConfigId = jwtTypeCredentialScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
@@ -1404,6 +1442,86 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                         throw new RuntimeException(e);
                     }
                 });
+    }
+
+    private void assertDefaultTokenJwsTypeWhenUnset(
+            ClientScopeRepresentation clientScope,
+            String expectedFormat,
+            String expectedTyp
+    ) {
+        String originalTyp = clientScope.getAttributes().remove(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE);
+        testRealm.admin().clientScopes().get(clientScope.getId()).update(clientScope);
+
+        try {
+            String actualTyp = issueCredentialAndGetTyp(clientScope, expectedFormat);
+            assertEquals(expectedTyp, actualTyp, "Expected typ default for format " + expectedFormat);
+        } finally {
+            if (originalTyp == null) {
+                clientScope.getAttributes().remove(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE);
+            } else {
+                clientScope.getAttributes().put(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE, originalTyp);
+            }
+            testRealm.admin().clientScopes().get(clientScope.getId()).update(clientScope);
+        }
+    }
+
+    private void assertDefaultTokenJwsTypeWhenBlank(
+            ClientScopeRepresentation clientScope,
+            String expectedFormat,
+            String expectedTyp
+    ) {
+        String originalTyp = clientScope.getAttributes().get(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE);
+        clientScope.getAttributes().put(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE, " ");
+        testRealm.admin().clientScopes().get(clientScope.getId()).update(clientScope);
+
+        try {
+            String actualTyp = issueCredentialAndGetTyp(clientScope, expectedFormat);
+            assertEquals(expectedTyp, actualTyp, "Expected typ default for format " + expectedFormat);
+        } finally {
+            if (originalTyp == null) {
+                clientScope.getAttributes().remove(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE);
+            } else {
+                clientScope.getAttributes().put(CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE, originalTyp);
+            }
+            testRealm.admin().clientScopes().get(clientScope.getId()).update(clientScope);
+        }
+    }
+
+    private String issueCredentialAndGetTyp(ClientScopeRepresentation clientScope, String expectedFormat) {
+        AtomicReference<String> typRef = new AtomicReference<>();
+
+        testCredentialIssuanceWithAuthZCodeFlow(
+                clientScope,
+                (testScope) -> getBearerToken(oauth, client, testScope),
+                m -> {
+                    String accessToken = (String) m.get("accessToken");
+                    WebTarget credentialTarget = (WebTarget) m.get("credentialTarget");
+                    CredentialRequest credentialRequest = (CredentialRequest) m.get("credentialRequest");
+                    String issuer = getRealmPath(testRealm.getName());
+                    String cNonce = getCNonce();
+                    credentialRequest.setProofs(jwtProofs(issuer, cNonce));
+
+                    try (Response response = credentialTarget.request()
+                            .header(HttpHeaders.AUTHORIZATION, "bearer " + accessToken)
+                            .post(Entity.json(credentialRequest))) {
+                        assertEquals(200, response.getStatus(), "Credential request should succeed");
+                        CredentialResponse credentialResponse = JsonSerialization.readValue(
+                                response.readEntity(String.class),
+                                CredentialResponse.class
+                        );
+                        String credentialValue = (String) credentialResponse.getCredentials().get(0).getCredential();
+                        if (VCFormat.SD_JWT_VC.equals(expectedFormat)) {
+                            credentialValue = credentialValue.split(SDJWT_DELIMITER)[0];
+                        }
+                        JWSHeader header = TokenVerifier.create(credentialValue, JsonWebToken.class).getHeader();
+                        typRef.set(header.getType());
+                    } catch (VerificationException | IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
+
+        return typRef.get();
     }
 
     private String getCNonce() {
