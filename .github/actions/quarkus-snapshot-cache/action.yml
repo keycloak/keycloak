@@ -1,0 +1,15 @@
+name: Quarkus Snapshot Cache
+description: Restores Quarkus snapshot artifacts built from quarkusio/quarkus main branch.
+
+runs:
+  using: composite
+  steps:
+    - id: restore-quarkus-snapshot
+      name: Restore Quarkus snapshot cache
+      uses: actions/cache/restore@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      with:
+        path: |
+          ~/.m2/repository/io/quarkus
+        key: quarkus-snapshot-
+        restore-keys: |
+          quarkus-snapshot-

@@ -69,6 +69,10 @@ jobs:
       - name: Setup Java
         uses: ./.github/actions/java-setup
 
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
+
       - name: Test operator running locally
         run: |
           ./mvnw install -Poperator -pl :keycloak-operator -am
@@ -89,6 +93,10 @@ jobs:
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
         uses: manusa/actions-setup-minikube@96202dee4ae1c2f46a62fe197273aaf22b83f42d # v2.16.1
@@ -137,6 +145,10 @@ jobs:
 
       - name: Setup Java
         uses: ./.github/actions/java-setup
+
+      - name: Restore Quarkus snapshot cache
+        if: github.ref == 'refs/heads/quarkus-next' || github.base_ref == 'quarkus-next'
+        uses: ./.github/actions/quarkus-snapshot-cache
 
       - name: Setup Minikube-Kubernetes
         uses: manusa/actions-setup-minikube@96202dee4ae1c2f46a62fe197273aaf22b83f42d # v2.16.1
