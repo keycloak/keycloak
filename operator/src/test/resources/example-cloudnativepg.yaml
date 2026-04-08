@@ -1,0 +1,65 @@
+# CloudNativePG 1.29 Cluster Configuration
+# This example demonstrates using CloudNativePG 1.29 with Keycloak
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: keycloak-db-cluster
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.4
+  instances: 3
+  storage:
+    size: 10Gi
+  postgresql:
+    version: "16"
+    parameters:
+      max_connections: "200"
+      shared_buffers: "256MB"
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  monitoring:
+    enabled: true
+    customQueriesConfigMap:
+      name: cnpg-default-monitoring
+      key: queries
+  backup:
+    enabled: true
+    retentionPolicy: "30d"
+    schedule:
+      cron: "0 0 * * *"
+      suspend: false
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+---
+# Service for Keycloak to connect to the primary instance
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak-db-primary
+spec:
+  type: ClusterIP
+  selector:
+    cnpg.io/cluster: keycloak-db-cluster
+    cnpg.io/instanceRole: primary
+  ports:
+    - port: 5432
+      targetPort: 5432
+      name: postgres
+---
+# Secret for database credentials (referenced by Keycloak)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: keycloak-db-secret
+type: Opaque
+stringData:
+  username: keycloak
+  password: keycloak-password
+  host: keycloak-db-primary
+  port: "5432"
+  database: keycloak
