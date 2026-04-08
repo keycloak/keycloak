@@ -140,43 +140,6 @@ test("should persist values after page refresh", async ({ page }) => {
   expect(preAuthValue).toBeGreaterThan(0);
 });
 
-test("should load and migrate the legacy credential offer lifespan attribute", async ({
-  page,
-}) => {
-  await using testBed = await createTestBed({
-    verifiableCredentialsEnabled: true,
-  });
-  await adminClient.updateRealm(testBed.realm, {
-    attributes: {
-      preAuthorizedCodeLifespanS: "120",
-    },
-  });
-  await login(page, { to: toRealmSettings({ realm: testBed.realm }) });
-
-  const tokensTab = page.getByTestId("rs-tokens-tab");
-  await tokensTab.click();
-
-  const oid4vciJumpLink = page.getByTestId("jump-link-oid4vci-attributes");
-  await oid4vciJumpLink.click();
-
-  const nonceField = page.getByTestId(
-    "attributes.vc🍺c-nonce-lifetime-seconds",
-  );
-  const preAuthField = page.getByTestId("attributes.credentialOfferLifespanS");
-
-  await expect(preAuthField).toHaveValue("120");
-
-  await nonceField.fill("61");
-  await page.getByTestId("tokens-tab-save").click();
-  await expect(
-    page.getByText("Realm successfully updated").first(),
-  ).toBeVisible();
-
-  const realmData = await adminClient.getRealm(testBed.realm);
-  expect(realmData?.attributes?.["credentialOfferLifespanS"]).toBe("120");
-  expect(realmData?.attributes?.["preAuthorizedCodeLifespanS"]).toBeUndefined();
-});
-
 test("should validate form fields and save valid values", async ({ page }) => {
   await using testBed = await createTestBed({
     verifiableCredentialsEnabled: true,

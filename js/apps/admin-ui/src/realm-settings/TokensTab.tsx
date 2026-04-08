@@ -71,47 +71,11 @@ export const RealmSettingsTokensTab = ({
   const { control, register, reset, formState, handleSubmit } =
     useFormContext<RealmRepresentation>();
   const credentialOfferLifespanDefaultValue =
-    realm.attributes?.["credentialOfferLifespanS"] ??
-    realm.attributes?.["preAuthorizedCodeLifespanS"] ??
-    30;
-  const realmWithCredentialOfferLifespanFallback =
-    realm.attributes?.["credentialOfferLifespanS"] !== undefined ||
-    realm.attributes?.["preAuthorizedCodeLifespanS"] === undefined
-      ? realm
-      : {
-          ...realm,
-          attributes: {
-            ...realm.attributes,
-            credentialOfferLifespanS:
-              realm.attributes["preAuthorizedCodeLifespanS"],
-          },
-        };
+    realm.attributes?.["credentialOfferLifespanS"] ?? 30;
 
   // Show a global error notification if validation fails
   const onError = () => {
     addAlert(t("oid4vciFormValidationError"), AlertVariant.danger);
-  };
-
-  const saveWithLegacyCredentialOfferCleanup = (
-    updatedRealm: RealmRepresentation,
-  ) => {
-    const credentialOfferLifespan =
-      updatedRealm.attributes?.["credentialOfferLifespanS"] ??
-      updatedRealm.attributes?.["preAuthorizedCodeLifespanS"];
-
-    if (credentialOfferLifespan === undefined) {
-      save(updatedRealm);
-      return;
-    }
-
-    const attributes = { ...(updatedRealm.attributes ?? {}) };
-    delete attributes.preAuthorizedCodeLifespanS;
-    attributes.credentialOfferLifespanS = credentialOfferLifespan;
-
-    save({
-      ...updatedRealm,
-      attributes,
-    });
   };
 
   const offlineSessionMaxEnabled = useWatch({
@@ -705,7 +669,7 @@ export const RealmSettingsTokensTab = ({
           isHorizontal
           role="manage-realm"
           className="pf-v5-u-mt-lg"
-          onSubmit={handleSubmit(saveWithLegacyCredentialOfferCleanup, onError)}
+          onSubmit={handleSubmit(save, onError)}
         >
           <TimeSelectorControl
             name={convertAttributeNameToForm(
@@ -911,7 +875,7 @@ export const RealmSettingsTokensTab = ({
             name="tokens-tab"
             isSubmit
             isDisabled={!formState.isDirty}
-            reset={() => reset(realmWithCredentialOfferLifespanFallback)}
+            reset={() => reset(realm)}
           />
         </FormAccess>
       ),

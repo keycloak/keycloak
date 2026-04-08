@@ -169,17 +169,7 @@ public class OID4VCIssuerEndpoint {
     private AuthenticationManager.AuthResult cachedAuthResult;
 
     public static final String CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY = "credentialOfferLifespanS";
-    /**
-     * @deprecated Use {@link #CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY} instead.
-     */
-    @Deprecated(forRemoval = true)
-    public static final String CODE_LIFESPAN_REALM_ATTRIBUTE_KEY = "preAuthorizedCodeLifespanS";
     public static final int DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S = 30;
-    /**
-     * @deprecated Use {@link #DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S} instead.
-     */
-    @Deprecated(forRemoval = true)
-    public static final int DEFAULT_CODE_LIFESPAN_S = DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 
     public static final String DEFLATE_COMPRESSION = "DEF";
     public static final String NONCE_PATH = "nonce";
@@ -228,7 +218,6 @@ public class OID4VCIssuerEndpoint {
 
         RealmModel realm = keycloakSession.getContext().getRealm();
         this.credentialOfferLifespan = Optional.ofNullable(realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY))
-                .or(() -> Optional.ofNullable(realm.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY)))
                 .map(Integer::valueOf)
                 .orElse(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
     }

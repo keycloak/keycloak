@@ -43,7 +43,6 @@ import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_NONCE;
 import static org.keycloak.constants.OID4VCIConstants.PRE_AUTHORIZED;
 import static org.keycloak.constants.OID4VCIConstants.VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID;
 import static org.keycloak.events.Details.REASON;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CODE_LIFESPAN_REALM_ATTRIBUTE_KEY;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY;
 import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 import static org.keycloak.protocol.oid4vc.model.AuthorizationCodeGrant.AUTH_CODE_GRANT_TYPE;
@@ -169,7 +168,6 @@ public class VerifiableCredentialOfferAction implements RequiredActionProvider, 
         boolean preAuthorized = actionConfig.getPreAuthorized() != null && actionConfig.getPreAuthorized();
         String grantType = preAuthorized ? PRE_AUTH_GRANT_TYPE : AUTH_CODE_GRANT_TYPE;
         int credentialOfferLifespan = Optional.ofNullable(realm.getAttribute(CREDENTIAL_OFFER_LIFESPAN_REALM_ATTRIBUTE_KEY))
-                .or(() -> Optional.ofNullable(realm.getAttribute(CODE_LIFESPAN_REALM_ATTRIBUTE_KEY)))
                 .map(Integer::valueOf)
                 .orElse(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S);
         int expiresAt = timeProvider.currentTimeSeconds() + credentialOfferLifespan;
