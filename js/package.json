@@ -60,7 +60,9 @@
       "minimatch@~3": "^3.1.4",
       "minimatch@~9": "^9.0.7",
       "@isaacs/brace-expansion@^5": "^5.0.1",
-      "serialize-javascript": "^7.0.3"
+      "serialize-javascript": "^7.0.3",
+      "diff@^4": "^4.0.4",
+      "diff@^7": "^8.0.3"
     }
   }
 }
