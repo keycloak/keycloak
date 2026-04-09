@@ -19,7 +19,7 @@ this value by decoding a service account token to retrieve the value of the `iss
 
 Keycloak must be able to invoke the endpoint `<ISSUER>/.well-known/openid-configuration` and additionally the
 JWKS endpoint returned in the well-known configuration. By default, these endpoints require authentication with a
-service account token. ${project_name} will automatically use the token from `/var/run/secrets/kubernetes.io/serviceaccount/token`
+service account token. {project_name} will automatically use the token from `/var/run/secrets/kubernetes.io/serviceaccount/token`
 if available and the token issuer matches the configured issuer.
 
 Each identity provider must have a unique issuer. Each client must also have a unique subject identifier for each
