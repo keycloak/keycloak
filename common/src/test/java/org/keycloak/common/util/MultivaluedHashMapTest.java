@@ -18,10 +18,10 @@ package org.keycloak.common.util;
 
 import java.util.Arrays;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  *
@@ -30,19 +30,19 @@ import static org.junit.Assert.assertTrue;
 public class MultivaluedHashMapTest {
 
     public <T, R> void equalsIgnoreValueOrder_shouldReturnTrueForEqualMaps(MultivaluedHashMap<T, R> map, MultivaluedHashMap<T, R> equalMap) {
-        assertTrue(String.format("MultivaluedHashMap.equalsIgnoreValueOrder() should return `true` for the same object. \nmap: %s", map),
-                map.equalsIgnoreValueOrder(map));
-        assertTrue(String.format("MultivaluedHashMap.equalsIgnoreValueOrder() should return `true` for maps that are equal. \nmap1: %s \nmap2: %s", map, equalMap),
-                map.equalsIgnoreValueOrder(equalMap));
-        assertTrue(String.format("MultivaluedHashMap.equalsIgnoreValueOrder() should return `true` for maps that are equal. \nmap1: %s \nmap2: %s", equalMap, map),
-                equalMap.equalsIgnoreValueOrder(map));
+        assertTrue(map.equalsIgnoreValueOrder(map),
+                String.format("MultivaluedHashMap.equalsIgnoreValueOrder() should return `true` for the same object. \nmap: %s", map));
+        assertTrue(map.equalsIgnoreValueOrder(equalMap),
+                String.format("MultivaluedHashMap.equalsIgnoreValueOrder() should return `true` for maps that are equal. \nmap1: %s \nmap2: %s", map, equalMap));
+        assertTrue(equalMap.equalsIgnoreValueOrder(map),
+                String.format("MultivaluedHashMap.equalsIgnoreValueOrder() should return `true` for maps that are equal. \nmap1: %s \nmap2: %s", equalMap, map));
     }
 
     public <T, R> void equalsIgnoreValueOrder_shouldReturnFalseForDifferentMaps(MultivaluedHashMap<T, R> map, MultivaluedHashMap<T, R> differentMap) {
-        assertFalse(String.format("MultivaluedHashMap.equalsIgnoreValueOrder() should return `false` for maps that are different. \nmap1: %s \nmap2: %s", map, differentMap),
-                map.equalsIgnoreValueOrder(differentMap));
-        assertFalse(String.format("MultivaluedHashMap.equalsIgnoreValueOrder() should return `false` for maps that are different. \nmap1: %s \nmap2: %s", differentMap, map),
-                differentMap.equalsIgnoreValueOrder(map));
+        assertFalse(map.equalsIgnoreValueOrder(differentMap),
+                String.format("MultivaluedHashMap.equalsIgnoreValueOrder() should return `false` for maps that are different. \nmap1: %s \nmap2: %s", map, differentMap));
+        assertFalse(differentMap.equalsIgnoreValueOrder(map),
+                String.format("MultivaluedHashMap.equalsIgnoreValueOrder() should return `false` for maps that are different. \nmap1: %s \nmap2: %s", differentMap, map));
     }
 
     @Test
