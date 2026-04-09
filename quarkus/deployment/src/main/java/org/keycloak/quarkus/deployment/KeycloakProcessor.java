@@ -747,6 +747,7 @@ class KeycloakProcessor {
      *
      * @param configSources
      */
+    @BuildStep
     void configureConfigSources(BuildProducer<StaticInitConfigBuilderBuildItem> configSources) {
         configSources.produce(new StaticInitConfigBuilderBuildItem(KeycloakConfigSourceProvider.class.getName()));
     }

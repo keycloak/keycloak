@@ -48,7 +48,7 @@ import static java.lang.System.setProperty;
 
 import static org.keycloak.it.junit5.extension.DistributionTest.ReInstall.BEFORE_ALL;
 import static org.keycloak.it.junit5.extension.DistributionType.RAW;
-import static org.keycloak.quarkus.runtime.Environment.forceNonServerMode;
+import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
 
 public class CLITestExtension extends QuarkusMainTestExtension {
 
@@ -216,7 +216,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 dist = createDistribution(distConfig, getStoreConfig(context), getDatabaseConfig(context));
             }
         } else {
-            forceNonServerMode();
+            forceTestLaunchMode();
         }
 
         super.beforeAll(context);
