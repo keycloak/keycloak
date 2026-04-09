@@ -142,7 +142,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"department\", \"displayName\" : \"Department\", " + PERMISSIONS_ALL + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
@@ -171,7 +171,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"contact\" }"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
@@ -205,7 +205,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"email\", " + UserProfileUtil.PERMISSIONS_ALL + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
@@ -228,7 +228,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + RegisterWithUserProfileTest.UP_CONFIG_PART_INPUT_TYPES
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
@@ -245,7 +245,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
             realm.setEditUsernameAllowed(false);
             testRealm().update(realm);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login(USERNAME1, PASSWORD);
 
             assertFalse(updateProfilePage.isUsernamePresent());
@@ -268,7 +268,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login(USERNAME1, PASSWORD);
 
@@ -306,7 +306,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_ONLY + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
@@ -336,7 +336,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
@@ -363,7 +363,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
@@ -390,7 +390,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_ONLY + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();
@@ -417,7 +417,7 @@ public class RequiredActionUpdateProfileWithUserProfileTest extends AbstractTest
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME1, PASSWORD);
 
         updateProfilePage.assertCurrent();

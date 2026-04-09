@@ -166,7 +166,7 @@ public class CustomUpdateProfileTemplateTest extends AbstractTestRealmKeycloakTe
     }
 
     private void navigateToUpdateProfilePage() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("tom@keycloak.org", "password");
         updateProfilePage.assertCurrent();
     }

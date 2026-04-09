@@ -150,7 +150,7 @@ public class UserStorageGracefulDegradationLdapTest extends AbstractLDAPTest {
             userIdRef.set(userId);
             
             // Test that LDAP users fail to login when LDAP is down
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("testldapuser", "TestPassword123!");
             
             // Should stay on login page with error since LDAP user can't be authenticated

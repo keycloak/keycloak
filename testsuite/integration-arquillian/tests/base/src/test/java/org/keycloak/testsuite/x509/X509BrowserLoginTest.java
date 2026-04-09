@@ -288,7 +288,7 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
 
         events.clear();
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         assertThat(loginPage.getError(), containsString("X509 certificate authentication's failed."));
 

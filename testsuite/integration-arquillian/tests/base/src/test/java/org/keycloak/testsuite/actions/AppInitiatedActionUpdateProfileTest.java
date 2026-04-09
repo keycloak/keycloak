@@ -111,7 +111,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
     // already logged in.  The other main difference between this and all other
     // AIA tests is that the events are posted in a different order.
     public void updateProfileLoginFirst() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         
         doAIA();

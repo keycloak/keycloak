@@ -117,13 +117,13 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
     public void alternativeSubflowStaySignedOutTest() {
         configureAlternativeResetCredentialsFlow();
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
             Assert.assertTrue(loginPasswordResetPage.isCurrent());
             loginPasswordResetPage.changePassword("login@test.com.com");
             Assert.assertTrue(loginPage.isCurrent());
             assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage());
-            loginPage.open();
+            oauth.openLoginForm();
             Assert.assertTrue(loginPage.isCurrent());
         } finally {
             testRealm().flows().getFlows().clear();

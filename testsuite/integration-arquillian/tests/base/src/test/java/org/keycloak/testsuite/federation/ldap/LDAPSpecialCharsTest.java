@@ -120,7 +120,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
     @Test
     public void test02_loginWithSpecialCharacter() {
         // Fail login with wildcard
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("john*", "Password1");
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
@@ -216,7 +216,7 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             Assert.assertEquals("Incorrect UUID attribute", "jamees,key*cložak)ppp", jamees.firstAttribute(LDAPConstants.LDAP_ID));
 
             // Fail login with wildcard
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("jamees*", "Password1");
             Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 

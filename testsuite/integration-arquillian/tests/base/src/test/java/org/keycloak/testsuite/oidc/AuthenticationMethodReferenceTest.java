@@ -495,7 +495,7 @@ public class AuthenticationMethodReferenceTest extends AbstractOIDCScopeTest{
      * @param password The password to log in with
      */
     private void authenticatePassword(String username, String password){
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
     }
 

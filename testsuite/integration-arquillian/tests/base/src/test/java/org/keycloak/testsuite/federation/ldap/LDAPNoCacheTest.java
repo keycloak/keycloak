@@ -141,7 +141,7 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
     @Test
     public void resetPasswordLink() throws IOException, MessagingException {
         // Trigger reset password from the login page
-        loginPage.open();
+        oauth.openLoginForm();
 
         // Send and email to the current email address of john. This will sync john to the Keycloak DB
         triggerForgetPasswordForUser("john_old@email.org", 1, "john_old@email.org");
@@ -170,7 +170,7 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
     @Test
     public void resetPasswordLinkCheckOldAddressLast() throws IOException, MessagingException {
         // Trigger reset password from the login page
-        loginPage.open();
+        oauth.openLoginForm();
 
         triggerForgetPasswordForUser("john_old@email.org", 1, "john_old@email.org");
 

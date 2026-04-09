@@ -63,7 +63,7 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
 
 
     protected void failoverTest(boolean expectSuccessfulFailover) throws IOException, MessagingException {
-        loginPage.open();
+        oauth.openLoginForm();
 
         String cookieValue1 = getAuthSessionCookieValue(driver);
 

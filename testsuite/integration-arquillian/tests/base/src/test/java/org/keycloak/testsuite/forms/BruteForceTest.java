@@ -1166,7 +1166,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     public void expectTemporarilyDisabled(String username, String userId, String password) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
 
         loginPage.assertCurrent();
@@ -1187,7 +1187,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     public void expectPermanentlyDisabled(String username) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, getPassword(username));
 
         loginPage.assertCurrent();
@@ -1211,7 +1211,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     public void loginSuccess(String username) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, getPassword(username));
 
         loginTotpPage.assertCurrent();
@@ -1230,7 +1230,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     public void loginWithTotpFailure() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         loginTotpPage.assertCurrent();
@@ -1288,7 +1288,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     public void loginWithMissingTotp() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         loginTotpPage.assertCurrent();
@@ -1309,7 +1309,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     public void loginInvalidPassword(String username, boolean clearEventsQueue) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, "invalid");
 
         loginPage.assertCurrent();
@@ -1322,7 +1322,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     public void loginMissingPassword() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.missingPassword("test-user@localhost");
 
         loginPage.assertCurrent();
@@ -1332,7 +1332,7 @@ public class BruteForceTest extends AbstractChangeImportedUserPasswordsTest {
     }
 
     public void registerUser(String username) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 

@@ -107,13 +107,13 @@ public class LDAPUserMultipleCredentialTest extends AbstractLDAPTest {
 
         try {
             log.info("Trying login as user without OTP");
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("test-user");
             passwordPage.assertCurrent();
             passwordPage.assertTryAnotherWayLinkAvailability(false);
 
             log.info("Trying login as user with OTP");
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("test-user-with-otp");
             // OTP is locally stored, so takes precedence in Keycloak
             loginTotpPage.assertCurrent();

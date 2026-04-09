@@ -109,7 +109,7 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
         configureBrowserFlowWithConditionalUserAttribute(flowAlias, errorMessage);
 
         for (String user : List.of(APPROVED_USER, APPROVED_BY_GROUP_USER, APPROVED_BY_SUBGROUP_USER)) {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(user);
     
@@ -140,7 +140,7 @@ public class ConditionalUserAttributeAuthenticatorTest extends AbstractTestRealm
         configureBrowserFlowWithConditionalUserAttribute(flowAlias, errorMessage);
 
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(user);
 

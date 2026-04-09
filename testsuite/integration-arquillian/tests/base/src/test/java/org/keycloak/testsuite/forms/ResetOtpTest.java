@@ -132,7 +132,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(otpCredentials.size() == 1);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
         resetPasswordPage.changePassword(RESET_OTP_TEST_USER_REMOVE_NONE);
 
@@ -154,7 +154,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(otpCredentials.size() == 1);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
         resetPasswordPage.changePassword(RESET_OTP_TEST_USER_REMOVE_NONE);
 
@@ -176,7 +176,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(otpCredentials.size() == 2);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
         resetPasswordPage.changePassword(RESET_OTP_TEST_USER_REMOVE_ONE);
         resetOtpPage.selectOtp(1);
@@ -190,7 +190,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
         // Since we selected to remove the second OTP, the first one should still be there.
         assertTrue("Otp1-RemoveOne".equals(otpCredentials.get(0).getId()));
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
         resetPasswordPage.changePassword(RESET_OTP_TEST_USER_REMOVE_ONE);
         // Here the last remaining OTP is selected automatically.
@@ -215,7 +215,7 @@ public class ResetOtpTest extends AbstractTestRealmKeycloakTest {
 
         assertTrue(otpCredentials.size() == 2);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
         resetPasswordPage.changePassword(RESET_OTP_TEST_USER_REMOVE_ALL);
 

@@ -117,7 +117,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Test
     public void updateProfile() {
-        loginPage.open();
+        oauth.openLoginForm();
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         user.setEmailVerified(true);
         adminClient.realm("test").users().get(user.getId()).update(user);
@@ -148,7 +148,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Test
     public void updateUsername() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
@@ -180,7 +180,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Test
     public void updateProfileMissingFirstName() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
@@ -201,7 +201,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Test
     public void updateProfileMissingLastName() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
@@ -223,7 +223,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Test
     public void updateProfileMissingEmail() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
@@ -249,7 +249,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Test
     public void updateProfileInvalidEmail() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
@@ -272,7 +272,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Test
     public void updateProfileMissingUsername() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
@@ -295,7 +295,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Test
     public void updateProfileDuplicateUsername() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
@@ -318,7 +318,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Test
     public void updateProfileDuplicatedEmail() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
@@ -343,7 +343,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
     public void updateProfileDuplicateUsernameWithEmail() {
         getCleanup().addUserId(createUser(TEST_REALM_NAME, "user1@local.com", generatePassword("user1@local.com"), "user1", "user1", "user1@local.org"));
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
@@ -368,7 +368,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
     public void updateProfileDuplicatedEmailWithUsername() {
         getCleanup().addUserId(createUser(TEST_REALM_NAME, "user1@local.com", generatePassword("user1@local.com"), "user1", "user1", "user1@local.org"));
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
@@ -391,7 +391,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
     @Test
     public void updateProfileExpiredCookies() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
         updateProfilePage.assertCurrent();
@@ -424,7 +424,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
             user.update(userRep);
 
-            loginPage.open();
+            oauth.openLoginForm();
 
             loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
@@ -473,7 +473,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
 
             userProfile.update(testUpConfig);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
             updateProfilePage.assertCurrent();
 
@@ -493,7 +493,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 // make sure multiple values are properly rendered
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
                 testRealm().users().get(userRep.getId()).update(userRep);
-                loginPage.open();
+                oauth.openLoginForm();
                 assertThat(IntStream.range(0, 5).mapToObj(value -> updateProfilePage.getAttribute(attribute + "-" + value)).collect(Collectors.toSet()), Matchers.equalTo(valuesSet));
 
                 final String lastValue = values.get(values.size() - 1);
@@ -516,7 +516,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 // make sure adding/removing within the same context works
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
                 testRealm().users().get(userRep.getId()).update(userRep);
-                loginPage.open();
+                oauth.openLoginForm();
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
                     updateProfilePage.setAttribute(elementId, value);
@@ -546,7 +546,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 // at the end the attribute is set with multiple values
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
                 testRealm().users().get(userRep.getId()).update(userRep);
-                loginPage.open();
+                oauth.openLoginForm();
                 for (String value : values) {
                     String elementId = attribute + "-" + value;
                     updateProfilePage.setAttribute(elementId, value);
@@ -558,7 +558,7 @@ public class RequiredActionUpdateProfileTest extends AbstractChangeImportedUserP
                 userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");
                 userRep.setRequiredActions(List.of(UserModel.RequiredAction.UPDATE_PROFILE.name()));
                 testRealm().users().get(userRep.getId()).update(userRep);
-                loginPage.open();
+                oauth.openLoginForm();
             }
 
             UserRepresentation userRep = ActionUtil.findUserWithAdminClient(adminClient, "john-doh@localhost");

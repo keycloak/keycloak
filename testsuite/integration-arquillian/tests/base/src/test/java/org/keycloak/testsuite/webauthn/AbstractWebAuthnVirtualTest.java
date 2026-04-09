@@ -232,7 +232,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     protected void registerUser(String username, String password, String email, String authenticatorLabel, boolean shouldSuccess) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
 
         waitForPageToLoad();
@@ -300,7 +300,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     protected void authenticateUser(String username, String password, boolean shouldSuccess) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent(TEST_REALM_NAME);
         loginPage.login(username, password);
 

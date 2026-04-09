@@ -110,7 +110,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
 	@Override
 	protected void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions, boolean newEmailAsUsername) throws Exception {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("test-user@localhost", "password");
         updateEmailPage.assertCurrent();
@@ -204,7 +204,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
     @Test
     public void pendingVerificationIsNotDisplayedOnFirstVisit() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", "password");
 
@@ -216,7 +216,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
 	@Test
 	public void confirmEmailUpdateAfterThirdPartyEmailUpdate() throws MessagingException, IOException {
-		loginPage.open();
+		oauth.openLoginForm();
 		loginPage.login("test-user@localhost", "password");
 
 		updateEmailPage.assertCurrent();
@@ -272,7 +272,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
 
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             updateEmailPage.assertCurrent();
             updateEmailPage.changeEmail("new@localhost");
@@ -308,7 +308,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             user.setRequiredActions(List.of(RequiredAction.UPDATE_PROFILE.name()));
             testRealm().users().get(user.getId()).update(user);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             updateProfilePage.assertCurrent();
             updateProfilePage.update("f", "l", "new-email@localhost");
@@ -347,7 +347,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             user.setRequiredActions(List.of(RequiredAction.UPDATE_PROFILE.name()));
             testRealm().users().get(user.getId()).update(user);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             updateProfilePage.assertCurrent();
             updateProfilePage.update("f", "l", "new-email@localhost");
@@ -355,7 +355,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             assertNotNull(confirmationLink);
             // logout to check if update email required action will be executed
             testRealm().users().get(user.getId()).logout();
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             // user is forced to update the email because it was not yet confirmed
             // The pending verification message takes precedence and is more informative
@@ -391,7 +391,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             user.setRequiredActions(List.of(RequiredAction.UPDATE_PROFILE.name()));
             testRealm().users().get(user.getId()).update(user);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             updateProfilePage.assertCurrent();
             updateProfilePage.update("f", "l", "new-email@localhost");
@@ -408,7 +408,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
 	@Test
 	public void confirmEmailAfterDuplicateEmailSetForThirdPartyAccount() throws MessagingException, IOException {
-		loginPage.open();
+		oauth.openLoginForm();
 		loginPage.login("test-user@localhost", "password");
 
 		updateEmailPage.assertCurrent();
@@ -451,7 +451,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 
             // Login and update profile (first and last name only, no email)
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("profile-test-user@localhost", "password");
 
             updateProfilePage.update("Updated", "Name");
@@ -504,7 +504,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                     .build();
             ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("pendinguser", "password");
             updateProfilePage.assertCurrent();
             updateProfilePage.update("John", "Doe", "pending@localhost");
@@ -522,7 +522,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             assertEquals("A confirmation email has been sent to pending@localhost. You must follow the instructions of the former to complete the email update.", 
                         infoPage.getInfo());
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("pendinguser", "password");
 
             // Should be on UPDATE_EMAIL page with pending verification message
@@ -566,7 +566,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 
             // Step 1: Login and change email (triggers verification due to realm verification setting)
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("realmverifyuser", "password");
             updateEmailPage.assertCurrent();
             
@@ -583,7 +583,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
             // Step 2: Logout and login again (should show pending verification message)
             testRealm().users().get(findUser("realmverifyuser").getId()).logout();
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("realmverifyuser", "password");
 
             // Should be on UPDATE_EMAIL page with pending verification message
@@ -614,7 +614,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         testUser.update(rep);
 
         // login and update profile, email is empty and writable, so email input should be present
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         updateProfilePage.assertCurrent();
         assertTrue(updateProfilePage.isEmailInputPresent());
@@ -641,7 +641,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
     public void testEmailVerificationCancelledByAdmin() throws Exception {
         configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.UPDATE_EMAIL.name());
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", "password");
         updateEmailPage.assertCurrent();
@@ -672,7 +672,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
     public void testUpdateEmailVerificationResendTooFast() throws Exception {
         UserRepresentation testUser = testRealm().users().search("test-user@localhost").get(0);
         
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         updateEmailPage.assertCurrent();
@@ -685,7 +685,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
         // Logout and login again to get back to update email page for resend
         testRealm().users().get(testUser.getId()).logout();
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         updateEmailPage.assertCurrent();
 
@@ -705,7 +705,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             
             // Logout and login again to retry after cooldown
             testRealm().users().get(testUser.getId()).logout();
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             updateEmailPage.assertCurrent();
             

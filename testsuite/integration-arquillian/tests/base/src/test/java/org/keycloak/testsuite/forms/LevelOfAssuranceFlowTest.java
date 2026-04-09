@@ -770,7 +770,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         BrowserFlowTest.revertFlows(testRealm(), FLOW_ALIAS);
 
         // Login normal way - should return 1 (backwards compatibility before step-up was introduced)
-        loginPage.open();
+        oauth.openLoginForm();
         authenticateWithUsernamePassword();
         authenticateWithTotp(); // OTP required due the user has it
         assertLoggedInWithAcr("1");

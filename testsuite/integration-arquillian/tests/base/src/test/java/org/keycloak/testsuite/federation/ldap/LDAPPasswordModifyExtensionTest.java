@@ -100,11 +100,11 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
     public void ldapPasswordChangeWithAccountConsole() throws Exception {
         Assert.assertTrue(AccountHelper.updatePassword(testRealm(), "johnkeycloak", "New-password1"));
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Bad-password1");
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "New-password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -114,7 +114,7 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
 
     @Test
     public void registerUserLdapSuccess() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 

@@ -74,7 +74,7 @@ public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void loginSuccess() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -120,7 +120,7 @@ public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void multipleSessions() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -169,7 +169,7 @@ public class SSOTest extends AbstractChangeImportedUserPasswordsTest {
     @Test
     public void loginWithRequiredActionAddedInTheMeantime() {
         // SSO login
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());

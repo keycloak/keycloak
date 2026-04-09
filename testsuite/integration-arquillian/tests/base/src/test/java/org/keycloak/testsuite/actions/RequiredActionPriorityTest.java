@@ -130,7 +130,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
         // Login
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME, PASSWORD);
 
         // First, accept terms
@@ -180,7 +180,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
         // Login
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME, PASSWORD);
 
         // First, change password
@@ -283,7 +283,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
         // Get a password reset link
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent(TEST_REALM_NAME);
         loginPage.resetPassword();
 
@@ -350,7 +350,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
         // Get a password reset link
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent(TEST_REALM_NAME);
         loginPage.login(USERNAME, PASSWORD);
 
@@ -393,7 +393,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         ApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
 
         // Login
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME, PASSWORD);
 
         // change password
@@ -443,7 +443,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         ApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
 
         // Login
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME, PASSWORD);
         events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).assertEvent();
 

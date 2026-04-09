@@ -53,13 +53,13 @@ public class HiddenProviderTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testVisibleProviderButton() {
-        loginPage.open();
+        oauth.openLoginForm();
         Assert.assertNotNull(loginPage.findSocialButton("visible-oidc"));
     }
     
     @Test(expected=org.openqa.selenium.NoSuchElementException.class)
     public void testHiddenProviderButton() {
-        loginPage.open();
+        oauth.openLoginForm();
         Assert.assertNull(loginPage.findSocialButton("hidden-oidc"));
     } 
 }

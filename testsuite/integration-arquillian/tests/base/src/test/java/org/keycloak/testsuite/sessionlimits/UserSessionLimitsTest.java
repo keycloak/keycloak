@@ -136,7 +136,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testClientSessionCountExceededAndNewSessionDeniedBrowserFlow() throws Exception {
         // Login and verify login was successful
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
@@ -144,7 +144,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         super.deleteCookies();
         
         // Login the same user again and verify the configured error message is shown
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
         errorPage.assertCurrent();
@@ -154,7 +154,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testClientSessionCountNotExceededOnReAuthentication() throws Exception {
         // Login and verify login was successful
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
@@ -170,7 +170,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
 
             // Login and verify login was successful
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             EventRepresentation initialLoginEvent = events.expectLogin().assertEvent();
             String userId = initialLoginEvent.getUserId();
@@ -179,7 +179,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             // Delete the cookies, while maintaining the server side session active
             super.deleteCookies();
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             // assert we have a logout session event, as the authenticator should have deleted the first session.
             events.expect(EventType.LOGOUT)
@@ -201,7 +201,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         try {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             events.expectLogin().assertEvent();
 
@@ -209,7 +209,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             super.deleteCookies();
 
             // Login the same user again and verify the configured error message is shown
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
             errorPage.assertCurrent();
@@ -226,7 +226,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             EventRepresentation initialLoginEvent = events.expectLogin().assertEvent();
             String userId = initialLoginEvent.getUserId();
@@ -235,7 +235,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             // Delete the cookies, while maintaining the server side session active
             super.deleteCookies();
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             // assert we have a logout session event, as the authenticator should have deleted the first session.
             events.expect(EventType.LOGOUT)
@@ -499,7 +499,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
 
             // Login and verify login was successful
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -542,7 +542,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
 
             // Login and verify login was successful
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
             EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
@@ -603,7 +603,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         );
 
         // Login in browser1
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
@@ -620,7 +620,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         super.deleteCookies();
 
         // New login should fail due the sessions limit
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
         errorPage.assertCurrent();

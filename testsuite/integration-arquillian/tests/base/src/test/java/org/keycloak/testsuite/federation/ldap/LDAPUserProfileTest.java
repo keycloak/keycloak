@@ -113,7 +113,7 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
         john.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
         johnResource.update(john);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
         updateProfilePage.assertCurrent();
         Assert.assertEquals("John", updateProfilePage.getFirstName());
@@ -150,7 +150,7 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             john.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
             johnResource.update(john);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("johnkeycloak", "Password1");
             updateProfilePage.assertCurrent();
 
@@ -216,7 +216,7 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             john.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
             johnResource.update(john);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("johnkeycloak", "Password1");
             updateProfilePage.assertCurrent();
             Assert.assertEquals("John", updateProfilePage.getFirstName());
@@ -247,7 +247,7 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
             mary.getRequiredActions().add(UserModel.RequiredAction.UPDATE_PROFILE.toString());
             maryResource.update(mary);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("marykeycloak", "Password1");
             updateProfilePage.assertCurrent();
             Assert.assertEquals("Mary", updateProfilePage.getFirstName());
@@ -391,11 +391,11 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
         john = johnResource.toRepresentation(true);
         Assert.assertEquals(upperCaseUsername, john.getUsername());
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(upperCaseUsername, "Password1");
         appPage.assertCurrent();
         testRealm().users().get(john.getId()).logout();
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(upperCaseUsername.toLowerCase(), "Password1");
         appPage.assertCurrent();
     }
@@ -428,11 +428,11 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
         john = johnResource.toRepresentation(true);
         Assert.assertEquals(upperCaseUsername, john.getUsername());
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(upperCaseUsername, "Password1");
         appPage.assertCurrent();
         testRealm().users().get(john.getId()).logout();
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(upperCaseUsername.toLowerCase(), "Password1");
         appPage.assertCurrent();
     }

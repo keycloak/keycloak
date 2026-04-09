@@ -98,7 +98,7 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
 
     @Test
     public void loginClassic() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("marykeycloak", "password-app");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -108,7 +108,7 @@ public class LDAPLegacyImportTest extends AbstractLDAPTest {
 
     @Test
     public void loginLdap() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());

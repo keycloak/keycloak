@@ -157,7 +157,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
     }
 
     public void loginBadPassword(String username) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, "badpassword");
         loginPage.assertCurrent();
     }

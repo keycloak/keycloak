@@ -161,7 +161,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
      */
     @Test
     public void loginShouldWorkWithScriptAuthenticator() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("user", getPassword("user"));
 
@@ -173,7 +173,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
      */
     @Test
     public void loginShouldFailWithScriptAuthenticator() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("fail", getPassword("fail"));
 
@@ -196,7 +196,7 @@ public class ScriptAuthenticatorTest extends AbstractFlowTest {
         Assert.assertEquals(201, addExecutionResponse.getStatus());
         addExecutionResponse.close();
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("user", getPassword("user"));
 

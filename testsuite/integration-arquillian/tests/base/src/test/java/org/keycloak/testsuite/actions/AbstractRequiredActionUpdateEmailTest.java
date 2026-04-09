@@ -121,7 +121,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Test
 	public void cancelIsNotDisplayed() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("test-user@localhost", "password");
 
@@ -131,7 +131,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Test
 	public void updateEmailMissing() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("test-user@localhost", "password");
 
@@ -151,7 +151,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Test
 	public void updateEmailDuplicate() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("john-doh@localhost", "password");
 
@@ -171,7 +171,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Test
 	public void updateEmailInvalid() {
-		loginPage.open();
+		oauth.openLoginForm();
 
 		loginPage.login("test-user@localhost", "password");
 

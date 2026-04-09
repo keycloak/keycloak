@@ -129,7 +129,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
                 .setEmailVerified(true)
                 .update()) {
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
 
             events.expectLogin().assertEvent();
@@ -182,7 +182,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
             events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "new-password");
 
             events.expectLogin().assertEvent();
@@ -191,7 +191,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @Test
     public void resetPasswordRequiresReAuth() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         events.expectLogin().assertEvent();
@@ -228,7 +228,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         passwordRequiredAction.getConfig().put(Constants.MAX_AUTH_AGE_KEY, "500");
         testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         events.expectLogin().assertEvent();
@@ -267,7 +267,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         testRealm().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.name(), passwordRequiredAction);
 
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         events.expectLogin().assertEvent();
@@ -304,7 +304,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         try {
             testRealm().update(currentTestRealmRep);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
 
             events.expectLogin().assertEvent();
@@ -379,7 +379,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @Test
     public void resetPasswordUserHasUpdatePasswordRequiredAction() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         UserResource userResource = testRealm().users().get(findUser("test-user@localhost").getId());
@@ -410,7 +410,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     public void checkLogoutSessions() {
         OAuthClient oauth2 = oauth.newConfig().driver(driver2);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 
@@ -444,7 +444,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         events.expectLogin().assertEvent();
 

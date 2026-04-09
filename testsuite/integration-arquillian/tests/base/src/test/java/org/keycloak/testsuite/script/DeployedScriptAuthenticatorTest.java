@@ -184,7 +184,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     public void loginShouldWorkWithScriptAuthenticator() throws Exception {
         configureFlows();
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("user", "password");
 
@@ -249,7 +249,7 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     public void loginShouldFailWithScriptAuthenticator() throws Exception {
         configureFlows();
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("fail", "password");
 

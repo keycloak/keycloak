@@ -126,7 +126,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testAuthentication() {
         // Test that user is required to provide OTP credential during authentication
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user", DummyUserFederationProvider.HARDCODED_PASSWORD);
 
         loginTotpPage.assertCurrent();
@@ -153,7 +153,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
             user.update(userRep);
 
             // Authenticate as the user
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user", DummyUserFederationProvider.HARDCODED_PASSWORD);
             loginTotpPage.assertCurrent();
             loginTotpPage.login(DummyUserFederationProvider.HARDCODED_OTP);
@@ -186,7 +186,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
             events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
 
             // Authenticate as the user again with the dummy OTP should still work
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user", DummyUserFederationProvider.HARDCODED_PASSWORD);
             loginTotpPage.assertCurrent();
             loginTotpPage.login(DummyUserFederationProvider.HARDCODED_OTP);
@@ -198,7 +198,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
             events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
 
             // Authenticate with the new OTP code should work as well
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user", DummyUserFederationProvider.HARDCODED_PASSWORD);
             loginTotpPage.assertCurrent();
             loginTotpPage.login(totp.generateTOTP(totpSecret));
@@ -233,7 +233,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
         ApiUtil.resetUserPassword(userResource, "pass", false);
 
         // Authenticate as the user. Only the password will be required for him
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user2", "pass");
 
         appPage.assertCurrent();

@@ -131,14 +131,14 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testRestartCookie() {
-        loginPage.open();
+        oauth.openLoginForm();
         String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
         assertRestartCookie(restartCookie);
     }
 
     @Test
     public void testRestartCookieRotateAes() {
-        loginPage.open();
+        oauth.openLoginForm();
         String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
         rotateAesKeys();
         assertRestartCookie(restartCookie);
@@ -146,7 +146,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testRestartCookieParsedOldA128CBCHS256() throws IOException {
-        loginPage.open();
+        oauth.openLoginForm();
         String restartCookie = driver.manage().getCookieNamed(RestartLoginCookie.KC_RESTART).getValue();
         getTestingClient().server(TEST_REALM_NAME).run(session -> {
             try {

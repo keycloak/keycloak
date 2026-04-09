@@ -125,7 +125,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         user.addFederatedIdentity("github", fedLink);
 
         // Login user
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         assertUsernameFieldAndOtherFields(true);
         assertSocialButtonsPresent(true, true);
@@ -164,7 +164,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
     @Test
     public void usernamePasswordFormReauthenticationWithResetFlow() {
         // Login user
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         assertUsernameFieldAndOtherFields(true);
         assertSocialButtonsPresent(true, true);
@@ -209,7 +209,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         setupIdentityFirstFlow();
 
         // Login user
-        loginPage.open();
+        oauth.openLoginForm();
         loginUsernameOnlyPage.assertCurrent();
         assertUsernameFieldAndOtherFields(true);
         assertSocialButtonsPresent(true, true);
@@ -254,7 +254,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         user.addFederatedIdentity("github", fedLink);
 
         // Login user
-        loginPage.open();
+        oauth.openLoginForm();
         loginUsernameOnlyPage.assertCurrent();
         loginUsernameOnlyPage.login("test-user@localhost");
         passwordPage.assertCurrent();
@@ -292,7 +292,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
 
     @Test
     public void restartLoginWithNewRootAuthSession() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response1 = oauth.doAccessTokenRequest(code);
@@ -322,7 +322,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         rep.setSsoSessionMaxLifespan(10);
         realmsResouce().realm(rep.getRealm()).update(rep);
 
-        loginPage.open();
+        oauth.openLoginForm();
         driver.navigate().refresh();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
@@ -332,7 +332,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         //set time offset after user session expiration (10s) but before accessCodeLifespanLogin (1800s) and accessCodeLifespan (60s)
         setTimeOffset(20);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("john-doh@localhost", getPassword("john-doh@localhost"));
 
         code = oauth.parseLoginResponse().getCode();

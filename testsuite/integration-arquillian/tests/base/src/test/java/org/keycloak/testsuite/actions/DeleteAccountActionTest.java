@@ -61,7 +61,7 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
 
   @Test
   public void deleteAccountActionSucceeds() {
-    loginPage.open();
+    oauth.openLoginForm();
 
     loginPage.login("test-user@localhost", "password");
 
@@ -78,7 +78,7 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testReauthenticateAfterDeletingAccount() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         UserRepresentation userRep = UserBuilder.create()
                 .username("delete-user")
@@ -104,7 +104,7 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
 
         testRealm().users().create(userRep).close();
         addDeleteAccountRoleToUserClientRoles(userRep.getUsername());
-        loginPage.open();
+        oauth.openLoginForm();
         Cookie newAuthSessionCookie = driver.manage().getCookieNamed(CookieType.AUTH_SESSION_ID.getName());
         Assert.assertFalse(authSessionCookie.getValue().equals(newAuthSessionCookie.getValue()));
         loginPage.login(userRep.getUsername(), "password");
@@ -117,7 +117,7 @@ public class DeleteAccountActionTest extends AbstractTestRealmKeycloakTest {
   @Test
   public void deleteAccountFailsWithoutRoleFails() {
     removeDeleteAccountRoleFromUserClientRoles();
-    loginPage.open();
+    oauth.openLoginForm();
 
     loginPage.login("test-user@localhost", "password");
 

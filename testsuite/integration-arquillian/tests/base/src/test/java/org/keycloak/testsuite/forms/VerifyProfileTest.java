@@ -171,7 +171,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\", \"displayName\" : \"Department\", " + PERMISSIONS_ALL + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
@@ -202,7 +202,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"contact\" }"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
@@ -242,7 +242,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         realm.setEditUsernameAllowed(true);
         testRealm().update(realm);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
@@ -268,7 +268,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + RegisterWithUserProfileTest.UP_CONFIG_PART_INPUT_TYPES
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
@@ -288,7 +288,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\", " + PERMISSIONS_ALL + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
@@ -314,7 +314,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
 
         testingClient.server(TEST_REALM_NAME).run(setEmptyFirstNameAndCustomAttribute());
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test", getPassword("login-test"));
 
         //submit with error
@@ -368,7 +368,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
             realm.setEditUsernameAllowed(false);
             testRealm().update(realm);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("login-test5", getPassword("login-test5"));
 
             verifyProfilePage.assertCurrent();
@@ -400,7 +400,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
             realm.setRegistrationEmailAsUsername(true);
             testRealm().update(realm);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("login-test5", getPassword("login-test5"));
 
             verifyProfilePage.assertCurrent();
@@ -448,7 +448,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
             realm.setRegistrationEmailAsUsername(true);
             testRealm().update(realm);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("login-test5", getPassword("login-test5"));
 
             verifyProfilePage.assertCurrent();
@@ -487,7 +487,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test2", getPassword("login-test2"));
 
         verifyProfilePage.assertCurrent();
@@ -513,7 +513,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_ONLY + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
@@ -545,7 +545,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL +","+VALIDATIONS_LENGTH + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -570,7 +570,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                     + "{\"name\": \"lastName\"," + PERMISSIONS_ALL +","+VALIDATIONS_LENGTH + "}"
                     + "]}");
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("login6@test.com", getPassword("login-test6"));
 
             Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -590,7 +590,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test3", getPassword("login-test3"));
 
         verifyProfilePage.assertCurrent();
@@ -618,7 +618,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"requiredAttrToTriggerVerifyPage\"," + PERMISSIONS_ALL + ", \"required\": {}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test6", getPassword("login-test6"));
 
         verifyProfilePage.assertCurrent();
@@ -637,7 +637,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"requiredAttrToTriggerVerifyPage\"," + PERMISSIONS_ALL + ", \"required\": {}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test6", getPassword("login-test6"));
 
         verifyProfilePage.assertCurrent();
@@ -656,7 +656,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"requiredAttrToTriggerVerifyPage\"," + PERMISSIONS_ALL + ", \"required\": {}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test6", getPassword("login-test6"));
 
         verifyProfilePage.assertCurrent();
@@ -675,7 +675,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\":{\"roles\":[\"user\"]}, \"validations\": {\"email\": {\"max-local-length\": \"16\"}}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-nomail", getPassword("login-nomail"));
 
         // no email is set => expect verify profile page to be displayed
@@ -706,7 +706,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ADMIN_ONLY + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test4", getPassword("login-test4"));
 
         verifyProfilePage.assertCurrent();
@@ -736,7 +736,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
@@ -769,7 +769,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         updateUser(user5Id, "ExistingFirst", "ExistingLast", null);
 
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
@@ -1027,7 +1027,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", "+VALIDATIONS_LENGTH+"}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
@@ -1059,7 +1059,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         verifyProfilePage.assertCurrent();
@@ -1087,7 +1087,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
                 + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", "+VALIDATIONS_LENGTH+"}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test5", getPassword("login-test5"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
