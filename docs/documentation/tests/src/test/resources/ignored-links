@@ -40,10 +40,3 @@ https://www.npmjs.com/package/*
 # Failing because of broken certificate, can likely be restored later.
 https://docs.kantarainitiative.org*
 https://saml.xml.org*
-
-# To be removed once KC 26.6.0 is released
-https://www.keycloak.org/securing-apps/dpop
-https://www.keycloak.org/server/reverseproxy#graceful-http-shutdown
-https://www.keycloak.org/server/db#_secure_the_database_connection
-https://www.keycloak.org/server/logging#customize-service-fields
-https://www.keycloak.org/server/configuration#kcraw-prefix
