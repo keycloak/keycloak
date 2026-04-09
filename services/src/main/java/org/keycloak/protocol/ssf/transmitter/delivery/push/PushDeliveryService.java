@@ -110,7 +110,8 @@ public class PushDeliveryService {
                 .withRequestConfig(requestConfig)
                 .doPost(endpointUrl);
         if (authorizationHeader != null) {
-            httpRequest.auth(authorizationHeader);
+            // we use the push authorization header as is
+            httpRequest.header(HttpHeaders.AUTHORIZATION, authorizationHeader);
         }
         return httpRequest;
     }
