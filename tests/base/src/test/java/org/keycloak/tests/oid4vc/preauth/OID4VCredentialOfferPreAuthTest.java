@@ -113,7 +113,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         assertNotNull(accessToken, "No accessToken");
 
         String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier, "No authorized credential identifier");
+        assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
 
         // Send the CredentialRequest
         //

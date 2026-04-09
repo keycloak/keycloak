@@ -317,8 +317,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         String authorizationDetailsParam = formParams.getFirst(AUTHORIZATION_DETAILS);
         if (authorizationDetailsParam != null) {
             try {
-                return new AuthorizationDetailsProcessorManager()
-                        .processAuthorizationDetails(session, userSession, clientSessionCtx, authorizationDetailsParam);
+                return new AuthorizationDetailsProcessorManager(session)
+                        .processAuthorizationDetails(userSession, clientSessionCtx, authorizationDetailsParam);
             } catch (InvalidAuthorizationDetailsException e) {
                 logger.warnf(e, "Error when processing authorization_details");
                 event.detail(Details.REASON, e.getMessage());
@@ -339,7 +339,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
      */
     protected List<AuthorizationDetailsJSONRepresentation> handleMissingAuthorizationDetails(UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
         try {
-            return new AuthorizationDetailsProcessorManager().handleMissingAuthorizationDetails(session, userSession, clientSessionCtx);
+            return new AuthorizationDetailsProcessorManager(session)
+                    .handleMissingAuthorizationDetails(userSession, clientSessionCtx);
         } catch (RuntimeException e) {
             logger.warnf(e, "Error when handling missing authorization_details");
             event.detail(Details.REASON, e.getMessage());
@@ -363,8 +364,8 @@ public abstract class OAuth2GrantTypeBase implements OAuth2GrantType {
         if (storedAuthDetails != null) {
             logger.debugf("Found authorization_details in client session, processing it");
             try {
-                return new AuthorizationDetailsProcessorManager()
-                        .processStoredAuthorizationDetails(session, userSession, clientSessionCtx, storedAuthDetails);
+                return new AuthorizationDetailsProcessorManager(session)
+                        .processStoredAuthorizationDetails(userSession, clientSessionCtx, storedAuthDetails);
             } catch (InvalidAuthorizationDetailsException e) {
                 logger.warnf(e, "Error when processing stored authorization_details");
                 event.detail(Details.REASON, e.getMessage());

@@ -127,7 +127,7 @@ public class OID4VCTestContext {
 
     // Attachment Support ----------------------------------------------------------------------------------------------
 
-    <T> void putAttachment(AttachmentKey<T> key, T value) {
+    public <T> void putAttachment(AttachmentKey<T> key, T value) {
         if (value != null) {
             attachments.put(key, value);
         } else {
@@ -135,29 +135,33 @@ public class OID4VCTestContext {
         }
     }
 
-    <T> T assertAttachment(AttachmentKey<T> key) {
+    public <T> T assertAttachment(AttachmentKey<T> key) {
         return Optional.of(getAttachment(key)).get();
     }
 
     @SuppressWarnings("unchecked")
-    <T> T getAttachment(AttachmentKey<T> key) {
+    public <T> T getAttachment(AttachmentKey<T> key) {
         return (T) attachments.get(key);
     }
 
+    public <T> T getAttachment(AttachmentKey<T> key, T defaultValue) {
+        return Optional.ofNullable(getAttachment(key)).orElse(defaultValue);
+    }
+
     @SuppressWarnings("unchecked")
-    <T> T removeAttachment(AttachmentKey<T> key) {
+    public <T> T removeAttachment(AttachmentKey<T> key) {
         return (T) attachments.remove(key);
     }
 
-    static class AttachmentKey<T> {
+    public static class AttachmentKey<T> {
         private final String name;
         private final Class<T> type;
 
-        AttachmentKey(Class<T> type) {
+        public AttachmentKey(Class<T> type) {
             this(null, type);
         }
 
-        AttachmentKey(String name, Class<T> type) {
+        public AttachmentKey(String name, Class<T> type) {
             this.name = Optional.ofNullable(name).orElse("");
             this.type = Optional.of(type).get();
         }

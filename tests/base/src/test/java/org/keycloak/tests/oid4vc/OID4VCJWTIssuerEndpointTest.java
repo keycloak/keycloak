@@ -927,31 +927,22 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
-    public void testRequestCredentialWithUnknownCredentialConfigurationId() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
+    public void testRequestCredentialWithCredentialConfigurationId() {
 
-        runOnServer.run(session -> {
-            try {
-                BearerTokenAuthenticator authenticator = new BearerTokenAuthenticator(session);
-                authenticator.setTokenString(token);
-                OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
+        String scopeName = jwtTypeCredentialScope.getName();
+        String authCode = getAuthorizationCode(oauth, client, "john", scopeName);
+        AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode);
 
-                CredentialRequest credentialRequest = new CredentialRequest()
-                        .setCredentialConfigurationId("unknown-configuration-id");
+        List<OID4VCAuthorizationDetail> authDetails = tokenResponse.getOID4VCAuthorizationDetails();
+        assertEquals(1, authDetails.size(), "Expected one OID4VCAuthorizationDetail");
 
-                String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
-
-                try {
-                    issuerEndpoint.requestCredential(requestPayload);
-                    fail("Expected BadRequestException due to unknown credential configuration");
-                } catch (BadRequestException e) {
-                    ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
-                    assertEquals(ErrorType.UNKNOWN_CREDENTIAL_CONFIGURATION.getValue(), error.getError());
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
+        // Server now requires credential_identifier when authorization_details are present,
+        // so this request is treated as an invalid credential request.
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> oauth.oid4vc().credentialRequest()
+                .credentialConfigurationId(authDetails.get(0).getCredentialConfigurationId())
+                .bearerToken(tokenResponse.getAccessToken())
+                .send().getCredentialResponse());
+        assertTrue(ex.getMessage().contains("Credential must be requested by credential identifier from authorization_details"), "Unexpected - " + ex.getMessage());
     }
 
     @Test
@@ -1106,7 +1097,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
 
         String token = tokenResponse.getAccessToken();
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-        String credentialConfigurationId = authDetailsResponse.get(0).getCredentialConfigurationId();
+        String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
 
         runOnServer.run(session -> {
             try {
@@ -1115,7 +1106,7 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 OID4VCIssuerEndpoint issuerEndpoint = prepareIssuerEndpoint(session, authenticator);
 
                 CredentialRequest credentialRequest = new CredentialRequest()
-                        .setCredentialConfigurationId(credentialConfigurationId);
+                        .setCredentialIdentifier(credentialIdentifier);
 
                 String requestPayload = JsonSerialization.writeValueAsString(credentialRequest);
                 Response credentialResponse = issuerEndpoint.requestCredential(requestPayload);

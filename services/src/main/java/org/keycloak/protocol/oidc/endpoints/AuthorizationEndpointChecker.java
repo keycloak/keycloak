@@ -40,6 +40,7 @@ import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
 import org.keycloak.protocol.oidc.endpoints.request.RequestUriType;
+import org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorManager;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorConstants;
 import org.keycloak.protocol.oidc.resourceindicators.ResourceIndicatorValidation;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
@@ -57,6 +58,8 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.StringUtil;
 
 import org.jboss.logging.Logger;
+
+import static org.keycloak.OAuth2Constants.AUTHORIZATION_DETAILS;
 
 /**
  * Implements some checks typical for OIDC Authorization Endpoint. Useful to consolidate various checks on single place to avoid duplicated
@@ -225,6 +228,18 @@ public class AuthorizationEndpointChecker {
     public void checkOIDCRequest() {
         if (!TokenUtil.isOIDCRequest(request.getScope())) {
             ServicesLogger.LOGGER.oidcScopeMissing();
+        }
+    }
+
+    public void checkAuthorizationDetails() throws AuthorizationCheckException {
+        String authDetailsParam = request.getAdditionalReqParams().get(AUTHORIZATION_DETAILS);
+        if (authDetailsParam != null) {
+            try {
+                new AuthorizationDetailsProcessorManager(session).validateAuthorizationDetail(authDetailsParam);
+            } catch (Exception e) {
+                event.error(Errors.INVALID_REQUEST);
+                throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, Errors.INVALID_REQUEST, e.getMessage());
+            }
         }
     }
 

@@ -107,7 +107,8 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
         String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
         assertNotNull(accessToken,"No accessToken");
 
-        assertNull(ctx.getAuthorizedCredentialIdentifier(),"Not expected to have credential identifier");
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        assertNotNull(credentialIdentifier,"Has authorized credential identifier");
 
         String credentialConfigId = ctx.getAuthorizedCredentialConfigurationId();
         assertEquals(minimalJwtTypeCredentialConfigurationIdName, credentialConfigId);
@@ -120,7 +121,7 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
 
         // Credential request
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
-                .credentialConfigurationId(credentialConfigId)
+                .credentialIdentifier(credentialIdentifier)
                 .send().getCredentialResponse();
 
         EventAssertion.assertSuccess(events.poll())
