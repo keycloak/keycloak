@@ -97,7 +97,9 @@ public class SecurityEventTokenDispatcher {
     protected SecurityEventToken getNarrowedEventToken(SsfSecurityEventToken eventToken, StreamConfig stream) {
         SecurityEventToken narrowedEventToken = eventToken;
 
-        if (stream.getProfile() == null || Ssf.PROFILE_SSE_CAEP.equals(stream.getProfile())) {
+        // if legacy CAEP SSE profile is requested convert the event to old format
+        // this is currently required for compatibility with apple business manager
+        if (Ssf.PROFILE_SSE_CAEP.equals(stream.getProfile())) {
             narrowedEventToken = SseCaepEventConverter.convert(eventToken);
         }
         return narrowedEventToken;
