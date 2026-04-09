@@ -86,6 +86,9 @@ public final class Environment {
         System.setProperty(org.keycloak.common.util.Environment.PROFILE, profile);
         System.setProperty(LaunchMode.current().getProfileKey(), profile);
         System.setProperty(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE, profile);
+        if (isTestLaunchMode()) {
+            System.setProperty("mp.config.profile", profile);
+        }
     }
 
     /**
@@ -132,8 +135,12 @@ public final class Environment {
         })).collect(Collectors.toMap(File::getName, Function.identity()));
     }
 
-    public static void forceNonServerMode() {
-        setProfile(org.keycloak.common.util.Environment.NON_SERVER_MODE);
+    public static boolean isTestLaunchMode() {
+        return "test".equals(System.getProperty(LAUNCH_MODE));
+    }
+
+    public static void forceTestLaunchMode() {
+        System.setProperty(LAUNCH_MODE, "test");
     }
 
     /**
