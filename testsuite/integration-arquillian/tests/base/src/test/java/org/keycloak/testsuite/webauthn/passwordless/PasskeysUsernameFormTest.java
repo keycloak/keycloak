@@ -35,12 +35,14 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
@@ -391,6 +393,59 @@ public class PasskeysUsernameFormTest extends AbstractWebAuthnVirtualTest {
                     .assertEvent();
 
             logout();
+        }
+    }
+
+    @Test
+    public void passwordLoginWithExternalKeyAndRememberMe() throws IOException {
+        // use a default resident key which is not shown in conditional UI
+        getVirtualAuthManager().useAuthenticator(DefaultVirtualAuthOptions.DEFAULT_RESIDENT_KEY.getOptions());
+
+        // set passwordless policy for discoverable keys and enable remember me
+        try (Closeable c = getWebAuthnRealmUpdater()
+                .setWebAuthnPolicyRpEntityName("localhost")
+                .setWebAuthnPolicyRequireResidentKey(Constants.WEBAUTHN_POLICY_OPTION_YES)
+                .setWebAuthnPolicyUserVerificationRequirement(Constants.WEBAUTHN_POLICY_OPTION_REQUIRED)
+                .setWebAuthnPolicyPasskeysEnabled(Boolean.TRUE)
+                .update();
+             RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(testRealm())
+                .setRememberMe(Boolean.TRUE)
+                .update()) {
+            registerDefaultUser();
+
+            UserRepresentation user = userResource().toRepresentation();
+            MatcherAssert.assertThat(user, Matchers.notNullValue());
+
+            logout();
+
+            events.clear();
+
+            // login should be done manually but webauthn is enabled
+            oauth.openLoginForm();
+            WaitUtils.waitForPageToLoad();
+            loginPage.assertCurrent();
+            MatcherAssert.assertThat(loginPage.getUsernameAutocomplete(), Matchers.is("username webauthn"));
+            MatcherAssert.assertThat(driver.findElement(By.xpath("//form[@id='webauth']")), Matchers.notNullValue());
+
+            // force login using webauthn link
+            loginPage.setRememberMe(true);
+            webAuthnLoginPage.clickAuthenticate();
+            appPage.assertCurrent();
+            EventRepresentation loginEvent = events.expectLogin()
+                    .user(user.getId())
+                    .detail(Details.USERNAME, user.getUsername())
+                    .detail(Details.CREDENTIAL_TYPE, WebAuthnCredentialModel.TYPE_PASSWORDLESS)
+                    .detail(WebAuthnConstants.USER_VERIFICATION_CHECKED, Boolean.TRUE.toString())
+                    .detail(Details.REMEMBER_ME, Boolean.TRUE.toString())
+                    .assertEvent();
+
+            // clear the session and check remember me is present
+            testRealm().deleteSession(loginEvent.getSessionId(), false);
+            oauth.openLoginForm();
+            WaitUtils.waitForPageToLoad();
+            loginPage.assertCurrent();
+            Assert.assertEquals(user.getUsername(), loginPage.getUsername());
+            Assert.assertTrue(loginPage.isRememberMeChecked());
         }
     }
 }
