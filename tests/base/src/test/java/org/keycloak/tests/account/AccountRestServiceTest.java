@@ -1283,6 +1283,117 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void revokeApplicationSessions() throws Exception {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+
+        // Create a session for "in-use-client" via direct grant
+        oauth.client("in-use-client", "secret1");
+        AccessTokenResponse tokenResponse = oauth.doPasswordGrantRequest("manage-account-access", "password");
+        Assertions.assertNull(tokenResponse.getErrorDescription());
+
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-account-access", "password").getAccessToken();
+
+        // skip the two direct access grant logins
+        events.skip(2);
+
+        UserResource user = AdminApiUtil.findUserByUsernameId(managedRealm.admin(), "manage-account-access");
+        Assertions.assertEquals(2, user.getUserSessions().size());
+
+        // Verify the client is "in use"
+        List<ClientRepresentation> applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        Assertions.assertTrue(apps.get("in-use-client").isInUse());
+
+        // End the application sessions
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        // A logout event is fired for the session of "in-use-client"
+        EventAssertion.assertSuccess(events.poll())
+                .type(EventType.LOGOUT)
+                .clientId("account")
+                .userId(user.toRepresentation().getId())
+                .sessionId(tokenResponse.getSessionState())
+                .details(Details.REVOKED_CLIENT, "in-use-client");
+        Assertions.assertNull(events.poll());
+
+        // The user session of "in-use-client" had no other client sessions and was removed as well
+        List<UserSessionRepresentation> userSessions = user.getUserSessions();
+        Assertions.assertEquals(1, userSessions.size());
+        Assertions.assertNotEquals(tokenResponse.getSessionState(), userSessions.get(0).getId());
+
+        // Verify the client is no longer "in use"
+        applications = simpleHttp
+                .doGet(getAccountUrl("applications"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asJson(new TypeReference<List<ClientRepresentation>>() {
+                });
+        apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
+        Assertions.assertFalse(apps.containsKey("in-use-client") && apps.get("in-use-client").isInUse());
+    }
+
+    @Test
+    public void revokeApplicationSessionsForNotExistingClient() throws IOException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-account-access", "password").getAccessToken();
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/not-existing/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(404, response.getStatus());
+        }
+    }
+
+    @Test
+    public void revokeApplicationSessionsWithoutPermission() throws IOException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("view-account-access", "password").getAccessToken();
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(403, response.getStatus());
+        }
+    }
+
+    @Test
+    public void revokeApplicationSessionsIdempotent() throws IOException {
+        managedRealm.cleanup().add(RealmResource::logoutAll);
+        String token = oauth.client("direct-grant", "password").doPasswordGrantRequest("manage-account-access", "password").getAccessToken();
+
+        // Delete sessions when there are none -- should still return 204
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+
+        // Call again -- still 204
+        try (SimpleHttpResponse response = simpleHttp
+                .doDelete(getAccountUrl("applications/in-use-client/sessions"))
+                .header("Accept", "application/json")
+                .auth(token)
+                .asResponse()) {
+            Assertions.assertEquals(204, response.getStatus());
+        }
+    }
+
+    @Test
     public void listApplicationsThirdPartyWithoutConsentText() throws Exception {
         listApplicationsThirdParty("acr", false);
     }

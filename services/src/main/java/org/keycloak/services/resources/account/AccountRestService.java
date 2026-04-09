@@ -71,6 +71,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.Auth;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.resources.ResourcesService;
@@ -387,6 +388,50 @@ public class AccountRestService {
 
         UserConsentManager.revokeConsentToClient(session, client, user);
         event.detail(Details.REVOKED_CLIENT, client.getClientId()).success();
+
+        return Response.noContent().build();
+    }
+
+    /**
+     * Ends all active online sessions of the user for the client with the given client id.
+     * The client sessions are detached from the user sessions, and the client is notified
+     * via backchannel logout when supported. A user session that no longer has any client
+     * sessions afterwards is removed. Offline sessions are not affected.
+     *
+     * @param clientId client id to end the sessions for
+     * @return returns 204 if the sessions were ended
+     */
+    @Path("/applications/{clientId}/sessions")
+    @DELETE
+    @NoCache
+    public Response revokeApplicationSessions(final @PathParam("clientId") String clientId) {
+        checkAccountApiEnabled();
+        auth.require(AccountRoles.MANAGE_ACCOUNT);
+
+        event.event(EventType.LOGOUT);
+        ClientModel client = realm.getClientByClientId(clientId);
+        if (client == null) {
+            String msg = String.format("No client with clientId: %s found.", clientId);
+            event.error(msg);
+            throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
+        }
+
+        session.sessions().getUserSessionsStream(realm, user)
+                .filter(userSession -> userSession.getAuthenticatedClientSessionByClient(client.getId()) != null)
+                .toList() // collect to avoid concurrent modification.
+                .forEach(userSession -> {
+                    AuthenticationManager.backchannelLogoutUserSessionFromClient(session, realm, userSession, client,
+                            session.getContext().getUri(), headers);
+                    if (userSession.getAuthenticatedClientSessions().isEmpty()) {
+                        // The last client session was ended, remove the now empty user session as well.
+                        session.sessions().removeUserSession(realm, userSession);
+                    }
+                    event.clone()
+                            .event(EventType.LOGOUT)
+                            .detail(Details.REVOKED_CLIENT, client.getClientId())
+                            .session(userSession)
+                            .success();
+                });
 
         return Response.noContent().build();
     }
