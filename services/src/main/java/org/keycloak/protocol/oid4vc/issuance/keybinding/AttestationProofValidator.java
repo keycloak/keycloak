@@ -20,8 +20,13 @@ package org.keycloak.protocol.oid4vc.issuance.keybinding;
 import java.util.List;
 import java.util.Optional;
 
+import org.keycloak.common.util.Time;
+import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.jose.jwk.JWK;
+import org.keycloak.jose.jws.crypto.HashUtils;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuanceContext;
 import org.keycloak.protocol.oid4vc.issuance.VCIssuerException;
 import org.keycloak.protocol.oid4vc.model.ErrorType;
@@ -29,6 +34,10 @@ import org.keycloak.protocol.oid4vc.model.KeyAttestationJwtBody;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
+
+import org.apache.commons.codec.binary.Hex;
+
+import static org.keycloak.protocol.oid4vc.model.ErrorType.INVALID_NONCE;
 
 /**
  * Validates attestation proofs as per OID4VCI specification.
@@ -61,6 +70,19 @@ public class AttestationProofValidator extends AbstractProofValidator {
 
             if (attestationBody.getAttestedKeys() == null || attestationBody.getAttestedKeys().isEmpty()) {
                 throw new VCIssuerException(ErrorType.INVALID_PROOF, "No valid attested keys found in attestation proof");
+            }
+
+            // Nonce replay protection
+            //
+            String nonce = attestationBody.getNonce();
+            if (nonce != null) {
+                RealmModel realmModel = keycloakSession.getContext().getRealm();
+                SingleUseObjectProvider singleUseCache = keycloakSession.singleUseObjects();
+                String hashString = Hex.encodeHexString(HashUtils.hash("SHA1", nonce.getBytes()));
+                Long nonceLifetimeSeconds = realmModel.getAttribute(OID4VCIConstants.C_NONCE_LIFETIME_IN_SECONDS, 60L);
+                if (!singleUseCache.putIfAbsent(hashString, Time.currentTime() + 10 * nonceLifetimeSeconds)) {
+                    throw new VCIssuerException(INVALID_NONCE, "Nonce in proof has already been used");
+                }
             }
 
             return attestationBody.getAttestedKeys();
