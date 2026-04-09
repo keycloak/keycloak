@@ -234,6 +234,30 @@ public class PermissionRESTTest extends AbstractPermissionTest {
                 .resources(Set.of("non-existent-id"))
                 .scopes(AdminPermissionsSchema.ROLES.getScopes())
                 .build(), Response.Status.BAD_REQUEST);
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.USERS.getType())
+                .resources(Set.of(AdminPermissionsSchema.USERS.getType()))
+                .scopes(AdminPermissionsSchema.USERS.getScopes())
+                .build());
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.GROUPS.getType())
+                .resources(Set.of(AdminPermissionsSchema.GROUPS.getType()))
+                .scopes(AdminPermissionsSchema.GROUPS.getScopes())
+                .build());
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.CLIENTS.getType())
+                .resources(Set.of(AdminPermissionsSchema.CLIENTS.getType()))
+                .scopes(AdminPermissionsSchema.CLIENTS.getScopes())
+                .build());
+
+        createPermission(client, PermissionBuilder.create()
+                .resourceType(AdminPermissionsSchema.ROLES.getType())
+                .resources(Set.of(AdminPermissionsSchema.ROLES.getType()))
+                .scopes(AdminPermissionsSchema.ROLES.getScopes())
+                .build());
     }
 
     @Test
