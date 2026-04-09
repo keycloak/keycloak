@@ -40,7 +40,7 @@ public final class Constants {
     public static final String AUTH_BASE_URL_PROP = "${authBaseUrl}";
     public static final String AUTH_ADMIN_URL_PROP = "${authAdminUrl}";
 
-    public static final Collection<String> defaultClients = Arrays.asList(ACCOUNT_MANAGEMENT_CLIENT_ID, ADMIN_CLI_CLIENT_ID, BROKER_SERVICE_CLIENT_ID, REALM_MANAGEMENT_CLIENT_ID, ADMIN_CONSOLE_CLIENT_ID);
+    public static final Collection<String> defaultClients = Arrays.asList(ACCOUNT_MANAGEMENT_CLIENT_ID, ACCOUNT_CONSOLE_CLIENT_ID, ADMIN_CLI_CLIENT_ID, BROKER_SERVICE_CLIENT_ID, REALM_MANAGEMENT_CLIENT_ID, ADMIN_CONSOLE_CLIENT_ID);
 
     public static final String INSTALLED_APP_URN = "urn:ietf:wg:oauth:2.0:oob";
 
