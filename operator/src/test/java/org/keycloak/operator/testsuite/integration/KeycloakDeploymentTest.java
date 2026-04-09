@@ -79,6 +79,7 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBe
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisabledIfApiServerTest
@@ -114,6 +115,14 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         k8sclient.resource(kc).delete();
         Awaitility.await()
                 .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()).isNull());
+
+        // check that the operator is not attempting to use telemetry
+        if (operatorDeployment == OperatorDeployment.remote) {
+            String log = k8sclient.apps().deployments().withName(BaseOperatorTest.KEYCLOAK_OPERATOR).getLog();
+            if (log != null) {
+                assertFalse(log.contains("opentelemetry"), "Should not mention opentelemetry " + log);
+            }
+        }
     }
 
     /**

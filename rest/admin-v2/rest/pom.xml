@@ -33,6 +33,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-server-spi</artifactId>
+             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
@@ -41,6 +42,7 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-services</artifactId>
+             <scope>provided</scope>
         </dependency>
         <!-- used by OAS Filter during OpenAPI spec generation -->
         <dependency>
