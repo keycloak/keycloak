@@ -17,6 +17,9 @@ include::../partials/blueprint-disclaimer.adoc[]
 
 CloudNativePG is an opensource operator that manages PostgreSQL clusters on {kubernetes}. It is designed to operate one primary writer instance and optional reader instances.
 
+As this setup uses standard a PostgreSQL image that does not support Transparent Data Encryption (TDE), all storage devices for the database and write-ahead logs (WAL) should be placed on encrypted storage.
+See <@links.server id="db" anchor="encrypting-data-at-rest"/> for more information.
+
 image::high-availability/cnpg-multi-az.dio.svg[]
 
 == Install CloudNativePG
