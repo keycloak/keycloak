@@ -2,7 +2,6 @@ package org.keycloak.operator.testsuite.integration;
 
 import org.keycloak.operator.crds.v2beta1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2beta1.deployment.ValueOrSecret;
-import org.keycloak.utils.StringUtil;
 
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Tag;
@@ -26,7 +25,7 @@ public class KeycloakNewServiceClientTest extends KeycloakClientTest {
 
         if (existingJavaOptsAppend != null) {
             String existingValue = existingJavaOptsAppend.getValue();
-            if (StringUtil.isNotBlank(existingValue)) {
+            if (existingValue != null && !existingValue.isBlank()) {
                 existingJavaOptsAppend.setValue(existingValue + " " + newClientServiceProperty);
             } else {
                 existingJavaOptsAppend.setValue(newClientServiceProperty);
