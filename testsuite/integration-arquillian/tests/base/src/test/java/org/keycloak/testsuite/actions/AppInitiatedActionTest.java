@@ -37,8 +37,8 @@ import org.junit.Test;
 
 import static org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest.SUCCESS;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:wadahiro@gmail.com">Hiroyuki Wada</a>

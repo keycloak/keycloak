@@ -36,8 +36,8 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
-import org.junit.Assert;
 import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.cli.KcRegExec.WORK_DIR;
@@ -146,13 +146,13 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         HashSet<String> exclusions = new HashSet<>(Arrays.asList(excluded));
 
         if (!exclusions.contains("serverUrl")) {
-            Assert.assertEquals("serverUrl", config1.getServerUrl(), config2.getServerUrl());
+            Assertions.assertEquals(config1.getServerUrl(), config2.getServerUrl(), "serverUrl");
         }
         if (!exclusions.contains("realm")) {
-            Assert.assertEquals("realm", config1.getRealm(), config2.getRealm());
+            Assertions.assertEquals(config1.getRealm(), config2.getRealm(), "realm");
         }
         if (!exclusions.contains("truststore")) {
-            Assert.assertEquals("truststore", config1.getTruststore(), config2.getTruststore());
+            Assertions.assertEquals(config1.getTruststore(), config2.getTruststore(), "truststore");
         }
         if (!exclusions.contains("endpoints")) {
             Map<String, Map<String, RealmConfigData>> endp1 = config1.getEndpoints();
@@ -168,7 +168,7 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
                 String serverUrl = ent1.getKey();
                 String endpskey = "endpoints." + serverUrl;
                 if (!exclusions.contains(endpskey)) {
-                    Assert.assertEquals(endpskey, ent1.getKey(), ent2.getKey());
+                    Assertions.assertEquals(ent1.getKey(), ent2.getKey(), endpskey);
 
                     Map<String, RealmConfigData> realms1 = ent1.getValue();
                     Map<String, RealmConfigData> realms2 = ent2.getValue();
@@ -183,7 +183,7 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
                         String realm = rent1.getKey();
                         String rkey = endpskey + "." + realm;
                         if (!exclusions.contains(endpskey)) {
-                            Assert.assertEquals(rkey, rent1.getKey(), rent2.getKey());
+                            Assertions.assertEquals(rent1.getKey(), rent2.getKey(), rkey);
 
                             RealmConfigData rdata1 = rent1.getValue();
                             RealmConfigData rdata2 = rent2.getValue();
@@ -211,57 +211,57 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
 
         String ekey = pfix + "serverUrl";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.serverUrl(), data2.serverUrl());
+            Assertions.assertEquals(data1.serverUrl(), data2.serverUrl(), ekey);
         }
 
         ekey = pfix + "realm";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.realm(), data2.realm());
+            Assertions.assertEquals(data1.realm(), data2.realm(), ekey);
         }
 
         ekey = pfix + "clientId";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getClientId(), data2.getClientId());
+            Assertions.assertEquals(data1.getClientId(), data2.getClientId(), ekey);
         }
 
         ekey = pfix + "initialToken";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getInitialToken(), data2.getInitialToken());
+            Assertions.assertEquals(data1.getInitialToken(), data2.getInitialToken(), ekey);
         }
 
         ekey = pfix + "token";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getToken(), data2.getToken());
+            Assertions.assertEquals(data1.getToken(), data2.getToken(), ekey);
         }
 
         ekey = pfix + "refreshToken";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getRefreshToken(), data2.getRefreshToken());
+            Assertions.assertEquals(data1.getRefreshToken(), data2.getRefreshToken(), ekey);
         }
 
         ekey = pfix + "expiresAt";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getExpiresAt(), data2.getExpiresAt());
+            Assertions.assertEquals(data1.getExpiresAt(), data2.getExpiresAt(), ekey);
         }
 
         ekey = pfix + "refreshExpiresAt";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getRefreshExpiresAt(), data2.getRefreshExpiresAt());
+            Assertions.assertEquals(data1.getRefreshExpiresAt(), data2.getRefreshExpiresAt(), ekey);
         }
 
         ekey = pfix + "secret";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getSecret(), data2.getSecret());
+            Assertions.assertEquals(data1.getSecret(), data2.getSecret(), ekey);
         }
 
         ekey = pfix + "signingToken";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getSigningToken(), data2.getSigningToken());
+            Assertions.assertEquals(data1.getSigningToken(), data2.getSigningToken(), ekey);
         }
 
         ekey = pfix + "sigExpiresAt";
         if (!exclusions.contains(ekey)) {
-            Assert.assertEquals(ekey, data1.getSigExpiresAt(), data2.getSigExpiresAt());
+            Assertions.assertEquals(data1.getSigExpiresAt(), data2.getSigExpiresAt(), ekey);
         }
 
         ekey = pfix + "clients";
@@ -278,10 +278,10 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
 
                 String ckey = ekey + "." + (ckey1 != null ? ckey1.getKey() : ckey2.getKey());
                 if (!exclusions.contains(ckey)) {
-                    Assert.assertNotNull(ckey + " left not null", ckey1);
-                    Assert.assertNotNull(ckey + " right not null", ckey2);
-                    Assert.assertEquals(ckey, ckey1.getKey(), ckey2.getKey());
-                    Assert.assertEquals(ckey + " value", ckey1.getValue(), ckey2.getValue());
+                    Assertions.assertNotNull(ckey1, ckey + " left not null");
+                    Assertions.assertNotNull(ckey2, ckey + " right not null");
+                    Assertions.assertEquals(ckey1.getKey(), ckey2.getKey(), ckey);
+                    Assertions.assertEquals(ckey1.getValue(), ckey2.getValue(), ckey + " value");
                 }
             }
         }
@@ -346,7 +346,7 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         ClientInitialAccessPresentation response = resource.create(rep);
 
         String token = response.getToken();
-        Assert.assertNotNull("Issued initial access token not null", token);
+        Assertions.assertNotNull(token, "Issued initial access token not null");
         return token;
     }
 
@@ -381,15 +381,15 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         KcRegExec exe = execute("create --no-config --server " + serverUrl +
                 " --realm test " + credentials + " " + extraOptions + " -s clientId=test-client -o");
 
-        Assert.assertEquals("exitCode == 0", 0, exe.exitCode());
-        Assert.assertEquals("login message", loginMessage, exe.stderrLines().get(0));
+        Assertions.assertEquals(0, exe.exitCode(), "exitCode == 0");
+        Assertions.assertEquals(loginMessage, exe.stderrLines().get(0), "login message");
 
         ClientRepresentation client = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assert.assertEquals("clientId", "test-client", client.getClientId());
-        Assert.assertNotNull("registrationAccessToken not null", client.getRegistrationAccessToken());
+        Assertions.assertEquals("test-client", client.getClientId(), "clientId");
+        Assertions.assertNotNull(client.getRegistrationAccessToken(), "registrationAccessToken not null");
 
         long lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
 
 
 
@@ -399,13 +399,13 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         assertExitCodeAndStdErrSize(exe, 0, 1);
 
         ClientRepresentation client2 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assert.assertEquals("clientId", "test-client", client2.getClientId());
+        Assertions.assertEquals("test-client", client2.getClientId(), "clientId");
 
         // we did not provide a token, thus no registrationAccessToken is present
-        Assert.assertNull("registrationAccessToken is null", client2.getRegistrationAccessToken());
+        Assertions.assertNull(client2.getRegistrationAccessToken(), "registrationAccessToken is null");
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
 
 
 
@@ -418,13 +418,12 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         assertExitCodeAndStdErrSize(exe, 0, 0);
 
         ClientRepresentation client3 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assert.assertEquals("clientId", "test-client", client3.getClientId());
+        Assertions.assertEquals("test-client", client3.getClientId(), "clientId");
 
-        Assert.assertEquals("registrationAccessToken in returned json is different than one returned by create",
-                client.getRegistrationAccessToken(), client3.getRegistrationAccessToken());
+        Assertions.assertEquals(client.getRegistrationAccessToken(), client3.getRegistrationAccessToken(), "registrationAccessToken in returned json is different than one returned by create");
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
 
 
 
@@ -437,13 +436,13 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         assertExitCodeAndStdErrSize(exe, 0, 1);
 
         ClientRepresentation client4 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assert.assertEquals("clientId", "test-client", client4.getClientId());
-        Assert.assertFalse("enabled", client4.isEnabled());
+        Assertions.assertEquals("test-client", client4.getClientId(), "clientId");
+        Assertions.assertFalse(client4.isEnabled(), "enabled");
 
-        Assert.assertNull("registrationAccessToken in null", client4.getRegistrationAccessToken());
+        Assertions.assertNull(client4.getRegistrationAccessToken(), "registrationAccessToken in null");
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
 
 
 
@@ -457,14 +456,13 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         assertExitCodeAndStdErrSize(exe, 0, 0);
 
         ClientRepresentation client5 = JsonSerialization.readValue(exe.stdout(), ClientRepresentation.class);
-        Assert.assertEquals("clientId", "test-client", client5.getClientId());
-        Assert.assertTrue("enabled", client5.isEnabled());
+        Assertions.assertEquals("test-client", client5.getClientId(), "clientId");
+        Assertions.assertTrue(client5.isEnabled(), "enabled");
 
-        Assert.assertNotEquals("registrationAccessToken in returned json is different than one returned by get",
-                client3.getRegistrationAccessToken(), client5.getRegistrationAccessToken());
+        Assertions.assertNotEquals(client3.getRegistrationAccessToken(), client5.getRegistrationAccessToken(), "registrationAccessToken in returned json is different than one returned by get");
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
 
 
 
@@ -477,7 +475,7 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         assertExitCodeAndStreamSizes(exe, 0, 0, 1);
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
 
 
 
@@ -487,9 +485,9 @@ public abstract class AbstractRegCliTest extends AbstractCliTest {
         exe = execute("delete test-client --no-config --server " + serverUrl + " --realm test " + credentials + " " + extraOptions);
 
         assertExitCodeAndStreamSizes(exe, 1, 0, 2);
-        Assert.assertEquals("error message", "Client not found [invalid_request]", exe.stderrLines().get(exe.stderrLines().size() - 1));
+        Assertions.assertEquals("Client not found [invalid_request]", exe.stderrLines().get(exe.stderrLines().size() - 1), "error message");
 
         lastModified2 = configFile.exists() ? configFile.lastModified() : 0;
-        Assert.assertEquals("config file not modified", lastModified, lastModified2);
+        Assertions.assertEquals(lastModified, lastModified2, "config file not modified");
     }
 }

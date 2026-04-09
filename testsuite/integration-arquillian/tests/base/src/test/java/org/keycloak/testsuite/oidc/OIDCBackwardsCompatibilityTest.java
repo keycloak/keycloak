@@ -28,7 +28,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
@@ -42,9 +41,9 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertTrue;
-
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 /**
@@ -90,8 +89,8 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         // Open login form and login successfully. Assert session_state is present
         AuthorizationEndpointResponse authzResponse = oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(authzResponse.getSessionState());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(authzResponse.getSessionState());
 
         // Switch "exclude session_state" to on
         ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
@@ -102,11 +101,11 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
 
         // Open login again and assert session_state not present
         oauth.openLoginForm();
-        org.keycloak.testsuite.Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
 
         authzResponse = oauth.parseLoginResponse();
-        Assert.assertNull(authzResponse.getSessionState());
+        Assertions.assertNull(authzResponse.getSessionState());
 
         // Revert
         config.setExcludeSessionStateFromAuthResponse(false);
@@ -118,8 +117,8 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         // Open login form and login successfully. Assert iss parameter is present
         AuthorizationEndpointResponse authzResponse = oauth.doLogin("test-user@localhost", "password");
         events.expectLogin().assertEvent();
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", authzResponse.getIssuer());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", authzResponse.getIssuer());
 
         // Switch "exclude iss" to on
         ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
@@ -130,11 +129,11 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
 
         // Open login again and assert iss parameter is not present
         oauth.openLoginForm();
-        org.keycloak.testsuite.Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
 
         authzResponse = oauth.parseLoginResponse();
-        Assert.assertNull(authzResponse.getIssuer());
+        Assertions.assertNull(authzResponse.getIssuer());
 
         // Revert
         config.setExcludeIssuerFromAuthResponse(false);
@@ -149,8 +148,8 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
 
         AuthorizationEndpointResponse errorResponse = oauth.parseLoginResponse();
         assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
-        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
+        Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assertions.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
 
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
 
@@ -166,8 +165,8 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
 
         errorResponse = oauth.parseLoginResponse();
         assertTrue(errorResponse.isRedirected());
-        Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
-        Assert.assertNull(errorResponse.getIssuer());
+        Assertions.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assertions.assertNull(errorResponse.getIssuer());
 
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
 

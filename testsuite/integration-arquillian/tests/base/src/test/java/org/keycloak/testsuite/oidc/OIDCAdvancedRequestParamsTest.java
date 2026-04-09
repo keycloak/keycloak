@@ -73,7 +73,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
@@ -101,6 +100,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP_256;
@@ -108,11 +108,11 @@ import static org.keycloak.testsuite.admin.AdminApiUtil.findClientResourceByClie
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test for supporting advanced parameters of OIDC specs (max_age, prompt, ...)
@@ -212,7 +212,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Check that authTime is available and set to current time
         long authTime = idToken.getAuth_time();
         long currentTime = Time.currentTime();
-        Assert.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
+        Assertions.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
         setTimeOffset(10);
@@ -228,7 +228,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Assert that authTime was updated
         long authTimeUpdated = idToken.getAuth_time();
-        Assert.assertTrue(authTime + 10 <= authTimeUpdated);
+        Assertions.assertTrue(authTime + 10 <= authTimeUpdated);
     }
 
     @Test
@@ -242,7 +242,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Check that authTime is available and set to current time
         long authTime = idToken.getAuth_time();
         long currentTime = Time.currentTime();
-        Assert.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
+        Assertions.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
         setTimeOffset(10);
@@ -257,7 +257,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Assert that authTime is still the same
         long authTimeUpdated = idToken.getAuth_time();
-        Assert.assertEquals(authTime, authTimeUpdated);
+        Assertions.assertEquals(authTime, authTimeUpdated);
     }
 
 
@@ -278,9 +278,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Assert error response was sent because not logged in
         AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
-        Assert.assertEquals(expectedIssuer, resp.getIssuer());
-        Assert.assertNull(resp.getCode());
-        Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
+        Assertions.assertEquals(expectedIssuer, resp.getIssuer());
+        Assertions.assertNull(resp.getCode());
+        Assertions.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
 
 
     }
@@ -290,7 +290,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Login user
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
@@ -301,13 +301,13 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Assert user still logged with previous authTime
         oauth.loginForm().prompt("none").open();
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         loginEvent = events.expectLogin().removeDetail(Details.USERNAME).assertEvent();
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
         long authTime2 = idToken.getAuth_time();
 
-        Assert.assertEquals(authTime, authTime2);
+        Assertions.assertEquals(authTime, authTime2);
     }
 
 
@@ -321,11 +321,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             // Assert error shown when trying prompt=none and consent not yet granted
             oauth.loginForm().prompt("none").open();
             assertTrue(appPage.isCurrent());
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             AuthorizationEndpointResponse resp = oauth.parseLoginResponse();
-            Assert.assertNull(resp.getCode());
-            Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
+            Assertions.assertNull(resp.getCode());
+            Assertions.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
 
             // Login and confirm consent
             oauth.openLoginForm();
@@ -341,11 +341,11 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
             // Consent not required anymore. Login with prompt=none should success
             oauth.loginForm().prompt("none").open();
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             resp = oauth.parseLoginResponse();
-            Assert.assertNotNull(resp.getCode());
-            Assert.assertNull(resp.getError());
+            Assertions.assertNotNull(resp.getCode());
+            Assertions.assertNull(resp.getError());
 
             events.expectLogin()
                     .detail(Details.USERNAME, "test-user@localhost")
@@ -369,7 +369,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Login user
         oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken oldIdToken = sendTokenRequestAndGetIDToken(loginEvent);
@@ -379,12 +379,12 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // SSO login first WITHOUT prompt=login ( Tests KEYCLOAK-5248 )
         oauth.openLoginForm();
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime wasn't updated
-        Assert.assertEquals(oldIdToken.getAuth_time(), newIdToken.getAuth_time());
+        Assertions.assertEquals(oldIdToken.getAuth_time(), newIdToken.getAuth_time());
 
         // Set time offset
         setTimeOffset(20);
@@ -394,17 +394,17 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         loginPage.assertCurrent();
         assertThat(false, is(loginPage.isUsernameInputPresent()));
         loginPage.login("password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         newIdToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime was updated
-        Assert.assertTrue("Expected auth time to change. old auth time: " + oldIdToken.getAuth_time() + " , new auth time: " + newIdToken.getAuth_time(),
-                oldIdToken.getAuth_time() + 20 <= newIdToken.getAuth_time());
+        Assertions.assertTrue(oldIdToken.getAuth_time() + 20 <= newIdToken.getAuth_time(),
+                "Expected auth time to change. old auth time: " + oldIdToken.getAuth_time() + " , new auth time: " + newIdToken.getAuth_time());
 
         // Assert userSession didn't change
-        Assert.assertEquals(oldIdToken.getSessionState(), newIdToken.getSessionState());
+        Assertions.assertEquals(oldIdToken.getSessionState(), newIdToken.getSessionState());
     }
 
     // prompt=create
@@ -452,7 +452,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             grantPage.accept();
 
             appPage.assertCurrent();
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             events.expectLogin()
                     .detail(Details.USERNAME, "test-user@localhost")
@@ -462,7 +462,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
             // Re-login without prompt=consent. The previous persistent consent was used
             oauth.openLoginForm();
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             events.expectLogin()
                     .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.CONSENT, Details.CONSENT_VALUE_PERSISTED_CONSENT)
@@ -478,7 +478,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             grantPage.accept();
 
             appPage.assertCurrent();
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             events.expectLogin()
                     .detail(Details.USERNAME, "test-user@localhost")
@@ -502,12 +502,12 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
-        Assert.assertNotNull(idToken);
+        Assertions.assertNotNull(idToken);
     }
 
     // REQUEST & REQUEST_URI
@@ -522,8 +522,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Send request without request object
         // Assert that the request is accepted
         AuthorizationEndpointResponse response = oauth.loginForm().state("mystate2").doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate2", response.getState());
+        Assertions.assertNotNull(response.getCode());
+        Assertions.assertEquals("mystate2", response.getState());
         assertTrue(appPage.isCurrent());
     }
     
@@ -541,8 +541,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Assert that the request is accepted
         AuthorizationEndpointResponse response1 = oauth.loginForm().request(oidcClientEndpointsResource.getOIDCRequest()).state("mystate2").doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response1.getCode());
-        Assert.assertEquals("mystate2", response1.getState());
+        Assertions.assertNotNull(response1.getCode());
+        Assertions.assertEquals("mystate2", response1.getState());
         assertTrue(appPage.isCurrent());
     }
     
@@ -560,8 +560,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Assert that the request is accepted
         AuthorizationEndpointResponse response2 = oauth.loginForm().requestUri(TestApplicationResourceUrls.clientRequestUri()).state("mystate2").doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response2.getCode());
-        Assert.assertEquals("mystate2", response2.getState());
+        Assertions.assertNotNull(response2.getCode());
+        Assertions.assertEquals("mystate2", response2.getState());
         assertTrue(appPage.isCurrent());
     }
     
@@ -576,7 +576,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Send request without request object
         // Assert that the request is not accepted
         oauth.loginForm().state("mystate2").open();
-        Assert.assertTrue(errorPage.isCurrent());
+        Assertions.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
         
         // Revert requiring request object for client
@@ -598,8 +598,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Assert that the request is accepted
         AuthorizationEndpointResponse response1 = oauth.loginForm().request(oidcClientEndpointsResource.getOIDCRequest()).state("mystate2").doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response1.getCode());
-        Assert.assertEquals("mystate2", response1.getState());
+        Assertions.assertNotNull(response1.getCode());
+        Assertions.assertEquals("mystate2", response1.getState());
         assertTrue(appPage.isCurrent());
         
         // Revert requiring request object for client
@@ -624,8 +624,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Assert that the request is accepted
         AuthorizationEndpointResponse response1 = oauth.loginForm().request(oidcClientEndpointsResource.getOIDCRequest()).state(stateInQueryParameter).doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response1.getCode());
-        Assert.assertEquals(stateInRequestObject, response1.getState());
+        Assertions.assertNotNull(response1.getCode());
+        Assertions.assertEquals(stateInRequestObject, response1.getState());
         assertTrue(appPage.isCurrent());
         
         // Revert requiring request object for client
@@ -649,8 +649,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.loginForm().request(request).state("some-state").open();
         appPage.assertCurrent();
         AuthorizationEndpointResponse authorizationEndpointResponse = oauth.parseLoginResponse();
-        Assert.assertEquals("invalid_request", authorizationEndpointResponse.getError());
-        Assert.assertEquals("some-state", authorizationEndpointResponse.getState());
+        Assertions.assertEquals("invalid_request", authorizationEndpointResponse.getError());
+        Assertions.assertEquals("some-state", authorizationEndpointResponse.getState());
 
         // Test that different "client_id" in the query and in the request object is disallowed
         oauth.clientId("test-app-scope");
@@ -666,8 +666,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.responseMode("query"); // Keycloak falls back to query in this case
         authorizationEndpointResponse = oauth.parseLoginResponse();
         oauth.responseMode(null);
-        Assert.assertEquals("invalid_request", authorizationEndpointResponse.getError());
-        Assert.assertEquals("some-state", authorizationEndpointResponse.getState());
+        Assertions.assertEquals("invalid_request", authorizationEndpointResponse.getError());
+        Assertions.assertEquals("some-state", authorizationEndpointResponse.getState());
 
         // Test that "client_id" and "response_type" are not mandatory in the request object
         Map<String, Object> oidcRequest = new HashMap<>();
@@ -678,8 +678,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.clientId("test-app");
         oauth.responseType(OAuth2Constants.CODE);
         AuthorizationEndpointResponse response1 = oauth.loginForm().request(requestObjectString).state("some-state").doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response1.getCode());
-        Assert.assertEquals("request-state", response1.getState());
+        Assertions.assertNotNull(response1.getCode());
+        Assertions.assertEquals("request-state", response1.getState());
     }
 
     @Test
@@ -696,8 +696,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Assert that the request is accepted
         AuthorizationEndpointResponse response2 = oauth.loginForm().requestUri(TestApplicationResourceUrls.clientRequestUri()).state("mystate2").doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response2.getCode());
-        Assert.assertEquals("mystate2", response2.getState());
+        Assertions.assertNotNull(response2.getCode());
+        Assertions.assertEquals("mystate2", response2.getState());
         assertTrue(appPage.isCurrent());
         
         // Revert requiring request object for client
@@ -716,7 +716,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Send request without request object
         // Assert that the request is not accepted
         oauth.loginForm().state("mystate2").open();
-        Assert.assertTrue(errorPage.isCurrent());
+        Assertions.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
         
         // Revert requiring request object for client
@@ -738,8 +738,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Assert that the request is accepted
         AuthorizationEndpointResponse response1 = oauth.loginForm().request(oidcClientEndpointsResource.getOIDCRequest()).state("mystate2").doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response1.getCode());
-        Assert.assertEquals("mystate2", response1.getState());
+        Assertions.assertNotNull(response1.getCode());
+        Assertions.assertEquals("mystate2", response1.getState());
         assertTrue(appPage.isCurrent());
         
         // Revert requiring request object for client
@@ -761,7 +761,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Assert that the request is accepted
         oauth.loginForm().requestUri(TestApplicationResourceUrls.clientRequestUri()).state("mystate2").open();
-        Assert.assertTrue(errorPage.isCurrent());
+        Assertions.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
         
         // Revert requiring request object for client
@@ -780,7 +780,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Send request without request object
         // Assert that the request is not accepted
         oauth.loginForm().state("mystate2").open();
-        Assert.assertTrue(errorPage.isCurrent());
+        Assertions.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
         
         // Revert requiring request object for client
@@ -802,7 +802,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Assert that the request is not accepted
         oauth.loginForm().request(oidcClientEndpointsResource.getOIDCRequest()).state("mystate2").open();
-        Assert.assertTrue(errorPage.isCurrent());
+        Assertions.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
         
         // Revert requiring request object for client
@@ -824,8 +824,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         
         // Assert that the request is accepted
         AuthorizationEndpointResponse response1 = oauth.loginForm().requestUri(TestApplicationResourceUrls.clientRequestUri()).state("mystate2").doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response1.getCode());
-        Assert.assertEquals("mystate2", response1.getState());
+        Assertions.assertNotNull(response1.getCode());
+        Assertions.assertEquals("mystate2", response1.getState());
         assertTrue(appPage.isCurrent());
         
         // Revert requiring request object for client
@@ -843,7 +843,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         String requestStr = oidcClientEndpointsResource.getOIDCRequest();
 
         oauth.loginForm().request(requestStr).state("mystate2").open();
-        Assert.assertTrue(errorPage.isCurrent());
+        Assertions.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
         // Assert the value from request object has bigger priority then from the query parameter.
@@ -852,8 +852,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         requestStr = oidcClientEndpointsResource.getOIDCRequest();
 
         AuthorizationEndpointResponse response = oauth.loginForm().request(requestStr).state("mystate2").doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate2", response.getState());
+        Assertions.assertNotNull(response.getCode());
+        Assertions.assertEquals("mystate2", response.getState());
         assertTrue(appPage.isCurrent());
     }
 
@@ -868,7 +868,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         String requestUri = TestApplicationResourceUrls.clientRequestUri();
 
         oauth.loginForm().requestUri(requestUri).open();
-        Assert.assertTrue(errorPage.isCurrent());
+        Assertions.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
         // Assert the value from request object has bigger priority then from the query parameter.
@@ -876,8 +876,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate1", "none");
 
         AuthorizationEndpointResponse response = oauth.loginForm().requestUri(requestUri).doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate1", response.getState());
+        Assertions.assertNotNull(response.getCode());
+        Assertions.assertEquals("mystate1", response.getState());
         assertTrue(appPage.isCurrent());
     }
 
@@ -896,7 +896,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         clientMgrBuilder.setRequestUris(requestUri);
 
         oauth.loginForm().requestUri(loginRequestUri).open();
-        Assert.assertFalse(errorPage.isCurrent());
+        Assertions.assertFalse(errorPage.isCurrent());
         loginPage.assertCurrent();
 
         // Test with the relative and star at the end - should pass
@@ -904,7 +904,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         clientMgrBuilder.setRequestUris(requestUri);
 
         oauth.loginForm().requestUri(loginRequestUri).open();
-        Assert.assertFalse(errorPage.isCurrent());
+        Assertions.assertFalse(errorPage.isCurrent());
         loginPage.assertCurrent();
 
         // Test absolute and wildcard at the end - should pass
@@ -912,21 +912,21 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         clientMgrBuilder.setRequestUris(requestUri);
 
         oauth.loginForm().requestUri(loginRequestUri).open();
-        Assert.assertFalse(errorPage.isCurrent());
+        Assertions.assertFalse(errorPage.isCurrent());
         loginPage.assertCurrent();
 
         // Test star only as wildcard - should pass
         clientMgrBuilder.setRequestUris("*");
 
         oauth.loginForm().requestUri(loginRequestUri).open();
-        Assert.assertFalse(errorPage.isCurrent());
+        Assertions.assertFalse(errorPage.isCurrent());
         loginPage.assertCurrent();
 
         // Test with multiple request_uris - should pass
         clientMgrBuilder.setRequestUris("/foo", requestUri);
 
         oauth.loginForm().requestUri(loginRequestUri).open();
-        Assert.assertFalse(errorPage.isCurrent());
+        Assertions.assertFalse(errorPage.isCurrent());
         loginPage.assertCurrent();
 
         // Test invalid request_uris - should fail
@@ -961,7 +961,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Verify unsigned request_uri will fail
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "none");
         oauth.loginForm().requestUri(requestUri).open();
-        Assert.assertTrue(errorPage.isCurrent());
+        Assertions.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
 
         // Generate keypair for client
@@ -970,7 +970,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Verify signed request_uri will fail due to failed signature validation
         oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate3", Algorithm.RS256);
         oauth.loginForm().requestUri(requestUri).open();
-        Assert.assertTrue(errorPage.isCurrent());
+        Assertions.assertTrue(errorPage.isCurrent());
         assertEquals("Invalid Request", errorPage.getError());
 
 
@@ -986,8 +986,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         // Check signed request_uri will pass
         AuthorizationEndpointResponse response = oauth.loginForm().requestUri(requestUri).doLogin("test-user@localhost", "password");
-        Assert.assertNotNull(response.getCode());
-        Assert.assertEquals("mystate3", response.getState());
+        Assertions.assertNotNull(response.getCode());
+        Assertions.assertEquals("mystate3", response.getState());
         assertTrue(appPage.isCurrent());
 
         // Revert requiring signature for client
@@ -1035,13 +1035,13 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             if (expectedAlgorithm == null || expectedAlgorithm.equals(actualAlgorithm)) {
                 // Check signed request_uri will pass
                 AuthorizationEndpointResponse response = oauth.loginForm().requestUri(requestUri).doLogin("test-user@localhost", "password");
-                Assert.assertNotNull(response.getCode());
-                Assert.assertEquals("mystate3", response.getState());
+                Assertions.assertNotNull(response.getCode());
+                Assertions.assertEquals("mystate3", response.getState());
                 appPage.assertCurrent();
             } else {
                 // Verify signed request_uri will fail due to failed signature validation
                 oauth.loginForm().requestUri(requestUri).open();
-                Assert.assertTrue(errorPage.isCurrent());
+                Assertions.assertTrue(errorPage.isCurrent());
                 assertEquals("Invalid Request", errorPage.getError());
             }
 
@@ -1148,9 +1148,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         oauth.loginForm().loginHint("test-user%40localhost").open();
 
                 loginPage.assertCurrent();
-        Assert.assertEquals("test-user@localhost", loginPage.getUsername());
+        Assertions.assertEquals("test-user@localhost", loginPage.getUsername());
         loginPage.login("password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
     }
@@ -1172,7 +1172,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // need to login so session id can be read from event
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         String sessionId = loginEvent.getSessionId();
@@ -1211,7 +1211,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // need to login so session id can be read from event
         loginPage.assertCurrent();
         loginPage.login("test-user@localhost", "password");
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         String sessionId = loginEvent.getSessionId();

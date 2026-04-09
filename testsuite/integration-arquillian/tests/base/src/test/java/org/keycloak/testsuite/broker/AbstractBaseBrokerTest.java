@@ -35,7 +35,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.IdpConfirmLinkPage;
@@ -64,6 +63,7 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 
@@ -78,7 +78,7 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * No test methods there. Just some useful common functionality
@@ -245,7 +245,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
         // We are re-authenticating. Username field not visible
         log.debug("Reauthenticating");
-        Assert.assertFalse(loginPage.isUsernameInputPresent());
+        Assertions.assertFalse(loginPage.isUsernameInputPresent());
         loginPage.login(bc.getUserPassword());
     }
 
@@ -295,9 +295,9 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
     protected void updateAccountInformation() {
         waitForPage(driver, "update account information", false);
 
-        Assert.assertTrue(updateAccountInformationPage.isCurrent());
-        Assert.assertTrue("We must be on correct realm right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+        Assertions.assertTrue(updateAccountInformationPage.isCurrent());
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                "We must be on correct realm right now");
 
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
@@ -423,7 +423,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         } catch (TimeoutException e) {
             log.debug(driver.getTitle());
             log.debug(driver.getPageSource());
-            Assert.fail("Timeout while waiting for login page");
+            Assertions.fail("Timeout while waiting for login page");
         }
     }
 
@@ -434,7 +434,7 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     protected void assertErrorPage(String expectedError) {
         errorPage.assertCurrent();
-        Assert.assertEquals(expectedError, errorPage.getError());
+        Assertions.assertEquals(expectedError, errorPage.getError());
     }
 
 

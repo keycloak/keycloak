@@ -30,9 +30,9 @@ import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -73,20 +73,20 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             // Open login page in tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assert.assertTrue(loginPage.isCurrent("consumer"));
+            Assertions.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             setTimeOffset(7200000);
 
             // Finish login in tab2
             loginPage.clickSocial(bc.getIDPAlias());
-            Assert.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
+            Assertions.assertEquals(loginPage.getError(), "Your login attempt timed out. Login will start from the beginning.");
             logInWithBroker(bc);
 
             waitForPage(driver, "update account information", false);
             updateAccountInformationPage.assertCurrent();
-            Assert.assertTrue("We must be on consumer realm right now",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                    "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
             appPage.assertCurrent();
             events.clear();
@@ -120,7 +120,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
 
             // Being on "You are already logged-in" now. No way to redirect to client due "clientData" are null in RelayState of SAML IDP
             loginPage.assertCurrent("consumer");
-            Assert.assertEquals("You are already logged in.", loginPage.getInstruction());
+            Assertions.assertEquals("You are already logged in.", loginPage.getInstruction());
         }
     }
 
@@ -142,7 +142,7 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             // Open login page in tab 2
             tabUtil.newTab(oauth.loginForm().build());
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(2));
-            Assert.assertTrue(loginPage.isCurrent("consumer"));
+            Assertions.assertTrue(loginPage.isCurrent("consumer"));
             getLogger().infof("URL in tab2: %s", driver.getCurrentUrl());
 
             setTimeOffset(3600);
@@ -152,8 +152,8 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
 
             waitForPage(driver, "update account information", false);
             updateAccountInformationPage.assertCurrent();
-            Assert.assertTrue("We must be on consumer realm right now",
-                    driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+            Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"),
+                    "We must be on consumer realm right now");
             updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
             appPage.assertCurrent();
             events.clear();
@@ -204,8 +204,8 @@ public class KcSamlMultipleTabsBrokerTest extends AbstractInitializedBaseBrokerT
             // Authentication session on "consumer" realm is still valid, so no error here.
             appPage.assertCurrent();
             AuthorizationEndpointResponse authzResponse = oauth.parseLoginResponse();
-            org.keycloak.testsuite.Assert.assertNotNull(authzResponse.getCode());
-            org.keycloak.testsuite.Assert.assertNull(authzResponse.getError());
+            Assertions.assertNotNull(authzResponse.getCode());
+            Assertions.assertNull(authzResponse.getError());
         }
     }
 

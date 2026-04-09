@@ -49,7 +49,6 @@ import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpoint;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -59,9 +58,10 @@ import org.keycloak.util.TokenUtil;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.Cookie;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -125,7 +125,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         rep.setConfig(config);
 
         try (Response res = testRealm().components().add(rep)) {
-            Assert.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());
+            Assertions.assertEquals(Response.Status.CREATED.getStatusCode(), res.getStatus());
         }
     }
 
@@ -157,9 +157,9 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                 SecretKey signKey = session.keys().getActiveKey(session.getContext().getRealm(), KeyUse.SIG, sigAlgorithm).getSecretKey();
                 String encodedJwt = session.tokens().encode(restartLoginCookie);
                 String oldRestartCookie = TokenUtil.jweDirectEncode(encKey, signKey, encodedJwt.getBytes(StandardCharsets.UTF_8));
-                Assert.assertNotNull(RestartLoginCookie.decryptAndDecode(session, oldRestartCookie));
+                Assertions.assertNotNull(RestartLoginCookie.decryptAndDecode(session, oldRestartCookie));
             } catch (Exception e) {
-                Assert.fail();
+                Assertions.fail();
             }
         });
     }
@@ -182,7 +182,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
             requestUri = pResp.getRequestUri();
         }
         catch (Exception e) {
-            Assert.fail();
+            Assertions.fail();
         }
 
         oauth.redirectUri(null);
@@ -207,7 +207,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
         }
 
         String updatedActiveKid = realm.keys().getKeyMetadata().getActive().get(Algorithm.AES);
-        Assert.assertNotEquals(activeKid, updatedActiveKid);
+        Assertions.assertNotEquals(activeKid, updatedActiveKid);
     }
 
     private ComponentRepresentation createComponentRep(String algorithm, String providerId, String realmId, MultivaluedHashMap<String,String> extra) {
@@ -230,9 +230,9 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
                 {
                     try {
                         RestartLoginCookie restartLoginCookie = RestartLoginCookie.decryptAndDecode(session, restartCookie);
-                        Assert.assertFalse(restartLoginCookie.getNotes().keySet().stream().anyMatch(sensitiveNotes::contains));
+                        Assertions.assertFalse(restartLoginCookie.getNotes().keySet().stream().anyMatch(sensitiveNotes::contains));
                     } catch (Exception e) {
-                        Assert.fail();
+                        Assertions.fail();
                     }
                 });
     }
@@ -261,7 +261,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("foo", "bar");
         loginPage.assertCurrent();
-        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+        Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")
@@ -294,7 +294,7 @@ public class RestartCookieTest extends AbstractTestRealmKeycloakTest {
 
         loginPage.login("foo", "bar");
         loginPage.assertCurrent();
-        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+        Assertions.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
         events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .detail(Details.RESTART_AFTER_TIMEOUT, "true")

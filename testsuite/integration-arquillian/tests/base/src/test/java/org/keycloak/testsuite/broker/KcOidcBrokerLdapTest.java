@@ -31,10 +31,10 @@ import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTest {
 
@@ -61,7 +61,7 @@ public final class KcOidcBrokerLdapTest extends AbstractInitializedBaseBrokerTes
         loginPage.open(bc.consumerRealmName());
         logInWithBroker(bc);
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "f", "l");
-        Assert.assertFalse(errorPage.isCurrent());
+        Assertions.assertFalse(errorPage.isCurrent());
     }
 
     private ComponentRepresentation getUserStorageConfiguration(String providerName, String providerId) {

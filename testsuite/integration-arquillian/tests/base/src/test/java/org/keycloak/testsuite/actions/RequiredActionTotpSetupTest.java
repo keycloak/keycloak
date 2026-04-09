@@ -66,16 +66,16 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -353,8 +353,8 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), customOtpLabel);
 
         // Check if OTP credential is present
-        Assert.assertTrue(AccountHelper.isTotpPresent(testRealm(), "setupTotpRegister"));
-        Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "setupTotpRegister", customOtpLabel));
+        Assertions.assertTrue(AccountHelper.isTotpPresent(testRealm(), "setupTotpRegister"));
+        Assertions.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "setupTotpRegister", customOtpLabel));
     }
 
     @Test
@@ -521,7 +521,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             String uri = driver.getCurrentUrl();
             String src = driver.getPageSource();
             assertTrue(loginPage.isCurrent());
-            Assert.assertFalse(totpPage.isCurrent());
+            Assertions.assertFalse(totpPage.isCurrent());
 
             // Login with one-time password
             loginTotpPage.login(totp.generateTOTP(totpCode));
@@ -529,7 +529,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
             // Remove google authenticator
-            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "setupTotp2"));
+            Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "setupTotp2"));
             AccountHelper.logout(testRealm(), "setupTotp2");
 
             setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
@@ -741,7 +741,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         if (logoutOtherSessions) {
             totpPage.checkLogoutSessions();
         }
-        Assert.assertEquals(logoutOtherSessions, totpPage.isLogoutSessionsChecked());
+        Assertions.assertEquals(logoutOtherSessions, totpPage.isLogoutSessionsChecked());
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

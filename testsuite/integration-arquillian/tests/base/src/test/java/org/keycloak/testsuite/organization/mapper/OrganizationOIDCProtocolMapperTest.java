@@ -63,9 +63,9 @@ import org.keycloak.testsuite.util.oauth.IntrospectionResponse;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.keycloak.testsuite.util.oauth.UserInfoResponse;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -78,9 +78,9 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.oneOf;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest {
 
@@ -101,8 +101,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         orgb.members().addMember(member.getId()).close();
 
-        Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
-        Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
 
         oauth.client("direct-grant", "password");
         oauth.scope("openid organization:*");
@@ -133,40 +133,40 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         orgb.members().addMember(member.getId()).close();
 
-        Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
-        Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
 
         oauth.clientId("test-app");
 
         // Test multiple specific organization scopes - should return both organizations
         oauth.scope("openid organization:org-a organization:org-b");
         AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
-        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        Assertions.assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
         AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
         List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
-        Assert.assertNotNull(organizations);
-        Assert.assertTrue(organizations.contains("org-a"));
-        Assert.assertTrue(organizations.contains("org-b"));
+        Assertions.assertNotNull(organizations);
+        Assertions.assertTrue(organizations.contains("org-a"));
+        Assertions.assertTrue(organizations.contains("org-b"));
 
         // Test organization + specific organization scope - should still fail (mixing ANY with SPECIFIC)
         oauth.scope("openid organization organization:org-a");
         response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
-        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
 
         // Test organization + wildcard scope - should still fail (mixing ANY with ALL)
         oauth.scope("openid organization organization:*");
         response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
-        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
 
         // Test specific organization + wildcard scope - should still fail (mixing SPECIFIC with ALL)
         oauth.scope("openid organization:org-a organization:*");
         response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
-        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
 
         // Test nonexistent org alias - should fail (nonexistent alias is not a valid scope)
         oauth.scope("openid organization:org-a organization:nonexistent");
         response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
-        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+        Assertions.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
     }
 
     @Test
@@ -198,7 +198,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         oauth.client("broker-app", "broker-app-secret");
         oauth.scope("organization:" + orgA.getAlias());
         loginPage.open(bc.consumerRealmName());
-        org.keycloak.testsuite.Assert.assertFalse(loginPage.isPasswordInputPresent());
+        Assertions.assertFalse(loginPage.isPasswordInputPresent());
         assertTrue(loginPage.isSocialButtonPresent(orgA.getAlias() + "-identity-provider"));
         assertFalse(loginPage.isSocialButtonPresent(orgB.getAlias() + "-identity-provider"));
         assertFalse(driver.getPageSource().contains("Your email domain matches"));
@@ -1434,8 +1434,8 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
 
         orgb.members().addMember(member.getId()).close();
 
-        Assert.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
-        Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orga.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        Assertions.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
 
         ClientScopeRepresentation orgScope = testRealm().clientScopes().findAll().stream()
                 .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))

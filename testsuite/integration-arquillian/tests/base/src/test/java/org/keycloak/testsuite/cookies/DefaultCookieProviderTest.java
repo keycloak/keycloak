@@ -19,9 +19,9 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public class DefaultCookieProviderTest extends AbstractKeycloakTest {
 
@@ -55,7 +55,7 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
             cookies.set(CookieType.SESSION, "my-session", 444);
             cookies.set(CookieType.WELCOME_CSRF, "my-welcome-csrf");
         });
-        Assert.assertEquals(9, response.getCookies().size());
+        Assertions.assertEquals(9, response.getCookies().size());
         assertCookie(response, "AUTH_SESSION_ID", "my-auth-session-id", "/auth/realms/master/", -1, true, true, "None", true);
         assertCookie(response, "KC_AUTH_SESSION_HASH", "my-kc-auth-session", "/auth/realms/master/", 60, true, false, "None", true);
         assertCookie(response, "KC_RESTART", "my-auth-restart", "/auth/realms/master/", -1, true, true, "None", false);
@@ -83,7 +83,7 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
             cookies.set(CookieType.SESSION, "my-session", 444);
             cookies.set(CookieType.WELCOME_CSRF, "my-welcome-csrf");
         });
-        Assert.assertEquals(9, response.getCookies().size());
+        Assertions.assertEquals(9, response.getCookies().size());
         assertCookie(response, "AUTH_SESSION_ID", "my-auth-session-id", "/auth/realms/master/", -1, false, true, "Lax", true);
         assertCookie(response, "KC_AUTH_SESSION_HASH", "my-kc-auth-session", "/auth/realms/master/", 60, false, false, "Lax", true);
         assertCookie(response, "KC_RESTART", "my-auth-restart", "/auth/realms/master/", -1, false, true, "Lax", false);
@@ -105,11 +105,11 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
         });
 
         // Cookie values from response.getCookies() removes quotes
-        Assert.assertEquals(sessionValue, response.getCookies().get(CookieType.SESSION.getName()).getValue());
+        Assertions.assertEquals(sessionValue, response.getCookies().get(CookieType.SESSION.getName()).getValue());
 
         // Cookie values from the Set-Cookie header includes quotes
         String setHeader = getSetHeader(response, CookieType.SESSION.getName());
-        Assert.assertTrue(setHeader.startsWith(CookieType.SESSION.getName() + "=\"" + sessionValue + "\";"));
+        Assertions.assertTrue(setHeader.startsWith(CookieType.SESSION.getName() + "=\"" + sessionValue + "\";"));
 
         // Send Cookie header with quoted value for cookie
         filter.setHeader("Cookie", "KEYCLOAK_SESSION=\"" + sessionValue + "\";");
@@ -117,7 +117,7 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
         // Check cookie value matches original value without quotes
         testing.server().run(session -> {
             String cookieValue = session.getProvider(CookieProvider.class).get(CookieType.SESSION);
-            Assert.assertEquals(sessionValue, cookieValue);
+            Assertions.assertEquals(sessionValue, cookieValue);
         });
     }
 
@@ -131,7 +131,7 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
         });
 
         Map<String, NewCookie> cookies = response.getCookies();
-        Assert.assertEquals(1, cookies.size());
+        Assertions.assertEquals(1, cookies.size());
         assertCookie(response, "AUTH_SESSION_ID", "", "/auth/realms/master/", 0, false, false, null, false);
     }
 
@@ -141,7 +141,7 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
 
         testing.server().run(session -> {
             String authSessionId = session.getProvider(CookieProvider.class).get(CookieType.AUTH_SESSION_ID);
-            Assert.assertEquals("55000981-8b5e-4c8d-853f-ee4c582c1d0d4", authSessionId);
+            Assertions.assertEquals("55000981-8b5e-4c8d-853f-ee4c582c1d0d4", authSessionId);
         });
     }
 
@@ -150,13 +150,13 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
         filter.setHeader("Cookie", "AUTH_SESSION_ID_LEGACY=legacy; KEYCLOAK_IDENTITY_LEGACY=legacy; KEYCLOAK_SESSION_LEGACY=ignore");
 
         Response response = testing.server().runWithResponse(session -> {
-            Assert.assertNull(session.getProvider(CookieProvider.class).get(CookieType.AUTH_SESSION_ID));
-            Assert.assertNull(session.getProvider(CookieProvider.class).get(CookieType.IDENTITY));
-            Assert.assertNull(session.getProvider(CookieProvider.class).get(CookieType.SESSION));
+            Assertions.assertNull(session.getProvider(CookieProvider.class).get(CookieType.AUTH_SESSION_ID));
+            Assertions.assertNull(session.getProvider(CookieProvider.class).get(CookieType.IDENTITY));
+            Assertions.assertNull(session.getProvider(CookieProvider.class).get(CookieType.SESSION));
         });
 
         Map<String, NewCookie> cookies = response.getCookies();
-        Assert.assertEquals(3, cookies.size());
+        Assertions.assertEquals(3, cookies.size());
         assertCookie(response, "AUTH_SESSION_ID_LEGACY", "", "/auth/realms/master/", 0, false, false, null, false);
         assertCookie(response, "KEYCLOAK_IDENTITY_LEGACY", "", "/auth/realms/master/", 0, false, false, null, false);
         assertCookie(response, "KEYCLOAK_SESSION_LEGACY", "", "/auth/realms/master/", 0, false, false, null, false);
@@ -174,7 +174,7 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
         });
 
         Map<String, NewCookie> cookies = response.getCookies();
-        Assert.assertEquals(1, cookies.size());
+        Assertions.assertEquals(1, cookies.size());
         assertCookie(response, "mycookie", "myvalue", "/auth/realms/master/testing/run-on-server", 1232, false, false, null, false);
     }
 
@@ -200,7 +200,7 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
             });
         }
 
-        Assert.assertEquals(9, response.getCookies().size());
+        Assertions.assertEquals(9, response.getCookies().size());
         assertCookie(response, "AUTH_SESSION_ID", "my-auth-session-id", "/auth/realms/master/", -1, false, true, "Lax", true);
         assertCookie(response, "KC_AUTH_SESSION_HASH", "my-kc-auth-session", "/auth/realms/master/", 60, false, false, "Lax", true);
         assertCookie(response, "KC_RESTART", "my-auth-restart", "/auth/realms/master/", -1, false, true, "Lax", false);
@@ -215,22 +215,22 @@ public class DefaultCookieProviderTest extends AbstractKeycloakTest {
     private void assertCookie(Response response, String name, String value, String path, int maxAge, boolean secure, boolean httpOnly, String sameSite, boolean verifyLegacyNotSent) {
         Map<String, NewCookie> cookies = response.getCookies();
         NewCookie cookie = cookies.get(name);
-        Assert.assertNotNull(cookie);
-        Assert.assertEquals(value, cookie.getValue());
-        Assert.assertEquals(path, cookie.getPath());
-        Assert.assertEquals(maxAge, cookie.getMaxAge());
-        Assert.assertEquals(secure, cookie.isSecure());
-        Assert.assertEquals(httpOnly, cookie.isHttpOnly());
+        Assertions.assertNotNull(cookie);
+        Assertions.assertEquals(value, cookie.getValue());
+        Assertions.assertEquals(path, cookie.getPath());
+        Assertions.assertEquals(maxAge, cookie.getMaxAge());
+        Assertions.assertEquals(secure, cookie.isSecure());
+        Assertions.assertEquals(httpOnly, cookie.isHttpOnly());
 
         String setHeader = getSetHeader(response, name);
         if (sameSite == null) {
-            Assert.assertFalse(setHeader.contains("SameSite"));
+            Assertions.assertFalse(setHeader.contains("SameSite"));
         } else {
-            Assert.assertTrue("Expected SameSite=" + sameSite + ", header was: " + setHeader, setHeader.contains("SameSite=" + sameSite));
+            Assertions.assertTrue(setHeader.contains("SameSite=" + sameSite), "Expected SameSite=" + sameSite + ", header was: " + setHeader);
         }
 
         if (verifyLegacyNotSent) {
-            Assert.assertNull(response.getCookies().get(name + "_LEGACY"));
+            Assertions.assertNull(response.getCookies().get(name + "_LEGACY"));
         }
     }
 

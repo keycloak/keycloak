@@ -30,7 +30,7 @@ import org.junit.Test;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentationWithoutConfig;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public final class KcOidcBrokerLdapReadOnlyTest extends AbstractInitializedBaseBrokerTest {
 

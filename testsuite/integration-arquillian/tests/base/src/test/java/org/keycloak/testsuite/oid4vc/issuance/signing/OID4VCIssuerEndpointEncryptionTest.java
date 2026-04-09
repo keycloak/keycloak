@@ -51,7 +51,6 @@ import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.managers.AppAuthManager;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
@@ -59,17 +58,18 @@ import org.keycloak.utils.MediaType;
 import org.apache.http.HttpStatus;
 import org.jboss.logging.Logger;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.jose.jwe.JWEConstants.A256GCM;
 import static org.keycloak.testsuite.oid4vc.issuance.signing.OID4VCSdJwtIssuingEndpointTest.getCredentialIssuer;
 import static org.keycloak.utils.MediaType.APPLICATION_JWT;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test class for Credential Request and Response Encryption
@@ -94,10 +94,10 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        assertNotNull(authDetailsResponse, "authorization_details should be present in the response");
+        assertFalse(authDetailsResponse.isEmpty(), "authorization_details should not be empty");
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
-        assertNotNull("credential_identifier should be present", credentialIdentifier);
+        assertNotNull(credentialIdentifier, "credential_identifier should be present");
         String cNonce = getCNonce();
 
         testingClient
@@ -128,10 +128,8 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
                     Response credentialResponse = issuerEndpoint.requestCredential(credentialRequestPayload);
 
-                    assertEquals("The credential request should be answered successfully.",
-                            HttpStatus.SC_OK, credentialResponse.getStatus());
-                    assertEquals("Response should be JWT type for encrypted responses",
-                            APPLICATION_JWT, credentialResponse.getMediaType().toString());
+                    assertEquals(HttpStatus.SC_OK, credentialResponse.getStatus(), "The credential request should be answered successfully.");
+                    assertEquals(APPLICATION_JWT, credentialResponse.getMediaType().toString(), "Response should be JWT type for encrypted responses");
 
                     String encryptedResponse = (String) credentialResponse.getEntity();
                     CredentialResponse decryptedResponse;
@@ -143,7 +141,7 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                     }
 
                     // Verify the decrypted payload
-                    assertNotNull("Decrypted response should contain a credential", decryptedResponse.getCredentials());
+                    assertNotNull(decryptedResponse.getCredentials(), "Decrypted response should contain a credential");
                     JsonWebToken jsonWebToken;
                     try {
                         jsonWebToken = TokenVerifier.create((String) decryptedResponse.getCredentials().get(0).getCredential(), JsonWebToken.class).getToken();
@@ -151,10 +149,10 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                         fail("Failed to verify JWT: " + e.getMessage());
                         return;
                     }
-                    assertNotNull("A valid credential string should have been responded", jsonWebToken);
+                    assertNotNull(jsonWebToken, "A valid credential string should have been responded");
                     VerifiableCredential credential = JsonSerialization.mapper.convertValue(
                             jsonWebToken.getOtherClaims().get("vc"), VerifiableCredential.class);
-                    assertTrue("The static claim should be set.", credential.getCredentialSubject().getClaims().containsKey("scope-name"));
+                    assertTrue(credential.getCredentialSubject().getClaims().containsKey("scope-name"), "The static claim should be set.");
                 }));
     }
 
@@ -205,10 +203,10 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        assertNotNull(authDetailsResponse, "authorization_details should be present in the response");
+        assertFalse(authDetailsResponse.isEmpty(), "authorization_details should not be empty");
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
-        assertNotNull("credential_identifier should be present", credentialIdentifier);
+        assertNotNull(credentialIdentifier, "credential_identifier should be present");
         String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
@@ -247,25 +245,23 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
                 Response response = issuerEndpoint.requestCredential(encryptedRequest);
 
-                assertEquals("Encrypted request should be processed successfully",
-                        200, response.getStatus());
-                assertEquals("Response should be JWT type for encrypted responses",
-                        APPLICATION_JWT, response.getMediaType().toString());
+                assertEquals(200, response.getStatus(), "Encrypted request should be processed successfully");
+                assertEquals(APPLICATION_JWT, response.getMediaType().toString(), "Response should be JWT type for encrypted responses");
 
                 // Decrypt and verify response
                 String encryptedResponse = (String) response.getEntity();
                 CredentialResponse decryptedResponse = decryptJweResponse(encryptedResponse, responsePrivateKey);
 
-                assertNotNull("Decrypted response should contain a credential", decryptedResponse.getCredentials());
+                assertNotNull(decryptedResponse.getCredentials(), "Decrypted response should contain a credential");
                 JsonWebToken jsonWebToken = TokenVerifier.create(
                         (String) decryptedResponse.getCredentials().get(0).getCredential(),
                         JsonWebToken.class).getToken();
-                assertNotNull("A valid credential string should have been responded", jsonWebToken);
+                assertNotNull(jsonWebToken, "A valid credential string should have been responded");
                 VerifiableCredential credential = JsonSerialization.mapper.convertValue(
                         jsonWebToken.getOtherClaims().get("vc"),
                         VerifiableCredential.class);
-                assertTrue("The static claim should be set.",
-                        credential.getCredentialSubject().getClaims().containsKey("scope-name"));
+                assertTrue(credential.getCredentialSubject().getClaims().containsKey("scope-name"),
+                        "The static claim should be set.");
 
             } catch (Exception e) {
                 fail("Test failed with exception: " + e.getClass().getName() + ": " + e.getMessage());
@@ -287,10 +283,10 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        assertNotNull(authDetailsResponse, "authorization_details should be present in the response");
+        assertFalse(authDetailsResponse.isEmpty(), "authorization_details should not be empty");
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
-        assertNotNull("credential_identifier should be present", credentialIdentifier);
+        assertNotNull(credentialIdentifier, "credential_identifier should be present");
         String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
@@ -336,25 +332,23 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
                 Response response = issuerEndpoint.requestCredential(encryptedRequest);
 
                 // Verify response
-                assertEquals("Encrypted compressed request should be processed successfully",
-                        200, response.getStatus());
-                assertEquals("Response should be JWT type for encrypted responses",
-                        MediaType.APPLICATION_JWT, response.getMediaType().toString());
+                assertEquals(200, response.getStatus(), "Encrypted compressed request should be processed successfully");
+                assertEquals(MediaType.APPLICATION_JWT, response.getMediaType().toString(), "Response should be JWT type for encrypted responses");
 
                 // Decrypt and verify the response
                 String encryptedResponse = (String) response.getEntity();
                 CredentialResponse decryptedResponse = decryptJweResponse(encryptedResponse, responsePrivateKey);
 
-                assertNotNull("Decrypted response should contain a credential", decryptedResponse.getCredentials());
+                assertNotNull(decryptedResponse.getCredentials(), "Decrypted response should contain a credential");
                 JsonWebToken jsonWebToken = TokenVerifier.create(
                         (String) decryptedResponse.getCredentials().get(0).getCredential(),
                         JsonWebToken.class).getToken();
-                assertNotNull("A valid credential string should have been responded", jsonWebToken);
+                assertNotNull(jsonWebToken, "A valid credential string should have been responded");
                 VerifiableCredential credential = JsonSerialization.mapper.convertValue(
                         jsonWebToken.getOtherClaims().get("vc"),
                         VerifiableCredential.class);
-                assertTrue("The static claim should be set.",
-                        credential.getCredentialSubject().getClaims().containsKey("scope-name"));
+                assertTrue(credential.getCredentialSubject().getClaims().containsKey("scope-name"),
+                        "The static claim should be set.");
 
             } catch (Exception e) {
                 LOGGER.error("Test failed", e);
@@ -383,12 +377,12 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
             try {
                 issuerEndpoint.requestCredential(credentialRequestPayload);
-                Assert.fail("Expected BadRequestException due to missing encryption parameter 'enc'");
+                Assertions.fail("Expected BadRequestException due to missing encryption parameter 'enc'");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
                 assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
-                assertTrue("Error message should specify missing parameter 'enc'",
-                        error.getErrorDescription().contains("Missing required parameters: enc"));
+                assertTrue(error.getErrorDescription().contains("Missing required parameters: enc"),
+                        "Error message should specify missing parameter 'enc'");
             }
         });
     }
@@ -557,10 +551,10 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
         AccessTokenResponse tokenResponse = getBearerToken(oauth, authCode, authDetail);
         String token = tokenResponse.getAccessToken();
         List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-        assertNotNull("authorization_details should be present in the response", authDetailsResponse);
-        assertFalse("authorization_details should not be empty", authDetailsResponse.isEmpty());
+        assertNotNull(authDetailsResponse, "authorization_details should be present in the response");
+        assertFalse(authDetailsResponse.isEmpty(), "authorization_details should not be empty");
         String credentialIdentifier = authDetailsResponse.get(0).getCredentialIdentifiers().get(0);
-        assertNotNull("credential_identifier should be present", credentialIdentifier);
+        assertNotNull(credentialIdentifier, "credential_identifier should be present");
         String cNonce = getCNonce();
 
         testingClient.server(TEST_REALM_NAME).run(session -> {
@@ -582,12 +576,12 @@ public class OID4VCIssuerEndpointEncryptionTest extends OID4VCIssuerEndpointTest
 
             try {
                 issuerEndpoint.requestCredential(requestPayload);
-                Assert.fail("Expected BadRequestException due to invalid JWK missing modulus");
+                Assertions.fail("Expected BadRequestException due to invalid JWK missing modulus");
             } catch (BadRequestException e) {
                 ErrorResponse error = (ErrorResponse) e.getResponse().getEntity();
                 assertEquals(ErrorType.INVALID_ENCRYPTION_PARAMETERS.getValue(), error.getError());
-                assertTrue("Error should mention invalid JWK. Actual: " + error.getErrorDescription(),
-                        error.getErrorDescription().contains("Invalid JWK"));
+                assertTrue(error.getErrorDescription().contains("Invalid JWK"),
+                        "Error should mention invalid JWK. Actual: " + error.getErrorDescription());
             }
         });
     }

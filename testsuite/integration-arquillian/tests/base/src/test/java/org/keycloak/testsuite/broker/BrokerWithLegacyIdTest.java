@@ -36,7 +36,7 @@ import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClien
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.oidc.LegacyIdIdentityProvider.LEGACY_ID;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

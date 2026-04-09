@@ -38,9 +38,9 @@ import org.keycloak.testsuite.util.LDAPTestConfiguration;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Test graceful degradation with real embedded LDAP server that gets unreachable.
@@ -86,7 +86,7 @@ public class UserStorageGracefulDegradationLdapTest extends AbstractLDAPTest {
             List<String> usernames = users.map(UserModel::getUsername).toList();
             
             // Should find LDAP user "john" when LDAP is up
-            Assert.assertTrue("Should find john from LDAP when server is up", usernames.contains("john"));
+            Assertions.assertTrue(usernames.contains("john"), "Should find john from LDAP when server is up");
 
             // Simulate LDAP going down by changing connection URL to invalid server
             ldapModel.getConfig().putSingle("connectionUrl", "ldap://invalid-server:999");
@@ -100,10 +100,10 @@ public class UserStorageGracefulDegradationLdapTest extends AbstractLDAPTest {
             usernames = users.map(UserModel::getUsername).toList();
             
             // Should gracefully return local users despite LDAP being down
-            Assert.assertTrue("Should find local user despite LDAP down",
-                            usernames.contains("local-user"));
-            Assert.assertTrue("Should find local admin despite LDAP down",
-                            usernames.contains("local-admin"));
+            Assertions.assertTrue(usernames.contains("local-user"),
+                            "Should find local user despite LDAP down");
+            Assertions.assertTrue(usernames.contains("local-admin"),
+                            "Should find local admin despite LDAP down");
 
         } finally {
             // Clean up - remove users (LDAP provider will be cleaned up by AbstractLDAPTest)
@@ -154,15 +154,15 @@ public class UserStorageGracefulDegradationLdapTest extends AbstractLDAPTest {
             loginPage.login("testldapuser", "TestPassword123!");
             
             // Should stay on login page with error since LDAP user can't be authenticated
-            Assert.assertTrue("Should stay on login page when LDAP user login fails", 
-                            loginPage.isCurrent());
+            Assertions.assertTrue(loginPage.isCurrent(), 
+                            "Should stay on login page when LDAP user login fails");
             
             // Now try to login with the local user - this should work despite LDAP being down
             loginPage.login("user@domain.com", "password");
             
             // Should succeed despite LDAP failure
             appPage.assertCurrent();
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
             
         } finally {
             // Cleanup

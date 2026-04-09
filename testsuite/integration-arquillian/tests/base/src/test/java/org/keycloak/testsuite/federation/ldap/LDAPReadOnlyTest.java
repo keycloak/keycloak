@@ -53,18 +53,18 @@ import org.keycloak.testsuite.util.WaitUtils;
 
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runners.MethodSorters;
 import org.openqa.selenium.By;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test for more advanced scenarios related to LDAP read-only mode
@@ -140,8 +140,8 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
         // Revert TOTP
         setTotpRequirementExecutionForRealm(AuthenticationExecutionModel.Requirement.CONDITIONAL, AuthenticationExecutionModel.Requirement.ALTERNATIVE);
@@ -163,8 +163,8 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         // assert
         user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
         userRepresentation = user.toRepresentation();
-        Assert.assertEquals(userRepresentation.getRequiredActions().size(), 1);
-        Assert.assertEquals(userRepresentation.getRequiredActions().get(0), UserModel.RequiredAction.CONFIGURE_TOTP.toString());
+        Assertions.assertEquals(userRepresentation.getRequiredActions().size(), 1);
+        Assertions.assertEquals(userRepresentation.getRequiredActions().get(0), UserModel.RequiredAction.CONFIGURE_TOTP.toString());
 
         // reset
         userRepresentation.setRequiredActions(Collections.emptyList());
@@ -214,7 +214,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
 
             UserRepresentation user = adminClient.realm("test").users().search("johnkeycloak", 0, 1).get(0);
             Map<String, Object> bruteForceStatus = testRealm().attackDetection().bruteForceUserStatus(user.getId());
-            assertFalse("User should not be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
+            assertFalse((boolean) bruteForceStatus.get("disabled"), "User should not be disabled by brute force.");
             assertTrue(user.isEnabled());
 
             // Lock user (permanently) and make sure the number of failures matches failure factor
@@ -226,7 +226,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
 
             // Make sure user is now disabled
             bruteForceStatus = testRealm().attackDetection().bruteForceUserStatus(user.getId());
-            assertTrue("User should be disabled by brute force.", (boolean) bruteForceStatus.get("disabled"));
+            assertTrue((boolean) bruteForceStatus.get("disabled"), "User should be disabled by brute force.");
             user = adminClient.realm("test").users().search("johnkeycloak", 0, 1).get(0);
             assertFalse(user.isEnabled());
 
@@ -248,7 +248,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
 
         loginPage.assertCurrent();
 
-        Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
+        Assertions.assertEquals("Invalid username or password.", loginPage.getInputError());
 
         events.clear();
     }
@@ -275,8 +275,8 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
     }
 
     protected void assertFederatedUserLink(UserRepresentation user) {
-        Assert.assertTrue(StorageId.isLocalStorage(user.getId()));
-        Assert.assertNotNull(user.getFederationLink());
-        Assert.assertEquals(user.getFederationLink(), ldapModelId);
+        Assertions.assertTrue(StorageId.isLocalStorage(user.getId()));
+        Assertions.assertNotNull(user.getFederationLink());
+        Assertions.assertEquals(user.getFederationLink(), ldapModelId);
     }
 }

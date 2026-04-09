@@ -32,6 +32,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.Before;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 
@@ -123,7 +124,7 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
-        Assert.assertEquals(200, response.getStatusCode());
+        Assertions.assertEquals(200, response.getStatusCode());
 
         if (eventsField != null) {
             events.expectCodeToToken(codeId, sessionId).user(loginEvent.getUserId()).session(sessionId).assertEvent();

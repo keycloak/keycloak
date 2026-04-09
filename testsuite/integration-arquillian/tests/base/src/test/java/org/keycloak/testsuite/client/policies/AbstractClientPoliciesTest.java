@@ -123,7 +123,6 @@ import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorF
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -168,6 +167,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
@@ -183,11 +183,11 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientA
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -1066,38 +1066,38 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected void assertExpectedClientAccessTypeCondition(List<String> type, ClientPolicyRepresentation policyRep) {
         ClientAccessTypeCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientAccessTypeConditionFactory.PROVIDER_ID, ClientAccessTypeCondition.Configuration.class);
-        Assert.assertEquals(cfg.getType(), type);
+        Assertions.assertEquals(cfg.getType(), type);
     }
 
     protected void assertExpectedClientRolesCondition(List<String> roles, ClientPolicyRepresentation policyRep) {
         ClientRolesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientRolesConditionFactory.PROVIDER_ID,  ClientRolesCondition.Configuration.class);
-        Assert.assertEquals(cfg.getRoles(), roles);
+        Assertions.assertEquals(cfg.getRoles(), roles);
     }
 
     protected void assertExpectedClientScopesCondition(String type, List<String> scopes, ClientPolicyRepresentation policyRep) {
         ClientScopesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientScopesConditionFactory.PROVIDER_ID,  ClientScopesCondition.Configuration.class);
-        Assert.assertEquals(cfg.getType(), type);
-        Assert.assertEquals(cfg.getScopes(), scopes);
+        Assertions.assertEquals(cfg.getType(), type);
+        Assertions.assertEquals(cfg.getScopes(), scopes);
     }
 
     protected void assertExpectedClientUpdateContextCondition(List<String> updateClientSources, ClientPolicyRepresentation policyRep) {
         ClientUpdaterContextCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterContextConditionFactory.PROVIDER_ID,  ClientUpdaterContextCondition.Configuration.class);
-        Assert.assertEquals(cfg.getUpdateClientSource(), updateClientSources);
+        Assertions.assertEquals(cfg.getUpdateClientSource(), updateClientSources);
     }
 
     protected void assertExpectedClientUpdateSourceGroupsCondition(List<String> groups, ClientPolicyRepresentation policyRep) {
         ClientUpdaterSourceGroupsCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterSourceGroupsConditionFactory.PROVIDER_ID,  ClientUpdaterSourceGroupsCondition.Configuration.class);
-        Assert.assertEquals(cfg.getGroups(), groups);
+        Assertions.assertEquals(cfg.getGroups(), groups);
     }
 
     protected void assertExpectedClientUpdateSourceHostsCondition(List<String> trustedHosts, ClientPolicyRepresentation policyRep) {
         ClientUpdaterSourceHostsCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterSourceHostsConditionFactory.PROVIDER_ID,  ClientUpdaterSourceHostsCondition.Configuration.class);
-        Assert.assertEquals(cfg.getTrustedHosts(), trustedHosts);
+        Assertions.assertEquals(cfg.getTrustedHosts(), trustedHosts);
     }
 
     protected void assertExpectedClientUpdateSourceRolesCondition(List<String> roles, ClientPolicyRepresentation policyRep) {
         ClientUpdaterSourceRolesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientUpdaterSourceRolesConditionFactory.PROVIDER_ID,  ClientUpdaterSourceRolesCondition.Configuration.class);
-        Assert.assertEquals(cfg.getRoles(), roles);
+        Assertions.assertEquals(cfg.getRoles(), roles);
     }
 
     private <CFG extends ClientPolicyConditionConfigurationRepresentation> CFG getConfigAsExpectedType(ClientPolicyRepresentation policyRep, String conditionProviderId, Class<CFG> configClass) {
@@ -1134,7 +1134,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     private void assertExpectedEmptyConfig(String executorProviderId, ClientProfileRepresentation profileRep) {
         JsonNode config = getConfigOfExecutor(executorProviderId, profileRep);
         assert config != null;
-        Assert.assertTrue("Expected empty configuration for provider " + executorProviderId, config.isEmpty());
+        Assertions.assertTrue(config.isEmpty(), "Expected empty configuration for provider " + executorProviderId);
     }
 
     protected String signRequestObject(AuthorizationEndpointRequestObject requestObject) throws IOException {
@@ -1168,7 +1168,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected void checkMtlsFlow() throws IOException {
         // Check login.
         AuthorizationEndpointResponse loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        Assert.assertNull(loginResponse.getError());
+        Assertions.assertNull(loginResponse.getError());
 
         String code = oauth.parseLoginResponse().getCode();
 
@@ -1206,9 +1206,9 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         } finally {
             oauth.httpClient().reset();
         }
-        Assert.assertNotNull(tokenResponse);
+        Assertions.assertNotNull(tokenResponse);
         TokenMetadataRepresentation tokenMetadataRepresentation = tokenResponse.asTokenMetadata();
-        Assert.assertTrue(tokenMetadataRepresentation.isActive());
+        Assertions.assertTrue(tokenMetadataRepresentation.isActive());
 
         // Check token revoke.
         try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore()) {
@@ -1234,7 +1234,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
         // Check login.
         loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        Assert.assertNull(loginResponse.getError());
+        Assertions.assertNull(loginResponse.getError());
 
         code = oauth.parseLoginResponse().getCode();
 
@@ -1255,7 +1255,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
         loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-        Assert.assertNull(loginResponse.getError());
+        Assertions.assertNull(loginResponse.getError());
 
         code = oauth.parseLoginResponse().getCode();
 

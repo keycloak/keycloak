@@ -27,10 +27,10 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Mutual TLS Client tests.
@@ -261,13 +261,13 @@ public class MutualTLSClientTest extends AbstractTestRealmKeycloakTest {
    }
 
    private void assertTokenObtained(AccessTokenResponse token) {
-      Assert.assertEquals(200, token.getStatusCode());
-      Assert.assertNotNull(token.getAccessToken());
+      Assertions.assertEquals(200, token.getStatusCode());
+      Assertions.assertNotNull(token.getAccessToken());
    }
 
    private void assertTokenNotObtained(AccessTokenResponse token) {
-      Assert.assertEquals(401, token.getStatusCode());
-      Assert.assertNull(token.getAccessToken());
+      Assertions.assertEquals(401, token.getStatusCode());
+      Assertions.assertNull(token.getAccessToken());
    }
 
    /*

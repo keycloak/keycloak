@@ -58,17 +58,17 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.storage.CacheableStorageProviderModel.CACHE_POLICY;
 import static org.keycloak.storage.CacheableStorageProviderModel.MAX_LIFESPAN;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -131,7 +131,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             UserModel serviceAccount = manager.getSession().users().addUser(appRealm, ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + offlineClient.getClientId());
             serviceAccount.setEnabled(true);
             RoleModel role = appRealm.getRole("offline_access");
-            Assert.assertNotNull(role);
+            Assertions.assertNotNull(role);
             serviceAccount.grantRole(role);
             serviceAccount.setServiceAccountClientLink(offlineClient.getClientId());
 
@@ -188,7 +188,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
         // test that once user storage provider is available again we can still access the token.
         tokenResponse = oauth.doRefreshTokenRequest(offlineTokenString);
-        Assert.assertNotNull(tokenResponse.getAccessToken());
+        Assertions.assertNotNull(tokenResponse.getAccessToken());
         oauth.verifyToken(tokenResponse.getAccessToken());
         offlineTokenString = tokenResponse.getRefreshToken();
         oauth.parseRefreshToken(offlineTokenString);
@@ -244,9 +244,9 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         loginPage.login(username, password);
         System.out.println(driver.getCurrentUrl());
         System.out.println(driver.getPageSource());
-        Assert.assertTrue(appPage.isCurrent());
-        Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+        Assertions.assertTrue(appPage.isCurrent());
+        Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
         oauth.openLogoutForm();
     }
 
@@ -270,7 +270,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
             UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
-            Assert.assertNotNull(user);
+            Assertions.assertNotNull(user);
 
         });
 
@@ -289,29 +289,29 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
             UserModel local = session.users().getUserByUsername(realm, LOCAL_USER);
-            Assert.assertNotNull(local);
+            Assertions.assertNotNull(local);
             Stream<UserModel> result;
             result = session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, LOCAL_USER));
-            Assert.assertEquals(1, result.count());
+            Assertions.assertEquals(1, result.count());
             result = session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, FailableHardcodedStorageProvider.username));
-            Assert.assertEquals(1, result.count());
+            Assertions.assertEquals(1, result.count());
             result = session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, LOCAL_USER), 0, 2);
-            Assert.assertEquals(1, result.count());
+            Assertions.assertEquals(1, result.count());
             result = session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, FailableHardcodedStorageProvider.username), 0, 2);
-            Assert.assertEquals(1, result.count());
+            Assertions.assertEquals(1, result.count());
             Map<String, String> localParam = new HashMap<>();
             localParam.put("username", LOCAL_USER);
             Map<String, String> hardcodedParam = new HashMap<>();
             hardcodedParam.put("username", FailableHardcodedStorageProvider.username);
 
             result = session.users().searchForUserStream(realm, localParam);
-            Assert.assertEquals(1, result.count());
+            Assertions.assertEquals(1, result.count());
             result = session.users().searchForUserStream(realm, hardcodedParam);
-            Assert.assertEquals(1, result.count());
+            Assertions.assertEquals(1, result.count());
             result = session.users().searchForUserStream(realm, localParam, 0, 2);
-            Assert.assertEquals(1, result.count());
+            Assertions.assertEquals(1, result.count());
             result = session.users().searchForUserStream(realm, hardcodedParam, 0, 2);
-            Assert.assertEquals(1, result.count());
+            Assertions.assertEquals(1, result.count());
 
             // we run a terminal operation on the stream to make sure it is consumed.
             session.users().searchForUserStream(realm, Collections.emptyMap()).count();
@@ -319,12 +319,12 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
             UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
             assertFalse(user instanceof CachedUserModel);
-            Assert.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
-            Assert.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
+            Assertions.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
+            Assertions.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
             assertFalse(user.isEnabled());
             try {
                 user.setEmail("error@error.com");
-                Assert.fail();
+                Assertions.fail();
             } catch (Exception ex) {
 
             }
@@ -336,8 +336,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
             UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
             assertFalse(user instanceof CachedUserModel);
-            Assert.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
-            Assert.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
+            Assertions.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
+            Assertions.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
         });
 
         // make ABSOLUTELY sure user isn't cached as provider is disabled
@@ -346,8 +346,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
             UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
             assertFalse(user instanceof CachedUserModel);
-            Assert.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
-            Assert.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
+            Assertions.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
+            Assertions.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
         });
 
 
@@ -360,9 +360,9 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
             UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
-            Assert.assertTrue(user instanceof CachedUserModel);
-            Assert.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
-            Assert.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
+            Assertions.assertTrue(user instanceof CachedUserModel);
+            Assertions.assertEquals(FailableHardcodedStorageProvider.username, user.getUsername());
+            Assertions.assertEquals(FailableHardcodedStorageProvider.email, user.getEmail());
         });
 
         events.clear();

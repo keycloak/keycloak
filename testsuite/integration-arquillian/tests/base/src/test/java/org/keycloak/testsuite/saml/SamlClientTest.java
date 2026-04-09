@@ -22,8 +22,8 @@ import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.Document;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,7 +49,7 @@ public class SamlClientTest extends AbstractSamlTest {
         try (CloseableHttpClient client = HttpClientBuilder.create().setRedirectStrategy(strategy).build()) {
             HttpUriRequest post = SamlClient.Binding.POST.createSamlUnsignedRequest(samlEndpoint, null, samlRequest);
             CloseableHttpResponse response = sendPost(post, client);
-            Assert.assertEquals(response.getStatusLine().getStatusCode(), 400);
+            Assertions.assertEquals(response.getStatusLine().getStatusCode(), 400);
             String s = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
             assertThat(s, Matchers.containsString("Wrong client protocol."));
 

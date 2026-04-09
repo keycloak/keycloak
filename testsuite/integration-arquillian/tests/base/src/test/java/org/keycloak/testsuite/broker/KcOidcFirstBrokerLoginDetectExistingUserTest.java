@@ -18,9 +18,9 @@ import org.keycloak.testsuite.util.ExecutionBuilder;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitializedBaseBrokerTest {
 
@@ -44,7 +44,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         authMgmtResource.createFlow(authenticationFlowRepresentation);
 
         AuthenticationFlowRepresentation authenticationFlowRepresentation1 = getFlow(authMgmtResource, detectExistingFlowAlias);
-        assertNotNull("The authentication flow must exist", authenticationFlowRepresentation1);
+        assertNotNull(authenticationFlowRepresentation1, "The authentication flow must exist");
 
         String flowId = authenticationFlowRepresentation1.getId(); // retrieves the id of the newly created flow
 
@@ -59,7 +59,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         identityProviderRepresentation.getConfig().put(IdentityProviderModel.SYNC_MODE, IdentityProviderSyncMode.FORCE.toString());
         identityConsumerResource.update(identityProviderRepresentation);
 
-        assertEquals("Two executions must have been created", 2, getFlow(authMgmtResource, detectExistingFlowAlias).getAuthenticationExecutions().size());
+        assertEquals(2, getFlow(authMgmtResource, detectExistingFlowAlias).getAuthenticationExecutions().size(), "Two executions must have been created");
     }
 
     private void addExecution(AuthenticationManagementResource authMgmtResource, String flowId, String providerId, int priority) {
@@ -131,8 +131,8 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
         UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(
                 adminClient.realm(bc.consumerRealmName()), username);
 
-        assertEquals("Email is not correct", userRepresentation.getEmail(), email);
-        assertEquals("Firstname is not correct", userRepresentation.getFirstName(), firstname);
-        assertEquals("Lastname is not correct", userRepresentation.getLastName(), lastname);
+        assertEquals(userRepresentation.getEmail(), email, "Email is not correct");
+        assertEquals(userRepresentation.getFirstName(), firstname, "Firstname is not correct");
+        assertEquals(userRepresentation.getLastName(), lastname, "Lastname is not correct");
     }
 }

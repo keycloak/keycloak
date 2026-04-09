@@ -43,8 +43,8 @@ import static org.keycloak.common.util.reflections.Reflections.resolveListType;
 import static org.keycloak.common.util.reflections.Reflections.setAccessible;
 import static org.keycloak.common.util.reflections.Reflections.unsetAccessible;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  *

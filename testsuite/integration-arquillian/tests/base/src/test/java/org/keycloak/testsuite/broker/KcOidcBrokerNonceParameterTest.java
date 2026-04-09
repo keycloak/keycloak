@@ -22,8 +22,8 @@ import org.keycloak.testsuite.util.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
@@ -70,11 +70,11 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         IDToken idToken = toIdToken(response.getIdToken());
         
-        Assert.assertEquals("123456", idToken.getNonce());
+        Assertions.assertEquals("123456", idToken.getNonce());
         String federatedIdTokenString = (String) idToken.getOtherClaims().get(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-        Assert.assertNotNull(federatedIdTokenString);
+        Assertions.assertNotNull(federatedIdTokenString);
         IDToken federatedIdToken = toIdToken(federatedIdTokenString);
-        Assert.assertNotNull(federatedIdToken.getNonce());
+        Assertions.assertNotNull(federatedIdToken.getNonce());
     }
     
     @Test
@@ -96,11 +96,11 @@ public class KcOidcBrokerNonceParameterTest extends AbstractBrokerTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
         IDToken idToken = toIdToken(response.getIdToken());
 
-        Assert.assertNull(idToken.getNonce());
+        Assertions.assertNull(idToken.getNonce());
         String federatedIdTokenString = (String) idToken.getOtherClaims().get(OIDCIdentityProvider.FEDERATED_ID_TOKEN);
-        Assert.assertNotNull(federatedIdTokenString);
+        Assertions.assertNotNull(federatedIdTokenString);
         IDToken federatedIdToken = toIdToken(federatedIdTokenString);
-        Assert.assertNull(federatedIdToken.getNonce());
+        Assertions.assertNull(federatedIdToken.getNonce());
     }
 
     protected IDToken toIdToken(String encoded) {

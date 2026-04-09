@@ -109,8 +109,8 @@ import org.keycloak.util.JsonSerialization;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.http.HttpStatus;
 import org.jboss.logging.Logger;
-import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_SUBJECT_ID;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
@@ -647,11 +647,11 @@ public abstract class OID4VCTest extends AbstractTestRealmKeycloakTest {
 					.header(HttpHeaders.COOKIE, null);
 
 			try (Response response = nonceInvocationBuilder.post(null)) {
-				Assert.assertEquals(HttpStatus.SC_OK, response.getStatus());
-				Assert.assertTrue(response.getMediaType().toString().startsWith(MediaType.APPLICATION_JSON_TYPE.toString()));
+				Assertions.assertEquals(HttpStatus.SC_OK, response.getStatus());
+				Assertions.assertTrue(response.getMediaType().toString().startsWith(MediaType.APPLICATION_JSON_TYPE.toString()));
 				nonceResponseString = parseResponse(response);
-				Assert.assertNotNull(nonceResponseString);
-				Assert.assertEquals("no-store", response.getHeaderString(HttpHeaders.CACHE_CONTROL));
+				Assertions.assertNotNull(nonceResponseString);
+				Assertions.assertEquals("no-store", response.getHeaderString(HttpHeaders.CACHE_CONTROL));
 			}
 		}
 		NonceResponse nonceResponse;

@@ -26,11 +26,11 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Tests with response_type=code id_token token as detached signature
@@ -55,19 +55,19 @@ public class OIDCHybridResponseTypeCodeIDTokenAsDetachedSigTokenTest extends Abs
 
 
     protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
-        Assert.assertEquals(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
+        Assertions.assertEquals(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
         // IDToken from the authorization response
-        Assert.assertNotNull(authzResponse.getAccessToken());
+        Assertions.assertNotNull(authzResponse.getAccessToken());
         String idTokenStr = authzResponse.getIdToken();
         IDToken idToken = oauth.verifyIDToken(idTokenStr);
         // confirm ID token as detached signature does not include authenticated user's claims
-        Assert.assertNull(idToken.getEmailVerified());
-        Assert.assertNull(idToken.getName());
-        Assert.assertNull(idToken.getPreferredUsername());
-        Assert.assertNull(idToken.getGivenName());
-        Assert.assertNull(idToken.getFamilyName());
-        Assert.assertNull(idToken.getEmail());
+        Assertions.assertNull(idToken.getEmailVerified());
+        Assertions.assertNull(idToken.getName());
+        Assertions.assertNull(idToken.getPreferredUsername());
+        Assertions.assertNull(idToken.getGivenName());
+        Assertions.assertNull(idToken.getFamilyName());
+        Assertions.assertNull(idToken.getEmail());
 
         // Validate "at_hash"
         assertValidAccessTokenHash(idToken.getAccessTokenHash(), authzResponse.getAccessToken());
@@ -78,25 +78,25 @@ public class OIDCHybridResponseTypeCodeIDTokenAsDetachedSigTokenTest extends Abs
         // Financial API - Part 2: Read and Write API Security Profile
         // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
         // Validate "s_hash"
-        Assert.assertNotNull(idToken.getStateHash());
+        Assertions.assertNotNull(idToken.getStateHash());
 
-        Assert.assertEquals(idToken.getStateHash(), HashUtils.accessTokenHash(getIdTokenSignatureAlgorithm(), authzResponse.getState()));
+        Assertions.assertEquals(idToken.getStateHash(), HashUtils.accessTokenHash(getIdTokenSignatureAlgorithm(), authzResponse.getState()));
 
         // Validate if token_type is present
-        Assert.assertNotNull(authzResponse.getTokenType());
+        Assertions.assertNotNull(authzResponse.getTokenType());
 
         // Validate if expires_in is present
-        Assert.assertNotNull(authzResponse.getExpiresIn());
+        Assertions.assertNotNull(authzResponse.getExpiresIn());
 
         // IDToken exchanged for the code
         IDToken idToken2 = sendTokenRequestAndGetIDToken(loginEvent);
         // confirm ordinal ID token includes authenticated user's claims
-        Assert.assertNotNull(idToken2.getEmailVerified());
-        Assert.assertNotNull(idToken2.getName());
-        Assert.assertNotNull(idToken2.getPreferredUsername());
-        Assert.assertNotNull(idToken2.getGivenName());
-        Assert.assertNotNull(idToken2.getFamilyName());
-        Assert.assertNotNull(idToken2.getEmail());
+        Assertions.assertNotNull(idToken2.getEmailVerified());
+        Assertions.assertNotNull(idToken2.getName());
+        Assertions.assertNotNull(idToken2.getPreferredUsername());
+        Assertions.assertNotNull(idToken2.getGivenName());
+        Assertions.assertNotNull(idToken2.getFamilyName());
+        Assertions.assertNotNull(idToken2.getEmail());
 
         return Arrays.asList(idToken, idToken2);
     }

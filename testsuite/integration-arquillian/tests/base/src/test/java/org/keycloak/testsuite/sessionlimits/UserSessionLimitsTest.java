@@ -57,7 +57,7 @@ import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.assertC
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.assertSessionCount;
 import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.configureSessionLimits;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
     private String realmName = "test";

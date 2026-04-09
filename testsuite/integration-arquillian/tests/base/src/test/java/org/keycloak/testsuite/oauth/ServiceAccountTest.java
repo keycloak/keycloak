@@ -60,9 +60,9 @@ import org.keycloak.testsuite.util.oauth.LogoutResponse;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.rules.ExpectedException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -70,10 +70,10 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -190,9 +190,9 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
         System.out.println("Access token other claims: " + accessToken.getOtherClaims());
-        Assert.assertEquals("service-account-cl-refresh-on", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
-        Assert.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_ADDRESS));
-        Assert.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_HOST));
+        Assertions.assertEquals("service-account-cl-refresh-on", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
+        Assertions.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_ADDRESS));
+        Assertions.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_HOST));
 
         AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
 
@@ -300,7 +300,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
 
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        Assert.assertEquals("updated-client", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
+        Assertions.assertEquals("updated-client", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
 
         // Username updated after client ID changed
         events.expectClientLogin()
@@ -379,7 +379,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .assertEvent();
 
         // Check that it is not possible to introspect token anymore
-        Assert.assertFalse(getIntrospectionResponse(tokenString));
+        Assertions.assertFalse(getIntrospectionResponse(tokenString));
 
         events.expect(EventType.INTROSPECT_TOKEN_ERROR)
                 .client("service-account-cl")
@@ -411,15 +411,15 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         assertEquals(200, response.getStatusCode());
         String tokenString = response.getAccessToken();
 
-        Assert.assertNotNull("Access-Token should be present", tokenString);
+        Assertions.assertNotNull(tokenString, "Access-Token should be present");
         AccessToken accessToken = oauth.verifyToken(tokenString);
-        Assert.assertNull(accessToken.getSessionState());
-        Assert.assertNull("Refresh-Token should not be present", response.getRefreshToken());
+        Assertions.assertNull(accessToken.getSessionState());
+        Assertions.assertNull(response.getRefreshToken(), "Refresh-Token should not be present");
 
         AccessTokenContext ctx = testingClient.testing("test").getTokenContext(accessToken.getId());
-        Assert.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.TRANSIENT);
-        Assert.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.REGULAR);
-        Assert.assertEquals(ctx.getGrantType(), OAuth2Constants.CLIENT_CREDENTIALS);
+        Assertions.assertEquals(ctx.getSessionType(), AccessTokenContext.SessionType.TRANSIENT);
+        Assertions.assertEquals(ctx.getTokenType(), AccessTokenContext.TokenType.REGULAR);
+        Assertions.assertEquals(ctx.getGrantType(), OAuth2Constants.CLIENT_CREDENTIALS);
 
         events.expectClientLogin()
                 .client("service-account-cl")
@@ -434,7 +434,7 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         assertThat(clientSessionStats, empty());
 
         // Check that token is possible to introspect
-        Assert.assertTrue(getIntrospectionResponse(tokenString));
+        Assertions.assertTrue(getIntrospectionResponse(tokenString));
         events.expect(EventType.INTROSPECT_TOKEN)
                 .client("service-account-cl")
                 .user(AssertEvents.isUUID())
@@ -494,9 +494,9 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         assertEquals(accessToken.getSessionState(), refreshToken.getSessionState());
         System.out.println("Access token other claims: " + accessToken.getOtherClaims());
-        Assert.assertEquals("service-account-cl-refresh-on", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
-        Assert.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_ADDRESS));
-        Assert.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_HOST));
+        Assertions.assertEquals("service-account-cl-refresh-on", accessToken.getOtherClaims().get(ServiceAccountConstants.CLIENT_ID));
+        Assertions.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_ADDRESS));
+        Assertions.assertTrue(accessToken.getOtherClaims().containsKey(ServiceAccountConstants.CLIENT_HOST));
 
         AccessTokenResponse refreshedResponse = oauth.doRefreshTokenRequest(response.getRefreshToken());
 

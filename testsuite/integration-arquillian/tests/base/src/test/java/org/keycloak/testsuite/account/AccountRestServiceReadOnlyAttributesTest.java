@@ -41,16 +41,16 @@ import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.userprofile.UserProfileConstants;
 
 import org.jboss.logging.Logger;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -194,18 +194,18 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
             adminUserRep.singleAttribute(attrName, "foo");
             adminUserResource.update(adminUserRep);
             if (deniedForAdminAsWell) {
-                Assert.fail("Not expected to update attribute " + attrName + " by admin REST API");
+                Assertions.fail("Not expected to update attribute " + attrName + " by admin REST API");
             }
         } catch (BadRequestException bre) {
             if (!deniedForAdminAsWell) {
-                Assert.fail("Was expected to update attribute " + attrName + " by admin REST API");
+                Assertions.fail("Was expected to update attribute " + attrName + " by admin REST API");
             }
             return;
         }
 
         // Update attribute of the user with account REST to the same value (Case when we are updating existing attribute) - should be fine as our attribute is not changed
         user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        Assert.assertEquals("foo", user.getAttributes().get(attrName).get(0));
+        Assertions.assertEquals("foo", user.getAttributes().get(attrName).get(0));
         user.singleAttribute("someOtherAttr", "foo");
         user = updateAndGet(user);
 
@@ -236,7 +236,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
 
         // Update attribute of the user with account REST to the same value (Case when we are updating existing attribute) - should be fine as our attribute is not changed
         user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        Assert.assertEquals("foo", user.getAttributes().get(attrName).get(0));
+        Assertions.assertEquals("foo", user.getAttributes().get(attrName).get(0));
         user.singleAttribute("someOtherAttr", "foo");
         user = updateAndGet(user);
 

@@ -7,7 +7,8 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.Assert;
+
+import org.junit.jupiter.api.Assertions;
 
 import static java.util.Locale.ENGLISH;
 
@@ -71,7 +72,7 @@ public class KcOidcBrokerUiLocalesEnabledTest extends AbstractBrokerTest {
         UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
 
         int userCount = consumerUsers.count();
-        Assert.assertTrue("There must be at least one user", userCount > 0);
+        Assertions.assertTrue(userCount > 0, "There must be at least one user");
 
         List<UserRepresentation> users = consumerUsers.search("", 0, userCount);
 
@@ -83,7 +84,7 @@ public class KcOidcBrokerUiLocalesEnabledTest extends AbstractBrokerTest {
             }
         }
 
-        Assert.assertTrue("There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName(),
-                isUserFound);
+        Assertions.assertTrue(isUserFound,
+                "There must be user " + bc.getUserLogin() + " in realm " + bc.consumerRealmName());
     }
 }

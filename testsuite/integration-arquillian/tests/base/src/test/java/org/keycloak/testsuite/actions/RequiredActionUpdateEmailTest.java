@@ -42,16 +42,16 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.userprofile.UserProfileConstants.ROLE_ADMIN;
 import static org.keycloak.userprofile.UserProfileConstants.ROLE_USER;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateEmailTest {
 
@@ -64,7 +64,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         if (logoutOtherSessions) {
             updateEmailPage.checkLogoutSessions();
         }
-        Assert.assertEquals(logoutOtherSessions, updateEmailPage.isLogoutSessionsChecked());
+        Assertions.assertEquals(logoutOtherSessions, updateEmailPage.isLogoutSessionsChecked());
 
         updateEmailPage.changeEmail(newEmail);
     }

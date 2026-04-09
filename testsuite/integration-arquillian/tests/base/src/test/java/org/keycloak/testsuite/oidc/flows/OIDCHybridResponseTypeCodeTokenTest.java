@@ -24,12 +24,12 @@ import org.keycloak.events.Details;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.idm.EventRepresentation;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * Tests with response_type=code token
@@ -54,10 +54,10 @@ public class OIDCHybridResponseTypeCodeTokenTest extends AbstractOIDCResponseTyp
 
 
     protected List<IDToken> testAuthzResponseAndRetrieveIDTokens(AuthorizationEndpointResponse authzResponse, EventRepresentation loginEvent) {
-        Assert.assertEquals(OIDCResponseType.CODE + " " + OIDCResponseType.TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
+        Assertions.assertEquals(OIDCResponseType.CODE + " " + OIDCResponseType.TOKEN, loginEvent.getDetails().get(Details.RESPONSE_TYPE));
 
-        Assert.assertNotNull(authzResponse.getAccessToken());
-        Assert.assertNull(authzResponse.getIdToken());
+        Assertions.assertNotNull(authzResponse.getAccessToken());
+        Assertions.assertNull(authzResponse.getIdToken());
 
         // IDToken exchanged for the code
         AccessTokenResponse authzResponse2 = sendTokenRequestAndGetResponse(loginEvent);
@@ -67,10 +67,10 @@ public class OIDCHybridResponseTypeCodeTokenTest extends AbstractOIDCResponseTyp
         assertValidAccessTokenHash(idToken2.getAccessTokenHash(), authzResponse2.getAccessToken());
 
         // Validate if token_type is present
-        Assert.assertNotNull(authzResponse.getTokenType());
+        Assertions.assertNotNull(authzResponse.getTokenType());
 
         // Validate if expires_in is present
-        Assert.assertNotNull(authzResponse.getExpiresIn());
+        Assertions.assertNotNull(authzResponse.getExpiresIn());
 
         return Collections.singletonList(idToken2);
     }

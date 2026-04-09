@@ -69,8 +69,8 @@ import org.keycloak.testsuite.util.saml.SamlBackchannelArtifactResolveReceiver;
 import org.apache.http.Header;
 import org.apache.http.HttpHeaders;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -84,7 +84,7 @@ import static org.keycloak.testsuite.util.SamlClient.Binding.REDIRECT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *
@@ -156,7 +156,7 @@ public class BrokerTest extends AbstractSamlTest {
             reviewProfileAuthenticator = executions.stream()
               .filter(ex -> Objects.equals(ex.getProviderId(), IdpReviewProfileAuthenticatorFactory.PROVIDER_ID))
               .findFirst()
-              .orElseGet(() -> { Assert.fail("Could not find update profile in first broker login flow"); return null; });
+              .orElseGet(() -> { Assertions.fail("Could not find update profile in first broker login flow"); return null; });
 
             reviewProfileAuthenticator.setRequirement(Requirement.DISABLED.name());
             realm.flows().updateExecutions(firstBrokerLoginFlowAlias, reviewProfileAuthenticator);

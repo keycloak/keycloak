@@ -55,9 +55,9 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.updateAppRootRealm;
@@ -65,13 +65,13 @@ import static org.keycloak.testsuite.util.oauth.OAuthClient.updateAppRootRealm;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractRequiredActionUpdateEmailTest {
 
@@ -119,7 +119,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             updateEmailPage.checkLogoutSessions();
         }
 
-        Assert.assertEquals(logoutOtherSessions, updateEmailPage.isLogoutSessionsChecked());
+        Assertions.assertEquals(logoutOtherSessions, updateEmailPage.isLogoutSessionsChecked());
         updateEmailPage.changeEmail(newEmail);
 
 		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, newEmail).assertEvent();
@@ -511,10 +511,10 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
 
             // Verification email should be sent and email should be set
             UserRepresentation updatedUser = testRealm().users().get(findUser("pendinguser").getId()).toRepresentation();
-            assertNull("Email should be not set immediately", updatedUser.getEmail());
+            assertNull(updatedUser.getEmail(), "Email should be not set immediately");
 
-            assertTrue("User should have UPDATE_EMAIL required action", 
-                      updatedUser.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
+            assertTrue(updatedUser.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()), 
+                      "User should have UPDATE_EMAIL required action");
 
             infoPage.assertCurrent();
             
@@ -533,14 +533,13 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                       updateEmailPage.getInfo(), containsString("A verification email was sent to pending@localhost"));
             
             // Check that the email field is pre-filled with the pending email, not the old email
-            assertEquals("Email field should be pre-filled with pending email", 
-                        "pending@localhost", updateEmailPage.getEmail());
+            assertEquals("pending@localhost", updateEmailPage.getEmail(), "Email field should be pre-filled with pending email");
 
             updateEmailPage.changeEmail("pending@localhost"); // Same email to resend
             
             // Should send verification email
             String confirmationLink = fetchEmailConfirmationLink("pending@localhost", greenMail.getLastReceivedMessage());
-            assertNotNull("Should have received verification email", confirmationLink);
+            assertNotNull(confirmationLink, "Should have received verification email");
 
         } finally {
             // Always restore original configuration and clean up
@@ -579,7 +578,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             // Should send verification email and show confirmation
             events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "realmverify@localhost").user(findUser("realmverifyuser").getId()).assertEvent();
             String confirmationLink = fetchEmailConfirmationLink("realmverify@localhost");
-            assertNotNull("Should have received verification email", confirmationLink);
+            assertNotNull(confirmationLink, "Should have received verification email");
 
             // Step 2: Logout and login again (should show pending verification message)
             testRealm().users().get(findUser("realmverifyuser").getId()).logout();
@@ -652,11 +651,11 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         // Verify EMAIL_PENDING attribute is set
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Map<String, List<String>> attributes = user.getAttributes();
-        assertEquals("EMAIL_PENDING should contain new email", "new@localhost", attributes.get(UserModel.EMAIL_PENDING).get(0));
-        assertTrue("User should have UPDATE_EMAIL required action", user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
+        assertEquals("new@localhost", attributes.get(UserModel.EMAIL_PENDING).get(0), "EMAIL_PENDING should contain new email");
+        assertTrue(user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()), "User should have UPDATE_EMAIL required action");
 
         String confirmationLink = fetchEmailConfirmationLink("new@localhost");
-        assertNotNull("Should have received verification email", confirmationLink);
+        assertNotNull(confirmationLink, "Should have received verification email");
         
         // Admin sets EMAIL_PENDING to empty string (simulating admin UI removal)
         user.singleAttribute(UserModel.EMAIL_PENDING, "");
@@ -693,11 +692,10 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         updateEmailPage.changeEmail("newemail@localhost");
         assertThat("Should show cooldown error message", 
                 driver.getPageSource(), containsString("You must wait"));
-        assertEquals("Email should not be sent again due to cooldown", 1, greenMail.getReceivedMessages().length);
+        assertEquals(1, greenMail.getReceivedMessages().length, "Email should not be sent again due to cooldown");
         
         // Check that email field is pre-filled with the pending email after cooldown error
-        assertEquals("Email field should be pre-filled with pending email during cooldown", 
-                "newemail@localhost", updateEmailPage.getEmail());
+        assertEquals("newemail@localhost", updateEmailPage.getEmail(), "Email field should be pre-filled with pending email during cooldown");
 
         try {
             // Move time forward beyond cooldown period (default 30 seconds)
@@ -711,7 +709,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             
             // Now resend should work
             updateEmailPage.changeEmail("newemail@localhost");
-            assertEquals("Second email should be sent after cooldown expires", 2, greenMail.getReceivedMessages().length);
+            assertEquals(2, greenMail.getReceivedMessages().length, "Second email should be sent after cooldown expires");
         } finally {
             setTimeOffset(0);
         }

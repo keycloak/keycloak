@@ -49,8 +49,8 @@ import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClientBuilder;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.util.SamlStreams.assertionsUnencrypted;
 import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
@@ -128,7 +128,7 @@ public class OrganizationGroupMembershipSAMLMapperTest extends AbstractOrganizat
                 .findAny()
                 .orElse(null);
 
-        Assert.assertNotNull("Organization groups attribute should be present", groupsAttribute);
+        Assertions.assertNotNull(groupsAttribute, "Organization groups attribute should be present");
 
         List<Object> values = groupsAttribute.getAttributeValue();
         assertThat(values, hasSize(2));

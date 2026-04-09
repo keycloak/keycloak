@@ -41,8 +41,8 @@ import org.junit.Test;
 import static org.keycloak.common.Profile.Feature.ACCOUNT_API;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.APP_ROOT;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>

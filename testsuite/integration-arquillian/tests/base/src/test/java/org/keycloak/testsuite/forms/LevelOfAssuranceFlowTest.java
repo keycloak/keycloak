@@ -94,6 +94,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.actions.AppInitiatedActionDeleteCredentialTest.getKcActionParamForDeleteCredential;
 
@@ -170,7 +171,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
                 .totpSecret("totpSecret")
                 .otpEnabled();
         Response response = testRealm().users().create(userRep);
-        Assert.assertEquals(201, response.getStatus());
+        Assertions.assertEquals(201, response.getStatus());
         response.close();
     }
 
@@ -532,7 +533,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "2", "foo"));
         try {
             testClient.update(testClientRep);
-            Assert.fail("Should not successfully update client");
+            Assertions.fail("Should not successfully update client");
         } catch (BadRequestException bre) {
             // Expected
         }
@@ -541,7 +542,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "2", "5"));
         try {
             testClient.update(testClientRep);
-            Assert.fail("Should not successfully update client");
+            Assertions.fail("Should not successfully update client");
         } catch (BadRequestException bre) {
             // Expected
         }
@@ -571,13 +572,13 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("foo");
-        Assert.assertThrows(BadRequestException.class, () -> {
+        Assertions.assertThrows(BadRequestException.class, () -> {
             testClient.update(testClientRep);
         });
 
         // Realm value should not be considered either
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("realm:silver");
-        Assert.assertThrows(BadRequestException.class, () -> {
+        Assertions.assertThrows(BadRequestException.class, () -> {
             testClient.update(testClientRep);
         });
 
@@ -835,7 +836,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
                 .build()) {
             otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
             try (SimpleHttpResponse response = accountRestClient.removeCredential(otpCredentialId)) {
-                Assert.assertEquals(403, response.getStatus());
+                Assertions.assertEquals(403, response.getStatus());
             }
         }
 
@@ -846,9 +847,9 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
                 .build()) {
             otpCredentialId = accountRestClient.getCredentialByUserLabel("totp2-label").getId();
             try (SimpleHttpResponse response = accountRestClient.removeCredential(otpCredentialId)) {
-                Assert.assertEquals(204, response.getStatus());
+                Assertions.assertEquals(204, response.getStatus());
             }
-            Assert.assertNull(accountRestClient.getCredentialByUserLabel("totp2-label"));
+            Assertions.assertNull(accountRestClient.getCredentialByUserLabel("totp2-label"));
         }
     }
 
@@ -928,7 +929,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             // Trying to delete existing OTP. Should require authentication with this OTP
             String otpCredentialId = getCredentialIdByType(OTPCredentialModel.TYPE);
             oauth.loginForm().kcAction(getKcActionParamForDeleteCredential(otpCredentialId)).open();
-            Assert.assertEquals("Strong authentication required to continue", loginPage.getInfoMessage());
+            Assertions.assertEquals("Strong authentication required to continue", loginPage.getInfoMessage());
             authenticateWithTotp();
 
             deleteCredentialPage.assertCurrent();
@@ -965,7 +966,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
             loginTotpPage.assertCurrent();
             loginTotpPage.clickTryAnotherWayLink();
             selectAuthenticatorPage.assertCurrent();
-            Assert.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.RECOVERY_AUTHN_CODES), selectAuthenticatorPage.getAvailableLoginMethods());
+            Assertions.assertEquals(Arrays.asList(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION, SelectAuthenticatorPage.RECOVERY_AUTHN_CODES), selectAuthenticatorPage.getAvailableLoginMethods());
             selectAuthenticatorPage.selectLoginMethod(SelectAuthenticatorPage.AUTHENTICATOR_APPLICATION);
             loginTotpPage.assertCurrent();
             loginTotpPage.login(totp.generateTOTP(totp2Secret));
@@ -1157,7 +1158,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     private void reauthenticateWithPassword() {
         WaitUtils.waitUntilPageIsCurrent(loginPage);
         loginPage.assertCurrent();
-        Assert.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
+        Assertions.assertEquals("test-user@localhost", loginPage.getAttemptedUsername());
         loginPage.login(getPassword("test-user@localhost"));
     }
 
@@ -1177,13 +1178,13 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
         IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
-        Assert.assertEquals(acr, idToken.getAcr());
+        Assertions.assertEquals(acr, idToken.getAcr());
         return new TokenCtx(tokenResponse.getAccessToken(), idToken);
     }
 
     private void assertErrorPage(String expectedError) {
         assertThat(true, is(errorPage.isCurrent()));
-        Assert.assertEquals(expectedError, errorPage.getError());
+        Assertions.assertEquals(expectedError, errorPage.getError());
         events.clear();
     }
 

@@ -1,15 +1,15 @@
 package org.keycloak.testsuite.broker;
 
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.testsuite.Assert;
 
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test of various scenarios related to the use of login hint
@@ -29,14 +29,14 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
         addLoginHintOnSocialButton(username);
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
         log.debug("Logging in");
 
         if (isLoginHintOptionEnabled()) {
-            assertEquals("Username input should contain the SAML subject", loginPage.getUsername(), username);
+            assertEquals(loginPage.getUsername(), username, "Username input should contain the SAML subject");
         } else {
-            assertEquals("Username input should the SAML subject", loginPage.getUsername(), "");
+            assertEquals(loginPage.getUsername(), "", "Username input should the SAML subject");
         }
     }
 
@@ -53,11 +53,11 @@ public abstract class AbstractSamlLoginHintTest extends AbstractInitializedBaseB
         addLoginHintOnSocialButton("");
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
-        Assert.assertTrue("Driver should be on the provider realm page right now",
-                driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
+        Assertions.assertTrue(driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"),
+                "Driver should be on the provider realm page right now");
         log.debug("Logging in");
 
-        assertEquals("Username input should not contain any username", loginPage.getUsername(), "");
+        assertEquals(loginPage.getUsername(), "", "Username input should not contain any username");
     }
 
     abstract boolean isLoginHintOptionEnabled();

@@ -44,9 +44,9 @@ import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest {
@@ -94,8 +94,8 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
                 .get(idp.getAlias())
                 .getMapperById(mapperId);
 
-        assertNotNull("Mapper should be created", createdMapper);
-        assertEquals("Mapper should reference org group", groupPath, createdMapper.getConfig().get(ConfigConstants.GROUP));
+        assertNotNull(createdMapper, "Mapper should be created");
+        assertEquals(groupPath, createdMapper.getConfig().get(ConfigConstants.GROUP), "Mapper should reference org group");
     }
 
     @Test
@@ -122,7 +122,7 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
 
         // Get the subgroup from the parent's children
         List<GroupRepresentation> children = orgResource.groups().group(parentId).getSubGroups(null, null, null, null);
-        assertNotNull("Parent should have subgroups", children);
+        assertNotNull(children, "Parent should have subgroups");
         assertThat("Parent should have 1 subgroup", children.size(), is(1));
 
         String childGroupPath = children.get(0).getPath();
@@ -150,8 +150,8 @@ public class OrganizationGroupOidcIdpMapperTest extends AbstractOrganizationTest
                 .get(idp.getAlias())
                 .getMapperById(mapperId);
 
-        assertNotNull("Mapper should be created", createdMapper);
-        assertEquals("Mapper should reference org subgroup", childGroupPath, createdMapper.getConfig().get(ConfigConstants.GROUP));
+        assertNotNull(createdMapper, "Mapper should be created");
+        assertEquals(childGroupPath, createdMapper.getConfig().get(ConfigConstants.GROUP), "Mapper should reference org subgroup");
     }
 
     @Test

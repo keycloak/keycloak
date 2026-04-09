@@ -91,7 +91,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -128,11 +127,12 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
+import org.junit.jupiter.api.Assertions;
 import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
@@ -455,7 +455,7 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         assertCertificate(client, certOld,
                 KeycloakModelUtils.getPemFromCertificate(x509Cert));
         MatcherAssert.assertThat(x509Cert.getPublicKey(), Matchers.instanceOf(RSAKey.class));
-        Assert.assertEquals(keySize == null ? 4096 : keySize, ((RSAKey) x509Cert.getPublicKey()).getModulus().bitLength());
+        Assertions.assertEquals(keySize == null ? 4096 : keySize, ((RSAKey) x509Cert.getPublicKey()).getModulus().bitLength());
 
         Calendar afterCreateCalendar = Calendar.getInstance();
         afterCreateCalendar.add(Calendar.YEAR, expectedValidity);
@@ -543,17 +543,17 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
         if (keystoreFormat.equals(CertificateInfoHelper.PUBLIC_KEY_PEM)) {
             String pem = new String(Files.readAllBytes(keystoreFile.toPath()));
             final String publicKeyNew = client.getAttributes().get(JWTClientAuthenticator.ATTR_PREFIX + "." + CertificateInfoHelper.PUBLIC_KEY);
-            assertEquals("Certificates don't match", pem, publicKeyNew);
+            assertEquals(pem, publicKeyNew, "Certificates don't match");
         } else if (keystoreFormat.equals(CertificateInfoHelper.JSON_WEB_KEY_SET)) {
-            Assert.assertEquals("true", client.getAttributes().get(OIDCConfigAttributes.USE_JWKS_STRING));
+            Assertions.assertEquals("true", client.getAttributes().get(OIDCConfigAttributes.USE_JWKS_STRING));
             String jwks = new String(Files.readAllBytes(keystoreFile.toPath()));
-            Assert.assertEquals(jwks, client.getAttributes().get(OIDCConfigAttributes.JWKS_STRING));
+            Assertions.assertEquals(jwks, client.getAttributes().get(OIDCConfigAttributes.JWKS_STRING));
             CertificateRepresentation info = getClient(testRealm.getRealm(), client.getId())
                     .getCertficateResource(JWTClientAuthenticator.ATTR_PREFIX).getKeyInfo();
-            Assert.assertNotNull(info.getPublicKey());
+            Assertions.assertNotNull(info.getPublicKey());
             // Just assert it's valid public key
             PublicKey pk = KeycloakModelUtils.getPublicKey(info.getPublicKey());
-            Assert.assertNotNull(pk);
+            Assertions.assertNotNull(pk);
         } else if (keystoreFormat.equals(CertificateInfoHelper.CERTIFICATE_PEM)) {
             String pem = new String(Files.readAllBytes(keystoreFile.toPath()));
             assertCertificate(client, certOld, pem);
@@ -664,8 +664,8 @@ public abstract class AbstractClientAuthSignedJWTTest extends AbstractKeycloakTe
     protected static void assertCertificate(ClientRepresentation client, String certOld, String pem) {
         pem = PemUtils.removeBeginEnd(pem);
         final String certNew = client.getAttributes().get(JWTClientAuthenticator.CERTIFICATE_ATTR);
-        assertNotEquals("The old and new certificates shouldn't match", certOld, certNew);
-        assertEquals("Certificates don't match", pem, certNew);
+        assertNotEquals(certOld, certNew, "The old and new certificates shouldn't match");
+        assertEquals(pem, certNew, "Certificates don't match");
     }
 
     protected void testCodeToTokenRequestFailure(String algorithm, String error, String description) throws Exception {

@@ -29,7 +29,6 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
-import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.util.ClientManager;
@@ -41,10 +40,11 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test for scenarios when 'scope=openid' is missing. Which means we have pure OAuth2 request (not OpenID Connect)
@@ -107,20 +107,20 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         AccessTokenResponse response = oauth.doAccessTokenRequest(code);
 
         // IDToken is not there
-        Assert.assertEquals(200, response.getStatusCode());
-        Assert.assertNull(response.getIdToken());
-        Assert.assertNotNull(response.getRefreshToken());
+        Assertions.assertEquals(200, response.getStatusCode());
+        Assertions.assertNull(response.getIdToken());
+        Assertions.assertNotNull(response.getRefreshToken());
 
         AccessToken token = oauth.verifyToken(response.getAccessToken());
-        Assert.assertEquals(token.getSubject(), loginEvent.getUserId());
+        Assertions.assertEquals(token.getSubject(), loginEvent.getUserId());
 
         // Refresh and assert idToken still not present
         response = oauth.doRefreshTokenRequest(response.getRefreshToken());
-        Assert.assertEquals(200, response.getStatusCode());
-        Assert.assertNull(response.getIdToken());
+        Assertions.assertEquals(200, response.getStatusCode());
+        Assertions.assertNull(response.getIdToken());
 
         token = oauth.verifyToken(response.getAccessToken());
-        Assert.assertEquals(token.getSubject(), loginEvent.getUserId());
+        Assertions.assertEquals(token.getSubject(), loginEvent.getUserId());
     }
 
 
@@ -132,11 +132,11 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         assertEquals(200, response.getStatusCode());
 
         // idToken not present
-        Assert.assertNull(response.getIdToken());
+        Assertions.assertNull(response.getIdToken());
 
-        Assert.assertNotNull(response.getRefreshToken());
+        Assertions.assertNotNull(response.getRefreshToken());
         AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        Assert.assertEquals(accessToken.getPreferredUsername(), "test-user@localhost");
+        Assertions.assertEquals(accessToken.getPreferredUsername(), "test-user@localhost");
 
     }
 
@@ -162,7 +162,7 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
 
         driver.navigate().to(loginFormUrl);
         errorPage.assertCurrent();
-        Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+        Assertions.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
         events.expectLogin()
                 .error(Errors.INVALID_REDIRECT_URI)
                 .client("more-uris-client")
@@ -188,10 +188,10 @@ public class OAuth2OnlyTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().assertEvent();
 
         AuthorizationEndpointResponse response = oauth.parseLoginResponse();
-        Assert.assertNull(response.getError());
-        Assert.assertNull(response.getCode());
-        Assert.assertNull(response.getIdToken());
-        Assert.assertNotNull(response.getAccessToken());
+        Assertions.assertNull(response.getError());
+        Assertions.assertNull(response.getCode());
+        Assertions.assertNull(response.getIdToken());
+        Assertions.assertNotNull(response.getAccessToken());
     }
 
 }

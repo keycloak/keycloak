@@ -54,12 +54,12 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Test for the various alternatives of reset-credentials flow or browser flow (non-default setup of the  flows)
@@ -256,8 +256,8 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
             // Assert user authenticated
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
         } finally {
             revertFlows();
         }
@@ -276,7 +276,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
         // Assert switched to the "reset-credentials" flow, but button "back" not available
         resetPasswordPage.assertCurrent();
-        Assert.assertTrue(URLUtils.currentUrlMatches("/login-actions/reset-credentials"));
+        Assertions.assertTrue(URLUtils.currentUrlMatches("/login-actions/reset-credentials"));
     }
 
 
@@ -385,7 +385,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
             // Open OTP Authenticator account page
             // Check if OTP credential is present
-            Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "login-test", customOtpLabel));
+            Assertions.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "login-test", customOtpLabel));
 
         // Undo setup changes performed within the test
         } finally {
@@ -428,7 +428,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), emptyOtpLabel);
             assertKcActionStatus(SUCCESS);
 
-            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "login-test"));
+            Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "login-test"));
 
             // Logout
             oauth.openLogoutForm();
@@ -452,11 +452,11 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
             // Assert user authenticated
             appPage.assertCurrent();
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
-            Assert.assertTrue(AccountHelper.isTotpPresent(testRealm(), "bwilson"));
-            Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "bwilson", ""));
+            Assertions.assertTrue(AccountHelper.isTotpPresent(testRealm(), "bwilson"));
+            Assertions.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "bwilson", ""));
 
             // Logout
             oauth.openLogoutForm();
@@ -476,22 +476,22 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             // Try to create another OTP credential with empty label again. This
             // should fail with error since OTP label is required in this case already
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), "");
-            Assert.assertTrue(AccountHelper.totpCountEquals(testRealm(), "bwilson", 1));
+            Assertions.assertTrue(AccountHelper.totpCountEquals(testRealm(), "bwilson", 1));
             // Create 2nd OTP credential with valid (non-empty) Device Name label. This should pass
             final String secondOtpLabel = "My 2nd OTP device";
             totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()), secondOtpLabel);
 
             // Assert user authenticated
             appPage.assertCurrent();
-            Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-            Assert.assertNotNull(oauth.parseLoginResponse().getCode());
+            Assertions.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
+            Assertions.assertNotNull(oauth.parseLoginResponse().getCode());
 
             // Verify 2nd OTP credential was successfully created too
-            Assert.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "bwilson", secondOtpLabel));
+            Assertions.assertTrue(AccountHelper.totpUserLabelComparator(testRealm(), "bwilson", secondOtpLabel));
 
             // Remove both OTP credentials
-            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "bwilson"));
-            Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "bwilson"));
+            Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "bwilson"));
+            Assertions.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(), "bwilson"));
 
             // Logout
             oauth.openLogoutForm();

@@ -80,12 +80,12 @@ import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -199,7 +199,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setId(KeycloakModelUtils.generateId());
@@ -236,7 +236,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-user-in-group-path-e-policy");
@@ -272,7 +272,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-alice-in-group-path-e-policy.js");
@@ -284,7 +284,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
 
         policyRepresentation = new JSPolicyRepresentation();
         policyRepresentation.setName("allow-alice-in-group-name-e-policy.js");
@@ -296,7 +296,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -335,7 +335,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -373,7 +373,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -412,7 +412,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         provider.evaluate(evaluation);
 
-        Assert.assertNull(evaluation.getEffect());
+        Assertions.assertNull(evaluation.getEffect());
     }
 
     @Test
@@ -593,7 +593,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
             try {
                 evaluator.evaluate(resourceServer, null);
-                Assert.fail("Instances should be marked as read-only");
+                Assertions.fail("Instances should be marked as read-only");
             } catch (Exception ignore) {
             }
         } finally {

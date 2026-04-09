@@ -30,7 +30,7 @@ import org.openqa.selenium.By;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author <a href="mailto:slawomir@dabek.name">Slawomir Dabek</a>
