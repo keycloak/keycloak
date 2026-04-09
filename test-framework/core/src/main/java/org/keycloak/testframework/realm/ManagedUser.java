@@ -31,6 +31,10 @@ public class ManagedUser extends ManagedTestResource {
         return getPassword(createdRepresentation);
     }
 
+    public UserRepresentation toRepresentation() {
+        return admin().toRepresentation();
+    }
+
     public UserResource admin() {
         return userResource;
     }
