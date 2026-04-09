@@ -112,6 +112,13 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
             return false;
         }
 
+        // In the two-phase flow, the client is already identified and set on the context.
+        // Skip lookup and enabled/auth-type checks that the flow has already performed.
+        if (context.getClient() != null) {
+            return true;
+        }
+
+        // Legacy path: client not yet set on context, look up and validate
         ClientModel client = clientAssertionState.getClient();
 
         if (client == null) {
