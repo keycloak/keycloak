@@ -184,9 +184,6 @@ importers:
       '@uiw/react-textarea-code-editor':
         specifier: ^3.1.1
         version: 3.1.1(@babel/runtime@7.28.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      admin-ui:
-        specifier: 'file:'
-        version: '@keycloak/keycloak-admin-ui@file:apps/admin-ui(@babel/runtime@7.28.4)(@types/react@18.3.23)(typescript@5.9.3)'
       file-saver:
         specifier: ^2.0.5
         version: 2.0.5
@@ -1060,9 +1057,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
-
-  '@keycloak/keycloak-admin-ui@file:apps/admin-ui':
-    resolution: {directory: apps/admin-ui, type: directory}
 
   '@kiota-community/kiota-gen@1.0.2':
     resolution: {integrity: sha512-Fx6Xcu1s4gRKgSppSi3XHuT1wgoxiT8xK3OW+ceiCySQ9YslmSoskguoFhQLaOFcLN4dFPHlpgxvdLfVK910mA==}
