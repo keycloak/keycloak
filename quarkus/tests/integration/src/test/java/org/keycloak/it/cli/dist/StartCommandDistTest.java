@@ -250,6 +250,13 @@ public class StartCommandDistTest {
         cliResult.assertError(String.format("Try '%s --help' for more information on the available options.", KeycloakDistribution.SCRIPT_CMD));
     }
 
+    @DryRun
+    @Test
+    @Launch({CONFIG_FILE_LONG_NAME + "=src/test/resources/keycloak.properties", "start", "--db=dev-file"})
+    void testConfigFileWithWrongExtension(CLIResult cliResult) {
+        cliResult.assertError("Configuration file specified via '--config-file' or '-cf' must have the '.conf' extension.");
+    }
+
     @RawDistOnly(reason = "Containers are immutable")
     @Test
     void testRuntimeValuesAreNotCaptured(KeycloakDistribution dist) {

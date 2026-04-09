@@ -1,5 +1,7 @@
 package org.keycloak.tests.admin.user;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -880,6 +882,149 @@ public class UserSearchTest extends AbstractUserTest {
         assertEquals(countWithIdpUserId.intValue(), usersWithIdpUserId.size(), "Count and search should return same number with idpUserId parameter");
         
         managedRealm.admin().clients().get(clientId).remove();
+    }
+
+    @Test
+    public void searchByCreatedAfter() {
+        long beforeCreation = System.currentTimeMillis();
+        createUser("timestampuser1", "timestampuser1@localhost");
+        createUser("timestampuser2", "timestampuser2@localhost");
+
+        // All users created at or after beforeCreation should be returned
+        List<UserRepresentation> users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                String.valueOf(beforeCreation), null);
+        List<String> usernames = users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("timestampuser1"), "Should contain timestampuser1");
+        assertTrue(usernames.contains("timestampuser2"), "Should contain timestampuser2");
+
+        // Using a future timestamp should return no users
+        long futureTimestamp = System.currentTimeMillis() + 100_000;
+        users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                String.valueOf(futureTimestamp), null);
+        assertTrue(users.isEmpty(), "No users should be created after a future timestamp");
+    }
+
+    @Test
+    public void searchByCreatedBefore() {
+        createUser("beforeuser1", "beforeuser1@localhost");
+        long afterCreation = System.currentTimeMillis();
+
+        // All users created at or before afterCreation should include beforeuser1
+        List<UserRepresentation> users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                null, String.valueOf(afterCreation));
+        List<String> usernames = users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("beforeuser1"), "Should contain beforeuser1");
+
+        // Using a very old timestamp should return no users
+        List<UserRepresentation> noUsers = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                null, "1");
+        assertTrue(noUsers.isEmpty(), "No users should be created before epoch 1ms");
+    }
+
+    @Test
+    public void searchByCreatedBeforeAndAfter() {
+        long beforeFirst = System.currentTimeMillis();
+        createUser("rangeuser1", "rangeuser1@localhost");
+        long afterFirst = System.currentTimeMillis();
+
+        // Range query: both inclusive bounds
+        List<UserRepresentation> users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                String.valueOf(beforeFirst), String.valueOf(afterFirst));
+        List<String> usernames = users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("rangeuser1"), "Should contain rangeuser1 in range");
+
+        // Empty range: after > before should return no users
+        users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                String.valueOf(afterFirst + 100_000), String.valueOf(beforeFirst));
+        assertTrue(users.isEmpty(), "Inverted range should return no users");
+    }
+
+    @Test
+    public void searchByCreatedTimestampWithIsoDate() {
+        createUser("isodateuser1", "isodateuser1@localhost");
+
+        // Today's date in ISO-8601 format should include the user we just created
+        String today = LocalDate.now(ZoneOffset.UTC).toString();
+        List<UserRepresentation> users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                today, today);
+        List<String> usernames = users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("isodateuser1"), "Should contain user created today using ISO date filter");
+
+        // Yesterday should work as createdBefore (end-of-day) — but user was created today, so createdAfter=tomorrow should exclude
+        String tomorrow = LocalDate.now(ZoneOffset.UTC).plusDays(1).toString();
+        users = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, null, null,
+                tomorrow, null);
+        usernames = users.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        Assertions.assertFalse(usernames.contains("isodateuser1"), "Should not contain user when createdAfter is tomorrow");
+    }
+
+    @Test
+    public void countByCreatedTimestamp() {
+        long beforeCreation = System.currentTimeMillis();
+        createUser("countuser1", "countuser1@localhost");
+        createUser("countuser2", "countuser2@localhost");
+        long afterCreation = System.currentTimeMillis();
+
+        Integer count = managedRealm.admin().users().count(
+                null, null, null, null, null, null, null, null, null, null, null,
+                String.valueOf(beforeCreation), String.valueOf(afterCreation));
+        assertEquals(2, count.intValue(), "Should count 2 users created in the time range");
+
+        // Future range should count 0
+        Integer zeroCount = managedRealm.admin().users().count(
+                null, null, null, null, null, null, null, null, null, null, null,
+                String.valueOf(afterCreation + 100_000), null);
+        assertEquals(0, zeroCount.intValue(), "Should count 0 users for future timestamp");
+
+        // Count using ISO date (today) should include the users
+        String today = LocalDate.now(ZoneOffset.UTC).toString();
+        Integer isoCount = managedRealm.admin().users().count(
+                null, null, null, null, null, null, null, null, null, null, null,
+                today, today);
+        assertTrue(isoCount >= 2, "Should count at least 2 users created today using ISO date");
+    }
+
+    @Test
+    public void searchByCreatedTimestampWithOtherFilters() {
+        long beforeCreation = System.currentTimeMillis();
+
+        UserRepresentation enabledUser = new UserRepresentation();
+        enabledUser.setUsername("tsenableduser");
+        enabledUser.setEmail("tsenableduser@localhost");
+        enabledUser.setEnabled(true);
+        createUser(enabledUser);
+
+        UserRepresentation disabledUser = new UserRepresentation();
+        disabledUser.setUsername("tsdisableduser");
+        disabledUser.setEmail("tsdisableduser@localhost");
+        disabledUser.setEnabled(false);
+        createUser(disabledUser);
+
+        long afterCreation = System.currentTimeMillis();
+
+        // Search with createdAfter + enabled=true
+        List<UserRepresentation> enabledUsers = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, true, null,
+                String.valueOf(beforeCreation), String.valueOf(afterCreation));
+        List<String> usernames = enabledUsers.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("tsenableduser"), "Should contain enabled user");
+        Assertions.assertFalse(usernames.contains("tsdisableduser"), "Should not contain disabled user");
+
+        // Search with createdAfter + enabled=false
+        List<UserRepresentation> disabledUsers = managedRealm.admin().users().search(
+                null, null, null, null, null, null, null, 0, 100, false, null,
+                String.valueOf(beforeCreation), String.valueOf(afterCreation));
+        usernames = disabledUsers.stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+        assertTrue(usernames.contains("tsdisableduser"), "Should contain disabled user");
+        Assertions.assertFalse(usernames.contains("tsenableduser"), "Should not contain enabled user");
     }
 
     @Test

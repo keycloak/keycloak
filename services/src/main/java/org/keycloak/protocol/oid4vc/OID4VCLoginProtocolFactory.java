@@ -60,7 +60,6 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_H
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE;
-import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONFIGURATION_ID;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CONTEXTS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
@@ -71,6 +70,7 @@ import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_INCLUDE_IN_MET
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SD_JWT_NUMBER_OF_DECOYS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_SUPPORTED_TYPES;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.getDefaultTokenJwsTypeForFormat;
 
 /**
  * Factory for creating all OID4VC related endpoints and the default mappers.
@@ -174,7 +174,7 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
         clientScope.getAttributes().putIfAbsent(VCT, credentialType);
         clientScope.getAttributes().putIfAbsent(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
         clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_HASH_ALGORITHM, VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT);
-        clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_TOKEN_JWS_TYPE, VC_BUILD_CONFIG_TOKEN_JWS_TYPE_DEFAULT);
+        clientScope.getAttributes().putIfAbsent(VC_BUILD_CONFIG_TOKEN_JWS_TYPE, getDefaultTokenJwsTypeForFormat(format));
         clientScope.getAttributes().putIfAbsent(VC_EXPIRY_IN_SECONDS, String.valueOf(VC_EXPIRY_IN_SECONDS_DEFAULT));
 
         if (SD_JWT_VC.equals(format)) {

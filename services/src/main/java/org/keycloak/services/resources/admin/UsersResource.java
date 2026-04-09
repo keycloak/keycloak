@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.GET;
@@ -67,6 +68,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.UserPermissionEvaluator;
+import org.keycloak.services.util.DateUtil;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
@@ -288,7 +290,9 @@ public class UsersResource {
             @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
             @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
-            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery) {
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "Only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdAfter") String createdAfter,
+            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -317,12 +321,14 @@ public class UsersResource {
                 if (emailVerified != null) {
                     attributes.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
                 }
+                addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
 
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
                         maxResults, false);
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
-                || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()) {
+                || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()
+                || createdAfter != null || createdBefore != null) {
                     Map<String, String> attributes = new HashMap<>();
                     if (last != null) {
                         attributes.put(UserModel.LAST_NAME, last);
@@ -351,6 +357,7 @@ public class UsersResource {
                     if (exact != null) {
                         attributes.put(UserModel.EXACT, exact.toString());
                     }
+                    addCreatedTimestampConditions(attributes, createdAfter, createdBefore);
 
                     attributes.putAll(searchAttributes);
 
@@ -418,7 +425,9 @@ public class UsersResource {
             @Parameter(description = "The userId at an Identity Provider linked to the user") @QueryParam("idpUserId") String idpUserId,
             @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
-            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery) {
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery,
+            @Parameter(description = "Only return users created after (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdAfter") String createdAfter,
+            @Parameter(description = "Only return users created before (inclusive) the given date, in ISO-8601 format (yyyy-MM-dd) or epoch milliseconds") @QueryParam("createdBefore") String createdBefore) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
 
@@ -440,6 +449,7 @@ public class UsersResource {
             if (emailVerified != null) {
                 parameters.put(UserModel.EMAIL_VERIFIED, emailVerified.toString());
             }
+            addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
             // search /users equivalent to this doesn't include service-accounts so counting shouldn't as well
             parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "false");
             if (userPermissionEvaluator.canView()) {
@@ -452,7 +462,8 @@ public class UsersResource {
                 }
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
-                || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()) {
+                || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()
+                || createdAfter != null || createdBefore != null) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
@@ -481,6 +492,7 @@ public class UsersResource {
             if (exact != null) {
                 parameters.put(UserModel.EXACT, exact.toString());
             }
+            addCreatedTimestampConditions(parameters, createdAfter, createdBefore);
             parameters.putAll(searchAttributes);
             // search /users equivalent to this does include service-accounts so we should be explicit
             parameters.put(UserModel.INCLUDE_SERVICE_ACCOUNT, "true");
@@ -518,6 +530,23 @@ public class UsersResource {
     @Path("profile")
     public UserProfileResource userProfile() {
         return new UserProfileResource(session, auth, adminEvent);
+    }
+
+    private static void addCreatedTimestampConditions(Map<String, String> attributes, String createdAfter, String createdBefore) {
+        if (createdAfter != null) {
+            try {
+                attributes.put(UserModel.CREATED_AFTER, String.valueOf(DateUtil.toStartOfDay(createdAfter)));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'createdAfter', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
+        if (createdBefore != null) {
+            try {
+                attributes.put(UserModel.CREATED_BEFORE, String.valueOf(DateUtil.toEndOfDay(createdBefore)));
+            } catch (Throwable t) {
+                throw new BadRequestException("Invalid value for 'createdBefore', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
     }
 
     private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {

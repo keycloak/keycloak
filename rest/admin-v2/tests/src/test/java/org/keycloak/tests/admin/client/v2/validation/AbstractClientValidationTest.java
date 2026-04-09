@@ -119,14 +119,8 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
         try (var response = client.execute(request)) {
             switch (getHttpMethod()) {
-                case HttpPatch.METHOD_NAME -> {
-                    assertThat(response.getStatusLine().getStatusCode(), is(200));
-                }
-                case HttpPut.METHOD_NAME -> {
-                    assertThat(response.getStatusLine().getStatusCode(), is(400));
-                    var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
-                    assertThat(body.error(), is("Field 'clientId' in payload does not match the provided 'clientId'"));
-                }
+                // the clientId is checked on the patched object, so the clientId is present
+                case HttpPatch.METHOD_NAME -> assertThat(response.getStatusLine().getStatusCode(), is(200));
                 default -> {
                     assertThat(response.getStatusLine().getStatusCode(), is(400));
                     var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
@@ -166,6 +160,39 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
                     assertThat(body.violations(), hasItem("clientId: must not be blank"));
                 }
             }
+        }
+    }
+
+    // Tests that {@code @NotBlank} validation on {@code clientId} fires as first the path and payload clientIds are checked and throw error.
+    @ParameterizedTest
+    @ValueSource(strings = {OIDCClientRepresentation.PROTOCOL, SAMLClientRepresentation.PROTOCOL})
+    public void clientWithBlankClientIdMatchingPathFails(String protocol) throws Exception {
+        boolean isOidc = protocol.equals(OIDCClientRepresentation.PROTOCOL);
+        var request = switch (getHttpMethod()) {
+            case HttpPost.METHOD_NAME -> getRequest(isOidc);
+            case HttpPut.METHOD_NAME -> {
+                var r = new HttpPut(getClientApiUrl("%20"));
+                r.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+                yield r;
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + getHttpMethod());
+        };
+        setAuthHeader(request);
+
+        request.setEntity(new StringEntity("""
+                {
+                    "protocol": "%s",
+                    "clientId": " ",
+                    "enabled": true
+                }
+                """.formatted(protocol)));
+
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(), is(400));
+
+            var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
+            assertThat(body.error(), is("Provided data is invalid"));
+            assertThat(body.violations(), hasItem("clientId: must not be blank"));
         }
     }
 

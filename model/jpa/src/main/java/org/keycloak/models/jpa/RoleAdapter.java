@@ -18,7 +18,6 @@
 package org.keycloak.models.jpa;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +37,10 @@ import org.keycloak.models.jpa.entities.RoleAttributeEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.utils.StreamsUtil;
+
+import static java.util.Optional.ofNullable;
+
+import static org.keycloak.common.util.CollectionUtil.collectionEquals;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -151,11 +154,36 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public void setSingleAttribute(String name, String value) {
-        setAttribute(name, Collections.singletonList(value));
+        boolean found = false;
+        List<RoleAttributeEntity> toRemove = new ArrayList<>();
+        for (RoleAttributeEntity attr : role.getAttributes()) {
+            if (attr.getName().equals(name)) {
+                if (!found) {
+                    attr.setValue(value);
+                    found = true;
+                } else {
+                    toRemove.add(attr);
+                }
+            }
+        }
+
+        for (RoleAttributeEntity attr : toRemove) {
+            em.remove(attr);
+            role.getAttributes().remove(attr);
+        }
+
+        if (!found) {
+            persistAttributeValue(name, value);
+        }
     }
 
     @Override
     public void setAttribute(String name, List<String> values) {
+        List<String> current = getAttributes().getOrDefault(name, List.of());
+
+        if (collectionEquals(current, ofNullable(values).orElse(List.of()))) {
+            return;
+        }
         removeAttribute(name);
 
         for (String value : values) {

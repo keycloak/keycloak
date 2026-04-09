@@ -167,6 +167,41 @@ public class LDAPUserProfileTest extends AbstractLDAPTest {
     }
 
     @Test
+    public void testUserProfileWithMetadataAttributeDefinedInUserProfileConfig() {
+        UPConfig origConfig = testRealm().users().userProfile().getConfiguration();
+        try {
+            UPConfig config = testRealm().users().userProfile().getConfiguration();
+
+            for (String attrName : List.of(LDAPConstants.LDAP_ID, LDAPConstants.LDAP_ENTRY_DN)) {
+                UPAttribute attr = new UPAttribute();
+                attr.setName(attrName);
+                UPAttributePermissions permissions = new UPAttributePermissions();
+                permissions.setView(Set.of(UPConfigUtils.ROLE_ADMIN));
+                permissions.setEdit(Set.of(UPConfigUtils.ROLE_ADMIN));
+                attr.setPermissions(permissions);
+                config.getAttributes().add(attr);
+            }
+            testRealm().users().userProfile().update(config);
+
+            UserResource johnResource = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+            UserRepresentation john = johnResource.toRepresentation(true);
+            Assert.assertNotNull(john.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN));
+            Assert.assertNotNull(john.getAttributes().get(LDAPConstants.LDAP_ID));
+            Assert.assertNotNull(john.getUserProfileMetadata());
+
+            UserProfileAttributeMetadata ldapIdMeta = john.getUserProfileMetadata().getAttributeMetadata(LDAPConstants.LDAP_ID);
+            Assert.assertNotNull(ldapIdMeta);
+            Assert.assertNull(ldapIdMeta.getGroup());
+
+            UserProfileAttributeMetadata ldapEntryDnMeta = john.getUserProfileMetadata().getAttributeMetadata(LDAPConstants.LDAP_ENTRY_DN);
+            Assert.assertNotNull(ldapEntryDnMeta);
+            Assert.assertNull(ldapEntryDnMeta.getGroup());
+        } finally {
+            testRealm().users().userProfile().update(origConfig);
+        }
+    }
+
+    @Test
     public void testUserProfileWithReadOnlyLdap() {
         // Test user profile of user johnkeycloak in admin console as well as account console. Check attributes are writable.
         setLDAPReadOnly();

@@ -18,8 +18,9 @@
 package org.keycloak.quarkus.runtime.services.health;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
-import org.keycloak.services.resources.KeycloakApplication;
+import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 
 import io.smallrye.health.api.AsyncHealthCheck;
 import io.smallrye.mutiny.Uni;
@@ -37,16 +38,19 @@ public class BoostrapReadyHealthCheck implements AsyncHealthCheck {
     private static final HealthCheckResponse UP = builder().up().build();
     private boolean bootstrapCompleted;
 
+    @Inject
+    QuarkusKeycloakSessionFactory factory;
+
     @Override
     public Uni<HealthCheckResponse> call() {
         // JVM branch prediction may optimize this code and saves on reading a static volatile field
         if (bootstrapCompleted) {
             return ready();
         }
-        if (KeycloakApplication.isBootstrapCompleted()) {
+        if (factory.isBootstrapCompleted()) {
             bootstrapCompleted = true;
             return ready();
-        } 
+        }
         return Uni.createFrom().item(builder().down().build());
     }
 

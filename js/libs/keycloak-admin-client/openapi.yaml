@@ -26,6 +26,7 @@ components:
           readOnly: true
         clientId:
           type: string
+          pattern: \S
           description: ID uniquely identifying this client
         displayName:
           type: string
@@ -54,6 +55,10 @@ components:
           description: Roles associated with this client
         protocol:
           type: string
+          pattern: \S
+      required:
+      - clientId
+      - protocol
       discriminator:
         propertyName: protocol
         mapping:

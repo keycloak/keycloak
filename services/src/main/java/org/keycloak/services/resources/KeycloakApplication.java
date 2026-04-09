@@ -29,11 +29,11 @@ import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 
 import org.jboss.logging.Logger;
@@ -43,15 +43,13 @@ import org.jboss.logging.Logger;
  * @version $Revision: 1 $
  *
  */
-public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> extends Application {
+public abstract class KeycloakApplication extends Application {
 
     private static final String KC_TMPDIR = "kc.io.tmpdir";
 
     private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
 
-    private static volatile KeycloakSessionFactory sessionFactory;
-    // Set to true when bootstrap is completed. It never changes back to false.
-    private static volatile boolean bootstrapCompleted = false;
+    private static volatile DefaultKeycloakSessionFactory sessionFactory;
 
     public KeycloakApplication() {
         try {
@@ -86,12 +84,11 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
     protected void startup() {
         Profile.getInstance().logUnsupportedFeatures();
         CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
-        var ksf = createSessionFactory();
-        sessionFactory = ksf;
+        KeycloakApplication.sessionFactory = createSessionFactory();
 
         if (supportsAsyncInitialization()) {
             final var executor = Executors.newSingleThreadExecutor();
-            CompletableFuture.runAsync(() -> runBootstrap(ksf), executor)
+            CompletableFuture.runAsync(() -> runBootstrap(KeycloakApplication.sessionFactory), executor)
                     .exceptionally(throwable -> {
                         exit(throwable);
                         return null;
@@ -100,18 +97,17 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
             return;
         }
 
-        runBootstrap(ksf);
+        runBootstrap(KeycloakApplication.sessionFactory);
     }
 
     protected boolean supportsAsyncInitialization() {
         return false;
     }
 
-    // synchronized to prevent shutdown while running bootstrapping
-    private synchronized void runBootstrap(KSF keycloakSessionFactory) {
+    private synchronized void runBootstrap(DefaultKeycloakSessionFactory keycloakSessionFactory) {
         var startTime = System.nanoTime();
 
-        initKeycloakSessionFactory(keycloakSessionFactory);
+        keycloakSessionFactory.init();
         setTransactionTimeout(keycloakSessionFactory);
         var exportImportManager = KeycloakModelUtils.runJobInTransactionWithResult(keycloakSessionFactory, session -> {
             DBLockManager dbLockManager = new DBLockManager(session);
@@ -131,14 +127,14 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
         }
 
         resetTransactionTimeout(keycloakSessionFactory);
-        bootstrapCompleted = true;
         keycloakSessionFactory.publish(new PostMigrationEvent(keycloakSessionFactory));
+        keycloakSessionFactory.setBootstrapCompleted();
 
         var duration = Duration.ofNanos(System.nanoTime() - startTime);
         logger.infof("Bootstrap completed in %f seconds", (double) duration.toMillis() / 1000);
     }
 
-    protected int getTransactionTimeout(KSF sessionFactory) {
+    protected int getTransactionTimeout(DefaultKeycloakSessionFactory sessionFactory) {
         return Math.toIntExact(TimeUnit.MINUTES.toSeconds(5));
     }
 
@@ -146,6 +142,7 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
     protected synchronized void shutdown() {
         if (sessionFactory != null) {
             sessionFactory.close();
+            sessionFactory = null;
         }
     }
 
@@ -178,19 +175,13 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
 
     protected abstract void initAndStart();
 
-    protected abstract KSF createSessionFactory();
+    protected abstract DefaultKeycloakSessionFactory createSessionFactory();
 
-    protected abstract void initKeycloakSessionFactory(KSF ksf);
-
-    public static KeycloakSessionFactory getSessionFactory() {
+    public static DefaultKeycloakSessionFactory getSessionFactory() {
         return sessionFactory;
     }
 
-    public static boolean isBootstrapCompleted() {
-        return bootstrapCompleted;
-    }
-
-    private void setTransactionTimeout(KSF keycloakSessionFactory) {
+    private void setTransactionTimeout(DefaultKeycloakSessionFactory keycloakSessionFactory) {
         try {
             var transactionTimeoutSeconds = getTransactionTimeout(keycloakSessionFactory);
             KeycloakModelUtils.setTransactionLimit(keycloakSessionFactory, transactionTimeoutSeconds);
@@ -199,7 +190,7 @@ public abstract class KeycloakApplication<KSF extends KeycloakSessionFactory> ex
         }
     }
 
-    private void resetTransactionTimeout(KSF keycloakSessionFactory) {
+    private void resetTransactionTimeout(DefaultKeycloakSessionFactory keycloakSessionFactory) {
         try {
             KeycloakModelUtils.setTransactionLimit(keycloakSessionFactory, 0);
         } catch (Exception e) {
