@@ -3,10 +3,12 @@ package org.keycloak.admin.client.spi;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Spliterator;
@@ -67,20 +69,28 @@ public class StreamMessageBodyReader implements MessageBodyReader<Stream<?>> {
         Class<?> elementType = Object.class;
         if (genericType instanceof ParameterizedType) {
             Type[] typeArguments = ((ParameterizedType) genericType).getActualTypeArguments();
-            if (typeArguments.length > 0 && typeArguments[0] instanceof Class<?>) {
-                elementType = (Class<?>) typeArguments[0];
+            if (typeArguments.length > 0) {
+                if (typeArguments[0] instanceof WildcardType) {
+                    typeArguments = ((WildcardType)typeArguments[0]).getUpperBounds();
+                }
+                if (typeArguments.length > 0 && typeArguments[0] instanceof Class<?>) {
+                    elementType = (Class<?>) typeArguments[0];
+                }
             }
         }
 
         Iterator<?> iter = codec.readValues(parser, elementType);
         Stream<?> targetStream = StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(iter, Spliterator.ORDERED),
-                false);
+                false).onClose(() -> {
+            try {
+                entityStream.close();
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        });
         // return a Stream also marked as an EventInput to prevent the premature closure of the result
         return (Stream<?>) Proxy.newProxyInstance(EventInput.class.getClassLoader(), new Class<?>[] {Stream.class, EventInput.class}, (proxy, method, args) -> {
-            if (method.getName().equals("close")) {
-                entityStream.close();
-            }
             return method.invoke(targetStream, args);
         });
     }
