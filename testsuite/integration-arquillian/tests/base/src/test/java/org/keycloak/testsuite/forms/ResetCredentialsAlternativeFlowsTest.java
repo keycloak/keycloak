@@ -230,7 +230,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             );
 
             // provides username
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("login-test");
 
             passwordPage.assertCurrent();
@@ -266,7 +266,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
 
     private void provideUsernameAndClickResetPassword(String username) {
         // provides username
-        loginUsernameOnlyPage.open();
+        oauth.openLoginForm();
         loginUsernameOnlyPage.login(username);
 
         passwordPage.assertCurrent();
@@ -353,7 +353,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             );
 
             // Login & set up the initial OTP code for the user
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("login-test", password);
             String code = oauth.parseLoginResponse().getCode();
             AccessTokenResponse response = oauth.doAccessTokenRequest(code);
@@ -370,7 +370,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             oauth.logoutForm().idTokenHint(response.getIdToken()).open();
 
             // Go to login page & click "Forgot password" link to perform the custom 'Reset Credential' flow
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
 
             // Should be on reset password page now. Provide email of the user & click Submit button
@@ -416,7 +416,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             /* Verify the 'Device Name' is optional when creating new OTP credential via the Account page */
 
             // Login & set up the initial OTP code for the user
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("login@test.com", password);
 
             // Create OTP credential with empty label
@@ -438,7 +438,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             /* Verify the 'Device Name' is optional when creating the first OTP credential via the login config TOTP page */
 
             // Register new user
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -466,7 +466,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
             /* Verify the 'Device Name' is required for each next OTP credential created via the login config TOTP page */
 
             // Click "Forgot password" to define another OTP credential
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
 
             // Should be on reset password page now. Provide email of previously registered user & click Submit button

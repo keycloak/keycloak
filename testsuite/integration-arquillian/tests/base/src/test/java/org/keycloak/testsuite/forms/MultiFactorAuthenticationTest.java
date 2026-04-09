@@ -94,14 +94,14 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             configureBrowserFlowWithAlternativeCredentials();
 
             // test-user has not other credential than his password. No try-another-way link is displayed
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("test-user@localhost");
             passwordPage.assertCurrent();
             loginTotpPage.assertTryAnotherWayLinkAvailability(false);
 
             // A user with only one other credential than his password: the try-another-way link should be accessible
             // and he should be able to choose between his password and his OTP credentials
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
             passwordPage.assertCurrent();
             passwordPage.assertTryAnotherWayLinkAvailability(true);
@@ -122,7 +122,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
             // A user with two OTP credentials and password credential: He should be able to choose just between the password and OTP similarly
             // like user with user-with-one-configured-otp. However OTP is preferred credential for him, so OTP mechanism will take preference
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-two-configured-otp");
             loginTotpPage.assertCurrent();
             loginTotpPage.assertTryAnotherWayLinkAvailability(true);
@@ -145,7 +145,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
         try {
             configureBrowserFlowWithAlternativeCredentials();
 
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
             passwordPage.assertCurrent();
             passwordPage.assertTryAnotherWayLinkAvailability(true);
@@ -213,7 +213,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
         try {
             // Provide username, should be on password page with the link "Try another way" available
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
             passwordPage.assertCurrent();
             passwordPage.assertTryAnotherWayLinkAvailability(true);
@@ -271,7 +271,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
 
         try {
             // Provide username, should be on password page without the link "Try another way" available
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
             passwordPage.assertCurrent();
             passwordPage.assertTryAnotherWayLinkAvailability(false);
@@ -301,7 +301,7 @@ public class MultiFactorAuthenticationTest extends AbstractChangeImportedUserPas
             configureBrowserFlowWithAlternativeCredentials();
 
             // The "attempted username" with username not yet available on the login screen
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertAttemptedUsernameAvailability(false);
 
             loginUsernameOnlyPage.login("user-with-one-configured-otp");

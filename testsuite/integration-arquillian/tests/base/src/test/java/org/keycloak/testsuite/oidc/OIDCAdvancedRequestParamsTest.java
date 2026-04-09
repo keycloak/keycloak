@@ -288,7 +288,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     @Test
     public void promptNoneSuccess() {
         // Login user
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -328,7 +328,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
 
             // Login and confirm consent
-            loginPage.open();
+            oauth.openLoginForm();
             assertTrue(loginPage.isCurrent());
             loginPage.login("test-user@localhost", "password");
             grantPage.assertCurrent();
@@ -367,7 +367,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     @Test
     public void promptLogin() {
         // Login user
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -444,7 +444,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         try {
             // Login user
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
 
             // Grant consent

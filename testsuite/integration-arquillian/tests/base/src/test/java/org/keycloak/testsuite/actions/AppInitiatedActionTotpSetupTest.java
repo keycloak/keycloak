@@ -100,7 +100,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
     @Test
     public void setupTotpRegister() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
@@ -133,7 +133,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
     @Test
     public void setupTotpRegisterDuplicateUserLabel() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
@@ -224,7 +224,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
     @Test
     public void setupTotpRegisterManual() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "checkQrCode@mail.com", "checkQrCode", "password", "password");
 
@@ -281,7 +281,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     // KEYCLOAK-7081
     @Test
     public void setupTotpRegisterManualModeSwitchesOnBadSubmit() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "setupTotpRegisterManualModeSwitchesOnBadSubmit@mail.com", "setupTotpRegisterManualModeSwitchesOnBadSubmit", "password", "password");
 
@@ -312,7 +312,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     // KEYCLOAK-7081
     @Test
     public void setupTotpRegisterBarcodeModeSwitchesOnBadSubmit() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "setupTotpRegisterBarcodeModeSwitchesOnBadSubmit@mail.com", "setupTotpRegisterBarcodeModeSwitchesOnBadSubmit", "password", "password");
 
@@ -349,7 +349,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         rep.setOtpPolicyAlgorithm("HmacSHA256");
         realm.update(rep);
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.register("firstName", "lastName", "setupTotpModifiedPolicy@mail.com", "setupTotpModifiedPolicy", "password", "password");
 
@@ -405,7 +405,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         loginTotpPage.login(totp.generateTOTP(totpSecret));
@@ -416,7 +416,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     @Test
     public void setupTotpRegisteredAfterTotpRemoval() {
         // Register new user
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
 
@@ -452,7 +452,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
 
         // Try to login after logout
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("setupTotp2", "password2");
 
         // Totp is already configured, thus one-time password is needed, login page should be loaded
@@ -472,7 +472,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         AccountHelper.logout(testRealm(),"setupTotp2");
 
         // Try to login
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("setupTotp2", "password2");
     }
 
@@ -520,7 +520,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, timeBased);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         String src = driver.getPageSource();
         String token = timeBased.generateTOTP(totpSecret);
@@ -577,7 +577,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         String token = otpgen.generateHOTP(totpSecret, 1);
         loginTotpPage.login(token);
@@ -602,7 +602,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         adminClient.realm("test").update(realmRep);
 
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         token = otpgen.generateHOTP(totpSecret, 4);
         loginTotpPage.assertCurrent();
@@ -640,7 +640,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         try {
             // Login
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
 
             // Configure OTP as AIA

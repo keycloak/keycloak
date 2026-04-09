@@ -129,7 +129,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         setTotpRequirementExecutionForRealm(AuthenticationExecutionModel.Requirement.REQUIRED, AuthenticationExecutionModel.Requirement.REQUIRED);
 
         // Authenticate as the LDAP user and assert it works
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
 
         assertTrue(totpPage.isCurrent());
@@ -243,7 +243,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
     }
 
     public void loginInvalidPassword(String username) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, "invalid");
 
         loginPage.assertCurrent();

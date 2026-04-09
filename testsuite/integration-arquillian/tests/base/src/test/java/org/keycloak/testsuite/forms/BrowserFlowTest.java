@@ -113,7 +113,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
     private void provideUsernamePassword(String user) {
         // Go to login page
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
 
         // Login attempt with an invalid password
@@ -236,7 +236,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
     // In a form waiting for a username only, provides a username and check if password is requested in the following execution of the flow
     private boolean needsPassword(String username) {
         // provides username
-        loginUsernameOnlyPage.open();
+        oauth.openLoginForm();
         loginUsernameOnlyPage.login(username);
 
         return passwordPage.isCurrent();
@@ -319,7 +319,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             configureBrowserFlowWithConditionalAuthenticatorInNonConditionalFlow();
 
             // provides username
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-two-configured-otp");
 
             // if flow was conditional, the conditional authenticator would disable the flow because no user have the expected role
@@ -519,7 +519,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             configureBrowserFlowWithConditionalSubFlowWithChangingConditionWhileFlowEvaluation();
 
             // provides username
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("user-with-two-configured-otp");
 
             // The conditional sub flow is executed only if a specific user attribute is not set.
@@ -551,7 +551,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
 
         try {
             // provides username
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("test-user@localhost");
 
             // Check that Keycloak is redirecting us to the Keycloak account management page
@@ -593,7 +593,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         configureBrowserFlowWithRequiredPasswordFormAndAlternativeOTP(newFlowAlias);
 
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
 
@@ -638,7 +638,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             for (SocialLoginTest.Provider provider : Arrays.asList(GITHUB, GITLAB, GOOGLE)) {
                 adminClient.realm(testRealm).identityProviders().create(socialLoginTest.buildIdp(provider));
 
-                loginUsernameOnlyPage.open();
+                oauth.openLoginForm();
                 loginUsernameOnlyPage.assertCurrent();
                 // For each of the testing social providers, check the particular social provider button is present on the UsernameForm
                 // Test succeeded if NoSuchElementException is thrown for none of them
@@ -686,7 +686,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         configureBrowserFlowWithConditionalFlowWithOTP(newFlowAlias);
 
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login("test-user@localhost");
 
@@ -705,7 +705,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         configureBrowserFlowWithConditionalFlowWithOTP(newFlowAlias);
 
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
 
@@ -1024,7 +1024,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         String newFlowAlias = "browser - copy 1";
         configureBrowserFlowWithAlternativeOTPAndPassword(newFlowAlias);
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login("test-user@localhost");
 
@@ -1044,7 +1044,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
         Assert.assertNotNull(user);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.login(user.getUsername(), getPassword("test-user@localhost") + "wrong_password");
 
@@ -1076,7 +1076,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
             realm.setLoginWithEmailAllowed(false);
             testRealm().update(realm);
 
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login("non_existing_user");
             Assert.assertEquals("Invalid username.", loginUsernameOnlyPage.getUsernameError());
@@ -1152,7 +1152,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         String newFlowAlias = "browser - copy 1";
         configureBrowserFlowWithAlternativeWebAuthnAndPassword(newFlowAlias);
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login("test-user@localhost");
 
@@ -1180,7 +1180,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
         configureBrowserFlowWithAlternativeOTPAndConditionalPassword(newFlowAlias);
         try {
 
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login("user-with-one-configured-otp");
 

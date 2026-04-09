@@ -61,14 +61,14 @@ public class LDAPPasswordPolicyTest extends AbstractLDAPTest {
     @LDAPPasswordPolicy(mustChange=true)
     public void testForcedPasswordChangeAfterReset() throws Exception {
         // Login with user that has to change password.
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("mustchange", "Password1");
 
         // Forced password change sends user to update password page.
         passwordUpdatePage.assertCurrent();
 
         // Repeated login without changing password should still send user to update password page.
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("mustchange", "Password1");
         passwordUpdatePage.assertCurrent();
 
@@ -78,7 +78,7 @@ public class LDAPPasswordPolicyTest extends AbstractLDAPTest {
 
         UserRepresentation user = testRealm().users().search("mustchange").get(0);
         testRealm().users().get(user.getId()).logout();
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("mustchange", "changedpassword");
         appPage.assertCurrent();
     }

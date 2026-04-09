@@ -113,7 +113,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerExistingUsernameForbidden() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -137,7 +137,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
  
     @Test
     public void registerExistingEmailForbidden() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -162,7 +162,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerExistingEmailAllowed() throws IOException {
         try (RealmAttributeUpdater rau = setDuplicateEmailsAllowed(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -204,7 +204,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         events.clear();
 
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.assertCurrent();
 
             final String EMAIL = "TEST@localhost";
@@ -223,7 +223,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserInvalidPasswordConfirm() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -248,7 +248,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserMissingPassword() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -266,7 +266,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerPasswordPolicy() throws IOException {
         try (RealmAttributeUpdater rau = getRealmAttributeUpdater().setPasswordPolicy("length").update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -291,7 +291,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserMissingUsername() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -308,7 +308,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserManyErrors() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -340,7 +340,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserMissingEmail() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -354,7 +354,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserInvalidEmail() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -368,7 +368,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserSuccess() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -422,7 +422,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             testRealm().update(realm);
         });
         testRealm().update(realm);
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -450,7 +450,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             testRealm().update(realm);
         });
         testRealm().update(realm);
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -481,7 +481,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
      // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerification() throws Exception {
         try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -523,7 +523,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
      // GreenMailRule is not working atm
     public void registerUserSuccessWithEmailVerificationWithResend() throws Exception {
         try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -576,7 +576,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void registerUserUmlats() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         assertTrue(loginPage.isCurrent());
 
@@ -598,7 +598,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerUserNotUsernamePasswordPolicy() throws IOException {
         try (RealmAttributeUpdater rau = getRealmAttributeUpdater().setPasswordPolicy("notUsername").update()) {
-            loginPage.open();
+            oauth.openLoginForm();
 
             assertTrue(loginPage.isCurrent());
 
@@ -636,7 +636,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerUserNotContainsUsernamePasswordPolicy() throws IOException {
         try (RealmAttributeUpdater rau = getRealmAttributeUpdater().setPasswordPolicy("notContainsUsername").update()) {
-            loginPage.open();
+            oauth.openLoginForm();
 
             assertTrue(loginPage.isCurrent());
 
@@ -679,7 +679,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true)
                 .setPasswordPolicy("notEmail").update()) {
 
-            loginPage.open();
+            oauth.openLoginForm();
 
             assertTrue(loginPage.isCurrent());
 
@@ -706,7 +706,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerExistingUser_emailAsUsername() throws IOException {
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -722,7 +722,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerUserMissingOrInvalidEmail_emailAsUsername() throws IOException {
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -741,7 +741,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void registerUserSuccess_emailAsUsername() throws IOException {
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true).update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -765,7 +765,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true)
                 .setEditUserNameAllowed(false)
                 .update()) {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -798,7 +798,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         String newFlowAlias = "register - custom";
         configureRegistrationFlowWithCustomRegistrationPageForm(newFlowAlias);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
     }
@@ -810,7 +810,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 AuthenticationExecutionModel.Requirement.REQUIRED);
 
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -837,7 +837,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 AuthenticationExecutionModel.Requirement.REQUIRED);
 
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -869,7 +869,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         testRealm().flows().updateRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name(), tacRep);
 
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.assertCurrent();
 
@@ -897,7 +897,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testRegisterShouldFailBeforeUserCreationWhenUserIsInContext() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.clickBackToLogin();
         loginPage.assertCurrent(testRealm().toRepresentation().getRealm());
@@ -949,7 +949,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         final String USERNAME = "UPPERCASE";
         final String EMAIL_OR_USERNAME = emailAsUsername ? EMAIL : USERNAME;
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 

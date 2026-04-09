@@ -102,7 +102,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void loginWithTotpFailure() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue(loginTotpPage.isCurrent());
@@ -121,7 +121,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void loginWithMissingTotp() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue(loginTotpPage.isCurrent());
@@ -140,7 +140,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void loginWithTotpSuccess() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue(loginTotpPage.isCurrent());
@@ -157,7 +157,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
     // KEYCLOAK-3835
     @Test
     public void loginWithTotpRefreshTotpPage() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue(loginTotpPage.isCurrent());
@@ -176,7 +176,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void loginWithTotpInvalidPassword() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "invalid");
 
         Assert.assertTrue(loginPage.isCurrent());
@@ -191,7 +191,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void loginWithTotp_testAttemptedUsernameAndResetLogin() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
 
         // Assert attempted-username NOT available
         loginPage.assertAttemptedUsernameAvailability(false);
@@ -274,7 +274,7 @@ public class LoginTotpTest extends AbstractChangeImportedUserPasswordsTest {
 
         testRealm().users().create(newUser).close();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(newUser.getUsername(), getPassword("test-otp-user@localhost"));
 
         Assert.assertTrue(loginTotpPage.isCurrent());

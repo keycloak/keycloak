@@ -244,7 +244,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         }
 
 
-        loginPage.open();
+        oauth.openLoginForm();
          /* In the new flows, any required execution will render any optional flows unused.
         // test to make sure we aren't skipping anything
         loginPage.login("test-user@localhost", "bad-password");

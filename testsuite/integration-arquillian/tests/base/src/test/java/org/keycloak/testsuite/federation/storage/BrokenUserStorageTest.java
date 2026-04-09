@@ -60,7 +60,7 @@ public class BrokenUserStorageTest extends AbstractTestRealmKeycloakTest {
 
 
     private void loginSuccessAndLogout(String username, String password) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.parseLoginResponse().getCode());

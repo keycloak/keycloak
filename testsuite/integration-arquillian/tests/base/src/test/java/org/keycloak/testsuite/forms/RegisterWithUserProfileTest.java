@@ -125,7 +125,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -146,7 +146,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\":{\"scopes\":[\""+SCOPE_LAST_NAME+"\"]}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -219,7 +219,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", " + VALIDATIONS_LENGTH + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -240,7 +240,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", " + VALIDATIONS_LENGTH + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -262,7 +262,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"department\", \"displayName\" : \"Department\", " + PERMISSIONS_ALL + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
 
         registerPage.assertCurrent();
@@ -287,7 +287,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"email\", " + UserProfileUtil.PERMISSIONS_ALL + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
 
         registerPage.assertCurrent();
@@ -322,7 +322,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
 
         setUserProfileConfiguration("{\"attributes\": [" + UP_CONFIG_PART_INPUT_TYPES + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
 
         registerPage.assertCurrent();
@@ -413,7 +413,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"contact\" }"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
 
         registerPage.assertCurrent();
@@ -444,7 +444,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"department\", \"displayName\" : \"Department\", " + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
 
         registerPage.assertCurrent();
@@ -576,7 +576,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"email\"," + PERMISSIONS_ALL + "}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -593,7 +593,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\": {}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -615,7 +615,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\": {\"roles\" : [\"user\"]}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -634,7 +634,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"email\"," + PERMISSIONS_ADMIN_ONLY + ", \"required\": {\"roles\" : [\"user\"]}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -653,7 +653,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"email\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\": {\"roles\" : [\"user\"]}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -679,7 +679,7 @@ public class RegisterWithUserProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"email\"," + PERMISSIONS_ADMIN_EDITABLE + ", \"required\": {\"roles\" : [\"user\"]}}"
                 + "]}");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 

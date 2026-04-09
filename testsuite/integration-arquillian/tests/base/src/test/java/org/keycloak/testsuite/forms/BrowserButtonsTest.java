@@ -122,7 +122,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
     // KEYCLOAK-4670 - Flow 1
     @Test
     public void invalidLoginAndBackButton() throws IOException, MessagingException {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("login-test2", "invalid");
         loginPage.assertCurrent();
@@ -143,7 +143,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
     // KEYCLOAK-4670 - Flow 2
     @Test
     public void requiredActionsBackForwardTest() throws IOException, MessagingException {
-        loginPage.open();
+        oauth.openLoginForm();
 
         // Login and assert on "updatePassword" page
         loginPage.login("login-test", getPassword("login-test"));
@@ -170,7 +170,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
     // KEYCLOAK-4670 - Flow 3 extended
     @Test
     public void requiredActionsBackAndRefreshTest() throws IOException, MessagingException {
-        loginPage.open();
+        oauth.openLoginForm();
 
         // Login and assert on "updatePassword" page
         loginPage.login("login-test", getPassword("login-test"));
@@ -218,7 +218,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
         oauth.clientId("third-party");
 
         // Login and go through required actions
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test", getPassword("login-test"));
         updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
         updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
@@ -246,7 +246,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
     // KEYCLOAK-4670 - Flow 5
     @Test
     public void clickBackButtonAfterReturnFromRegister() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -262,7 +262,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
     @Test
     public void clickBackButtonFromRegisterPage() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -275,7 +275,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
     // KEYCLOAK-5136
     @Test
     public void clickRefreshButtonOnRegisterPage() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -296,7 +296,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
 
     @Test
     public void backButtonToAuthorizationEndpoint() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         // Login and assert on "updatePassword" page
         loginPage.login("login-test", getPassword("login-test"));
@@ -311,7 +311,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
     @Test
     public void backButtonInResetPasswordFlow() throws Exception {
         // Click on "forgot password" and type username
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login-test", getPassword("login-test") + "bad-username");
         loginPage.resetPassword();
 

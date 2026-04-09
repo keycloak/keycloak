@@ -99,7 +99,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void loginWithHotpFailure() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue(loginTotpPage.isCurrent());
@@ -118,7 +118,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void loginWithMissingHotp() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue(loginTotpPage.isCurrent());
@@ -137,7 +137,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void loginWithHotpSuccess() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
         Assert.assertTrue("expecting totpPage got: " + driver.getCurrentUrl(), loginTotpPage.isCurrent());
@@ -153,7 +153,7 @@ public class LoginHotpTest extends AbstractChangeImportedUserPasswordsTest {
 
     @Test
     public void loginWithHotpInvalidPassword() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "invalid");
 
         Assert.assertTrue(loginPage.isCurrent());

@@ -169,7 +169,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
         testUser.update(userRepresentation);
 
         // login and configure codes
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         setupRecoveryAuthnCodesPage.assertCurrent();
         if (logoutOtherSessions) {

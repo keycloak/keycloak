@@ -226,14 +226,14 @@ public class UserStorageTest extends AbstractAuthTest {
     }
 
     private void loginSuccessAndLogout(String username, String password) {
-        loginPage.open();
+        oauth.openLoginForm();
         testRealmLoginPage.form().login(username, password);
         appPage.assertCurrent();
         AccountHelper.logout(testRealmResource(), username);
     }
 
     public void loginBadPassword(String username) {
-        loginPage.open();
+        oauth.openLoginForm();
         testRealmLoginPage.form().login(username, "badpassword");
         assertCurrentUrlDoesntStartWith(oauth.APP_AUTH_ROOT);
     }
@@ -268,7 +268,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
     @Test
     public void testLoginSuccessWithSpecialCharacter() {
-        loginPage.open();
+        oauth.openLoginForm();
         testRealmLoginPage.form().login("spécial", "pw");
         appPage.assertCurrent();
         driver.navigate().to(oauth.AUTH_SERVER_ROOT + "/realms/" + testRealmResource().toRepresentation().getRealm() + "/login-actions/authenticate/" );
@@ -398,7 +398,7 @@ public class UserStorageTest extends AbstractAuthTest {
           })
           .update()) {
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password");
 

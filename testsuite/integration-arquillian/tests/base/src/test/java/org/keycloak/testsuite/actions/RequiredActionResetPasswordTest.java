@@ -103,7 +103,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
     @Test
     public void tempPassword() throws Exception {
         requireUpdatePassword();
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         changePasswordPage.assertCurrent();
@@ -123,7 +123,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "new-password");
 
         events.expectLogin().assertEvent();
@@ -161,7 +161,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
 
         requireUpdatePassword();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         changePasswordPage.assertCurrent();
         assertTrue(changePasswordPage.isLogoutSessionDisplayed());
@@ -215,7 +215,7 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
                     .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, UsernameFormFactory.PROVIDER_ID)
                     .defineAsBrowserFlow() // Activate this new flow
             );
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.login("test-user@localhost");
             events.expectLogin().assertEvent();
         } finally {

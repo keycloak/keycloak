@@ -57,7 +57,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
 
     @Override
     protected void changeEmailUsingRequiredAction(String newEmail, boolean logoutOtherSessions, boolean newEmailAsUsername) {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", "password");
         updateEmailPage.assertCurrent();
@@ -137,7 +137,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         UserResource testUser = testRealm().users().get(findUser("test-user@localhost").getId());
         assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", "password");
 
@@ -154,7 +154,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         assertEquals(1, testUser.toRepresentation().getRequiredActions().size());
 
         // login and update profile, email is already set and should not be visible
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         updateProfilePage.assertCurrent();
         assertFalse(updateProfilePage.isEmailInputPresent());
@@ -175,7 +175,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         testUser.update(rep);
 
         // login and update profile, including the email
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         updateProfilePage.assertCurrent();
         assertTrue(updateProfilePage.isEmailInputPresent());
@@ -205,7 +205,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         testUser.update(rep);
 
         // login and update profile, email is readonly for users and should not be visible
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         updateProfilePage.assertCurrent();
         assertFalse(updateProfilePage.isEmailInputPresent());
@@ -238,7 +238,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         rep.setEmail("");
         testUser.update(rep);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         updateProfilePage.assertCurrent();
         assertTrue(updateProfilePage.isEmailInputPresent());

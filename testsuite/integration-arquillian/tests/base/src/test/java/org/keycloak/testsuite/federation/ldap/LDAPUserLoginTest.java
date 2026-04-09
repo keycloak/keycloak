@@ -149,7 +149,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Helper methods
     private void verifyLoginSucceededAndLogout(String username, String password) {
         String userId = findUser(username).getId();
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         appPage.assertCurrent();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -164,7 +164,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
         // Clear the events queue before the actual test to catch all errors properly
         events.clear();
         // Run the test actions
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 

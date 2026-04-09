@@ -115,7 +115,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         setPasswordPolicy("hashAlgorithm(" + Pbkdf2PasswordHashProviderFactory.ID + ") and hashIterations(1)");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         appPage.assertCurrent();
 
@@ -150,7 +150,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
             session.getProvider(UserCache.class).clear();
         });
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         appPage.assertCurrent();
 
@@ -173,7 +173,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         setPasswordPolicy("");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         appPage.assertCurrent();
 
@@ -195,7 +195,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         setPasswordPolicy("hashIterations(2)");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         appPage.assertCurrent();
 
@@ -224,7 +224,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         setPasswordPolicy("hashIterations");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         appPage.assertCurrent();
 
@@ -237,7 +237,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         AccountHelper.logout(adminClient.realm("test"), username);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         appPage.assertCurrent();
 
@@ -267,7 +267,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         user.setCredentials(List.of(ExportUtils.exportCredential(passwordCredentialModel)));
         ApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         appPage.assertCurrent();
 
@@ -306,7 +306,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("7168", data.getAdditionalParameters().getFirst("memory"));
         Assert.assertEquals("1", data.getAdditionalParameters().getFirst("parallelism"));
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("testArgon2", "invalid");
         loginPage.assertCurrent();
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());

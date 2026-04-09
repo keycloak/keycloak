@@ -243,7 +243,7 @@ public class LogoutTest extends AbstractKeycloakTest {
             UserRepresentation user = ApiUtil.findUserByUsername(realm, "user-0");
             Assert.assertNotNull(user);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("user-0", "password");
 
             String code = oauth.parseLoginResponse().getCode();
@@ -265,7 +265,7 @@ public class LogoutTest extends AbstractKeycloakTest {
                     .enabled(true)
                     .build()).close();
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("user-1", "password");
             code = oauth.parseLoginResponse().getCode();
             tokenResponse = oauth.accessTokenRequest(code).param(AdapterConstants.CLIENT_SESSION_STATE, "client-session").send();
@@ -282,7 +282,7 @@ public class LogoutTest extends AbstractKeycloakTest {
 
     @Test
     public void logoutUserByAdmin() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         String sessionId = events.expectLogin().assertEvent().getSessionId();
 
@@ -295,7 +295,7 @@ public class LogoutTest extends AbstractKeycloakTest {
             UserRepresentation u = adminClient.realm("test").users().get(user.getId()).toRepresentation();
             Assert.assertTrue(u.getNotBefore() > 0);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.assertCurrent();
         }, 10, 200);
     }

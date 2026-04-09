@@ -287,15 +287,6 @@ public class LoginPage extends LanguageComboboxAwarePage {
      * @deprecated Use {@link OAuthClient#openLoginForm()}
      */
     @Deprecated
-    public void open() {
-        oauth.openLoginForm();
-        assertCurrent();
-    }
-
-    /**
-     * @deprecated Use {@link OAuthClient#openLoginForm()}
-     */
-    @Deprecated
     public void open(String realm) {
         oauth.realm(realm);
         oauth.openLoginForm();

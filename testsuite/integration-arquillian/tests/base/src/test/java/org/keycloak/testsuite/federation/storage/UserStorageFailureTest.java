@@ -240,7 +240,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void loginSuccessAndLogout(String username, String password) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         System.out.println(driver.getCurrentUrl());
         System.out.println(driver.getPageSource());

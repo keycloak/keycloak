@@ -55,7 +55,7 @@ public class TestAppHelper {
     }
 
     public boolean startLogin(String username, String password) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
 
         return appPage.isCurrent();
