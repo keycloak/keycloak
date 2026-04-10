@@ -10,6 +10,12 @@ Use it together with the other building blocks outlined in the <@links.ha id="si
 
 include::../partials/blueprint-disclaimer.adoc[]
 
+== Architecture
+
+As this setup does not support encrypted backups, the S3 bucket should be encrypted.
+Newly created AWS S3 buckets are encrypted by default.
+See <@links.server id="db" anchor="encrypting-data-at-rest"/> for more information.
+
 == Install the CloudNativePG Operator with Barman Cloud plugin
 
 Both the CloudNativePG operator and the Barman Cloud plugin are required in order to enable backup and restore operations using an S3-compatible object store.
