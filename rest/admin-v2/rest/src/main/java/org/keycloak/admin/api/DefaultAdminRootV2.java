@@ -24,7 +24,7 @@ public class DefaultAdminRootV2 implements AdminRootV2 {
   @Override
   public Response preFlight() {
     checkApiEnabled();
-    return new AdminCorsPreflightService().preflight();
+    return new AdminCorsPreflightService(AdminCorsPreflightService.resolveAdminConsoleClient(session)).preflight();
   }
 
   private void checkApiEnabled() {

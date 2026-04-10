@@ -111,6 +111,15 @@ public class DefaultCors implements Cors {
     }
 
     @Override
+    public Cors allowedOrigins(AccessToken token, KeycloakSession session, ClientModel fallbackClient) {
+        allowedOrigins(token);
+        if (allowedOrigins == null || allowedOrigins.isEmpty()) {
+            allowedOrigins(session, fallbackClient);
+        }
+        return this;
+    }
+
+    @Override
     public Cors allowedOrigins(String... allowedOrigins) {
         if (allowedOrigins != null && allowedOrigins.length > 0) {
             this.allowedOrigins = new HashSet<>(Arrays.asList(allowedOrigins));
@@ -169,7 +178,7 @@ public class DefaultCors implements Cors {
             return;
         }
 
-        if (!preflight && (allowedOrigins == null || (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD)))) {
+        if (allowedOrigins == null ? !preflight : (!allowedOrigins.contains(origin) && !allowedOrigins.contains(ACCESS_CONTROL_ALLOW_ORIGIN_WILDCARD))) {
             String requestOrigin = UriUtils.getOrigin(session.getContext().getUri().getRequestUri());
             if (!origin.equals(requestOrigin) && logger.isDebugEnabled()) {
                 logger.debugv("Invalid CORS request: origin {0} not in allowed origins {1}", origin, allowedOrigins);
