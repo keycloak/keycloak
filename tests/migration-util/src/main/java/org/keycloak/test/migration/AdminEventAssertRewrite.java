@@ -7,6 +7,17 @@ public class AdminEventAssertRewrite extends TestRewrite {
         boolean assertAdminEvents = findLine(".*assertAdminEvents[.]assertEvent\\(.*") != -1;
 
         if (assertAdminEvents) {
+            addImport("org.keycloak.testframework.annotations.InjectAdminEvents");
+            addImport("org.keycloak.testframework.events.AdminEvents");
+
+            int managedRealm = findLine("    ManagedRealm managedRealm;");
+
+            content.add(managedRealm + 1, "");
+            content.add(managedRealm + 2, "    @InjectAdminEvents");
+            content.add(managedRealm + 3, "    AdminEvents adminEvents;");
+
+            info(managedRealm + 2, "Injecting: AdminEvents");
+
             addImport("org.keycloak.testframework.events.AdminEventAssertion");
 
             for (int i = 0; i < content.size(); i++) {
