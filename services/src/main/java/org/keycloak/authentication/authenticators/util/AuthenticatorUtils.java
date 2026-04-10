@@ -142,10 +142,10 @@ public final class AuthenticatorUtils {
     }
 
     /**
-     * Process the remember_me input for authentication. If the inputData contains
-     * the <em>rememberMe</em> attribute to <em>on</em> and the realm is
-     * configured with the rememberMe option the auth note is added to the
-     * authentication session, if not the note is removed from the auth session.
+     * Process the <em>rememberMe</em> input for authentication. If the inputData contains
+     * the <em>rememberMe</em> attribute set to <em>on</em> and the realm is
+     * configured with the rememberMe option, the auth note is added to the
+     * authentication session; otherwise, the note is removed from the auth session.
      * @param context The flow context
      * @param inputData The form data
      */

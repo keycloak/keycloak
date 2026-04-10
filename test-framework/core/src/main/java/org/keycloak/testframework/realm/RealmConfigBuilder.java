@@ -454,6 +454,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder webAuthnPolicyPasswordlessPasskeysEnabled(Boolean enabled) {
+        rep.setWebAuthnPolicyPasswordlessPasskeysEnabled(enabled);
+        return this;
+    }
+
     public RealmConfigBuilder webAuthnPolicyAcceptableAaguids(List<String> aaguids) {
         rep.setWebAuthnPolicyAcceptableAaguids(aaguids);
         return this;

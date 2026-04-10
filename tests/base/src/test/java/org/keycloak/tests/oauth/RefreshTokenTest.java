@@ -582,7 +582,7 @@ public class RefreshTokenTest {
             oauth.openLoginForm();
             driver.cookies().add(authSessionCookie);
             oauth.fillLoginForm("bob", "bob");
-            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getErrorMessage().orElse(null));
         } finally {
             realmResource.remove();
             oauth.realm(origRealm);
