@@ -542,11 +542,12 @@ public class LDAPOperationManager {
                 logger.debugf(ae, "Authentication failed for DN [%s]", dn);
             }
 
+            tracing.error(ae);
+
             // Check for password policy response control in failed bind response.
             // If present and indicate an expired password, throw an exception.
             checkPasswordPolicy(authCtx, PasswordPolicyControl::passwordExpired);
 
-            tracing.error(ae);
             throw ae;
         } catch(RuntimeException re){
             if (logger.isDebugEnabled()) {
