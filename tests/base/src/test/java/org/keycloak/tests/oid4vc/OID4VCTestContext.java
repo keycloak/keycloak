@@ -167,7 +167,7 @@ public class OID4VCTestContext {
         if (value != null) {
             attachments.put(key, value);
         } else {
-            attachments.remove(key, value);
+            attachments.remove(key);
         }
     }
 

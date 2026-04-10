@@ -56,8 +56,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
 
     @BeforeEach
     void beforeEach() {
-        // Reconfigure OAuthClient
-        oauth.client(pubClient.getClientId(), null);
+        oauth.client(pubClient.getClientId());
     }
 
     @Test
@@ -99,7 +98,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(wallet.generateJwtProof(ctx, ctx.getHolder()))
+                .proofs(wallet.generateJwtProof(ctx))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);

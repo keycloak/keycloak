@@ -41,8 +41,6 @@ public class SupportedCredentialConfiguration {
 
     private static final Logger LOGGER = Logger.getLogger(SupportedCredentialConfiguration.class);
 
-    public static final String DOT_SEPARATOR = ".";
-
     @JsonIgnore
     private static final String FORMAT_KEY = "format";
     @JsonIgnore

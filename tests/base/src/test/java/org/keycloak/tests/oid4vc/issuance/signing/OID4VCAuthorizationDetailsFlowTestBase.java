@@ -186,7 +186,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
         if (credentialRequestSupplier == null) {
             credentialRequestSupplier = () -> new CredentialRequest()
                     .setCredentialIdentifier(expCredentialIdentifier)
-                    .setProofs(wallet.generateJwtProof(ctx, ctx.getHolder()));
+                    .setProofs(wallet.generateJwtProof(ctx));
         }
 
         // Update the vc.credential_identifier attribute

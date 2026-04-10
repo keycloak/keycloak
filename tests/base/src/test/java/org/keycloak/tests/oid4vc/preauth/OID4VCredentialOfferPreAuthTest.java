@@ -92,7 +92,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(wallet.generateJwtProof(ctx, ctx.getHolder()))
+                .proofs(wallet.generateJwtProof(ctx))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getIssuer(), credResponse);
@@ -126,7 +126,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(wallet.generateJwtProof(ctx, ctx.getHolder()))
+                .proofs(wallet.generateJwtProof(ctx))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);

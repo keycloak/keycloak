@@ -52,7 +52,7 @@ public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(wallet.generateJwtProof(ctx, ctx.getHolder()))
+                .proofs(wallet.generateJwtProof(ctx))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
@@ -93,7 +93,7 @@ public class OID4VCredentialByScopeTest extends OID4VCIssuerTestBase {
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(wallet.generateJwtProof(ctx, ctx.getHolder()))
+                .proofs(wallet.generateJwtProof(ctx))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
