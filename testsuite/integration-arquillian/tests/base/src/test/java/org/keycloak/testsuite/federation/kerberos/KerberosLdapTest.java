@@ -132,7 +132,7 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
             });
 
             // login not possible with old user
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("hnelson", "secret2");
             Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
@@ -172,7 +172,7 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
     public void validatePasswordPolicyTest() throws Exception{
          updateProviderEditMode(UserStorageProvider.EditMode.WRITABLE);
 
-         loginPage.open();
+         oauth.openLoginForm();
          loginPage.login("jduke", "theduke");
 
          updateProviderValidatePasswordPolicy(true);

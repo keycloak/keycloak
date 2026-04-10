@@ -133,7 +133,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
     @Test
     public void test02_registerUserWithFullName() {
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -203,7 +203,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
     @Test
     public void test05_registerUserWithFullNameSpecialChars() {
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -239,7 +239,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
             john2.setEnabled(true);
         });
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -252,7 +252,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
         String idTokenHint = oauth.doAccessTokenRequest(code).getIdToken();
         appPage.logout(idTokenHint);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
         registerPage.register("John", "Existing", "johnyanth2@check.cz", "existingkc3", "Password1", "Password1");

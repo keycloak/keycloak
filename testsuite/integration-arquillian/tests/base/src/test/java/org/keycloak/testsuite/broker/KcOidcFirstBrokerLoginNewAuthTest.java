@@ -6,7 +6,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.SelectAuthenticatorPage;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -194,7 +194,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
     private String addTOTPToUser(String username) {
 
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
-        UserResource user = ApiUtil.findUserByUsernameId(realm, username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(realm, username);
 
         // Add CONFIGURE_TOTP requiredAction to the user
         UserRepresentation userRep = UserBuilder.edit(user.toRepresentation()).requiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.toString()).build();

@@ -777,9 +777,17 @@ public class TokenManager {
 
         Collection<String> rawScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
 
-        // detect multiple organization scopes
+        // validate organization scopes - allow multiple specific organization scopes, but reject mixed types
         if (Profile.isFeatureEnabled(Feature.ORGANIZATION)) {
-            if (rawScopes.stream().filter(scope -> scope.startsWith(ORGANIZATION)).count() > 1) {
+            Set<OrganizationScope> orgScopeTypes = new HashSet<>();
+            for (String scope : rawScopes) {
+                OrganizationScope orgScopeType = OrganizationScope.valueOfScope(session, scope);
+                if (orgScopeType != null) {
+                    orgScopeTypes.add(orgScopeType);
+                }
+            }
+            if (orgScopeTypes.size() > 1) {
+                // mixing different organization scope types (ANY, SPECIFIC, ALL) is not allowed
                 return false;
             }
         }
@@ -1483,9 +1491,9 @@ public class TokenManager {
             res.setScope(responseScope);
             event.detail(Details.SCOPE, responseScope);
 
-            List<AuthorizationDetailsJSONRepresentation> authDetailsResponse = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
-            if (authDetailsResponse != null && !authDetailsResponse.isEmpty()) {
-                res.setAuthorizationDetails(authDetailsResponse);
+            List<AuthorizationDetailsJSONRepresentation> authDetails = clientSessionCtx.getAttribute(AUTHORIZATION_DETAILS_RESPONSE, List.class);
+            if (authDetails != null && !authDetails.isEmpty()) {
+                res.setAuthorizationDetails(authDetails);
             }
 
             response = res;

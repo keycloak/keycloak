@@ -29,7 +29,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.page.EmployeeServletDistributable;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
@@ -156,7 +156,7 @@ public abstract class AbstractSAMLAdapterClusteredTest extends AbstractAdapterCl
 
     private void logoutViaAdminConsole() {
         RealmResource demoRealm = adminClient.realm(DEMO);
-        String bburkeId = ApiUtil.findUserByUsername(demoRealm, "bburke").getId();
+        String bburkeId = AdminApiUtil.findUserByUsername(demoRealm, "bburke").getId();
         demoRealm.users().get(bburkeId).logout();
         log.infov("Logged out via admin console");
     }

@@ -79,6 +79,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -261,7 +262,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         // Assign role to the user
         RoleRepresentation fooRole = realm.clients().get(clientUUID).roles().get("my.foo.role").toRepresentation();
-        UserResource userResource = ApiUtil.findUserByUsernameId(realm, "test-user@localhost");
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(realm, "test-user@localhost");
         userResource.roles().clientLevel(clientUUID).add(Collections.singletonList(fooRole));
 
         // Login to the new client
@@ -355,7 +356,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
             oidcClientEndpointsResource.generateKeys(algAlgorithm, curve);
 
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
             clientRep = clientResource.toRepresentation();
             // set UserInfo response signature algorithm and encryption algorithms
             if(sigAlgorithm != null) {
@@ -426,7 +427,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         } catch (JWSInputException | JWEException | IOException e) {
             Assert.fail();
         } finally {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
             clientRep = clientResource.toRepresentation();
             // revert User Info response signature algorithm and encryption algorithms
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(null);
@@ -471,7 +472,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     @Test
     public void testSuccessSignedResponse() throws Exception {
         // Require signed userInfo request
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = clientResource.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(Algorithm.RS256);
         clientResource.update(clientRep);
@@ -871,7 +872,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
     public void testUnsuccessfulUserInfoRequestWithDisabledUser() {
         Client client = AdminClientUtil.createResteasyClient();
         RealmResource realm = adminClient.realm("test");
-        UserResource userResource = ApiUtil.findUserByUsernameId(realm, "test-user@localhost");
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(realm, "test-user@localhost");
         UserRepresentation user = userResource.toRepresentation();
 
         try {
@@ -1015,7 +1016,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         try {
             // Require signed userInfo request
-            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
             ClientRepresentation clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(sigAlg);
             clientResource.update(clientRep);

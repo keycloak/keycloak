@@ -44,6 +44,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -242,7 +243,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         assertCurrentUrlEquals(redirectUri);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         assertTrue(appPage.isCurrent());
 
@@ -292,7 +293,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         try (RealmAttributeUpdater update = new RealmAttributeUpdater(testRealm()).setRememberMe(true).update()) {
             String testUsername = "test-user@localhost";
             String testUserPassword = "password";
-            loginPage.open();
+            oauth.openLoginForm();
             assertFalse(loginPage.isRememberMeChecked());
             loginPage.setRememberMe(true);
             assertTrue(loginPage.isRememberMeChecked());
@@ -304,7 +305,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             testingClient.testing().removeUserSession("test", sessionId);
 
             // Assert rememberMe checked and username/email prefilled
-            loginPage.open();
+            oauth.openLoginForm();
             assertTrue(loginPage.isRememberMeChecked());
             assertEquals(testUsername, loginPage.getUsername());
 
@@ -315,7 +316,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 
-            loginPage.open();
+            oauth.openLoginForm();
             // Assert rememberMe not checked nor username/email prefilled
             assertTrue(loginPage.isCurrent());
             assertFalse(loginPage.isRememberMeChecked());
@@ -635,7 +636,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
         assertCurrentUrlEquals(APP_REDIRECT_URI + "?state=somethingg");
 
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         user.revokeConsent("third-party");
     }
 

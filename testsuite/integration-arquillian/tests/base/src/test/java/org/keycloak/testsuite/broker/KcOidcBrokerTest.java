@@ -47,7 +47,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -819,8 +819,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             hardcodedEmail.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
             hardcodedEmail.getConfig().put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO, "true");
             hardcodedEmail.getConfig().put(HardcodedClaim.CLAIM_VALUE, EMAIL.toUpperCase());
-            ClientScopeResource emailClientScope = ApiUtil.findClientScopeByName(providerRealmResource, "email");
-            ProtocolMapperRepresentation emailMapper = ApiUtil.findProtocolMapperByName(emailClientScope, "email");
+            ClientScopeResource emailClientScope = AdminApiUtil.findClientScopeByName(providerRealmResource, "email");
+            ProtocolMapperRepresentation emailMapper = AdminApiUtil.findProtocolMapperByName(emailClientScope, "email");
             emailClientScope.getProtocolMappers().delete(emailMapper.getId());
             emailClientScope.getProtocolMappers().createMapper(hardcodedEmail).close();
 

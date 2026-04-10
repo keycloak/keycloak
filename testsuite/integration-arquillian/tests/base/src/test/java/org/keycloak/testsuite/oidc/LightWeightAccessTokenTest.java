@@ -58,7 +58,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
 import org.keycloak.services.clientpolicy.executor.UseLightweightAccessTokenExecutorFactory;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
@@ -756,7 +756,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
                 .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
                 .findFirst()
                 .ifPresent(scope-> {
-                    ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).addDefaultClientScope(scope.getId());
+                    AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).addDefaultClientScope(scope.getId());
                 });
     }
 
@@ -766,7 +766,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
                 .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
                 .findFirst()
                 .ifPresent(scope-> {
-                    ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).removeDefaultClientScope(scope.getId());
+                    AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).removeDefaultClientScope(scope.getId());
                 });
     }
 
@@ -786,8 +786,8 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
     }
 
     private void setScopeProtocolMapper(String realmName, String scopeName, String mapperName, boolean isIncludeAccessToken, boolean isIncludeIntrospection, boolean isIncludeLightweightAccessToken) {
-        ClientScopeResource scope = ApiUtil.findClientScopeByName(realmsResouce().realm(realmName), scopeName);
-        ProtocolMapperRepresentation protocolMapper = ApiUtil.findProtocolMapperByName(scope, mapperName);
+        ClientScopeResource scope = AdminApiUtil.findClientScopeByName(realmsResouce().realm(realmName), scopeName);
+        ProtocolMapperRepresentation protocolMapper = AdminApiUtil.findProtocolMapperByName(scope, mapperName);
         Map<String, String> config = protocolMapper.getConfig();
         if (isIncludeAccessToken) {
             config.put(INCLUDE_IN_ACCESS_TOKEN, "true");
@@ -815,7 +815,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         setScopeProtocolMappers(isIncludeAccessToken, isIncludeIntrospection, false);
         List<ProtocolMapperRepresentation> protocolMapperList = new ArrayList<>();
         setExistingProtocolMappers(protocolMapperList, isIncludeAccessToken, isIncludeIntrospection, false, setPairWise);
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).getProtocolMappers();
         protocolMappers.createMapper(protocolMapperList);
         return protocolMappers;
     }
@@ -824,7 +824,7 @@ public class LightWeightAccessTokenTest extends AbstractClientPoliciesTest {
         setScopeProtocolMappers(isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken);
         List<ProtocolMapperRepresentation> protocolMapperList = new ArrayList<>();
         setExistingProtocolMappers(protocolMapperList, isIncludeAccessToken, isIncludeIntrospection, isIncludeLightweightAccessToken, setPairWise);
-        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).getProtocolMappers();
+        ProtocolMappersResource protocolMappers = AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), TEST_CLIENT).getProtocolMappers();
         protocolMappers.createMapper(protocolMapperList);
         return protocolMappers;
     }

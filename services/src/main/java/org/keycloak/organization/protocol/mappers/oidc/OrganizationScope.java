@@ -87,27 +87,21 @@ public enum OrganizationScope {
             }),
 
     /**
-     * Maps to a specific organization the user is a member. When this scope is requested by clients, only the
-     * organization specified in the scope is granted.
+     * Maps to one or more specific organizations the user is a member of. When this scope is requested by clients,
+     * only the organizations whose aliases are specified in the scope are granted. Multiple organizations can be
+     * requested using separate scopes, for example {@code organization:org-a organization:org-b}.
+     * If any of the aliases does not match an existing organization or the user is not a member, the request will be rejected.
      */
-    SINGLE(StringUtil::isNotBlank,
+    SPECIFIC(StringUtil::isNotBlank,
             (user, scopes, session) -> {
-                OrganizationModel organization = parseScopeParameter(session, scopes)
+                List<OrganizationModel> organizations = parseScopeParameter(session, scopes)
                         .map((String scope) -> parseScopeValue(session, scope))
                         .map(alias -> getProvider(session).getByAlias(alias))
                         .filter(Objects::nonNull)
-                        .findAny()
-                        .orElse(null);
+                        .filter(org -> user == null || org.isMember(user))
+                        .toList();
 
-                if (organization == null) {
-                    return Stream.empty();
-                }
-
-                if (user == null || organization.isMember(user)) {
-                    return Stream.of(organization);
-                }
-
-                return Stream.empty();
+                return organizations.stream();
             },
             (organizations) -> organizations.findAny().isPresent(),
             (session, current, previous) -> {

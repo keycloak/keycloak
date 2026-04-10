@@ -34,7 +34,7 @@ import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.ClientManager;
@@ -280,12 +280,12 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
             setIdTokenSignatureAlgorithm(expectedIdTokenAlg);
             // Realm setting is used for access token signature algorithm
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedAccessAlg);
-            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedIdTokenAlg);
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedIdTokenAlg);
             oidcFlow(expectedAccessAlg, expectedIdTokenAlg);
         } finally {
             setIdTokenSignatureAlgorithm(Algorithm.RS256);
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-            TokenSignatureUtil.changeClientIdTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+            TokenSignatureUtil.changeClientIdTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 

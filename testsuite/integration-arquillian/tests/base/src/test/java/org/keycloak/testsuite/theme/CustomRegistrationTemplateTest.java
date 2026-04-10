@@ -154,7 +154,7 @@ public class CustomRegistrationTemplateTest extends AbstractTestRealmKeycloakTes
     }
 
     private void navigateToRegistrationPage() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
     }
 }

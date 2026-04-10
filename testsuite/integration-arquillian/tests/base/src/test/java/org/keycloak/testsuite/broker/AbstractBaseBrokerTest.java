@@ -67,8 +67,8 @@ import org.junit.Before;
 import org.openqa.selenium.By;
 import org.openqa.selenium.TimeoutException;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;

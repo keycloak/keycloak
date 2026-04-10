@@ -36,7 +36,7 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.userprofile.UserProfileConstants;
 
@@ -158,16 +158,16 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         });
         testRealm().users().userProfile().update(configuration);
         UserRepresentation user = SimpleHttpDefault.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).asJson(UserRepresentation.class);
-        UserResource adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        UserResource adminUserResource = AdminApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
         org.keycloak.representations.idm.UserRepresentation adminUserRep = adminUserResource.toRepresentation();
         adminUserRep.singleAttribute("deniedFoo", "foo");
         adminUserResource.update(adminUserRep);
-        adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        adminUserResource = AdminApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
         adminUserRep = adminUserResource.toRepresentation();
         assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
         assertNull(user.getAttributes());
         updateAndGet(user);
-        adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+        adminUserResource = AdminApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
         adminUserRep = adminUserResource.toRepresentation();
         assertEquals("foo", adminUserRep.getAttributes().get("deniedFoo").get(0));
     }
@@ -189,7 +189,7 @@ public class AccountRestServiceReadOnlyAttributesTest extends AbstractRestServic
         UserResource adminUserResource = null;
         org.keycloak.representations.idm.UserRepresentation adminUserRep = null;
         try {
-            adminUserResource = ApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
+            adminUserResource = AdminApiUtil.findUserByUsernameId(testRealm(), user.getUsername());
             adminUserRep = adminUserResource.toRepresentation();
             adminUserRep.singleAttribute(attrName, "foo");
             adminUserResource.update(adminUserRep);

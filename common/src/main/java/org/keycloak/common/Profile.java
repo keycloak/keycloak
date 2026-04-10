@@ -98,6 +98,7 @@ public class Profile {
         STEP_UP_AUTHENTICATION_SAML("Step-up Authentication Saml", Type.PREVIEW, Feature.STEP_UP_AUTHENTICATION),
 
         CLIENT_AUTH_FEDERATED("Authenticates client based on assertions issued by identity provider", Type.DEFAULT),
+        CLIENT_AUTH_ABCA("Attestation-Based Client Authentication", Type.EXPERIMENTAL),
 
         SPIFFE("SPIFFE trust relationship provider", Type.PREVIEW),
 

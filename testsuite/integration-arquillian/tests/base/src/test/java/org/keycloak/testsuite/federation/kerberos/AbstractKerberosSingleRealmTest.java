@@ -48,7 +48,7 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assume;
 import org.junit.Test;
 
-import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
 
 /**
  * Contains just test methods

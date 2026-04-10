@@ -64,6 +64,7 @@ import org.keycloak.services.clientpolicy.executor.DownscopeAssertionGrantEnforc
 import org.keycloak.services.clientpolicy.executor.JWTClaimEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.JWTClaimEnforcerExecutorFactory;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
@@ -214,7 +215,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     @Test
     @UncaughtServerErrorExpected
     public void testRequestedTokenType() throws Exception {
-        final UserRepresentation john = ApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
+        final UserRepresentation john = AdminApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
         oauth.realm(TEST);
         String accessToken = resourceOwnerLogin(john.getUsername(), "password", "subject-client", "secret").getAccessToken();
 
@@ -311,7 +312,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     @Test
     @UncaughtServerErrorExpected
     public void testExchange() throws Exception {
-        final UserRepresentation john = ApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
+        final UserRepresentation john = AdminApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
         oauth.realm(TEST);
         String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
         {
@@ -346,7 +347,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     @Test
     public void testTransientSessionForRequester() throws Exception {
         final RealmResource realm = adminClient.realm(TEST);
-        final UserRepresentation john = ApiUtil.findUserByUsername(realm, "john");
+        final UserRepresentation john = AdminApiUtil.findUserByUsername(realm, "john");
 
         oauth.realm(TEST);
         final String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
@@ -379,7 +380,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     @Test
     public void testTransientOfflineSessionForRequester() throws Exception {
         final RealmResource realm = adminClient.realm(TEST);
-        final UserRepresentation john = ApiUtil.findUserByUsername(realm, "john");
+        final UserRepresentation john = AdminApiUtil.findUserByUsername(realm, "john");
         try (RealmAttributeUpdater realUpdater = new RealmAttributeUpdater(realm)
                 .setSsoSessionMaxLifespan(600)
                 .update();
@@ -444,16 +445,16 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     @Test
     public void testTransientSessionWithAdminApi() throws Exception {
         final RealmResource realm = adminClient.realm(TEST);
-        final UserRepresentation john = ApiUtil.findUserByUsername(realm, "john");
+        final UserRepresentation john = AdminApiUtil.findUserByUsername(realm, "john");
 
         // create a client-scope to the requester-client that adds realm-management view-role access
-        final ClientResource client = ApiUtil.findClientByClientId(realm, Constants.REALM_MANAGEMENT_CLIENT_ID);
+        final ClientResource client = AdminApiUtil.findClientByClientId(realm, Constants.REALM_MANAGEMENT_CLIENT_ID);
         createClientScopeForRole(realm, client, AdminRoles.VIEW_REALM, "realm-management-view-scope");
 
         // update the user and the requester-client to include the view-realm permission
         try (RoleScopeUpdater roleScopeUpdater = UserAttributeUpdater.forUserByUsername(realm, "john")
                 .clientRoleScope(client.toRepresentation().getId())
-                .add(ApiUtil.findClientRoleByName(client, AdminRoles.VIEW_REALM).toRepresentation())
+                .add(AdminApiUtil.findClientRoleByName(client, AdminRoles.VIEW_REALM).toRepresentation())
                 .update();
              ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
                      .addOptionalClientScope("realm-management-view-scope")
@@ -484,7 +485,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     @Test
     public void testTransientSessionWithAccountApi() throws Exception {
         final RealmResource realm = adminClient.realm(TEST);
-        final UserRepresentation john = ApiUtil.findUserByUsername(realm, "john");
+        final UserRepresentation john = AdminApiUtil.findUserByUsername(realm, "john");
 
         // create a client-scope for the requester-client that adds account view-profile access
         createClientScopeForRole(realm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, AccountRoles.VIEW_PROFILE, "account-view-profile-scope");
@@ -576,7 +577,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     @Test
     @UncaughtServerErrorExpected
     public void testExchangeUsingServiceAccount() throws Exception {
-        final UserRepresentation user = ApiUtil.findClientResourceByClientId(adminClient.realm(TEST), "subject-client").getServiceAccountUser();
+        final UserRepresentation user = AdminApiUtil.findClientResourceByClientId(adminClient.realm(TEST), "subject-client").getServiceAccountUser();
         oauth.realm(TEST);
         oauth.client("subject-client", "secret");
 
@@ -688,7 +689,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     @Test
     public void testOptionalScopeParamRequestedWithoutAudience() throws Exception {
-        final UserRepresentation john = ApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
+        final UserRepresentation john = AdminApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
         String accessToken = resourceOwnerLogin("john", "password","subject-client", "secret").getAccessToken();
         oauth.scope("optional-scope2");
         AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", null, null);
@@ -697,7 +698,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     @Test
     public void testAudienceRequested() throws Exception {
-        final UserRepresentation john = ApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
+        final UserRepresentation john = AdminApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
         String accessToken = resourceOwnerLogin("john", "password","subject-client", "secret").getAccessToken();
         AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of("target-client1"), null);
         assertAudiencesAndScopes(response, john, List.of("target-client1"), List.of("default-scope1"));
@@ -740,7 +741,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     @Test
     public void testScopeFilter() throws Exception {
         final RealmResource realm = adminClient.realm(TEST);
-        final UserRepresentation john = ApiUtil.findUserByUsername(realm, "john");
+        final UserRepresentation john = AdminApiUtil.findUserByUsername(realm, "john");
         String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
         AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret",  List.of("target-client2"), null);
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
@@ -767,7 +768,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         assertAudiencesAndScopes(response, john, List.of("target-client1", "target-client2"), List.of("default-scope1", "optional-scope2"));
 
         //just check that the exchanged token contains the optional-scope2 mapped by the realm role
-        final UserRepresentation mike = ApiUtil.findUserByUsername(realm, "mike");
+        final UserRepresentation mike = AdminApiUtil.findUserByUsername(realm, "mike");
         accessToken = resourceOwnerLogin("mike", "password","subject-client", "secret").getAccessToken();
         oauth.scope("optional-scope2");
         response = tokenExchange(accessToken, "requester-client", "secret",  null, null);
@@ -781,7 +782,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     @Test
     public void testScopeParamIncludedAudienceIncludedRefreshToken() throws Exception {
-        final UserRepresentation mike = ApiUtil.findUserByUsername(adminClient.realm(TEST), "mike");
+        final UserRepresentation mike = AdminApiUtil.findUserByUsername(adminClient.realm(TEST), "mike");
         try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
                 .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name())
                 .update()) {
@@ -837,7 +838,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     @Test
     public void testConsents() throws Exception {
         final RealmResource realm = adminClient.realm(TEST);
-        final UserResource mikeRes = ApiUtil.findUserByUsernameId(realm, "mike");
+        final UserResource mikeRes = AdminApiUtil.findUserByUsernameId(realm, "mike");
         final UserRepresentation mike = mikeRes.toRepresentation();
         try (ClientAttributeUpdater clientUpdater = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
                 .setConsentRequired(Boolean.TRUE)
@@ -912,7 +913,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     // Issue 37116
     @Test
     public void testOfflineAccessLoginWithRegularTokenExchange() throws Exception {
-        final UserRepresentation mike = ApiUtil.findUserByUsername(adminClient.realm(TEST), "mike");
+        final UserRepresentation mike = AdminApiUtil.findUserByUsername(adminClient.realm(TEST), "mike");
         try (ClientAttributeUpdater clientUpdater1 = ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
                 .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name())
                 .update();
@@ -965,9 +966,9 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
             AccessToken originalToken = verifier.parse().getToken();
 
             // Doublecheck count of sessions
-            String subjectClientUuid = ApiUtil.findClientByClientId(adminClient.realm(TEST), "subject-client").toRepresentation().getId();
-            String requesterClientUuid = ApiUtil.findClientByClientId(adminClient.realm(TEST), "requester-client").toRepresentation().getId();
-            UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(TEST), "mike");
+            String subjectClientUuid = AdminApiUtil.findClientByClientId(adminClient.realm(TEST), "subject-client").toRepresentation().getId();
+            String requesterClientUuid = AdminApiUtil.findClientByClientId(adminClient.realm(TEST), "requester-client").toRepresentation().getId();
+            UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(TEST), "mike");
             Assert.assertEquals(0, user.getUserSessions().size());
             Assert.assertEquals(1, user.getOfflineSessions(subjectClientUuid).size());
             Assert.assertEquals(0, user.getOfflineSessions(requesterClientUuid).size());
@@ -987,7 +988,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     @Test
     public void testIntrospectionWithExchangedTokenAfterSSOLoginOfRequesterClient() throws Exception {
         final RealmResource realm = adminClient.realm(TEST);
-        final UserResource mikeRes = ApiUtil.findUserByUsernameId(realm, "mike");
+        final UserResource mikeRes = AdminApiUtil.findUserByUsernameId(realm, "mike");
         final UserRepresentation mike = mikeRes.toRepresentation();
 
         // Login with "subject-client" and create SSO session
@@ -1040,7 +1041,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         ).toString();
         updatePolicies(json);
 
-        final UserRepresentation john = ApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
+        final UserRepresentation john = AdminApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
         String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret").getAccessToken();
 
         AccessTokenResponse response = tokenExchange(accessToken, "requester-client", "secret", List.of("target-client1"), null);
@@ -1072,7 +1073,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         updatePolicies(json);
 
         // request initial token with optional scope optional-scope2
-        final UserRepresentation john = ApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
+        final UserRepresentation john = AdminApiUtil.findUserByUsername(adminClient.realm(TEST), "john");
         String accessToken = resourceOwnerLogin("john", "password", "subject-client", "secret", "optional-scope2").getAccessToken();
         AccessToken token = TokenVerifier.create(accessToken, AccessToken.class).parse().getToken();
         assertScopes(token, List.of("email", "profile", "optional-scope2"));
@@ -1171,7 +1172,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
         ClientAttributeUpdater.forClient(adminClient, TEST, "requester-client")
                 .setAttribute(OIDCConfigAttributes.STANDARD_TOKEN_EXCHANGE_REFRESH_ENABLED, OIDCAdvancedConfigWrapper.TokenExchangeRefreshTokenEnabled.SAME_SESSION.name())
                 .update();
-        UserRepresentation johnUser = ApiUtil.findUserByUsernameId(adminClient.realm(TEST), "john").toRepresentation();
+        UserRepresentation johnUser = AdminApiUtil.findUserByUsernameId(adminClient.realm(TEST), "john").toRepresentation();
 
         oauth.realm(TEST);
         AccessTokenResponse accessTokenResponse = resourceOwnerLogin("john", "password", "subject-client", "secret");
@@ -1287,7 +1288,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     @Test
     public void testExchangeChainRequesters() throws Exception {
-        final UserRepresentation alice = ApiUtil.findUserByUsername(adminClient.realm(TEST), "alice");
+        final UserRepresentation alice = AdminApiUtil.findUserByUsername(adminClient.realm(TEST), "alice");
         oauth.realm(TEST);
         String accessToken = resourceOwnerLogin("alice", "password", "subject-client", "secret", "optional-requester-scope").getAccessToken();
 
@@ -1409,13 +1410,13 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
     }
 
     private void createClientScopeForRole(RealmResource realm, String clientId, String clientRoleName, String clientScopeName) {
-        final ClientResource client = ApiUtil.findClientByClientId(realm, clientId);
+        final ClientResource client = AdminApiUtil.findClientByClientId(realm, clientId);
         createClientScopeForRole(realm, client, clientRoleName, clientScopeName);
     }
 
     private void createClientScopeForRole(RealmResource realm, ClientResource client, String clientRoleName, String clientScopeName) {
         final String clientUUID = client.toRepresentation().getId();
-        final RoleRepresentation clientRole = ApiUtil.findClientRoleByName(client, clientRoleName).toRepresentation();
+        final RoleRepresentation clientRole = AdminApiUtil.findClientRoleByName(client, clientRoleName).toRepresentation();
 
         final ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
         clientScope.setName(clientScopeName);
@@ -1459,7 +1460,7 @@ public class StandardTokenExchangeV2Test extends AbstractClientPoliciesTest {
 
     @Test
     public void testSenderConstrainedTokenRejection() throws Exception {
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(TEST), "subject-client");
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(TEST), "subject-client");
         // Create a protocol mapper that adds the cnf claim
         ProtocolMapperModel mapper = HardcodedClaim.create("test-cnf-mapper", "cnf", "{\"jkt\":\"test-thumbprint-12345\"}", "JSON", true,  false, false);
 

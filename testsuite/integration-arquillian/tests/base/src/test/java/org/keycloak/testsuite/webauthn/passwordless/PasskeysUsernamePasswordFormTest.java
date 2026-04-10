@@ -32,7 +32,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAdminTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.SelectOrganizationPage;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -308,7 +308,7 @@ public class PasskeysUsernamePasswordFormTest extends AbstractWebAuthnVirtualTes
             loginPage.login(getPassword("test-user@localhost"));
             appPage.assertCurrent();
 
-            UserRepresentation testUser = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").toRepresentation();
+            UserRepresentation testUser = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").toRepresentation();
 
             events.expectLogin()
                     .user(testUser.getId())

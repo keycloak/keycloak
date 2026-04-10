@@ -63,6 +63,7 @@ import org.keycloak.services.clientregistration.policy.impl.MaxClientsClientRegi
 import org.keycloak.services.clientregistration.policy.impl.ProtocolMappersClientRegistrationPolicyFactory;
 import org.keycloak.services.clientregistration.policy.impl.TrustedHostClientRegistrationPolicyFactory;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -263,7 +264,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Assert new client has consent required
         String clientId = client.getClientId();
-        ClientRepresentation clientRep = ApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
+        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
         Assert.assertTrue(clientRep.isConsentRequired());
 
         // Try update with disabled consent required. Should fail
@@ -283,7 +284,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
         // Assert new client has fullScopeAllowed disabled
         String clientId = client.getClientId();
-        ClientRepresentation clientRep = ApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
+        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
         Assert.assertFalse(clientRep.isFullScopeAllowed());
 
         // Try update with disabled consent required. Should fail
@@ -303,7 +304,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Assert new client is enabled
         OIDCClientRepresentation client = create();
         String clientId = client.getClientId();
-        ClientRepresentation clientRep = ApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
+        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
         Assert.assertTrue(clientRep.isEnabled());
 
         // Add client-disabled policy
@@ -320,7 +321,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Assert new client is disabled
         client = create();
         clientId = client.getClientId();
-        clientRep = ApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
+        clientRep = AdminApiUtil.findClientByClientId(realmResource(), clientId).toRepresentation();
         Assert.assertFalse(clientRep.isEnabled());
 
         // Try enable client. Should fail
@@ -466,7 +467,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         assertFail(ClientRegOp.UPDATE, registeredClient, 403, "Not permitted to use specified clientScope");
 
         // Update client with the clientScope via Admin REST
-        ClientResource client = ApiUtil.findClientByClientId(realmResource(), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(realmResource(), "test-app");
         client.addDefaultClientScope(clientScopeId);
 
         // Now the update via clientRegistration is permitted too as scope was already set
@@ -505,7 +506,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         Assert.assertNotNull(registeredClient.getRegistrationAccessToken());
 
         // Revert client scope
-        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
         realmResource().clientScopes().get(clientScopeId).remove();
     }
 
@@ -542,7 +543,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         assertFail(ClientRegOp.CREATE, clientRep, 403, "ProtocolMapper type not allowed");
 
         // Revert policy change
-        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
         protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
         realmResource().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
     }
@@ -589,7 +590,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         reg.update(registeredClient);
 
         // Revert client
-        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
     }
 
     @Test
@@ -610,7 +611,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         reg.update(clientResource.toRepresentation());
 
         // Revert client
-        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
     }
 
     @Test
@@ -633,7 +634,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         assertFail(ClientRegOp.UPDATE, representation, 403, "Missing id for mapper named 'Hardcoded foo role'");
 
         // Revert client
-        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
     }
 
     @Test
@@ -656,7 +657,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         assertFail(ClientRegOp.UPDATE, representation, 403, "ProtocolMapper type not allowed");
 
         // Revert client
-        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
     }
 
     @Test
@@ -678,7 +679,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         assertFail(ClientRegOp.UPDATE, representation, 403, "No existing mapper model found for id");
 
         // Revert client
-        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
     }
 
     @Test
@@ -692,7 +693,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         Assert.assertNull(registeredClient.getProtocolMappers());
 
         // Revert
-        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
     }
 
 
@@ -715,7 +716,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         ProtocolMapperRepresentation hardcodedMapper = registeredClient.getProtocolMappers().get(0);
 
         // Revert
-        ApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
+        AdminApiUtil.findClientResourceByClientId(realmResource(), "test-app").remove();
         protocolMapperPolicyRep.getConfig().get(ProtocolMappersClientRegistrationPolicyFactory.ALLOWED_PROTOCOL_MAPPER_TYPES).remove(HardcodedRole.PROVIDER_ID);
         realmResource().components().component(protocolMapperPolicyRep.getId()).update(protocolMapperPolicyRep);
     }

@@ -29,7 +29,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
@@ -93,7 +93,7 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
         log.info("Adding login-test user");
         UserRepresentation testUser = UserBuilder.create().username("login-test").email("login@test.com").enabled(true).build();
 
-        userID = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), testUser, "password");
+        userID = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), testUser, "password");
         getCleanup().addUserId(userID);
     }
 
@@ -117,13 +117,13 @@ public class AltSubflowForCredentialResetTest extends AbstractTestRealmKeycloakT
     public void alternativeSubflowStaySignedOutTest() {
         configureAlternativeResetCredentialsFlow();
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
             Assert.assertTrue(loginPasswordResetPage.isCurrent());
             loginPasswordResetPage.changePassword("login@test.com.com");
             Assert.assertTrue(loginPage.isCurrent());
             assertEquals("You should receive an email shortly with further instructions.", loginUsernameOnlyPage.getSuccessMessage());
-            loginPage.open();
+            oauth.openLoginForm();
             Assert.assertTrue(loginPage.isCurrent());
         } finally {
             testRealm().flows().getFlows().clear();

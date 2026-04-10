@@ -53,7 +53,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.util.JsonSerialization;
 
@@ -809,7 +809,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     private ClientRepresentation getKeycloakClient(String clientId) {
-        return ApiUtil.findClientByClientId(adminClient.realms().realm(REALM_NAME), clientId).toRepresentation();
+        return AdminApiUtil.findClientByClientId(adminClient.realms().realm(REALM_NAME), clientId).toRepresentation();
     }
 
     @Test

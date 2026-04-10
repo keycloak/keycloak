@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -99,7 +100,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
     @Before
     public void beforeTest() {
         // Check if already exists
-        ClientScopeResource clientScopeRes = ApiUtil.findClientScopeByName(testRealm(), "audience-scope");
+        ClientScopeResource clientScopeRes = AdminApiUtil.findClientScopeByName(testRealm(), "audience-scope");
         if (clientScopeRes != null) {
             return;
         }
@@ -112,7 +113,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         String clientScopeId = ApiUtil.getCreatedId(resp);
         resp.close();
 
-        ClientResource client = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         client.addOptionalClientScope(clientScopeId);
     }
 
@@ -122,7 +123,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         // Add audience protocol mapper to the clientScope "audience-scope"
         ProtocolMapperRepresentation audienceMapper = ProtocolMapperUtil.createAudienceMapper("audience mapper", "service-client",
                 null, true, false, true);
-        ClientScopeResource clientScope = ApiUtil.findClientScopeByName(testRealm(), "audience-scope");
+        ClientScopeResource clientScope = AdminApiUtil.findClientScopeByName(testRealm(), "audience-scope");
         Response resp = clientScope.getProtocolMappers().createMapper(audienceMapper);
         String mapperId = ApiUtil.getCreatedId(resp);
         resp.close();
@@ -148,7 +149,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
         // Add audience protocol mapper to the clientScope "audience-scope"
         ProtocolMapperRepresentation audienceMapper = ProtocolMapperUtil.createAudienceMapper("audience mapper 1", null,
                 "http://host/service/ctx1", true, false, true);
-        ClientScopeResource clientScope = ApiUtil.findClientScopeByName(testRealm(), "audience-scope");
+        ClientScopeResource clientScope = AdminApiUtil.findClientScopeByName(testRealm(), "audience-scope");
         Response resp = clientScope.getProtocolMappers().createMapper(audienceMapper);
         String mapper1Id = ApiUtil.getCreatedId(resp);
         resp.close();

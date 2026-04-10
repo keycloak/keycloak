@@ -151,7 +151,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
         if (!isPasswordless()) {
             logout();
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.assertCurrent(TEST_REALM_NAME);
             loginPage.login(USERNAME, getPassword(USERNAME));
 

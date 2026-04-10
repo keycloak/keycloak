@@ -1,29 +1,33 @@
 package org.keycloak.tests.oid4vc.issuance.signing;
 
-import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-import org.keycloak.models.oid4vci.CredentialScopeModel;
-import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
+import org.keycloak.protocol.oid4vc.model.CredentialRequest;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
+import org.keycloak.protocol.oid4vc.model.CredentialScopeRepresentation;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.tests.oid4vc.OID4VCBasicWallet.AuthorizationEndpointRequest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
-import org.keycloak.tests.oid4vc.OID4VCProofTestUtils;
+import org.keycloak.tests.oid4vc.OID4VCTestContext;
+import org.keycloak.tests.oid4vc.OID4VCTestContext.AttachmentKey;
+import org.keycloak.testsuite.util.oauth.AccessTokenRequest;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
-import org.keycloak.testsuite.util.oauth.oid4vc.CredentialIssuerMetadataResponse;
-import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.Strings;
 
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.NoSuchElementException;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_IDENTIFIER;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -31,135 +35,219 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssuerTestBase {
 
-    private static final class Oid4vcTestContext {
-        CredentialIssuer credentialIssuer;
-    }
-
-    protected abstract ClientScopeRepresentation getCredentialClientScope();
+    protected abstract CredentialScopeRepresentation getCredentialScope();
 
     protected abstract void verifyCredentialStructure(Object credentialObj);
 
-    private void clearLoginState() {
-        try {
-            wallet.logout("john");
-        } catch (Exception e) {
-            log.warn("Failed to logout test user before authorization-details flow", e);
+    static final AttachmentKey<Boolean> ON_AUTH_REQUEST_ATTACHMENT_KEY = new AttachmentKey<>("onAuthRequest", Boolean.class);
+    static final AttachmentKey<Boolean> ON_TOKEN_REQUEST_ATTACHMENT_KEY = new AttachmentKey<>("onTokenRequest", Boolean.class);
+
+    @Test
+    public void testNoAuthorizationDetails() {
+        var ctx = new OID4VCTestContext(client, getCredentialScope());
+        String credIdentifier = ctx.getCredentialScope().getCredentialIdentifier();
+        runAuthorizationDetailsTest(ctx, false, false, credIdentifier);
+    }
+
+    @Test
+    public void testAuthorizationDetails_OnAuthRequest() {
+        var ctx = new OID4VCTestContext(client, getCredentialScope());
+        String credIdentifier = ctx.getCredentialScope().getCredentialIdentifier();
+        runAuthorizationDetailsTest(ctx, true, false, credIdentifier);
+    }
+
+    @Test
+    public void testAuthorizationDetails_OnTokenRequest() {
+        var ctx = new OID4VCTestContext(client, getCredentialScope());
+        String credIdentifier = ctx.getCredentialScope().getCredentialIdentifier();
+        runAuthorizationDetailsTest(ctx, false, true, credIdentifier);
+    }
+
+    @Test
+    public void testAuthorizationDetails_OnAuthRequest_AndTokenRequest() {
+        var ctx = new OID4VCTestContext(client, getCredentialScope());
+        String credIdentifier = ctx.getCredentialScope().getCredentialIdentifier();
+        runAuthorizationDetailsTest(ctx, true, true, credIdentifier);
+    }
+
+    @Test
+    public void testNoAuthorizationDetails_NoIdentifier() {
+        var ctx = new OID4VCTestContext(client, getCredentialScope());
+        runAuthorizationDetailsTest(ctx, false, false, "");
+    }
+
+    @Test
+    public void testAuthorizationDetails_OnAuthRequest_NoIdentifier() {
+        var ctx = new OID4VCTestContext(client, getCredentialScope());
+        runAuthorizationDetailsTest(ctx, true, false, "");
+    }
+
+    @Test
+    public void testAuthorizationDetails_OnTokenRequest_NoIdentifier() {
+        var ctx = new OID4VCTestContext(client, getCredentialScope());
+        runAuthorizationDetailsTest(ctx, false, true, "");
+    }
+
+    @Test
+    public void testAuthorizationDetails_OnAuthRequest_AndTokenRequest_NoIdentifier() {
+        var ctx = new OID4VCTestContext(client, getCredentialScope());
+        runAuthorizationDetailsTest(ctx, true, true, "");
+    }
+
+    @Test
+    public void testAuthorizationDetails_WithInvalidCredentialIdentifiers() {
+
+        var ctx = new OID4VCTestContext(client, getCredentialScope());
+        var credIdentifier = ctx.getCredentialScope().getCredentialIdentifier();
+        var issuerMetadata = wallet.getIssuerMetadata(ctx);
+
+        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+        authDetail.setType(OPENID_CREDENTIAL);
+        authDetail.setCredentialConfigurationId(ctx.getCredentialConfigurationId());
+        authDetail.setCredentialIdentifiers(List.of("credential_identifiers_not_allowed_here"));
+        authDetail.setLocations(List.of(issuerMetadata.getCredentialIssuer()));
+
+        ctx.putAttachment(ON_AUTH_REQUEST_ATTACHMENT_KEY, true);
+
+        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
+        // https://github.com/keycloak/keycloak/issues/47649
+        assertThrows(NoSuchElementException.class, () ->
+                runAuthorizationDetailsTest(ctx, credIdentifier, () -> authDetail, null, null, null));
+
+//        IllegalStateException ex = assertThrows(IllegalStateException.class, () ->
+//                runAuthorizationDetailsTest(ctx, credIdentifier, () -> authDetail, null, null, null));
+//        assertTrue(ex.getMessage().contains("Found invalid credential_identifiers in authorization_details"), "Unexpected - " + ex.getMessage());
+    }
+
+    @Test
+    public void testCredentialRequestWithCredentialConfigurationId() {
+
+        var ctx = new OID4VCTestContext(client, getCredentialScope());
+        var credIdentifier = ctx.getCredentialScope().getCredentialIdentifier();
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> runAuthorizationDetailsTest(ctx, credIdentifier, null, null, null,
+                () -> new CredentialRequest().setCredentialConfigurationId(ctx.getCredentialConfigurationId())));
+        assertTrue(ex.getMessage().contains("Credential must be requested by credential identifier from authorization_details"), ex.getMessage());
+    }
+
+    // Private ---------------------------------------------------------------------------------------------------------
+
+    private void runAuthorizationDetailsTest(OID4VCTestContext ctx, boolean onAuthRequest, boolean onTokenRequest, String credIdentifier) {
+
+        ctx.putAttachment(ON_AUTH_REQUEST_ATTACHMENT_KEY, onAuthRequest);
+        ctx.putAttachment(ON_TOKEN_REQUEST_ATTACHMENT_KEY, onTokenRequest);
+
+        runAuthorizationDetailsTest(ctx, credIdentifier, null, null, null, null);
+    }
+
+    private void runAuthorizationDetailsTest(
+            OID4VCTestContext ctx,
+            String credIdentifier,
+            Supplier<OID4VCAuthorizationDetail> authDetailSupplier,
+            Supplier<AuthorizationEndpointRequest> authRequestSupplier,
+            Function<String, AccessTokenRequest> tokenRequestSupplier,
+            Supplier<CredentialRequest> credentialRequestSupplier) {
+
+        String credConfigId = ctx.getCredentialConfigurationId();
+        String expCredentialIdentifier = !Strings.isEmpty(credIdentifier) ? credIdentifier : credConfigId + "_0000";
+
+        if (authDetailSupplier == null) {
+            authDetailSupplier = () -> {
+                var issuerMetadata = wallet.getIssuerMetadata(ctx);
+                OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
+                authDetail.setType(OPENID_CREDENTIAL);
+                authDetail.setCredentialConfigurationId(credConfigId);
+                authDetail.setLocations(List.of(issuerMetadata.getCredentialIssuer()));
+                return authDetail;
+            };
+        }
+        OID4VCAuthorizationDetail authDetail = authDetailSupplier.get();
+
+        if (authRequestSupplier == null) {
+            authRequestSupplier = () -> {
+                boolean onAuthRequest = ctx.getAttachment(ON_AUTH_REQUEST_ATTACHMENT_KEY, false);
+                AuthorizationEndpointRequest authRequest = wallet.authorizationRequest().scope(ctx.getScope());
+                if (onAuthRequest)
+                    authRequest.authorizationDetails(authDetail);
+                return authRequest;
+            };
         }
 
-        if (driver != null && driver.driver() != null) {
-            try {
-                driver.cookies().deleteAll();
-                driver.open("about:blank");
-            } catch (Exception e) {
-                log.warn("Failed to cleanup browser state before authorization-details flow", e);
+        if (tokenRequestSupplier == null) {
+            tokenRequestSupplier = (authCode) -> {
+                boolean onTokenRequest = ctx.getAttachment(ON_TOKEN_REQUEST_ATTACHMENT_KEY, false);
+                AccessTokenRequest tokenRequest = oauth.accessTokenRequest(authCode);
+                if (onTokenRequest)
+                    tokenRequest.authorizationDetails(List.of(authDetail));
+                return tokenRequest;
+            };
+        }
+
+        if (credentialRequestSupplier == null) {
+            credentialRequestSupplier = () -> new CredentialRequest()
+                    .setCredentialIdentifier(expCredentialIdentifier)
+                    .setProofs(wallet.generateJwtProof(ctx, ctx.getHolder()));
+        }
+
+        // Update the vc.credential_identifier attribute
+        //
+        String wasCredentialIdentifier = ctx.getCredentialScope().getCredentialIdentifier();
+        if (!wasCredentialIdentifier.equals(credIdentifier)) {
+            setCredentialScopeAttributes(ctx.getCredentialScope(), Map.of(VC_IDENTIFIER, credIdentifier));
+        }
+
+        try {
+            AuthorizationEndpointResponse authResponse = authRequestSupplier.get()
+                    .send(ctx.getHolder(), "password");
+
+            if (authResponse.getError() != null)
+                throw new IllegalStateException(authResponse.getErrorDescription());
+
+            String authCode = authResponse.getCode();
+            assertNotNull(authCode, "No authorization code");
+
+            AccessTokenResponse tokenResponse = tokenRequestSupplier.apply(authCode).send();
+            assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
+            String accessToken = tokenResponse.getAccessToken();
+
+            // TokenResponse requires credential_identifiers in authorization_details
+            // https://github.com/keycloak/keycloak/issues/47386
+
+            List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
+            assertNotNull(authDetailsResponse, "authorization_details should be present");
+            assertEquals(1, authDetailsResponse.size(), "Should have authorization_details");
+
+            OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
+            assertEquals(ctx.getCredentialConfigurationId(), authDetailResponse.getCredentialConfigurationId());
+
+            assertNotNull(authDetailResponse.getCredentialIdentifiers(), "Credential identifiers should be present");
+            assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
+            assertEquals(expCredentialIdentifier, authDetailResponse.getCredentialIdentifiers().get(0));
+
+            CredentialRequest credRequest = credentialRequestSupplier.get();
+            CredentialResponse credResponse = oauth.oid4vc()
+                    .credentialRequest(credRequest)
+                    .bearerToken(accessToken)
+                    .send().getCredentialResponse();
+
+            assertNotNull(credResponse, "Credential response should not be null");
+            assertNotNull(credResponse.getCredentials(), "Credentials should be present");
+            assertEquals(1, credResponse.getCredentials().size(), "Should have exactly one credential");
+
+            CredentialResponse.Credential credentialWrapper = credResponse.getCredentials().get(0);
+            assertNotNull(credentialWrapper, "Credential wrapper should not be null");
+
+            Object credentialObj = credentialWrapper.getCredential();
+            assertNotNull(credentialObj, "Credential object should not be null");
+
+            verifyCredentialStructure(credentialObj);
+
+        } finally {
+            // Restore the vc.credential_identifier attribute value
+            //
+            if (!wasCredentialIdentifier.equals(credIdentifier)) {
+                setCredentialScopeAttributes(ctx.getCredentialScope(), Map.of(VC_IDENTIFIER, wasCredentialIdentifier));
             }
         }
-    }
-
-    @Test
-    public void testAuthorizationCodeFlowWithAuthorizationDetails() throws Exception {
-        Oid4vcTestContext ctx = new Oid4vcTestContext();
-
-        clearLoginState();
-
-        CredentialIssuerMetadataResponse issuerMetadataResponse = oauth.oid4vc().issuerMetadataRequest().send();
-        assertEquals(HttpStatus.SC_OK, issuerMetadataResponse.getStatusCode());
-        ctx.credentialIssuer = issuerMetadataResponse.getMetadata();
-
-        ClientScopeRepresentation credClientScope = getCredentialClientScope();
-        String credConfigId = credClientScope.getAttributes().get(CredentialScopeModel.VC_CONFIGURATION_ID);
-
-        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-        authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialConfigurationId(credConfigId);
-        authDetail.setLocations(List.of(ctx.credentialIssuer.getCredentialIssuer()));
-
-        String authDetailsJson = JsonSerialization.valueAsString(List.of(authDetail));
-        String authDetailsEncoded = URLEncoder.encode(authDetailsJson, Charset.defaultCharset());
-
-        // [TODO #44320] Requires Credential scope in AuthorizationRequest although already given in AuthorizationDetails
-        AuthorizationEndpointResponse authEndpointResponse = oauth.loginForm()
-                .scope(credClientScope.getName())
-                .param("authorization_details", authDetailsEncoded)
-                .doLogin("john", "password");
-
-        String authCode = authEndpointResponse.getCode();
-        assertNotNull(authCode, "No authorization code");
-
-        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authCode)
-                .authorizationDetails(List.of(authDetail))
-                .send();
-        assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
-
-        String accessToken = tokenResponse.getAccessToken();
-
-        List<OID4VCAuthorizationDetail> authDetailsResponse = tokenResponse.getOID4VCAuthorizationDetails();
-        assertNotNull(authDetailsResponse, "authorization_details should be present in the response");
-        assertEquals(1, authDetailsResponse.size(),
-                "Should have authorization_details for each credential configuration in the offer");
-
-        OID4VCAuthorizationDetail authDetailResponse = authDetailsResponse.get(0);
-        assertNotNull(authDetailResponse.getCredentialIdentifiers(), "Credential identifiers should be present");
-        assertEquals(1, authDetailResponse.getCredentialIdentifiers().size());
-
-        String credentialIdentifier = authDetailResponse.getCredentialIdentifiers().get(0);
-        assertNotNull(credentialIdentifier, "Credential identifier should not be null");
-
-        String credentialConfigurationId = authDetailResponse.getCredentialConfigurationId();
-        assertNotNull(credentialConfigurationId, "Credential configuration id should not be null");
-
-        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
-        Oid4vcCredentialResponse credentialResponse = oauth.oid4vc().credentialRequest()
-                .credentialIdentifier(credentialIdentifier)
-                .proofs(OID4VCProofTestUtils.jwtProofs(ctx.credentialIssuer.getCredentialIssuer(), cNonce))
-                .bearerToken(accessToken)
-                .send();
-
-        CredentialResponse parsedResponse = credentialResponse.getCredentialResponse();
-        assertNotNull(parsedResponse, "Credential response should not be null");
-        assertNotNull(parsedResponse.getCredentials(), "Credentials should be present");
-        assertEquals(1, parsedResponse.getCredentials().size(), "Should have exactly one credential");
-
-        CredentialResponse.Credential credentialWrapper = parsedResponse.getCredentials().get(0);
-        assertNotNull(credentialWrapper, "Credential wrapper should not be null");
-
-        Object credentialObj = credentialWrapper.getCredential();
-        assertNotNull(credentialObj, "Credential object should not be null");
-
-        verifyCredentialStructure(credentialObj);
-    }
-
-    @Test
-    public void testAuthorizationCodeFlowWithCredentialIdentifier() throws Exception {
-        Oid4vcTestContext ctx = new Oid4vcTestContext();
-
-        CredentialIssuerMetadataResponse issuerMetadataResponse = oauth.oid4vc().issuerMetadataRequest().send();
-        assertEquals(HttpStatus.SC_OK, issuerMetadataResponse.getStatusCode());
-        ctx.credentialIssuer = issuerMetadataResponse.getMetadata();
-
-        ClientScopeRepresentation credClientScope = getCredentialClientScope();
-
-        OID4VCAuthorizationDetail authDetail = new OID4VCAuthorizationDetail();
-        authDetail.setType(OPENID_CREDENTIAL);
-        authDetail.setCredentialIdentifiers(List.of("credential_identifiers_not_allowed_here"));
-        authDetail.setLocations(List.of(ctx.credentialIssuer.getCredentialIssuer()));
-
-        String authDetailsJson = JsonSerialization.valueAsString(List.of(authDetail));
-        String authDetailsEncoded = URLEncoder.encode(authDetailsJson, Charset.defaultCharset());
-
-        // [TODO #44320] Requires Credential scope in AuthorizationRequest although already given in AuthorizationDetails
-        AuthorizationEndpointResponse authEndpointResponse = oauth.loginForm()
-                .scope(credClientScope.getName())
-                .param("authorization_details", authDetailsEncoded)
-                .doLogin("john", "password");
-
-        String authCode = authEndpointResponse.getCode();
-        assertNotNull(authCode, "No authorization code");
-
-        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(authCode)
-                .authorizationDetails(List.of(authDetail))
-                .send();
-        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
-        assertTrue(tokenResponse.getErrorDescription().contains("credential_identifiers not allowed"));
     }
 }

@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.openqa.selenium.By;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import static org.junit.Assert.assertEquals;

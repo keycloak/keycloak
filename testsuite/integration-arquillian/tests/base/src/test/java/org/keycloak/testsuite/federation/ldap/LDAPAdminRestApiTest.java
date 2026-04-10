@@ -40,6 +40,7 @@ import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
@@ -145,7 +146,7 @@ public class LDAPAdminRestApiTest extends AbstractLDAPTest {
 
     @Test
     public void updateUserWithAdminRest() throws Exception {
-        UserResource userRes = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource userRes = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
         UserRepresentation user = userRes.toRepresentation();
 
         List<String> origLdapId = new ArrayList<>(user.getAttributes().get(LDAPConstants.LDAP_ID));

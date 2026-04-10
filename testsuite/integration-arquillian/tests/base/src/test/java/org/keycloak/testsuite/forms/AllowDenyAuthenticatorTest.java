@@ -90,7 +90,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
         configureBrowserFlowWithDenyAccess(flowAlias, denyAccessConfigMap);
 
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(userWithoutAttribute);
 
@@ -129,7 +129,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
         configureBrowserFlowWithDenyAccessInConditionalFlow(flowAlias, ConditionalUserAttributeValueFactory.PROVIDER_ID, attributeConfigMap, denyAccessConfigMap);
 
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(userWithoutAttribute);
 
@@ -165,7 +165,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
         configureBrowserFlowWithDenyAccessInConditionalFlow(flowAlias, ConditionalUserAttributeValueFactory.PROVIDER_ID, attributeConfigMap, denyAccessConfigMap);
 
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(userWithoutAttribute);
 
@@ -233,7 +233,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
      */
     private void denyAccessInConditionalFlow(String flowAlias, String userCondMatch, String userCondNotMatch, String errorMessage) {
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(userCondMatch);
 
@@ -250,7 +250,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
 
             final String userCondNotMatchId = testRealm().users().search(userCondNotMatch).get(0).getId();
 
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(userCondNotMatch);
 
@@ -281,7 +281,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
 
         configureBrowserFlowWithSkipExecutionInConditionalFlow(newFlowAlias, ConditionalRoleAuthenticatorFactory.PROVIDER_ID, configMap);
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(userWithoutRole);
 
@@ -315,7 +315,7 @@ public class AllowDenyAuthenticatorTest extends AbstractChangeImportedUserPasswo
 
         configureBrowserFlowWithSkipExecutionInConditionalFlow(newFlowAlias, ConditionalRoleAuthenticatorFactory.PROVIDER_ID, configMap);
         try {
-            loginUsernameOnlyPage.open();
+            oauth.openLoginForm();
             loginUsernameOnlyPage.assertCurrent();
             loginUsernameOnlyPage.login(userWithRole);
 

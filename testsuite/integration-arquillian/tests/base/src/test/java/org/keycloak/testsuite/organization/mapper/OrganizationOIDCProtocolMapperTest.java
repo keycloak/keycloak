@@ -122,6 +122,7 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testMultipleOrganizationScopes() throws Exception {
         OrganizationResource orga = testRealm().organizations().get(createOrganization("org-a").getId());
         OrganizationResource orgb = testRealm().organizations().get(createOrganization("org-b").getId());
@@ -136,15 +137,34 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         Assert.assertTrue(orgb.members().list(-1, -1).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
 
         oauth.clientId("test-app");
-        oauth.scope("openid organization organization:org-a");
+
+        // Test multiple specific organization scopes - should return both organizations
+        oauth.scope("openid organization:org-a organization:org-b");
         AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatusCode());
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        Assert.assertNotNull(organizations);
+        Assert.assertTrue(organizations.contains("org-a"));
+        Assert.assertTrue(organizations.contains("org-b"));
+
+        // Test organization + specific organization scope - should still fail (mixing ANY with SPECIFIC)
+        oauth.scope("openid organization organization:org-a");
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
 
+        // Test organization + wildcard scope - should still fail (mixing ANY with ALL)
         oauth.scope("openid organization organization:*");
         response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
 
+        // Test specific organization + wildcard scope - should still fail (mixing SPECIFIC with ALL)
         oauth.scope("openid organization:org-a organization:*");
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+
+        // Test nonexistent org alias - should fail (nonexistent alias is not a valid scope)
+        oauth.scope("openid organization:org-a organization:nonexistent");
         response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
         Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
     }
@@ -1453,6 +1473,65 @@ public class OrganizationOIDCProtocolMapperTest extends AbstractOrganizationTest
         assertThat(List.of(accessToken.getScope().split(" ")), not(hasItem("org")));
         assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
         assertThat((List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION), hasSize(2));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testCustomOrganizationScopeNameMultipleSpecific() throws Exception {
+        OrganizationResource orga = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgb = testRealm().organizations().get(createOrganization("org-b").getId());
+
+        addMember(orga);
+
+        UserRepresentation member = getUserRepresentation(memberEmail);
+
+        orgb.members().addMember(member.getId()).close();
+
+        assertTrue(orga.members().list(null, null).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+        assertTrue(orgb.members().list(null, null).stream().map(UserRepresentation::getId).anyMatch(member.getId()::equals));
+
+        // Create custom "org" scope with OrganizationMembershipMapper
+        ClientScopeRepresentation orgScope = testRealm().clientScopes().findAll().stream()
+                .filter(s -> OIDCLoginProtocolFactory.ORGANIZATION.equals(s.getName()))
+                .findAny()
+                .orElseThrow();
+        ClientScopeResource orgScopeResource = testRealm().clientScopes().get(orgScope.getId());
+        ProtocolMapperRepresentation orgMapper = orgScopeResource.getProtocolMappers().getMappers().stream()
+                .filter(m -> OIDCLoginProtocolFactory.ORGANIZATION.equals(m.getName()))
+                .findAny()
+                .orElseThrow();
+        orgMapper.setId(null);
+        orgScope.setProtocolMappers(List.of(orgMapper));
+        orgScope.setId(null);
+        orgScope.setName("org");
+        String createdId = ApiUtil.getCreatedId(testRealm().clientScopes().create(orgScope));
+        testRealm().addDefaultDefaultClientScope(createdId);
+        ClientRepresentation testApp = testRealm().clients().findByClientId("test-app").get(0);
+        testRealm().clients().get(testApp.getId()).addDefaultClientScope(createdId);
+        getCleanup().addCleanup(() -> testRealm().clientScopes().get(createdId).remove());
+
+        oauth.clientId("test-app");
+
+        // Test multiple specific organization scopes with custom scope name - should return both organizations
+        oauth.scope("openid org:org-a org:org-b");
+        AccessTokenResponse response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        assertThat(response.getStatusCode(), is(Response.Status.OK.getStatusCode()));
+        AccessToken accessToken = TokenVerifier.create(response.getAccessToken(), AccessToken.class).getToken();
+        assertThat(accessToken.getOtherClaims().keySet(), hasItem(OAuth2Constants.ORGANIZATION));
+        List<String> organizations = (List<String>) accessToken.getOtherClaims().get(OAuth2Constants.ORGANIZATION);
+        assertThat(organizations, hasSize(2));
+        assertThat(organizations, hasItem("org-a"));
+        assertThat(organizations, hasItem("org-b"));
+
+        // Test mixing custom ANY + SPECIFIC scope - should fail
+        oauth.scope("openid org org:org-a");
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        assertThat(response.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
+
+        // Test mixing custom SPECIFIC + ALL scope - should fail
+        oauth.scope("openid org:org-a org:*");
+        response = oauth.doPasswordGrantRequest(memberEmail, memberPassword);
+        assertThat(response.getStatusCode(), is(Response.Status.BAD_REQUEST.getStatusCode()));
     }
 
     @Test

@@ -30,7 +30,7 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPAttributeMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -100,11 +100,11 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
     public void ldapPasswordChangeWithAccountConsole() throws Exception {
         Assert.assertTrue(AccountHelper.updatePassword(testRealm(), "johnkeycloak", "New-password1"));
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Bad-password1");
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "New-password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -114,14 +114,14 @@ public class LDAPPasswordModifyExtensionTest extends AbstractLDAPTest  {
 
     @Test
     public void registerUserLdapSuccess() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
         registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(),"registerUserSuccess2");
+        UserRepresentation user = AdminApiUtil.findUserByUsername(testRealm(),"registerUserSuccess2");
         Assert.assertNotNull(user);
         assertFederatedUserLink(user);
         Assert.assertEquals("registerusersuccess2", user.getUsername());

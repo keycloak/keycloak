@@ -32,6 +32,7 @@ import org.keycloak.rar.AuthorizationRequestSource;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
@@ -48,7 +49,7 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
 
     @Test
     public void generatedAuthorizationRequestsShouldMatchDefaultScopes() {
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         List<ClientScopeRepresentation> defScopes = testApp.getDefaultClientScopes();
         oauth.openLoginForm();
         oauth.scope("openid");
@@ -79,7 +80,7 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addDefaultClientScope(scopeId);
@@ -117,7 +118,7 @@ public class DynamicScopesRARParseTest extends AbstractRARParserTest {
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addOptionalClientScope(scopeId);

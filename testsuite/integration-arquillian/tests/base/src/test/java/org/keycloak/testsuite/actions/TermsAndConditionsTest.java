@@ -91,7 +91,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
     @Test
     public void termsAccepted() {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 
@@ -126,7 +126,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
 
     @Test
     public void termsDeclined() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
         Assert.assertTrue(termsPage.isCurrent());
 
@@ -207,7 +207,7 @@ public class TermsAndConditionsTest extends AbstractChangeImportedUserPasswordsT
         rep.setEnabled(false);
         adminClient.realm("test").flows().updateRequiredAction(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name(), rep);
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", getPassword("test-user@localhost"));
 

@@ -33,6 +33,7 @@ import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
@@ -373,7 +374,7 @@ public class OrganizationAuthenticationTest extends AbstractOrganizationTest {
                 .password(memberPassword)
                 .build();
         
-        String memberId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), member, memberPassword);
+        String memberId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), member, memberPassword);
         organization.members().addMember(memberId).close();
         
         // Enter the email address in the login form

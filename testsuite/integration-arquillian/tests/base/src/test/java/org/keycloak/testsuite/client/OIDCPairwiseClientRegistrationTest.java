@@ -43,7 +43,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -204,7 +204,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
         String clientId = response.getClientId();
         ProtocolMapperRepresentation pairwiseProtMapper = SHA256PairwiseSubMapper.createPairwiseMapper(sectorIdentifierUri, null);
         RealmResource realmResource = realmsResouce().realm("test");
-        ClientResource clientResource = ApiUtil.findClientByClientId(realmsResouce().realm("test"), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(realmsResouce().realm("test"), clientId);
         Response resp = clientResource.getProtocolMappers().createMapper(pairwiseProtMapper);
         Assert.assertEquals(400, resp.getStatus());
 
@@ -493,7 +493,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
                 .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
                 .findFirst()
                 .ifPresent(scope-> {
-                    ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), clientId).addDefaultClientScope(scope.getId());
+                    AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), clientId).addDefaultClientScope(scope.getId());
                 });
     }
 
@@ -503,7 +503,7 @@ public class OIDCPairwiseClientRegistrationTest extends AbstractClientRegistrati
                 .filter(scope-> scope.getName().equals(OIDCLoginProtocolFactory.BASIC_SCOPE))
                 .findFirst()
                 .ifPresent(scope-> {
-                    ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), clientId).removeDefaultClientScope(scope.getId());
+                    AdminApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), clientId).removeDefaultClientScope(scope.getId());
                 });
     }
 }

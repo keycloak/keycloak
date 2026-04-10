@@ -72,6 +72,7 @@ import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -430,7 +431,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     private void loginSuccessAndLogout(String username, String password) {
         events.clear();
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -502,7 +503,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     public void deleteFederationLink() throws Exception {
         // KEYCLOAK-4789: Login in client, which requires consent
         oauth.clientId("third-party");
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
 
         grantPage.assertCurrent();
@@ -515,7 +516,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testRealm().components().component(ldapModelId).remove();
 
         // User not available once LDAP provider was removed
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
         loginPage.assertCurrent();
 
@@ -539,7 +540,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void loginClassic() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("marykeycloak", "password-app");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -549,7 +550,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void loginLdap() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Password1");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -574,7 +575,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void loginLdapWithEmail() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("john@email.org", "Password1");
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -583,7 +584,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void loginLdapWithoutPassword() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("john@email.org", "");
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
     }
@@ -592,11 +593,11 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     public void ldapPasswordChangeWithAccountConsole() throws Exception {
         Assert.assertTrue(AccountHelper.updatePassword(testRealm(), "johnkeycloak", "New-password1"));
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "Bad-password1");
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("johnkeycloak", "New-password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -612,7 +613,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         String email = username + "@email.cz";
 
         // Register new LDAP user with password, logout user
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
         registerPage.register("firstName", "lastName", email,
@@ -621,7 +622,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), username);
         String userId = user.toRepresentation().getId();
 
         events.expectRegister(username, email).assertEvent();
@@ -634,9 +635,9 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         assertPasswordConfiguredThroughLDAPOnly(user);
 
         // Update password through admin REST endpoint. Assert user can authenticate with the new password
-        ApiUtil.resetUserPassword(user, "Password1-updated1", false);
+        AdminApiUtil.resetUserPassword(user, "Password1-updated1", false);
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginSuccessAndLogout(username, "Password1-updated1");
 
@@ -650,7 +651,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             user2.setRequiredActions(Arrays.asList(UserModel.RequiredAction.UPDATE_PASSWORD.toString()));
             user.update(user2);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login(username, "Password1-updated1");
             requiredActionChangePasswordPage.assertCurrent();
 
@@ -690,7 +691,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void registerExistingLdapUser() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -741,14 +742,14 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void registerUserLdapSuccess() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
         registerPage.register("firstName", "lastName", "email2@check.cz", "register-user-success2", "Password1", "Password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(),"register-user-success2");
+        UserRepresentation user = AdminApiUtil.findUserByUsername(testRealm(),"register-user-success2");
         Assert.assertNotNull(user);
         assertFederatedUserLink(user);
         Assert.assertEquals("register-user-success2", user.getUsername());
@@ -855,7 +856,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         });
 
         // Register new user
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
@@ -999,7 +1000,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
 
         // Try to import the duplicated LDAP user into Keycloak
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("mary-duplicatemail", "password");
         Assert.assertEquals("Email already exists.", loginPage.getError());
 
@@ -1019,7 +1020,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             appRealm.updateComponent(ctx.getLdapModel());
         });
 
-        UserRepresentation userRep = ApiUtil.findUserByUsername(testRealm(), "johnkeycloak");
+        UserRepresentation userRep = AdminApiUtil.findUserByUsername(testRealm(), "johnkeycloak");
         assertFederatedUserLink(userRep);
 
         testingClient.server().run(session -> {
@@ -1072,17 +1073,17 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testRemoveFederatedUser() {
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
+        UserRepresentation user = AdminApiUtil.findUserByUsername(testRealm(), "register-user-success2");
 
         // Case when this test was executed "alone" (User "registerusersuccess2" is registered inside registerUserLdapSuccess)
         if (user == null) {
             registerUserLdapSuccess();
-            user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
+            user = AdminApiUtil.findUserByUsername(testRealm(), "register-user-success2");
         }
 
         assertFederatedUserLink(user);
         testRealm().users().get(user.getId()).remove();
-        user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
+        user = AdminApiUtil.findUserByUsername(testRealm(), "register-user-success2");
         Assert.assertNull(user);
     }
 
@@ -1253,7 +1254,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         });
 
         // Test admin REST endpoints
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
 
         // Assert password is stored locally
         List<String> storedCredentials = userResource.credentials().stream()
@@ -1599,7 +1600,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             ctx.getRealm().updateComponent(ctx.getLdapModel());
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "testUserVerified", "John", "Email", "john@test.com", null, "1234");
         });
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("testuserVerified", "password");
 
         testingClient.server().run(session -> {
@@ -1616,7 +1617,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             LDAPTestUtils.addLDAPUser(ctx.getLdapProvider(), ctx.getRealm(), "testUserNotVerified", "John", "Email", "john2@test.com", null, "1234");
         });
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("testuserNotVerified", "password");
 
         testingClient.server().run(session -> {
@@ -1680,7 +1681,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         loginSuccessAndLogout("beckyupdated", "MyChangedPassword11");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("beckybecks", "Password1");
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
 

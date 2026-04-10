@@ -24,7 +24,7 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -36,7 +36,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -483,7 +483,7 @@ public class OAuthProofKeyForCodeExchangeTest extends AbstractKeycloakTest {
     // KEYCLOAK-10747 Explicit Proof Key for Code Exchange Activation Settings
 
     private void setPkceActivationSettings(String clientId, String codeChallengeMethodName) {
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), clientId);
         ClientRepresentation clientRep = clientResource.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setPkceCodeChallengeMethod(codeChallengeMethodName);
         clientResource.update(clientRep);

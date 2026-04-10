@@ -5,10 +5,8 @@ import java.util.List;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
-import org.keycloak.protocol.oid4vc.model.Proofs;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -19,8 +17,6 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Test;
-
-import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.jwtProofs;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -89,7 +85,7 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(getJwtProofs(ctx))
+                .proofs(wallet.generateJwtProof(ctx, ctx.getHolder()))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getIssuer(), credResponse);
@@ -113,13 +109,13 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         assertNotNull(accessToken, "No accessToken");
 
         String authorizedIdentifier = ctx.getAuthorizedCredentialIdentifier();
-        assertNotNull(authorizedIdentifier, "No authorized credential identifier");
+        assertNotNull(authorizedIdentifier, "Has authorized credential identifier");
 
         // Send the CredentialRequest
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(getJwtProofs(ctx))
+                .proofs(wallet.generateJwtProof(ctx, ctx.getHolder()))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
@@ -140,11 +136,5 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         assertEquals(List.of(scope), credential.getType());
         assertEquals(URI.create("did:web:test.org"), credential.getIssuer());
         assertEquals(expUser + "@email.cz", credential.getCredentialSubject().getClaims().get("email"));
-    }
-
-    private Proofs getJwtProofs(OID4VCTestContext ctx) {
-        String cNonce = oauth.oid4vc().nonceRequest().send().getNonce();
-        CredentialIssuer issuerMetadata = wallet.getIssuerMetadata(ctx);
-        return jwtProofs(issuerMetadata.getCredentialIssuer(), cNonce);
     }
 }

@@ -37,12 +37,14 @@ import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 
 import org.apache.http.HttpStatus;
 import org.junit.Test;
+import org.openqa.selenium.TimeoutException;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -231,22 +233,12 @@ public class OID4VCAuthorizationCodeFlowWithPARTest extends OID4VCIssuerEndpoint
         // Step 2: Perform authorization with PAR
         oauth.client(clientId);
         oauth.scope(getCredentialClientScope().getName());
-        oauth.loginForm().requestUri(requestUri).doLogin("john", "password");
+        TimeoutException ex = assertThrows(TimeoutException.class, () ->
+                oauth.loginForm().requestUri(requestUri).doLogin("john", "password"));
 
-        String code = oauth.parseLoginResponse().getCode();
-        assertNotNull("Authorization code should not be null", code);
-
-        // Step 3: Exchange authorization code for tokens (should fail because of invalid authorization_details)
-        AccessTokenResponse tokenResponse = oauth.accessTokenRequest(code)
-                .endpoint(ctx.openidConfig.getTokenEndpoint())
-                .client(oauth.getClientId(), "password")
-                .send();
-
-        // Should fail because authorization_details from PAR request cannot be processed
-        assertEquals(HttpStatus.SC_BAD_REQUEST, tokenResponse.getStatusCode());
-        String errorDescription = tokenResponse.getErrorDescription();
-        assertTrue("Error message should indicate authorization_details processing failure",
-                errorDescription != null && errorDescription.contains("authorization_details was used in authorization request but cannot be processed for token response"));
+        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
+        assertNotNull("No error message", ex.getMessage());
+        assertTrue(ex.getMessage(), ex.getMessage().contains("waiting for element Proxy element for: DefaultElementLocator 'By.id: username' to be present"));
     }
 
     @Test

@@ -55,8 +55,8 @@ import org.keycloak.testsuite.util.oauth.OAuthClient;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import static org.junit.Assert.assertEquals;

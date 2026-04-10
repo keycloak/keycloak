@@ -29,7 +29,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -103,7 +103,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
     public void beforeEach() {
         setRequiredActionEnabled(TEST_REALM_NAME, TermsAndConditions.PROVIDER_ID, true, false);
 
-        testUserId = ApiUtil.findUserByUsernameId(testRealm(), USERNAME).toRepresentation().getId();
+        testUserId = AdminApiUtil.findUserByUsernameId(testRealm(), USERNAME).toRepresentation().getId();
     }
 
     @Override
@@ -130,7 +130,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
         // Login
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME, PASSWORD);
 
         // First, accept terms
@@ -173,14 +173,14 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.UPDATE_PROFILE,
                 RequiredAction.TERMS_AND_CONDITIONS
         );
-        ApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
 
         enableRequiredActionForUser(RequiredAction.UPDATE_PASSWORD);
         enableRequiredActionForUser(RequiredAction.UPDATE_PROFILE);
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
         // Login
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME, PASSWORD);
 
         // First, change password
@@ -223,7 +223,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.UPDATE_PROFILE,
                 RequiredAction.TERMS_AND_CONDITIONS
         );
-        ApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
 
         enableRequiredActionForUser(RequiredAction.UPDATE_PASSWORD);
         // we don't enable UPDATE_PROFILE for the user, we set this as kc_action param instead
@@ -276,14 +276,14 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.UPDATE_PROFILE,
                 RequiredAction.TERMS_AND_CONDITIONS
         );
-        ApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
 
         // NOTE: we don't configure UPDATE_PASSWORD on the user - it's set on the session by the reset-password flow
         enableRequiredActionForUser(RequiredAction.UPDATE_PROFILE);
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
         // Get a password reset link
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent(TEST_REALM_NAME);
         loginPage.resetPassword();
 
@@ -338,7 +338,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.VERIFY_PROFILE,
                 RequiredAction.TERMS_AND_CONDITIONS
         );
-        ApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
 
         // make user profile invalid by setting lastName to empty
         final var userResource = testRealm().users().get(testUserId);
@@ -350,7 +350,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         enableRequiredActionForUser(RequiredAction.TERMS_AND_CONDITIONS);
 
         // Get a password reset link
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent(TEST_REALM_NAME);
         loginPage.login(USERNAME, PASSWORD);
 
@@ -390,10 +390,10 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.UPDATE_PASSWORD,
                 RequiredAction.CONFIGURE_TOTP
         );
-        ApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
 
         // Login
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME, PASSWORD);
 
         // change password
@@ -440,10 +440,10 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
                 RequiredAction.VERIFY_EMAIL,
                 RequiredAction.UPDATE_PASSWORD
         );
-        ApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
+        AdminApiUtil.updateRequiredActionsOrder(testRealm(), requiredActionsCustomOrdered);
 
         // Login
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(USERNAME, PASSWORD);
         events.expectRequiredAction(EventType.CUSTOM_REQUIRED_ACTION).assertEvent();
 

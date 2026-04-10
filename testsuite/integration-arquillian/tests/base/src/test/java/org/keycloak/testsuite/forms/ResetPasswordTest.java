@@ -58,6 +58,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
@@ -143,7 +144,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                 .build();
 
         password = generatePassword();
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), defaultUser, password);
+        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), defaultUser, password);
         defaultUser.setId(userId);
         expectedMessagesCount = 0;
         getCleanup().addUserId(userId);
@@ -199,7 +200,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void resetPasswordLoggedUser() throws IOException {
         String username = "login-test";
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
 
         events.expectLogin().user(userId).detail(Details.USERNAME, username).assertEvent();
@@ -329,7 +330,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
         // Client disabled
-        ClientResource client = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         ClientRepresentation clientRep = client.toRepresentation();
         clientRep.setEnabled(false);
         client.update(clientRep);
@@ -509,7 +510,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void resetPasswordBackButton() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("login@test.com", "wrongpassword");
         loginPage.resetPassword();
         resetPasswordPage.assertCurrent();
@@ -570,9 +571,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             // relogin is forced therefore the info page should be displayed
             Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
             String backToAppLink = infoPage.getBackToApplicationLink();
-            ClientRepresentation client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
+            ClientRepresentation client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
             Assert.assertEquals(backToAppLink, client.getBaseUrl());
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.assertCurrent();
         } else {
             // continue to app because it is the same browser and auth session exists
@@ -586,7 +587,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
 
-            loginPage.open();
+            oauth.openLoginForm();
 
             loginPage.login("login-test", password);
 
@@ -631,7 +632,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void initiateResetPasswordFromResetPasswordPage(String username) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
@@ -654,7 +655,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void resetPasswordMissingUsername() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
@@ -1151,7 +1152,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             realmRep.setSmtpServer(smtpConfig);
             testRealm().update(realmRep);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
 
             resetPasswordPage.assertCurrent();
@@ -1221,7 +1222,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogout(sessionId).user(userId).session(sessionId).assertEvent();
 
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("login-test", "resetPasswordWithPasswordPolicy");
 
@@ -1387,7 +1388,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void resetPasswordLinkNewBrowserSessionPreserveClient() throws IOException {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.resetPassword();
 
         resetPasswordPage.assertCurrent();
@@ -1469,7 +1470,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
             assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
 
-            loginPage.open();
+            oauth.openLoginForm();
             resetPasswordInNewTab(defaultUser, CLIENT_ID, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
 
@@ -1477,7 +1478,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 
-            loginPage.open();
+            oauth.openLoginForm();
             resetPasswordInNewTab(defaultUser, CLIENT_ID, REDIRECT_URI);
             assertThat(driver.getCurrentUrl(), Matchers.containsString(REDIRECT_URI));
         }
@@ -1490,7 +1491,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         Boolean originalDuplicateEmailsAllowed = realmRep.isDuplicateEmailsAllowed();
 
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
 
             resetPasswordPage.assertCurrent();
@@ -1501,7 +1502,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             realmRep.setDuplicateEmailsAllowed(true);
             testRealm().update(realmRep);
 
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.resetPassword();
 
             resetPasswordPage.assertCurrent();

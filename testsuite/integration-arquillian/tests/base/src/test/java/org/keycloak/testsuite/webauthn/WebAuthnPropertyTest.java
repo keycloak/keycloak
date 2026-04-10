@@ -141,7 +141,7 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
 
         logout();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent();
         loginPage.login(USERNAME, getPassword(USERNAME));
         webAuthnLoginPage.assertCurrent();

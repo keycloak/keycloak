@@ -45,7 +45,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
@@ -121,7 +121,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void configureRequiredActionsToUser(String username, String... actions) {
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), username);
         UserRepresentation userRepresentation = userResource.toRepresentation();
         userRepresentation.setRequiredActions(Arrays.asList(actions));
         userResource.update(userRepresentation);
@@ -129,14 +129,14 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void setOTPAuthRequired() {
-        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
                 .email("test-user@localhost")
                 .firstName("Tom")
                 .lastName("Brady")
                 .build();
-        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
 
 
@@ -169,7 +169,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void setupTotpRegister() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "email@mail.com", "setupTotp", "password", "password");
 
@@ -216,7 +216,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void setupTotpRegisterManual() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "checkQrCode@mail.com", "checkQrCode", "password", "password");
 
@@ -277,7 +277,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-7081
     @Test
     public void setupTotpRegisterManualModeSwitchesOnBadSubmit() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "setupTotpRegisterManualModeSwitchesOnBadSubmit@mail.com", "setupTotpRegisterManualModeSwitchesOnBadSubmit", "password", "password");
 
@@ -306,7 +306,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     // KEYCLOAK-7081
     @Test
     public void setupTotpRegisterBarcodeModeSwitchesOnBadSubmit() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "setupTotpRegisterBarcodeModeSwitchesOnBadSubmit@mail.com", "setupTotpRegisterBarcodeModeSwitchesOnBadSubmit", "password", "password");
 
@@ -334,7 +334,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void setupTotpRegisterVerifyCustomOtpLabelSetProperly() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
         registerPage.register("firstName", "lastName", "setupTotpRegister@mail.com", "setupTotpRegister", "password", "password");
 
@@ -366,7 +366,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         rep.setOtpPolicyAlgorithm("HmacSHA256");
         realm.update(rep);
         try {
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.register("firstName", "lastName", "setupTotpModifiedPolicy@mail.com", "setupTotpModifiedPolicy", "password", "password");
 
@@ -403,7 +403,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     }
 
     public void setupTotpExisting(boolean reusableCodesEnabled) {
-        loginPage.open();
+        oauth.openLoginForm();
 
         loginPage.login("test-user@localhost", "password");
 
@@ -432,7 +432,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogout(authSessionId1).assertEvent();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         loginTotpPage.login(firstCode);
@@ -455,13 +455,13 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             String configureTotp = UserModel.RequiredAction.CONFIGURE_TOTP.name();
 
             // Remove required action from the user
-            UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+            UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), username);
             UserRepresentation userRepresentation = user.toRepresentation();
             userRepresentation.getRequiredActions().remove(configureTotp);
             user.update(userRepresentation);
 
             // login
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login(username, "password");
 
             // ensure TOTP configuration is enforced for current authentication session
@@ -480,7 +480,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         setOTPAuthRequirement(AuthenticationExecutionModel.Requirement.REQUIRED, AuthenticationExecutionModel.Requirement.REQUIRED);
         try {
             // Register new user
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.clickRegister();
             registerPage.register("firstName2", "lastName2", "email2@mail.com", "setupTotp2", "password2", "password2");
 
@@ -514,7 +514,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
             // Try to login after logout
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("setupTotp2", "password2");
 
             // Totp is already configured, thus one-time password is needed, login page should be loaded
@@ -535,7 +535,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
 
             // Try to login
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("setupTotp2", "password2");
 
             // Since the authentificator was removed, it has to be set up again
@@ -576,7 +576,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         adminClient.realm("test").update(realmRep);
 
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         totpPage.assertCurrent();
@@ -605,7 +605,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, timeBased);
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         String src = driver.getPageSource();
         String token = timeBased.generateTOTP(totpSecret);
@@ -636,7 +636,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         adminClient.realm("test").update(realmRep);
 
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         totpPage.assertCurrent();
@@ -663,7 +663,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         loginTotpPage.assertCurrent();
         loginTotpPage.login(otpgen.generateHOTP(totpSecret, 1));
@@ -689,7 +689,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         adminClient.realm("test").update(realmRep);
 
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         loginTotpPage.assertCurrent();
         loginTotpPage.login(otpgen.generateHOTP(totpSecret, 2));
@@ -735,7 +735,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         configureRequiredActionsToUser("test-user@localhost", UserModel.RequiredAction.CONFIGURE_TOTP.name());
 
         // login and configure totp checking/unchecking the logout checkbox
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
         totpPage.assertCurrent();
         if (logoutOtherSessions) {
@@ -788,7 +788,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
         try {
             // Login
-            loginPage.open();
+            oauth.openLoginForm();
             loginPage.login("test-user@localhost", "password");
 
             // Configure OTP

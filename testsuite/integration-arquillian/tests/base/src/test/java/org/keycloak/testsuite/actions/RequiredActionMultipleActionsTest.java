@@ -63,7 +63,7 @@ public class RequiredActionMultipleActionsTest extends AbstractTestRealmKeycloak
 
     @Test
     public void updateProfileAndPassword() throws Exception {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("test-user@localhost", "password");
 
         String codeId = null;

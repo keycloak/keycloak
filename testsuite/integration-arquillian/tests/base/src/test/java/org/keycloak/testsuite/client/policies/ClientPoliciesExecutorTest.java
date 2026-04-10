@@ -88,7 +88,7 @@ import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFac
 import org.keycloak.services.clientpolicy.executor.SecureSessionEnforceExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -260,7 +260,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         successfulLoginAndLogout(clientId, "secret");
 
         // Add role to the client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
         Assert.assertEquals(ClientIdAndSecretAuthenticator.PROVIDER_ID, clientRep.getClientAuthenticatorType());
@@ -1418,7 +1418,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleCommonName).build());
 
 
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
 
@@ -1509,7 +1509,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleAlphaName).build());
         adminClient.realm(REALM_NAME).clients().get(cid).roles().create(RoleBuilder.create().name(roleCommonName).build());
 
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
 
@@ -1740,7 +1740,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         String clientId = generateSuffixedName(CLIENT_NAME);
         createClientByAdmin(clientId, (ClientRepresentation clientRep) -> clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID));
 
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
 
@@ -1787,7 +1787,7 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         assertEquals(400, tokenResponse.getStatusCode());
 
         // Send a token request with valid 'aud' . Should succeed
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), TEST_USER_NAME);
+        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), TEST_USER_NAME);
         user.logout();
 
         loginResponse = oauth.loginForm().doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);

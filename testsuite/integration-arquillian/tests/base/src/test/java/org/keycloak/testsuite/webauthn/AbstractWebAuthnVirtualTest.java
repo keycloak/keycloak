@@ -43,7 +43,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -175,7 +175,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     public UserResource userResource() {
-        return ApiUtil.findUserByUsernameId(testRealm(), USERNAME);
+        return AdminApiUtil.findUserByUsernameId(testRealm(), USERNAME);
     }
 
     public VirtualAuthenticatorOptions getDefaultAuthenticatorOptions() {
@@ -232,7 +232,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     protected void registerUser(String username, String password, String email, String authenticatorLabel, boolean shouldSuccess) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
 
         waitForPageToLoad();
@@ -300,7 +300,7 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractChangeImported
     }
 
     protected void authenticateUser(String username, String password, boolean shouldSuccess) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.assertCurrent(TEST_REALM_NAME);
         loginPage.login(username, password);
 

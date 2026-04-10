@@ -28,7 +28,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -51,7 +51,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.PageFactory;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
-import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
+import static org.keycloak.testsuite.admin.AdminApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.assertHardCodedSessionNote;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureAutoLinkFlow;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureConfirmOverrideLinkFlow;
@@ -885,7 +885,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         configureSMTPServer();
 
         // change provider user email to changed@localhost.com
-        UserRepresentation userProvider = ApiUtil.findUserByUsername(providerRealm, bc.getUserLogin());
+        UserRepresentation userProvider = AdminApiUtil.findUserByUsername(providerRealm, bc.getUserLogin());
         userProvider.setEmail("changed@localhost.com");
         providerRealm.users().get(userProvider.getId()).update(userProvider);
 
@@ -1666,7 +1666,7 @@ public abstract class AbstractFirstBrokerLoginTest extends AbstractInitializedBa
         idpConfirmOverrideLinkPage.clickConfirmOverride();
 
         // assert federated identity override
-        UserRepresentation user = ApiUtil.findUserByUsername(providerRealm, bc.getUserLogin());
+        UserRepresentation user = AdminApiUtil.findUserByUsername(providerRealm, bc.getUserLogin());
         String providerUserId = user.getId();
         List<FederatedIdentityRepresentation> federatedIdentities = consumerRealm.users().get(createdUser).getFederatedIdentity();
         assertEquals(1, federatedIdentities.size());

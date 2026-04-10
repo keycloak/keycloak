@@ -93,7 +93,7 @@ public class CustomRegistrationFlowTest extends AbstractFlowTest {
 
     @Test
     public void registerUserSuccess() {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.clickRegister();
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());

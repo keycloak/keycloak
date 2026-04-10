@@ -119,7 +119,7 @@ import org.junit.Test;
 
 import static org.keycloak.OAuth2Constants.SCOPE_PHONE;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createAnyClientConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;

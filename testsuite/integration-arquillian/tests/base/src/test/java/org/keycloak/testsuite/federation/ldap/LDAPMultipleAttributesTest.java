@@ -187,7 +187,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         oauth.client("ldap-portal", "password");
         oauth.redirectUri(suiteContext.getAuthServerInfo().getContextRoot().toString() + "/ldap-portal");
 
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("bwilson", "Password1");
 
         String code = oauth.parseLoginResponse().getCode();
@@ -206,7 +206,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         oauth.doLogout(response.getRefreshToken());
 
         // Login as jbrown
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login("jbrown", "Password1");
 
         code = oauth.parseLoginResponse().getCode();

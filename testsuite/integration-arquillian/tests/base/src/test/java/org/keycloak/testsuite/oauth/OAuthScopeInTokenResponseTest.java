@@ -17,6 +17,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
@@ -187,7 +188,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         String userScopeId = ApiUtil.getCreatedId(response);
         getCleanup().addClientScopeId(userScopeId);
 
-        ApiUtil.findClientResourceByClientId(realmsResouce().realm("test"), "test-app").addOptionalClientScope(userScopeId);
+        AdminApiUtil.findClientResourceByClientId(realmsResouce().realm("test"), "test-app").addOptionalClientScope(userScopeId);
 
 
         String loginUser = "john-doh@localhost";
@@ -217,7 +218,7 @@ public class OAuthScopeInTokenResponseTest extends AbstractKeycloakTest {
         expectSuccessfulResponseFromTokenEndpoint(code, expectedScope);
 
         // Cleanup
-        ApiUtil.findClientResourceByClientId(realmsResouce().realm("test"), "test-app").removeOptionalClientScope(userScopeId);
+        AdminApiUtil.findClientResourceByClientId(realmsResouce().realm("test"), "test-app").removeOptionalClientScope(userScopeId);
     }
     
     private void expectSuccessfulResponseFromTokenEndpoint(String code, String expectedScope) throws Exception {

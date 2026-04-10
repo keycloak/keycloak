@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.pages.AppPage;
@@ -567,7 +568,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
         // set the user's credentials
         UserRepresentation user = testRealm().users().searchByEmail(bc.getUserEmail(), true).get(0);
-        ApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), "updated-password", false);
+        AdminApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), "updated-password", false);
 
         // logout to force the user to authenticate again
         UserRepresentation account = getUserRepresentation(bc.getUserEmail());
