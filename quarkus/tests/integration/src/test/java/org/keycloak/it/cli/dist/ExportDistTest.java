@@ -17,6 +17,8 @@
 
 package org.keycloak.it.cli.dist;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -71,6 +73,22 @@ public class ExportDistTest {
         CLIResult cliResult = rawDist.run("export", "--realm=fgap", "--dir=" + importDir.toAbsolutePath(), "--features=admin-fine-grained-authz:v2");
         cliResult.assertMessage("Export of realm 'fgap' requested.");
         cliResult.assertMessage("Export finished successfully");
+    }
+
+    @Test
+    void testDevExport(KeycloakDistribution dist) throws IOException {
+        dist.setEnvVar("MY_SECRET", "admin123");
+        RawKeycloakDistribution rawDist = dist.unwrap(RawKeycloakDistribution.class);
+        CLIResult result = rawDist.run("bootstrap-admin", "service", "--db=dev-file", "--client-id=admin", "--client-secret:env=MY_SECRET");
+        assertTrue(result.getErrorOutput().isEmpty(), result.getErrorOutput());
+
+        dist.setManualStop(true);
+        dist.run("start-dev");
+
+        rawDist.kcadm("create", "realms/master/dev-export", "--server", "http://localhost:8080", "--realm", "master", "--client", "admin", "--secret", "admin123");
+
+        Path file = rawDist.getDistPath().resolve("data").resolve("tmp").resolve("master").resolve("master-realm.json");
+        assertTrue(Files.exists(file), "Export failed");
     }
 
     @Test

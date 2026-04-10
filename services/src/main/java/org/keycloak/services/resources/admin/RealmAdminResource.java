@@ -1408,22 +1408,20 @@ public class RealmAdminResource {
         return response.build();
     }
 
-    @GET
+    @POST
     @Path("dev-export")
-    @NoCache
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Full export of existing realm into a JSON file. Only for dev mode.")
+    @Operation(summary = "Full export of existing realm into a JSON file. Only for dev (H2) databases.")
     @APIResponses(value = {
-            @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "204", description = "Success"),
             @APIResponse(responseCode = "403", description = "Forbidden")
         })
     public Response devExport() {
         auth.requireRealmAdmin();
         Scope exportScope = Config.scope("export");
-        String db = exportScope.root().get("kc.db");
+        String db = exportScope.root().get("db");
         if (Database.getVendor(db).filter(Database.Vendor.H2::equals).isEmpty()) {
-            throw new ForbiddenException("Export endpoint is only for H2");
+            throw new ForbiddenException("Export endpoint is only for dev (H2) databases.");
         }
         try (KeycloakSession override = session.getKeycloakSessionFactory().create()) {
             Map<String, String> config = Map.of(ExportImportConfig.DIR_OPTION,
@@ -1442,7 +1440,7 @@ public class RealmAdminResource {
                 exportProvider.close();
             }
         }
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 
     @Path("keys")
