@@ -68,6 +68,12 @@ Before contributing to Keycloak, please read our [contributing guidelines](CONTR
 
 Joining a [community meeting](https://www.keycloak.org/community) is a great way to get involved and help shape the future of Keycloak.
 
+## Code of Conduct
+
+We are committed to providing a safe, welcoming, and constructive environment for all Keycloak contributors and users.
+To protect this space, we actively enforce our [Code of Conduct](https://github.com/keycloak/.github/blob/main/CODE_OF_CONDUCT.md).
+If you wish to report an incident or appeal a moderation decision, please email `keycloak-coc@googlegroups.com`.
+
 ## Other Keycloak Projects
 
 * [Keycloak](https://github.com/keycloak/keycloak) - Keycloak Server and Java adapters
