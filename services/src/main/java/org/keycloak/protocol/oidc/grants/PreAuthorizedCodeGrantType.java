@@ -91,7 +91,8 @@ public class PreAuthorizedCodeGrantType extends OAuth2GrantTypeBase {
                 clientSession.getClient(),
                 clientSession.getUserSession().getUser(),
                 clientSession.getUserSession(),
-                sessionContext);
+                sessionContext,
+                sessionContext.isOfflineTokenRequested());
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(
                 clientSession.getRealm(),
