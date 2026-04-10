@@ -73,7 +73,7 @@ public abstract class AbstractBaseSSSDTest extends AbstractTestRealmKeycloakTest
     }
 
     protected void testLoginFailure(String username, String password) {
-        loginPage.open();
+        oauth.openLoginForm();
         loginPage.login(username, password);
         loginPage.assertCurrent();
         Assert.assertEquals("Invalid username or password.", loginPage.getInputError());
