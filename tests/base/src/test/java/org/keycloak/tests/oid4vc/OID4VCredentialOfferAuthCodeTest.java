@@ -85,7 +85,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(wallet.generateJwtProof(ctx, ctx.getHolder()))
+                .proofs(wallet.generateJwtProof(ctx))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
@@ -163,7 +163,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx1, accessToken1)
                 .credentialIdentifier(authorizedIdentifier1)
-                .proofs(wallet.generateJwtProof(ctx1, ctx1.getHolder()))
+                .proofs(wallet.generateJwtProof(ctx1))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx1, ctx1.getHolder(), credResponse);
@@ -222,7 +222,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         IllegalStateException error = assertThrows(IllegalStateException.class,
                 () -> wallet.credentialRequest(ctx, accessToken)
                         .credentialIdentifier(authorizedIdentifier)
-                        .proofs(wallet.generateJwtProof(ctx, ctx.getHolder()))
+                        .proofs(wallet.generateJwtProof(ctx))
                         .send().getCredentialResponse());
         assertTrue(error.getMessage().contains("Credential offer has already expired"), error.getMessage());
         timeOffSet.set(0);
@@ -265,7 +265,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         //
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
                 .credentialIdentifier(authorizedIdentifier)
-                .proofs(wallet.generateJwtProof(ctx, ctx.getHolder()))
+                .proofs(wallet.generateJwtProof(ctx))
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);

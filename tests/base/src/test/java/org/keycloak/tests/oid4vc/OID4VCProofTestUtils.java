@@ -72,7 +72,7 @@ public final class OID4VCProofTestUtils {
             String certification
     ) {
         KeyAttestationJwtBody body = new KeyAttestationJwtBody();
-        body.setIat((long) (System.currentTimeMillis() / 1000));
+        body.setIat(System.currentTimeMillis() / 1000);
         body.setNonce(nonce);
         body.setAttestedKeys(attestedKeys);
         body.setKeyStorage(keyStorage);

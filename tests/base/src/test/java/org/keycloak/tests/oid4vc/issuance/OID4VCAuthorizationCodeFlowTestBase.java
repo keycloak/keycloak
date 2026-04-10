@@ -34,7 +34,6 @@ import org.keycloak.testsuite.util.oauth.InvalidTokenRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.InvalidCredentialRequest;
 import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 
-import org.jboss.logging.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,8 +59,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * extend this class and implement the abstract methods to define format-specific expectations.
  */
 public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTestBase {
-
-    private static final Logger logger = Logger.getLogger(OID4VCAuthorizationCodeFlowTestBase.class);
 
     protected OID4VCTestContext ctx;
 
@@ -97,28 +94,28 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         try {
             wallet.logout(TEST_USER);
         } catch (Exception e) {
-            logger.warn("Failed to logout user during cleanup", e);
+            log.warn("Failed to logout user during cleanup", e);
         }
 
         // 2. User profile restoration
         try {
             resetTestUser();
         } catch (Exception e) {
-            logger.warn("Failed to reset test user", e);
+            log.warn("Failed to reset test user", e);
         }
 
         // 3. Consent cleanup
         try {
             clearUserConsents();
         } catch (Exception e) {
-            logger.warn("Failed to clear user consents", e);
+            log.warn("Failed to clear user consents", e);
         }
 
         // 4. Event cleanup
         try {
             events.clear();
         } catch (Exception e) {
-            logger.warn("Failed to clear events", e);
+            log.warn("Failed to clear events", e);
         }
 
         // 5. Browser-side cookie cleanup (VERY IMPORTANT to prevent NoSuchElementException: username)
@@ -128,7 +125,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
                 driver.driver().navigate().to("about:blank");
             }
         } catch (Exception e) {
-            logger.warn("Failed to cleanup browser state", e);
+            log.warn("Failed to cleanup browser state", e);
         }
     }
 
