@@ -221,7 +221,7 @@ See below for more on TLS termination.
 
 ==== TLS Termination with default Ingress
 
-When using the operator-provided ingress (`spec.ingress.enabled: true`) there are a lot of Keycloak CR options (like service and ingress labels and annotations) which allows you to customize your ingress behaviour. This section show how to achive below TLS Termination when using Openshift:
+When using the operator-provided ingress (`spec.ingress.enabled: true`) there are a lot of Keycloak CR options (like service and ingress labels and annotations) which allow you to customize your ingress behaviour. This section shows how to achieve the following TLS Termination when using Openshift:
 
 - <<passthrough, Passthrough>>
 - <<edge_cluster_domain, Edge using cluster domain and certificate>>
