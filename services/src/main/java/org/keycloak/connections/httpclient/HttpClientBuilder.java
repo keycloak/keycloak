@@ -188,6 +188,15 @@ public class HttpClientBuilder {
     }
 
     /**
+     * Disables automatic redirect handling.
+     * @return
+     */
+    public HttpClientBuilder disableRedirectHandling() {
+        apacheBuilder.disableRedirectHandling();
+        return this;
+    }
+
+    /**
      * Disable cookie management.
      */
     public HttpClientBuilder disableCookies(boolean disable) {
