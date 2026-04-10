@@ -167,10 +167,7 @@ export default function ClientScopesSection() {
             try {
               await removeScope(adminClient, scope);
             } catch (error) {
-              console.warn(
-                "could not remove scope",
-                getErrorMessage(error),
-              );
+              console.warn("could not remove scope", getErrorMessage(error));
             }
             await adminClient.clientScopes.del({ id: scope.id! });
           }
