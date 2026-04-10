@@ -30,6 +30,7 @@ team/core-iam:
   - area/identity-brokering
   - area/ldap
   - area/organizations
+  - area/scim
   - area/user-profile
   - area/workflows
 

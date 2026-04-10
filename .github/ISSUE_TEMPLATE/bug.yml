@@ -55,6 +55,7 @@ body:
         - operator
         - organizations
         - saml
+        - scim
         - storage
         - testsuite
         - token-exchange
