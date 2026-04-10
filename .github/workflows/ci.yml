@@ -701,7 +701,7 @@ jobs:
         id: parse-creds
         shell: bash
         run: |
-          SUBSCRIPTION=$(echo ''"${AZURE_CREDENTIALS}"'' | jq -r '.subscriptionId')
+          SUBSCRIPTION=$(echo "${AZURE_CREDENTIALS}" | jq -r '.subscriptionId')
           if [[ -z "$SUBSCRIPTION" || "$SUBSCRIPTION" == "null" ]]; then
             echo "ERROR: Failed to parse subscriptionId from AZURE_CREDENTIALS"
             exit 1
