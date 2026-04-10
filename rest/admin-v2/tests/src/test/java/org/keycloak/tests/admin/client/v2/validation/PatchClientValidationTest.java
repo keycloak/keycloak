@@ -92,7 +92,7 @@ public class PatchClientValidationTest extends AbstractClientValidationTest {
             assertThat(response.getStatusLine().getStatusCode(), is(400));
 
             String responseBody = EntityUtils.toString(response.getEntity());
-            assertThat(responseBody, containsString("Cannot replace client resource with null"));
+            assertThat(responseBody, containsString("Cannot replace client resource with non-object"));
         }
     }
 

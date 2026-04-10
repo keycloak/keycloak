@@ -1,5 +1,7 @@
 package org.keycloak.admin.api.client;
 
+import java.io.InputStream;
+
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -13,10 +15,11 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.PatchTypeNames;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
 
@@ -49,7 +52,8 @@ public interface ClientApi {
         @APIResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = BaseClientRepresentation.class))),
         @APIResponse(responseCode = "404", description = "Not Found")
     })
-    BaseClientRepresentation patchClient(JsonNode patch);
+    @RequestBody(required = true, content = @Content(schema = @Schema(type = SchemaType.OBJECT)))
+    BaseClientRepresentation patchClient(InputStream patch);
 
     @DELETE
     @Operation(summary = "Delete a client", description = "Deletes a client from the realm")

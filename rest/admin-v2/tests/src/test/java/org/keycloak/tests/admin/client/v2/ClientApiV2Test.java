@@ -17,6 +17,7 @@
 
 package org.keycloak.tests.admin.client.v2;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
@@ -119,10 +120,10 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
     }
 
     @Test
-    public void jsonMergePatchClient() {
+    public void jsonMergePatchClient() throws JsonProcessingException {
         OIDCClientRepresentation patch = new OIDCClientRepresentation();
         patch.setDescription("I'm also a description");
-        BaseClientRepresentation baseRep = clients(masterRealm.getName()).v2().client(testClient.getClientId()).patchClient(mapper.valueToTree(patch));
+        BaseClientRepresentation baseRep = clients(masterRealm.getName()).v2().client(testClient.getClientId()).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(patch)));
         assertEquals("I'm also a description", baseRep.getDescription());
     }
 
@@ -131,6 +132,12 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         HttpPatch request = new HttpPatch(getClientApiUrl(testClient.getClientId()));
         setAuthHeader(request);
         request.setHeader(HttpHeaders.CONTENT_TYPE, PatchTypeNames.JSON_MERGE);
+
+        request.setEntity(null);
+        try (var response = client.execute(request)) {
+            assertEquals(400, response.getStatusLine().getStatusCode());
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with non-object"));
+        }
 
         request.setEntity(new StringEntity("patch client invalid"));
         try (var response = client.execute(request)) {
@@ -148,11 +155,24 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
             assertEquals(200, response.getStatusLine().getStatusCode());
         }
 
+        request.setEntity(new StringEntity("\"a\""));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with non-object"));
+        }
+
         request.setEntity(new StringEntity(""));
         try (var response = client.execute(request)) {
             assertThat(response.getStatusLine().getStatusCode(),is(400));
-            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with null"));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Cannot replace client resource with non-object"));
         }
+
+        request.setEntity(new StringEntity("{} {}"));
+        try (var response = client.execute(request)) {
+            assertThat(response.getStatusLine().getStatusCode(),is(400));
+            assertThat(EntityUtils.toString(response.getEntity()), Matchers.containsString("Patch contains additional content"));
+        }
+
     }
 
     @Test
@@ -884,9 +904,9 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         }
     }
 
-    private OIDCClientRepresentation.Auth getResultingAuthConfigPatch(OIDCClientRepresentation.Auth auth, String clientId, String... additionalFields) throws IllegalArgumentException {
+    private OIDCClientRepresentation.Auth getResultingAuthConfigPatch(OIDCClientRepresentation.Auth auth, String clientId, String... additionalFields) throws IllegalArgumentException, JsonProcessingException {
         var rep = getResultingClientRep(auth, clientId, additionalFields);
-        OIDCClientRepresentation createdClient = (OIDCClientRepresentation) clients(testRealm.getName()).v2().client(clientId).patchClient(mapper.valueToTree(rep));
+        OIDCClientRepresentation createdClient = (OIDCClientRepresentation) clients(testRealm.getName()).v2().client(clientId).patchClient(new ByteArrayInputStream(mapper.writeValueAsBytes(rep)));
         return assertClientEnabledIdDescriptionAndAuth(rep, createdClient);
     }
 
