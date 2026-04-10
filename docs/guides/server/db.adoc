@@ -486,6 +486,49 @@ Alternatively, you can use `--truststore-paths` instead of the `db-tls-trust-sto
 
 <@kc.start parameters="--db=postgres --db-tls-mode=verify-server --truststore-paths=/path/to/certificate.pem"/>
 
+[[encrypting-data-at-rest]]
+== Encrypting data at rest
+
+{project_name} stores sensitive information in the database. This includes hashed user passwords, client credentials and realm keys that are used to sign tokens.
+
+Enabling encryption at rest for your database is recommended to protect this data from unauthorized access in the event of physical media theft or improper storage decommissioning.
+
+=== Transparent Data Encryption
+
+Several database vendors support Transparent Data Encryption (TDE).
+With TDE, the database engine transparently encrypts data before writing it to disk and decrypts it when reading.
+Consult your vendor documentation for instructions on enabling TDE:
+
+* *Oracle*: https://docs.oracle.com/en/database/oracle/oracle-database/23/dbtde/index.html[Transparent Data Encryption (TDE)]
+* *Microsoft SQL Server*: https://learn.microsoft.com/en-us/sql/relational-databases/security/encryption/transparent-data-encryption[Transparent Data Encryption (TDE)]
+* *MySQL*: https://dev.mysql.com/doc/refman/8.4/en/innodb-data-encryption.html[InnoDB Data-at-Rest Encryption]
+* *MariaDB*: https://mariadb.com/kb/en/data-at-rest-encryption-overview/[Data-at-Rest Encryption]
+* *EDB*: https://www.enterprisedb.com/docs/tde/latest/[Transparent Data Encryption]
+* *PostgreSQL*: While native PostgreSQL does not include TDE by default, some distributions include it.
+
+For databases that do not offer built-in Transparent Data Encryption, use filesystem-level encryption instead.
+
+NOTE: Most cloud-managed database services, such as AWS RDS, Azure SQL, and GCP Cloud SQL, enable encryption at rest by default.
+Consult your cloud provider documentation to verify this is enabled and to understand the key management options available.
+
+=== Filesystem encryption
+
+As an alternative or complement to TDE, you can encrypt the filesystem or block device where the database stores its data files.
+This approach works with any database vendor and is the primary recommendation for databases without built-in TDE support.
+Options include LUKS/dm-crypt on Linux, BitLocker on Windows, or cloud-provider volume encryption such as AWS EBS encryption and Azure Disk Encryption.
+
+=== Write-ahead logs and backups
+
+Encryption must also cover write-ahead logs (WAL), redo logs, and database backups, as these contain the same sensitive data as the main data files.
+
+WARNING: Encrypting the main database data files alone is not sufficient.
+Write-ahead logs and backups can expose sensitive data if left unencrypted.
+
+Ensure that:
+
+* Write-ahead logs (WAL) or redo logs are encrypted or stored on encrypted storage.
+* All database backups are encrypted, whether at the filesystem level or by using your backup tool's built-in encryption capabilities.
+
 == Setting JPA provider configuration option for migrationStrategy
 
 To setup the JPA migrationStrategy (manual/update/validate) you should setup JPA provider as follows:
