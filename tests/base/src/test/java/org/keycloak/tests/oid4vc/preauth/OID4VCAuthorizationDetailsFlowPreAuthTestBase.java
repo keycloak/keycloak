@@ -60,7 +60,7 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
-import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CODE_LIFESPAN_S;
+import static org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint.DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S;
 import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.generateJwtProof;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -698,7 +698,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
     public void testCompleteFlowWithExpiredCredentialOffer() throws Exception {
         AccessTokenResponse tokenResponse = preAuthzCodeSuccessful();
         // Make sure that offer is expired
-        timeOffSet.set(DEFAULT_CODE_LIFESPAN_S + 10);
+        timeOffSet.set(DEFAULT_CREDENTIAL_OFFER_LIFESPAN_S + 10);
         assertFailedCredentialRequest(tokenResponse);
     }
 
