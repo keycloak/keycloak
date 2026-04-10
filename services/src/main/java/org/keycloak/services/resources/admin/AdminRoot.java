@@ -40,6 +40,8 @@ import org.keycloak.common.util.Encode;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
@@ -238,7 +240,7 @@ public class AdminRoot {
         }
 
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new RealmsAdminResourcePreflight(session, null, tokenManager, request);
+            return new RealmsAdminResourcePreflight(session, null, tokenManager, request, resolveAdminConsoleClient());
         }
 
         AdminAuth auth = authenticateRealmAdminRequest(session);
@@ -248,7 +250,8 @@ public class AdminRoot {
             }
         }
 
-        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().add();
+        Cors.builder().allowedOrigins(auth.getToken(), session, auth.getRealm().getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID))
+                .allowedMethods("GET", "PUT", "POST", "DELETE").exposedHeaders("Location").auth().failOnInvalidOrigin().add();
 
         return new RealmsAdminResource(session, auth, tokenManager);
     }
@@ -261,7 +264,7 @@ public class AdminRoot {
             throw new NotFoundException();
         }
 
-        return new AdminCorsPreflightService();
+        return new AdminCorsPreflightService(resolveAdminConsoleClient());
     }
 
     /**
@@ -280,7 +283,7 @@ public class AdminRoot {
         HttpRequest request = getHttpRequest();
 
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new AdminCorsPreflightService();
+            return new AdminCorsPreflightService(resolveAdminConsoleClient());
         }
 
         AdminAuth auth = authenticateRealmAdminRequest(session);
@@ -292,13 +295,18 @@ public class AdminRoot {
             logger.debugf("authenticated admin access for: %s", auth.getUser().getUsername());
         }
 
-        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
+        Cors.builder().allowedOrigins(auth.getToken(), session, auth.getRealm().getClientByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID))
+                .allowedMethods("GET", "PUT", "POST", "DELETE").auth().failOnInvalidOrigin().add();
 
         return new ServerInfoAdminResource(session, auth);
     }
 
     private HttpRequest getHttpRequest() {
         return session.getContext().getHttpRequest();
+    }
+
+    private ClientModel resolveAdminConsoleClient() {
+        return AdminCorsPreflightService.resolveAdminConsoleClient(session);
     }
 
     public static Theme getTheme(KeycloakSession session, RealmModel realm) throws IOException {

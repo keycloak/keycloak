@@ -136,7 +136,8 @@ public class AccountLoader {
 
         Auth auth = new Auth(session.getContext().getRealm(), accessToken, authResult.user(), client, authResult.session(), false);
 
-        Cors.builder().allowedOrigins(auth.getToken()).allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
+        Cors.builder().allowedOrigins(auth.getToken(), session, session.getContext().getRealm().getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID))
+                .allowedMethods("GET", "PUT", "POST", "DELETE").auth().add();
 
         if (authResult.user().getServiceAccountClientLink() != null) {
             throw new NotAuthorizedException("Service accounts are not allowed to access this service");
