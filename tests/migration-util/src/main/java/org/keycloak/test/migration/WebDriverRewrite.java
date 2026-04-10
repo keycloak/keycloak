@@ -1,6 +1,14 @@
 package org.keycloak.test.migration;
 
+import java.util.Map;
+
 public class WebDriverRewrite extends TestRewrite {
+
+    private static final Map<String, String> STATEMENTS = Map.of(
+            "driver.navigate().to(", "driver.open(",
+            "driver.manage().deleteAllCookies()", "driver.cookies().deleteAll()",
+            "driver.getPageSource()", "driver.page().getPageSource()"
+    );
 
     @Override
     public void rewrite() {
@@ -40,6 +48,17 @@ public class WebDriverRewrite extends TestRewrite {
             }
         } else if (driverRef >= 0) {
             addManagedWebDriver();
+        }
+
+        int startingLine = findClassDeclaration();
+        for (int i = startingLine; i < content.size(); i++) {
+            String l = content.get(i);
+            for (Map.Entry<String, String> entry : STATEMENTS.entrySet()) {
+                if (l.contains(entry.getKey())) {
+                    replaceLine(i, l.replace(entry.getKey(), entry.getValue()));
+                    info(i + 1, "Data rewritten: '" + entry.getKey() + "' --> '" + entry.getValue() + "'");
+                }
+            }
         }
     }
 
