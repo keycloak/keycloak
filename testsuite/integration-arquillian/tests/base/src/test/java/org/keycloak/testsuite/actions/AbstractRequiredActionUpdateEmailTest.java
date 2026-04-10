@@ -27,7 +27,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.UpdateEmailPage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -75,8 +75,8 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 
 	@Before
 	public void beforeTest() {
-        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
-		ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+		AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
 		UserRepresentation user = UserBuilder.create().enabled(true)
 				.username("test-user@localhost")
 				.email("test-user@localhost")
@@ -84,9 +84,9 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 				.lastName("Brady")
 				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
-		ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+		AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 
-		ApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
+		AdminApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
 		user = UserBuilder.create().enabled(true)
 				.username("john-doh@localhost")
 				.email("john-doh@localhost")
@@ -94,7 +94,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 				.lastName("Doh")
 				.requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name()).build();
 		prepareUser(user);
-		ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+		AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 	}
 
 	private void setRegistrationEmailAsUsername(RealmResource realmResource, boolean enabled) {
@@ -104,7 +104,7 @@ public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTest
 	}
 
         protected void configureRequiredActionsToUser(String username, String... actions) {
-                UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), username);
+                UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), username);
                 UserRepresentation userRepresentation = userResource.toRepresentation();
                 userRepresentation.setRequiredActions(Arrays.asList(actions));
                 userResource.update(userRepresentation);

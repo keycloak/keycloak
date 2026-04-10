@@ -34,7 +34,7 @@ import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory;
 import org.keycloak.testsuite.broker.SocialLoginTest;
@@ -400,7 +400,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
                 .addComposites(Collections.singletonList(testRealm().roles().get(childRealmRoleName).toRepresentation()));
 
         // Add composite-realm-role-1 to user "user-with-two-configured-otp"
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp");
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp");
         userResource.roles().realmLevel().add(Collections.singletonList(testRealm().roles().get(compositeRealmRoleName).toRepresentation()));
 
         // A browser flow is configured with an OTPForm for users having the role "child-realm-role-1"
@@ -450,7 +450,7 @@ public class BrowserFlowTest extends AbstractChangeImportedUserPasswordsTest {
                 .addComposites(Collections.singletonList(testRealm().clients().get(testClient.getId()).roles().get(childClientRoleName).toRepresentation()));
 
         // Add composite-client-role-1 to user "user-with-two-configured-otp"
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp") ;
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), "user-with-two-configured-otp") ;
         userResource.roles().clientLevel(testClient.getId())
                 .add(Collections.singletonList(testRealm().clients().get(testClient.getId()).roles().get(compositeClientRoleName).toRepresentation()));
 

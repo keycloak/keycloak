@@ -42,7 +42,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
@@ -519,7 +519,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     @Test
     public void testNoRefreshToken() throws Exception {
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
         ClientRepresentation clientRepresentation = client.toRepresentation();
         clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
         client.update(clientRepresentation);
@@ -743,7 +743,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     @Test
     public void testDeviceCodeLifespanPerClient() throws Exception {
         getTestingClient().testing().setTestingInfinispanTimeService();
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
         ClientRepresentation clientRepresentation = client.toRepresentation();
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
@@ -793,7 +793,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     @Test
     public void testDevicePollingIntervalPerClient() throws Exception {
         getTestingClient().testing().setTestingInfinispanTimeService();
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
         ClientRepresentation clientRepresentation = client.toRepresentation();
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
@@ -1041,7 +1041,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     @Test
     public void testClientWithErrors() throws Exception {
         try {
-            ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP_PUBLIC);
+            ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP_PUBLIC);
             ClientRepresentation clientRepresentation = client.toRepresentation();
             clientRepresentation.getAttributes().put(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "false");
             client.update(clientRepresentation);
@@ -1065,7 +1065,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assert.assertEquals("Bearer-only applications are not allowed to initiate browser login.", response.getErrorDescription());
 
         } finally {
-            ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP_PUBLIC);
+            ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP_PUBLIC);
             ClientRepresentation clientRepresentation = client.toRepresentation();
             clientRepresentation.getAttributes().put(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true");
             clientRepresentation.setBearerOnly(false);

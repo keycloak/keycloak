@@ -47,7 +47,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -240,7 +240,7 @@ public class LogoutTest extends AbstractKeycloakTest {
                     .lastName("last")
                     .enabled(true)
                     .build()).close();
-            UserRepresentation user = ApiUtil.findUserByUsername(realm, "user-0");
+            UserRepresentation user = AdminApiUtil.findUserByUsername(realm, "user-0");
             Assert.assertNotNull(user);
 
             oauth.openLoginForm();
@@ -274,7 +274,7 @@ public class LogoutTest extends AbstractKeycloakTest {
                     .idTokenHint(idTokenString)
                     .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
                     .open();
-            user = ApiUtil.findUserByUsername(realm, "user-1");
+            user = AdminApiUtil.findUserByUsername(realm, "user-1");
             Assert.assertNotNull(user);
             realm.users().get(user.getId()).remove();
         }
@@ -286,7 +286,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         loginPage.login("test-user@localhost", "password");
         String sessionId = events.expectLogin().assertEvent().getSessionId();
 
-        UserRepresentation user = ApiUtil.findUserByUsername(adminClient.realm("test"), "test-user@localhost");
+        UserRepresentation user = AdminApiUtil.findUserByUsername(adminClient.realm("test"), "test-user@localhost");
         Assert.assertEquals((Object) 0, user.getNotBefore());
 
         adminClient.realm("test").users().get(user.getId()).logout();
@@ -339,11 +339,11 @@ public class LogoutTest extends AbstractKeycloakTest {
     public void backchannelLogoutRequest_RealmRS384_ClientRS512() throws Exception {
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS384");
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS512");
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS512");
             backchannelLogoutRequest(Constants.INTERNAL_SIGNATURE_ALGORITHM, "RS512", "RS384");
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, "RS256");
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), "RS256");
         }
     }
 

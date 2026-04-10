@@ -72,7 +72,7 @@ import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecu
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSignedJwtExecutorFactory;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -214,10 +214,10 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String victimClientPassword = "password";
             final String attackerClientPassword = TEST_CLIENT_PASSWORD;
             String victimClientAuthReqId = null;
-            victimClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), victimClientName);
+            victimClientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), victimClientName);
             victimClientRep = victimClientResource.toRepresentation();
             prepareCIBASettings(victimClientResource, victimClientRep);
-            attackerClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), attackerClientName);
+            attackerClientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), attackerClientName);
             attackerClientRep = attackerClientResource.toRepresentation();
             prepareCIBASettings(attackerClientResource, attackerClientRep);
 
@@ -254,7 +254,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String bindingMessage = "BASTION";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
 
@@ -284,7 +284,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String signal = "GODOWN";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
@@ -313,7 +313,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-deaktiviert";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
@@ -337,7 +337,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String bindingMessage = "BASTION";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
@@ -361,7 +361,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String bindingMessage = "BASTION";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
@@ -382,7 +382,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         ClientRepresentation clientRep = null;
         try {
             final String username = "nutzername-schwarz";
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             RealmRepresentation rep = backupCIBAPolicy();
@@ -412,7 +412,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             oauth.client(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD);
 
             final String username = "nutzername-schwarz";
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
 
@@ -455,7 +455,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String bindingMessage = "BASTION";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
@@ -488,7 +488,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String bindingMessage = "BASTION";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
@@ -533,7 +533,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         try {
             final String firstUsername = "nutzername-schwarz";
             final String secondUsername = "nutzername-rot";
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
 
@@ -572,7 +572,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String bindingMessage = "BASTION";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             RealmRepresentation rep = backupCIBAPolicy();
@@ -638,7 +638,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String bindingMessage = "BASTION";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
             RealmRepresentation rep = backupCIBAPolicy();
@@ -769,7 +769,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         ClientRepresentation clientRep = null;
         try {
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
             clientRep = clientResource.toRepresentation();
 
@@ -838,7 +838,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         ClientRepresentation clientRep = null;
         try {
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -873,7 +873,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             additionalParameters.put("user_device", "mobile");
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -939,7 +939,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-rot";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -977,7 +977,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String secondUsername = "nutzername-rot";
             String firstUserAuthReqId = null;
             String secondUserAuthReqId = null;
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
 
@@ -1025,7 +1025,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String clientName = "third-party";  // see testrealm.json : "consentRequired": true
             final String clientPassword = "password";
             String clientAuthReqId = null;
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientName);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientName);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
 
@@ -1072,13 +1072,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             String firstClientAuthReqId = null;
             String secondClientAuthReqId = null;
 
-            firstClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), firstClientName);
+            firstClientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), firstClientName);
             assertThat(firstClientResource, notNullValue());
 
             firstClientRep = firstClientResource.toRepresentation();
             prepareCIBASettings(firstClientResource, firstClientRep);
 
-            secondClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), secondClientName);
+            secondClientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), secondClientName);
             assertThat(secondClientResource, notNullValue());
 
             secondClientRep = secondClientResource.toRepresentation();
@@ -1132,13 +1132,13 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String secondClientPassword = TEST_CLIENT_PASSWORD;
             String firstClientAuthReqId = null;
 
-            firstClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), firstClientName);
+            firstClientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), firstClientName);
             assertThat(firstClientResource, notNullValue());
 
             firstClientRep = firstClientResource.toRepresentation();
             prepareCIBASettings(firstClientResource, firstClientRep);
 
-            secondClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), secondClientName);
+            secondClientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), secondClientName);
             assertThat(secondClientResource, notNullValue());
 
             secondClientRep = secondClientResource.toRepresentation();
@@ -1173,7 +1173,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-rot";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -1218,7 +1218,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-rot";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -1260,7 +1260,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-rot";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -1297,7 +1297,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-gelb";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -1339,7 +1339,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-rot";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -1402,7 +1402,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-rot";
 
             // prepare CIBA settings with ciba grant deactivated
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -1424,7 +1424,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertThat(response.getErrorDescription(), is("Client not allowed OIDC CIBA Grant"));
 
             // activate ciba grant
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -1447,7 +1447,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             doAuthenticationChannelCallback(authenticationChannelReq);
 
             // deactivate ciba grant
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -1576,7 +1576,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             String bindingMessage = "Flughafen-Frankfurt-am-Main";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
 
@@ -1823,7 +1823,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-rot";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
 
@@ -1923,7 +1923,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         updatePolicies(json);
 
         // Add role to the client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         clientResource.roles().create(RoleBuilder.create().name(roleName).build());
 
         oauth.client(clientId, clientSecret);
@@ -1987,7 +1987,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
         updatePolicies(json);
 
         // Add role to the client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         clientResource.roles().create(RoleBuilder.create().name(roleName).build());
 
         oauth.client(clientId, clientSecret);
@@ -2245,7 +2245,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             additionalParameters.put("user_device", "mobile");
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
             clientResource.update(clientRep);
@@ -2298,7 +2298,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             assertTrue(logoutResponse.isSuccess());
         } finally {
             updatePolicies("{}");
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(false);
             clientResource.update(clientRep);
@@ -2500,7 +2500,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String invalidScope = "not_exist_scope";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -2545,7 +2545,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             oauth.client(clientId, clientSecret);
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientId);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientId);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
 
@@ -2569,7 +2569,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
         // Set required signature for request_uri
         // use and set jwks_url
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientId);
         ClientRepresentation clientRep = clientResource.toRepresentation();
         Map<String, String> attr = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
         attr.put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, sigAlg);
@@ -2606,7 +2606,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String bindingMessage = "BASTION";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             prepareCIBASettings(clientResource, clientRep);
 
@@ -2684,7 +2684,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
         // Set required signature for request_uri
         // use and set jwks_url
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), clientId);
         ClientRepresentation clientRep = clientResource.toRepresentation();
         if (requestedSigAlg != null) {
             Map<String, String> attr = Optional.ofNullable(clientRep.getAttributes()).orElse(new HashMap<>());
@@ -2726,7 +2726,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             final String username = "nutzername-rot";
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();
@@ -2973,7 +2973,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             additionalParameters.put("user_device", "mobile");
 
             // prepare CIBA settings
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             assertThat(clientResource, notNullValue());
 
             clientRep = clientResource.toRepresentation();

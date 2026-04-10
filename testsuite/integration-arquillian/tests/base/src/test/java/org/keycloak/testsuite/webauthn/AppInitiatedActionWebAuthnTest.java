@@ -36,7 +36,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
@@ -201,7 +201,7 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
 
         doAIA();
 
-        final Supplier<Integer> getCredentialCount = () -> Optional.ofNullable(ApiUtil.findUserByUsernameId(testRealm(), DEFAULT_USERNAME))
+        final Supplier<Integer> getCredentialCount = () -> Optional.ofNullable(AdminApiUtil.findUserByUsernameId(testRealm(), DEFAULT_USERNAME))
                 .map(UserResource::credentials)
                 .map(List::size)
                 .orElse(0);

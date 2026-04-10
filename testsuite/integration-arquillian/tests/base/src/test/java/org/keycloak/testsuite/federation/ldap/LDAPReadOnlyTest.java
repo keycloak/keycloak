@@ -44,7 +44,7 @@ import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapper;
 import org.keycloak.storage.ldap.mappers.msad.MSADUserAccountControlStorageMapperFactory;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -145,7 +145,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
 
         // Revert TOTP
         setTotpRequirementExecutionForRealm(AuthenticationExecutionModel.Requirement.CONDITIONAL, AuthenticationExecutionModel.Requirement.ALTERNATIVE);
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
         String totpCredentialId = user.credentials().stream()
                 .filter(credentialRep -> credentialRep.getType().equals(OTPCredentialModel.TYPE))
                 .findFirst().get().getId();
@@ -155,13 +155,13 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
     // KEYCLOAK-3365
     @Test
     public void testReadOnlyUserDoesNotThrowIfUnchanged() {
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
         UserRepresentation userRepresentation = user.toRepresentation();
         userRepresentation.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
         user.update(userRepresentation);
 
         // assert
-        user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
         userRepresentation = user.toRepresentation();
         Assert.assertEquals(userRepresentation.getRequiredActions().size(), 1);
         Assert.assertEquals(userRepresentation.getRequiredActions().get(0), UserModel.RequiredAction.CONFIGURE_TOTP.toString());
@@ -176,7 +176,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
         RealmRepresentation realm = testRealm().toRepresentation();
         realm.setInternationalizationEnabled(true);
         testRealm().update(realm);
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
 
         UserRepresentation userRepresentation = user.toRepresentation();
         String language = "pt_BR";
@@ -194,7 +194,7 @@ public class LDAPReadOnlyTest extends AbstractLDAPTest  {
     // KEYCLOAK-3365
     @Test(expected = ClientErrorException.class)
     public void testReadOnlyUserThrowsIfChanged() {
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
         UserRepresentation userRepresentation = user.toRepresentation();
         userRepresentation.setFirstName("Jane");
         user.update(userRepresentation);

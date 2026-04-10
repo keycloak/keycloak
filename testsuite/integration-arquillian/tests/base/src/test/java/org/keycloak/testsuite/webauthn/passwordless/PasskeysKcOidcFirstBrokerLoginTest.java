@@ -26,7 +26,7 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.broker.AbstractBrokerTest;
 import org.keycloak.testsuite.broker.AbstractInitializedBaseBrokerTest;
@@ -156,7 +156,7 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
         loginPage.login(bc.getUserPassword());
         Assert.assertTrue(appPage.isCurrent());
 
-        assertNumFederatedIdentities(ApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
+        assertNumFederatedIdentities(AdminApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
     }
 
     @Test
@@ -187,7 +187,7 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
         webAuthnLoginPage.clickAuthenticate();
         Assert.assertTrue(appPage.isCurrent());
 
-        assertNumFederatedIdentities(ApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
+        assertNumFederatedIdentities(AdminApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
     }
 
     @Test
@@ -215,7 +215,7 @@ public class PasskeysKcOidcFirstBrokerLoginTest extends AbstractInitializedBaseB
         // login is automatically now via discoverable passkey
         Assert.assertTrue(appPage.isCurrent());
 
-        assertNumFederatedIdentities(ApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
+        assertNumFederatedIdentities(AdminApiUtil.findUserByUsername(adminClient.realm(bc.consumerRealmName()), "consumer").getId(), 1);
     }
 
     protected void registerUser(String username, String password, String email, String authenticatorLabel) {

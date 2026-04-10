@@ -66,7 +66,7 @@ import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.account.AccountRestClient;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
@@ -160,7 +160,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Before
     public void beforeTest() {
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         UserRepresentation userRep = user.toRepresentation();
         user.remove();
 
@@ -458,7 +458,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         testRealm().update(realmRep);
 
         // Remove acr-to-loa mapping from the client. It should use realm acr-to-loa mapping
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         testClientRep.getAttributes().put(Constants.ACR_LOA_MAP, "{}");
         testClient.update(testClientRep);
@@ -486,7 +486,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testClientDefaultAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "gold"));
         testClient.update(testClientRep);
@@ -527,7 +527,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         testRealm().update(realmRep);
 
         // Value "foo" not used in any ACR-To-Loa mapping
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, Arrays.asList("silver", "2", "foo"));
         try {
@@ -568,7 +568,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
         testRealm().update(realmRep);
 
         // Value "foo" not used in any ACR-To-Loa mapping
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("foo");
         Assert.assertThrows(BadRequestException.class, () -> {
@@ -864,7 +864,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
         // Override step-up flow just for the client
         AuthenticationFlowRepresentation stepUpFlowRepresentation = AbstractAuthenticationTest.findFlowByAlias(FLOW_ALIAS, flows);
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         testClientRep.setAuthenticationFlowBindingOverrides(
                 Map.of(DefaultAuthenticationFlows.BROWSER_FLOW, stepUpFlowRepresentation.getId())
@@ -982,7 +982,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testLoginWithMinimumAcrWithoutAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1000,7 +1000,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testLoginWithMinimumAcrWithLowerAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1018,7 +1018,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testLoginWithMinimumAcrWithHigherAcrValues() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1037,7 +1037,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testEssentialAcrMinimumOk() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1056,7 +1056,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testEssentialAcrMinimumTooLow() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1072,7 +1072,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
 
     @Test
     public void testNonEssentialAcrMinimumUpgrade() {
-        ClientResource testClient = ApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
+        ClientResource testClient = AdminApiUtil.findClientByClientId(testRealm(), CLIENT_ID);
         ClientRepresentation testClientRep = testClient.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(testClientRep).setMinimumAcrValue("gold");
         testClient.update(testClientRep);
@@ -1109,7 +1109,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     }
 
     private String getCredentialIdByLabel(String credentialLabel) {
-        return ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").credentials()
+        return AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").credentials()
                 .stream()
                 .filter(credential -> "totp2-label".equals(credential.getUserLabel()))
                 .map(CredentialRepresentation::getId)
@@ -1117,7 +1117,7 @@ public class LevelOfAssuranceFlowTest extends AbstractChangeImportedUserPassword
     }
 
     private String getCredentialIdByType(String credentialType) {
-        return ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").credentials()
+        return AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost").credentials()
                 .stream()
                 .filter(credential -> credentialType.equals(credential.getType()))
                 .map(CredentialRepresentation::getId)

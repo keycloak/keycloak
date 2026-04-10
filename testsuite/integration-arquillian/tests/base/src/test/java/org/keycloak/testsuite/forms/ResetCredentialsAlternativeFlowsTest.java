@@ -33,7 +33,7 @@ import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthenticationTest;
 import org.keycloak.testsuite.actions.AbstractAppInitiatedActionTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
@@ -124,7 +124,7 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractAppInitiatedAc
                 .build();
 
         password = generatePassword();
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, password);
+        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, password);
         getCleanup().addUserId(userId);
     }
 

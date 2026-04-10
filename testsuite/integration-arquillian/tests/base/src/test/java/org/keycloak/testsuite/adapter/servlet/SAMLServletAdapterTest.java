@@ -157,7 +157,7 @@ import org.keycloak.testsuite.adapter.page.SalesPostSigEmailServlet;
 import org.keycloak.testsuite.adapter.page.SalesPostSigPersistentServlet;
 import org.keycloak.testsuite.adapter.page.SalesPostSigServlet;
 import org.keycloak.testsuite.adapter.page.SalesPostSigTransientServlet;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
@@ -595,7 +595,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Test
     public void disabledClientTest() {
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_SALES_POST_SIG);
+        ClientResource clientResource = AdminApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_SALES_POST_SIG);
         ClientRepresentation client = clientResource.toRepresentation();
         client.setEnabled(false);
         clientResource.update(client);
@@ -1286,7 +1286,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         group1.setAttributes(new HashMap<>());
         group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
 
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ClientResource clientResource = AdminApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
         ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
 
         Map<String, String> config = new LinkedHashMap<>();
@@ -1325,7 +1325,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         group1.setAttributes(new HashMap<>());
         group1.getAttributes().put("group-value", Arrays.asList("value1", "value2"));
 
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ClientResource clientResource = AdminApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
         ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
 
         Map<String, String> config = new LinkedHashMap<>();
@@ -1368,7 +1368,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         group2.setAttributes(new HashMap<>());
         group2.getAttributes().put("group-value", Arrays.asList("value2", "value3"));
 
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ClientResource clientResource = AdminApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
         ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
 
         Map<String, String> config = new LinkedHashMap<>();
@@ -1412,7 +1412,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         group2.setAttributes(new HashMap<>());
         group2.getAttributes().put("group-value", Arrays.asList("value2", "value3"));
 
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ClientResource clientResource = AdminApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
         ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
 
         Map<String, String> config = new LinkedHashMap<>();
@@ -1512,7 +1512,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     @Test
     public void spMetadataValidation() throws Exception {
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_SALES_POST_SIG);
+        ClientResource clientResource = AdminApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_SALES_POST_SIG);
         ClientRepresentation representation = clientResource.toRepresentation();
         Client client = AdminClientUtil.createResteasyClient();
         WebTarget target = client.target(authServerPage.toString() + "/admin/realms/" + SAMLSERVLETDEMO + "/clients/" + representation.getId() + "/installation/providers/saml-sp-descriptor");

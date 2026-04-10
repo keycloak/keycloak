@@ -72,6 +72,7 @@ import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.testsuite.AbstractAuthTest;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
@@ -621,7 +622,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), username);
         String userId = user.toRepresentation().getId();
 
         events.expectRegister(username, email).assertEvent();
@@ -634,7 +635,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         assertPasswordConfiguredThroughLDAPOnly(user);
 
         // Update password through admin REST endpoint. Assert user can authenticate with the new password
-        ApiUtil.resetUserPassword(user, "Password1-updated1", false);
+        AdminApiUtil.resetUserPassword(user, "Password1-updated1", false);
 
         oauth.openLoginForm();
 
@@ -748,7 +749,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         registerPage.register("firstName", "lastName", "email2@check.cz", "register-user-success2", "Password1", "Password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(),"register-user-success2");
+        UserRepresentation user = AdminApiUtil.findUserByUsername(testRealm(),"register-user-success2");
         Assert.assertNotNull(user);
         assertFederatedUserLink(user);
         Assert.assertEquals("register-user-success2", user.getUsername());
@@ -1019,7 +1020,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             appRealm.updateComponent(ctx.getLdapModel());
         });
 
-        UserRepresentation userRep = ApiUtil.findUserByUsername(testRealm(), "johnkeycloak");
+        UserRepresentation userRep = AdminApiUtil.findUserByUsername(testRealm(), "johnkeycloak");
         assertFederatedUserLink(userRep);
 
         testingClient.server().run(session -> {
@@ -1072,17 +1073,17 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testRemoveFederatedUser() {
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
+        UserRepresentation user = AdminApiUtil.findUserByUsername(testRealm(), "register-user-success2");
 
         // Case when this test was executed "alone" (User "registerusersuccess2" is registered inside registerUserLdapSuccess)
         if (user == null) {
             registerUserLdapSuccess();
-            user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
+            user = AdminApiUtil.findUserByUsername(testRealm(), "register-user-success2");
         }
 
         assertFederatedUserLink(user);
         testRealm().users().get(user.getId()).remove();
-        user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
+        user = AdminApiUtil.findUserByUsername(testRealm(), "register-user-success2");
         Assert.assertNull(user);
     }
 
@@ -1253,7 +1254,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         });
 
         // Test admin REST endpoints
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
 
         // Assert password is stored locally
         List<String> storedCredentials = userResource.credentials().stream()

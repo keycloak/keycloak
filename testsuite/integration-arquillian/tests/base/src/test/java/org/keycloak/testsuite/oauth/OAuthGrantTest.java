@@ -39,6 +39,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage;
@@ -57,7 +58,7 @@ import org.junit.Test;
 import org.openqa.selenium.By;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import static org.junit.Assert.assertEquals;
@@ -428,7 +429,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         Assert.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("foo-addr")));
 
         // Login as admin and see the consent screen of particular user
-        UserResource user = ApiUtil.findUserByUsernameId(appRealm, "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(appRealm, "test-user@localhost");
         List<Map<String, Object>> consents = user.getConsents();
         Assert.assertEquals(1, consents.size());
 
@@ -476,13 +477,13 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         // Add GUI Order to client scopes --- email=1, profile=2
         RealmResource appRealm = adminClient.realm(REALM_NAME);
 
-        ClientScopeResource emailScope = ApiUtil.findClientScopeByName(appRealm, "email");
+        ClientScopeResource emailScope = AdminApiUtil.findClientScopeByName(appRealm, "email");
         ClientScopeRepresentation emailRep = emailScope.toRepresentation();
         emailRep.getAttributes().put(ClientScopeModel.GUI_ORDER, "1");
         emailScope.update(emailRep);
         Assert.assertEquals("1", emailRep.getAttributes().get(ClientScopeModel.GUI_ORDER));
 
-        ClientScopeResource profileScope = ApiUtil.findClientScopeByName(appRealm, "profile");
+        ClientScopeResource profileScope = AdminApiUtil.findClientScopeByName(appRealm, "profile");
         ClientScopeRepresentation profileRep = profileScope.toRepresentation();
         profileRep.getAttributes().put(ClientScopeModel.GUI_ORDER, "2");
         profileScope.update(profileRep);

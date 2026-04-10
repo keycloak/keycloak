@@ -53,8 +53,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

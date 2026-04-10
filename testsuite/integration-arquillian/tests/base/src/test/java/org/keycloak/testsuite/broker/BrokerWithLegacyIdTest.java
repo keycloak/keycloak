@@ -32,7 +32,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Test;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.oidc.LegacyIdIdentityProvider.LEGACY_ID;
 

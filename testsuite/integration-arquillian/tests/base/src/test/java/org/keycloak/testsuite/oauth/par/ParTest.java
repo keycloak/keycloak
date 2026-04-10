@@ -49,7 +49,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.ClientRolesConditionFactory;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -76,7 +76,7 @@ import org.junit.Test;
 
 import static org.keycloak.OAuthErrorException.INVALID_GRANT;
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
@@ -338,7 +338,7 @@ public class ParTest extends AbstractClientPoliciesTest {
 
             // Step 3: Attempt to exchange code for token with the "fake code" from PAR
             String parId = requestUri.substring(requestUri.lastIndexOf(":" ) + 1);
-            String clientUUID = ApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId()).toRepresentation().getId();
+            String clientUUID = AdminApiUtil.findClientByClientId(adminClient.realm("test"), oauth.getClientId()).toRepresentation().getId();
             String fakeCode = parId + "." + sessionId + "." + clientUUID;
             AccessTokenResponse response = oauth.doAccessTokenRequest(fakeCode);
             assertEquals(400, response.getStatusCode());
@@ -389,7 +389,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
 
             // use and set jwks_url
-            ClientResource clientResource = ApiUtil
+            ClientResource clientResource = AdminApiUtil
                     .findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
             ClientRepresentation clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
@@ -448,7 +448,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
 
             // use and set jwks_url
-            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+            ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
             ClientRepresentation clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());
@@ -524,7 +524,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
 
             // use and set jwks_url
-            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+            ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
             ClientRepresentation clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());
@@ -600,7 +600,7 @@ public class ParTest extends AbstractClientPoliciesTest {
             TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
 
             // use and set jwks_url
-            ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+            ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
             ClientRepresentation clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(TestApplicationResourceUrls.clientJwksUri());
@@ -1269,7 +1269,7 @@ public class ParTest extends AbstractClientPoliciesTest {
         updatePolicies(json);
 
         // Add role to the client
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         clientResource.roles().create(RoleBuilder.create().name(roleName).build());
 
         // Pushed Authorization Request

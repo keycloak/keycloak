@@ -33,7 +33,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -197,7 +197,7 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 	@Test
 	@IgnoreBrowserDriver(value={ChromeDriver.class, FirefoxDriver.class}, negate=true)
 	public void updateEmailWithVerificationBackToApplicationInCleanBrowserShouldTriggerAuth() throws Exception {
-		ClientRepresentation client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
+		ClientRepresentation client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
 		String originalBaseUrl = client.getBaseUrl();
 		List<String> originalRedirectUris = new ArrayList<>(client.getRedirectUris());
 		

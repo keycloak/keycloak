@@ -45,7 +45,7 @@ import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.federation.ldap.LDAPProvidersIntegrationTest;
 import org.keycloak.testsuite.federation.ldap.LDAPTestAsserts;
 import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
@@ -301,7 +301,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
     // Tests that attempt to change some user attributes, which are not mapped to LDAP, will fail
     @Test
     public void testImpossibleToChangeNonLDAPMappedAttributes() {
-        UserResource john = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource john = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
 
         UserRepresentation johnRep = john.toRepresentation();
         String firstNameOrig = johnRep.getFirstName();
@@ -369,7 +369,7 @@ public class LDAPProvidersIntegrationNoImportTest extends LDAPProvidersIntegrati
 
     @Test
     public void testCannotUpdateReadOnlyUserImportDisabled() {
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "johnkeycloak");
 
         try {
             UserRepresentation rep = user.toRepresentation();

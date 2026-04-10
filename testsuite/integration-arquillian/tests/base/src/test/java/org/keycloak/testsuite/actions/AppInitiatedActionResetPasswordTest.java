@@ -40,7 +40,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -101,7 +101,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
 
     @After
     public void after() {
-        ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+        AdminApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
 
         // reset password required action max auth age back to default
         Optional<RequiredActionProviderRepresentation> passwordRequiredAction = testRealm().flows().getRequiredActions()
@@ -114,7 +114,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         }
 
         // remove all required action from the user
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         UserRepresentation userRepresentation = user.toRepresentation();
         userRepresentation.setRequiredActions(Collections.emptyList());
         user.update(userRepresentation);
@@ -125,7 +125,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
         try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(testRealm())
                 .addEventsListener(EmailEventListenerProviderFactory.ID)
                 .update();
-             UserAttributeUpdater userUpdater = new UserAttributeUpdater(ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost"))
+             UserAttributeUpdater userUpdater = new UserAttributeUpdater(AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost"))
                 .setEmailVerified(true)
                 .update()) {
 
@@ -357,7 +357,7 @@ public class AppInitiatedActionResetPasswordTest extends AbstractAppInitiatedAct
     @Test
     public void cancelWhenOTPRequiredAction() {
         // Add OTP required action to the user
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         UserRepresentation userRep = user.toRepresentation();
         UserBuilder.edit(userRep).requiredAction(UserModel.RequiredAction.CONFIGURE_TOTP.name());
         user.update(userRep);

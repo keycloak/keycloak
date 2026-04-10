@@ -79,6 +79,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -116,9 +117,9 @@ import org.openqa.selenium.By;
 
 import static org.keycloak.testsuite.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.Assert.assertExpiration;
-import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsernameId;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.util.oauth.OAuthClient.AUTH_SERVER_ROOT;
@@ -878,7 +879,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(201, response.getStatus());
         response.close();
 
-        ClientRepresentation clientRep = ApiUtil.findClientByClientId(realm, "test-app").toRepresentation();
+        ClientRepresentation clientRep = AdminApiUtil.findClientByClientId(realm, "test-app").toRepresentation();
         realm.clients().get(clientRep.getId()).addDefaultClientScope(clientScopeId);
         clientRep.setFullScopeAllowed(false);
         realm.clients().get(clientRep.getId()).update(clientRep);
@@ -1172,7 +1173,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void clientAccessTokenLifespanOverride() {
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRep = client.toRepresentation();
 
         RealmResource realm = adminClient.realm("test");
@@ -1216,7 +1217,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void testClientSessionMaxLifespan() throws Exception {
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRepresentation = client.toRepresentation();
 
         RealmResource realm = adminClient.realm("test");
@@ -1257,7 +1258,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void testClientOfflineSessionMaxLifespan() throws Exception {
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRepresentation = client.toRepresentation();
 
         RealmResource realm = adminClient.realm("test");
@@ -1304,7 +1305,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void accessTokenRequestNoRefreshToken() {
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         ClientRepresentation clientRepresentation = client.toRepresentation();
         clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
         client.update(clientRepresentation);
@@ -1409,11 +1410,11 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         try {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedAlg);
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedAlg);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedAlg);
             validateTokenSignatureLength(ECDSAAlgorithm.getSignatureLength(expectedAlg));
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 
@@ -1439,11 +1440,11 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         try {
             /// Realm Setting is used for ID Token Signature Algorithm
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, expectedIdTokenAlg);
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedAccessAlg);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), expectedAccessAlg);
             tokenRequest(expectedRefreshAlg, expectedAccessAlg, expectedIdTokenAlg, idTokenCurve);
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
-            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
+            TokenSignatureUtil.changeClientAccessTokenSignatureProvider(AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
     }
 

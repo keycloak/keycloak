@@ -59,6 +59,7 @@ import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorF
 import org.keycloak.testsuite.AbstractAdminTest;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
@@ -137,7 +138,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testCodeToTokenRequestSuccessWhenClientHasGeneratedKeys() throws Exception {
         // Test when client has public/private keys generated despite the fact that it uses client-secret for the client authentication (and not those keys)
-        ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").getCertficateResource("jwt.credential").generate();
+        AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").getCertficateResource("jwt.credential").generate();
 
         testCodeToTokenRequestSuccess(Algorithm.HS256);
     }
@@ -145,7 +146,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testCodeToTokenRequestFailureWhenClientHasPrivateKeyJWT() throws Exception {
         // Setup client for "private_key_jwt" authentication
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
         client.getCertficateResource("jwt.credential").generate();
         ClientRepresentation clientRep = client.toRepresentation();
         clientRep.setClientAuthenticatorType(JWTClientAuthenticator.PROVIDER_ID);
@@ -200,7 +201,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         final String realmName = "test";
         final String clientId = "test-app";
         try {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.HS384);
             clientResource.update(clientRep);
@@ -209,7 +210,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         } catch (Exception e) {
             fail();
         } finally {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
             clientResource.update(clientRep);
@@ -223,7 +224,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         final String realmName = "test";
         final String clientId = "test-app";
         try {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.HS512);
             clientResource.update(clientRep);
@@ -239,7 +240,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         } catch (Exception e) {
             fail();
         } finally {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
             clientResource.update(clientRep);

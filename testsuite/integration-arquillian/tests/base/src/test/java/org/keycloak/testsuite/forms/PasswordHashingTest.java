@@ -55,7 +55,7 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -265,7 +265,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
         // Create a user with the encoded password, simulating a user import from a different system using a specific key size
         UserRepresentation user = UserBuilder.create().username(username).build();
         user.setCredentials(List.of(ExportUtils.exportCredential(passwordCredentialModel)));
-        ApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
+        AdminApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
 
         oauth.openLoginForm();
         loginPage.login(username, password);
@@ -383,7 +383,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     private String createUser(String username) {
         final String password = generatePassword();
-        ApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm("test"), UserBuilder.create().username(username).build(), password);
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(adminClient.realm("test"), UserBuilder.create().username(username).build(), password);
         return password;
     }
 

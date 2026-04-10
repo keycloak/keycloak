@@ -37,7 +37,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
@@ -328,7 +328,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
         oauth.realm(TEST);
         oauth.client("client-exchanger", "secret");
 
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(TEST), "no-refresh-token");
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(TEST), "no-refresh-token");
         ClientRepresentation clientRepresentation = client.toRepresentation();
         clientRepresentation.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
         client.update(clientRepresentation);
@@ -378,7 +378,7 @@ public class StandardTokenExchangeV1Test extends AbstractKeycloakTest {
         oauth.realm(TEST);
         String accessToken = getInitialAccessTokenForClientExchanger();
 
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(TEST), "client-exchanger");
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(TEST), "client-exchanger");
         ClientRepresentation clientRepresentation = client.toRepresentation();
         clientRepresentation.setConsentRequired(Boolean.TRUE);
         client.update(clientRepresentation);

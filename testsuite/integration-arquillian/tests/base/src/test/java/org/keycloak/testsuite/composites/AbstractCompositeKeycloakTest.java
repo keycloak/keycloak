@@ -19,7 +19,7 @@ package org.keycloak.testsuite.composites;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 
 /**
  *
@@ -32,6 +32,6 @@ public abstract class AbstractCompositeKeycloakTest extends AbstractKeycloakTest
     }
 
     protected String getUserId(String username) {
-        return ApiUtil.findUserByUsername(testRealm(), username).getId();
+        return AdminApiUtil.findUserByUsername(testRealm(), username).getId();
     }
 }

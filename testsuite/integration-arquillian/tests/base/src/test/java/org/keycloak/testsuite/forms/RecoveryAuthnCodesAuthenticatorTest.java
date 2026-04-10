@@ -36,7 +36,7 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.AppPage;
@@ -151,7 +151,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
                 .defineAsBrowserFlow()
         );
 
-        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         createUser("test", "test-user@localhost", generatePassword("test-user@localhost"), UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
     }
 
@@ -218,7 +218,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
     @Test
     public void test03SetupRecoveryAuthnCodesModifyGeneratedAt() {
         // add the configure recovery codes action
-        UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource testUser = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         UserRepresentation userRepresentation = testUser.toRepresentation();
         userRepresentation.setRequiredActions(Arrays.asList(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()));
         testUser.update(userRepresentation);
@@ -250,7 +250,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
     @Test
     public void test04SetupRecoveryAuthnCodesModifyGeneratedCodes() {
         // add the configure recovery codes action
-        UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource testUser = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         UserRepresentation userRepresentation = testUser.toRepresentation();
         userRepresentation.setRequiredActions(Arrays.asList(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()));
         testUser.update(userRepresentation);
@@ -489,7 +489,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractChangeImportedU
             authMgt.updateRequiredAction(requiredAction.getAlias(), requiredAction);
 
             // Add required action to the user
-            UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+            UserResource testUser = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
             UserRepresentation userRepresentation = testUser.toRepresentation();
             userRepresentation.setRequiredActions(Arrays.asList(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()));
             testUser.update(userRepresentation);

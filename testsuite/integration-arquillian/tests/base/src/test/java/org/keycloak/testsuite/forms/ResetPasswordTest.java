@@ -58,6 +58,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
@@ -143,7 +144,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                 .build();
 
         password = generatePassword();
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), defaultUser, password);
+        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), defaultUser, password);
         defaultUser.setId(userId);
         expectedMessagesCount = 0;
         getCleanup().addUserId(userId);
@@ -329,7 +330,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
 
         // Client disabled
-        ClientResource client = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource client = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         ClientRepresentation clientRep = client.toRepresentation();
         clientRep.setEnabled(false);
         client.update(clientRep);
@@ -570,7 +571,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             // relogin is forced therefore the info page should be displayed
             Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
             String backToAppLink = infoPage.getBackToApplicationLink();
-            ClientRepresentation client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
+            ClientRepresentation client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
             Assert.assertEquals(backToAppLink, client.getBaseUrl());
             oauth.openLoginForm();
             loginPage.assertCurrent();

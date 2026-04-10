@@ -47,7 +47,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
@@ -380,7 +380,7 @@ public class FlowOverrideTest extends AbstractFlowTest {
     }
 
     private void testWithRemovedFlowOverrideByClient(String binding, Consumer<String> testNoOverride) {
-        ClientResource clientResource = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         Assert.assertNotNull(clientResource);
         ClientRepresentation clientRep = clientResource.toRepresentation();
 
