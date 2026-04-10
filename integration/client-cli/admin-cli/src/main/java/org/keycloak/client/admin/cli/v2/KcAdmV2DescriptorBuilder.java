@@ -11,9 +11,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.keycloak.client.admin.cli.v2.KcAdmV2CommandDescriptor.OptionDescriptor;
+import org.keycloak.client.cli.util.OutputUtil;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import io.smallrye.openapi.api.SmallRyeOpenAPI;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigValue;
@@ -37,8 +36,6 @@ public class KcAdmV2DescriptorBuilder {
 
     static final String ID_PATH_PARAM = "{id}";
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT);
 
     private static final Map<PathItem.HttpMethod, String> HTTP_METHOD_TO_COMMAND = Map.of(
             PathItem.HttpMethod.GET, "get",
@@ -120,11 +117,11 @@ public class KcAdmV2DescriptorBuilder {
 
     public static void writeDescriptor(KcAdmV2CommandDescriptor descriptor, Path outputFile) throws IOException {
         Files.createDirectories(outputFile.getParent());
-        MAPPER.writeValue(outputFile.toFile(), descriptor);
+        OutputUtil.MAPPER.writeValue(outputFile.toFile(), descriptor);
     }
 
     public static KcAdmV2CommandDescriptor readDescriptor(InputStream is) throws IOException {
-        return MAPPER.readValue(is, KcAdmV2CommandDescriptor.class);
+        return OutputUtil.MAPPER.readValue(is, KcAdmV2CommandDescriptor.class);
     }
 
     private static String extractResourceName(PathItem pathItem) {
