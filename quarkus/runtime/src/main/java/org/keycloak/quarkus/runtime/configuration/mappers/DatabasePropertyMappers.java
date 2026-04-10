@@ -87,14 +87,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .mapFrom(DB, DatabasePropertyMappers::getDatabaseUrl)
                         .paramLabel("jdbc-url")
                         .build(),
-                fromOption(DatabaseOptions.DB_POSTGRESQL_TARGET_SERVER_TYPE)
-                        .to(PG_TARGET_SERVER_TYPE)
-                        .isEnabled(DatabasePropertyMappers::isPostgresqlTargetServerTypeEnabled)
-                        .build(),
-                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
-                        .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
-                        .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
-                        .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(JDBC_LOGIN_TIMEOUT)
                         .validator(DatabasePropertyMappers::validateConnectTimeout)
@@ -103,42 +95,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(DatabaseOptions.DB_POOL_ACQUISITION_TIMEOUT)
                         .to(JDBC_ACQUISITION_TIMEOUT)
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context) -> computeAcquisitionTimeout(value))
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isMysqlConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isMariadbConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(ORACLEDB_CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isOracleConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(MSSQL_CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToSeconds(value))
-                        .isEnabled(DatabasePropertyMappers::isMssqlLoginTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToSeconds(value))
-                        .isEnabled(DatabasePropertyMappers::isPostgresConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isTidbConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")
@@ -240,12 +196,62 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_FILE, "sslrootcert", EnumSet.of(Database.Vendor.POSTGRES))
         );
 
-        return appendDatasourceMappers(mappers, Map.of(
+        List<PropertyMapper<?>> result = appendDatasourceMappers(mappers, Map.of(
                 // Inherit options from the DB mappers
                 DB, PropertyMapper.Builder::removeMapFrom,
                 DB_POOL_INITIAL_SIZE, mapper -> mapper.mapFrom(DB_POOL_INITIAL_SIZE),
                 DB_POOL_MAX_SIZE, mapper -> mapper.mapFrom(DB_POOL_MAX_SIZE)
         ));
+
+        // finally add mappers that utilize isEnabled - that won't work as expected for multiple datasources
+        // so these will only affect the primary datasource
+        result.addAll(List.of(
+                fromOption(DatabaseOptions.DB_POSTGRESQL_TARGET_SERVER_TYPE)
+                        .to(PG_TARGET_SERVER_TYPE)
+                        .isEnabled(DatabasePropertyMappers::isPostgresqlTargetServerTypeEnabled)
+                        .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
+                        .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
+                        .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToMillis(value))
+                        .isEnabled(DatabasePropertyMappers::isMysqlConnectTimeoutEnabled)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToMillis(value))
+                        .isEnabled(DatabasePropertyMappers::isMariadbConnectTimeoutEnabled)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(ORACLEDB_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToMillis(value))
+                        .isEnabled(DatabasePropertyMappers::isOracleConnectTimeoutEnabled)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(MSSQL_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToSeconds(value))
+                        .isEnabled(DatabasePropertyMappers::isMssqlLoginTimeoutEnabled)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToSeconds(value))
+                        .isEnabled(DatabasePropertyMappers::isPostgresConnectTimeoutEnabled)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToMillis(value))
+                        .isEnabled(DatabasePropertyMappers::isTidbConnectTimeoutEnabled)
+                        .build()
+        ));
+        return result;
     }
 
     @Override

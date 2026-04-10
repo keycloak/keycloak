@@ -595,6 +595,11 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
         assertNullAdditionalJdbcProperty(config, "users", trustStorePasswordProperty);
         assertNullAdditionalJdbcProperty(config, "users", trustStoreTypeProperty);
 
+        // MSSQL-specific property should not leak into non-MSSQL named datasources
+        if (!"mssql".equals(dbKind)) {
+            assertNullAdditionalJdbcProperty(config, "users", "sendStringParametersAsUnicode");
+        }
+
         // oracle has a different protocol for TLS
         if ("oracle".equals(dbKind)) {
             dbUrl = dbUrl.replace("jdbc:oracle:thin:@//", "jdbc:oracle:thin:@tcps://");
