@@ -35,7 +35,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.openqa.selenium.TimeoutException;
 
-import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
+import static org.keycloak.testsuite.admin.AdminApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.disablePostBrokerLoginFlow;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;

@@ -35,6 +35,7 @@ import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.DeleteCredentialPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -89,7 +90,7 @@ public class AppInitiatedActionDeleteCredentialTest extends AbstractAppInitiated
 
     @Before
     public void beforeTest() {
-        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create()
                 .username("john")
                 .email("test-user@localhost")

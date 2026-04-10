@@ -27,7 +27,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.VerifyEmail;
@@ -94,7 +94,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
     }
 
     public void verifyEmailWithSslEnabled(Boolean opportunistic) {
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         UserRepresentation user = userResource.toRepresentation();
         user.setEmailVerified(false);
         userResource.update(user);
@@ -155,7 +155,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void test01VerifyEmailWithSslWrongCertificate() throws Exception {
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
+        UserRepresentation user = AdminApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
 
         SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.INVALID_KEY).getFile());
         oauth.openLoginForm();
@@ -190,7 +190,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void test03erifyEmailWithSslWrongHostname() throws Exception {
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
+        UserRepresentation user = AdminApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
 
         try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm())
                 .setSmtpServer("host", "localhost.localdomain")

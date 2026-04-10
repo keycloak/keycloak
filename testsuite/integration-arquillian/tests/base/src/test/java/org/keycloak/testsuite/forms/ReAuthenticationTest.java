@@ -33,7 +33,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.broker.SocialLoginTest;
 import org.keycloak.testsuite.pages.AppPage;
@@ -116,7 +116,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
     @Test
     public void usernamePasswordFormReauthentication() {
         // Add fake github link to user account
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         FederatedIdentityRepresentation fedLink = FederatedIdentityBuilder.create()
                 .identityProvider("github")
                 .userId("123")
@@ -245,7 +245,7 @@ public class ReAuthenticationTest extends AbstractChangeImportedUserPasswordsTes
         setupIdentityFirstFlow();
 
         // Add fake federated link to the user
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
         FederatedIdentityRepresentation fedLink = FederatedIdentityBuilder.create()
                 .identityProvider("github")
                 .userId("123")

@@ -74,7 +74,7 @@ import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.FullNameLDAPStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.util.JsonSerialization;
 
@@ -123,11 +123,11 @@ public class ExportImportUtil {
         Assert.assertEquals(10, resources.size());
 
         // Test applications imported
-        ClientRepresentation application = ApiUtil.findClientByClientId(realmRsc, "Application").toRepresentation();
-        ClientRepresentation otherApp = ApiUtil.findClientByClientId(realmRsc, "OtherApp").toRepresentation();
-        ClientRepresentation accountApp = ApiUtil.findClientByClientId(realmRsc, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
-        ClientRepresentation testAppAuthzApp = ApiUtil.findClientByClientId(realmRsc, "test-app-authz").toRepresentation();
-        ClientResource nonExisting = ApiUtil.findClientByClientId(realmRsc, "NonExisting");
+        ClientRepresentation application = AdminApiUtil.findClientByClientId(realmRsc, "Application").toRepresentation();
+        ClientRepresentation otherApp = AdminApiUtil.findClientByClientId(realmRsc, "OtherApp").toRepresentation();
+        ClientRepresentation accountApp = AdminApiUtil.findClientByClientId(realmRsc, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
+        ClientRepresentation testAppAuthzApp = AdminApiUtil.findClientByClientId(realmRsc, "test-app-authz").toRepresentation();
+        ClientResource nonExisting = AdminApiUtil.findClientByClientId(realmRsc, "NonExisting");
         Assert.assertNotNull(application);
         Assert.assertNotNull(otherApp);
         Assert.assertNull(nonExisting);
@@ -159,8 +159,8 @@ public class ExportImportUtil {
         Assert.assertEquals("browser", flowRep.getAlias());
 
         // Test finding applications by ID
-        Assert.assertNull(ApiUtil.findClientResourceById(realmRsc, "982734"));
-        Assert.assertEquals(application.getId(), ApiUtil.findClientResourceById(realmRsc, application.getId()).toRepresentation().getId());
+        Assert.assertNull(AdminApiUtil.findClientResourceById(realmRsc, "982734"));
+        Assert.assertEquals(application.getId(), AdminApiUtil.findClientResourceById(realmRsc, application.getId()).toRepresentation().getId());
 
 
         // Test role mappings
@@ -222,7 +222,7 @@ public class ExportImportUtil {
         Assert.assertTrue(attrVals.contains("val21") && attrVals.contains("val22"));
 
         // Test client
-        ClientResource oauthClient = ApiUtil.findClientResourceByClientId(realmRsc, "oauthclient");
+        ClientResource oauthClient = AdminApiUtil.findClientResourceByClientId(realmRsc, "oauthclient");
         ClientRepresentation oauthClientRep = oauthClient.toRepresentation();
         Assert.assertEquals("clientpassword", oauthClient.getSecret().getValue());
         Assert.assertTrue(oauthClientRep.isEnabled());
@@ -601,7 +601,7 @@ public class ExportImportUtil {
     }
 
     private static void assertAuthorizationSettingsOtherApp(RealmResource realmRsc) {
-        AuthorizationResource authzResource = ApiUtil.findAuthorizationSettings(realmRsc, "OtherApp");
+        AuthorizationResource authzResource = AdminApiUtil.findAuthorizationSettings(realmRsc, "OtherApp");
         Assert.assertNotNull(authzResource);
 
         List<ResourceRepresentation> resources = authzResource.resources().resources();
@@ -614,7 +614,7 @@ public class ExportImportUtil {
     }
 
     private static void assertAuthorizationSettingsTestAppAuthz(RealmResource realmRsc) {
-        AuthorizationResource authzResource = ApiUtil.findAuthorizationSettings(realmRsc, "test-app-authz");
+        AuthorizationResource authzResource = AdminApiUtil.findAuthorizationSettings(realmRsc, "test-app-authz");
 
         Assert.assertNotNull(authzResource);
 

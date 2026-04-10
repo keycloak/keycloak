@@ -36,7 +36,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -439,7 +439,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
         setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
         updateUser(user5Id, null, "ExistingLast", null);
 
-        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
 
         try {
             setUserProfileConfiguration(null);
@@ -473,7 +473,7 @@ public class VerifyProfileTest extends AbstractChangeImportedUserPasswordsTest {
             assertTrue(verifyProfilePage.isUsernamePresent());
             assertFalse(verifyProfilePage.isEmailPresent());
         } finally {
-            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
             realm.setEditUsernameAllowed(false);
             realm.setRegistrationEmailAsUsername(false);
             testRealm().update(realm);

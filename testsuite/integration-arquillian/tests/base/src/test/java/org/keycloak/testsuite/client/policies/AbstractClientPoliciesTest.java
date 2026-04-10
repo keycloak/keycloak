@@ -125,6 +125,7 @@ import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSign
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -168,7 +169,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientAccessTypeConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
@@ -620,7 +621,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected void registerRequestObject(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri) throws IOException {
         // Set required signature for request_uri
         // use and set jwks_url
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), clientId);
         assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectSignatureAlg(sigAlg);
@@ -1142,7 +1143,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         TestOIDCEndpointsApplicationResource client = testingClient.testApp().oidcClientEndpoints();
 
         // use and set jwks_url
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
         assert clientResource != null;
         ClientRepresentation clientRep = clientResource.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);

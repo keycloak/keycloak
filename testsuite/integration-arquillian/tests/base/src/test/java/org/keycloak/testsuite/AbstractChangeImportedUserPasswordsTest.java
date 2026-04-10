@@ -24,7 +24,7 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 
 import org.junit.Before;
 
@@ -71,7 +71,7 @@ abstract public class AbstractChangeImportedUserPasswordsTest extends AbstractTe
     }
 
     protected String changePassword(String username) {
-        UserResource userRes = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource userRes = AdminApiUtil.findUserByUsernameId(testRealm(), username);
         CredentialRepresentation credential = new CredentialRepresentation();
         credential.setType(PasswordCredentialModel.TYPE);
         credential.setTemporary(Boolean.FALSE);

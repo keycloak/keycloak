@@ -59,7 +59,7 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.services.resources.admin.fgap.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.fgap.AdminPermissions;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
@@ -230,7 +230,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
 
         final RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
         final int expires = realmsResouce().realm(bc.providerRealmName()).toRepresentation().getAccessTokenLifespan();
-        final ClientRepresentation brokerApp = ApiUtil.findClientByClientId(consumerRealm, "broker-app").toRepresentation();
+        final ClientRepresentation brokerApp = AdminApiUtil.findClientByClientId(consumerRealm, "broker-app").toRepresentation();
 
         logInAsUserInIDPForFirstTimeAndAssertSuccess();
         final String code = oauth.parseLoginResponse().getCode();
@@ -416,7 +416,7 @@ public class KcOidcBrokerTokenExchangeTest extends AbstractInitializedBaseBroker
     private void testInternalExternalTokenExchange() throws Exception {
         final RealmResource consumerRealm = realmsResouce().realm(bc.consumerRealmName());
         final int expires = realmsResouce().realm(bc.providerRealmName()).toRepresentation().getAccessTokenLifespan();
-        final ClientRepresentation brokerApp = ApiUtil.findClientByClientId(consumerRealm, "broker-app").toRepresentation();
+        final ClientRepresentation brokerApp = AdminApiUtil.findClientByClientId(consumerRealm, "broker-app").toRepresentation();
 
         logInAsUserInIDPForFirstTimeAndAssertSuccess();
         final String code = oauth.parseLoginResponse().getCode();

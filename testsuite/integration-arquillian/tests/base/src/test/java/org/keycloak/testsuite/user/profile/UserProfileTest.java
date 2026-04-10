@@ -58,6 +58,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttributePolicy;
 import org.keycloak.representations.userprofile.config.UPGroup;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.ModelTest;
 import org.keycloak.testsuite.runonserver.RunOnServer;
@@ -2308,11 +2309,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailAttributeInUpdateEmailContext() {
-        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAttributeInUpdateEmailContext);
         } finally {
-            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 
@@ -2398,11 +2399,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailAnnotationsInAccountContext() {
-        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailAnnotationsInAccountContext);
         } finally {
-            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 
@@ -2473,11 +2474,11 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
     @Test
     public void testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled() {
-        ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, true);
         try {
             getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testEmailFieldHiddenWhenEmptyAndReadOnlyWithUpdateEmailEnabled);
         } finally {
-            ApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(testRealm(), RequiredAction.UPDATE_EMAIL, false);
         }
     }
 

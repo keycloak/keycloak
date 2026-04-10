@@ -58,7 +58,7 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.KcArquillian;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.TestContext;
@@ -556,18 +556,18 @@ public abstract class AbstractKeycloakTest {
         UserRepresentation homer = createUserRepresentation(username, password);
         homer.setRequiredActions(Arrays.asList(requiredActions));
 
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
     }
 
     public String createUser(String realm, String username, String password, String firstName, String lastName, String email, Consumer<UserRepresentation> customizer) {
         UserRepresentation user = createUserRepresentation(username, email, firstName, lastName, true, password);
         customizer.accept(user);
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), user);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), user);
     }
 
     public String createUser(String realm, String username, String password, String firstName, String lastName, String email) {
         UserRepresentation homer = createUserRepresentation(username, email, firstName, lastName, true, password);
-        return ApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
+        return AdminApiUtil.createUserWithAdminClient(adminClient.realm(realm), homer);
     }
 
     public static UserRepresentation createUserRepresentation(String id, String username, String email, String firstName, String lastName, List<String> groups, boolean enabled) {

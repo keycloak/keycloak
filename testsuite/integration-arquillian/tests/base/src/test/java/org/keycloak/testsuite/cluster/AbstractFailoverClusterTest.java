@@ -22,7 +22,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -100,7 +100,7 @@ public abstract class AbstractFailoverClusterTest extends AbstractClusterTest {
                 .password("password")
                 .build();
 
-        String userId = ApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
+        String userId = AdminApiUtil.createUserWithAdminClient(adminClient.realm("test"), user);
         getCleanup().addUserId(userId);
 
         oauth.clientId("test-app");

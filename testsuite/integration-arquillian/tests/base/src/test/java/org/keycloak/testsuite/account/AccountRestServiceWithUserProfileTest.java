@@ -38,7 +38,7 @@ import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.userprofile.config.UPAttribute;
 import org.keycloak.representations.userprofile.config.UPAttributePermissions;
 import org.keycloak.representations.userprofile.config.UPConfig;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.util.userprofile.UserProfileUtil;
 import org.keycloak.userprofile.UserProfileContext;
@@ -177,7 +177,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
     public void testUpdateEmailLink() throws Exception {
         RealmResource realm = adminClient.realm("test");
         RealmRepresentation realmRep = realm.toRepresentation();
-        ApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, true);
+        AdminApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, true);
 
         try {
             realmRep.setEditUsernameAllowed(false);
@@ -195,7 +195,7 @@ public class AccountRestServiceWithUserProfileTest extends AbstractRestServiceTe
             assertNotNull(user.getUserProfileMetadata());
             assertThat(user.getUserProfileMetadata().getAttributeMetadata(UserModel.EMAIL).getAnnotations().get("kc.required.action.supported"), is(nullValue()));
         } finally {
-            ApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, false);
+            AdminApiUtil.enableRequiredAction(realm, RequiredAction.UPDATE_EMAIL, false);
             realmRep.setEditUsernameAllowed(true);
             realm.update(realmRep);
         }

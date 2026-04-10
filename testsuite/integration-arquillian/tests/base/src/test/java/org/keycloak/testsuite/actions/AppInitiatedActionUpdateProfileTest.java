@@ -22,7 +22,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -61,23 +61,23 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
     @Before
     public void beforeTest() {
-        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
                 .email("test-user@localhost")
                 .firstName("Tom")
                 .lastName("Brady")
                 .build();
-        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 
-        ApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
+        AdminApiUtil.removeUserByUsername(testRealm(), "john-doh@localhost");
         user = UserBuilder.create().enabled(true)
                 .username("john-doh@localhost")
                 .email("john-doh@localhost")
                 .firstName("John")
                 .lastName("Doh")
                 .build();
-        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
   
     @Test
@@ -368,7 +368,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         String backToAppLink = errorPage.getBackToApplicationLink();
 
-        ClientRepresentation client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
+        ClientRepresentation client = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "test-app").toRepresentation();
         Assert.assertEquals(backToAppLink, client.getBaseUrl());
     }
 

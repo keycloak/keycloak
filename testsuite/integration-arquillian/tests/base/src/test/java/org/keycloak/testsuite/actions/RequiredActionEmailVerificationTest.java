@@ -44,7 +44,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.cluster.AuthenticationSessionFailoverClusterTest;
 import org.keycloak.testsuite.pages.AppPage;
@@ -140,14 +140,14 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
     @Before
     public void before() {
-        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
                 .firstName("test-user")
                 .lastName("test-user")
                 .emailVerified(false)
                 .email("test-user@localhost").build();
-        testUserId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        testUserId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 
         clearCooldownForUser();
     }

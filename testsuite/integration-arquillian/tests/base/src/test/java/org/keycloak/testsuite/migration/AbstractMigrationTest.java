@@ -87,7 +87,7 @@ import org.keycloak.representations.userprofile.config.UPConfig.UnmanagedAttribu
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
@@ -460,7 +460,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     private void testClientContainsExpectedClientScopes() {
         // Test OIDC client contains expected client scopes
-        ClientResource migrationTestOIDCClient = ApiUtil.findClientByClientId(migrationRealm, "migration-test-client");
+        ClientResource migrationTestOIDCClient = AdminApiUtil.findClientByClientId(migrationRealm, "migration-test-client");
         List<String> defaultClientScopes = migrationTestOIDCClient.getDefaultClientScopes().stream()
                 .map(ClientScopeRepresentation::getName)
                 .collect(Collectors.toList());
@@ -481,7 +481,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         ));
 
         // Test SAML client
-        ClientResource migrationTestSAMLClient = ApiUtil.findClientByClientId(migrationRealm, "migration-saml-client");
+        ClientResource migrationTestSAMLClient = AdminApiUtil.findClientByClientId(migrationRealm, "migration-saml-client");
         defaultClientScopes = migrationTestSAMLClient.getDefaultClientScopes().stream()
                 .map(ClientScopeRepresentation::getName)
                 .collect(Collectors.toList());
@@ -949,7 +949,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     private void testOfflineScopeAddedToClient() {
         log.infof("Testing offline_access optional scope present in realm %s for client migration-test-client", migrationRealm.toRepresentation().getRealm());
 
-        List<ClientScopeRepresentation> optionalClientScopes = ApiUtil.findClientByClientId(this.migrationRealm, "migration-test-client").getOptionalClientScopes();
+        List<ClientScopeRepresentation> optionalClientScopes = AdminApiUtil.findClientByClientId(this.migrationRealm, "migration-test-client").getOptionalClientScopes();
 
         boolean found = optionalClientScopes.stream().filter((ClientScopeRepresentation clientScope) -> {
 
@@ -966,7 +966,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     private void testRolesAndWebOriginsScopesAddedToClient() {
         log.infof("Testing roles and web-origins default scopes present in realm %s for client migration-test-client", migrationRealm.toRepresentation().getRealm());
 
-        List<ClientScopeRepresentation> defaultClientScopes = ApiUtil.findClientByClientId(this.migrationRealm, "migration-test-client").getDefaultClientScopes();
+        List<ClientScopeRepresentation> defaultClientScopes = AdminApiUtil.findClientByClientId(this.migrationRealm, "migration-test-client").getDefaultClientScopes();
 
         Set<String> defaultClientScopeNames = defaultClientScopes.stream()
                 .map(ClientScopeRepresentation::getName)
@@ -987,7 +987,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
     private void testMicroprofileJWTScopeAddedToClient() {
         log.infof("Testing microprofile-jwt optional scope present in realm %s for client migration-test-client", migrationRealm.toRepresentation().getRealm());
 
-        List<ClientScopeRepresentation> optionalClientScopes = ApiUtil.findClientByClientId(this.migrationRealm, "migration-test-client").getOptionalClientScopes();
+        List<ClientScopeRepresentation> optionalClientScopes = AdminApiUtil.findClientByClientId(this.migrationRealm, "migration-test-client").getOptionalClientScopes();
 
         Set<String> defaultClientScopeNames = optionalClientScopes.stream()
                 .map(ClientScopeRepresentation::getName)

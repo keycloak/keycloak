@@ -23,7 +23,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
 import org.hamcrest.Matchers;
@@ -159,7 +159,7 @@ public class DockerClientTest extends AbstractKeycloakTest {
 
     @Test
     public void shouldPerformDockerAuthAgainstRegistry() throws Exception {
-        UserRepresentation dockerUser = ApiUtil.findUserByUsername(adminClient.realm(REALM_ID), DOCKER_USER);
+        UserRepresentation dockerUser = AdminApiUtil.findUserByUsername(adminClient.realm(REALM_ID), DOCKER_USER);
 
         log.info("Starting the attempt for login...");
         Container.ExecResult result = dockerClientContainer.execInContainer("docker", "login", "-u", DOCKER_USER, "-p", DOCKER_USER_PASSWORD, REGISTRY_HOSTNAME + ":" + REGISTRY_PORT);
@@ -190,7 +190,7 @@ public class DockerClientTest extends AbstractKeycloakTest {
         assertLogin(dockerUser);
 
         // disable and login should fail
-        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_ID), CLIENT_ID);
+        ClientResource client = AdminApiUtil.findClientByClientId(adminClient.realm(REALM_ID), CLIENT_ID);
         ClientRepresentation clientRep = client.toRepresentation();
         clientRep.setEnabled(Boolean.FALSE);
         client.update(clientRep);

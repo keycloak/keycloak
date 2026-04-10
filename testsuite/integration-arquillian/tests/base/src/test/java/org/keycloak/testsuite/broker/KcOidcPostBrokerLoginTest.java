@@ -45,7 +45,7 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import static org.keycloak.models.utils.TimeBasedOTP.DEFAULT_INTERVAL_SECONDS;
-import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
+import static org.keycloak.testsuite.admin.AdminApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;

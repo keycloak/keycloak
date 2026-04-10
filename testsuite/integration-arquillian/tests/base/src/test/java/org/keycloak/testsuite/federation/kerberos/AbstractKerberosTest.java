@@ -56,6 +56,7 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -299,7 +300,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     protected UserRepresentation assertUser(String expectedUsername, String expectedEmail, String expectedFirstname,
                                             String expectedLastname, String expectedKerberosPrincipal, boolean updateProfileActionExpected) {
         try {
-            UserRepresentation user = ApiUtil.findUserByUsername(testRealmResource(), expectedUsername);
+            UserRepresentation user = AdminApiUtil.findUserByUsername(testRealmResource(), expectedUsername);
             Assert.assertNotNull(user);
             Assert.assertEquals(expectedEmail, user.getEmail());
             Assert.assertEquals(expectedFirstname, user.getFirstName());

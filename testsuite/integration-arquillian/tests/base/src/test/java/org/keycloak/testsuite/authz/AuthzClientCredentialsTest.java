@@ -53,7 +53,7 @@ import org.keycloak.representations.idm.authorization.PermissionResponse;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
@@ -245,7 +245,7 @@ public class AuthzClientCredentialsTest extends AbstractAuthzTest {
     @Test
     public void testReusingAccessAndRefreshTokens_refreshEnabled() throws Exception {
         // Use userSessions and refresh tokens
-        ClientResource client = ApiUtil.findClientByClientId(getAdminClient().realm("authz-test-session"), "resource-server-test");
+        ClientResource client = AdminApiUtil.findClientByClientId(getAdminClient().realm("authz-test-session"), "resource-server-test");
         ClientRepresentation clientRepresentation = ClientBuilder.edit(client.toRepresentation())
                 .attribute(OIDCConfigAttributes.USE_REFRESH_TOKEN_FOR_CLIENT_CREDENTIALS_GRANT, "true")
                 .build();

@@ -45,7 +45,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
@@ -219,7 +219,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
 
         // User-profile data should be present (including KERBEROS_PRINCIPAL attribute)
-        UserResource johnResource = ApiUtil.findUserByUsernameId(testRealmResource(), "hnelson");
+        UserResource johnResource = AdminApiUtil.findUserByUsernameId(testRealmResource(), "hnelson");
         UserRepresentation john = johnResource.toRepresentation(true);
         Assert.assertNames(john.getUserProfileMetadata().getAttributes(), UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME, KerberosConstants.KERBEROS_PRINCIPAL);
 
@@ -287,7 +287,7 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
 
         // User-profile data should be present (including KERBEROS_PRINCIPAL attribute)
-        UserResource johnResource = ApiUtil.findUserByUsernameId(testRealmResource(), "hnelson");
+        UserResource johnResource = AdminApiUtil.findUserByUsernameId(testRealmResource(), "hnelson");
         UserRepresentation john = johnResource.toRepresentation(true);
         Assert.assertNames(john.getUserProfileMetadata().getAttributes(), UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL, UserModel.USERNAME, KerberosConstants.KERBEROS_PRINCIPAL);
         johnResource.remove();

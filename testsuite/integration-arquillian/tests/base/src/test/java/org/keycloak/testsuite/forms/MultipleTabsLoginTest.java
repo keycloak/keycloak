@@ -47,7 +47,7 @@ import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -117,7 +117,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
                 .requiredAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString())
                 .build();
 
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, generatePassword("login-test"), true);
+        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, generatePassword("login-test"), true);
         getCleanup().addUserId(userId);
 
         oauth.clientId("test-app");

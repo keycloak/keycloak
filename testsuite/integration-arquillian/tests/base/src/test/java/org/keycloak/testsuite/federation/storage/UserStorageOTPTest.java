@@ -40,7 +40,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.pages.AppPage;
@@ -105,7 +105,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
                 .username("test-user")
                 .email("test-user@something.org")
                 .build();
-        String testUserId = ApiUtil.createUserWithAdminClient(testRealm(), user);
+        String testUserId = AdminApiUtil.createUserWithAdminClient(testRealm(), user);
 
         getCleanup().addUserId(testUserId);
     }
@@ -114,7 +114,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void testCredentialsThroughRESTAPI() {
         // Test that test-user has federation link on him
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user");
+        UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user");
         Assert.assertEquals(componentId, user.toRepresentation().getFederationLink());
 
         // Test that both "password" and "otp" are configured for the test-user
@@ -147,7 +147,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
     public void testUpdateOTP() throws IOException {
         try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setOtpPolicyCodeReusable(true).update()) {
             // Add requiredAction to the user for update OTP
-            UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user");
+            UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user");
             UserRepresentation userRep = user.toRepresentation();
             userRep.setRequiredActions(Collections.singletonList(UserModel.RequiredAction.CONFIGURE_TOTP.toString()));
             user.update(userRep);
@@ -218,11 +218,11 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
                 .username("test-user2")
                 .email("test-user2@something.org")
                 .build();
-        String testUserId = ApiUtil.createUserWithAdminClient(testRealm(), user);
+        String testUserId = AdminApiUtil.createUserWithAdminClient(testRealm(), user);
         getCleanup().addUserId(testUserId);
 
         // Assert he has federation link on him
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "test-user2");
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), "test-user2");
         Assert.assertEquals(componentId, userResource.toRepresentation().getFederationLink());
 
         // Assert no userStorage supported credentials shown through admin REST API for that user. For this user, the validation of password and OTP is not delegated
@@ -230,7 +230,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(userResource.getConfiguredUserStorageCredentialTypes().isEmpty());
 
         // Update password
-        ApiUtil.resetUserPassword(userResource, "pass", false);
+        AdminApiUtil.resetUserPassword(userResource, "pass", false);
 
         // Authenticate as the user. Only the password will be required for him
         oauth.openLoginForm();

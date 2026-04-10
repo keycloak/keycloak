@@ -45,7 +45,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LanguageComboboxAwarePage;
@@ -121,7 +121,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void configureRequiredActionsToUser(String username, String... actions) {
-        UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), username);
+        UserResource userResource = AdminApiUtil.findUserByUsernameId(testRealm(), username);
         UserRepresentation userRepresentation = userResource.toRepresentation();
         userRepresentation.setRequiredActions(Arrays.asList(actions));
         userResource.update(userRepresentation);
@@ -129,14 +129,14 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void setOTPAuthRequired() {
-        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
                 .email("test-user@localhost")
                 .firstName("Tom")
                 .lastName("Brady")
                 .build();
-        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
 
 
@@ -455,7 +455,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
             String configureTotp = UserModel.RequiredAction.CONFIGURE_TOTP.name();
 
             // Remove required action from the user
-            UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+            UserResource user = AdminApiUtil.findUserByUsernameId(testRealm(), username);
             UserRepresentation userRepresentation = user.toRepresentation();
             userRepresentation.getRequiredActions().remove(configureTotp);
             user.update(userRepresentation);

@@ -41,7 +41,7 @@ import org.keycloak.representations.idm.RequiredActionConfigRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -448,7 +448,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                     .lastName("Brady")
                     .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
                     .build();
-            ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+            AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 
             // Login and update profile (first and last name only, no email)
             oauth.openLoginForm();
@@ -463,7 +463,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             // Always restore original configuration
             testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), originalConfig);
             events.clear();
-            ApiUtil.removeUserByUsername(testRealm(), "profile-test-user@localhost");
+            AdminApiUtil.removeUserByUsername(testRealm(), "profile-test-user@localhost");
         }
     }
 
@@ -502,7 +502,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                     .lastName("Doe")
                     .requiredAction(UserModel.RequiredAction.UPDATE_PROFILE.name())
                     .build();
-            ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+            AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 
             oauth.openLoginForm();
             loginPage.login("pendinguser", "password");
@@ -546,7 +546,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
             // Always restore original configuration and clean up
             testRealm().flows().updateRequiredActionConfig(UserModel.RequiredAction.UPDATE_EMAIL.name(), originalConfig);
             events.clear();
-            ApiUtil.removeUserByUsername(testRealm(), "pendinguser");
+            AdminApiUtil.removeUserByUsername(testRealm(), "pendinguser");
         }
     }
 
@@ -563,7 +563,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
                     .emailVerified(true)
                     .requiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name())
                     .build();
-            ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+            AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
 
             // Step 1: Login and change email (triggers verification due to realm verification setting)
             oauth.openLoginForm();
@@ -600,7 +600,7 @@ public class RequiredActionUpdateEmailTestWithVerificationTest extends AbstractR
         } finally {
             // Clean up
             events.clear();
-            ApiUtil.removeUserByUsername(testRealm(), "realmverifyuser");
+            AdminApiUtil.removeUserByUsername(testRealm(), "realmverifyuser");
         }
     }
 

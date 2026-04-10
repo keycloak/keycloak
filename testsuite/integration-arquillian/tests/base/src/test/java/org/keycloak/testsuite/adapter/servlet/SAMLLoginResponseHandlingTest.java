@@ -23,7 +23,7 @@ import org.keycloak.saml.processing.core.saml.v2.constants.X500SAMLProfileConsta
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.Employee2Servlet;
 import org.keycloak.testsuite.adapter.page.EmployeeSigServlet;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.util.Matchers;
@@ -138,7 +138,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
 
     @Test
     public void testAttributes() throws Exception {
-        ClientResource clientResource = ApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
+        ClientResource clientResource = AdminApiUtil.findClientResourceByClientId(testRealmResource(), AbstractSamlTest.SAML_CLIENT_ID_EMPLOYEE_2);
         ProtocolMappersResource protocolMappersResource = clientResource.getProtocolMappers();
 
         Map<String, String> config = new LinkedHashMap<>();

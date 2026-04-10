@@ -43,7 +43,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.drone.Different;
 import org.keycloak.testsuite.oauth.OAuthProofKeyForCodeExchangeTest;
@@ -66,7 +66,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.openqa.selenium.WebDriver;
 
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.admin.AdminApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -175,7 +175,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
     private void enableHoKToken(String clientId) {
         // Enable MTLS HoK Token
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), clientId);
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), clientId);
         ClientRepresentation clientRep = clientResource.toRepresentation();
         OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseMtlsHoKToken(true);
         clientResource.update(clientRep);

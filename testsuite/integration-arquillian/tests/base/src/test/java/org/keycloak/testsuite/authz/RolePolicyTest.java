@@ -38,7 +38,7 @@ import org.keycloak.representations.idm.authorization.PermissionRequest;
 import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -175,7 +175,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
         RealmResource realm = getRealm();
         ClientsResource clients = realm.clients();
         ClientRepresentation client = clients.findByClientId(authzClient.getConfiguration().getResource()).get(0);
-        ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
+        ClientScopeRepresentation rolesScope = AdminApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
         ClientResource clientResource = clients.get(client.getId());
         clientResource.removeDefaultClientScope(rolesScope.getId());
         getCleanup().addCleanup(() -> clientResource.addDefaultClientScope(rolesScope.getId()));
@@ -199,7 +199,7 @@ public class RolePolicyTest extends AbstractAuthzTest {
         RealmResource realm = getRealm();
         ClientsResource clients = realm.clients();
         ClientRepresentation client = clients.findByClientId(authzClient.getConfiguration().getResource()).get(0);
-        ClientScopeRepresentation rolesScope = ApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
+        ClientScopeRepresentation rolesScope = AdminApiUtil.findClientScopeByName(realm, OIDCLoginProtocolFactory.ROLES_SCOPE).toRepresentation();
         ClientResource clientResource = clients.get(client.getId());
         clientResource.removeDefaultClientScope(rolesScope.getId());
         UserRepresentation serviceAccountUser = clientResource.getServiceAccountUser();

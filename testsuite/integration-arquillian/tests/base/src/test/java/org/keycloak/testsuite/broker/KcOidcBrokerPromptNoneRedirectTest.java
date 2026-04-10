@@ -30,8 +30,8 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
-import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.CLIENT_ID;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;

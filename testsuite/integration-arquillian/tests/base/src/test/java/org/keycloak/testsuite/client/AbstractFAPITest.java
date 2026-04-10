@@ -43,7 +43,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.AppPage;
@@ -184,7 +184,7 @@ public abstract class AbstractFAPITest extends AbstractClientPoliciesTest {
     }
 
     protected void logoutUserAndRevokeConsent(String clientId, String username) {
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), username);
         user.logout();
         List<Map<String, Object>> consents = user.getConsents();
         org.junit.Assert.assertEquals(1, consents.size());

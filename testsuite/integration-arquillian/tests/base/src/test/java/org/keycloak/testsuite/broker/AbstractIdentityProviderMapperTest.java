@@ -15,7 +15,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import org.junit.Before;
 
-import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
+import static org.keycloak.testsuite.admin.AdminApiUtil.createUserAndResetPasswordWithAdminClient;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;

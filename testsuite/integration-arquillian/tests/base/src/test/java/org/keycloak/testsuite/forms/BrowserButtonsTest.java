@@ -26,7 +26,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractChangeImportedUserPasswordsTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -70,7 +70,7 @@ public class BrowserButtonsTest extends AbstractChangeImportedUserPasswordsTest 
                 .build();
 
         generatePasswords("login-test");
-        userId = ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, getPassword("login-test"), true);
+        userId = AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, getPassword("login-test"), true);
         expectedMessagesCount = 0;
         getCleanup().addUserId(userId);
 

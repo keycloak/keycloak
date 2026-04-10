@@ -40,6 +40,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -71,7 +72,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
 
     @Test
     public void testNonceWithMapper() throws IOException {
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         String mapperId = createNonceMapper(testApp);
         try {
             testNonce(true, false);
@@ -82,7 +83,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
 
     @Test
     public void testOfflineSessionNonceWithMapper() throws IOException {
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         String mapperId = createNonceMapper(testApp);
         try {
             testNonce(true, true);
@@ -102,7 +103,7 @@ public class NonceBackwardsCompatibleMapperTest extends AbstractTestRealmKeycloa
 
     @Test
     public void testImplicitFlowWithMapper() throws Exception {
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         String mapperId = createNonceMapper(testApp);
         try (ClientAttributeUpdater client = ClientAttributeUpdater.forClient(adminClient, TEST_REALM_NAME, "test-app")
                 .setImplicitFlowEnabled(true)

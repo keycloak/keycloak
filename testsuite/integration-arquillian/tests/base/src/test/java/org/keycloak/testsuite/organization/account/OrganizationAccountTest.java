@@ -30,7 +30,7 @@ import org.keycloak.representations.account.OrganizationRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OrganizationDomainRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.broker.util.SimpleHttpDefault;
 import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
 import org.keycloak.testsuite.util.TokenUtil;
@@ -73,7 +73,7 @@ public class OrganizationAccountTest extends AbstractOrganizationTest {
         assertBrokerRegistration(organization, bc.getUserLogin(), bc.getUserEmail());
         // reset password to obtain a token and access the account api
         UserRepresentation user = testRealm().users().searchByEmail(bc.getUserEmail(), true).get(0);
-        ApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), bc.getUserPassword(), false);
+        AdminApiUtil.resetUserPassword(realmsResouce().realm(bc.consumerRealmName()).users().get(user.getId()), bc.getUserPassword(), false);
 
         LinkedAccountRepresentation link = findLinkedAccount(bc.getIDPAlias());
         Assert.assertNotNull(link);

@@ -36,7 +36,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
@@ -73,14 +73,14 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
     @Before
     public void setOTPAuthRequired() {
-        ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
+        AdminApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
                 .username("test-user@localhost")
                 .email("test-user@localhost")
                 .firstName("Tom")
                 .lastName("Brady")
                 .build();
-        ApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
+        AdminApiUtil.createUserAndResetPasswordWithAdminClient(testRealm(), user, "password");
     }
 
 

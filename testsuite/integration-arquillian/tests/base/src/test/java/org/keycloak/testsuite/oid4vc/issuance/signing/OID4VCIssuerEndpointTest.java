@@ -101,6 +101,7 @@ import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.testsuite.util.AdminClientUtil;
@@ -461,7 +462,7 @@ public abstract class OID4VCIssuerEndpointTest extends OID4VCTest {
     }
 
     protected void logoutUser(String username) {
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(TEST_REALM_NAME), username);
+        UserResource user = AdminApiUtil.findUserByUsernameId(adminClient.realm(TEST_REALM_NAME), username);
         user.logout();
     }
 

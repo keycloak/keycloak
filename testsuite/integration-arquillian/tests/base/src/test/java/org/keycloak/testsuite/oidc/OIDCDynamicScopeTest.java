@@ -37,6 +37,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -145,7 +146,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
         getCleanup().addClientScopeId(scopeId);
         response.close();
 
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addOptionalClientScope(scopeId);
@@ -170,7 +171,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
 
         testRealm().clientScopes().get(scopeId).getScopeMappings().realmLevel().add(dynamicScopeRoleList);
 
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addOptionalClientScope(scopeId);
@@ -195,7 +196,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
 
         testRealm().clientScopes().get(scopeId).getScopeMappings().realmLevel().add(dynamicScopeRoleList);
 
-        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientResource testApp = AdminApiUtil.findClientByClientId(testRealm(), "test-app");
         ClientRepresentation testAppRep = testApp.toRepresentation();
         testApp.update(testAppRep);
         testApp.addOptionalClientScope(scopeId);
@@ -228,7 +229,7 @@ public class OIDCDynamicScopeTest extends OIDCScopeTest {
      * @param expectedRoles
      */
     private void testLoginAndClientScopesPermissions(String username, String expectedRoleScopes, String... expectedRoles) {
-        String userId = ApiUtil.findUserByUsername(testRealm(), username).getId();
+        String userId = AdminApiUtil.findUserByUsername(testRealm(), username).getId();
 
         oauth.openLoginForm();
         oauth.doLogin(username, "password");

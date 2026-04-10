@@ -45,7 +45,7 @@ import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeystoreUtils;
@@ -197,7 +197,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.ES256);
             clientResource.update(clientRep);
@@ -206,7 +206,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         } catch (Exception e) {
             Assert.fail();
         } finally {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
             clientResource.update(clientRep);
@@ -566,7 +566,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         }
         final CertificateHolder backupClient1Cert = new CertificateHolder();
 
-        backupClient1Cert.certificate = ApiUtil.findClientByClientId(adminClient.realm("test"), "client1")
+        backupClient1Cert.certificate = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client1")
                 .toRepresentation().getAttributes().get(JWTClientAuthenticator.CERTIFICATE_ATTR);
 
         ClientManager.realm(adminClient.realm("test")).clientId("client1")
@@ -772,7 +772,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
     @Test
     public void testAuthenticationFailsWhenClientSecretJWTAuthenticatorSet() throws Exception {
         // Set client authenticator to JWT signed by client secret.
-        ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client1");
+        ClientResource clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client1");
         ClientRepresentation clientRep = clientResource.toRepresentation();
         clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
         clientResource.update(clientRep);
@@ -847,7 +847,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(Algorithm.ES256);
             clientResource.update(clientRep);
@@ -856,7 +856,7 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         } catch (Exception e) {
             Assert.fail();
         } finally {
-            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
+            clientResource = AdminApiUtil.findClientByClientId(adminClient.realm("test"), "client2");
             clientRep = clientResource.toRepresentation();
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setTokenEndpointAuthSigningAlg(null);
             clientResource.update(clientRep);

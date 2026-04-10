@@ -42,7 +42,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.pages.IdpLinkActionPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.oauth.OAuthClient;
@@ -333,7 +333,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         RoleRepresentation defaultRoles = consumerRealm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + bc.consumerRealmName()).toRepresentation();
         consumerRealm.users().get(user1Id).roles().realmLevel().remove(Collections.singletonList(defaultRoles));
 
-        ClientRepresentation accountClient = ApiUtil.findClientResourceByClientId(consumerRealm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
+        ClientRepresentation accountClient = AdminApiUtil.findClientResourceByClientId(consumerRealm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
         RoleRepresentation manageAccount = consumerRealm.clients().get(accountClient.getId()).roles().get(AccountRoles.MANAGE_ACCOUNT).toRepresentation();
         consumerRealm.users().get(user1Id).roles().clientLevel(accountClient.getId()).add(Collections.singletonList(manageAccount));
 
@@ -372,7 +372,7 @@ public class KcOidcBrokerIdpLinkActionTest extends AbstractInitializedBaseBroker
         RoleRepresentation defaultRoles = consumerRealm.roles().get(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + bc.consumerRealmName()).toRepresentation();
         consumerRealm.users().get(user1Id).roles().realmLevel().remove(Collections.singletonList(defaultRoles));
 
-        ClientRepresentation accountClient = ApiUtil.findClientResourceByClientId(consumerRealm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
+        ClientRepresentation accountClient = AdminApiUtil.findClientResourceByClientId(consumerRealm, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).toRepresentation();
         RoleRepresentation manageAccountLinks = consumerRealm.clients().get(accountClient.getId()).roles().get(AccountRoles.MANAGE_ACCOUNT_LINKS).toRepresentation();
         consumerRealm.users().get(user1Id).roles().clientLevel(accountClient.getId()).add(Collections.singletonList(manageAccountLinks));
 

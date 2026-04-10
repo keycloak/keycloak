@@ -29,7 +29,7 @@ import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.AdminApiUtil;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -323,7 +323,7 @@ public class PasswordAgePolicyTest extends AbstractAuthTest {
             Assert.assertNull(response.getError());
             Assert.assertNotNull(response.getCode());
 
-            ApiUtil.findUserByUsernameId(testRealmResource(), "registration-user").remove();
+            AdminApiUtil.findUserByUsernameId(testRealmResource(), "registration-user").remove();
         }
     }
 }
