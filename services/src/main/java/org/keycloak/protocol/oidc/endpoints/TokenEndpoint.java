@@ -76,7 +76,7 @@ import static org.keycloak.protocol.oid4vc.model.PreAuthorizedCodeGrant.PRE_AUTH
  */
 public class TokenEndpoint {
 
-    private static final Logger logger = Logger.getLogger(TokenEndpoint.class);
+    private static final Logger LOGGER = Logger.getLogger(TokenEndpoint.class);
     private MultivaluedMap<String, String> formParams;
     private ClientModel client;
     private Map<String, String> clientAuthAttributes;
@@ -171,8 +171,8 @@ public class TokenEndpoint {
 
     @OPTIONS
     public Response preflight() {
-        if (logger.isDebugEnabled()) {
-            logger.debugv("CORS preflight from: {0}", headers.getRequestHeaders().getFirst("Origin"));
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debugv("CORS preflight from: {0}", headers.getRequestHeaders().getFirst("Origin"));
         }
         return Cors.builder().auth().preflight().allowedMethods("POST", "OPTIONS").add(Response.ok());
     }
@@ -244,7 +244,7 @@ public class TokenEndpoint {
                     .reduce(0, Integer::sum);
             int maxLength = config.getMaxLengthForTheParameter(paramName);
             if (totalLengthOfParamValues > maxLength) {
-                logger.warnf("The size of OIDC parameter '%s' is longer (%d) than allowed (%d). %s", paramName, totalLengthOfParamValues, maxLength, config.isAdditionalReqParamsFailFast() ? "Request not allowed." : "Ignoring the parameter.");
+                LOGGER.warnf("The size of OIDC parameter '%s' is longer (%d) than allowed (%d). %s", paramName, totalLengthOfParamValues, maxLength, config.isAdditionalReqParamsFailFast() ? "Request not allowed." : "Ignoring the parameter.");
                 if (config.isAdditionalReqParamsFailFast()) {
                     throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "The size of OIDC parameter '" + paramName + "' is longer than allowed.",
                             Response.Status.BAD_REQUEST);
