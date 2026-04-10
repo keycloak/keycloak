@@ -295,7 +295,7 @@ public class OASModelFilter implements OASFilter {
 
         SecurityRequirement securityRequirement = OASFactory.createSecurityRequirement()
                 .addScheme(schemeName);
-        openAPI.addSecurityRequirement(securityRequirement);
+        openAPI.setSecurity(List.of(securityRequirement));
     }
 
     private PathItem sortOperationsByMethod(PathItem pathItem) {
