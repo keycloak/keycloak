@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -111,6 +112,13 @@ public class JdbcPing2Test {
         assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.UNHEALTHY, ping.healthStatus());
         clusterHealth.triggerClusterHealthCheck();
         assertFalse(clusterHealth.isHealthy());
+
+        // test more members in a partition win
+        // coordinator a[0] and a[1] in the table, and we belong to view with the coordinator a[1]
+        ping.setPingData(List.of(addresses[1], addresses[0]), Map.of(addresses[0], 1, addresses[1], 2));
+        assertEquals(KEYCLOAK_JDBC_PING2.HealthStatus.HEALTHY, ping.healthStatus());
+        clusterHealth.triggerClusterHealthCheck();
+        assertTrue(clusterHealth.isHealthy());
     }
 
     @SuppressWarnings("resource")
