@@ -354,9 +354,9 @@ public class DPoPUtil {
 
     private static class DPoPHTTPCheck implements TokenVerifier.Predicate<DPoP> {
 
-        private final KeycloakSession session;
         private final URI uri;
         private final String method;
+        private final KeycloakSession session;
 
         DPoPHTTPCheck(KeycloakSession session, URI uri, String method) {
             this.session = session;
