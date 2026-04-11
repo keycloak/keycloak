@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import org.keycloak.config.database.Database;
 
@@ -154,90 +155,16 @@ public class DatabaseOptions {
             .description("The type of the truststore file. Common values include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the driver's default.")
             .build();
 
-    // TLS hidden options, per vendor, to configure TLS in the driver
     public static final Option<String> DB_ORACLE_TLS_TRANSPORT = new OptionBuilder<>("db-oracle-protocol", String.class)
             .hidden()
             .build();
-    public static final Option<String> DB_PROPERTY_SSL_SERVER_DN_MATCH = new OptionBuilder<>("db-property-ssl-server-dn-match", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_ENCRYPT = new OptionBuilder<>("db-property-encrypt", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_TRUST_SERVER_CERTIFICATE = new OptionBuilder<>("db-property-trust-server-certificate", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_SSLFACTORY = new OptionBuilder<>("db-property-sslfactory", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_SSLMODE = new OptionBuilder<>("db-property-sslmode", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_SSL_MODE = new OptionBuilder<>("db-property-sslMode", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_SSLROOTCERT = new OptionBuilder<>("db-property-sslrootcert", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_URL = new OptionBuilder<>("db-property-trustCertificateKeyStoreUrl", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_SERVER_SSL_CERT = new OptionBuilder<>("db-property-serverSslCert", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_TRUST_STORE = new OptionBuilder<>("db-property-trustStore", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_ORACLE_TRUST_STORE = new OptionBuilder<>("db-property-javax.net.ssl.trustStore", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_PASSWORD = new OptionBuilder<>("db-property-trustCertificateKeyStorePassword", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_TRUST_STORE_PASSWORD = new OptionBuilder<>("db-property-trustStorePassword", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_ORACLE_TRUST_STORE_PASSWORD = new OptionBuilder<>("db-property-javax.net.ssl.trustStorePassword", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_PROPERTY_ORACLE_TRUST_STORE_TYPE = new OptionBuilder<>("db-property-javax.net.ssl.trustStoreType", String.class)
-            .hidden()
-            .build();
-    public static final Option<String> DB_MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = new OptionBuilder<>("db-mssql-send-string-parameter-as-unicode", String.class)
-            .category(OptionCategory.DATABASE)
-            .defaultValue("false")
-            .hidden()
-            .build();
-    public static final Option<String> DB_MYSQL_CONNECT_TIMEOUT = new OptionBuilder<>("db-mysql-connect-timeout", String.class)
-            .category(OptionCategory.DATABASE)
-            .hidden()
-            .build();
-    public static final Option<String> DB_MARIADB_CONNECT_TIMEOUT = new OptionBuilder<>("db-mariadb-connect-timeout", String.class)
-            .category(OptionCategory.DATABASE)
-            .hidden()
-            .build();
-    public static final Option<String> DB_ORACLE_CONNECT_TIMEOUT = new OptionBuilder<>("db-oracle-connect-timeout", String.class)
-            .category(OptionCategory.DATABASE)
-            .hidden()
-            .build();
-    public static final Option<String> DB_MSSQL_CONNECT_TIMEOUT = new OptionBuilder<>("db-mssql-login-timeout", String.class)
-            .category(OptionCategory.DATABASE)
-            .hidden()
-            .build();
-    public static final Option<String> DB_POSTGRES_CONNECT_TIMEOUT = new OptionBuilder<>("db-postgres-connect-timeout", String.class)
-            .category(OptionCategory.DATABASE)
-            .hidden()
-            .build();
-    public static final Option<String> DB_TIDB_CONNECT_TIMEOUT = new OptionBuilder<>("db-tidb-connect-timeout", String.class)
-            .category(OptionCategory.DATABASE)
-            .hidden()
-            .build();
+
     public static final class Datasources {
         /**
          * Options that have their sibling for a named datasource
          * Example: for `db-dialect`, `db-dialect-<datasource>` is created
          */
-        public static final List<Option<?>> OPTIONS_DATASOURCES = List.of(
+        public static final List<String> OPTIONS_DATASOURCES = Stream.of(
                 DB_DIALECT,
                 DB_DRIVER,
                 DB,
@@ -258,23 +185,8 @@ public class DatabaseOptions {
                 DB_TLS_TRUST_STORE_FILE,
                 DB_TLS_TRUST_STORE_PASSWORD,
                 DB_TLS_TRUST_STORE_TYPE,
-                DB_PROPERTY_SSLMODE,
-                DB_PROPERTY_SSLFACTORY,
-                DB_PROPERTY_SSL_MODE,
-                DB_PROPERTY_ENCRYPT,
-                DB_PROPERTY_TRUST_SERVER_CERTIFICATE,
-                DB_PROPERTY_SSL_SERVER_DN_MATCH,
-                DB_ORACLE_TLS_TRANSPORT,
-                DB_PROPERTY_SSLROOTCERT,
-                DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_URL,
-                DB_PROPERTY_SERVER_SSL_CERT,
-                DB_PROPERTY_TRUST_STORE,
-                DB_PROPERTY_ORACLE_TRUST_STORE,
-                DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_PASSWORD,
-                DB_PROPERTY_TRUST_STORE_PASSWORD,
-                DB_PROPERTY_ORACLE_TRUST_STORE_PASSWORD,
-                DB_PROPERTY_ORACLE_TRUST_STORE_TYPE
-        );
+                DB_ORACLE_TLS_TRANSPORT
+        ).map(Option::getKey).toList();
 
         /**
          * In order to avoid ambiguity, we need to have unique option names for wildcard options.
@@ -308,7 +220,7 @@ public class DatabaseOptions {
          */
         @SuppressWarnings("unchecked")
         public static <T> Optional<Option<T>> getDatasourceOption(Option<T> parentOption) {
-            if (!OPTIONS_DATASOURCES.contains(parentOption)) {
+            if (!OPTIONS_DATASOURCES.contains(parentOption.getKey())) {
                 return Optional.empty();
             }
 
@@ -354,7 +266,7 @@ public class DatabaseOptions {
      */
     public static Optional<String> getKeyForDatasource(String option) {
         return Optional.of(option)
-                .filter(o -> OPTIONS_DATASOURCES.stream().map(Option::getKey).anyMatch(o::equals))
+                .filter(OPTIONS_DATASOURCES::contains)
                 .map(key -> key.concat(DATASOURCES_OVERRIDES_SUFFIX.getOrDefault(key, "")))
                 .map(key -> key.concat("-<datasource>"));
     }

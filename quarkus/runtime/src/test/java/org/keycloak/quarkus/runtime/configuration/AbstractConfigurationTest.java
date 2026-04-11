@@ -26,6 +26,7 @@ import java.util.function.Function;
 import org.keycloak.Config;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakMain;
+import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.smallrye.config.ConfigValue;
@@ -140,6 +141,7 @@ public abstract class AbstractConfigurationTest {
         ConfigArgsConfigSource.setCliArgs(args);
         var config = createConfig();
         PropertyMappers.reset();
+        PropertyMappers.sanitizeDisabledMappers(new Start());
         return config;
     }
 

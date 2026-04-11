@@ -16,7 +16,6 @@ import org.keycloak.config.CachingOptions;
 import org.keycloak.config.CachingOptions.Stack;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.Option;
-import org.keycloak.config.OptionBuilder;
 import org.keycloak.config.OptionsUtil;
 import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
@@ -34,19 +33,6 @@ import static org.keycloak.config.DatabaseOptions.DB;
 import static org.keycloak.config.DatabaseOptions.DB_ORACLE_TLS_TRANSPORT;
 import static org.keycloak.config.DatabaseOptions.DB_POOL_INITIAL_SIZE;
 import static org.keycloak.config.DatabaseOptions.DB_POOL_MAX_SIZE;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_ENCRYPT;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_ORACLE_TRUST_STORE;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_ORACLE_TRUST_STORE_PASSWORD;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_ORACLE_TRUST_STORE_TYPE;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_SERVER_SSL_CERT;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_SSLFACTORY;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_SSLROOTCERT;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_SSL_SERVER_DN_MATCH;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_PASSWORD;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_URL;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_TRUST_SERVER_CERTIFICATE;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_TRUST_STORE;
-import static org.keycloak.config.DatabaseOptions.DB_PROPERTY_TRUST_STORE_PASSWORD;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_MODE;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_FILE;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_TRUST_STORE_PASSWORD;
@@ -62,6 +48,7 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropert
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 public final class DatabasePropertyMappers implements PropertyMapperGrouping {
+    private static final Option<String> SYNTHETIC_RUNTIME_DB_OPTION = DB.toBuilder().synthetic().buildTime(false).build();
     public static final String PG_TARGET_SERVER_TYPE = "quarkus.datasource.jdbc.additional-jdbc-properties.targetServerType";
     public static final String MSSQL_SEND_STRING_PARAMETER_AS_UNICODE = "quarkus.datasource.jdbc.additional-jdbc-properties.sendStringParametersAsUnicode";
     public static final String CONNECT_TIMEOUT = "quarkus.datasource.jdbc.additional-jdbc-properties.connectTimeout";
@@ -100,14 +87,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .mapFrom(DB, DatabasePropertyMappers::getDatabaseUrl)
                         .paramLabel("jdbc-url")
                         .build(),
-                fromOption(DatabaseOptions.DB_POSTGRESQL_TARGET_SERVER_TYPE)
-                        .to(PG_TARGET_SERVER_TYPE)
-                        .isEnabled(DatabasePropertyMappers::isPostgresqlTargetServerTypeEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
-                        .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
-                        .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
-                        .build(),
                 fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
                         .to(JDBC_LOGIN_TIMEOUT)
                         .validator(DatabasePropertyMappers::validateConnectTimeout)
@@ -116,42 +95,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(DatabaseOptions.DB_POOL_ACQUISITION_TIMEOUT)
                         .to(JDBC_ACQUISITION_TIMEOUT)
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context) -> computeAcquisitionTimeout(value))
-                        .build(),
-                fromOption(DatabaseOptions.DB_MYSQL_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isMysqlConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_MARIADB_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isMariadbConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_ORACLE_CONNECT_TIMEOUT)
-                        .to(ORACLEDB_CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isOracleConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_MSSQL_CONNECT_TIMEOUT)
-                        .to(MSSQL_CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToSeconds(value))
-                        .isEnabled(DatabasePropertyMappers::isMssqlLoginTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_POSTGRES_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToSeconds(value))
-                        .isEnabled(DatabasePropertyMappers::isPostgresConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_TIDB_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isTidbConnectTimeoutEnabled)
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")
@@ -203,11 +146,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(DatabaseOptions.DB_ENABLED_DATASOURCE)
                         .to("quarkus.datasource.\"<datasource>\".active")
                         .build(),
-                fromOption(DB_URL_PATH)
-                        .build(),
                 // Database TLS configuration
                 fromOption(DB_TLS_MODE)
                         .paramLabel("mode")
+                        .transformer(DatabasePropertyMappers::transformOracleProtocol)
+                        .to(NS_KEYCLOAK_PREFIX + DB_ORACLE_TLS_TRANSPORT.getKey())
                         .build(),
                 fromOption(DB_TLS_TRUST_STORE_FILE)
                         .paramLabel("path")
@@ -219,49 +162,96 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
-                fromOption(DB_ORACLE_TLS_TRANSPORT)
-                        .mapFrom(DB_TLS_MODE, DatabasePropertyMappers::transformOracleProtocol)
-                        .build(),
                 // Oracle
-                setTlsJdbcProperty(DB_PROPERTY_SSL_SERVER_DN_MATCH, "ssl_server_dn_match", Map.of(Database.Vendor.ORACLE, "true")),
-                setInputTlsJdbcProperty(DB_PROPERTY_ORACLE_TRUST_STORE, DB_TLS_TRUST_STORE_FILE, "javax.net.ssl.trustStore", EnumSet.of(Database.Vendor.ORACLE)),
-                setInputTlsJdbcProperty(DB_PROPERTY_ORACLE_TRUST_STORE_PASSWORD, DB_TLS_TRUST_STORE_PASSWORD, "javax.net.ssl.trustStorePassword", EnumSet.of(Database.Vendor.ORACLE)),
-                setInputTlsJdbcProperty(DB_PROPERTY_ORACLE_TRUST_STORE_TYPE, DB_TLS_TRUST_STORE_TYPE, "javax.net.ssl.trustStoreType", EnumSet.of(Database.Vendor.ORACLE)),
+                setTlsJdbcProperty("ssl_server_dn_match", Map.of(Database.Vendor.ORACLE, "true")),
+                setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_FILE, "javax.net.ssl.trustStore", EnumSet.of(Database.Vendor.ORACLE)),
+                setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_PASSWORD, "javax.net.ssl.trustStorePassword", EnumSet.of(Database.Vendor.ORACLE)),
+                setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_TYPE, "javax.net.ssl.trustStoreType", EnumSet.of(Database.Vendor.ORACLE)),
 
                 // MSSQL
-                setTlsJdbcProperty(DB_PROPERTY_ENCRYPT, "encrypt", Map.of(Database.Vendor.MSSQL, "true")),
-                setTlsJdbcProperty(DB_PROPERTY_TRUST_SERVER_CERTIFICATE, "trustServerCertificate", Map.of(Database.Vendor.MSSQL, "false")),
-                setInputTlsJdbcProperty(DB_PROPERTY_TRUST_STORE, DB_TLS_TRUST_STORE_FILE, "trustStore", EnumSet.of(Database.Vendor.MSSQL)),
-                setInputTlsJdbcProperty(DB_PROPERTY_TRUST_STORE_PASSWORD, DB_TLS_TRUST_STORE_PASSWORD, "trustStorePassword", EnumSet.of(Database.Vendor.MSSQL)),
+                setTlsJdbcProperty("encrypt", Map.of(Database.Vendor.MSSQL, "true")),
+                setTlsJdbcProperty("trustServerCertificate", Map.of(Database.Vendor.MSSQL, "false")),
+                setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_FILE, "trustStore", EnumSet.of(Database.Vendor.MSSQL)),
+                setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_PASSWORD, "trustStorePassword", EnumSet.of(Database.Vendor.MSSQL)),
 
                 // Mysql/MariaDB/TiDB
-                setTlsJdbcProperty(DatabaseOptions.DB_PROPERTY_SSL_MODE, "sslMode",
+                setTlsJdbcProperty("sslMode",
                         Map.of(
                                 Database.Vendor.MARIADB, "verify-full",
                                 Database.Vendor.MYSQL, "VERIFY_IDENTITY",
                                 Database.Vendor.TIDB, "VERIFY_IDENTITY"
                         )
                 ),
-                setInputTlsJdbcProperty(DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_URL, DB_TLS_TRUST_STORE_FILE, "trustCertificateKeyStoreUrl", EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.TIDB)),
-                setInputTlsJdbcProperty(DB_PROPERTY_TRUST_CERTIFICATE_KEY_STORE_PASSWORD, DB_TLS_TRUST_STORE_PASSWORD, "trustCertificateKeyStorePassword", EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.TIDB)),
-                setInputTlsJdbcProperty(DB_PROPERTY_SERVER_SSL_CERT, DB_TLS_TRUST_STORE_FILE, "serverSslCert", EnumSet.of(Database.Vendor.MARIADB)),
+                setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_FILE, "trustCertificateKeyStoreUrl", EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.TIDB)),
+                setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_PASSWORD, "trustCertificateKeyStorePassword", EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.TIDB)),
+                setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_FILE, "serverSslCert", EnumSet.of(Database.Vendor.MARIADB)),
 
                 // PostgreSQL
-                setTlsJdbcProperty(DatabaseOptions.DB_PROPERTY_SSLMODE, "sslmode", Map.of(Database.Vendor.POSTGRES, "verify-full")),
-                fromOption(DB_PROPERTY_SSLFACTORY)
+                setTlsJdbcProperty("sslmode", Map.of(Database.Vendor.POSTGRES, "verify-full")),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION)
                         .mapFrom(DB)
                         .transformer(DatabasePropertyMappers::computePostgresSSLFactory)
                         .to("quarkus.datasource.jdbc.additional-jdbc-properties.sslfactory")
                         .build(),
-                setInputTlsJdbcProperty(DB_PROPERTY_SSLROOTCERT, DB_TLS_TRUST_STORE_FILE, "sslrootcert", EnumSet.of(Database.Vendor.POSTGRES))
+                setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_FILE, "sslrootcert", EnumSet.of(Database.Vendor.POSTGRES))
         );
 
-        return appendDatasourceMappers(mappers, Map.of(
+        List<PropertyMapper<?>> result = appendDatasourceMappers(mappers, Map.of(
                 // Inherit options from the DB mappers
                 DB, PropertyMapper.Builder::removeMapFrom,
                 DB_POOL_INITIAL_SIZE, mapper -> mapper.mapFrom(DB_POOL_INITIAL_SIZE),
                 DB_POOL_MAX_SIZE, mapper -> mapper.mapFrom(DB_POOL_MAX_SIZE)
         ));
+
+        // finally add mappers that utilize isEnabled - that won't work as expected for multiple datasources
+        // so these will only affect the primary datasource
+        result.addAll(List.of(
+                fromOption(DatabaseOptions.DB_POSTGRESQL_TARGET_SERVER_TYPE)
+                        .to(PG_TARGET_SERVER_TYPE)
+                        .isEnabled(DatabasePropertyMappers::isPostgresqlTargetServerTypeEnabled)
+                        .build(),
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
+                        .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
+                        .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToMillis(value))
+                        .isEnabled(DatabasePropertyMappers::isMysqlConnectTimeoutEnabled)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToMillis(value))
+                        .isEnabled(DatabasePropertyMappers::isMariadbConnectTimeoutEnabled)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(ORACLEDB_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToMillis(value))
+                        .isEnabled(DatabasePropertyMappers::isOracleConnectTimeoutEnabled)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(MSSQL_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToSeconds(value))
+                        .isEnabled(DatabasePropertyMappers::isMssqlLoginTimeoutEnabled)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToSeconds(value))
+                        .isEnabled(DatabasePropertyMappers::isPostgresConnectTimeoutEnabled)
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
+                                -> durationToMillis(value))
+                        .isEnabled(DatabasePropertyMappers::isTidbConnectTimeoutEnabled)
+                        .build()
+        ));
+        return result;
     }
 
     @Override
@@ -282,11 +272,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         String stack = getOptionalKcValue(CachingOptions.CACHE_STACK).orElse(Stack.jdbc_ping.toString());
         return Stack.jdbc_ping.toString().equals(stack) || Stack.jdbc_ping_udp.toString().equals(stack);
     }
-
-    private static final Option<String> DB_URL_PATH = new OptionBuilder<>("db-url-path", String.class)
-            .hidden()
-            .description("Used for internal purposes of H2 database.")
-            .build();
 
     public static boolean isPostgresqlTargetServerTypeEnabled() {
         String db = Configuration.getConfigValue(DB).getValue();
@@ -551,18 +536,17 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return tlsMode != DatabaseOptions.DatabaseTlsMode.DISABLED ? "@tcps:" : "@";
     }
 
-    private static PropertyMapper<?> setTlsJdbcProperty(Option<String> option, String jdbcPropertyKey, Map<Database.Vendor, String> vendorValues) {
-        return fromOption(option)
+    private static PropertyMapper<?> setTlsJdbcProperty(String jdbcPropertyKey, Map<Database.Vendor, String> vendorValues) {
+        return fromOption(SYNTHETIC_RUNTIME_DB_OPTION)
                 .mapFrom(DB)
                 .transformer((name, value, context) -> computeTlsProperty(vendorValues, name, value, jdbcPropertyKey))
                 .to("quarkus.datasource.jdbc.additional-jdbc-properties." + jdbcPropertyKey)
                 .build();
     }
 
-    private static PropertyMapper<?> setInputTlsJdbcProperty(Option<String> option, Option<?> from, String jdbcPropertyKey, Collection<Database.Vendor> vendorValues) {
-        return fromOption(option)
-                .mapFrom(from)
-                .transformer((name, value, context) -> transformTlsUserProperty(vendorValues, name, value, jdbcPropertyKey))
+    private static PropertyMapper<?> setInputTlsJdbcProperty(Option<?> from, String jdbcPropertyKey, Collection<Database.Vendor> vendorValues) {
+        return fromOption(from)
+                .mapFrom(from, (name, value, context) -> transformTlsUserProperty(vendorValues, name, value, jdbcPropertyKey))
                 .to("quarkus.datasource.jdbc.additional-jdbc-properties." + jdbcPropertyKey)
                 .build();
     }

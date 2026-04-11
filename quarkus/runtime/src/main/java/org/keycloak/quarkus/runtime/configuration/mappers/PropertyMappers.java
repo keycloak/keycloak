@@ -25,7 +25,6 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
-import org.keycloak.quarkus.runtime.configuration.DisabledMappersInterceptor;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.NestedPropertyMappingInterceptor;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
@@ -311,25 +310,22 @@ public final class PropertyMappers {
         }
 
         public void sanitizeDisabledMappers(AbstractCommand command) {
-            DisabledMappersInterceptor.runWithDisabled(() -> { // We need to have the whole configuration available
-
-                // Initialize profile in order to check state of features. Disable Persisted CS for re-augmentation
-                if (isRebuildCheck()) {
-                    PersistedConfigSource.getInstance().runWithDisabled(Environment::getCurrentOrCreateFeatureProfile);
-                } else {
-                    Environment.getCurrentOrCreateFeatureProfile();
-                    if (!command.shouldStart()) {
-                        // this will use the deferred logger, which means it may not be seen in some circumstances
-                        Profile.getInstance().logUnsupportedFeatures();
-                    }
+            // Initialize profile in order to check state of features. Disable Persisted CS for re-augmentation
+            if (isRebuildCheck()) {
+                PersistedConfigSource.getInstance().runWithDisabled(Environment::getCurrentOrCreateFeatureProfile);
+            } else {
+                Environment.getCurrentOrCreateFeatureProfile();
+                if (!command.shouldStart()) {
+                    // this will use the deferred logger, which means it may not be seen in some circumstances
+                    Profile.getInstance().logUnsupportedFeatures();
                 }
+            }
 
-                sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers, command);
-                sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers, command);
+            sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers, command);
+            sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers, command);
 
-                entrySet().stream().filter(e -> e.getValue().size() > 1).findFirst().ifPresent(e -> {
-                    throw new PropertyException(String.format("Duplicated mapper for key '%s'.", e.getKey()));
-                });
+            entrySet().stream().filter(e -> e.getValue().size() > 1).findFirst().ifPresent(e -> {
+                throw new PropertyException(String.format("Duplicated mapper for key '%s'.", e.getKey()));
             });
         }
 
@@ -363,7 +359,10 @@ public final class PropertyMappers {
         }
 
         private static void handleMapper(PropertyMapper<?> mapper, BiConsumer<String, PropertyMapper<?>> operation) {
-            operation.accept(mapper.getFrom(), mapper);
+            // skip accounting for the from if it is a synthetic option
+            if (!mapper.getOption().isSynthetic()) {
+                operation.accept(mapper.getFrom(), mapper);
+            }
             if (!mapper.getFrom().equals(mapper.getTo())) {
                 String to = mapper.getTo();
                 operation.accept(to, mapper);
@@ -374,6 +373,8 @@ public final class PropertyMappers {
                     String legacyTo = mapper.getTo().replace("--", "-");
                     operation.accept(legacyTo, mapper);
                 }
+            } else if (mapper.getOption().isSynthetic()) {
+                throw new IllegalStateException("Synthetic options must map to a value");
             }
         }
     }
