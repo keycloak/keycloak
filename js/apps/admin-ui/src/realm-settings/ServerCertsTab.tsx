@@ -5,6 +5,7 @@ import {
   TextContent,
   Text,
   EmptyState,
+  EmptyStateBody,
   Label,
   Button,
   AlertVariant,
@@ -21,7 +22,6 @@ import {
   CheckCircleIcon,
   BanIcon,
   InProgressIcon,
-  CertificateIcon,
 } from "@patternfly/react-icons";
 
 interface ServerCertEntry {
@@ -48,11 +48,20 @@ export const ServerCertsTab = () => {
   const fetchCerts = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await adminClient.fetchWithError(
-        `/admin/realms/${realm}/tide-admin/server-cert/requests`,
+      const token = await adminClient.getAccessToken();
+      const response = await fetch(
+        `${adminClient.baseUrl}/admin/realms/${realm}/tide-admin/server-cert/requests`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/json",
+          },
+        },
       );
-      const data: ServerCertEntry[] = await response.json();
-      setCerts(data);
+      if (response.ok) {
+        const data: ServerCertEntry[] = await response.json();
+        setCerts(data);
+      }
     } catch (e) {
       console.error("Failed to fetch server certs", e);
     }
@@ -65,18 +74,28 @@ export const ServerCertsTab = () => {
 
   const handleRevoke = async (instanceId: string) => {
     try {
-      await adminClient.fetchWithError(
-        `/admin/realms/${realm}/tide-admin/server-cert/revoke`,
+      const token = await adminClient.getAccessToken();
+      const response = await fetch(
+        `${adminClient.baseUrl}/admin/realms/${realm}/tide-admin/server-cert/revoke`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ instanceId }),
         },
       );
-      addAlert(t("Server certificate revoked"), AlertVariant.success);
-      void fetchCerts();
-    } catch (e: any) {
-      addAlert(e.message || "Revocation failed", AlertVariant.danger);
+      if (response.ok) {
+        addAlert(t("Server certificate revoked"), AlertVariant.success);
+        void fetchCerts();
+      } else {
+        const err = await response.text();
+        addAlert(err || "Revocation failed", AlertVariant.danger);
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Revocation failed";
+      addAlert(msg, AlertVariant.danger);
     }
   };
 
@@ -121,20 +140,21 @@ export const ServerCertsTab = () => {
   };
 
   if (loading) {
-    return <EmptyState>Loading server certificates...</EmptyState>;
+    return (
+      <EmptyState>
+        <EmptyStateBody>Loading server certificates...</EmptyStateBody>
+      </EmptyState>
+    );
   }
 
   if (certs.length === 0) {
     return (
-      <EmptyState icon={CertificateIcon}>
-        <TextContent>
-          <Text component="h4">No server certificates</Text>
-          <Text>
-            Server certificates are requested by app servers via the public
-            /tide-server-identity/request endpoint. They require admin quorum
-            approval before a VVK-signed SVID is issued.
-          </Text>
-        </TextContent>
+      <EmptyState>
+        <EmptyStateBody>
+          No server certificates. Server certificates are requested by app
+          servers via the public /tide-server-identity/request endpoint. They
+          require admin quorum approval before a VVK-signed SVID is issued.
+        </EmptyStateBody>
       </EmptyState>
     );
   }
@@ -185,8 +205,8 @@ export const ServerCertsTab = () => {
                   {cert.status === "ACTIVE" && !cert.revoked && (
                     <Button
                       variant="danger"
-                      isSmall
-                      onClick={() => handleRevoke(cert.instanceId)}
+                      size="sm"
+                      onClick={() => void handleRevoke(cert.instanceId)}
                     >
                       Revoke
                     </Button>
@@ -230,7 +250,7 @@ export const ServerCertsTab = () => {
 
       <Button
         variant="secondary"
-        onClick={fetchCerts}
+        onClick={() => void fetchCerts()}
         style={{ marginTop: "1rem" }}
       >
         Refresh
