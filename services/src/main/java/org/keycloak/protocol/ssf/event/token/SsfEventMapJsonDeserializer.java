@@ -4,8 +4,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.protocol.ssf.Ssf;
+import org.keycloak.protocol.ssf.event.GenericSsfEvent;
 import org.keycloak.protocol.ssf.event.SsfEvent;
-import org.keycloak.protocol.ssf.event.SsfStandardEvents;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -48,7 +49,9 @@ public class SsfEventMapJsonDeserializer extends JsonDeserializer<Map<String, Ss
             String eventType = entry.getKey();  // Extracts event type key
             JsonNode eventData = entry.getValue(); // Extracts event data
 
-            Class<? extends SsfEvent> eventClass = SsfStandardEvents.getSecurityEventType(eventType);
+            Class<? extends SsfEvent> eventClass = Ssf.events().getRegistry()
+                    .getEventClassByType(eventType)
+                    .orElse(GenericSsfEvent.class);
 
             if (eventClass == null) {
                 throw new IOException("Unknown event type: " + eventType);

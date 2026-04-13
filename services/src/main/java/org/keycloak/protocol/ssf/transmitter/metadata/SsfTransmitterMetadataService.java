@@ -2,19 +2,13 @@ package org.keycloak.protocol.ssf.transmitter.metadata;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.Ssf;
-import org.keycloak.protocol.ssf.event.caep.CaepCredentialChange;
-import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.protocol.ssf.support.SsfUtil;
-import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 
 /**
  * Service for managing the SSF transmitter functionality.
@@ -85,23 +79,5 @@ public class SsfTransmitterMetadataService {
         Map<String, Object> oauthScheme = new HashMap<>();
         oauthScheme.put("spec_urn", "urn:ietf:rfc:6749");
         return oauthScheme;
-    }
-
-    public Set<String> getEventsDelivered(StreamConfig streamConfig, Set<String> eventsRequested) {
-
-        // TODO compute events delivered for current realm
-        Set<String> eventsDelivered = new HashSet<>(eventsRequested);
-        eventsDelivered.retainAll(getSupportedEvents());
-
-        return eventsDelivered;
-    }
-
-    public Set<String> getSupportedEvents() {
-
-        RealmModel realm = session.getContext().getRealm();
-        ClientModel client = session.getContext().getClient();
-
-        // TODO compute supported events for current realm
-        return Set.of(CaepCredentialChange.TYPE, CaepSessionRevoked.TYPE);
     }
 }

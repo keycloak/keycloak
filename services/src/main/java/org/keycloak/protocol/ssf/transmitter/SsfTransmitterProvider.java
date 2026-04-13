@@ -1,5 +1,6 @@
 package org.keycloak.protocol.ssf.transmitter;
 
+import org.keycloak.protocol.ssf.event.SsfEvent;
 import org.keycloak.protocol.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataService;
@@ -9,6 +10,8 @@ import org.keycloak.protocol.ssf.transmitter.resources.StreamVerificationResourc
 import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.provider.Provider;
+
+import java.util.Set;
 
 /**
  * Provider for the SSF (Shared Signals Framework) Transmitter.
@@ -83,4 +86,47 @@ public interface SsfTransmitterProvider extends Provider {
      * @return the stream verification endpoint
      */
     StreamVerificationResource verificationEndpoint();
+
+    /**
+     * The default set of supported events.
+     * @return
+     */
+    Set<String> getDefaultSupportedEvents();
+
+    /**
+     * Returns the event type of the given SSF event type string
+     * @param supportedEvent
+     * @return
+     */
+    Class<? extends SsfEvent> resolveSupportedEventType(String supportedEvent);
+
+    /**
+     * Resolves the event alias (e.g. {@code CaepCredentialChange}) for the given
+     * full event type URI. Returns {@code null} if the transmitter does not know
+     * an alias for the given event type — callers can then fall back to the
+     * original URI.
+     *
+     * <p>The default implementation delegates to the global
+     * {@link org.keycloak.protocol.ssf.event.SsfEventRegistry}, which is
+     * populated by every registered
+     * {@link org.keycloak.protocol.ssf.event.SsfEventProviderFactory}; extensions
+     * can therefore add custom event types and aliases without subclassing the
+     * transmitter.
+     *
+     * @param eventType the long event type URI
+     * @return the matching event alias, or {@code null} if unknown
+     */
+    String resolveAliasForEventType(String eventType);
+
+    /**
+     * Returns the full set of known SSF event aliases that the transmitter can
+     * deliver. Used by the admin UI to render a selectable list of supported
+     * events for a receiver client.
+     *
+     * <p>The default implementation returns all aliases registered in the
+     * global {@link org.keycloak.protocol.ssf.event.SsfEventRegistry}, which is
+     * populated by every registered
+     * {@link org.keycloak.protocol.ssf.event.SsfEventProviderFactory}.
+     */
+    Set<String> getKnownEventAliases();
 }

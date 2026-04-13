@@ -1,5 +1,6 @@
 package org.keycloak.protocol.ssf;
 
+import org.keycloak.protocol.ssf.event.SsfEventProvider;
 import org.keycloak.protocol.ssf.receiver.spi.SsfReceiverProvider;
 import org.keycloak.protocol.ssf.transmitter.SsfScopes;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
@@ -68,6 +69,10 @@ public class Ssf {
 
     public static SsfTransmitterProvider transmitter() {
         return getKeycloakSession().getProvider(SsfTransmitterProvider.class);
+    }
+
+    public static SsfEventProvider events() {
+        return getKeycloakSession().getProvider(SsfEventProvider.class);
     }
 
     public static String getSsfTransmitterBasePath(String issuerUrl) {

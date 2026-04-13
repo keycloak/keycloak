@@ -18,6 +18,12 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  */
 public abstract class SsfEvent {
 
+    /**
+     * Internal (shorter) alias for the event type.
+     */
+    @JsonIgnore
+    protected String alias;
+
     @JsonProperty("subject")
     @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
     protected SubjectId subjectId;
@@ -56,6 +62,9 @@ public abstract class SsfEvent {
 
     public SsfEvent(String eventType) {
         this.eventType = eventType;
+
+        // use the simple class name as the default alias
+        this.alias = getClass().getSimpleName();
     }
 
     public SubjectId getSubjectId() {
@@ -117,5 +126,13 @@ public abstract class SsfEvent {
 
     public void setSubjectId(SubjectId subjectId) {
         this.subjectId = subjectId;
+    }
+
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
     }
 }

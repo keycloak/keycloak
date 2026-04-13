@@ -1,9 +1,11 @@
 package org.keycloak.protocol.ssf.transmitter.stream.storage;
 
 import java.util.List;
+import java.util.Set;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.ssf.stream.StreamStatus;
+import org.keycloak.protocol.ssf.transmitter.stream.SsfEventsConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationConfig;
 
@@ -76,4 +78,6 @@ public interface SsfStreamStore {
     void deleteStream(String streamId);
 
     StreamVerificationConfig getStreamVerificationConfig(String streamId, ClientModel client);
+
+    SsfEventsConfig getEventsConfig(ClientModel client, Set<String> eventsRequested);
 }

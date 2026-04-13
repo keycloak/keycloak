@@ -9,8 +9,9 @@ import jakarta.ws.rs.core.UriInfo;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.ssf.Ssf;
+import org.keycloak.protocol.ssf.event.GenericSsfEvent;
 import org.keycloak.protocol.ssf.event.SsfEvent;
-import org.keycloak.protocol.ssf.event.SsfStandardEvents;
 import org.keycloak.protocol.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.protocol.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.protocol.ssf.event.subjects.OpaqueSubjectId;
@@ -147,7 +148,9 @@ public class DefaultSsfEventProcessor implements SsfEventProcessor {
     }
 
     protected Class<? extends SsfEvent> getEventType(String securityEventType) {
-        return SsfStandardEvents.getSecurityEventType(securityEventType);
+        return Ssf.events().getRegistry()
+                .getEventClassByType(securityEventType)
+                .orElse(GenericSsfEvent.class);
     }
 
     protected boolean handleVerificationEvent(SsfEventContext eventContext, SsfStreamVerificationEvent verificationEvent, String jti) {
