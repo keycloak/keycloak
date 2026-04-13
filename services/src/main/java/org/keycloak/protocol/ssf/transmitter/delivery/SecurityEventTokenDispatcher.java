@@ -4,6 +4,7 @@ import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.event.token.SecurityEventToken;
+import org.keycloak.protocol.ssf.event.token.SseCaepSecurityEventToken;
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.protocol.ssf.stream.DeliveryMethod;
 import org.keycloak.protocol.ssf.stream.StreamStatusValue;
@@ -97,12 +98,23 @@ public class SecurityEventTokenDispatcher {
     protected SecurityEventToken getNarrowedEventToken(SsfSecurityEventToken eventToken, StreamConfig stream) {
         SecurityEventToken narrowedEventToken = eventToken;
 
-        // if legacy CAEP SSE profile is requested convert the event to old format
-        // this is currently required for compatibility with apple business manager
-        if (Ssf.PROFILE_SSE_CAEP.equals(stream.getProfile())) {
-            narrowedEventToken = SseCaepEventConverter.convert(eventToken);
+        if (Ssf.PROFILE_SSF_1_0.equals(stream.getProfile())) {
+            narrowedEventToken = narrowSsfEventToken(eventToken);
+        } else if (Ssf.PROFILE_SSE_CAEP.equals(stream.getProfile())) {
+            // if legacy CAEP SSE profile is requested convert the event to old format
+            // this is currently required for compatibility with apple business manager
+            narrowedEventToken = narrowCaepSseEventToken(eventToken);
         }
+
         return narrowedEventToken;
+    }
+
+    protected SecurityEventToken narrowSsfEventToken(SsfSecurityEventToken eventToken) {
+        return eventToken;
+    }
+
+    protected SseCaepSecurityEventToken narrowCaepSseEventToken(SsfSecurityEventToken eventToken) {
+        return SseCaepEventConverter.convert(eventToken);
     }
 
     protected boolean isStreamEnabled(StreamConfig stream) {

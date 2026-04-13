@@ -50,6 +50,7 @@ import useToggle from "../utils/useToggle";
 import { AdvancedTab } from "./AdvancedTab";
 import { ClientSessions } from "./ClientSessions";
 import { ClientSettings } from "./ClientSettings";
+import { SsfTab } from "./SsfTab";
 import { AuthorizationEvaluate } from "./authorization/AuthorizationEvaluate";
 import { AuthorizationExport } from "./authorization/AuthorizationExport";
 import { AuthorizationPermissions } from "./authorization/Permissions";
@@ -225,6 +226,11 @@ export default function ClientDetails() {
     defaultValue: "client-secret",
   });
 
+  const ssfEnabled = useWatch({
+    control: form.control,
+    name: convertAttributeNameToForm<FormFields>("attributes.ssf.enabled"),
+  });
+
   const [client, setClient] = useState<ClientRepresentation>();
 
   const loader = async () => {
@@ -249,6 +255,7 @@ export default function ClientDetails() {
   const sessionsTab = useRoutableTab(tab("sessions"));
   const permissionsTab = useRoutableTab(tab("permissions"));
   const advancedTab = useRoutableTab(tab("advanced"));
+  const ssfTab = useRoutableTab(tab("ssf"));
   const eventsTab = useRoutableTab(tab("events"));
 
   const [activeEventsTab, setActiveEventsTab] = useState("userEvents");
@@ -688,6 +695,18 @@ export default function ClientDetails() {
             >
               <AdvancedTab save={save} client={client} />
             </Tab>
+            {client.protocol === "openid-connect" &&
+              !client.publicClient &&
+              ssfEnabled?.toString() === "true" && (
+                <Tab
+                  id="ssf"
+                  data-testid="ssfTab"
+                  title={<TabTitleText>{t("ssf")}</TabTitleText>}
+                  {...ssfTab}
+                >
+                  <SsfTab save={save} client={client} />
+                </Tab>
+              )}
             {hasAccess("view-events") && (
               <Tab
                 data-testid="events-tab"

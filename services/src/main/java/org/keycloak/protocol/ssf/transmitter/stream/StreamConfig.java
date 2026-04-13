@@ -2,6 +2,7 @@ package org.keycloak.protocol.ssf.transmitter.stream;
 
 import java.util.Set;
 
+import org.keycloak.protocol.ssf.SsfProfile;
 import org.keycloak.protocol.ssf.stream.StreamStatusValue;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -114,33 +115,16 @@ public class StreamConfig {
     protected String format = "iss_sub";
 
     @JsonIgnore
-    protected String profile;
+    protected SsfProfile profile;
 
-    @JsonProperty("kc_enabled")
+    @JsonIgnore
     protected Boolean enabled;
 
-    /**
-     * Indicates how the verification is triggered.
-     */
-    @JsonProperty("kc_verification_trigger")
-    protected VerificationTrigger verificationTrigger;
-
-    /**
-     * The verification delay in milliseconds, in case the transmitter triggers the verification.
-     */
-    @JsonProperty("kc_verification_delay_millis")
-    protected Integer verificationDelayMillis;
-
-    @JsonProperty("kc_transmitter_push_connect_timeout_millis")
+    @JsonIgnore
     protected Integer pushEndpointConnectTimeoutMillis;
 
-    @JsonProperty("kc_transmitter_push_socket_timeout_millis")
+    @JsonIgnore
     protected Integer pushEndpointSocketTimeoutMillis;
-
-    public enum VerificationTrigger {
-        TRANSMITTER_INITIATED,
-        RECEIVER_INITIATED
-    }
 
     public String getStreamId() {
         return streamId;
@@ -262,12 +246,13 @@ public class StreamConfig {
         this.format = format;
     }
 
-    public String getProfile() {
-        return profile;
+
+    public void setProfile(SsfProfile profile) {
+        this.profile = profile;
     }
 
-    public void setProfile(String profile) {
-        this.profile = profile;
+    public SsfProfile getProfile() {
+        return profile;
     }
 
     public Boolean getEnabled() {
@@ -276,22 +261,6 @@ public class StreamConfig {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public VerificationTrigger getVerificationTrigger() {
-        return verificationTrigger;
-    }
-
-    public void setVerificationTrigger(VerificationTrigger verificationTrigger) {
-        this.verificationTrigger = verificationTrigger;
-    }
-
-    public Integer getVerificationDelayMillis() {
-        return verificationDelayMillis;
-    }
-
-    public void setVerificationDelayMillis(Integer verificationDelayMillis) {
-        this.verificationDelayMillis = verificationDelayMillis;
     }
 
     public Integer getPushEndpointConnectTimeoutMillis() {

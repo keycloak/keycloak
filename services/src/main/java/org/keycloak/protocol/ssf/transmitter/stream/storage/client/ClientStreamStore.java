@@ -10,10 +10,13 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.Ssf;
+import org.keycloak.protocol.ssf.SsfProfile;
 import org.keycloak.protocol.ssf.stream.StreamStatus;
 import org.keycloak.protocol.ssf.stream.StreamStatusValue;
+import org.keycloak.protocol.ssf.transmitter.stream.SsfVerificationTrigger;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore;
+import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationConfig;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
@@ -28,6 +31,9 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_VERIFICATION_TRIGGER_KEY = "ssf.verificationTrigger";
     public static final String SSF_VERIFICATION_DELAY_MILLIS_KEY = "ssf.verificationDelayMillis";
     public static final String SSF_STREAM_CONFIG_KEY = "ssf.streamConfig";
+    public static final String SSF_STREAM_AUDIENCE_KEY = "ssf.streamAudience";
+    public static final String SSF_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointConnectTimeoutMillis";
+    public static final String SSF_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointSocketTimeoutMillis";
 
     public static final String SSF_STATUS_KEY = "ssf.status";
     public static final String SSF_STATUS_REASON_KEY = "ssf.status_reason";
@@ -161,27 +167,27 @@ public class ClientStreamStore implements SsfStreamStore {
             return null;
         }
 
-        String streamConfig = client.getAttribute(SSF_STREAM_CONFIG_KEY);
-        if (streamConfig == null) {
+        String streamConfigRaw = client.getAttribute(SSF_STREAM_CONFIG_KEY);
+        if (streamConfigRaw == null) {
             return null;
         }
 
         try {
-            StreamConfig stream = JsonSerialization.readValue(streamConfig, StreamConfig.class);
-            stream.setProfile(client.getAttribute(SSF_PROFILE_KEY));
-            stream.setEnabled(client.getAttribute(SSF_ENABLED_KEY) == null || Boolean.parseBoolean(client.getAttribute(SSF_ENABLED_KEY)));
-            String verificationTriggerString = client.getAttribute(SSF_VERIFICATION_TRIGGER_KEY);
-            if (verificationTriggerString != null) {
-                stream.setVerificationTrigger(StreamConfig.VerificationTrigger.valueOf(verificationTriggerString));
+            StreamConfig streamConfig = JsonSerialization.readValue(streamConfigRaw, StreamConfig.class);
+
+            if (client.getAttribute(SSF_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS_KEY) != null) {
+                streamConfig.setPushEndpointConnectTimeoutMillis(Integer.parseInt(client.getAttribute(SSF_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS_KEY)));
             }
-            String verificationDelayMillisString = client.getAttribute(SSF_VERIFICATION_DELAY_MILLIS_KEY);
-            if (verificationDelayMillisString != null) {
-                stream.setVerificationDelayMillis(Integer.parseInt(verificationDelayMillisString));
-            } else if (StreamConfig.VerificationTrigger.TRANSMITTER_INITIATED == stream.getVerificationTrigger()){
-                // Fallback to default value
-                stream.setVerificationDelayMillis(Ssf.TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS);
+
+            if (client.getAttribute(SSF_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS_KEY) != null) {
+                streamConfig.setPushEndpointSocketTimeoutMillis(Integer.parseInt(client.getAttribute(SSF_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS_KEY)));
             }
-            return stream;
+
+            if (client.getAttribute(SSF_PROFILE_KEY) != null) {
+                streamConfig.setProfile(SsfProfile.valueOf(client.getAttribute(SSF_PROFILE_KEY)));
+            }
+
+            return streamConfig;
         } catch (IOException e) {
             log.errorf(e, "Failed to deserialize stream configuration from client. clientId=%s streamId=%s"
                     , client.getClientId(), streamId);
@@ -192,21 +198,6 @@ public class ClientStreamStore implements SsfStreamStore {
     protected void storeStreamConfig(ClientModel client, StreamConfig streamConfig) {
 
         client.setAttribute(SSF_STREAM_ID_KEY, streamConfig.getStreamId());
-        client.setAttribute(SSF_ENABLED_KEY, "true");
-        client.setAttribute(SSF_PROFILE_KEY, streamConfig.getProfile());
-
-        StreamConfig.VerificationTrigger verificationTrigger = streamConfig.getVerificationTrigger();
-        if (verificationTrigger == null) {
-            verificationTrigger = StreamConfig.VerificationTrigger.RECEIVER_INITIATED;
-        }
-        client.setAttribute(SSF_VERIFICATION_TRIGGER_KEY, verificationTrigger.name());
-
-        if (StreamConfig.VerificationTrigger.TRANSMITTER_INITIATED.equals(verificationTrigger)) {
-            Integer verificationDelayMillis = streamConfig.getVerificationDelayMillis();
-            if (verificationDelayMillis != null) {
-                client.setAttribute(SSF_VERIFICATION_DELAY_MILLIS_KEY, verificationDelayMillis.toString());
-            }
-        }
 
         StreamStatusValue status = streamConfig.getStatus();
         if (status == null) {
@@ -222,5 +213,26 @@ public class ClientStreamStore implements SsfStreamStore {
         if (streamConfig != null && streamConfig.getStreamId().equals(streamId)) {
             SSF_STREAM_KEYS.forEach(client::removeAttribute);
         }
+    }
+
+    @Override
+    public StreamVerificationConfig getStreamVerificationConfig(String streamId, ClientModel client) {
+
+        SsfVerificationTrigger verificationTrigger = getVerificationTrigger(client);
+        int verificationDelayMillis = getVerificationDelayMillis(client);
+
+        return new StreamVerificationConfig(verificationTrigger, verificationDelayMillis);
+    }
+
+    protected int getVerificationDelayMillis(ClientModel client) {
+        if (client.getAttribute(SSF_VERIFICATION_DELAY_MILLIS_KEY) != null) {
+            return Integer.parseInt(client.getAttribute(SSF_VERIFICATION_DELAY_MILLIS_KEY));
+        }
+        // Fallback to default value
+        return Ssf.TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS;
+    }
+
+    protected SsfVerificationTrigger getVerificationTrigger(ClientModel client) {
+        return client.getAttribute(SSF_VERIFICATION_TRIGGER_KEY) != null ? SsfVerificationTrigger.valueOf(client.getAttribute(SSF_VERIFICATION_TRIGGER_KEY)) : null;
     }
 }

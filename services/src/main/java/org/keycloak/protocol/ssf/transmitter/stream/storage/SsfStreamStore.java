@@ -2,8 +2,10 @@ package org.keycloak.protocol.ssf.transmitter.stream.storage;
 
 import java.util.List;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.protocol.ssf.stream.StreamStatus;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationConfig;
 
 /**
  * Interface for storing and retrieving SSF stream configurations.
@@ -72,4 +74,6 @@ public interface SsfStreamStore {
      * @param streamId The stream ID
      */
     void deleteStream(String streamId);
+
+    StreamVerificationConfig getStreamVerificationConfig(String streamId, ClientModel client);
 }

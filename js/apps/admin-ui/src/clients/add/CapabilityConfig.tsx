@@ -106,6 +106,12 @@ export const CapabilityConfig = ({
                         ),
                         false,
                       );
+                      setValue(
+                        convertAttributeNameToForm<FormFields>(
+                          "attributes.ssf.enabled",
+                        ),
+                        false,
+                      );
                     }
                   }}
                   aria-label={t("clientAuthentication")}
@@ -498,6 +504,16 @@ export const CapabilityConfig = ({
                   )}
               </>
             )}
+          {!clientAuthentication && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.ssf.enabled",
+              )}
+              label={t("ssfReceiver")}
+              labelIcon={t("ssfReceiverHelp")}
+              stringify
+            />
+          )}
         </>
       )}
       {protocol === "saml" && (
