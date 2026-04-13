@@ -146,7 +146,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
       <KeycloakDataTable
         isNotCompact
         className="kc-keys-list"
-        loader={filteredKeyData}
+        loader={filteredKeyData ?? []}
         ariaLabelKey="keysList"
         searchPlaceholderKey="searchKey"
         searchTypeComponent={
