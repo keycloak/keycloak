@@ -20,7 +20,7 @@ import {
   StackItem,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../admin-client";
 import { DefaultSwitchControl } from "../components/SwitchControl";
@@ -122,6 +122,13 @@ function RealmSettingsGeneralTabForm({
   const isScimApiEnabled = isFeatureEnabled(Feature.ScimApi);
 
   const isSsfEnabled = isFeatureEnabled(Feature.Ssf);
+
+  const ssfTransmitterEnabled = useWatch({
+    control,
+    name: convertAttributeNameToForm<FormFields>(
+      "attributes.ssf.transmitterEnabled",
+    ) as any,
+  });
 
   const setupForm = () => {
     convertToFormValues(realm, setValue);
@@ -273,6 +280,16 @@ function RealmSettingsGeneralTabForm({
               labelIcon={t("scimApiEnabledHelp")}
             />
           )}
+          {isSsfEnabled && (
+            <DefaultSwitchControl
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.ssf.transmitterEnabled",
+              )}
+              label={t("ssfTransmitterEnabled")}
+              labelIcon={t("ssfTransmitterEnabledHelp")}
+              stringify
+            />
+          )}
           <SelectControl
             name="unmanagedAttributePolicy"
             label={t("unmanagedAttributes")}
@@ -346,7 +363,7 @@ function RealmSettingsGeneralTabForm({
                   />
                 </StackItem>
               )}
-              {isSsfEnabled && (
+              {isSsfEnabled && ssfTransmitterEnabled?.toString() === "true" && (
                 <StackItem>
                   <FormattedLink
                     href={`${addTrailingSlash(

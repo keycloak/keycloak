@@ -222,10 +222,10 @@ public class StreamManagementResource {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
-        if (SsfAuthUtil.hasScope(Ssf.SCOPE_APPLE_ABM)) {
-            // use stored streamId from client attributes
+        if (streamId == null) {
+            // try to use stored streamId from client attributes
             ClientModel client = KeycloakSessionUtil.getKeycloakSession().getContext().getClient();
-            streamId = client.getAttribute("ssf.streamId");
+            streamId = client.getAttribute(ClientStreamStore.SSF_STREAM_ID_KEY);
         }
 
         if (streamId == null) {
@@ -245,10 +245,9 @@ public class StreamManagementResource {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
 
-            if (SsfAuthUtil.hasScope(Ssf.SCOPE_APPLE_ABM)) {
-                // use stored streamId from client attributes
-                ClientModel client = KeycloakSessionUtil.getKeycloakSession().getContext().getClient();
-                client.removeAttribute("ssf.streamId");
+            ClientModel client = KeycloakSessionUtil.getKeycloakSession().getContext().getClient();
+            if (client.getAttribute(ClientStreamStore.SSF_STREAM_ID_KEY) != null) {
+                client.removeAttribute(ClientStreamStore.SSF_STREAM_ID_KEY);
             }
 
             return Response.noContent().build();

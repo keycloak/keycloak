@@ -26,19 +26,14 @@ public class Ssf {
     public static final String SSF_TRANSMITTER_BASE_PATH_SUFFIX = "%s/%s".formatted(SSF_REALM_RESOURCE_PATH, SSF_TRANSMITTER_PATH);
 
     /**
-     * NON standard internal marker scope for Apple Business Manager compatibility.
-     */
-    public static final String SCOPE_APPLE_ABM = SsfScopes.SCOPE_APPLE_ABM;
-
-    /**
      * Apply standard SSF semantics, default.
      */
-    public static final String PROFILE_STANDARD = "SSF";
+    public static final String PROFILE_SSF_1_0 = SsfProfile.SSF_1_0.name();
 
     /**
      * Apply SSE CAEP semantics
      */
-    public static final String PROFILE_SSE_CAEP = "SSE_CAEP";
+    public static final String PROFILE_SSE_CAEP = SsfProfile.SSE_CAEP.name();
 
     public static final String APPLICATION_SECEVENT_JWT_TYPE = "application/secevent+jwt";
 

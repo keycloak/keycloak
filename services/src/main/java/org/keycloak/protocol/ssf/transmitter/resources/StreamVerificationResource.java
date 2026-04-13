@@ -55,8 +55,8 @@ public class StreamVerificationResource {
             String streamId = verificationRequest.getStreamId();
             KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
             ClientModel client = session.getContext().getClient();
-            if (SsfAuthUtil.hasScope(Ssf.SCOPE_APPLE_ABM)) {
-                // Store created streamId in client attributes
+            if (streamId == null) {
+                // use streamId from client attributes
                 streamId = client.getAttribute(ClientStreamStore.SSF_STREAM_ID_KEY);
                 verificationRequest.setStreamId(streamId);
             }

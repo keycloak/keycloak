@@ -8,6 +8,8 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.jspecify.annotations.NonNull;
+
 import org.keycloak.common.util.Time;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
@@ -18,11 +20,11 @@ import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.SsfException;
 import org.keycloak.protocol.ssf.stream.StreamStatus;
 import org.keycloak.protocol.ssf.stream.StreamStatusValue;
-import org.keycloak.protocol.ssf.support.SsfAuthUtil;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
 import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataService;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore;
+import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 import org.jboss.logging.Logger;
@@ -66,12 +68,10 @@ public class StreamService {
         String iss = transmitterService.getTransmitterMetadata().getIssuer();
         streamConfig.setIssuer(iss);
 
-//        // set audience
+        // set audience
         ClientModel receiverClient = session.getContext().getClient();
         String receiverClientId = receiverClient.getClientId();
-        // FIXME use proper audience
-//        streamConfiguration.setAudience(Set.of(receiverClientId));
-        Set<String> audience = streamConfig.getAudience() == null ? new HashSet<>() : new HashSet<>(streamConfig.getAudience());
+        Set<String> audience = createAudience(receiverClient);
 
         // TODO shall we really add the audience of the stream?
         // String streamAudience = transmitterService.getTransmitterMetadata().getIssuer() + "/ssf/receivers/" + receiverClientId + "/" + streamConfig.getStreamId();
@@ -97,36 +97,26 @@ public class StreamService {
 
         streamConfig.setStatus(StreamStatusValue.enabled);
 
-        // use stream delivery as is
-
-        // TODO move stream config to client via Client Stream Store
-        if (SsfAuthUtil.hasScope(Ssf.SCOPE_APPLE_ABM)) {
-
-            if (streamConfig.getProfile() == null) {
-                streamConfig.setProfile(Ssf.PROFILE_SSE_CAEP);
-            }
-
-            if (streamConfig.getVerificationTrigger() == null) {
-                streamConfig.setVerificationTrigger(StreamConfig.VerificationTrigger.TRANSMITTER_INITIATED);
-            }
-
-            if (streamConfig.getVerificationDelayMillis() == null) {
-                streamConfig.setVerificationDelayMillis(Ssf.TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS);
-            }
-        } else {
-            if (streamConfig.getVerificationTrigger() == null) {
-                streamConfig.setVerificationTrigger(StreamConfig.VerificationTrigger.RECEIVER_INITIATED);
-            }
-        }
-
         // Store the stream configuration
         streamStore.saveStream(streamConfig);
 
-        if (streamConfig.getVerificationTrigger() == StreamConfig.VerificationTrigger.TRANSMITTER_INITIATED) {
-            scheduleTransmitterInitiatedAsyncStreamVerification(streamConfig, session);
+        StreamVerificationConfig streamVerificationConfig = streamStore.getStreamVerificationConfig(streamConfig.getStreamId(), session.getContext().getClient());
+        if (streamVerificationConfig.verificationTrigger() == SsfVerificationTrigger.TRANSMITTER_INITIATED) {
+            scheduleTransmitterInitiatedAsyncStreamVerification(streamConfig, streamVerificationConfig, session);
         }
 
         return streamConfig;
+    }
+
+    protected Set<String> createAudience(ClientModel receiverClient) {
+        Set<String> audience = new HashSet<>();
+        String ssfClientAudience = receiverClient.getAttribute(ClientStreamStore.SSF_STREAM_AUDIENCE_KEY);
+        if (ssfClientAudience != null) {
+            audience.add(ssfClientAudience);
+        } else {
+            audience.add(receiverClient.getClientId());
+        }
+        return audience;
     }
 
     protected void checkClient() {
@@ -140,7 +130,7 @@ public class StreamService {
         return UUID.randomUUID().toString();
     }
 
-    protected void scheduleTransmitterInitiatedAsyncStreamVerification(StreamConfig streamConfig, KeycloakSession session) {
+    protected void scheduleTransmitterInitiatedAsyncStreamVerification(StreamConfig streamConfig, StreamVerificationConfig streamVerificationConfig, KeycloakSession session) {
         StreamVerificationRequest verificationRequest = new StreamVerificationRequest();
         verificationRequest.setStreamId(streamConfig.getStreamId());
         // If the Verification Event is initiated by the Transmitter then this parameter MUST not be set.
@@ -158,7 +148,7 @@ public class StreamService {
         KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
 
         var executor = Executors.newSingleThreadScheduledExecutor();
-        int delay = streamConfig.getVerificationDelayMillis();
+        int delay = streamVerificationConfig.verificationDelayMillis();
         executor.schedule(() -> {
             try (KeycloakSession subSession = keycloakSessionFactory.create()) {
                 subSession.getTransactionManager().begin();
