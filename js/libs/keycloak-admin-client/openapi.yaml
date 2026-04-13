@@ -18,8 +18,8 @@ components:
       description: "Validation: on update: ClientSecretNotBlank"
     BaseClientRepresentation:
       description: "Base client representation with common properties for all client\
-        \ types. Validation: on update/on patch: UuidUnmodified; on update/on patch:\
-        \ ProtocolUnmodified"
+        \ types. Validation: on update/on patch: ProtocolUnmodified; on update/on\
+        \ patch: UuidUnmodified"
       type: object
       properties:
         uuid:

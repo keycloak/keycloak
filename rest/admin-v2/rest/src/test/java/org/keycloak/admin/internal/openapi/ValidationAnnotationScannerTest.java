@@ -267,9 +267,9 @@ public class ValidationAnnotationScannerTest {
 
         assertNotNull(descriptions);
         assertEquals(1, descriptions.size());
-        assertTrue(descriptions.containsKey("clientsecretnotblank"));
+        assertTrue(descriptions.containsKey("secret"));
         // Falls back to annotation name when message can't be resolved from resource bundle
-        assertEquals("ClientSecretNotBlank", descriptions.get("clientsecretnotblank"));
+        assertEquals("ClientSecretNotBlank", descriptions.get("secret"));
     }
 
     @Test
@@ -279,8 +279,8 @@ public class ValidationAnnotationScannerTest {
         Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
 
         assertNotNull(descriptions);
-        assertTrue(descriptions.containsKey("clientsecretnotblank"));
-        assertEquals("Custom validation message", descriptions.get("clientsecretnotblank"));
+        assertTrue(descriptions.containsKey("secret"));
+        assertEquals("Custom validation message", descriptions.get("secret"));
     }
 
     @Test
@@ -290,8 +290,8 @@ public class ValidationAnnotationScannerTest {
         Map<String, String> descriptions = scanner.buildClassLevelDescriptions(classInfo);
 
         assertNotNull(descriptions);
-        assertTrue(descriptions.containsKey("clientsecretnotblank"));
-        String description = descriptions.get("clientsecretnotblank");
+        assertTrue(descriptions.containsKey("secret"));
+        String description = descriptions.get("secret");
         assertTrue(description.contains("on create"));
         // Falls back to annotation name when message can't be resolved
         assertTrue(description.contains("ClientSecretNotBlank"));
@@ -366,19 +366,19 @@ public class ValidationAnnotationScannerTest {
         private String createAndUpdate;
     }
 
-    @ClientSecretNotBlank
+    @ClientSecretNotBlank(affectedFieldNames = {"secret"})
     @SuppressWarnings("unused")
     public static class TestWithClassLevelConstraint {
         private String secret;
     }
 
-    @ClientSecretNotBlank(groups = CreateClient.class)
+    @ClientSecretNotBlank(groups = CreateClient.class, affectedFieldNames = {"secret"})
     @SuppressWarnings("unused")
     public static class TestWithClassLevelConstraintAndGroups {
         private String secret;
     }
 
-    @ClientSecretNotBlank(message = "Custom validation message")
+    @ClientSecretNotBlank(message = "Custom validation message", affectedFieldNames = {"secret"})
     @SuppressWarnings("unused")
     public static class TestWithClassLevelConstraintAndMessage {
         private String secret;

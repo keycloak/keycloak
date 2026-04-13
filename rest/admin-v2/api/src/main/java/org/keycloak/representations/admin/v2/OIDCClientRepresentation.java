@@ -89,7 +89,7 @@ public class OIDCClientRepresentation extends BaseClientRepresentation {
         return PROTOCOL;
     }
 
-    @ClientSecretNotBlank(groups = PutClient.class)
+    @ClientSecretNotBlank(groups = PutClient.class, affectedFieldNames = {"secret"})
     public static class Auth extends BaseRepresentation {
 
         @JsonPropertyDescription("Which authentication method is used for this client")

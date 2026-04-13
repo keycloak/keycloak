@@ -270,8 +270,15 @@ public class ValidationAnnotationScanner {
                 message = annotation.name().withoutPackagePrefix();
             }
 
-            String affectedField = annotation.name().withoutPackagePrefix().toLowerCase();
-            fieldDescriptions.put(affectedField, context + message);
+            AnnotationValue affectedField = annotation.value("affectedFieldNames");
+            String affectedFieldName = annotation.name().withoutPackagePrefix();
+            if (affectedField != null) {
+                for (String affected : affectedField.asStringArray()) {
+                    fieldDescriptions.put(affected, context + message);
+                }
+            } else {
+                fieldDescriptions.put(affectedFieldName, context + message);
+            }
         }
 
         return fieldDescriptions;
