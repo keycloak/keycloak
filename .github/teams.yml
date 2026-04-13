@@ -9,7 +9,7 @@ team/continuous-delivery:
   - area/ci
   - area/testsuite
 
-team/core-protocols:
+team/core-clients:
   - area/adapter/fuse
   - area/adapter/java-cli
   - area/adapter/jee
