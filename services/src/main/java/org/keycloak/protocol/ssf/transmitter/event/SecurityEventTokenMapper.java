@@ -12,14 +12,20 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.ssf.event.InitiatingEntity;
 import org.keycloak.protocol.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.protocol.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.protocol.ssf.event.subjects.ComplexSubjectId;
+import org.keycloak.protocol.ssf.event.subjects.EmailSubjectId;
 import org.keycloak.protocol.ssf.event.subjects.IssuerSubjectId;
 import org.keycloak.protocol.ssf.event.subjects.OpaqueSubjectId;
+import org.keycloak.protocol.ssf.event.subjects.SubjectId;
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.protocol.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 
 import org.jboss.logging.Logger;
@@ -36,8 +42,14 @@ public class SecurityEventTokenMapper {
 
     private final String issuer;
 
-    public SecurityEventTokenMapper(String issuer) {
+    private final KeycloakSession session;
+
+    private final SsfTransmitterConfig transmitterConfig;
+
+    public SecurityEventTokenMapper(KeycloakSession session, String issuer, SsfTransmitterConfig transmitterConfig) {
+        this.session = session;
         this.issuer = issuer;
+        this.transmitterConfig = transmitterConfig;
     }
 
     /**
@@ -111,9 +123,7 @@ public class SecurityEventTokenMapper {
             // Set subject ID (complex subject with user and session)
             ComplexSubjectId subId = new ComplexSubjectId();
 
-            IssuerSubjectId userSubject = new IssuerSubjectId();
-            userSubject.setIss(issuer);
-            userSubject.setSub(userId);
+            SubjectId userSubject = buildUserSubjectId(userId, stream);
 
             OpaqueSubjectId sessionSubject = new OpaqueSubjectId();
             sessionSubject.setId(sessionId);
@@ -159,10 +169,7 @@ public class SecurityEventTokenMapper {
             event.setTxn(UUID.randomUUID().toString());
 
             // Set subject ID
-            IssuerSubjectId subId = new IssuerSubjectId();
-            subId.setIss(issuer);
-            subId.setSub(userId);
-            event.setSubjectId(subId);
+            event.setSubjectId(buildUserSubjectId(userId, stream));
 
             String caepCredentialType = narrowCaepCredentialType(credentialType);
 
@@ -186,6 +193,64 @@ public class SecurityEventTokenMapper {
 
     protected String narrowCaepCredentialType(String credentialType) {
         return credentialType;
+    }
+
+    /**
+     * Builds the SSF subject identifier for a Keycloak user according to
+     * the stream's configured user subject format (falling back to
+     * {@link SsfUserSubjectFormats#DEFAULT iss_sub}). Invoked for every
+     * event type whose {@code sub_id} carries a user identifier — both
+     * as the {@code user} field of a {@link ComplexSubjectId} (e.g. for
+     * {@link CaepSessionRevoked}) and as the top-level {@code sub_id}
+     * of simpler events (e.g. {@link CaepCredentialChange}).
+     *
+     * <p>When the configured format is {@code email} and the user has
+     * no email address on record (or the user itself cannot be resolved
+     * — e.g. deleted mid-event), this method logs a warning and falls
+     * back to {@code iss_sub} rather than dropping the event. Losing a
+     * receiver signal is worse than delivering it with a less-preferred
+     * subject format.
+     */
+    protected SubjectId buildUserSubjectId(String userId, StreamConfig stream) {
+
+        String format = SsfUserSubjectFormats.resolveForStream(stream, transmitterConfig);
+
+        if (EmailSubjectId.TYPE.equals(format)) {
+            String email = lookupUserEmail(userId);
+            if (email != null && !email.isBlank()) {
+                EmailSubjectId emailSubject = new EmailSubjectId();
+                emailSubject.setEmail(email);
+                return emailSubject;
+            }
+            log.warnf("Configured user subject format is 'email' but no email is available for user. "
+                    + "Falling back to 'iss_sub'. userId=%s streamId=%s", userId, stream != null ? stream.getStreamId() : null);
+        }
+
+        IssuerSubjectId issSubject = new IssuerSubjectId();
+        issSubject.setIss(issuer);
+        issSubject.setSub(userId);
+        return issSubject;
+    }
+
+    /**
+     * Resolves a Keycloak user's email address for the current realm.
+     * Returns {@code null} when the session is not available, the user
+     * cannot be resolved, or the user has no email — callers fall back
+     * to {@code iss_sub} in that case.
+     */
+    protected String lookupUserEmail(String userId) {
+        if (session == null || userId == null) {
+            return null;
+        }
+        RealmModel realm = session.getContext().getRealm();
+        if (realm == null) {
+            return null;
+        }
+        UserModel user = session.users().getUserById(realm, userId);
+        if (user == null) {
+            return null;
+        }
+        return user.getEmail();
     }
 
     public SsfSecurityEventToken toSecurityEvent(Event event, StreamConfig stream) {

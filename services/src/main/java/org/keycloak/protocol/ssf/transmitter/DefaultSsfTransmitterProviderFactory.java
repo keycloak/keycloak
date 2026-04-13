@@ -46,7 +46,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     @Override
     public SsfTransmitterProvider create(KeycloakSession session) {
         var transmitterConfig = getTransmitterConfig();
-        var mapper = new SecurityEventTokenMapper(SsfUtil.getIssuerUrl(session));
+        var mapper = new SecurityEventTokenMapper(session, SsfUtil.getIssuerUrl(session), transmitterConfig);
         var encoder = new SecurityEventTokenEncoder(session);
         var pushDelivery = new PushDeliveryService(session, transmitterConfig);
         var dispatcher = new SecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig);
@@ -108,6 +108,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .type("string")
                 .helpText("Default JWS signature algorithm used to sign outgoing SSF Security Event Tokens when a receiver client does not configure its own ssf.signatureAlgorithm attribute. Defaults to RS256 per the CAEP interoperability profile 1.0 §2.6.")
                 .defaultValue(SsfTransmitterConfig.DEFAULT_SIGNATURE_ALGORITHM)
+                .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_USER_SUBJECT_FORMAT)
+                .type("string")
+                .helpText("Default subject identifier format for the user portion of outgoing SSF Security Event Tokens when a receiver client does not configure its own ssf.userSubjectFormat attribute. Defaults to iss_sub (realm issuer + user ID). Allowed values: iss_sub, email.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_USER_SUBJECT_FORMAT)
                 .add()
                 .build();
     }

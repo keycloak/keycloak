@@ -75,6 +75,7 @@ public class SsfAdminResource {
                 transmitterConfig.getPushEndpointConnectTimeoutMillis());
         config.setDefaultPushEndpointSocketTimeoutMillis(
                 transmitterConfig.getPushEndpointSocketTimeoutMillis());
+        config.setDefaultUserSubjectFormat(transmitterConfig.getUserSubjectFormat());
         return config;
     }
 
