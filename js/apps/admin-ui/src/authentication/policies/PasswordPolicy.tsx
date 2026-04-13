@@ -137,7 +137,7 @@ export const PasswordPolicy = ({
       setupForm(updatedRealm);
       refresh();
       addAlert(t("updatePasswordPolicySuccess"), AlertVariant.success);
-    } catch (error: any) {
+    } catch (error) {
       addError("updatePasswordPolicyError", error);
     }
   };
