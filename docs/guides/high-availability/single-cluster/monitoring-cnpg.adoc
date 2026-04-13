@@ -21,7 +21,7 @@ Please follow the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-
 * Prometheus and Grafana installed on the {kubernetes} cluster.
 Basic installation steps can be found in the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/quickstart[Quickstart section of the CloudNativePG documentation].
 
-== Procedure
+== Review the status through command-line
 
 . Review the status of the CloudNativePG cluster using the `kubectl cnpg status` command.
 +
@@ -68,10 +68,10 @@ Any other value indicates a problem.
 <2> This section shows the status of the cluster's standby instances and their replication health.
 <3> General status of individual instances and their roles in the cluster.
 
-. Verify standby health in the _Streaming Replication status_ table.
-+
+Verify standby health in the _Streaming Replication status_ table.
+
 The following fields help determine whether standbys are healthy and replication is working:
-+
+
 [%autowidth]
 |===
 | Field | Expected value | What it means
@@ -93,32 +93,17 @@ The following fields help determine whether standbys are healthy and replication
 | Confirms the replication slot is in use and the standby is consuming WAL.
 |===
 
-. Check that there is at least one safe standby candidate.
-+
-In the `Sync State` column, standbys with values `quorum` or `sync` are safe promotion candidates.
-Standbys in `potential` or `async` are replicating asynchronously at that moment.
-+
-.Sync State
-[%autowidth]
-|===
-| Sync State | Replication | Safe to promote
+== Review the status through Prometheus and Grafana
 
-| `quorum` | Quorum Synchronous | Safe
-| `sync` | Synchronous | Safe
-| `potential` | Asynchronous ^1^ | Unsafe
-| `async` | Asynchronous | Unsafe
-|===
-+
-.Table footnotes:
-^1^ May be promoted to a synchronous standby if the current synchronous standby fails.
-+
-[IMPORTANT]
-====
-If all standbys are `potential` or `async`, the cluster is not currently providing synchronous replication guarantees.
-Investigate standby health and replication before performing maintenance operations.
-====
+Monitoring of CloudNativePG clusters leverages https://prometheus.io/[Prometheus] and https://grafana.com/[Grafana].
 
-. Enable collection of metrics from all cluster instances, including standbys, by creating a `PodMonitor` resource:
+Installation of the Prometheus stack is out of scope of this guide.
+Basic installation steps can be found in the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/quickstart[Quickstart section of the CloudNativePG documentation].
+Additional details on how to customize the monitoring can be found in the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/monitoring#monitoring-instances[Monitoring section of the CloudNativePG documentation].
+
+Assuming Prometheus and Grafana are installed on the {kubernetes} cluster the following steps can be used to enable monitoring for a particular CloudNativePG cluster:
+
+. Enable collection of metrics by creating a PodMonitor resource:
 +
 .Command:
 [source,yaml,indent=0]
@@ -131,47 +116,17 @@ metadata:
 spec:
   selector:
     matchLabels:
-      cnpg.io/cluster: cnpg-keycloak <1>
+      cnpg.io/cluster: cnpg-keycloak # <1>
   podMetricsEndpoints:
   - port: metrics
 EOF
 ----
 <1> Name of the CloudNativePG cluster to be monitored.
-The selector targets all pods in the cluster, including standbys.
-
-. Import the CloudNativePG Grafana dashboard to visualise standby metrics:
 +
-.Command:
-[source,bash]
-----
-curl -L -O https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/main/charts/cluster/grafana-dashboard.json
+. Add the https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/refs/heads/main/charts/cluster/grafana-dashboard.json[grafana-dashboard.json] from the https://github.com/cloudnative-pg/grafana-dashboards[cloudnative-pg/grafana-dashboards GitHub project] to your Grafana instance.
 
-kubectl create configmap cnpg-dashboard \
-  --from-file=cnpg-dashboard.json=grafana-dashboard.json \
-  -n monitoring
+Once Prometheus is scraping metrics, use the following key metrics in Grafana to observe standby health:
 
-kubectl label configmap cnpg-dashboard \
-  grafana_dashboard=1 \
-  -n monitoring
-----
-
-. To access the Grafana dashboard, forward the Grafana service port and retrieve the admin password:
-+
-.Command:
-[source,bash]
-----
-kubectl port-forward -n monitoring svc/prometheus-grafana 3001:80
-
-# In a separate terminal, retrieve the admin password:
-kubectl get secret --namespace monitoring prometheus-grafana \
-  -o jsonpath="{.data.admin-password}" | base64 --decode; echo
-----
-+
-Open `http://localhost:3001` in a browser and log in with username `admin` and the password retrieved above.
-When adding Prometheus as a data source, use `DS_PROMETHEUS` as the data source variable name and `prometheus` as the Prometheus service name.
-
-. Once Prometheus is scraping metrics, use the following key metrics in Grafana to observe standby health:
-+
 [%autowidth]
 |===
 | Metric | Description
@@ -192,15 +147,15 @@ When adding Prometheus as a data source, use `DS_PROMETHEUS` as the data source 
 | Time elapsed between WAL flushed on the primary and replayed on the standby.
 |===
 
-== What healthy looks like
+== What healthy standby looks like
 
 A healthy standby setup typically shows:
 
 * Cluster status is `Cluster in healthy state`.
 * All standby instances show `State: streaming`.
-* `Write Lag`, `Flush Lag`, and `Replay Lag` stay at `00:00:00` (or near-zero) and do not trend upward.
+* `Write Lag`, `Flush Lag`, and `Replay Lag` are low and stable, with no continuous upward trend.
 * At least one standby has `Sync State: quorum` (for quorum-based synchronous replication as described in the <@links.ha id="single-cluster-deploy-cnpg" /> {section}).
-* `cnpg_pg_replication_is_wal_receiver_up` is `1` for all standbys in Prometheus.
+* `cnpg_pg_replication_in_recovery` is `1` for all standby instances in Prometheus.
 
 == Signs of an unhealthy standby
 
@@ -208,10 +163,10 @@ The following are indicators that a standby requires attention:
 
 * The cluster `Status` is not `Cluster in healthy state`.
 * A standby `State` is not `streaming`.
-* Any of `Write Lag`, `Flush Lag`, or `Replay Lag` is non-zero and increasing over time.
+* Any of `Write Lag`, `Flush Lag`, or `Replay Lag` is continuously increasing over time.
 * No standby is in `quorum` or `sync` state when synchronous replication is expected.
 * A standby is missing from the _Streaming Replication status_ table.
-* `cnpg_pg_replication_is_wal_receiver_up` is `0` for any standby in Prometheus.
+* `cnpg_pg_replication_in_recovery` is `0` for any instance that is expected to be a standby in Prometheus.
 
 If one or more standby instances show these symptoms, investigate using the following commands:
 
