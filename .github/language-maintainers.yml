@@ -93,6 +93,11 @@ languages:
     maintainers:
       - spctr
       - ariferol
+  vi:
+    name: Vietnamese
+    maintainers:
+      - thangnm11
+      - it-site44-com
   zh_Hans:
     name: Simplified Chinese
     maintainers:
