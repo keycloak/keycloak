@@ -84,7 +84,7 @@ export const getToken = async (settings: Settings): Promise<TokenResponse> => {
 
   // Prepare credentials for openid-connect token request
   // ref: http://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint
-  const credentials = settings.credentials || ({} as any);
+  const credentials = settings.credentials;
   const payload = stringifyQueryParams({
     username: credentials.username,
     password: credentials.password,

@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 
 type RealmContextType = {
   realm: string;
-  realmRepresentation?: RealmRepresentation;
+  realmRepresentation: RealmRepresentation;
   refresh: () => void;
 };
 
@@ -54,7 +54,9 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
   }
 
   return (
-    <RealmContext.Provider value={{ realm, realmRepresentation, refresh }}>
+    <RealmContext.Provider
+      value={{ realm, realmRepresentation: realmRepresentation!, refresh }}
+    >
       {children}
     </RealmContext.Provider>
   );

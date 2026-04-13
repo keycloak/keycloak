@@ -718,11 +718,11 @@ export class Clients extends Resource<{ realm?: string }> {
     policyName: string;
     policy: PolicyRepresentation;
   }): Promise<PolicyRepresentation> {
-    const policyFound = await this.findPolicyByName({
-      id: payload.id,
-      name: payload.policyName,
-    });
-    if (policyFound) {
+    try {
+      const policyFound = await this.findPolicyByName({
+        id: payload.id,
+        name: payload.policyName,
+      });
       await this.updatePolicy(
         {
           id: payload.id,
@@ -731,11 +731,11 @@ export class Clients extends Resource<{ realm?: string }> {
         },
         payload.policy,
       );
-      return this.findPolicyByName({
+      return await this.findPolicyByName({
         id: payload.id,
         name: payload.policyName,
       });
-    } else {
+    } catch {
       return this.createPolicy(
         { id: payload.id, type: payload.policy.type! },
         payload.policy,

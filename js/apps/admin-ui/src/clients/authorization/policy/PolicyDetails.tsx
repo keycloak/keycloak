@@ -103,7 +103,7 @@ export default function PolicyDetails() {
       }
       if (!isValidComponentType(policyType!)) {
         const providers = await adminClient.clients.listPolicyProviders({
-          id: permissionClientId ?? id,
+          id: permissionClientId,
         });
         const provider = providers.find((p) => p.type === policyType);
         if (provider) {

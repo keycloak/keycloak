@@ -186,7 +186,7 @@ export const AdvancedSettings = ({
                 "attributes.client.offline.session.max.lifespan",
               )}
               defaultValue={
-                realm?.offlineSessionMaxLifespanEnabled
+                realm.offlineSessionMaxLifespanEnabled
                   ? realm.offlineSessionMaxLifespan
                   : undefined
               }
