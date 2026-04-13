@@ -228,12 +228,15 @@ public class StreamService {
     }
 
     /**
-     * Gets all enabled streams across all clients in the realm.
-     *
-     * @return A list of all enabled stream configurations
+     * Returns every stream configuration attached to a client whose SSF
+     * receiver capability is enabled. Does not filter by per-stream status
+     * — the dispatcher applies {@code StreamStatusValue} gating before
+     * actually delivering events. See
+     * {@link org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore#findStreamsForSsfReceiverClients()}
+     * for details.
      */
-    public List<StreamConfig> findAllEnabledStreams() {
-        return streamStore.findAllEnabledStreams();
+    public List<StreamConfig> findStreamsForSsfReceiverClients() {
+        return streamStore.findStreamsForSsfReceiverClients();
     }
 
     /**
