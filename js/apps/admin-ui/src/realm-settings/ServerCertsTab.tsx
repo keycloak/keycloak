@@ -72,6 +72,57 @@ export const ServerCertsTab = () => {
     void fetchCerts();
   }, [fetchCerts]);
 
+  const handleApprove = async (changeRequestId: string) => {
+    try {
+      const token = await adminClient.getAccessToken();
+      const payload = {
+        changeSetId: changeRequestId,
+        changeSetType: "SERVER_CERT",
+        actionType: "CREATE",
+      };
+
+      // Sign
+      await fetch(
+        `${adminClient.baseUrl}/admin/realms/${realm}/tide-admin/change-set/sign`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      // Commit
+      const commitResponse = await fetch(
+        `${adminClient.baseUrl}/admin/realms/${realm}/tide-admin/change-set/commit`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      if (commitResponse.ok) {
+        addAlert(
+          "Server certificate approved and signed",
+          AlertVariant.success,
+        );
+      } else {
+        const err = await commitResponse.text();
+        addAlert(`Approval failed: ${err}`, AlertVariant.danger);
+      }
+      void fetchCerts();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Approval failed";
+      addAlert(msg, AlertVariant.danger);
+    }
+  };
+
   const handleRevoke = async (instanceId: string) => {
     try {
       const token = await adminClient.getAccessToken();
@@ -202,6 +253,15 @@ export const ServerCertsTab = () => {
                 <Td>{getStatusIcon(cert)}</Td>
                 <Td>{new Date(cert.timestamp).toLocaleString()}</Td>
                 <Td>
+                  {cert.status === "DRAFT" && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => void handleApprove(cert.changeRequestId)}
+                    >
+                      Approve
+                    </Button>
+                  )}
                   {cert.status === "ACTIVE" && !cert.revoked && (
                     <Button
                       variant="danger"
