@@ -149,7 +149,7 @@ public class ClientStreamStore implements SsfStreamStore {
     }
 
     @Override
-    public List<StreamConfig> findAllEnabledStreams() {
+    public List<StreamConfig> findStreamsForSsfReceiverClients() {
         RealmModel realm = session.getContext().getRealm();
         Map<String, String> attributes = Map.of(SSF_ENABLED_KEY, "true");
         return session.clients()

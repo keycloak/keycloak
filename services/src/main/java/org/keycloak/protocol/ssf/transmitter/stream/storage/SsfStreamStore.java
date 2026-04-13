@@ -54,12 +54,20 @@ public interface SsfStreamStore {
     List<StreamConfig> getAvailableStreams();
 
     /**
-     * Gets all enabled stream configurations across all clients in the realm.
-     * This is used when there is no specific client context, e.g., when dispatching events from the event listener.
+     * Returns every stream configuration attached to a client whose SSF
+     * receiver capability is enabled (i.e. the client carries the
+     * {@code ssf.enabled} attribute). This does <strong>not</strong> filter
+     * by per-stream {@code StreamStatusValue} — a stream registered against
+     * an SSF-enabled client is returned regardless of whether it is
+     * {@code enabled}, {@code paused}, or {@code disabled}; the dispatcher
+     * applies the per-stream status filter in
+     * {@code SecurityEventTokenDispatcher#isStreamEnabled} before actually
+     * delivering an event.
      *
-     * @return A list of all enabled stream configurations
+     * <p>Used when there is no specific client context on the session, e.g.
+     * when the event listener fans an event out to all receivers.
      */
-    List<StreamConfig> findAllEnabledStreams();
+    List<StreamConfig> findStreamsForSsfReceiverClients();
 
     /**
      * Finds a stream configuration by stream ID across all clients in the realm.

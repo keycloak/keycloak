@@ -66,7 +66,7 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     protected List<Map.Entry<SsfSecurityEventToken, StreamConfig>> generateSecurityTokensForUserEvent(Event event, SsfTransmitterProvider transmitter) {
 
         StreamService streamService = transmitter.streamService();
-        List<StreamConfig> streams = streamService.findAllEnabledStreams();
+        List<StreamConfig> streams = streamService.findStreamsForSsfReceiverClients();
         if (streams.isEmpty()) {
             log.warnf("No streams found. Discarding user event %s", event.getId());
             return List.of();
