@@ -16,16 +16,16 @@
  */
 package org.keycloak.protocol.oidc.mappers;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.utils.JsonUtils;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
