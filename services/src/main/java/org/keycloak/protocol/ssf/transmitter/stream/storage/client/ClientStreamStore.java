@@ -82,6 +82,11 @@ public class ClientStreamStore implements SsfStreamStore {
         streamConfig.setStatus(StreamStatusValue.valueOf(streamStatus.getStatus()));
         streamConfig.setStatusReason(streamStatus.getReason());
 
+        // Persist the updated stream config back to the client attribute so
+        // subsequent extractStreamConfig calls (e.g. from the dispatcher)
+        // observe the new status.
+        storeStreamConfig(client, streamConfig);
+
         String statusReason = streamConfig.getStatusReason();
         StreamStatus status = new StreamStatus();
         status.setStreamId(streamId);

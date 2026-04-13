@@ -1,0 +1,474 @@
+package org.keycloak.tests.ssf;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.Profile;
+import org.keycloak.http.simple.SimpleHttp;
+import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.protocol.ssf.Ssf;
+import org.keycloak.protocol.ssf.SsfProfile;
+import org.keycloak.protocol.ssf.event.caep.CaepCredentialChange;
+import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
+import org.keycloak.protocol.ssf.stream.StreamStatus;
+import org.keycloak.protocol.ssf.stream.StreamStatusValue;
+import org.keycloak.protocol.ssf.transmitter.SsfScopes;
+import org.keycloak.protocol.ssf.transmitter.SsfTransmitterConfig;
+import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.protocol.ssf.transmitter.stream.StreamDeliveryConfig;
+import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.testframework.annotations.InjectAdminClient;
+import org.keycloak.testframework.annotations.InjectHttpServer;
+import org.keycloak.testframework.annotations.InjectKeycloakUrls;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.InjectSimpleHttp;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.oauth.OAuthClient;
+import org.keycloak.testframework.oauth.annotations.InjectOAuthClient;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
+import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
+import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.util.HttpServerUtil;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.util.JsonSerialization;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Tests for the SSF Transmitter push delivery pipeline end-to-end:
+ * Keycloak user event → {@code SsfTransmitterEventListener} → SET mapping →
+ * {@code SecurityEventTokenDispatcher} → {@code PushDeliveryService} → mock
+ * receiver.
+ *
+ * <p>Each test fires a real LOGOUT user event by obtaining an access token
+ * via a password grant (creating a user session) and then logging the
+ * refresh token out, which the SSF event listener maps to a
+ * {@link CaepSessionRevoked} SET and pushes to the mock receiver.
+ *
+ * <p>Three receiver clients are registered by {@link PushDeliveryRealm}:
+ * <ul>
+ *     <li>{@link #RECEIVER_SSF} — default SSF 1.0 profile, used for the
+ *         happy path that covers a standard SSF SET payload.</li>
+ *     <li>{@link #RECEIVER_SSE_CAEP} — legacy SSE CAEP profile, used to
+ *         regression-guard the enum-switch fix in
+ *         {@code SecurityEventTokenDispatcher#getNarrowedEventToken}.</li>
+ *     <li>{@link #RECEIVER_CRED_ONLY} — receiver that only requests the
+ *         CAEP credential-change event, used to assert that SETs carrying
+ *         un-requested event types are not delivered.</li>
+ * </ul>
+ */
+@KeycloakIntegrationTest(config = SsfTransmitterPushDeliveryTests.PushDeliveryKeycloakServerConfig.class)
+public class SsfTransmitterPushDeliveryTests {
+
+    static final String RECEIVER_SSF = "ssf-receiver-push-ssf";
+    static final String RECEIVER_SSF_SECRET = "receiver-push-ssf-secret";
+
+    static final String RECEIVER_SSE_CAEP = "ssf-receiver-push-sse-caep";
+    static final String RECEIVER_SSE_CAEP_SECRET = "receiver-push-sse-caep-secret";
+
+    static final String RECEIVER_CRED_ONLY = "ssf-receiver-push-cred-only";
+    static final String RECEIVER_CRED_ONLY_SECRET = "receiver-push-cred-only-secret";
+
+    static final String TEST_USER = "tester";
+    static final String TEST_PASSWORD = "test";
+
+    static final String PUSH_CONTEXT_PATH = "/ssf/push-delivery";
+    static final String MOCK_PUSH_ENDPOINT = "http://127.0.0.1:8500" + PUSH_CONTEXT_PATH;
+    static final String EXPECTED_PUSH_AUTH_HEADER = "Bearer dummy-push-delivery-receiver";
+
+    static final long PUSH_WAIT_SECONDS = 5;
+
+    @InjectRealm(config = PushDeliveryRealm.class)
+    ManagedRealm realm;
+
+    @InjectOAuthClient
+    OAuthClient oauthClient;
+
+    @InjectSimpleHttp
+    SimpleHttp http;
+
+    @InjectAdminClient
+    Keycloak adminClient;
+
+    @InjectKeycloakUrls
+    KeycloakUrls keycloakUrls;
+
+    @InjectHttpServer
+    HttpServer mockReceiverServer;
+
+    private final BlockingQueue<CapturedPush> pushes = new LinkedBlockingQueue<>();
+
+    @BeforeEach
+    public void setup() {
+        pushes.clear();
+
+        mockReceiverServer.createContext(PUSH_CONTEXT_PATH, new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                try (InputStream is = exchange.getRequestBody()) {
+                    pushes.add(new CapturedPush(
+                            new String(is.readAllBytes(), StandardCharsets.UTF_8),
+                            exchange.getRequestHeaders().getFirst("Authorization"),
+                            exchange.getRequestHeaders().getFirst("Content-Type")));
+                }
+                HttpServerUtil.sendResponse(exchange, 202, Map.of());
+            }
+        });
+
+        // Assign the SSF scopes to every receiver client. These scopes are
+        // created by RealmPostCreateEvent after client import, so declaring
+        // them as optionalClientScopes on the realm config is silently
+        // dropped.
+        assignOptionalClientScopes(RECEIVER_SSF, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
+        assignOptionalClientScopes(RECEIVER_SSE_CAEP, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
+        assignOptionalClientScopes(RECEIVER_CRED_ONLY, SsfScopes.SCOPE_SSF_READ, SsfScopes.SCOPE_SSF_MANAGE);
+    }
+
+    @AfterEach
+    public void cleanup() {
+        List.of(RECEIVER_SSF, RECEIVER_SSE_CAEP, RECEIVER_CRED_ONLY)
+                .forEach(this::bestEffortDeleteStream);
+        try {
+            mockReceiverServer.removeContext(PUSH_CONTEXT_PATH);
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
+    @Test
+    public void testPushDeliversCaepSessionRevokedOnUserLogout() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        StreamConfig stream = createPushStream(token, Set.of(CaepSessionRevoked.TYPE, CaepCredentialChange.TYPE));
+
+        triggerUserLogout();
+
+        CapturedPush captured = awaitPush();
+
+        // Regression guard: the push must carry the receiver-supplied
+        // authorization header verbatim and the SSF SET content-type.
+        Assertions.assertEquals(EXPECTED_PUSH_AUTH_HEADER, captured.authorizationHeader,
+                "push authorization header should be forwarded verbatim");
+        Assertions.assertEquals(Ssf.APPLICATION_SECEVENT_JWT_TYPE, captured.contentType,
+                "content-type should be application/secevent+jwt");
+
+        JsonNode set = decodeSet(captured);
+
+        Assertions.assertEquals(realm.getBaseUrl(), set.get("iss").asText());
+        Assertions.assertEquals(stream.getAudience(), extractAudience(set),
+                "aud in the SET should match the stream audience");
+
+        JsonNode events = set.path("events");
+        Assertions.assertTrue(events.has(CaepSessionRevoked.TYPE),
+                "SET should carry the CAEP session-revoked event");
+
+        // SSF 1.0 profile carries sub_id at the token level (complex user +
+        // session subject id), not nested under the event.
+        JsonNode subId = set.path("sub_id");
+        Assertions.assertFalse(subId.isMissingNode(), "SSF 1.0 SET should carry a top-level sub_id");
+        Assertions.assertTrue(subId.path("user").isObject(), "sub_id.user should describe the logged-out user");
+        Assertions.assertTrue(subId.path("session").isObject(), "sub_id.session should describe the revoked session");
+    }
+
+    @Test
+    public void testSseCaepProfileNarrowsEventShape() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSE_CAEP, RECEIVER_SSE_CAEP_SECRET);
+        createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        triggerUserLogout();
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+
+        // Regression guard for the SsfProfile enum-vs-String comparison bug:
+        // with SSE CAEP profile, the SseCaepEventConverter wraps the subject
+        // inside the event body and the SET no longer carries a top-level
+        // sub_id. If the converter is not invoked (original bug), the payload
+        // is still SSF 1.0-shaped with sub_id at the token level.
+        Assertions.assertTrue(set.path("sub_id").isMissingNode() || set.path("sub_id").isNull(),
+                "SSE CAEP SET should not carry a top-level sub_id");
+
+        JsonNode event = set.path("events").path(CaepSessionRevoked.TYPE);
+        Assertions.assertFalse(event.isMissingNode(), "SET should carry a CAEP session-revoked event");
+        Assertions.assertTrue(event.path("subject").isObject(),
+                "SSE CAEP event should carry a nested 'subject' object");
+        Assertions.assertTrue(event.path("subject").path("user").isObject(),
+                "SSE CAEP event.subject should wrap a 'user' entry");
+    }
+
+    @Test
+    public void testUnsupportedEventNotDelivered() throws Exception {
+
+        // RECEIVER_CRED_ONLY only requests credential-change events; a
+        // session-revoked push should be discarded by the dispatcher's
+        // events_requested filter and never reach the mock receiver.
+        String token = obtainReceiverToken(RECEIVER_CRED_ONLY, RECEIVER_CRED_ONLY_SECRET);
+        createPushStream(token, Set.of(CaepCredentialChange.TYPE));
+
+        triggerUserLogout();
+
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "no push should be delivered when the event type is not in events_requested");
+    }
+
+    @Test
+    public void testDisabledStreamDoesNotReceivePush() throws Exception {
+
+        String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
+        StreamConfig stream = createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
+
+        // Disable the stream. The dispatcher must skip delivery when the
+        // stream status is not `enabled`.
+        StreamStatus disableStatus = new StreamStatus();
+        disableStatus.setStreamId(stream.getStreamId());
+        disableStatus.setStatus(StreamStatusValue.disabled.getStatusCode());
+        try (SimpleHttpResponse response = http.doPost(streamsStatusEndpoint())
+                .json(disableStatus)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    "POST /streams/status should succeed");
+        }
+
+        triggerUserLogout();
+
+        Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
+                "disabled stream should not receive pushes");
+    }
+
+    // --- helpers ---------------------------------------------------------
+
+    /**
+     * Obtains a new access token via password grant for {@link #TEST_USER},
+     * then invokes the OIDC logout endpoint with the refresh token. That
+     * fires a {@code LOGOUT} user event which the SSF event listener maps
+     * to a {@link CaepSessionRevoked} SET for every enabled stream.
+     */
+    protected void triggerUserLogout() {
+        AccessTokenResponse tokenResponse = oauthClient.passwordGrantRequest(TEST_USER, TEST_PASSWORD).send();
+        Assertions.assertNotNull(tokenResponse.getAccessToken(),
+                "password grant should succeed for the test user");
+        Assertions.assertNotNull(tokenResponse.getRefreshToken(),
+                "password grant response should include a refresh token");
+        oauthClient.doLogout(tokenResponse.getRefreshToken());
+    }
+
+    protected CapturedPush awaitPush() throws InterruptedException {
+        CapturedPush captured = pushes.poll(PUSH_WAIT_SECONDS, TimeUnit.SECONDS);
+        Assertions.assertNotNull(captured,
+                () -> "expected a push within " + PUSH_WAIT_SECONDS + "s but the mock receiver saw nothing");
+        return captured;
+    }
+
+    protected JsonNode decodeSet(CapturedPush captured) throws JWSInputException, IOException {
+        JWSInput jws = new JWSInput(captured.body);
+        // Parse as raw JsonNode; the typed SsfSecurityEventToken pulls in a
+        // custom Jackson deserializer that needs a live Keycloak session.
+        return JsonSerialization.readValue(jws.getContent(), JsonNode.class);
+    }
+
+    protected Set<String> extractAudience(JsonNode set) {
+        JsonNode aud = set.get("aud");
+        Assertions.assertNotNull(aud, "SET should carry an aud claim");
+        if (aud.isArray()) {
+            Set<String> result = new java.util.LinkedHashSet<>();
+            aud.forEach(element -> result.add(element.asText()));
+            return result;
+        }
+        return Set.of(aud.asText());
+    }
+
+    protected StreamConfig createPushStream(String token, Set<String> eventsRequested) throws IOException {
+        StreamDeliveryConfig delivery = new StreamDeliveryConfig();
+        delivery.setMethod(Ssf.DELIVERY_METHOD_PUSH_URI);
+        delivery.setEndpointUrl(MOCK_PUSH_ENDPOINT);
+        delivery.setAuthorizationHeader(EXPECTED_PUSH_AUTH_HEADER);
+
+        StreamConfig streamConfig = new StreamConfig();
+        streamConfig.setDelivery(delivery);
+        streamConfig.setEventsRequested(eventsRequested);
+        streamConfig.setDescription("Push delivery integration test");
+
+        try (SimpleHttpResponse response = http.doPost(streamsEndpoint())
+                .json(streamConfig)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(201, response.getStatus(), "stream creation should succeed");
+            return response.asJson(StreamConfig.class);
+        }
+    }
+
+    protected String streamsEndpoint() {
+        return Ssf.streamsEndpoint(realm.getBaseUrl());
+    }
+
+    protected String streamsStatusEndpoint() {
+        return Ssf.streamStatusEndpoint(realm.getBaseUrl());
+    }
+
+    protected String obtainReceiverToken(String clientId, String secret) throws IOException {
+        String tokenUrl = realm.getBaseUrl() + "/protocol/openid-connect/token";
+        try (SimpleHttpResponse response = http.doPost(tokenUrl)
+                .authBasic(clientId, secret)
+                .param("grant_type", "client_credentials")
+                .param("scope", SsfScopes.SCOPE_SSF_MANAGE + " " + SsfScopes.SCOPE_SSF_READ)
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    () -> "CC grant for client '" + clientId + "' should succeed");
+            return response.asJson().get("access_token").asText();
+        }
+    }
+
+    protected ClientRepresentation findClientByClientId(String clientId) {
+        List<ClientRepresentation> clients = realm.admin().clients().findByClientId(clientId);
+        if (clients.isEmpty()) {
+            return null;
+        }
+        return clients.get(0);
+    }
+
+    protected void assignOptionalClientScopes(String clientId, String... scopeNames) {
+        ClientRepresentation client = findClientByClientId(clientId);
+        Assertions.assertNotNull(client, () -> "expected client '" + clientId + "' to exist");
+        ClientResource clientResource = realm.admin().clients().get(client.getId());
+
+        Set<String> alreadyAssigned = clientResource.getOptionalClientScopes().stream()
+                .map(ClientScopeRepresentation::getName)
+                .collect(Collectors.toSet());
+
+        List<ClientScopeRepresentation> allScopes = realm.admin().clientScopes().findAll();
+        for (String scopeName : scopeNames) {
+            if (alreadyAssigned.contains(scopeName)) {
+                continue;
+            }
+            ClientScopeRepresentation scope = allScopes.stream()
+                    .filter(s -> scopeName.equals(s.getName()))
+                    .findFirst()
+                    .orElse(null);
+            Assertions.assertNotNull(scope,
+                    () -> "expected realm scope '" + scopeName + "' to exist");
+            clientResource.addOptionalClientScope(scope.getId());
+        }
+    }
+
+    protected void bestEffortDeleteStream(String clientId) {
+        ClientRepresentation client = findClientByClientId(clientId);
+        if (client == null) {
+            return;
+        }
+        String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
+                + "/ssf/clients/" + client.getId() + "/stream";
+        try (SimpleHttpResponse ignored = http.doDelete(adminStreamUrl)
+                .auth(adminClient.tokenManager().getAccessTokenString())
+                .asResponse()) {
+            // 204 / 404 both fine
+        } catch (IOException e) {
+            // best-effort
+        }
+    }
+
+    /**
+     * Snapshot of the request the mock receiver saw from the transmitter.
+     */
+    protected static final class CapturedPush {
+        final String body;
+        final String authorizationHeader;
+        final String contentType;
+
+        CapturedPush(String body, String authorizationHeader, String contentType) {
+            this.body = body;
+            this.authorizationHeader = authorizationHeader;
+            this.contentType = contentType;
+        }
+    }
+
+    public static class PushDeliveryKeycloakServerConfig extends DefaultKeycloakServerConfig {
+        @Override
+        public KeycloakServerConfigBuilder configure(KeycloakServerConfigBuilder config) {
+            KeycloakServerConfigBuilder configured = super.configure(config);
+            config.features(Profile.Feature.SSF);
+            config.log().categoryLevel("org.keycloak.protocol.ssf", "DEBUG");
+            // Relax the min-verification-interval rate limiter so these
+            // tests aren't affected by it (they don't exercise /verify).
+            config.spiOption("ssf-transmitter", "default",
+                    SsfTransmitterConfig.CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS, "0");
+            return configured;
+        }
+    }
+
+    public static class PushDeliveryRealm implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.name("ssf-transmitter-push-delivery");
+
+            // Enable user events and register the SSF event listener so
+            // LOGOUT user events flow into the SSF transmitter pipeline.
+            realm.eventsEnabled(true);
+            realm.adminEventsEnabled(true);
+            realm.eventsListeners("jboss-logging", "ssf-events");
+
+            // Test user used by the password grant + logout flow in each
+            // test. Creating a password grant for this user implicitly
+            // creates a user session that the subsequent logout terminates.
+            UserConfigBuilder tester = realm.addUser(TEST_USER);
+            tester.email(TEST_USER + "@local.test");
+            tester.firstName("Theo");
+            tester.lastName("Tester");
+            tester.enabled(true);
+            tester.password(TEST_PASSWORD);
+
+            realm.addClient(RECEIVER_SSF)
+                    .secret(RECEIVER_SSF_SECRET)
+                    .serviceAccountsEnabled(true)
+                    .directAccessGrantsEnabled(false)
+                    .publicClient(false)
+                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true");
+
+            realm.addClient(RECEIVER_SSE_CAEP)
+                    .secret(RECEIVER_SSE_CAEP_SECRET)
+                    .serviceAccountsEnabled(true)
+                    .directAccessGrantsEnabled(false)
+                    .publicClient(false)
+                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                    .attribute(ClientStreamStore.SSF_PROFILE_KEY, SsfProfile.SSE_CAEP.name());
+
+            realm.addClient(RECEIVER_CRED_ONLY)
+                    .secret(RECEIVER_CRED_ONLY_SECRET)
+                    .serviceAccountsEnabled(true)
+                    .directAccessGrantsEnabled(false)
+                    .publicClient(false)
+                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true");
+
+            return realm;
+        }
+    }
+}
