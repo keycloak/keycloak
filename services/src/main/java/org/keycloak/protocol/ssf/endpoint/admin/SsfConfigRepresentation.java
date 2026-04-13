@@ -24,6 +24,8 @@ public class SsfConfigRepresentation {
 
     private Integer defaultPushEndpointSocketTimeoutMillis;
 
+    private String defaultUserSubjectFormat;
+
     public Set<String> getDefaultSupportedEvents() {
         return defaultSupportedEvents;
     }
@@ -54,5 +56,13 @@ public class SsfConfigRepresentation {
 
     public void setDefaultPushEndpointSocketTimeoutMillis(Integer defaultPushEndpointSocketTimeoutMillis) {
         this.defaultPushEndpointSocketTimeoutMillis = defaultPushEndpointSocketTimeoutMillis;
+    }
+
+    public String getDefaultUserSubjectFormat() {
+        return defaultUserSubjectFormat;
+    }
+
+    public void setDefaultUserSubjectFormat(String defaultUserSubjectFormat) {
+        this.defaultUserSubjectFormat = defaultUserSubjectFormat;
     }
 }

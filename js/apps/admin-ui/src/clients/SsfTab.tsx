@@ -58,10 +58,12 @@ type SsfConfig = {
   availableSupportedEvents?: string[];
   defaultPushEndpointConnectTimeoutMillis?: number;
   defaultPushEndpointSocketTimeoutMillis?: number;
+  defaultUserSubjectFormat?: string;
 };
 
 const FALLBACK_DEFAULT_PUSH_CONNECT_TIMEOUT_MILLIS = 1000;
 const FALLBACK_DEFAULT_PUSH_SOCKET_TIMEOUT_MILLIS = 1000;
+const FALLBACK_DEFAULT_USER_SUBJECT_FORMAT = "iss_sub";
 
 type SsfClientStream = {
   streamId?: string;
@@ -94,6 +96,8 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
     useState<number>(FALLBACK_DEFAULT_PUSH_CONNECT_TIMEOUT_MILLIS);
   const [defaultPushSocketTimeoutMillis, setDefaultPushSocketTimeoutMillis] =
     useState<number>(FALLBACK_DEFAULT_PUSH_SOCKET_TIMEOUT_MILLIS);
+  const [defaultUserSubjectFormat, setDefaultUserSubjectFormat] =
+    useState<string>(FALLBACK_DEFAULT_USER_SUBJECT_FORMAT);
   const [clientStream, setClientStream] = useState<SsfClientStream | null>(
     null,
   );
@@ -195,6 +199,25 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
         }
       }
 
+      if (
+        typeof config?.defaultUserSubjectFormat === "string" &&
+        config.defaultUserSubjectFormat.length > 0
+      ) {
+        setDefaultUserSubjectFormat(config.defaultUserSubjectFormat);
+        const userSubjectFormatField = convertAttributeNameToForm<FormFields>(
+          "attributes.ssf.userSubjectFormat",
+        );
+        const currentUserSubjectFormat = watch(userSubjectFormatField);
+        if (
+          currentUserSubjectFormat === undefined ||
+          currentUserSubjectFormat === ""
+        ) {
+          setValue(userSubjectFormatField, config.defaultUserSubjectFormat, {
+            shouldDirty: false,
+          });
+        }
+      }
+
       const events = config?.defaultSupportedEvents;
       if (!events || events.length === 0) {
         return;
@@ -263,6 +286,7 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
       "ssf.streamAudience",
       "ssf.supportedEvents",
       "ssf.profile",
+      "ssf.userSubjectFormat",
       "ssf.verificationTrigger",
       "ssf.verificationDelayMillis",
       "ssf.status",
@@ -377,6 +401,26 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
                     options={[
                       { key: "SSF_1_0", value: t("ssfProfile.SSF_1_0") },
                       { key: "SSE_CAEP", value: t("ssfProfile.SSE_CAEP") },
+                    ]}
+                  />
+                  <SelectControl
+                    name={convertAttributeNameToForm<FormFields>(
+                      "attributes.ssf.userSubjectFormat",
+                    )}
+                    label={t("ssfUserSubjectFormat")}
+                    labelIcon={t("ssfUserSubjectFormatHelp")}
+                    controller={{
+                      defaultValue: defaultUserSubjectFormat,
+                    }}
+                    options={[
+                      {
+                        key: "iss_sub",
+                        value: t("ssfUserSubjectFormat.iss_sub"),
+                      },
+                      {
+                        key: "email",
+                        value: t("ssfUserSubjectFormat.email"),
+                      },
                     ]}
                   />
                   <SelectControl

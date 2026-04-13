@@ -20,6 +20,7 @@ import org.keycloak.protocol.ssf.stream.StreamStatus;
 import org.keycloak.protocol.ssf.stream.StreamStatusValue;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.protocol.ssf.transmitter.event.SsfSignatureAlgorithms;
+import org.keycloak.protocol.ssf.transmitter.event.SsfUserSubjectFormats;
 import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
 import org.keycloak.protocol.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore;
@@ -90,6 +91,7 @@ public class StreamService {
         streamConfig.setMinVerificationInterval(Ssf.transmitter().getConfig().getMinVerificationIntervalSeconds());
 
         applySignatureAlgorithmFromClient(streamConfig, receiverClient);
+        applyUserSubjectFormatFromClient(streamConfig, receiverClient);
 
         streamConfig.setStatus(StreamStatusValue.enabled);
 
@@ -284,6 +286,7 @@ public class StreamService {
         existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
 
         applySignatureAlgorithmFromClient(existingStream, receiverClient);
+        applyUserSubjectFormatFromClient(existingStream, receiverClient);
 
         // Store the updated stream configuration
         streamStore.saveStream(existingStream);
@@ -318,6 +321,7 @@ public class StreamService {
         existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
 
         applySignatureAlgorithmFromClient(existingStream, receiverClient);
+        applyUserSubjectFormatFromClient(existingStream, receiverClient);
 
         // Store the updated stream configuration
         streamStore.saveStream(existingStream);
@@ -349,6 +353,32 @@ public class StreamService {
                     + " is not in the transmitter allow-list " + SsfSignatureAlgorithms.ALLOWED);
         }
         streamConfig.setSignatureAlgorithm(signatureAlgorithm);
+    }
+
+    /**
+     * Reads the receiver client's {@code ssf.userSubjectFormat} attribute,
+     * validates it against {@link SsfUserSubjectFormats#ALLOWED}, and copies
+     * it onto the given {@link StreamConfig} so the mapper can pick it up
+     * when building the user portion of an SSF SET. Rejects the stream
+     * create/update with {@link SsfException} when the attribute is set to
+     * an unsupported format, giving the receiver a clean 400 instead of a
+     * silent fallback at emission time.
+     *
+     * <p>A {@code null} or blank attribute is intentionally allowed — it
+     * means "use {@link SsfUserSubjectFormats#DEFAULT}", which matches the
+     * transmitter's behavior before this knob was added.
+     */
+    protected void applyUserSubjectFormatFromClient(StreamConfig streamConfig, ClientModel receiverClient) {
+        String userSubjectFormat = receiverClient.getAttribute(ClientStreamStore.SSF_STREAM_USER_SUBJECT_FORMAT_KEY);
+        if (userSubjectFormat == null || userSubjectFormat.isBlank()) {
+            streamConfig.setUserSubjectFormat(null);
+            return;
+        }
+        if (!SsfUserSubjectFormats.isAllowed(userSubjectFormat)) {
+            throw new SsfException("Invalid stream configuration: user subject format " + userSubjectFormat
+                    + " is not in the transmitter allow-list " + SsfUserSubjectFormats.ALLOWED);
+        }
+        streamConfig.setUserSubjectFormat(userSubjectFormat);
     }
 
     /**

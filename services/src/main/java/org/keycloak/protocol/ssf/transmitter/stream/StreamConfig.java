@@ -138,6 +138,20 @@ public class StreamConfig {
     @JsonIgnore
     protected String signatureAlgorithm;
 
+    /**
+     * Per-receiver selection of the subject identifier format the
+     * transmitter should use for the <em>user</em> part of SSF Security
+     * Event Tokens delivered to this stream. Populated from the receiver
+     * client's {@code ssf.userSubjectFormat} attribute when the stream is
+     * loaded; {@code null} means "fall through to the
+     * {@link org.keycloak.protocol.ssf.event.subjects.IssuerSubjectId#TYPE iss_sub}
+     * default". Validated against
+     * {@link org.keycloak.protocol.ssf.transmitter.event.SsfUserSubjectFormats#ALLOWED}
+     * at stream create/update time.
+     */
+    @JsonIgnore
+    protected String userSubjectFormat;
+
     public String getStreamId() {
         return streamId;
     }
@@ -297,5 +311,13 @@ public class StreamConfig {
 
     public void setSignatureAlgorithm(String signatureAlgorithm) {
         this.signatureAlgorithm = signatureAlgorithm;
+    }
+
+    public String getUserSubjectFormat() {
+        return userSubjectFormat;
+    }
+
+    public void setUserSubjectFormat(String userSubjectFormat) {
+        this.userSubjectFormat = userSubjectFormat;
     }
 }

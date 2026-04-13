@@ -2,6 +2,7 @@ package org.keycloak.protocol.ssf.transmitter;
 
 import org.keycloak.Config;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.protocol.ssf.event.subjects.IssuerSubjectId;
 
 /**
  * Immutable snapshot of the transmitter-wide SSF configuration that is sourced
@@ -21,6 +22,8 @@ public class SsfTransmitterConfig {
     public static final String CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS = "min-verification-interval-seconds";
 
     public static final String CONFIG_SIGNATURE_ALGORITHM = "signature-algorithm";
+
+    public static final String CONFIG_USER_SUBJECT_FORMAT = "user-subject-format";
 
     /**
      * Default connect timeout (in milliseconds) for delivering SSF events via
@@ -56,6 +59,14 @@ public class SsfTransmitterConfig {
      */
     public static final String DEFAULT_SIGNATURE_ALGORITHM = Algorithm.RS256;
 
+    /**
+     * Default subject identifier format the transmitter uses for the user
+     * portion of outgoing SSF Security Event Tokens. Defaults to
+     * {@link IssuerSubjectId#TYPE iss_sub} (realm issuer + user ID), matching
+     * the behavior the transmitter had before the knob was added.
+     */
+    public static final String DEFAULT_USER_SUBJECT_FORMAT = IssuerSubjectId.TYPE;
+
     private final int pushEndpointConnectTimeoutMillis;
 
     private final int pushEndpointSocketTimeoutMillis;
@@ -66,16 +77,20 @@ public class SsfTransmitterConfig {
 
     private final String signatureAlgorithm;
 
+    private final String userSubjectFormat;
+
     public SsfTransmitterConfig(int pushEndpointConnectTimeoutMillis,
                                 int pushEndpointSocketTimeoutMillis,
                                 int transmitterInitiatedVerificationDelayMillis,
                                 int minVerificationIntervalSeconds,
-                                String signatureAlgorithm) {
+                                String signatureAlgorithm,
+                                String userSubjectFormat) {
         this.pushEndpointConnectTimeoutMillis = pushEndpointConnectTimeoutMillis;
         this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
         this.transmitterInitiatedVerificationDelayMillis = transmitterInitiatedVerificationDelayMillis;
         this.minVerificationIntervalSeconds = minVerificationIntervalSeconds;
         this.signatureAlgorithm = signatureAlgorithm;
+        this.userSubjectFormat = userSubjectFormat;
     }
 
     /**
@@ -94,7 +109,9 @@ public class SsfTransmitterConfig {
                 config.getInt(CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS,
                         DEFAULT_MIN_VERIFICATION_INTERVAL_SECONDS),
                 config.get(CONFIG_SIGNATURE_ALGORITHM,
-                        DEFAULT_SIGNATURE_ALGORITHM));
+                        DEFAULT_SIGNATURE_ALGORITHM),
+                config.get(CONFIG_USER_SUBJECT_FORMAT,
+                        DEFAULT_USER_SUBJECT_FORMAT));
     }
 
     /**
@@ -108,7 +125,8 @@ public class SsfTransmitterConfig {
                 DEFAULT_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS,
                 DEFAULT_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS,
                 DEFAULT_MIN_VERIFICATION_INTERVAL_SECONDS,
-                DEFAULT_SIGNATURE_ALGORITHM);
+                DEFAULT_SIGNATURE_ALGORITHM,
+                DEFAULT_USER_SUBJECT_FORMAT);
     }
 
     /**
@@ -155,5 +173,16 @@ public class SsfTransmitterConfig {
      */
     public String getSignatureAlgorithm() {
         return signatureAlgorithm;
+    }
+
+    /**
+     * Default subject identifier format for the user portion of outgoing
+     * SSF Security Event Tokens when a receiver client does not configure
+     * its own {@code ssf.userSubjectFormat} attribute. Defaults to
+     * {@link IssuerSubjectId#TYPE iss_sub} unless overridden via the
+     * {@code user-subject-format} SPI property.
+     */
+    public String getUserSubjectFormat() {
+        return userSubjectFormat;
     }
 }

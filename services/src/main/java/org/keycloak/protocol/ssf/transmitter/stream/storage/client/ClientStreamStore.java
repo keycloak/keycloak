@@ -42,6 +42,7 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointConnectTimeoutMillis";
     public static final String SSF_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointSocketTimeoutMillis";
     public static final String SSF_STREAM_SIGNATURE_ALGORITHM_KEY = "ssf.signatureAlgorithm";
+    public static final String SSF_STREAM_USER_SUBJECT_FORMAT_KEY = "ssf.userSubjectFormat";
 
     public static final String SSF_STATUS_KEY = "ssf.status";
     public static final String SSF_STATUS_REASON_KEY = "ssf.status_reason";
@@ -229,6 +230,11 @@ public class ClientStreamStore implements SsfStreamStore {
             String signatureAlgorithm = client.getAttribute(SSF_STREAM_SIGNATURE_ALGORITHM_KEY);
             if (signatureAlgorithm != null && !signatureAlgorithm.isBlank()) {
                 streamConfig.setSignatureAlgorithm(signatureAlgorithm);
+            }
+
+            String userSubjectFormat = client.getAttribute(SSF_STREAM_USER_SUBJECT_FORMAT_KEY);
+            if (userSubjectFormat != null && !userSubjectFormat.isBlank()) {
+                streamConfig.setUserSubjectFormat(userSubjectFormat);
             }
 
             return streamConfig;
