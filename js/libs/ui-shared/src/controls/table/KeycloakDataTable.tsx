@@ -437,7 +437,6 @@ export function KeycloakDataTable<T>({
             data: value,
             disableSelection: disabledRow,
             disableActions: disabledRow,
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- id may exist at runtime on generic T
             selected: !!selected.find((v) => get(v, "id") === get(value, "id")),
             isOpen: isDetailColumnsEnabled(value) ? false : undefined,
             cells: renderCell(columns, value),
