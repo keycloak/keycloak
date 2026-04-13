@@ -261,8 +261,8 @@ public class ClientStreamStore implements SsfStreamStore {
         if (client.getAttribute(SSF_VERIFICATION_DELAY_MILLIS_KEY) != null) {
             return Integer.parseInt(client.getAttribute(SSF_VERIFICATION_DELAY_MILLIS_KEY));
         }
-        // Fallback to default value
-        return Ssf.TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS;
+        // Fallback to the transmitter-wide default configured via SPI
+        return Ssf.transmitter().getConfig().getTransmitterInitiatedVerificationDelayMillis();
     }
 
     protected SsfVerificationTrigger getVerificationTrigger(ClientModel client) {

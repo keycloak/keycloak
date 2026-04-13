@@ -20,7 +20,7 @@ import org.keycloak.protocol.ssf.stream.StreamStatus;
 import org.keycloak.protocol.ssf.stream.StreamStatusValue;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
-import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataService;
+import org.keycloak.protocol.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.utils.KeycloakSessionUtil;
@@ -36,9 +36,9 @@ public class StreamService {
 
     protected final SsfStreamStore streamStore;
 
-    protected final SsfTransmitterMetadataService transmitterService;
+    protected final TransmitterMetadataService transmitterService;
 
-    public StreamService(SsfStreamStore streamStore, SsfTransmitterMetadataService transmitterService) {
+    public StreamService(SsfStreamStore streamStore, TransmitterMetadataService transmitterService) {
         this.streamStore = streamStore;
         this.transmitterService = transmitterService;
     }

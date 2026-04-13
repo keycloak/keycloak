@@ -17,6 +17,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.receiver.resources.SsfReceiverAdminResource;
+import org.keycloak.protocol.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
@@ -60,14 +61,15 @@ public class SsfAdminResource {
         auth.realm().requireViewRealm();
 
         SsfTransmitterProvider transmitter = Ssf.transmitter();
+        SsfTransmitterConfig transmitterConfig = transmitter.getConfig();
 
         SsfConfigRepresentation config = new SsfConfigRepresentation();
         config.setDefaultSupportedEvents(transmitter.getDefaultSupportedEvents());
         config.setAvailableSupportedEvents(transmitter.getKnownEventAliases());
         config.setDefaultPushEndpointConnectTimeoutMillis(
-                Ssf.DEFAULT_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS);
+                transmitterConfig.getPushEndpointConnectTimeoutMillis());
         config.setDefaultPushEndpointSocketTimeoutMillis(
-                Ssf.DEFAULT_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS);
+                transmitterConfig.getPushEndpointSocketTimeoutMillis());
         return config;
     }
 

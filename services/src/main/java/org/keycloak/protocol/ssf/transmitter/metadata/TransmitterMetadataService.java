@@ -13,11 +13,11 @@ import org.keycloak.protocol.ssf.support.SsfUtil;
 /**
  * Service for managing the SSF transmitter functionality.
  */
-public class SsfTransmitterMetadataService {
+public class TransmitterMetadataService {
 
     private final KeycloakSession session;
 
-    public SsfTransmitterMetadataService(KeycloakSession session) {
+    public TransmitterMetadataService(KeycloakSession session) {
         this.session = session;
     }
 

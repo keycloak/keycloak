@@ -5,7 +5,7 @@ import java.util.Set;
 import org.keycloak.protocol.ssf.event.SsfEvent;
 import org.keycloak.protocol.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenMapper;
-import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataService;
+import org.keycloak.protocol.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamManagementResource;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamStatusResource;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamVerificationResource;
@@ -41,7 +41,7 @@ public interface SsfTransmitterProvider extends Provider {
      *
      * @return the transmitter metadata service
      */
-    SsfTransmitterMetadataService transmitterService();
+    TransmitterMetadataService transmitterService();
 
     /**
      * Returns the mapper that converts Keycloak events (user events, admin events)
@@ -129,4 +129,12 @@ public interface SsfTransmitterProvider extends Provider {
      * {@link org.keycloak.protocol.ssf.event.SsfEventProviderFactory}.
      */
     Set<String> getKnownEventAliases();
+
+    /**
+     * Returns the immutable transmitter-wide configuration snapshot that is
+     * sourced from the {@link SsfTransmitterProviderFactory} SPI configuration.
+     * Consumers should use this to access the effective default push endpoint
+     * timeouts and the transmitter-initiated verification delay.
+     */
+    SsfTransmitterConfig getConfig();
 }

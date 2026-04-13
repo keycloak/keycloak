@@ -8,6 +8,7 @@ import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.event.token.SecurityEventToken;
+import org.keycloak.protocol.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 
 import org.apache.http.client.config.RequestConfig;
@@ -93,13 +94,14 @@ public class PushDeliveryService {
 
     protected SimpleHttpRequest createSimpleHttp(String endpointUrl, String authorizationHeader, StreamConfig stream) {
 
+        SsfTransmitterConfig transmitterConfig = Ssf.transmitter().getConfig();
         Integer connectRequestTimeout = stream.getPushEndpointConnectTimeoutMillis();
         if (connectRequestTimeout == null) {
-            connectRequestTimeout = Ssf.DEFAULT_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS;
+            connectRequestTimeout = transmitterConfig.getPushEndpointConnectTimeoutMillis();
         }
         Integer socketTimeout = stream.getPushEndpointSocketTimeoutMillis();
         if (socketTimeout == null) {
-            socketTimeout = Ssf.DEFAULT_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS;
+            socketTimeout = transmitterConfig.getPushEndpointSocketTimeoutMillis();
         }
 
         RequestConfig requestConfig = RequestConfig.custom()

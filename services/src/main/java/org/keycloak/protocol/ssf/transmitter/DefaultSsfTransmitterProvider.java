@@ -10,7 +10,7 @@ import org.keycloak.protocol.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.protocol.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenMapper;
-import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataService;
+import org.keycloak.protocol.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamManagementResource;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamStatusResource;
 import org.keycloak.protocol.ssf.transmitter.resources.StreamVerificationResource;
@@ -32,18 +32,22 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     protected final SecurityEventTokenDispatcher securityEventTokenDispatcher;
 
-    protected final SsfTransmitterMetadataService transmitterService;
+    protected final TransmitterMetadataService transmitterService;
+
+    private final SsfTransmitterConfig transmitterConfig;
 
     public DefaultSsfTransmitterProvider(KeycloakSession session,
-                                         SsfTransmitterMetadataService transmitterService,
+                                         TransmitterMetadataService transmitterMetadataService,
                                          StreamVerificationService verificationService,
                                          SecurityEventTokenMapper securityEventTokenMapper,
-                                         SecurityEventTokenDispatcher securityEventTokenDispatcher) {
+                                         SecurityEventTokenDispatcher securityEventTokenDispatcher,
+                                         SsfTransmitterConfig transmitterConfig) {
         this.session = session;
-        this.transmitterService = transmitterService;
+        this.transmitterService = transmitterMetadataService;
         this.verificationService = verificationService;
         this.securityEventTokenMapper = securityEventTokenMapper;
         this.securityEventTokenDispatcher = securityEventTokenDispatcher;
+        this.transmitterConfig = transmitterConfig;
     }
 
     @Override
@@ -52,7 +56,7 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
     }
 
     @Override
-    public SsfTransmitterMetadataService transmitterService() {
+    public TransmitterMetadataService transmitterService() {
         return transmitterService;
     }
 
@@ -108,5 +112,10 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     protected SsfEventRegistry registry() {
         return Ssf.events().getRegistry();
+    }
+
+    @Override
+    public SsfTransmitterConfig getConfig() {
+        return transmitterConfig;
     }
 }
