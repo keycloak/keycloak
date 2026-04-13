@@ -35,11 +35,6 @@ public class Ssf {
      */
     public static final String SECEVENT_JWT_TYPE = "secevent+jwt";
 
-    /**
-     * An integer indicating the minimum amount of time in seconds that must pass in between verification requests. If an Event Receiver submits verification requests more frequently than this, the Event Transmitter MAY respond with a 429 status code.
-     */
-    public static final int DEFAULT_MIN_VERIFICATION_INTERVAL = 60;
-
     public static final String DELIVERY_METHOD_PUSH_URI = "urn:ietf:rfc:8935";
 
     public static final String DELIVERY_METHOD_RISC_PUSH_URI = "https://schemas.openid.net/secevent/risc/delivery-method/push";

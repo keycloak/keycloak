@@ -86,7 +86,7 @@ public class StreamService {
         streamConfig.setCreatedAt(now);
         streamConfig.setUpdatedAt(now);
 
-        streamConfig.setMinVerificationInterval(Ssf.DEFAULT_MIN_VERIFICATION_INTERVAL);
+        streamConfig.setMinVerificationInterval(Ssf.transmitter().getConfig().getMinVerificationIntervalSeconds());
 
         streamConfig.setStatus(StreamStatusValue.enabled);
 
