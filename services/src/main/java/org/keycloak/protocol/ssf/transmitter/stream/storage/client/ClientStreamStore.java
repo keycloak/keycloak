@@ -21,8 +21,8 @@ import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.protocol.ssf.transmitter.stream.SsfEventsConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.SsfVerificationTrigger;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
-import org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationConfig;
+import org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;
