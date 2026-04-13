@@ -18,6 +18,6 @@ public class MigrateTo26_6_0 extends RealmMigration {
 
     @Override
     public void migrateRealm(KeycloakSession session, RealmModel realm) {
-        DefaultAuthenticationFlows.addOrganizationBrowserFlowStep(realm, realm.getBrowserFlow());
+        DefaultAuthenticationFlows.addOrganizationBrowserFlowStep(realm, realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW));
     }
 }
