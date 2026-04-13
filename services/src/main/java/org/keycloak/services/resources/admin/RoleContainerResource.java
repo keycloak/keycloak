@@ -102,6 +102,15 @@ public class RoleContainerResource extends RoleResource {
         this.session = session;
     }
 
+    public RoleContainerResource(KeycloakSession session, UriInfo uriInfo, RealmModel realm,
+                                 AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+        this(session, uriInfo, realm, auth, null, adminEvent);
+    }
+
+    public void setRoleContainer(RoleContainerModel roleContainer) {
+        this.roleContainer = roleContainer;
+    }
+
     /**
      * Get all roles for the realm or client
      *

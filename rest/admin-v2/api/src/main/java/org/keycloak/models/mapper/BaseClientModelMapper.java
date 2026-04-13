@@ -46,6 +46,7 @@ public abstract class BaseClientModelMapper<T extends BaseClientRepresentation> 
             existingModel = createClientModel(rep);
         }
 
+        existingModel.setProtocol(rep.getProtocol());
         existingModel.setEnabled(Boolean.TRUE.equals(rep.getEnabled()));
         existingModel.setClientId(rep.getClientId());
         existingModel.setDescription(rep.getDescription());
