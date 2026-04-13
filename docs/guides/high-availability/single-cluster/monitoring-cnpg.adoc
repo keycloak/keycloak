@@ -1,6 +1,7 @@
-<#import "/templates/guide.adoc" as tmpl> <#import "/templates/links.adoc" as links>
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/links.adoc" as links>
 
-<@tmpl.guide title="Monitoring CloudNativePG Standbys" summary="Observing standby health and replication status in a CloudNativePG cluster" tileVisible="false" >
+<@tmpl.guide title="Monitoring CloudNativePG" summary="Observing standby health and replication status in a CloudNativePG cluster" tileVisible="false" >
 
 These instructions are intended for use with the setup described in the <@links.ha id="single-cluster-concepts"/> {section}.
 Use it together with the other building blocks outlined in the <@links.ha id="single-cluster-building-blocks"/> {section}.
@@ -15,9 +16,13 @@ Monitoring standby health helps detect replication issues early and ensures a sa
 == Prerequisites
 
 * A CloudNativePG cluster deployed according to steps described in the <@links.ha id="single-cluster-deploy-cnpg" /> {section}.
+
+To see the status on the command line:
 * The `kubectl` command-line utility.
 * The `kubectl cnpg` plugin.
 Please follow the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/kubectl-plugin[CloudNativePG documentation] for installation steps.
+
+To monitor the status via metrics and dashboards:
 * Prometheus and Grafana installed on the {kubernetes} cluster.
 Basic installation steps can be found in the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/quickstart[Quickstart section of the CloudNativePG documentation].
 
@@ -32,6 +37,7 @@ kubectl cnpg status -n cnpg-keycloak cnpg-keycloak
 ----
 +
 .Output:
+[options="nowrap"]
 [source,bash]
 ----
 Cluster Summary
@@ -106,7 +112,7 @@ Assuming Prometheus and Grafana are installed on the {kubernetes} cluster the fo
 . Enable collection of metrics by creating a PodMonitor resource:
 +
 .Command:
-[source,yaml,indent=0]
+[source,bash,indent=0]
 ----
 kubectl -n cnpg-keycloak apply -f - <<EOF
 apiVersion: monitoring.coreos.com/v1
@@ -194,7 +200,7 @@ kubectl -n cnpg-keycloak get events --sort-by=.lastTimestamp | tail -n 30
 kubectl -n cnpg-keycloak describe cluster cnpg-keycloak
 ----
 
-For possible troubleshooting scenarios refer to the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/troubleshooting[CloudNativePG documentation].
+For possible troubleshooting scenarios refer to the link:++https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/troubleshooting++[CloudNativePG documentation].
 
 == Next steps
 
