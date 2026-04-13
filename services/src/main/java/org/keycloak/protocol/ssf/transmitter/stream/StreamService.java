@@ -8,8 +8,6 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.jspecify.annotations.NonNull;
-
 import org.keycloak.common.util.Time;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.models.ClientModel;
@@ -70,23 +68,18 @@ public class StreamService {
 
         // set audience
         ClientModel receiverClient = session.getContext().getClient();
-        String receiverClientId = receiverClient.getClientId();
-        Set<String> audience = createAudience(receiverClient);
-
-        // TODO shall we really add the audience of the stream?
-        // String streamAudience = transmitterService.getTransmitterMetadata().getIssuer() + "/ssf/receivers/" + receiverClientId + "/" + streamConfig.getStreamId();
-        String streamAudience = receiverClientId + "/" + streamConfig.getStreamId();
-        audience.add(streamAudience);
+        Set<String> audience = createAudience(streamConfig, receiverClient);
         streamConfig.setAudience(audience);
 
         // Requested events
         Set<String> eventsRequested = streamConfig.getEventsRequested();
+        streamConfig.setEventsRequested(eventsRequested);
 
         // Compute delivered events based on requested events
-        streamConfig.setEventsDelivered(transmitterService.getEventsDelivered(streamConfig, eventsRequested));
-
+        SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, eventsRequested);
+        streamConfig.setEventsDelivered(eventsConfig.eventsDelivered());
         // Return supported events
-        streamConfig.setEventsSupported(transmitterService.getSupportedEvents());
+        streamConfig.setEventsSupported(eventsConfig.eventsSupported());
 
         // Set timestamps
         int now = Time.currentTime();
@@ -108,13 +101,14 @@ public class StreamService {
         return streamConfig;
     }
 
-    protected Set<String> createAudience(ClientModel receiverClient) {
+    protected Set<String> createAudience(StreamConfig streamConfig, ClientModel receiverClient) {
         Set<String> audience = new HashSet<>();
         String ssfClientAudience = receiverClient.getAttribute(ClientStreamStore.SSF_STREAM_AUDIENCE_KEY);
         if (ssfClientAudience != null) {
             audience.add(ssfClientAudience);
         } else {
-            audience.add(receiverClient.getClientId());
+            String streamAudience = receiverClient.getClientId() + "/" + streamConfig.getStreamId();
+            audience.add(streamAudience);
         }
         return audience;
     }
@@ -278,9 +272,10 @@ public class StreamService {
         existingStream.setEventsRequested(eventsRequested);
 
         // set events delivered
-        Set<String> eventsDelivered = new HashSet<>(eventsRequested);
-        eventsDelivered.retainAll(transmitterService.getSupportedEvents());
-        existingStream.setEventsDelivered(eventsDelivered);
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        ClientModel receiverClient = session.getContext().getClient();
+        SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, eventsRequested);
+        existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
 
 
         // Store the updated stream configuration
@@ -310,9 +305,10 @@ public class StreamService {
         existingStream.setEventsRequested(eventsRequested);
 
         // set events delivered
-        Set<String> eventsDelivered = new HashSet<>(eventsRequested);
-        eventsDelivered.retainAll(transmitterService.getSupportedEvents());
-        existingStream.setEventsDelivered(eventsDelivered);
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        ClientModel receiverClient = session.getContext().getClient();
+        SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, eventsRequested);
+        existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
 
 
         // Store the updated stream configuration

@@ -7,6 +7,9 @@ public class GenericSsfEvent extends SsfEvent {
 
     public GenericSsfEvent() {
         super(null);
+
+        // Generic events don't have an alias by default
+        setAlias(null);
     }
 
     @Override

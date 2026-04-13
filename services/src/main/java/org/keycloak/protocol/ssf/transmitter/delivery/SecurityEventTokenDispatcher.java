@@ -2,7 +2,7 @@ package org.keycloak.protocol.ssf.transmitter.delivery;
 
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.protocol.ssf.Ssf;
+import org.keycloak.protocol.ssf.SsfProfile;
 import org.keycloak.protocol.ssf.event.token.SecurityEventToken;
 import org.keycloak.protocol.ssf.event.token.SseCaepSecurityEventToken;
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
@@ -96,17 +96,22 @@ public class SecurityEventTokenDispatcher {
     }
 
     protected SecurityEventToken getNarrowedEventToken(SsfSecurityEventToken eventToken, StreamConfig stream) {
-        SecurityEventToken narrowedEventToken = eventToken;
-
-        if (Ssf.PROFILE_SSF_1_0.equals(stream.getProfile())) {
-            narrowedEventToken = narrowSsfEventToken(eventToken);
-        } else if (Ssf.PROFILE_SSE_CAEP.equals(stream.getProfile())) {
-            // if legacy CAEP SSE profile is requested convert the event to old format
-            // this is currently required for compatibility with apple business manager
-            narrowedEventToken = narrowCaepSseEventToken(eventToken);
+        // StreamConfig.getProfile() is an SsfProfile enum — comparing it against
+        // the String constants in Ssf (Ssf.PROFILE_SSF_1_0 etc.) always returned
+        // false, so neither branch ever fired and the SSE CAEP converter was
+        // silently skipped for Apple Business Manager. Compare the enum
+        // directly instead.
+        SsfProfile profile = stream.getProfile();
+        if (profile == null) {
+            profile = SsfProfile.SSF_1_0;
         }
 
-        return narrowedEventToken;
+        return switch (profile) {
+            case SSF_1_0 -> narrowSsfEventToken(eventToken);
+            // if legacy CAEP SSE profile is requested convert the event to old format
+            // this is currently required for compatibility with apple business manager
+            case SSE_CAEP -> narrowCaepSseEventToken(eventToken);
+        };
     }
 
     protected SecurityEventToken narrowSsfEventToken(SsfSecurityEventToken eventToken) {

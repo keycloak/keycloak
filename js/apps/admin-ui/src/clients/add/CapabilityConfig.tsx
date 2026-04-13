@@ -509,8 +509,8 @@ export const CapabilityConfig = ({
               name={convertAttributeNameToForm<FormFields>(
                 "attributes.ssf.enabled",
               )}
-              label={t("ssfReceiver")}
-              labelIcon={t("ssfReceiverHelp")}
+              label={t("ssfReceiverEnabled")}
+              labelIcon={t("ssfReceiverEnabledHelp")}
               stringify
             />
           )}

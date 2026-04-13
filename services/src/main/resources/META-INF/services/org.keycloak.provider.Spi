@@ -41,5 +41,6 @@ org.keycloak.protocol.oid4vc.issuance.keybinding.CNonceHandlerSpi
 org.keycloak.protocol.ssf.receiver.spi.SsfReceiverSpi
 org.keycloak.protocol.oidc.rar.AuthorizationDetailsProcessorSpi
 org.keycloak.protocol.ssf.transmitter.SsfTransmitterSpi
+org.keycloak.protocol.ssf.event.SsfEventSpi
 org.keycloak.protocol.oauth2.cimd.provider.ClientIdMetadataDocumentProviderSpi
 org.keycloak.protocol.oidc.token.TokenInterceptorSpi

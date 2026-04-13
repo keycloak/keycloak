@@ -1,20 +1,25 @@
 package org.keycloak.protocol.ssf.transmitter;
 
+import java.util.Set;
+
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.protocol.ssf.event.caep.CaepCredentialChange;
+import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.protocol.ssf.support.SsfUtil;
 import org.keycloak.protocol.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.protocol.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataService;
-import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
 
 public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProviderFactory {
+
+    protected Set<String> defaultSupportedEvents;
 
     @Override
     public String getId() {
@@ -23,22 +28,40 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     @Override
     public SsfTransmitterProvider create(KeycloakSession session) {
-        var transmitterService = new SsfTransmitterMetadataService(session);
-        var streamStore = new ClientStreamStore(session);
-        var streamService = new StreamService(streamStore, transmitterService);
-        var issuerUrl = SsfUtil.getIssuerUrl(session);
-        var mapper = new SecurityEventTokenMapper(issuerUrl);
-        var securityEventTokenEncoder = new SecurityEventTokenEncoder(session);
-        var pushDeliveryService = new PushDeliveryService(session);
-        var dispatcher = new SecurityEventTokenDispatcher(session, securityEventTokenEncoder, pushDeliveryService);
-        var verificationService = new StreamVerificationService(streamStore, mapper, dispatcher);
+        var mapper = new SecurityEventTokenMapper(SsfUtil.getIssuerUrl(session));
+        var dispatcher = new SecurityEventTokenDispatcher(session, new SecurityEventTokenEncoder(session), new PushDeliveryService(session));
+        var verificationService = new StreamVerificationService(new ClientStreamStore(session), mapper, dispatcher);
 
-        return new DefaultSsfTransmitterProvider(session, transmitterService, verificationService, mapper, dispatcher);
+        return new DefaultSsfTransmitterProvider(session, new SsfTransmitterMetadataService(session), verificationService, mapper, dispatcher);
     }
 
     @Override
     public void init(Config.Scope config) {
 
+        Set<String> defaultSupportedEvents;
+
+        defaultSupportedEvents = extractSupportedEvents(config);
+        if (defaultSupportedEvents == null) return;
+
+        this.defaultSupportedEvents = defaultSupportedEvents;
+    }
+
+    protected Set<String> extractSupportedEvents(Config.Scope config) {
+        String defaultSupportedEventsString = config.get("supported-events", "CaepCredentialChange, CaepSessionRevoked");
+
+        if (defaultSupportedEventsString == null || defaultSupportedEventsString.isBlank()) {
+            return getDefaultSupportedEvents();
+        }
+
+        return parseSupportedEvents(defaultSupportedEventsString);
+    }
+
+    protected Set<String> parseSupportedEvents(String supportedEventsString) {
+        return SsfUtil.parseEventTypeAliases(supportedEventsString);
+    }
+
+    protected Set<String> getDefaultSupportedEvents() {
+        return Set.of(CaepCredentialChange.class.getSimpleName(), CaepSessionRevoked.class.getSimpleName());
     }
 
     @Override

@@ -1,18 +1,24 @@
 package org.keycloak.protocol.ssf.transmitter.stream.storage.client;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.SsfProfile;
+import org.keycloak.protocol.ssf.event.SsfEventRegistry;
 import org.keycloak.protocol.ssf.stream.StreamStatus;
 import org.keycloak.protocol.ssf.stream.StreamStatusValue;
+import org.keycloak.protocol.ssf.support.SsfUtil;
+import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
+import org.keycloak.protocol.ssf.transmitter.stream.SsfEventsConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.SsfVerificationTrigger;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore;
@@ -32,15 +38,24 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_VERIFICATION_DELAY_MILLIS_KEY = "ssf.verificationDelayMillis";
     public static final String SSF_STREAM_CONFIG_KEY = "ssf.streamConfig";
     public static final String SSF_STREAM_AUDIENCE_KEY = "ssf.streamAudience";
+    public static final String SSF_STREAM_SUPPORTED_EVENTS_KEY = "ssf.supportedEvents";
     public static final String SSF_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointConnectTimeoutMillis";
     public static final String SSF_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointSocketTimeoutMillis";
 
     public static final String SSF_STATUS_KEY = "ssf.status";
     public static final String SSF_STATUS_REASON_KEY = "ssf.status_reason";
 
+    /**
+     * Attributes that describe a concrete, registered SSF stream for a
+     * receiver client. Deleting the stream clears exactly these attributes.
+     * receiver-level configuration survives a stream delete so the receiver can re-register
+     * a new stream with the same admin-configured defaults.
+     */
     public static final Set<String> SSF_STREAM_KEYS = Set.of(
-            SSF_ENABLED_KEY, SSF_PROFILE_KEY, SSF_STREAM_ID_KEY, SSF_VERIFICATION_TRIGGER_KEY,
-            SSF_VERIFICATION_DELAY_MILLIS_KEY, SSF_STREAM_CONFIG_KEY, SSF_STATUS_KEY, SSF_STATUS_REASON_KEY);
+            SSF_STREAM_ID_KEY,
+            SSF_STREAM_CONFIG_KEY,
+            SSF_STATUS_KEY,
+            SSF_STATUS_REASON_KEY);
 
     protected final KeycloakSession session;
 
@@ -157,6 +172,24 @@ public class ClientStreamStore implements SsfStreamStore {
         deleteStreamConfig(client, streamId);
     }
 
+    public StreamConfig getStreamForClient(ClientModel client) {
+        return extractStreamConfig(client);
+    }
+
+    /**
+     * Removes the SSF stream registration (and all associated attributes) from
+     * the given client. Returns {@code true} if a stream existed and was
+     * removed, {@code false} if no stream was registered for the client.
+     */
+    public boolean deleteStreamForClient(ClientModel client) {
+        StreamConfig streamConfig = extractStreamConfig(client);
+        if (streamConfig == null) {
+            return false;
+        }
+        SSF_STREAM_KEYS.forEach(client::removeAttribute);
+        return true;
+    }
+
     protected StreamConfig extractStreamConfig(ClientModel client) {
         if (client == null) {
             return null;
@@ -234,5 +267,49 @@ public class ClientStreamStore implements SsfStreamStore {
 
     protected SsfVerificationTrigger getVerificationTrigger(ClientModel client) {
         return client.getAttribute(SSF_VERIFICATION_TRIGGER_KEY) != null ? SsfVerificationTrigger.valueOf(client.getAttribute(SSF_VERIFICATION_TRIGGER_KEY)) : null;
+    }
+
+    @Override
+    public SsfEventsConfig getEventsConfig(ClientModel client, Set<String> eventsRequested) {
+
+        Set<String> supportedEvents = getSupportedEvents(session, client);
+
+        // TODO compute events delivered for current realm
+        Set<String> eventsDelivered = new HashSet<>(eventsRequested);
+        eventsDelivered.retainAll(supportedEvents);
+
+        return new SsfEventsConfig(supportedEvents, eventsRequested, eventsDelivered);
+    }
+
+    protected Set<String> getSupportedEvents(KeycloakSession session, ClientModel client) {
+
+        SsfTransmitterProvider transmitter = Ssf.transmitter();
+        SsfEventRegistry registry = Ssf.events().getRegistry();
+
+        String supportedEventsAttribute = client.getAttribute(SSF_STREAM_SUPPORTED_EVENTS_KEY);
+        if (supportedEventsAttribute == null) {
+
+            return transmitter.getDefaultSupportedEvents();
+        }
+
+        // The admin UI stores event aliases (e.g. "CaepCredentialChange") in the
+        // client attribute; the SSF stream configuration however MUST carry the
+        // full event type URIs as defined by the SSF/CAEP/RISC specs. Resolve
+        // each candidate (alias or URI) to its canonical event type URI and
+        // drop any candidates the transmitter does not know about.
+        Set<String> supportedEvents = new TreeSet<>();
+        Set<String> supportedEventCandidates = SsfUtil.parseEventTypeAliases(supportedEventsAttribute);
+        for (String supportedEventCandidate : supportedEventCandidates) {
+
+            String eventType = registry.resolveEventTypeForAlias(supportedEventCandidate);
+            if (eventType == null && registry.getEventClassByType(supportedEventCandidate).isPresent()) {
+                eventType = supportedEventCandidate;
+            }
+            if (eventType == null) {
+                continue;
+            }
+            supportedEvents.add(eventType);
+        }
+        return supportedEvents;
     }
 }

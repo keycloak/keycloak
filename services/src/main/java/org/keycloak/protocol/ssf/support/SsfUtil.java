@@ -4,6 +4,9 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
+import java.util.Set;
+import java.util.stream.Stream;
+
 public class SsfUtil {
 
     public static String getIssuerUrl(KeycloakSession session) {
@@ -28,5 +31,9 @@ public class SsfUtil {
             baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
         }
         return baseUrl;
+    }
+
+    public static Set<String> parseEventTypeAliases(String eventAliases) {
+        return Set.copyOf(Stream.of(eventAliases.split(",")).map(String::trim).toList());
     }
 }
