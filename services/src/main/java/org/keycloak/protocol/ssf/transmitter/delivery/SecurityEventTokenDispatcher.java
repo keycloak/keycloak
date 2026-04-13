@@ -8,8 +8,10 @@ import org.keycloak.protocol.ssf.event.token.SseCaepSecurityEventToken;
 import org.keycloak.protocol.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.protocol.ssf.stream.DeliveryMethod;
 import org.keycloak.protocol.ssf.stream.StreamStatusValue;
+import org.keycloak.protocol.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.protocol.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenEncoder;
+import org.keycloak.protocol.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 
 import org.jboss.logging.Logger;
@@ -21,13 +23,16 @@ public class SecurityEventTokenDispatcher {
     private final KeycloakSession session;
     private final SecurityEventTokenEncoder securityEventTokenEncoder;
     private final PushDeliveryService pushDeliveryService;
+    private final SsfTransmitterConfig transmitterConfig;
 
     public SecurityEventTokenDispatcher(KeycloakSession session,
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
-                                        PushDeliveryService pushDeliveryService) {
+                                        PushDeliveryService pushDeliveryService,
+                                        SsfTransmitterConfig transmitterConfig) {
         this.session = session;
         this.securityEventTokenEncoder = securityEventTokenEncoder;
         this.pushDeliveryService = pushDeliveryService;
+        this.transmitterConfig = transmitterConfig;
     }
 
     /**
@@ -74,7 +79,8 @@ public class SecurityEventTokenDispatcher {
                 try {
                     SecurityEventToken narrowedEventToken = getNarrowedEventToken(eventToken, stream);
 
-                    String encodedEvent = securityEventTokenEncoder.encode(narrowedEventToken);
+                    String signatureAlgorithm = SsfSignatureAlgorithms.resolveForStream(stream, transmitterConfig);
+                    String encodedEvent = securityEventTokenEncoder.encode(narrowedEventToken, signatureAlgorithm);
 
                     deliverEvent(stream, narrowedEventToken, encodedEvent);
                 } catch (Exception e) {

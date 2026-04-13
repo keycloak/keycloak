@@ -45,12 +45,14 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     @Override
     public SsfTransmitterProvider create(KeycloakSession session) {
-        SsfTransmitterConfig effectiveTransmitterConfig = getTransmitterConfig();
+        var transmitterConfig = getTransmitterConfig();
         var mapper = new SecurityEventTokenMapper(SsfUtil.getIssuerUrl(session));
-        var dispatcher = new SecurityEventTokenDispatcher(session, new SecurityEventTokenEncoder(session), new PushDeliveryService(session, effectiveTransmitterConfig));
+        var encoder = new SecurityEventTokenEncoder(session);
+        var pushDelivery = new PushDeliveryService(session, transmitterConfig);
+        var dispatcher = new SecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig);
         var verificationService = new StreamVerificationService(new ClientStreamStore(session), mapper, dispatcher);
 
-        return new DefaultSsfTransmitterProvider(session, new TransmitterMetadataService(session), verificationService, mapper, dispatcher, effectiveTransmitterConfig, configuredDefaultSupportedEventAliases);
+        return new DefaultSsfTransmitterProvider(session, new TransmitterMetadataService(session), verificationService, mapper, dispatcher, transmitterConfig, configuredDefaultSupportedEventAliases);
     }
 
     @Override
@@ -100,6 +102,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .name(CONFIG_SUPPORTED_EVENTS)
                 .type("string")
                 .helpText("Comma-separated list of event aliases or full event type URIs that the transmitter advertises as the default supported event set for receiver clients that do not configure their own ssf.supportedEvents attribute. When unset, every event type registered via SsfEventProviderFactory is advertised.")
+                .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_SIGNATURE_ALGORITHM)
+                .type("string")
+                .helpText("Default JWS signature algorithm used to sign outgoing SSF Security Event Tokens when a receiver client does not configure its own ssf.signatureAlgorithm attribute. Defaults to RS256 per the CAEP interoperability profile 1.0 §2.6.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_SIGNATURE_ALGORITHM)
                 .add()
                 .build();
     }

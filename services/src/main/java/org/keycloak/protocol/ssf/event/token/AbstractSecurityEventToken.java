@@ -35,8 +35,19 @@ public class AbstractSecurityEventToken implements SecurityEventToken {
 
     @Override
     public TokenCategory getCategory() {
-        // This MUST be ACCESS to select the proper Key Material for signing Security Event Tokens
-        return TokenCategory.ACCESS;
+        // SSF SETs are server-produced and never issued to a client the way
+        // OIDC access/id tokens are, so no OIDC-oriented TokenCategory
+        // applies cleanly. The category returned here is NOT consulted by
+        // the SSF signing path: SecurityEventTokenDispatcher resolves the
+        // JWS signature algorithm via SsfSignatureAlgorithms#resolveForStream
+        // (stream override → transmitter SPI default → hardcoded RS256) and
+        // passes it straight to SecurityEventTokenEncoder. Returning
+        // INTERNAL here is the neutral fallback that satisfies the
+        // org.keycloak.Token contract; if a future caller accidentally
+        // routes a SET through session.tokens() helpers, they'll pick up
+        // the internal-token signer instead of silently inheriting a
+        // receiver client's OIDC access-token alg.
+        return TokenCategory.INTERNAL;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.keycloak.protocol.ssf.receiver.event.parser;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.KeyWrapper;
@@ -73,6 +74,19 @@ public class DefaultSsfSecurityEventTokenParser implements SsfSecurityEventToken
 
             String kid = header.getKeyId();
             String alg = header.getRawAlgorithm();
+
+            // Gate on the receiver's allow-list BEFORE any key lookup or
+            // signer construction. Rejects the classic JWS alg-confusion
+            // surface where a compromised transmitter could downgrade or
+            // swap the signing algorithm, and avoids hitting the JWKS
+            // loader with a disallowed alg. Defaults to RS256 when the
+            // receiver config does not explicitly override it, per CAEP
+            // interoperability profile 1.0 §2.6.
+            Set<String> expectedAlgorithms = receiver.getConfig().getExpectedSignatureAlgorithms();
+            if (alg == null || !expectedAlgorithms.contains(alg)) {
+                throw new SecurityEventTokenParsingException(
+                        "SET signed with disallowed alg=" + alg + " (expected one of " + expectedAlgorithms + ")");
+            }
 
             KeyWrapper publicKey = getKeyWrapper(receiver, kid, alg);
 

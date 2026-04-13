@@ -19,6 +19,7 @@ import org.keycloak.protocol.ssf.SsfException;
 import org.keycloak.protocol.ssf.stream.StreamStatus;
 import org.keycloak.protocol.ssf.stream.StreamStatusValue;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterProvider;
+import org.keycloak.protocol.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadata;
 import org.keycloak.protocol.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.SsfStreamStore;
@@ -87,6 +88,8 @@ public class StreamService {
         streamConfig.setUpdatedAt(now);
 
         streamConfig.setMinVerificationInterval(Ssf.transmitter().getConfig().getMinVerificationIntervalSeconds());
+
+        applySignatureAlgorithmFromClient(streamConfig, receiverClient);
 
         streamConfig.setStatus(StreamStatusValue.enabled);
 
@@ -280,6 +283,7 @@ public class StreamService {
         SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, eventsRequested);
         existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
 
+        applySignatureAlgorithmFromClient(existingStream, receiverClient);
 
         // Store the updated stream configuration
         streamStore.saveStream(existingStream);
@@ -313,11 +317,38 @@ public class StreamService {
         SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, eventsRequested);
         existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
 
+        applySignatureAlgorithmFromClient(existingStream, receiverClient);
 
         // Store the updated stream configuration
         streamStore.saveStream(existingStream);
 
         return existingStream;
+    }
+
+    /**
+     * Reads the receiver client's {@code ssf.signatureAlgorithm} attribute,
+     * validates it against {@link SsfSignatureAlgorithms#ALLOWED}, and
+     * copies it onto the given {@link StreamConfig} so the dispatcher can
+     * pick it up at delivery time. Rejects the stream create/update with
+     * {@link SsfException} when the attribute is set to a value the
+     * transmitter does not support, giving the receiver a clean 400
+     * instead of a silent drop later during SET signing.
+     *
+     * <p>A {@code null} or blank attribute is intentionally allowed — it
+     * means "use the transmitter-wide default", which the dispatcher
+     * resolves via {@link SsfSignatureAlgorithms#resolveForStream}.
+     */
+    protected void applySignatureAlgorithmFromClient(StreamConfig streamConfig, ClientModel receiverClient) {
+        String signatureAlgorithm = receiverClient.getAttribute(ClientStreamStore.SSF_STREAM_SIGNATURE_ALGORITHM_KEY);
+        if (signatureAlgorithm == null || signatureAlgorithm.isBlank()) {
+            streamConfig.setSignatureAlgorithm(null);
+            return;
+        }
+        if (!SsfSignatureAlgorithms.isAllowed(signatureAlgorithm)) {
+            throw new SsfException("Invalid stream configuration: signature algorithm " + signatureAlgorithm
+                    + " is not in the transmitter allow-list " + SsfSignatureAlgorithms.ALLOWED);
+        }
+        streamConfig.setSignatureAlgorithm(signatureAlgorithm);
     }
 
     /**

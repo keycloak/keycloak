@@ -179,6 +179,12 @@ public class SsfReceiverTests {
         config.put("transmitterToken", "dummy-transmitter-token");
         config.put("transmitterTokenType", "ACCESS_TOKEN");
         config.put("pushAuthorizationHeader", "expected-push-auth-header");
+        // The mock transmitter in this test signs SETs with an ES256 key
+        // (see keyWrapper setup in @BeforeEach). The receiver's JWS alg
+        // allow-list defaults to {RS256} per CAEP interop profile §2.6, so
+        // we widen it here to accept the ES256 signatures produced by the
+        // mock.
+        config.put("expectedSignatureAlgorithms", "ES256");
         ssfReceiverRegistration.setConfig(config);
         return ssfReceiverRegistration;
     }
@@ -373,14 +379,6 @@ public class SsfReceiverTests {
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
 
             realm.name("ssf-receiver-test");
-
-            // How to configure default client scopes?
-
-            // client used to call into the receiver push endpoint
-//            ClientConfigBuilder ssfClient = realm.addClient("ssf-transmitter-client");
-//            ssfClient.clientId("ssf-client");
-//            ssfClient.secret("secret");
-//            ssfClient.serviceAccountsEnabled(true);
 
             UserConfigBuilder tester = realm.addUser("tester");
             tester.email("tester@local.test");
