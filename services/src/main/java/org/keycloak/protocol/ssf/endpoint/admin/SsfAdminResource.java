@@ -64,8 +64,13 @@ public class SsfAdminResource {
         SsfTransmitterConfig transmitterConfig = transmitter.getConfig();
 
         SsfConfigRepresentation config = new SsfConfigRepresentation();
-        config.setDefaultSupportedEvents(transmitter.getDefaultSupportedEvents());
-        config.setAvailableSupportedEvents(transmitter.getKnownEventAliases());
+        // Both fields are exposed as aliases so the admin UI can render a
+        // human-readable selection list and pre-select the defaults against
+        // the same option values. Both are filtered to events the transmitter
+        // can actually emit — events contributed purely for inbound parsing
+        // on the receiver side are intentionally excluded.
+        config.setDefaultSupportedEvents(toEventAliases(transmitter, transmitter.getDefaultSupportedEvents()));
+        config.setAvailableSupportedEvents(transmitter.getEmittableEventAliases());
         config.setDefaultPushEndpointConnectTimeoutMillis(
                 transmitterConfig.getPushEndpointConnectTimeoutMillis());
         config.setDefaultPushEndpointSocketTimeoutMillis(

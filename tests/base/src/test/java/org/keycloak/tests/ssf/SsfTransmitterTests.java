@@ -116,21 +116,20 @@ public class SsfTransmitterTests {
 
             SsfConfigRepresentation config = response.asJson(SsfConfigRepresentation.class);
 
-            // defaultSupportedEvents is returned as full event type URIs so that
-            // stream configurations and SETs use the canonical identifiers.
+            // Both defaultSupportedEvents and availableSupportedEvents are returned
+            // as event aliases so the admin UI can render them directly and
+            // pre-select the defaults against the same option values.
             Assertions.assertNotNull(config.getDefaultSupportedEvents(),
                     "defaultSupportedEvents should be populated");
             Assertions.assertFalse(config.getDefaultSupportedEvents().isEmpty(),
                     "defaultSupportedEvents should contain at least one event");
             Assertions.assertTrue(
-                    config.getDefaultSupportedEvents().contains(CaepCredentialChange.TYPE),
-                    "defaultSupportedEvents should include the CAEP credential-change event type URI");
+                    config.getDefaultSupportedEvents().contains(CaepCredentialChange.class.getSimpleName()),
+                    "defaultSupportedEvents should include the CaepCredentialChange alias");
             Assertions.assertTrue(
-                    config.getDefaultSupportedEvents().contains(CaepSessionRevoked.TYPE),
-                    "defaultSupportedEvents should include the CAEP session-revoked event type URI");
+                    config.getDefaultSupportedEvents().contains(CaepSessionRevoked.class.getSimpleName()),
+                    "defaultSupportedEvents should include the CaepSessionRevoked alias");
 
-            // availableSupportedEvents is returned as aliases so the admin UI can
-            // render a human-readable selection list.
             Assertions.assertNotNull(config.getAvailableSupportedEvents(),
                     "availableSupportedEvents should be populated");
             Assertions.assertTrue(

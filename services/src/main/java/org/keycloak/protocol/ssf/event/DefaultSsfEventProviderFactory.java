@@ -69,6 +69,16 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory {
             new RiscRecoveryActivated(),
             new RiscRecoveryInformationChanged());
 
+    /**
+     * Subset of {@link #STANDARD_EVENTS} that {@code SecurityEventTokenMapper}
+     * actually produces from Keycloak events. Every other built-in event in
+     * the list is contributed to the registry only so that the receiver-side
+     * parser can decode incoming SETs of that type.
+     */
+    public static final Set<String> EMITTABLE_EVENT_TYPES = Set.of(
+            CaepCredentialChange.TYPE,
+            CaepSessionRevoked.TYPE);
+
     private volatile SsfEventRegistry registry;
 
     @Override
@@ -79,6 +89,11 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory {
     @Override
     public Set<SsfEvent> getContributedEvents() {
         return new LinkedHashSet<>(STANDARD_EVENTS);
+    }
+
+    @Override
+    public Set<String> getEmittableEventTypes() {
+        return EMITTABLE_EVENT_TYPES;
     }
 
     @Override

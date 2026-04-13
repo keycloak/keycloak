@@ -3,6 +3,7 @@ package org.keycloak.protocol.ssf.event;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -25,15 +26,19 @@ public final class SsfEventRegistry {
 
     private final Map<String, String> eventTypeByAlias;
 
+    private final Set<String> emittableEventTypes;
+
     SsfEventRegistry(
             Map<String, Class<? extends SsfEvent>> classByEventType,
             Map<String, Class<? extends SsfEvent>> classByAlias,
             Map<String, String> aliasByEventType,
-            Map<String, String> eventTypeByAlias) {
+            Map<String, String> eventTypeByAlias,
+            Set<String> emittableEventTypes) {
         this.classByEventType = Collections.unmodifiableMap(classByEventType);
         this.classByAlias = Collections.unmodifiableMap(classByAlias);
         this.aliasByEventType = Collections.unmodifiableMap(aliasByEventType);
         this.eventTypeByAlias = Collections.unmodifiableMap(eventTypeByAlias);
+        this.emittableEventTypes = Collections.unmodifiableSet(emittableEventTypes);
     }
 
     /**
@@ -46,6 +51,7 @@ public final class SsfEventRegistry {
         Map<String, Class<? extends SsfEvent>> classByAlias = new HashMap<>();
         Map<String, String> aliasByEventType = new HashMap<>();
         Map<String, String> eventTypeByAlias = new HashMap<>();
+        Set<String> emittableEventTypes = new LinkedHashSet<>();
 
         for (SsfEventProviderFactory factory : factories) {
             for (SsfEvent event : factory.getContributedEvents()) {
@@ -58,9 +64,10 @@ public final class SsfEventRegistry {
                 aliasByEventType.put(eventType, alias);
                 eventTypeByAlias.put(alias, eventType);
             }
+            emittableEventTypes.addAll(factory.getEmittableEventTypes());
         }
 
-        return new SsfEventRegistry(classByEventType, classByAlias, aliasByEventType, eventTypeByAlias);
+        return new SsfEventRegistry(classByEventType, classByAlias, aliasByEventType, eventTypeByAlias, emittableEventTypes);
     }
 
     /**
@@ -111,5 +118,18 @@ public final class SsfEventRegistry {
      */
     public Set<String> getKnownEventTypes() {
         return Collections.unmodifiableSet(classByEventType.keySet());
+    }
+
+    /**
+     * Returns the set of event type URIs that the transmitter can
+     * actually emit, as declared by every registered
+     * {@link SsfEventProviderFactory#getEmittableEventTypes()}. This is
+     * the honest "default supported events" set advertised to receivers
+     * that do not configure their own {@code ssf.supportedEvents}
+     * attribute — it excludes events contributed to the registry purely
+     * for inbound parsing on the receiver side.
+     */
+    public Set<String> getEmittableEventTypes() {
+        return emittableEventTypes;
     }
 }

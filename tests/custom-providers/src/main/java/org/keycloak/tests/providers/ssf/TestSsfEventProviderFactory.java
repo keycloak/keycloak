@@ -41,6 +41,17 @@ public class TestSsfEventProviderFactory implements SsfEventProviderFactory {
     }
 
     @Override
+    public Set<String> getEmittableEventTypes() {
+        // Declare the custom event as "transmitter-emittable" so it is
+        // picked up by DefaultSsfTransmitterProvider.getDefaultSupportedEvents()
+        // when the supported-events SPI property is unset. A real extension
+        // would also wire up a Keycloak event → TestSsfEvent mapping path;
+        // here we just need the registry declaration for the tests that
+        // exercise the "default supported events" advertisement.
+        return Set.of(TestSsfEvent.TYPE);
+    }
+
+    @Override
     public SsfEventProvider create(KeycloakSession session) {
         return new DefaultSsfEventProvider(registry);
     }
