@@ -47,15 +47,27 @@ public class Ssf {
     }
 
     public static SsfReceiverProvider receiver() {
-        return getKeycloakSession().getProvider(SsfReceiverProvider.class);
+        var session = getKeycloakSession();
+        if (session == null) {
+            return null;
+        }
+        return session.getProvider(SsfReceiverProvider.class);
     }
 
     public static SsfTransmitterProvider transmitter() {
-        return getKeycloakSession().getProvider(SsfTransmitterProvider.class);
+        var session = getKeycloakSession();
+        if (session == null) {
+            return null;
+        }
+        return session.getProvider(SsfTransmitterProvider.class);
     }
 
     public static SsfEventProvider events() {
-        return getKeycloakSession().getProvider(SsfEventProvider.class);
+        var session = getKeycloakSession();
+        if (session == null) {
+            return null;
+        }
+        return session.getProvider(SsfEventProvider.class);
     }
 
     public static String getSsfTransmitterBasePath(String issuerUrl) {

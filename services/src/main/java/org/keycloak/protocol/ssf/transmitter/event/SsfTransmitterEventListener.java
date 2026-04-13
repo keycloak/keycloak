@@ -56,7 +56,7 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
      * @return
      */
     public boolean isSupportedEvent(Event event, StreamConfig stream) {
-        // todo read supported events from stream config
+
         return switch (event.getType()) {
             case LOGOUT, UPDATE_CREDENTIAL -> true;
             default -> false;
