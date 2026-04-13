@@ -126,6 +126,18 @@ public class StreamConfig {
     @JsonIgnore
     protected Integer pushEndpointSocketTimeoutMillis;
 
+    /**
+     * Per-receiver override of the JWS signature algorithm used to sign
+     * SSF Security Event Tokens delivered to this stream. Populated from
+     * the receiver client's {@code ssf.signatureAlgorithm} attribute when
+     * the stream is loaded; {@code null} means "fall through to the
+     * transmitter-wide default from {@link org.keycloak.protocol.ssf.transmitter.SsfTransmitterConfig}".
+     * Validated against {@link org.keycloak.protocol.ssf.transmitter.event.SsfSignatureAlgorithms#ALLOWED}
+     * at stream create/update time.
+     */
+    @JsonIgnore
+    protected String signatureAlgorithm;
+
     public String getStreamId() {
         return streamId;
     }
@@ -277,5 +289,13 @@ public class StreamConfig {
 
     public void setPushEndpointSocketTimeoutMillis(Integer pushEndpointSocketTimeoutMillis) {
         this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
+    }
+
+    public String getSignatureAlgorithm() {
+        return signatureAlgorithm;
+    }
+
+    public void setSignatureAlgorithm(String signatureAlgorithm) {
+        this.signatureAlgorithm = signatureAlgorithm;
     }
 }

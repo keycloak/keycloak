@@ -1,9 +1,20 @@
 package org.keycloak.protocol.ssf.event.subjects;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 /**
  * See: https://openid.net/specs/openid-sse-framework-1_0.html#complex-subjects
+ *
+ * <p>Every nested field is typed as the abstract {@link SubjectId} and
+ * therefore annotated with {@link JsonDeserialize} using
+ * {@link SubjectIdJsonDeserializer}, which dispatches on the {@code format}
+ * discriminator. Without this, Jackson's default bean deserialization tries
+ * to instantiate the abstract class and fails — a path hit as soon as a
+ * receiver parses a real transmitter-emitted SET that carries a complex
+ * subject (e.g. {@code ComplexSubjectId{user: IssuerSubjectId, session:
+ * OpaqueSubjectId}} on a {@link org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked}
+ * event).
  */
 public class ComplexSubjectId extends SubjectId {
 
@@ -13,42 +24,49 @@ public class ComplexSubjectId extends SubjectId {
      * The user involved with the event
      */
     @JsonProperty("user")
+    @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
     protected SubjectId user;
 
     /**
      * The device involved with the event
      */
     @JsonProperty("device")
+    @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
     protected SubjectId device;
 
     /**
      * The session involved with the event
      */
     @JsonProperty("session")
+    @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
     protected SubjectId session;
 
     /**
      * The application involved with the event
      */
     @JsonProperty("application")
+    @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
     protected SubjectId application;
 
     /**
      * The tenant involved with the event
      */
     @JsonProperty("tenant")
+    @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
     protected SubjectId tenant;
 
     /**
      * The org_unit involved with the event
      */
     @JsonProperty("org_unit")
+    @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
     protected SubjectId orgUnit;
 
     /**
      * The group involved with the event
      */
     @JsonProperty("group")
+    @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
     protected SubjectId group;
 
     public ComplexSubjectId() {
