@@ -1,5 +1,7 @@
 package org.keycloak.protocol.ssf.transmitter;
 
+import java.util.Set;
+
 import org.keycloak.protocol.ssf.event.SsfEvent;
 import org.keycloak.protocol.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenMapper;
@@ -10,8 +12,6 @@ import org.keycloak.protocol.ssf.transmitter.resources.StreamVerificationResourc
 import org.keycloak.protocol.ssf.transmitter.stream.StreamService;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.provider.Provider;
-
-import java.util.Set;
 
 /**
  * Provider for the SSF (Shared Signals Framework) Transmitter.

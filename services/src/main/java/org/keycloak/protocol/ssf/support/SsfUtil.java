@@ -1,11 +1,11 @@
 package org.keycloak.protocol.ssf.support;
 
+import java.util.Set;
+import java.util.stream.Stream;
+
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-
-import java.util.Set;
-import java.util.stream.Stream;
 
 public class SsfUtil {
 

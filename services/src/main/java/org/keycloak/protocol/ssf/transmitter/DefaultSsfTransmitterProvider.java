@@ -1,5 +1,7 @@
 package org.keycloak.protocol.ssf.transmitter;
 
+import java.util.Set;
+
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.event.SsfEvent;
@@ -17,8 +19,6 @@ import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
 
 import org.jboss.logging.Logger;
-
-import java.util.Set;
 
 public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 

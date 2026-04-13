@@ -1,5 +1,8 @@
 package org.keycloak.protocol.ssf.endpoint.admin;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
@@ -8,9 +11,6 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
