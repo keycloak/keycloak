@@ -65,7 +65,6 @@ class KcAdmV2CommandBuilder {
     private static CommandLine buildLeafCommand(CommandDescriptor cmd,
             List<OptionDescriptor> options, VariantDescriptor variant) {
         boolean isVariantParent = variant == null && cmd.hasVariants();
-
         KcAdmV2RequestExecutor executor = new KcAdmV2RequestExecutor(cmd, variant);
         CommandSpec spec = CommandSpec.forAnnotatedObject(executor);
         spec.name(variant != null ? variant.getName() : cmd.getName());

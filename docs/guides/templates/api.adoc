@@ -1,0 +1,185 @@
+<#function escapeAsciidoc text>
+  <#return text?replace("{", "\\{")>
+</#function>
+<#macro endpoint op>
+<#assign escapedPath = escapeAsciidoc(op.path)>
+==== ${op.httpMethod} `${escapedPath}`
+
+${(op.summary)!}
+
+<#if (op.description)?has_content>
+${op.description}
+
+</#if>
+===== HTTP Request
+
+[source,http]
+----
+${op.httpMethod} ${op.path} HTTP/1.1
+<#if (op.requestBody.contentType)??>
+Content-Type: ${op.requestBody.contentType}
+</#if>
+----
+
+<#if (op.parameters)?has_content>
+<#assign pathParams = op.parameters?filter(p -> (p.in)! == "path")>
+<#assign queryParams = op.parameters?filter(p -> (p.in)! == "query")>
+<#if pathParams?has_content>
+===== Path Parameters
+
+[cols="1,3",options="header"]
+|===
+|Name |Description
+<#list pathParams as param>
+|*${param.name}* +
+_required_ |${(param.description)!}
+</#list>
+|===
+
+</#if>
+<#if queryParams?has_content>
+===== Query Parameters
+
+[cols="1,3",options="header"]
+|===
+|Name |Description
+<#list queryParams as param>
+|*${param.name}* |${(param.description)!}
+</#list>
+|===
+
+</#if>
+</#if>
+<#if (op.requestBody.typeName)??>
+===== Body Parameter
+
+<#if (op.requestBody.partial)?? && op.requestBody.partial>
+A partial representation containing the fields to update. Required fields must always be included.
+
+</#if>
+<#if (op.requestBody.discriminatorProperty)??>
+[cols="1,1",options="header"]
+|===
+|Name |`${op.requestBody.discriminatorProperty}`
+<#list op.requestBody.discriminatorMapping as key, type>
+|*<<${type}>>* +
+<#if !(op.requestBody.partial)?? || !op.requestBody.partial>_required_ </#if>|`${key}`
+</#list>
+|===
+<#else>
+[cols="1",options="header"]
+|===
+|Name
+|*<<${op.requestBody.typeName}>>* +
+<#if !(op.requestBody.partial)?? || !op.requestBody.partial>_required_</#if>
+|===
+</#if>
+
+</#if>
+<#if (op.responses)??>
+===== Responses
+
+[cols="1,2,3",options="header"]
+|===
+|Code |Type |Description
+<#list op.responses?keys as code>
+<#assign resp = op.responses[code]>
+|*${code}*
+|<#if (resp.discriminatorMapping)??>
+<#list resp.discriminatorMapping?values as subtype><<${subtype}>><#sep>, </#sep></#list><#--
+-->
+<#elseif (resp.typeRef)??>${resp.type?replace(resp.typeRef, "<<" + resp.typeRef + ">>")}<#--
+-->
+<#elseif (resp.type)??>${resp.type}</#if>
+|${(resp.description)!}
+</#list>
+|===
+
+</#if>
+<#assign cliEx = (ctx.adminApiV2.getCliExample(op.operationId))!>
+<#assign jsEx = (ctx.adminApiV2.getJsExample(op.operationId))!>
+<#if cliEx?has_content || (op.javaExample)?has_content || jsEx?has_content>
+===== Examples
+
+<#if cliEx?has_content>
+*CLI*
+
+[source,bash]
+----
+${cliEx}
+----
+
+</#if>
+<#if (op.javaExample)?has_content>
+*Java*
+
+[source,java]
+----
+${op.javaExample}
+----
+
+</#if>
+<#if jsEx?has_content>
+*JavaScript*
+
+[source,javascript]
+----
+${jsEx}
+----
+
+</#if>
+</#if>
+</#macro>
+
+<#macro endpoints category>
+<#assign eps = ctx.adminApiV2.getEndpoints(category)>
+<#assign javaInterface = (ctx.adminApiV2.getJavaInterface(category))!>
+<#assign javaVar = (ctx.adminApiV2.getJavaVariableName(category))!>
+<#if eps?has_content && javaInterface?has_content>
+==== Java Client Setup
+
+[source,java]
+----
+import ${javaInterface};
+import org.keycloak.admin.api.AdminApi;
+
+AdminApi adminApi = adminClient.proxy(AdminApi.class);
+${javaInterface?keep_after_last(".")} ${javaVar} = adminApi.${category}V2();
+----
+
+</#if>
+<#list eps as op>
+<@endpoint op=op/>
+</#list>
+</#macro>
+
+<#macro schemas>
+<#assign schemaNames = ctx.adminApiV2.schemaNames>
+<#if schemaNames?has_content>
+<#list schemaNames as name>
+<#assign schema = ctx.adminApiV2.getSchema(name)>
+=== ${name}
+
+<#if (schema.enumValues)?? && schema.enumValues?has_content>
+Enum values: <#list schema.enumValues as v>`${v}`<#sep>, </#sep></#list>
+<#else>
+<#if (schema.parent)??>
+Extends <<${schema.parent}>>.
+
+</#if>
+[cols="1,1,3",options="header"]
+|===
+|Name |Type |Description
+<#list schema.properties as prop>
+|*${prop.name}*<#if schema.required?? && schema.required?seq_contains(prop.name)> +
+_required_</#if><#if prop.readOnly?? && prop.readOnly> +
+_read-only_</#if>
+|<#if (prop.typeRef)??>${prop.type?replace(prop.typeRef, "<<" + prop.typeRef + ">>")}<#elseif (prop.type)??>${prop.type}</#if>
+|${(prop.description)!}
+</#list>
+|===
+</#if>
+
+</#list>
+</#if>
+</#macro>

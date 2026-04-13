@@ -79,7 +79,26 @@
                     <compilerArgument>
                         -AgeneratedTranslationFilesPath=${project.build.directory}/generated-translation-files
                     </compilerArgument>
+                    <parameters>true</parameters>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-generated-test-sources</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-test-sources/openapi</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>io.smallrye</groupId>
@@ -96,6 +115,7 @@
                         <mp.openapi.extensions.smallrye.auto-inheritance>PARENT_ONLY</mp.openapi.extensions.smallrye.auto-inheritance>
                         <mp.openapi.extensions.smallrye.operationIdStrategy>METHOD</mp.openapi.extensions.smallrye.operationIdStrategy>
                         <mp.openapi.extensions.smallrye.duplicateOperationIdBehavior>FAIL</mp.openapi.extensions.smallrye.duplicateOperationIdBehavior>
+                        <keycloak.classes.dir>${project.build.outputDirectory}</keycloak.classes.dir>
                     </systemPropertyVariables>
                 </configuration>
                 <executions>
@@ -142,7 +162,7 @@
                                 <resource>
                                     <directory>${project.build.directory}</directory>
                                     <includes>
-                                        <include>openapi.yaml</include>
+                                        <include>openapi.json</include>
                                     </includes>
                                     <filtering>false</filtering>
                                 </resource>

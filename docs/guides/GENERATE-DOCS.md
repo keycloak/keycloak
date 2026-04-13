@@ -4,14 +4,13 @@ FreeMarker macros are used heavily here to keep consistency throughout the guide
 
 To help debugging, for now use the `DocsBuildDebugUtil.java` which has a main method that allows running this step outside of Maven.
 
-To build the guides, run: 
+To build the guides, run from the project root: 
 ```
-cd docs
-mvn clean install
+mvn clean install -am -pl docs/guides -DskipTests
 ```
 After that, you will have the following artifacts:
 
 - `docs/guides/target/generated-guides`: pure asciidoc generated versions of the guides
-- `docs/guides/target/generated-docs/<operator|server|migration|getting-started>/index.html`: all guides in a single html file generated with asciidoc maven plugins. 
+- `docs/guides/target/generated-docs/<operator|server|migration|getting-started|api>/index.html`: all guides in a single html file generated with asciidoc maven plugins. 
 
 _Note:_ The layout primarily serves as an example for now and is not how we will eventually present the documentation.
