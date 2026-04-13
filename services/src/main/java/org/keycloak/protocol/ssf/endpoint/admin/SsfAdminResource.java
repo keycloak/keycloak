@@ -64,6 +64,10 @@ public class SsfAdminResource {
         SsfConfigRepresentation config = new SsfConfigRepresentation();
         config.setDefaultSupportedEvents(transmitter.getDefaultSupportedEvents());
         config.setAvailableSupportedEvents(transmitter.getKnownEventAliases());
+        config.setDefaultPushEndpointConnectTimeoutMillis(
+                Ssf.DEFAULT_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS);
+        config.setDefaultPushEndpointSocketTimeoutMillis(
+                Ssf.DEFAULT_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS);
         return config;
     }
 

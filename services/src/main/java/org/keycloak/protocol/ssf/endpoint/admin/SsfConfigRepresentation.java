@@ -20,6 +20,10 @@ public class SsfConfigRepresentation {
 
     private Set<String> availableSupportedEvents;
 
+    private Integer defaultPushEndpointConnectTimeoutMillis;
+
+    private Integer defaultPushEndpointSocketTimeoutMillis;
+
     public Set<String> getDefaultSupportedEvents() {
         return defaultSupportedEvents;
     }
@@ -34,5 +38,21 @@ public class SsfConfigRepresentation {
 
     public void setAvailableSupportedEvents(Set<String> availableSupportedEvents) {
         this.availableSupportedEvents = availableSupportedEvents;
+    }
+
+    public Integer getDefaultPushEndpointConnectTimeoutMillis() {
+        return defaultPushEndpointConnectTimeoutMillis;
+    }
+
+    public void setDefaultPushEndpointConnectTimeoutMillis(Integer defaultPushEndpointConnectTimeoutMillis) {
+        this.defaultPushEndpointConnectTimeoutMillis = defaultPushEndpointConnectTimeoutMillis;
+    }
+
+    public Integer getDefaultPushEndpointSocketTimeoutMillis() {
+        return defaultPushEndpointSocketTimeoutMillis;
+    }
+
+    public void setDefaultPushEndpointSocketTimeoutMillis(Integer defaultPushEndpointSocketTimeoutMillis) {
+        this.defaultPushEndpointSocketTimeoutMillis = defaultPushEndpointSocketTimeoutMillis;
     }
 }

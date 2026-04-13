@@ -56,7 +56,12 @@ const splitSupportedEvents = (value: unknown): string[] => {
 type SsfConfig = {
   defaultSupportedEvents?: string[];
   availableSupportedEvents?: string[];
+  defaultPushEndpointConnectTimeoutMillis?: number;
+  defaultPushEndpointSocketTimeoutMillis?: number;
 };
+
+const FALLBACK_DEFAULT_PUSH_CONNECT_TIMEOUT_MILLIS = 1000;
+const FALLBACK_DEFAULT_PUSH_SOCKET_TIMEOUT_MILLIS = 1000;
 
 type SsfClientStream = {
   streamId?: string;
@@ -85,6 +90,10 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
   const [availableSupportedEvents, setAvailableSupportedEvents] = useState<
     string[]
   >([]);
+  const [defaultPushConnectTimeoutMillis, setDefaultPushConnectTimeoutMillis] =
+    useState<number>(FALLBACK_DEFAULT_PUSH_CONNECT_TIMEOUT_MILLIS);
+  const [defaultPushSocketTimeoutMillis, setDefaultPushSocketTimeoutMillis] =
+    useState<number>(FALLBACK_DEFAULT_PUSH_SOCKET_TIMEOUT_MILLIS);
   const [clientStream, setClientStream] = useState<SsfClientStream | null>(
     null,
   );
@@ -150,6 +159,40 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
     (config) => {
       if (config?.availableSupportedEvents) {
         setAvailableSupportedEvents(config.availableSupportedEvents);
+      }
+
+      if (typeof config?.defaultPushEndpointConnectTimeoutMillis === "number") {
+        setDefaultPushConnectTimeoutMillis(
+          config.defaultPushEndpointConnectTimeoutMillis,
+        );
+        const connectField = convertAttributeNameToForm<FormFields>(
+          "attributes.ssf.pushEndpointConnectTimeoutMillis",
+        );
+        const currentConnect = watch(connectField);
+        if (currentConnect === undefined || currentConnect === "") {
+          setValue(
+            connectField,
+            String(config.defaultPushEndpointConnectTimeoutMillis),
+            { shouldDirty: false },
+          );
+        }
+      }
+
+      if (typeof config?.defaultPushEndpointSocketTimeoutMillis === "number") {
+        setDefaultPushSocketTimeoutMillis(
+          config.defaultPushEndpointSocketTimeoutMillis,
+        );
+        const socketField = convertAttributeNameToForm<FormFields>(
+          "attributes.ssf.pushEndpointSocketTimeoutMillis",
+        );
+        const currentSocket = watch(socketField);
+        if (currentSocket === undefined || currentSocket === "") {
+          setValue(
+            socketField,
+            String(config.defaultPushEndpointSocketTimeoutMillis),
+            { shouldDirty: false },
+          );
+        }
       }
 
       const events = config?.defaultSupportedEvents;
@@ -515,7 +558,7 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
                           label={t("ssfPushEndpointConnectTimeout")}
                           labelIcon={t("ssfPushEndpointConnectTimeoutHelp")}
                           controller={{
-                            defaultValue: 1000,
+                            defaultValue: defaultPushConnectTimeoutMillis,
                             rules: {
                               min: 0,
                             },
@@ -528,7 +571,7 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
                           label={t("ssfPushEndpointSocketTimeout")}
                           labelIcon={t("ssfPushEndpointSocketTimeoutHelp")}
                           controller={{
-                            defaultValue: 750,
+                            defaultValue: defaultPushSocketTimeoutMillis,
                             rules: {
                               min: 0,
                             },

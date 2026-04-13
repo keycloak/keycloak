@@ -95,11 +95,11 @@ public class PushDeliveryService {
 
         Integer connectRequestTimeout = stream.getPushEndpointConnectTimeoutMillis();
         if (connectRequestTimeout == null) {
-            connectRequestTimeout = 1000;
+            connectRequestTimeout = Ssf.DEFAULT_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS;
         }
         Integer socketTimeout = stream.getPushEndpointSocketTimeoutMillis();
         if (socketTimeout == null) {
-            socketTimeout = 750;
+            socketTimeout = Ssf.DEFAULT_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS;
         }
 
         RequestConfig requestConfig = RequestConfig.custom()
