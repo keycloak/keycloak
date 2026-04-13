@@ -103,7 +103,6 @@ import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProvi
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
-import org.keycloak.representations.userprofile.config.UPConfig;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.resources.LoadBalancerResource;
@@ -393,27 +392,6 @@ class KeycloakProcessor {
         // Ignore queued TRACE and DEBUG messages for not initialized log handlers
         InitialConfigurator.DELAYED_HANDLER.setBuildTimeHandlers(new Handler[]{});
         throw new ConfigurationException(msg);
-    }
-
-    /**
-     * Parse the default configuration for the User Profile provider
-     */
-    @BuildStep
-    @Produce(UserProfileBuildItem.class)
-    UserProfileBuildItem parseDefaultUserProfileConfig() {
-        UPConfig defaultConfig = UPConfigUtils.parseSystemDefaultConfig();
-        logger.debug("Parsing default configuration for the User Profile provider");
-        return new UserProfileBuildItem(defaultConfig);
-    }
-
-    /**
-     * Set the default configuration to the User Profile provider
-     */
-    @BuildStep
-    @Consume(ProfileBuildItem.class)
-    @Record(ExecutionTime.STATIC_INIT)
-    void setDefaultUserProfileConfig(KeycloakRecorder recorder, UserProfileBuildItem configuration) {
-        recorder.setDefaultUserProfileConfiguration(configuration.getDefaultConfig());
     }
 
     @BuildStep
@@ -709,6 +687,7 @@ class KeycloakProcessor {
             }
         }
 
+        recorder.setDefaultUserProfileConfiguration(UPConfigUtils.parseSystemDefaultConfig());
         recorder.configSessionFactory(factories, defaultProviders, preConfiguredProviders, loadThemesFromClassPath());
     }
 
