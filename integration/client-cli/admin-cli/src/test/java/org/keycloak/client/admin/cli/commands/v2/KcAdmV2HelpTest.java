@@ -321,6 +321,44 @@ public class KcAdmV2HelpTest {
     }
 
     @Test
+    public void testVariantParentShowsFileOptionForCreate() {
+        String help = getVariantParentHelp("create");
+        assertTrue("create parent should show -f option: " + help, help.contains("-f"));
+        assertTrue("create parent should show --file option: " + help, help.contains("--file"));
+    }
+
+    @Test
+    public void testVariantParentShowsFileOptionForUpdate() {
+        String help = getVariantParentHelp("update");
+        assertTrue("update parent should show -f option: " + help, help.contains("-f"));
+        assertTrue("update parent should show --file option: " + help, help.contains("--file"));
+        assertFalse("update parent should not show <id>: " + help, help.contains("<id>"));
+    }
+
+    @Test
+    public void testVariantParentShowsFileOptionForPatch() {
+        String help = getVariantParentHelp("patch");
+        assertTrue("patch parent should show -f option: " + help, help.contains("-f"));
+        assertTrue("patch parent should show --file option: " + help, help.contains("--file"));
+        assertFalse("patch parent should not show <id>: " + help, help.contains("<id>"));
+    }
+
+    @Test
+    public void testVariantParentDoesNotShowFieldOptions() {
+        String help = getVariantParentHelp("create");
+        assertFalse("create parent should not show --client-id: " + help, help.contains("--client-id"));
+        assertFalse("create parent should not show --login-flows: " + help, help.contains("--login-flows"));
+        assertFalse("create parent should not show --sign-documents: " + help, help.contains("--sign-documents"));
+    }
+
+    @Test
+    public void testVariantParentShowsConnectionOptions() {
+        String help = getVariantParentHelp("create");
+        assertTrue("create parent should show --config: " + help, help.contains("--config"));
+        assertTrue("create parent should show --server: " + help, help.contains("--server"));
+    }
+
+    @Test
     public void testHelpFlagOnVariantParent() {
         CommandLine cli = createCli();
         StringWriter out = new StringWriter();
@@ -413,6 +451,16 @@ public class KcAdmV2HelpTest {
                 .getSubcommands().get("credentials").getCommand()).help();
         assertTrue("should show --openapi-url option: " + help, help.contains("--openapi-url"));
         assertTrue("should show --v2 in command: " + help, help.contains("--v2"));
+    }
+
+    private String getVariantParentHelp(String command) {
+        CommandLine cli = createCli();
+        StringWriter out = new StringWriter();
+        cli.setOut(new PrintWriter(out));
+        cli.setErr(new PrintWriter(new StringWriter()));
+        int exitCode = cli.execute("client", command, "--help");
+        assertEquals("--help should exit with 0", 0, exitCode);
+        return out.toString();
     }
 
     private String getVariantHelp(String command, String variant) {
