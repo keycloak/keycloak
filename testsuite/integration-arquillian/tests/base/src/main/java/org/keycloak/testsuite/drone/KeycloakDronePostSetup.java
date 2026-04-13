@@ -19,7 +19,7 @@ package org.keycloak.testsuite.drone;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 import org.keycloak.testsuite.util.WaitUtils;
 
@@ -82,12 +82,12 @@ public class KeycloakDronePostSetup {
 
 
     private void configureDriverSettings(WebDriver driver) {
-        long implicitWaitMillis = WaitUtils.IMPLICIT_ELEMENT_WAIT_MILLIS;
-        long pageLoadTimeoutMillis = WaitUtils.PAGELOAD_TIMEOUT_MILLIS;
+        Duration implicitWaitMillis = Duration.ofMillis(WaitUtils.IMPLICIT_ELEMENT_WAIT_MILLIS);
+        Duration pageLoadTimeoutMillis = Duration.ofMillis(WaitUtils.PAGELOAD_TIMEOUT_MILLIS);
         log.infof("Configuring driver settings. implicitWait=%d, pageLoadTimeout=%d", implicitWaitMillis, pageLoadTimeoutMillis);
 
-        driver.manage().timeouts().implicitlyWait(implicitWaitMillis, TimeUnit.MILLISECONDS);
-        driver.manage().timeouts().pageLoadTimeout(pageLoadTimeoutMillis, TimeUnit.MILLISECONDS);
+        driver.manage().timeouts().implicitlyWait(implicitWaitMillis);
+        driver.manage().timeouts().pageLoadTimeout(pageLoadTimeoutMillis);
         driver.manage().window().maximize();
 
         configureFirefoxDriver(driver);

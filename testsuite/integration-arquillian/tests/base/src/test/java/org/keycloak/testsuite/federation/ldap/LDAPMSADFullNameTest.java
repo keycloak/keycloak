@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
@@ -225,7 +225,7 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
     @Test
     public void test06_conflicts() {
         // register user with the same cn requires more time to load the page with the real ldap
-        driver.manage().timeouts().pageLoadTimeout(100, TimeUnit.SECONDS);
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(100));
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();

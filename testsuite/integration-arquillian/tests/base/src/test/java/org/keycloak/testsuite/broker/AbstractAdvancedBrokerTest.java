@@ -1,9 +1,9 @@
 package org.keycloak.testsuite.broker;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
@@ -238,7 +238,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         logInWithBroker(bc);
 
-        driver.manage().timeouts().pageLoadTimeout(30, TimeUnit.MINUTES);
+        driver.manage().timeouts().pageLoadTimeout(Duration.ofMinutes(30));
 
         waitForPage(driver, "grant access", false);
         consentPage.cancel();

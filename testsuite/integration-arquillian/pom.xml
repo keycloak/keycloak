@@ -41,20 +41,19 @@
         <cache.server.java.home>${java.home}</cache.server.java.home>
 
         <!--component versions-->
-        <arquillian-core.version>1.9.3.Final</arquillian-core.version>
+        <arquillian-core.version>1.10.1.Final</arquillian-core.version>
         <arquillian.protocol.servlet.jakarta.version>10.0.0.Final</arquillian.protocol.servlet.jakarta.version>
         <!--the version of shrinkwrap_resolver should align with the version in arquillian-bom-->
-        <shrinkwrap-resolver.version>3.2.1</shrinkwrap-resolver.version>
-        <selenium.htmlunit3.version>4.28.0</selenium.htmlunit3.version>
-        <arquillian-drone.version>3.0.0-alpha.8</arquillian-drone.version>
-        <arquillian-graphene.version>3.0.0-alpha.4</arquillian-graphene.version>
-        <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
+        <shrinkwrap-resolver.version>3.3.5</shrinkwrap-resolver.version>
+        <selenium.htmlunit3.version>4.40.0</selenium.htmlunit3.version>
+        <arquillian-drone.version>3.0.0.Final</arquillian-drone.version>
+        <arquillian-graphene.version>3.0.0.Final</arquillian-graphene.version>
+        <arquillian-wildfly-container.version>5.1.0.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
         <arquillian-infinispan-container.version>1.2.0.Beta3</arquillian-infinispan-container.version>
         <undertow-embedded.version>1.0.0.Final</undertow-embedded.version>
         <version.org.wildfly.extras.creaper>2.0.3</version.org.wildfly.extras.creaper>
-        <jakarta.persistence-legacy.version>2.2.3</jakarta.persistence-legacy.version>
-        <commons.validator.version>1.8.0</commons.validator.version>
+        <commons.validator.version>1.10.1</commons.validator.version>
 
         <!--migration properties-->
         <migration.70.version>1.9.8.Final</migration.70.version>
