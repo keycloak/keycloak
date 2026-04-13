@@ -17,6 +17,8 @@ public class SsfTransmitterConfig {
 
     public static final String CONFIG_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS = "transmitter-initiated-verification-delay-millis";
 
+    public static final String CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS = "min-verification-interval-seconds";
+
     /**
      * Default connect timeout (in milliseconds) for delivering SSF events via
      * HTTP push to a receiver's push endpoint.
@@ -35,18 +37,29 @@ public class SsfTransmitterConfig {
      */
     public static final int DEFAULT_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS = 1500;
 
+    /**
+     * Default minimum amount of time (in seconds) that must pass between
+     * receiver-initiated verification requests. Subsequent requests within
+     * this window are rejected with HTTP 429.
+     */
+    public static final int DEFAULT_MIN_VERIFICATION_INTERVAL_SECONDS = 60;
+
     private final int pushEndpointConnectTimeoutMillis;
 
     private final int pushEndpointSocketTimeoutMillis;
 
     private final int transmitterInitiatedVerificationDelayMillis;
 
+    private final int minVerificationIntervalSeconds;
+
     public SsfTransmitterConfig(int pushEndpointConnectTimeoutMillis,
                                 int pushEndpointSocketTimeoutMillis,
-                                int transmitterInitiatedVerificationDelayMillis) {
+                                int transmitterInitiatedVerificationDelayMillis,
+                                int minVerificationIntervalSeconds) {
         this.pushEndpointConnectTimeoutMillis = pushEndpointConnectTimeoutMillis;
         this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
         this.transmitterInitiatedVerificationDelayMillis = transmitterInitiatedVerificationDelayMillis;
+        this.minVerificationIntervalSeconds = minVerificationIntervalSeconds;
     }
 
     /**
@@ -61,7 +74,9 @@ public class SsfTransmitterConfig {
                 config.getInt(CONFIG_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS,
                         DEFAULT_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS),
                 config.getInt(CONFIG_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS,
-                        DEFAULT_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS));
+                        DEFAULT_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS),
+                config.getInt(CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS,
+                        DEFAULT_MIN_VERIFICATION_INTERVAL_SECONDS));
     }
 
     /**
@@ -73,7 +88,8 @@ public class SsfTransmitterConfig {
         return new SsfTransmitterConfig(
                 DEFAULT_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS,
                 DEFAULT_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS,
-                DEFAULT_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS);
+                DEFAULT_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS,
+                DEFAULT_MIN_VERIFICATION_INTERVAL_SECONDS);
     }
 
     /**
@@ -100,5 +116,14 @@ public class SsfTransmitterConfig {
      */
     public int getTransmitterInitiatedVerificationDelayMillis() {
         return transmitterInitiatedVerificationDelayMillis;
+    }
+
+    /**
+     * Minimum amount of time (in seconds) that must pass between
+     * receiver-initiated verification requests. Subsequent requests within
+     * this window are rejected with HTTP 429.
+     */
+    public int getMinVerificationIntervalSeconds() {
+        return minVerificationIntervalSeconds;
     }
 }

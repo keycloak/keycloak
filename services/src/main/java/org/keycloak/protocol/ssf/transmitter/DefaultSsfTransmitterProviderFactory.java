@@ -33,11 +33,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     @Override
     public SsfTransmitterProvider create(KeycloakSession session) {
+        SsfTransmitterConfig effectiveTransmitterConfig = getTransmitterConfig();
         var mapper = new SecurityEventTokenMapper(SsfUtil.getIssuerUrl(session));
-        var dispatcher = new SecurityEventTokenDispatcher(session, new SecurityEventTokenEncoder(session), new PushDeliveryService(session));
+        var dispatcher = new SecurityEventTokenDispatcher(session, new SecurityEventTokenEncoder(session), new PushDeliveryService(session, effectiveTransmitterConfig));
         var verificationService = new StreamVerificationService(new ClientStreamStore(session), mapper, dispatcher);
 
-        return new DefaultSsfTransmitterProvider(session, new TransmitterMetadataService(session), verificationService, mapper, dispatcher, getTransmitterConfig());
+        return new DefaultSsfTransmitterProvider(session, new TransmitterMetadataService(session), verificationService, mapper, dispatcher, effectiveTransmitterConfig);
     }
 
     @Override
@@ -80,6 +81,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .type("int")
                 .helpText("Delay in milliseconds before the transmitter dispatches a verification event after a stream is created or updated.")
                 .defaultValue(SsfTransmitterConfig.DEFAULT_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS)
+                .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS)
+                .type("int")
+                .helpText("Minimum amount of time in seconds that must pass between receiver-initiated verification requests. Requests within this window are rejected with HTTP 429. Set to 0 to disable rate limiting.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_MIN_VERIFICATION_INTERVAL_SECONDS)
                 .add()
                 .build();
     }

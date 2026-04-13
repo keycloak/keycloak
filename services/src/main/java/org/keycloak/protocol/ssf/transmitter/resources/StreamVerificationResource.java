@@ -89,6 +89,11 @@ public class StreamVerificationResource {
             return Response.noContent()
                     .header(HttpHeaders.CACHE_CONTROL, "no-store")
                     .build();
+        } catch (WebApplicationException wae) {
+            // Let JAX-RS mapped status responses (e.g. 429 from the min
+            // verification interval check) propagate unchanged instead of
+            // rewriting them to a generic 500.
+            throw wae;
         } catch (Exception e) {
             log.error("Error triggering verification", e);
             return Response.serverError().build();
@@ -97,21 +102,28 @@ public class StreamVerificationResource {
 
     protected void checkMinVerificationInterval(ClientModel client) {
 
-        String lastVerifiedAt = client.getAttribute("ssf.lastVerifiedAt");
-
-        if (lastVerifiedAt == null) {
-            lastVerifiedAt = String.valueOf(Time.currentTime());
-            client.setAttribute("ssf.lastVerifiedAt", lastVerifiedAt);
+        int minVerificationIntervalSeconds = Ssf.transmitter().getConfig().getMinVerificationIntervalSeconds();
+        if (minVerificationIntervalSeconds <= 0) {
+            // Rate limiting disabled.
             return;
         }
 
-        long lastVerifiedAtTime = Long.parseLong(lastVerifiedAt);
+        String lastVerifiedAt = client.getAttribute("ssf.lastVerifiedAt");
         long currentTime = Time.currentTime();
-        long timeSinceLastVerification = currentTime - lastVerifiedAtTime;
-        if (timeSinceLastVerification < Ssf.DEFAULT_MIN_VERIFICATION_INTERVAL) {
-            throw new WebApplicationException(Response.status(Response.Status.TOO_MANY_REQUESTS)
-                    .entity(new SsfErrorRepresentation("too_many_requests", "Wait at least " + timeSinceLastVerification + "seconds before triggering another verification"))
-                    .build());
+
+        if (lastVerifiedAt != null) {
+            long lastVerifiedAtTime = Long.parseLong(lastVerifiedAt);
+            long timeSinceLastVerification = currentTime - lastVerifiedAtTime;
+            if (timeSinceLastVerification < minVerificationIntervalSeconds) {
+                throw new WebApplicationException(Response.status(Response.Status.TOO_MANY_REQUESTS)
+                        .type(MediaType.APPLICATION_JSON)
+                        .entity(new SsfErrorRepresentation("too_many_requests",
+                                "Wait at least " + (minVerificationIntervalSeconds - timeSinceLastVerification)
+                                        + " seconds before triggering another verification"))
+                        .build());
+            }
         }
+
+        client.setAttribute("ssf.lastVerifiedAt", String.valueOf(currentTime));
     }
 }

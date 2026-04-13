@@ -3,6 +3,7 @@ package org.keycloak.protocol.ssf.transmitter.delivery.push;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.models.KeycloakSession;
@@ -11,6 +12,7 @@ import org.keycloak.protocol.ssf.event.token.SecurityEventToken;
 import org.keycloak.protocol.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
 
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.entity.StringEntity;
 import org.jboss.logging.Logger;
@@ -22,10 +24,18 @@ public class PushDeliveryService {
 
     protected static final Logger log = Logger.getLogger(PushDeliveryService.class);
 
-    private final KeycloakSession session;
+    private final HttpClient httpClient;
 
-    public PushDeliveryService(KeycloakSession session) {
-        this.session = session;
+    private final SsfTransmitterConfig transmitterConfig;
+
+    public PushDeliveryService(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
+        // Resolve the shared HttpClient up front so push delivery can later
+        // run on an async executor thread that has no live KeycloakSession
+        // bound to it any more (the /verify request's session is closed by
+        // then). Likewise, transmitterConfig is captured once so delivery
+        // doesn't depend on the thread-local session via Ssf.transmitter().
+        this.httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        this.transmitterConfig = transmitterConfig;
     }
 
     /**
@@ -94,7 +104,6 @@ public class PushDeliveryService {
 
     protected SimpleHttpRequest createSimpleHttp(String endpointUrl, String authorizationHeader, StreamConfig stream) {
 
-        SsfTransmitterConfig transmitterConfig = Ssf.transmitter().getConfig();
         Integer connectRequestTimeout = stream.getPushEndpointConnectTimeoutMillis();
         if (connectRequestTimeout == null) {
             connectRequestTimeout = transmitterConfig.getPushEndpointConnectTimeoutMillis();
@@ -108,7 +117,7 @@ public class PushDeliveryService {
                 .setConnectionRequestTimeout(connectRequestTimeout)
                 .setSocketTimeout(socketTimeout)
                 .build();
-        var httpRequest = SimpleHttp.create(session)
+        var httpRequest = SimpleHttp.create(httpClient)
                 .withRequestConfig(requestConfig)
                 .doPost(endpointUrl);
         if (authorizationHeader != null) {
