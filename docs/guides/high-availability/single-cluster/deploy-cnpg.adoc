@@ -153,37 +153,6 @@ cnpg-keycloak-2   1/1     Running   0          10m   replica
 cnpg-keycloak-3   1/1     Running   0          10m   replica
 ----
 
-
-=== Monitor the CloudNativePG cluster
-
-Monitoring of CloudNativePG clusters leverages https://prometheus.io/[Prometheus] and https://grafana.com/[Grafana].
-
-Installation of the Prometheus stack is out of scope of this guide. Basic installation steps can be found in the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/quickstart[Quickstart section of the CloudNativePG documentation]. Additional details on how to customize the monitoring can be found in the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/monitoring#monitoring-instances[Monitoring section of the CloudNativePG documentation].
-
-Assuming Prometheus and Grafana are installed on the {kubernetes} cluster the following steps can be used to enable monitoring for a particular CloudNativePG cluster:
-
-. Enable collection of metrics by creating a PodMonitor resource:
-+
-.Command:
-[source,yaml,indent=0]
-----
-kubectl -n cnpg-keycloak apply -f - <<EOF
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: cnpg-keycloak-pod-monitor
-spec:
-  selector:
-    matchLabels:
-      cnpg.io/cluster: cnpg-keycloak # <1>
-  podMetricsEndpoints:
-  - port: metrics
-EOF
-----
-<1> Name of the CloudNativePG cluster to be monitored.
-+
-. Add the https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/refs/heads/main/charts/cluster/grafana-dashboard.json[grafana-dashboard.json] from the https://github.com/cloudnative-pg/grafana-dashboards[cloudnative-pg/grafana-dashboards GitHub project] to your Grafana instance.
-
 == Next steps
 
 After successful deployment of the CloudNativePG database continue with <@links.ha id="single-cluster-deploy-keycloak" />
