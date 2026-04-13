@@ -7,8 +7,6 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.protocol.ssf.event.caep.CaepCredentialChange;
-import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.protocol.ssf.support.SsfUtil;
 import org.keycloak.protocol.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.protocol.ssf.transmitter.delivery.push.PushDeliveryService;
@@ -22,7 +20,21 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 
 public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProviderFactory {
 
-    protected Set<String> defaultSupportedEvents;
+    public static final String CONFIG_SUPPORTED_EVENTS = "supported-events";
+
+    /**
+     * Aliases (or full URIs) of the events the transmitter advertises as
+     * "default supported events" for a receiver client that does not set
+     * its own {@code ssf.supportedEvents} attribute. Sourced from the
+     * {@code supported-events} SPI property. When {@code null} (i.e. the
+     * property is unset), the provider falls back to every event type
+     * known to the
+     * {@link org.keycloak.protocol.ssf.event.SsfEventRegistry}, which
+     * includes events contributed by custom
+     * {@link org.keycloak.protocol.ssf.event.SsfEventProviderFactory}
+     * implementations.
+     */
+    protected Set<String> configuredDefaultSupportedEventAliases;
 
     protected SsfTransmitterConfig transmitterConfig = SsfTransmitterConfig.defaults();
 
@@ -38,17 +50,13 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         var dispatcher = new SecurityEventTokenDispatcher(session, new SecurityEventTokenEncoder(session), new PushDeliveryService(session, effectiveTransmitterConfig));
         var verificationService = new StreamVerificationService(new ClientStreamStore(session), mapper, dispatcher);
 
-        return new DefaultSsfTransmitterProvider(session, new TransmitterMetadataService(session), verificationService, mapper, dispatcher, effectiveTransmitterConfig);
+        return new DefaultSsfTransmitterProvider(session, new TransmitterMetadataService(session), verificationService, mapper, dispatcher, effectiveTransmitterConfig, configuredDefaultSupportedEventAliases);
     }
 
     @Override
     public void init(Config.Scope config) {
 
-        Set<String> defaultSupportedEvents = extractSupportedEvents(config);
-        if (defaultSupportedEvents != null) {
-            this.defaultSupportedEvents = defaultSupportedEvents;
-        }
-
+        this.configuredDefaultSupportedEventAliases = extractSupportedEvents(config);
         this.transmitterConfig = createTransmitterConfig(config);
     }
 
@@ -88,14 +96,25 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .helpText("Minimum amount of time in seconds that must pass between receiver-initiated verification requests. Requests within this window are rejected with HTTP 429. Set to 0 to disable rate limiting.")
                 .defaultValue(SsfTransmitterConfig.DEFAULT_MIN_VERIFICATION_INTERVAL_SECONDS)
                 .add()
+                .property()
+                .name(CONFIG_SUPPORTED_EVENTS)
+                .type("string")
+                .helpText("Comma-separated list of event aliases or full event type URIs that the transmitter advertises as the default supported event set for receiver clients that do not configure their own ssf.supportedEvents attribute. When unset, every event type registered via SsfEventProviderFactory is advertised.")
+                .add()
                 .build();
     }
 
+    /**
+     * Parses the {@code supported-events} SPI property into a set of
+     * aliases (or full URIs). Returns {@code null} when the property is
+     * unset or blank so the provider can fall back to the full
+     * {@link org.keycloak.protocol.ssf.event.SsfEventRegistry}.
+     */
     protected Set<String> extractSupportedEvents(Config.Scope config) {
-        String defaultSupportedEventsString = config.get("supported-events", "CaepCredentialChange, CaepSessionRevoked");
+        String defaultSupportedEventsString = config.get(CONFIG_SUPPORTED_EVENTS);
 
         if (defaultSupportedEventsString == null || defaultSupportedEventsString.isBlank()) {
-            return getDefaultSupportedEvents();
+            return null;
         }
 
         return parseSupportedEvents(defaultSupportedEventsString);
@@ -103,10 +122,6 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     protected Set<String> parseSupportedEvents(String supportedEventsString) {
         return SsfUtil.parseEventTypeAliases(supportedEventsString);
-    }
-
-    protected Set<String> getDefaultSupportedEvents() {
-        return Set.of(CaepCredentialChange.class.getSimpleName(), CaepSessionRevoked.class.getSimpleName());
     }
 
     @Override

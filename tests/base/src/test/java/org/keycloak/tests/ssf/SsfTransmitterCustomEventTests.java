@@ -104,6 +104,21 @@ public class SsfTransmitterCustomEventTests {
             Assertions.assertTrue(
                     config.getAvailableSupportedEvents().contains(CaepCredentialChange.class.getSimpleName()),
                     "built-in CaepCredentialChange alias should still be advertised");
+
+            // The custom event must also show up in the "default supported
+            // events" set (the fallback used when a receiver client doesn't
+            // configure its own ssf.supportedEvents attribute). When the
+            // supported-events SPI property is unset, the provider returns
+            // every emittable event in the registry, which must include the
+            // SPI-contributed custom event.
+            Assertions.assertNotNull(config.getDefaultSupportedEvents());
+            Assertions.assertTrue(
+                    config.getDefaultSupportedEvents().contains(TestSsfEvent.class.getSimpleName()),
+                    () -> "defaultSupportedEvents should include the custom TestSsfEvent alias, got "
+                            + config.getDefaultSupportedEvents());
+            Assertions.assertTrue(
+                    config.getDefaultSupportedEvents().contains(CaepCredentialChange.class.getSimpleName()),
+                    "defaultSupportedEvents should still include the built-in CaepCredentialChange alias");
         }
     }
 

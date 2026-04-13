@@ -1,13 +1,12 @@
 package org.keycloak.protocol.ssf.transmitter;
 
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.event.SsfEvent;
 import org.keycloak.protocol.ssf.event.SsfEventRegistry;
-import org.keycloak.protocol.ssf.event.caep.CaepCredentialChange;
-import org.keycloak.protocol.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.protocol.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.protocol.ssf.transmitter.metadata.TransmitterMetadataService;
@@ -36,18 +35,29 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     private final SsfTransmitterConfig transmitterConfig;
 
+    /**
+     * Aliases (or full URIs) of the events this transmitter advertises as
+     * the default supported set for receivers that do not opt into their
+     * own list. When {@code null}, {@link #getDefaultSupportedEvents()}
+     * falls back to every event type known to the registry — which picks
+     * up custom SPI-contributed events automatically.
+     */
+    private final Set<String> configuredDefaultSupportedEventAliases;
+
     public DefaultSsfTransmitterProvider(KeycloakSession session,
                                          TransmitterMetadataService transmitterMetadataService,
                                          StreamVerificationService verificationService,
                                          SecurityEventTokenMapper securityEventTokenMapper,
                                          SecurityEventTokenDispatcher securityEventTokenDispatcher,
-                                         SsfTransmitterConfig transmitterConfig) {
+                                         SsfTransmitterConfig transmitterConfig,
+                                         Set<String> configuredDefaultSupportedEventAliases) {
         this.session = session;
         this.transmitterService = transmitterMetadataService;
         this.verificationService = verificationService;
         this.securityEventTokenMapper = securityEventTokenMapper;
         this.securityEventTokenDispatcher = securityEventTokenDispatcher;
         this.transmitterConfig = transmitterConfig;
+        this.configuredDefaultSupportedEventAliases = configuredDefaultSupportedEventAliases;
     }
 
     @Override
@@ -92,7 +102,30 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     @Override
     public Set<String> getDefaultSupportedEvents() {
-        return Set.of(CaepCredentialChange.TYPE, CaepSessionRevoked.TYPE);
+        SsfEventRegistry registry = registry();
+        if (configuredDefaultSupportedEventAliases == null) {
+            // No explicit SPI configuration — advertise only the events
+            // the transmitter can actually emit, as declared by every
+            // registered SsfEventProviderFactory#getEmittableEventTypes.
+            // This naturally picks up events contributed by custom SPI
+            // extensions that also wire up an emission path.
+            return registry.getEmittableEventTypes();
+        }
+
+        // SPI config is set — resolve each configured entry (which may be
+        // either an alias or a full URI) to its canonical event type URI
+        // via the registry. Unknown entries are silently dropped.
+        Set<String> resolved = new LinkedHashSet<>();
+        for (String candidate : configuredDefaultSupportedEventAliases) {
+            String eventType = registry.resolveEventTypeForAlias(candidate);
+            if (eventType == null && registry.getEventClassByType(candidate).isPresent()) {
+                eventType = candidate;
+            }
+            if (eventType != null) {
+                resolved.add(eventType);
+            }
+        }
+        return resolved;
     }
 
     @Override
@@ -106,8 +139,14 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
     }
 
     @Override
-    public Set<String> getKnownEventAliases() {
-        return registry().getKnownAliases();
+    public Set<String> getEmittableEventAliases() {
+        SsfEventRegistry registry = registry();
+        Set<String> aliases = new LinkedHashSet<>();
+        for (String eventType : registry.getEmittableEventTypes()) {
+            String alias = registry.resolveAliasForEventType(eventType);
+            aliases.add(alias != null ? alias : eventType);
+        }
+        return aliases;
     }
 
     protected SsfEventRegistry registry() {

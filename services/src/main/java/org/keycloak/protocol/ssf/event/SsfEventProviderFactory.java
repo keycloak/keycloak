@@ -33,6 +33,26 @@ public interface SsfEventProviderFactory extends ProviderFactory<SsfEventProvide
     }
 
     /**
+     * Returns the subset of {@link #getContributedEvents()} that this
+     * extension actively emits from the transmitter (i.e. a Keycloak
+     * event or other transmitter-side trigger is wired to produce an
+     * SSF Security Event Token carrying the returned event type URI).
+     *
+     * <p>Events contributed purely for inbound parsing on the receiver
+     * side MUST NOT be returned here. The transmitter aggregates the
+     * contributions of every registered factory into the "default
+     * supported events" set advertised to receiver clients that do
+     * not configure their own
+     * {@code ssf.supportedEvents} attribute. Advertising an event that
+     * the transmitter cannot actually emit would mislead receivers.
+     *
+     * <p>The default implementation returns an empty set.
+     */
+    default Set<String> getEmittableEventTypes() {
+        return Set.of();
+    }
+
+    /**
      * Aggregates the events contributed by all registered
      * {@link SsfEventProviderFactory} instances into a single immutable
      * {@link SsfEventRegistry}.

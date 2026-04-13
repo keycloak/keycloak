@@ -119,16 +119,14 @@ public interface SsfTransmitterProvider extends Provider {
     String resolveAliasForEventType(String eventType);
 
     /**
-     * Returns the full set of known SSF event aliases that the transmitter can
-     * deliver. Used by the admin UI to render a selectable list of supported
-     * events for a receiver client.
-     *
-     * <p>The default implementation returns all aliases registered in the
-     * global {@link org.keycloak.protocol.ssf.event.SsfEventRegistry}, which is
-     * populated by every registered
-     * {@link org.keycloak.protocol.ssf.event.SsfEventProviderFactory}.
+     * Returns the set of SSF event aliases that the transmitter can actually
+     * emit, i.e. the aliases corresponding to every event type declared in
+     * {@link org.keycloak.protocol.ssf.event.SsfEventProviderFactory#getEmittableEventTypes()}.
+     * Used by the admin UI to render a selectable list of supported events for
+     * a receiver client — excluding events only contributed for inbound
+     * parsing on the receiver side.
      */
-    Set<String> getKnownEventAliases();
+    Set<String> getEmittableEventAliases();
 
     /**
      * Returns the immutable transmitter-wide configuration snapshot that is
