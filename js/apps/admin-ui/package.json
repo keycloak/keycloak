@@ -109,7 +109,6 @@
     "react-i18next": "^16.5.1",
     "react-router-dom": "^6.30.3",
     "reactflow": "^11.11.4",
-    "use-react-router-breadcrumbs": "^4.0.1",
     "yaml": "^2.8.3"
   },
   "devDependencies": {
