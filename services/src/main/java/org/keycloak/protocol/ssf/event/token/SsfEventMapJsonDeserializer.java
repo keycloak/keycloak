@@ -7,6 +7,8 @@ import java.util.Map;
 import org.keycloak.protocol.ssf.Ssf;
 import org.keycloak.protocol.ssf.event.GenericSsfEvent;
 import org.keycloak.protocol.ssf.event.SsfEvent;
+import org.keycloak.protocol.ssf.event.SsfEventProvider;
+import org.keycloak.protocol.ssf.event.SsfEventRegistry;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -43,19 +45,15 @@ public class SsfEventMapJsonDeserializer extends JsonDeserializer<Map<String, Ss
         ObjectMapper mapper = (ObjectMapper) p.getCodec();
         JsonNode node = mapper.readTree(p);
 
+        SsfEventRegistry registry = resolveRegistry();
+
         Map<String, SsfEvent> eventsMap = new HashMap<>();
 
         for (Map.Entry<String, JsonNode> entry : node.properties()) {
             String eventType = entry.getKey();  // Extracts event type key
             JsonNode eventData = entry.getValue(); // Extracts event data
 
-            Class<? extends SsfEvent> eventClass = Ssf.events().getRegistry()
-                    .getEventClassByType(eventType)
-                    .orElse(GenericSsfEvent.class);
-
-            if (eventClass == null) {
-                throw new IOException("Unknown event type: " + eventType);
-            }
+            Class<? extends SsfEvent> eventClass = resolveEventClass(registry, eventType);
 
             SsfEvent event = mapper.treeToValue(eventData, eventClass);
             event.setEventType(eventType);  // Manually set event type since it's not in JSON
@@ -63,5 +61,30 @@ public class SsfEventMapJsonDeserializer extends JsonDeserializer<Map<String, Ss
         }
 
         return eventsMap;
+    }
+
+    /**
+     * Resolves the {@link SsfEventRegistry} used to map event type URIs to
+     * concrete {@link SsfEvent} subclasses. Uses the per-session
+     * {@link SsfEventProvider} when a Keycloak session is bound to the
+     * current thread; otherwise returns {@code null} so the deserializer
+     * degrades to {@link GenericSsfEvent} for every event type rather than
+     * failing with an NPE — this keeps SET parsing available to callers
+     * (e.g. tests, background workers) that run outside a request scope.
+     */
+    protected SsfEventRegistry resolveRegistry() {
+
+        SsfEventProvider events = Ssf.events();
+        if (events == null) {
+            return null;
+        }
+        return events.getRegistry();
+    }
+
+    protected Class<? extends SsfEvent> resolveEventClass(SsfEventRegistry registry, String eventType) {
+        if (registry == null) {
+            return GenericSsfEvent.class;
+        }
+        return registry.getEventClassByType(eventType).orElse(GenericSsfEvent.class);
     }
 }
