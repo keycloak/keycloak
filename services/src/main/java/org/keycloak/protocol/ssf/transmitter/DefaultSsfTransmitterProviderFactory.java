@@ -1,5 +1,6 @@
 package org.keycloak.protocol.ssf.transmitter;
 
+import java.util.List;
 import java.util.Set;
 
 import org.keycloak.Config;
@@ -13,13 +14,17 @@ import org.keycloak.protocol.ssf.transmitter.delivery.SecurityEventTokenDispatch
 import org.keycloak.protocol.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.protocol.ssf.transmitter.event.SecurityEventTokenMapper;
-import org.keycloak.protocol.ssf.transmitter.metadata.SsfTransmitterMetadataService;
+import org.keycloak.protocol.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.protocol.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProviderFactory {
 
     protected Set<String> defaultSupportedEvents;
+
+    protected SsfTransmitterConfig transmitterConfig = SsfTransmitterConfig.defaults();
 
     @Override
     public String getId() {
@@ -32,18 +37,51 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         var dispatcher = new SecurityEventTokenDispatcher(session, new SecurityEventTokenEncoder(session), new PushDeliveryService(session));
         var verificationService = new StreamVerificationService(new ClientStreamStore(session), mapper, dispatcher);
 
-        return new DefaultSsfTransmitterProvider(session, new SsfTransmitterMetadataService(session), verificationService, mapper, dispatcher);
+        return new DefaultSsfTransmitterProvider(session, new TransmitterMetadataService(session), verificationService, mapper, dispatcher, getTransmitterConfig());
     }
 
     @Override
     public void init(Config.Scope config) {
 
-        Set<String> defaultSupportedEvents;
+        Set<String> defaultSupportedEvents = extractSupportedEvents(config);
+        if (defaultSupportedEvents != null) {
+            this.defaultSupportedEvents = defaultSupportedEvents;
+        }
 
-        defaultSupportedEvents = extractSupportedEvents(config);
-        if (defaultSupportedEvents == null) return;
+        this.transmitterConfig = createTransmitterConfig(config);
+    }
 
-        this.defaultSupportedEvents = defaultSupportedEvents;
+    protected SsfTransmitterConfig createTransmitterConfig(Config.Scope config) {
+        return new SsfTransmitterConfig(config);
+    }
+
+    @Override
+    public SsfTransmitterConfig getTransmitterConfig() {
+        return transmitterConfig;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS)
+                .type("int")
+                .helpText("Default connect timeout in milliseconds for delivering SSF events via HTTP push to a receiver's push endpoint.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS)
+                .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS)
+                .type("int")
+                .helpText("Default socket (read) timeout in milliseconds for delivering SSF events via HTTP push to a receiver's push endpoint.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS)
+                .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS)
+                .type("int")
+                .helpText("Delay in milliseconds before the transmitter dispatches a verification event after a stream is created or updated.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS)
+                .add()
+                .build();
     }
 
     protected Set<String> extractSupportedEvents(Config.Scope config) {
