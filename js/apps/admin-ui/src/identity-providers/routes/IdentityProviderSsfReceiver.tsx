@@ -10,9 +10,9 @@ const AddSsfReceiver = lazy(() => import("../add/AddSsfReceiver"));
 export const IdentityProviderSsfReceiverRoute: AppRouteObject = {
   path: "/:realm/identity-providers/ssf-receiver/add",
   element: <AddSsfReceiver />,
-  breadcrumb: (t) => t("addSsfReceiverProvider"),
   handle: {
     access: "manage-identity-providers",
+    breadcrumb: (t) => t("addSsfReceiverProvider"),
   },
 };
 
