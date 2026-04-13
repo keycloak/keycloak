@@ -52,6 +52,7 @@ import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
 import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
 import { SecurityDefenses } from "./security-defences/SecurityDefenses";
 import { UserProfileTab } from "./user-profile/UserProfileTab";
+import { ServerCertsTab } from "./ServerCertsTab";
 
 export interface UIRealmRepresentation extends RealmRepresentation {
   upConfig?: UserProfileConfig;
@@ -287,6 +288,7 @@ export const RealmSettingsTabs = () => {
   const clientPoliciesTab = useTab("client-policies");
   const userProfileTab = useTab("user-profile");
   const userRegistrationTab = useTab("user-registration");
+  const serverCertsTab = useTab("server-certs");
   const { hasAccess, hasSomeAccess } = useAccess();
   const canViewOrManageEvents =
     hasAccess("view-realm") && hasSomeAccess("view-events", "manage-events");
@@ -336,7 +338,11 @@ export const RealmSettingsTabs = () => {
             {...generalTab}
           >
             {/* TIDECLOAK IMPLEMENTATION */}
-            <RealmSettingsGeneralTab realm={realm!} save={save} refresh={refresh} />
+            <RealmSettingsGeneralTab
+              realm={realm!}
+              save={save}
+              refresh={refresh}
+            />
           </Tab>
           <Tab
             title={<TabTitleText>{t("login")}</TabTitleText>}
@@ -464,6 +470,13 @@ export const RealmSettingsTabs = () => {
               <UserRegistration />
             </Tab>
           )}
+          <Tab
+            title={<TabTitleText>Server Certs</TabTitleText>}
+            data-testid="rs-server-certs-tab"
+            {...serverCertsTab}
+          >
+            <ServerCertsTab />
+          </Tab>
         </RoutableTabs>
       </PageSection>
     </FormProvider>
