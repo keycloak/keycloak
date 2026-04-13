@@ -60,6 +60,18 @@ public class Ssf {
 
     public static final int TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS = 1500;
 
+    /**
+     * Default connect timeout (in milliseconds) for delivering SSF events via
+     * HTTP push to a receiver's push endpoint.
+     */
+    public static final int DEFAULT_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS = 1000;
+
+    /**
+     * Default socket (read) timeout (in milliseconds) for delivering SSF
+     * events via HTTP push to a receiver's push endpoint.
+     */
+    public static final int DEFAULT_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS = 1000;
+
     private Ssf() {
     }
 
