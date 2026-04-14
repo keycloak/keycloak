@@ -6,9 +6,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 
 
-public class MigrateTo26_6_0 extends RealmMigration {
+public class MigrateTo26_6_1 extends RealmMigration {
 
-    public static final ModelVersion VERSION = new ModelVersion("26.6.0");
+    public static final ModelVersion VERSION = new ModelVersion("26.6.1");
 
     @Override
     public ModelVersion getVersion() {
@@ -18,6 +18,6 @@ public class MigrateTo26_6_0 extends RealmMigration {
 
     @Override
     public void migrateRealm(KeycloakSession session, RealmModel realm) {
-        DefaultAuthenticationFlows.addOrganizationBrowserFlowStep(realm, realm.getBrowserFlow());
+        DefaultAuthenticationFlows.addOrganizationBrowserFlowStep(realm, realm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW));
     }
 }
