@@ -207,6 +207,10 @@ Database:
 
 Database - additional datasources:
 
+--db-connect-timeout-<datasource> <timeout>
+                     Used for named <datasource>. Sets the JDBC driver connection timeout and login
+                       timeout. May be an ISO 8601 duration value, an integer number of seconds, or
+                       an integer followed by one of [ms, h, m, s, d]. Default: 10s.
 --db-debug-jpql-<datasource> <true|false>
                      Used for named <datasource>. Add JPQL information as comments to SQL
                        statements to debug JPA SQL statement generation. Default: false.
