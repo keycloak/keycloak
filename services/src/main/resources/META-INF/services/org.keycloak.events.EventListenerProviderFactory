@@ -17,5 +17,5 @@
 
 org.keycloak.events.email.EmailEventListenerProviderFactory
 org.keycloak.events.log.JBossLoggingEventListenerProviderFactory
-org.keycloak.protocol.ssf.transmitter.event.SsfTransmitterEventListenerFactory
+org.keycloak.ssf.transmitter.event.SsfTransmitterEventListenerFactory
 org.keycloak.models.workflow.WorkflowsEventListenerFactory

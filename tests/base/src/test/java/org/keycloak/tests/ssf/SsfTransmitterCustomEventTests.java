@@ -10,13 +10,15 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
-import org.keycloak.protocol.ssf.Ssf;
-import org.keycloak.protocol.ssf.endpoint.admin.SsfConfigRepresentation;
-import org.keycloak.protocol.ssf.event.caep.CaepCredentialChange;
-import org.keycloak.protocol.ssf.transmitter.SsfScopes;
-import org.keycloak.protocol.ssf.transmitter.stream.StreamConfig;
-import org.keycloak.protocol.ssf.transmitter.stream.StreamDeliveryConfig;
-import org.keycloak.protocol.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.Ssf;
+import org.keycloak.ssf.endpoint.admin.SsfConfigRepresentation;
+import org.keycloak.ssf.event.SsfEvent;
+import org.keycloak.ssf.event.SsfEventProviderFactory;
+import org.keycloak.ssf.event.caep.CaepCredentialChange;
+import org.keycloak.ssf.transmitter.SsfScopes;
+import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
+import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -38,9 +40,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests that custom {@link org.keycloak.protocol.ssf.event.SsfEvent}
+ * Tests that custom {@link SsfEvent}
  * implementations contributed by a third-party
- * {@link org.keycloak.protocol.ssf.event.SsfEventProviderFactory} are
+ * {@link SsfEventProviderFactory} are
  * picked up by the SSF event registry and usable in stream configurations.
  *
  * <p>The test uses the {@code keycloak-tests-custom-providers} module, which

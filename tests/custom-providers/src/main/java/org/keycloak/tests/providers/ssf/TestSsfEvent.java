@@ -1,6 +1,6 @@
 package org.keycloak.tests.providers.ssf;
 
-import org.keycloak.protocol.ssf.event.SsfEvent;
+import org.keycloak.ssf.event.SsfEvent;
 
 /**
  * Custom {@link SsfEvent} used by the SSF Transmitter custom-event

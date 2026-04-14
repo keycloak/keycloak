@@ -1,0 +1,140 @@
+package org.keycloak.ssf.transmitter;
+
+import java.util.Set;
+
+import org.keycloak.ssf.event.SsfEvent;
+import org.keycloak.ssf.event.SsfEventProviderFactory;
+import org.keycloak.ssf.event.SsfEventRegistry;
+import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
+import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
+import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
+import org.keycloak.ssf.transmitter.resources.StreamManagementResource;
+import org.keycloak.ssf.transmitter.resources.StreamStatusResource;
+import org.keycloak.ssf.transmitter.resources.StreamVerificationResource;
+import org.keycloak.ssf.transmitter.stream.StreamService;
+import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
+import org.keycloak.provider.Provider;
+
+/**
+ * Provider for the SSF (Shared Signals Framework) Transmitter.
+ *
+ * <p>The transmitter is responsible for generating and delivering Security Event Tokens (SETs)
+ * to registered SSF receivers via configured streams. It exposes services for stream management,
+ * stream verification, event mapping, and event dispatching, as well as the JAX-RS sub-resources
+ * that implement the SSF Transmitter REST API.
+ *
+ * @see <a href="https://openid.github.io/sharedsignals/openid-sharedsignals-framework-1_0.html">OpenID Shared Signals Framework 1.0</a>
+ */
+public interface SsfTransmitterProvider extends Provider {
+
+    default void close() {
+    }
+
+    /**
+     * Returns the service for handling stream verification requests.
+     *
+     * @return the stream verification service
+     */
+    StreamVerificationService verificationService();
+
+    /**
+     * Returns the service for managing transmitter metadata,
+     * such as supported events, delivery methods, and the transmitter configuration endpoint.
+     *
+     * @return the transmitter metadata service
+     */
+    TransmitterMetadataService transmitterService();
+
+    /**
+     * Returns the mapper that converts Keycloak events (user events, admin events)
+     * into SSF Security Event Tokens (SETs).
+     *
+     * @return the security event token mapper
+     */
+    SecurityEventTokenMapper securityEventTokenMapper();
+
+    /**
+     * Returns the dispatcher responsible for delivering Security Event Tokens
+     * to all applicable streams based on their delivery configuration.
+     *
+     * @return the security event token dispatcher
+     */
+    SecurityEventTokenDispatcher securityEventTokenDispatcher();
+
+    /**
+     * Returns the JAX-RS sub-resource for stream CRUD operations (create, read, update, delete).
+     *
+     * @return the stream management endpoint
+     */
+    StreamManagementResource streamManagementEndpoint();
+
+    /**
+     * Returns the service for managing SSF streams (create, update, delete, lookup).
+     *
+     * @return the stream service
+     */
+    StreamService streamService();
+
+    /**
+     * Returns the JAX-RS sub-resource for querying and updating stream status.
+     *
+     * @return the stream status endpoint
+     */
+    StreamStatusResource streamStatusEndpoint();
+
+    /**
+     * Returns the JAX-RS sub-resource for triggering stream verification.
+     *
+     * @return the stream verification endpoint
+     */
+    StreamVerificationResource verificationEndpoint();
+
+    /**
+     * The default set of supported events.
+     * @return
+     */
+    Set<String> getDefaultSupportedEvents();
+
+    /**
+     * Returns the event type of the given SSF event type string
+     * @param supportedEvent
+     * @return
+     */
+    Class<? extends SsfEvent> resolveSupportedEventType(String supportedEvent);
+
+    /**
+     * Resolves the event alias (e.g. {@code CaepCredentialChange}) for the given
+     * full event type URI. Returns {@code null} if the transmitter does not know
+     * an alias for the given event type — callers can then fall back to the
+     * original URI.
+     *
+     * <p>The default implementation delegates to the global
+     * {@link SsfEventRegistry}, which is
+     * populated by every registered
+     * {@link SsfEventProviderFactory}; extensions
+     * can therefore add custom event types and aliases without subclassing the
+     * transmitter.
+     *
+     * @param eventType the long event type URI
+     * @return the matching event alias, or {@code null} if unknown
+     */
+    String resolveAliasForEventType(String eventType);
+
+    /**
+     * Returns the set of SSF event aliases that the transmitter can actually
+     * emit, i.e. the aliases corresponding to every event type declared in
+     * {@link SsfEventProviderFactory#getEmittableEventTypes()}.
+     * Used by the admin UI to render a selectable list of supported events for
+     * a receiver client — excluding events only contributed for inbound
+     * parsing on the receiver side.
+     */
+    Set<String> getEmittableEventAliases();
+
+    /**
+     * Returns the immutable transmitter-wide configuration snapshot that is
+     * sourced from the {@link SsfTransmitterProviderFactory} SPI configuration.
+     * Consumers should use this to access the effective default push endpoint
+     * timeouts and the transmitter-initiated verification delay.
+     */
+    SsfTransmitterConfig getConfig();
+}

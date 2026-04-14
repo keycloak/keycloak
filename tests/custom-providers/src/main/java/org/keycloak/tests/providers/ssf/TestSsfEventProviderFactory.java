@@ -5,11 +5,11 @@ import java.util.Set;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.protocol.ssf.event.DefaultSsfEventProvider;
-import org.keycloak.protocol.ssf.event.SsfEvent;
-import org.keycloak.protocol.ssf.event.SsfEventProvider;
-import org.keycloak.protocol.ssf.event.SsfEventProviderFactory;
-import org.keycloak.protocol.ssf.event.SsfEventRegistry;
+import org.keycloak.ssf.event.DefaultSsfEventProvider;
+import org.keycloak.ssf.event.SsfEvent;
+import org.keycloak.ssf.event.SsfEventProvider;
+import org.keycloak.ssf.event.SsfEventProviderFactory;
+import org.keycloak.ssf.event.SsfEventRegistry;
 
 /**
  * Test-only {@link SsfEventProviderFactory} that contributes a single
