@@ -16,6 +16,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.util.JsonSerialization;
 
@@ -62,13 +63,22 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         String issuerState = credOffer.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
+        CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+        assertNotNull(offerURI, "No CredentialOfferURI");
+
+        // Fetch credential offer again
+        // https://github.com/keycloak/keycloak/issues/48014
+        credOffer = wallet.credentialsOfferRequest(ctx, offerURI).send().getCredentialsOffer();
+        issuerState = credOffer.getIssuerState();
+        assertNotNull(issuerState, "No IssuerState");
+
         // Send AuthorizationRequest
         //
         AuthorizationEndpointResponse authResponse = wallet
                 .authorizationRequest()
                 .scope(ctx.getScope())
                 .issuerState(issuerState)
-                .send(ctx.getHolder(), "password");
+                .send(ctx.getHolder(), TEST_PASSWORD);
         String authCode = authResponse.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -89,6 +99,12 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
+
+        // Attempt to fetch the credential offer again after it has been consumed
+
+        CredentialOfferResponse res = wallet.credentialsOfferRequest(ctx, offerURI).send();
+        assertEquals("invalid_credential_offer_request", res.getError());
+        assertEquals("Credential offer not found or already consumed", res.getErrorDescription());
     }
 
     @Test
@@ -111,7 +127,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .authorizationRequest()
                 .scope(ctx1.getScope())
                 .issuerState(issuerState)
-                .send(ctx1.getHolder(), "password");
+                .send(ctx1.getHolder(), TEST_PASSWORD);
         String authCode = authResponse1.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -146,7 +162,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .authorizationRequest()
                 .scope(ctx2.getScope())
                 .issuerState(issuerState)
-                .send(ctx2.getHolder(), "password");
+                .send(ctx2.getHolder(), TEST_PASSWORD);
         authCode = authResponse2.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -202,7 +218,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .authorizationRequest()
                 .scope(ctx.getScope())
                 .issuerState(issuerState)
-                .send(ctx.getHolder(), "password");
+                .send(ctx.getHolder(), TEST_PASSWORD);
         String authCode = authResponse.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -248,7 +264,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .authorizationRequest()
                 .scope(ctx.getScope())
                 .issuerState(issuerState)
-                .send(ctx.getHolder(), "password");
+                .send(ctx.getHolder(), TEST_PASSWORD);
         String authCode = authResponse.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -283,7 +299,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
         String issuerState = credOffer.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
-        CredentialOfferURI credOfferURI = ctx.getCredentialsOfferUriResponse().get().getCredentialOfferURI();
+        CredentialOfferURI credOfferURI = ctx.getCredentialsOfferUriResponse().getCredentialOfferURI();
         assertNotNull(credOfferURI, "No CredentialOfferURI");
         assertNotNull(credOfferURI.getQrCode(), "No QR Code");
     }
@@ -297,7 +313,7 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
             req.responseType(OfferResponseType.URI_QR);
             req.width(1000).height(1000);
         }));
-        CredentialOfferUriResponse res = ctx.getCredentialsOfferUriResponse().orElseThrow();
+        CredentialOfferUriResponse res = ctx.getCredentialsOfferUriResponse();
 
         String error = res.getError();
         assertNotNull(error, "No Error");

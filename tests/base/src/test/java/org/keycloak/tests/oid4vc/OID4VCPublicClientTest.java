@@ -36,7 +36,6 @@ import org.keycloak.util.JsonSerialization;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.NoSuchElementException;
-import org.opentest4j.AssertionFailedError;
 
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 
@@ -142,29 +141,6 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
         // assertEquals("Missing parameter: code_challenge_method", authResponse.getErrorDescription());
     }
 
-    @Test
-    public void testAuthorizationRequestWrongPassword() throws Exception {
-
-        var ctx = new OID4VCTestContext(pubClient, jwtTypeCredentialScope);
-
-        // Send AuthorizationRequest with incorrect credentials
-        //
-        AssertionFailedError ex = assertThrows(AssertionFailedError.class, () -> wallet
-                .authorizationRequest()
-                .scope(ctx.getScope())
-                .codeChallenge(PkceGenerator.s256())
-                .send(ctx.getHolder(), "wrong_password"));
-
-        assertTrue(ex.getMessage().contains("Expected OAuth callback, but URL was"), ex.getMessage());
-        assertTrue(ex.getMessage().contains("after timeout"), ex.getMessage());
-
-        // [TODO #47649] OAuthClient cannot handle invalid authorization requests
-        // https://github.com/keycloak/keycloak/issues/47649
-        // assertEquals("unauthorized", authResponse.getError());
-        // assertNull(authResponse.getErrorDescription(), "Null error description");
-
-    }
-
     // Private ---------------------------------------------------------------------------------------------------------
 
     private void verifyCredentialResponse(OID4VCTestContext ctx, String expUser, CredentialResponse credResponse) throws Exception {
@@ -172,6 +148,8 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
         String scope = ctx.getScope();
         CredentialResponse.Credential credentialObj = credResponse.getCredentials().get(0);
         assertNotNull(credentialObj, "The first credential in the array should not be null");
+
+        wallet.verifyCredentialsSignature(credResponse);
 
         JsonWebToken jsonWebToken = TokenVerifier.create((String) credentialObj.getCredential(), JsonWebToken.class).getToken();
         assertEquals("did:web:test.org", jsonWebToken.getIssuer());

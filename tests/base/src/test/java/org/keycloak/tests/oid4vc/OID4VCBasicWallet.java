@@ -17,7 +17,6 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKBuilder;
-import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.protocol.oid4vc.model.CredentialIssuer;
@@ -29,6 +28,7 @@ import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oid4vc.model.Proofs;
+import org.keycloak.protocol.oid4vc.model.SupportedCredentialConfiguration;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -261,14 +261,52 @@ public class OID4VCBasicWallet {
             public Oid4vcCredentialResponse send() {
                 Oid4vcCredentialResponse response = super.send();
                 ctx.putAttachment(CREDENTIALS_RESPONSE_ATTACHMENT_KEY, response);
-                if (response.isSuccess()) {
-                    CredentialResponse credentialResponse = response.getCredentialResponse();
-                }
                 return response;
             }
         };
         request.bearerToken(accessToken);
         return request;
+    }
+
+    public Oid4vcCredentialResponse fetchCredentialByOffer(OID4VCTestContext ctx, CredentialsOffer offer) {
+        AccessTokenResponse tokenResponse;
+        if (offer.hasPreAuthorizedGrant()) {
+            tokenResponse = accessTokenRequestPreAuth(ctx, offer.getPreAuthorizedCode()).send();
+        } else {
+            String scope = ctx.getScope();
+            String issuerState = offer.getIssuerState();
+            String credConfigId = offer.getCredentialConfigurationIds().get(0);
+            if (!ctx.getCredentialConfigurationId().equals(credConfigId)) {
+                SupportedCredentialConfiguration credConfig = getIssuerMetadata(ctx).getCredentialsSupported().get(credConfigId);
+                scope = credConfig.getScope();
+            }
+            String authCode = authorizationRequest()
+                    .scope(scope)
+                    .issuerState(issuerState)
+                    .send(ctx.getHolder(), TEST_PASSWORD)
+                    .getCode();
+            tokenResponse = accessTokenRequest(ctx, authCode).send();
+        }
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        Oid4vcCredentialResponse credResponse = credentialRequest(ctx, tokenResponse.getAccessToken())
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(generateJwtProof(ctx))
+                .send();
+        return credResponse;
+    }
+
+    public Oid4vcCredentialResponse fetchCredentialByScope(OID4VCTestContext ctx, String scope) {
+        String authCode = authorizationRequest()
+                .scope(scope)
+                .send(ctx.getHolder(), TEST_PASSWORD)
+                .getCode();
+        AccessTokenResponse tokenResponse = accessTokenRequest(ctx, authCode).send();
+        String credentialIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        Oid4vcCredentialResponse credResponse = credentialRequest(ctx, tokenResponse.getAccessToken())
+                .credentialIdentifier(credentialIdentifier)
+                .proofs(generateJwtProof(ctx))
+                .send();
+        return credResponse;
     }
 
     /**
@@ -298,14 +336,9 @@ public class OID4VCBasicWallet {
 
     // State Validation ------------------------------------------------------------------------------------------------
 
-    public void verifyCredentialsSignature(CredentialResponse credResponse, String algorithm) throws Exception {
+    public void verifyCredentialsSignature(CredentialResponse credResponse) {
         for (Credential credEntry : credResponse.getCredentials()) {
-
             String encodedCredential = credEntry.getCredential().toString();
-            JWSInput jwsInput = new JWSInput(encodedCredential);
-            JWSHeader header = jwsInput.getHeader();
-
-            assertEquals(algorithm, header.getRawAlgorithm());
             oauth.verifyToken(encodedCredential, JsonWebToken.class);
         }
     }

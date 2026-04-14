@@ -1212,49 +1212,6 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
     }
 
     @Test
-    public void testCredentialOfferReplayProtection() {
-        String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
-        final String credentialConfigurationId = jwtTypeCredentialScope.getAttributes()
-                .get(CredentialScopeModel.VC_CONFIGURATION_ID);
-
-        // 1. Retrieving the create-credential-offer
-        CredentialOfferURI credentialOfferURI = oauth.oid4vc()
-                .credentialOfferUriRequest(credentialConfigurationId)
-                .preAuthorized(false)
-                .targetUser("john")
-                .bearerToken(token)
-                .send()
-                .getCredentialOfferURI();
-
-        assertNotNull(credentialOfferURI, "Credential offer URI should not be null");
-
-        String nonce = credentialOfferURI.getNonce();
-        assertNotNull(nonce, "Nonce should not be null");
-
-        // 2. First access to the credential offer URL - should succeed
-        CredentialsOffer credentialsOffer = oauth.oid4vc()
-                .credentialOfferRequest(nonce)
-                .bearerToken(token)
-                .send()
-                .getCredentialsOffer();
-
-        assertNotNull(credentialsOffer, "Credential offer should not be null");
-
-        String issuerState = credentialsOffer.getIssuerState();
-        assertNotNull(issuerState, "Issuer state should not be null");
-
-        // 3. Second access to the same credential offer URL - should fail with replay protection error
-        CredentialOfferResponse response = oauth.oid4vc()
-                .credentialOfferRequest(nonce)
-                .bearerToken(token)
-                .send();
-
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode(), "Second access to credential offer should fail with 400 Bad Request");
-        assertEquals(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), response.getError(), "Error type should be INVALID_CREDENTIAL_OFFER_REQUEST");
-        assertTrue(response.getErrorDescription().contains("not found") || response.getErrorDescription().contains("already consumed"), "Error description should mention that offer is not found or already consumed");
-    }
-
-    @Test
     public void testCredentialOfferDifferentNoncesIndependent() {
         String token = getBearerToken(oauth, client, jwtTypeCredentialScope.getName());
         final String credentialConfigurationId = jwtTypeCredentialScope.getAttributes()
@@ -1302,24 +1259,6 @@ public class OID4VCJWTIssuerEndpointTest extends OID4VCIssuerEndpointTest {
                 .send()
                 .getCredentialsOffer();
         assertNotNull(credentialsOffer2, "Second credential offer should not be null");
-
-        // 5. Verify that accessing first offer again fails (replay protection per-nonce)
-        CredentialOfferResponse response1 = oauth.oid4vc()
-                .credentialOfferRequest(nonce1)
-                .bearerToken(token)
-                .send();
-
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response1.getStatusCode(), "First offer should fail on second access (replay protection)");
-        assertEquals(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), response1.getError(), "Error type should be INVALID_CREDENTIAL_OFFER_REQUEST");
-
-        // 6. Verify that accessing second offer again also fails (replay protection per-nonce)
-        CredentialOfferResponse response2 = oauth.oid4vc()
-                .credentialOfferRequest(nonce2)
-                .bearerToken(token)
-                .send();
-
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response2.getStatusCode(), "Second offer should fail on second access (replay protection)");
-        assertEquals(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), response2.getError(), "Error type should be INVALID_CREDENTIAL_OFFER_REQUEST");
     }
 
     @Test
