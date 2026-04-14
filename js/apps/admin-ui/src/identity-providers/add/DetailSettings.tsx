@@ -433,7 +433,7 @@ export default function DetailSettings() {
   const isSocial = !isOIDC && !isSAML && !isOAuth2;
   const isJWTAuthorizationGrantSupported =
     (isOAuth2 || isOIDC) &&
-    !!provider?.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
+    !!provider.types?.includes(IdentityProviderType.JWT_AUTHORIZATION_GRANT) &&
     isFeatureEnabled(Feature.JWTAuthorizationGrant);
   const groupResource = provider.organizationId
     ? adminClient.organizations.groups(provider.organizationId)
@@ -741,7 +741,7 @@ export default function DetailSettings() {
               <PermissionsTab id={alias} type="identityProviders" />
             </Tab>
           )}
-          {realmRepresentation?.adminEventsEnabled &&
+          {realmRepresentation.adminEventsEnabled &&
             hasAccess("view-events") && (
               <Tab
                 data-testid="admin-events-tab"

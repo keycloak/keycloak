@@ -67,7 +67,7 @@ export const PageHandler = ({
         ...component,
         providerId,
         providerType,
-        parentId: realm?.id,
+        parentId: realm.id,
       };
       if (id) {
         await adminClient.components.update({ id }, updatedComponent);

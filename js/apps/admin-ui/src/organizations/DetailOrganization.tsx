@@ -64,9 +64,6 @@ export default function DetailOrganization() {
   useFetch(
     () => adminClient.organizations.findOne({ id }),
     (org) => {
-      if (!org) {
-        throw new Error(t("notFound"));
-      }
       form.reset({
         ...org,
         domains: org.domains?.map((d) => d.name),
@@ -179,7 +176,7 @@ export default function DetailOrganization() {
           >
             <IdentityProviders />
           </Tab>
-          {realmRepresentation?.adminEventsEnabled &&
+          {realmRepresentation.adminEventsEnabled &&
             hasAccess("view-events") && (
               <Tab
                 data-testid="admin-events-tab"

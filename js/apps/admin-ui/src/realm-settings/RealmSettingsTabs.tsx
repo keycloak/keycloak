@@ -206,9 +206,7 @@ export const RealmSettingsTabs = () => {
                   selectedLocale: locale,
                 });
 
-              if (response) {
-                setTableData([response]);
-              }
+              setTableData([response]);
             } catch {
               return [];
             }
@@ -273,7 +271,7 @@ export const RealmSettingsTabs = () => {
       addError("realmSaveError", error);
     }
 
-    const isRealmRenamed = realmName !== (r.realm || realm?.realm);
+    const isRealmRenamed = realmName !== (r.realm || realm.realm);
     if (isRealmRenamed) {
       navigate(toRealmSettings({ realm: r.realm!, tab: "general" }));
     }

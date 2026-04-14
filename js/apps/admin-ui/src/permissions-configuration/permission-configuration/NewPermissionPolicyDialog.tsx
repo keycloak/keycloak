@@ -106,7 +106,7 @@ export const NewPermissionPolicyDialog = ({
   });
   const { addAlert, addError } = useAlerts();
   const { handleSubmit, reset } = form;
-  const isPermissionClient = realmRepresentation?.adminPermissionsEnabled;
+  const isPermissionClient = realmRepresentation.adminPermissionsEnabled;
 
   const policyTypeSelector = useWatch({
     control: form.control,

@@ -78,8 +78,7 @@ export const AssignedPolicies = ({
       return Promise.resolve([]);
     },
     (policies) => {
-      const filteredPolicy = policies.filter((p) => p) as [];
-      setSelectedPolicies(filteredPolicy);
+      setSelectedPolicies(policies);
     },
     [policies],
   );

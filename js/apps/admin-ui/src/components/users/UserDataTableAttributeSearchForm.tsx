@@ -140,59 +140,44 @@ export function UserDataTableAttributeSearchForm({
   };
 
   const createAttributeKeyInputField = () => {
-    if (profile) {
-      return (
-        <KeycloakSelect
-          data-testid="search-attribute-name-select"
-          variant={SelectVariant.typeahead}
-          onToggle={(isOpen) => setSelectAttributeKeyOpen(isOpen)}
-          selections={getValues().displayName}
-          onSelect={(selectedValue) => {
-            setValue("displayName", selectedValue.toString());
-            if (isAttributeKeyDuplicate()) {
-              setError("name", { type: "conflict" });
-            } else {
-              clearErrors("name");
-            }
-          }}
-          isOpen={selectAttributeKeyOpen}
-          placeholderText={t("selectAttribute")}
-          validated={errors.name && "error"}
-          maxHeight={300}
-          {...register("displayName", {
-            required: true,
-            validate: isAttributeNameValid,
-          })}
-        >
-          {profile.attributes?.map((option) => (
-            <SelectOption
-              key={option.name}
-              value={label(t, option.displayName!, option.name)}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectAttributeKeyOpen(false);
-                setValue("name", option.name!);
-              }}
-            >
-              {label(t, option.displayName!, option.name)}
-            </SelectOption>
-          ))}
-        </KeycloakSelect>
-      );
-    } else {
-      return (
-        <TextInput
-          id="name"
-          placeholder={t("keyPlaceholder")}
-          validated={errors.name && "error"}
-          onKeyDown={(e) => e.key === "Enter" && addToFilter()}
-          {...register("name", {
-            required: true,
-            validate: isAttributeNameValid,
-          })}
-        />
-      );
-    }
+    return (
+      <KeycloakSelect
+        data-testid="search-attribute-name-select"
+        variant={SelectVariant.typeahead}
+        onToggle={(isOpen) => setSelectAttributeKeyOpen(isOpen)}
+        selections={getValues().displayName}
+        onSelect={(selectedValue) => {
+          setValue("displayName", selectedValue.toString());
+          if (isAttributeKeyDuplicate()) {
+            setError("name", { type: "conflict" });
+          } else {
+            clearErrors("name");
+          }
+        }}
+        isOpen={selectAttributeKeyOpen}
+        placeholderText={t("selectAttribute")}
+        validated={errors.name && "error"}
+        maxHeight={300}
+        {...register("displayName", {
+          required: true,
+          validate: isAttributeNameValid,
+        })}
+      >
+        {profile.attributes?.map((option) => (
+          <SelectOption
+            key={option.name}
+            value={label(t, option.displayName!, option.name)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setSelectAttributeKeyOpen(false);
+              setValue("name", option.name!);
+            }}
+          >
+            {label(t, option.displayName!, option.name)}
+          </SelectOption>
+        ))}
+      </KeycloakSelect>
+    );
   };
 
   return (

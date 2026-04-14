@@ -72,26 +72,23 @@ export const AttributesTab = ({ setTableData }: AttributesTabProps) => {
         await Promise.all(
           combinedLocales.map(async (locale) => {
             try {
-              const response =
+              await adminClient.realms.getRealmLocalizationTexts({
+                realm,
+                selectedLocale: locale,
+              });
+
+              await adminClient.realms.deleteRealmLocalizationTexts({
+                realm,
+                selectedLocale: locale,
+                key: formattedTranslationsToDelete,
+              });
+
+              const updatedData =
                 await adminClient.realms.getRealmLocalizationTexts({
                   realm,
                   selectedLocale: locale,
                 });
-
-              if (response) {
-                await adminClient.realms.deleteRealmLocalizationTexts({
-                  realm,
-                  selectedLocale: locale,
-                  key: formattedTranslationsToDelete,
-                });
-
-                const updatedData =
-                  await adminClient.realms.getRealmLocalizationTexts({
-                    realm,
-                    selectedLocale: locale,
-                  });
-                setTableData([updatedData]);
-              }
+              setTableData([updatedData]);
             } catch {
               console.error(`Error removing translations for ${locale}`);
             }

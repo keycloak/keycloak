@@ -69,9 +69,7 @@ class AdminClient {
       await this.#client.clients.find({ clientId: clientName })
     )[0];
 
-    if (client) {
-      await this.#client.clients.del({ id: client.id! });
-    }
+    await this.#client.clients.del({ id: client.id! });
   }
 
   async createGroup(groupName: string, realm: string = this.#client.realmName) {
@@ -604,7 +602,7 @@ class AdminClient {
 
     const client = (await this.#client.clients.find({ clientId, realm }))[0];
 
-    if (!client?.id) {
+    if (!client.id) {
       throw new Error(`Client ${clientId} not found in realm ${realm}`);
     }
 
@@ -623,7 +621,7 @@ class AdminClient {
 
     const client = (await this.#client.clients.find({ clientId, realm }))[0];
 
-    if (!client?.id) {
+    if (!client.id) {
       throw new Error(`Client ${clientId} not found in realm ${realm}`);
     }
 

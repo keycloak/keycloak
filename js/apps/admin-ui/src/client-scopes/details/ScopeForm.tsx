@@ -83,7 +83,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const isDynamicScopesEnabled = isFeatureEnabled(Feature.DynamicScopes);
 
   // Get available hash algorithms from server info
-  const hashAlgorithms = serverInfo.providers?.hash?.providers
+  const hashAlgorithms = serverInfo.providers?.hash.providers
     ? Object.keys(serverInfo.providers.hash.providers).map((alg) =>
         alg.toLowerCase(),
       )
@@ -178,7 +178,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const isOid4vcProtocol = selectedProtocol === OID4VC_PROTOCOL;
   const isOid4vcEnabled =
     isFeatureEnabled(Feature.OpenId4VCI) &&
-    realmRepresentation?.verifiableCredentialsEnabled;
+    realmRepresentation.verifiableCredentialsEnabled;
   const isNotSaml = selectedProtocol != "saml";
   const recommendedTokenJwsType =
     selectedFormat === VC_FORMAT_SD_JWT

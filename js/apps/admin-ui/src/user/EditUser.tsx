@@ -97,7 +97,7 @@ export default function EditUser() {
   const [realmHasOrganizations, setRealmHasOrganizations] = useState(false);
   const isFeatureEnabled = useIsFeatureEnabled();
   const showOrganizations =
-    isFeatureEnabled(Feature.Organizations) && realm?.organizationsEnabled;
+    isFeatureEnabled(Feature.Organizations) && realm.organizationsEnabled;
 
   const toTab = (tab: UserTab) =>
     toUser({
@@ -143,7 +143,7 @@ export default function EditUser() {
       upConfig,
       organizations,
     ]) => {
-      if (!userData || !realm || !attackDetection) {
+      if (!userData || !attackDetection) {
         throw new Error(t("notFound"));
       }
 

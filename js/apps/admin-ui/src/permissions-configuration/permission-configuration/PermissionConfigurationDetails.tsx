@@ -221,10 +221,10 @@ export default function PermissionConfigurationDetails() {
     <>
       <DeleteConfirm />
       <ViewHeader
-        titleKey={permissionId ? permission?.name! : t("createPermission")}
+        titleKey={permissionId ? permission.name! : t("createPermission")}
         subKey={
           permissionId
-            ? permission?.description!
+            ? permission.description!
             : t("createPermissionOfType", { resourceType })
         }
         dropdownItems={

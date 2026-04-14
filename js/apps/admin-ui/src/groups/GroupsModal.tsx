@@ -152,9 +152,7 @@ export const GroupsModal = ({
           id: sourceGroup.id!,
         });
 
-        if (permissions) {
-          await groups.updatePermission({ id: createdGroup.id }, permissions);
-        }
+        await groups.updatePermission({ id: createdGroup.id }, permissions);
       }
 
       if (!groups.isOrgGroups()) {
