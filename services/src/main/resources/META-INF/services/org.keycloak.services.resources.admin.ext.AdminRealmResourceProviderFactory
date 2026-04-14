@@ -1,1 +1,1 @@
-org.keycloak.protocol.ssf.endpoint.admin.SsfAdminRealmResourceProviderFactory
+org.keycloak.ssf.endpoint.admin.SsfAdminRealmResourceProviderFactory
