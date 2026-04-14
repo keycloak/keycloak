@@ -63,7 +63,7 @@ public class OID4VCActionPreAuthTest extends OID4VCIssuerTestBase {
         oauth.loginForm()
                 .kcAction(getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, true))
                 .open();
-        oauth.fillLoginForm(user.getUsername(), "password");
+        oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
 
         credentialOfferPage.assertCurrent();
         String credentialOfferUri = credentialOfferPage.getCredentialOfferUri();

@@ -582,8 +582,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetail);
 
         AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
-                .withClientId(clientId)
-                .withClientSecret("password")
+                .withClientId(client.getClientId())
+                .withClientSecret(client.getSecret())
                 .send();
 
         // Keycloak may return 400 or 401 depending on validation order
@@ -601,8 +601,8 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetail);
 
         AccessTokenResponse errorResponse = new InvalidTokenRequest(code, oauth)
-                .withClientId(clientId)
-                .withClientSecret("password")
+                .withClientId(client.getClientId())
+                .withClientSecret(client.getSecret())
                 .withRedirectUri("http://invalid-redirect-uri")
                 .send();
 
@@ -657,7 +657,7 @@ public abstract class OID4VCAuthorizationCodeFlowTestBase extends OID4VCIssuerTe
         String code = performAuthorizationCodeLoginWithAuthorizationDetails(authDetail);
 
         AccessTokenResponse errorResponse = oauth.accessTokenRequest(code)
-                .client(clientId, "wrong-secret")
+                .client(client.getClientId(), "wrong-secret")
                 .send();
 
         assertEquals(401, errorResponse.getStatusCode());

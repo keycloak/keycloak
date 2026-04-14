@@ -93,7 +93,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         oauth.loginForm()
                 .kcAction(getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, false))
                 .open();
-        oauth.fillLoginForm(user.getUsername(), "password");
+        oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
 
         credentialOfferPage.assertCurrent();
         String credentialOfferUri = credentialOfferPage.getCredentialOfferUri();
@@ -134,7 +134,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
                 .authorizationRequest()
                 .scope(ctx.getScope())
                 .issuerState(issuerState)
-                .send(user.getUsername(), "password");
+                .send(user.getUsername(), TEST_PASSWORD);
         String authCode = authResponse.getCode();
         assertNotNull(authCode, "No authCode");
 
@@ -183,7 +183,7 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         oauth.loginForm()
                 .kcAction(getKcActionParameter(client.getClientId(), minimalJwtTypeCredentialConfigurationIdName, false))
                 .open();
-        oauth.fillLoginForm(user.getUsername(), "password");
+        oauth.fillLoginForm(user.getUsername(), TEST_PASSWORD);
 
         credentialOfferPage.assertCurrent();
         String credentialOfferUri = credentialOfferPage.getCredentialOfferUri();
@@ -217,10 +217,10 @@ public class OID4VCActionTest extends OID4VCIssuerTestBase {
         oauth.client(client.getClientId(), "test-secret");
 
         // Test missing kc_action_parameter
-        oauth.client(client.getClientId(), "password");
+        oauth.client(client.getClientId(), client.getSecret());
         AuthorizationEndpointResponse authzCodeResponse = oauth.loginForm()
                 .kcAction(VERIFIABLE_CREDENTIAL_OFFER_PROVIDER_ID)
-                .doLogin(user.getUsername(), "password");
+                .doLogin(user.getUsername(), TEST_PASSWORD);
         assertNotNull(authzCodeResponse.getCode());
         assertEquals(RequiredActionContext.KcActionStatus.ERROR.name().toLowerCase(), authzCodeResponse.getKcActionStatus());
 
