@@ -16,6 +16,9 @@ import org.keycloak.protocol.oid4vc.model.OID4VCAuthorizationDetail;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.Oid4vcCredentialResponse;
 
 
 /**
@@ -28,12 +31,12 @@ import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
  */
 public class OID4VCTestContext {
 
-    static final AttachmentKey<OIDCConfigurationRepresentation> AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY = new AttachmentKey<>(OIDCConfigurationRepresentation.class);
-    static final AttachmentKey<CredentialIssuer> ISSUER_METADATA_ATTACHMENT_KEY = new AttachmentKey<>(CredentialIssuer.class);
-    static final AttachmentKey<CredentialOfferURI> CREDENTIALS_OFFER_URI_ATTACHMENT_KEY = new AttachmentKey<>(CredentialOfferURI.class);
-    static final AttachmentKey<CredentialsOffer> CREDENTIALS_OFFER_ATTACHMENT_KEY = new AttachmentKey<>(CredentialsOffer.class);
-    static final AttachmentKey<AccessTokenResponse> ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(AccessTokenResponse.class);
-    static final AttachmentKey<CredentialResponse> CREDENTIAL_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(CredentialResponse.class);
+    public static final AttachmentKey<OIDCConfigurationRepresentation> AUTHORIZATION_SERVER_METADATA_ATTACHMENT_KEY = new AttachmentKey<>(OIDCConfigurationRepresentation.class);
+    public static final AttachmentKey<CredentialIssuer> ISSUER_METADATA_ATTACHMENT_KEY = new AttachmentKey<>(CredentialIssuer.class);
+    public static final AttachmentKey<CredentialOfferUriResponse> CREDENTIALS_OFFER_URI_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(CredentialOfferUriResponse.class);
+    public static final AttachmentKey<CredentialOfferResponse> CREDENTIALS_OFFER_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(CredentialOfferResponse.class);
+    public static final AttachmentKey<AccessTokenResponse> ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(AccessTokenResponse.class);
+    public static final AttachmentKey<Oid4vcCredentialResponse> CREDENTIALS_RESPONSE_ATTACHMENT_KEY = new AttachmentKey<>(Oid4vcCredentialResponse.class);
 
     private String issuer;      // Issuing username (i.e. agent who creates credential offers)
     private String holder;      // Holder who requests the credential
@@ -48,37 +51,6 @@ public class OID4VCTestContext {
         this.issuer = "john";
         this.holder = "alice";
         this.credentialScope = credentialScope;
-    }
-
-    public List<String> getAuthorizedCredentialIdentifiers() {
-        OID4VCAuthorizationDetail tokenAuthDetails = getOID4VCAuthorizationDetail();
-        return Optional.ofNullable(tokenAuthDetails)
-                .map(OID4VCAuthorizationDetail::getCredentialIdentifiers)
-                .orElse(Collections.emptyList());
-    }
-
-    public String getAuthorizedCredentialIdentifier() {
-        List<String> authorizedIdentifiers = getAuthorizedCredentialIdentifiers();
-        return authorizedIdentifiers.size() == 1 ? authorizedIdentifiers.get(0) : null;
-    }
-
-    public String getAuthorizedCredentialConfigurationId() {
-        OID4VCAuthorizationDetail tokenAuthDetails = getOID4VCAuthorizationDetail();
-        return Optional.ofNullable(tokenAuthDetails)
-                .map(OID4VCAuthorizationDetail::getCredentialConfigurationId)
-                .orElse(null);
-    }
-
-    public List<OID4VCAuthorizationDetail> getOID4VCAuthorizationDetails() {
-        AccessTokenResponse response = assertAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY);
-        return Optional.ofNullable(response)
-                .map(AccessTokenResponse::getOID4VCAuthorizationDetails)
-                .orElse(Collections.emptyList());
-    }
-
-    public OID4VCAuthorizationDetail getOID4VCAuthorizationDetail() {
-        List<OID4VCAuthorizationDetail> tokenAuthDetails = getOID4VCAuthorizationDetails();
-        return tokenAuthDetails.size() == 1 ? tokenAuthDetails.get(0) : null;
     }
 
     public ClientRepresentation getClient() {
@@ -111,6 +83,70 @@ public class OID4VCTestContext {
 
     public void setCredentialScope(CredentialScopeRepresentation credentialScope) {
         this.credentialScope = credentialScope;
+    }
+
+    public List<OID4VCAuthorizationDetail> getAuthorizationDetails() {
+        AccessTokenResponse response = assertAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY);
+        return Optional.ofNullable(response)
+                .map(AccessTokenResponse::getOID4VCAuthorizationDetails)
+                .orElse(Collections.emptyList());
+    }
+
+    public OID4VCAuthorizationDetail getAuthorizationDetail() {
+        List<OID4VCAuthorizationDetail> tokenAuthDetails = getAuthorizationDetails();
+        return tokenAuthDetails.size() == 1 ? tokenAuthDetails.get(0) : null;
+    }
+
+    public List<String> getAuthorizedCredentialIdentifiers() {
+        OID4VCAuthorizationDetail tokenAuthDetails = getAuthorizationDetail();
+        return Optional.ofNullable(tokenAuthDetails)
+                .map(OID4VCAuthorizationDetail::getCredentialIdentifiers)
+                .orElse(Collections.emptyList());
+    }
+
+    public String getAuthorizedCredentialIdentifier() {
+        List<String> authorizedIdentifiers = getAuthorizedCredentialIdentifiers();
+        return authorizedIdentifiers.size() == 1 ? authorizedIdentifiers.get(0) : null;
+    }
+
+    public String getAuthorizedCredentialConfigurationId() {
+        OID4VCAuthorizationDetail tokenAuthDetails = getAuthorizationDetail();
+        return Optional.ofNullable(tokenAuthDetails)
+                .map(OID4VCAuthorizationDetail::getCredentialConfigurationId)
+                .orElse(null);
+    }
+
+    public Optional<AccessTokenResponse> getAccessTokenResponse() {
+        var tokenResponse = getAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY);
+        return Optional.ofNullable(tokenResponse);
+    }
+
+    public Optional<CredentialOfferUriResponse> getCredentialsOfferUriResponse() {
+        var credOfferUriResponse = getAttachment(CREDENTIALS_OFFER_URI_RESPONSE_ATTACHMENT_KEY);
+        return Optional.ofNullable(credOfferUriResponse);
+    }
+
+    public Optional<CredentialOfferURI> getCredentialsOfferUri() {
+        return getCredentialsOfferUriResponse().map(CredentialOfferUriResponse::getCredentialOfferURI);
+    }
+
+    public Optional<CredentialOfferResponse> getCredentialsOfferResponse() {
+        var credOfferResponse = getAttachment(CREDENTIALS_OFFER_RESPONSE_ATTACHMENT_KEY);
+        return Optional.ofNullable(credOfferResponse);
+    }
+
+    public Optional<CredentialsOffer> getCredentialsOffer() {
+        return getCredentialsOfferResponse().map(CredentialOfferResponse::getCredentialsOffer);
+    }
+
+    public Optional<Oid4vcCredentialResponse> getOid4vcCredentialResponse() {
+        var credResponse = getAttachment(CREDENTIALS_RESPONSE_ATTACHMENT_KEY);
+        return Optional.ofNullable(credResponse);
+    }
+
+    public Optional<CredentialResponse> getCredentialResponse() {
+        var credResponse = getOid4vcCredentialResponse();
+        return credResponse.map(Oid4vcCredentialResponse::getCredentialResponse);
     }
 
     public String getCredentialConfigurationId() {

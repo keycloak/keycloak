@@ -156,6 +156,11 @@ public class OID4VCIssuerEndpoint {
      */
     public static final String CREDENTIALS_OFFER_ID_ATTR = "CREDENTIALS_OFFER_ID";
 
+    /**
+     * The maximum QR Code dimension
+     */
+    public static final Integer MAX_QR_CODE_DIMENSION = 800;
+
     private Cors cors;
 
     /**
@@ -461,6 +466,18 @@ public class OID4VCIssuerEndpoint {
             eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_REQUEST.getValue());
             throw new CorsErrorResponseException(cors,
                     ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), errorMessage, Response.Status.BAD_REQUEST);
+        }
+
+        // Verify image dimensions
+        //
+        if (List.of(OfferResponseType.QR, OfferResponseType.URI_QR).contains(responseType)) {
+            if (width < 1 || height < 1 || MAX_QR_CODE_DIMENSION < width || MAX_QR_CODE_DIMENSION < height) {
+                var dim = String.format("%dx%d", MAX_QR_CODE_DIMENSION, MAX_QR_CODE_DIMENSION);
+                var errorMessage = "Requested QR Code too large, allowed maximum is " + dim;
+                eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_REQUEST.getValue());
+                throw new CorsErrorResponseException(cors,
+                        ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST.getValue(), errorMessage, Response.Status.BAD_REQUEST);
+            }
         }
 
         LOGGER.debugf("Create a credential offer for %s", credentialConfigurationId);

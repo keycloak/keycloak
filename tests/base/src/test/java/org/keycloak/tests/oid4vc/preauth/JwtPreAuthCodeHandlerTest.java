@@ -41,14 +41,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @KeycloakIntegrationTest(config = VCTestServerWithPreAuthCodeEnabled.class)
 public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
 
-    OID4VCTestContext testCtx;
+    OID4VCTestContext ctx;
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
 
     @BeforeEach
     void beforeEach() {
-        testCtx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+        ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
     }
 
     @Test
@@ -72,7 +72,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         assertPreAuthCodeCtx(preAuthCodeCtx);
 
         // Ensure that the pre-auth code can be exchanged for an access token
-        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(testCtx, preAuthCode).send();
+        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
         assertEquals(HttpStatus.SC_OK, resp.getStatusCode());
         assertNotNull(resp.getAccessToken(), "Access token must not be null");
     }
@@ -106,7 +106,7 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         });
 
         // Ensure that it cannot be exchanged for an access token
-        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(testCtx, imposterPreAuthCode).send();
+        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(ctx, imposterPreAuthCode).send();
         assertEquals(HttpStatus.SC_BAD_REQUEST, resp.getStatusCode());
         assertEquals("Pre-authorized code failed handler verification (invalid_code)",
                 resp.getErrorDescription());
@@ -156,11 +156,11 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
         assertValidPreAuthCodeJwt(preAuthCode);
 
         // First use: the pre-auth code can be exchanged for an access token
-        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(testCtx, preAuthCode).send();
+        AccessTokenResponse resp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
         assertEquals(HttpStatus.SC_OK, resp.getStatusCode());
 
         // Second use: the same pre-auth code must be rejected as replayed
-        AccessTokenResponse replayResp = wallet.accessTokenRequestPreAuth(testCtx, preAuthCode).send();
+        AccessTokenResponse replayResp = wallet.accessTokenRequestPreAuth(ctx, preAuthCode).send();
         assertEquals(HttpStatus.SC_BAD_REQUEST, replayResp.getStatusCode());
         assertEquals("Pre-authorized code has already been used", replayResp.getErrorDescription());
     }
@@ -172,12 +172,12 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
                     "This testsuite expects JwtPreAuthCodeHandler as PreAuthCodeHandler provider");
         });
 
-        try {
-            CredentialsOffer offer = wallet.createCredentialOfferPreAuth(testCtx, testCtx.getHolder());
-            return offer.getPreAuthorizedCode();
-        } catch (Exception e) {
-            throw new AssertionError("Should not fail to create pre-auth code", e);
-        }
+        CredentialsOffer offer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
+        return offer.getPreAuthorizedCode();
     }
 
     public static void assertValidPreAuthCodeJwt(String jwt) {
@@ -200,8 +200,8 @@ public class JwtPreAuthCodeHandlerTest extends OID4VCIssuerTestBase {
 
     private void assertPreAuthCodeCtx(PreAuthCodeCtx preAuthCodeCtx) {
         assertEquals(client.getClientId(), preAuthCodeCtx.getTargetClientId());
-        assertEquals(getExistingUser(testCtx.getHolder()).getId(), preAuthCodeCtx.getTargetUserId());
-        assertEquals(List.of(testCtx.getCredentialScope().getCredentialConfigurationId()),
+        assertEquals(getExistingUser(ctx.getHolder()).getId(), preAuthCodeCtx.getTargetUserId());
+        assertEquals(List.of(ctx.getCredentialScope().getCredentialConfigurationId()),
                 preAuthCodeCtx.getCredentialConfigurationIds());
     }
 }
