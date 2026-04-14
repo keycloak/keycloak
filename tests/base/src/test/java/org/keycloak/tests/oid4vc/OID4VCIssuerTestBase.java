@@ -153,7 +153,6 @@ public abstract class OID4VCIssuerTestBase {
     protected CredentialScopeRepresentation jwtTypeCredentialScope;
     protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
 
-    protected String clientId = "test-app";
     protected ClientRepresentation client;
     protected ClientRepresentation pubClient;
     protected OID4VCBasicWallet wallet;
@@ -298,7 +297,7 @@ public abstract class OID4VCIssuerTestBase {
         if (scope != null) {
             oAuthClient.scope(scope);
         }
-        var authorizationEndpointResponse = oAuthClient.doLogin(username, "password");
+        var authorizationEndpointResponse = oAuthClient.doLogin(username, TEST_PASSWORD);
         return authorizationEndpointResponse;
     }
 
@@ -549,7 +548,7 @@ public abstract class OID4VCIssuerTestBase {
                     .emailVerified(true)
                     .firstName(firstName)
                     .lastName(lastName)
-                    .password("password")
+                    .password(TEST_PASSWORD)
                     .attribute("address_street_address", "221B Baker Street")
                     .attribute("address_locality", "London")
                     .roles("account", "manage-account", "view-profile");

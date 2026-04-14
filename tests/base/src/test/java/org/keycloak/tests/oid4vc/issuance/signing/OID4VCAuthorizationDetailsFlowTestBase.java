@@ -198,7 +198,7 @@ public abstract class OID4VCAuthorizationDetailsFlowTestBase extends OID4VCIssue
 
         try {
             AuthorizationEndpointResponse authResponse = authRequestSupplier.get()
-                    .send(ctx.getHolder(), "password");
+                    .send(ctx.getHolder(), TEST_PASSWORD);
 
             if (authResponse.getError() != null)
                 throw new IllegalStateException(authResponse.getErrorDescription());

@@ -81,7 +81,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
                 .scope(ctx.getScope())
                 .authorizationDetails(authDetail)
                 .codeChallenge(pkce)
-                .send(ctx.getHolder(), "password");
+                .send(ctx.getHolder(), TEST_PASSWORD);
         String authCode = authResponse.getCode();
 
         // Build and send AccessTokenRequest
@@ -116,7 +116,7 @@ public class OID4VCPublicClientTest extends OID4VCIssuerTestBase {
                 .authorizationRequest()
                 .scope(ctx.getScope())
                 .codeChallenge(PkceGenerator.s256())
-                .send(ctx.getHolder(), "password");
+                .send(ctx.getHolder(), TEST_PASSWORD);
 
         assertNull(authResponse.getError(), "No error");
         assertNotNull(authResponse.getCode(), "Has auth code");
