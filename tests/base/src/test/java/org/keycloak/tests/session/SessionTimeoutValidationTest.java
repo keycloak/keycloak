@@ -15,58 +15,30 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.session;
+package org.keycloak.tests.session;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserManager;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.ModelTest;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.remote.annotations.TestOnServer;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
-public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest {
+@KeycloakIntegrationTest
+public class SessionTimeoutValidationTest {
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
+    @InjectRealm(config = SessionTimeoutValidationRealmConfig.class)
+    ManagedRealm managedRealm;
 
-    }
 
-    
-    @Before
-    public  void before() {
-        testingClient.server().run( session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            session.users().addUser(realm, "user1");
-        });
-    }
-    
-
-    @After
-    public void after() {
-        testingClient.server().run( session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            session.sessions().removeUserSessions(realm);
-            UserModel user1 = session.users().getUserByUsername(realm, "user1");
-
-            UserManager um = new UserManager(session);
-            if (user1 != null) {
-                um.removeUser(realm, user1);
-            }
-        });
-    }
-    
-
-    @Test
-    @ModelTest
-    public  void testIsSessionValid(KeycloakSession session) {
+    @TestOnServer
+    public void testIsSessionValid(KeycloakSession session) {
         
         // KEYCLOAK-9833 Large SSO Session Idle/SSO Session Max causes login failure
         RealmModel realm = session.realms().getRealmByName("test");
@@ -80,14 +52,24 @@ public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest 
                                                 UserSessionModel.SessionPersistenceState.PERSISTENT);
 
         realm.setSsoSessionIdleTimeout(Integer.MAX_VALUE);
-        Assert.assertTrue("Session validataion with large SsoSessionIdleTimeout failed",
-                          AuthenticationManager.isSessionValid(realm, userSessionModel));
+        Assertions.assertTrue(AuthenticationManager.isSessionValid(realm, userSessionModel),
+                "Session validation with large SsoSessionIdleTimeout failed");
         
         realm.setSsoSessionMaxLifespan(Integer.MAX_VALUE);
-        Assert.assertTrue("Session validataion with large SsoSessionMaxLifespan failed",
-                          AuthenticationManager.isSessionValid(realm, userSessionModel));
+        Assertions.assertTrue(AuthenticationManager.isSessionValid(realm, userSessionModel),
+                "Session validation with large SsoSessionMaxLifespan failed");
         
         realm.setSsoSessionIdleTimeout(ssoSessionIdleTimeoutOrig);
         realm.setSsoSessionMaxLifespan(ssoSessionMaxLifespanOrig);
+    }
+
+    private static class SessionTimeoutValidationRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            realm.name("test");
+            realm.addUser("user1");
+            return realm;
+        }
     }
 }
