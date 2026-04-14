@@ -194,6 +194,9 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
      */
     private List<UserSessionModel> logoutOldestSessions(List<UserSessionModel> userSessions, long limit, EventBuilder eventBuilder) {
         long numberOfSessionsThatNeedToBeLoggedOut = getNumberOfSessionsThatNeedToBeLoggedOut(userSessions.size(), limit);
+        if (numberOfSessionsThatNeedToBeLoggedOut <= 0) {
+            return Collections.emptyList();
+        }
         if (numberOfSessionsThatNeedToBeLoggedOut == 1) {
             logger.info("Logging out oldest session");
         } else {
