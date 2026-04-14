@@ -10,11 +10,12 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.server.KeycloakUrls;
+import org.keycloak.testframework.ui.webdriver.ManagedWebDriver;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class UserSessionLimitsUtil {
-    
     protected static final String ERROR_TO_DISPLAY = "This account has too many sessions";
 
     protected static void configureSessionLimits(RealmModel realm, AuthenticationFlowModel flow, String behavior, String realmLimit, String clientLimit) {
@@ -55,5 +56,22 @@ public class UserSessionLimitsUtil {
             UserModel user = session.users().getUserByUsername(realm, username);
             assertEquals(count, session.sessions().getUserSessionsStream(realm, user).count());
         };
+    }
+
+
+    /**
+     * Delete all cookies for a specific realm.
+     * This method follows the WebDriver best practice of navigating to a page within the realm
+     * before deleting cookies to ensure all realm-scoped cookies are accessible for deletion.
+     *
+     * @param driver The WebDriver instance
+     * @param keycloakUrls The Keycloak URLs helper
+     * @param realmName The name of the realm
+     */
+    public static void deleteAllCookiesForRealm(ManagedWebDriver driver, KeycloakUrls keycloakUrls, String realmName) {
+        // Navigate to a blank page in the realm to ensure cookies are properly scoped
+        String realmUrl = keycloakUrls.getBase() + "/realms/" + realmName;
+        driver.driver().navigate().to(realmUrl + "/testing/blank");
+        driver.cookies().deleteAll();
     }
 }

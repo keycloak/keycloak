@@ -65,6 +65,9 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
         if (context.getRealm() != null && context.getUser() != null) {
 
+            long realmExcess = 0;
+            long clientExcess = 0;
+
             // Get the session count in this realm for this specific user
             List<UserSessionModel> userSessionsForRealm = session.sessions()
                     .getUserSessionsStream(context.getRealm(), context.getUser())
@@ -79,31 +82,43 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
             logger.debugf("session-limiter's count of total user sessions for the entire realm (could be apps other than web apps): %s", userSessionCountForRealm);
             logger.debugf("session-limiter's count of total user sessions for this keycloak client: %s", userSessionCountForClient);
 
-            // First check if the user has too many sessions in this realm
-            if (newUserSession && exceedsLimit(userSessionCountForRealm, userRealmLimit)) {
-                logger.infof("Too many session in this realm for the current user. Session count: %s", userSessionCountForRealm);
-                String eventDetails = String.format("Realm session limit exceeded. Realm: %s, Realm limit: %s. Session count: %s, User id: %s",
-                        context.getRealm().getName(), userRealmLimit, userSessionCountForRealm, context.getUser().getId());
-                handleLimitExceeded(context, userSessionsForRealm, eventDetails, userRealmLimit);
-            } // otherwise if the user is still allowed to create a new session in the realm, check if this applies for this specific client as well.
-            else if (newClientSession && exceedsLimit(userSessionCountForClient, userClientLimit)) {
+            // Calculate excess only when new sessions would be created
+            if (newUserSession && userRealmLimit > 0 && userSessionCountForRealm >= userRealmLimit) {
+                realmExcess = userSessionCountForRealm - userRealmLimit + 1;
+            }
+            if (newClientSession && userClientLimit > 0 && userSessionCountForClient >= userClientLimit) {
+                clientExcess = userSessionCountForClient - userClientLimit + 1;
+            }
+
+            boolean realmLimitHandled = false;
+            boolean clientLimitHandled = false;
+
+            // When both limits are exceeded, prioritize client limit (more restrictive)
+            // Check if this applies for this specific client first
+            if (newClientSession && clientExcess > 0) {
                 logger.infof("Too many sessions related to the current client for this user. Session count: %s", userSessionCountForClient);
                 String eventDetails = String.format("Client session limit exceeded. Realm: %s, Client limit: %s. Session count: %s, User id: %s",
                         context.getRealm().getName(), userClientLimit, userSessionCountForClient, context.getUser().getId());
                 handleLimitExceeded(context, userSessionsForClient, eventDetails, userClientLimit);
-            } else {
+                clientLimitHandled = true;
+            }
+            // Check if the user has too many sessions in this realm
+            else if (newUserSession && realmExcess > 0) {
+                logger.infof("Too many sessions in this realm for the current user. Session count: %s", userSessionCountForRealm);
+                String eventDetails = String.format("Realm session limit exceeded. Realm: %s, Realm limit: %s. Session count: %s, User id: %s",
+                        context.getRealm().getName(), userRealmLimit, userSessionCountForRealm, context.getUser().getId());
+
+                handleLimitExceeded(context, userSessionsForRealm, eventDetails, userRealmLimit);
+                realmLimitHandled = true;
+            }
+
+            // Only call success if no limits were handled (handleLimitExceeded already calls context.success() or context.failure())
+            if (!realmLimitHandled && !clientLimitHandled) {
                 context.success();
             }
         } else {
             context.success();
         }
-    }
-
-    private boolean exceedsLimit(long count, long limit) {
-        if (limit <= 0) { // if limit is zero or negative, consider the limit disabled
-            return false;
-        }
-        return getNumberOfSessionsThatNeedToBeLoggedOut(count, limit) > 0;
     }
 
     private long getNumberOfSessionsThatNeedToBeLoggedOut(long count, long limit) {
@@ -121,9 +136,9 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
     private List<UserSessionModel> getUserSessionsForClientIfEnabled(List<UserSessionModel> userSessionsForRealm, ClientModel currentClient, int userClientLimit) {
         // Only count this users sessions for this client only in case a limit is configured, otherwise skip this costly operation.
         if (userClientLimit <= 0) {
+            logger.debugf("total user sessions for this keycloak client will not be counted. Will be logged as 0 (zero)");
             return Collections.emptyList();
         }
-        logger.debugf("total user sessions for this keycloak client will not be counted. Will be logged as 0 (zero)");
         List<UserSessionModel> userSessionsForClient = userSessionsForRealm.stream().filter(session -> session.getAuthenticatedClientSessionByClient(currentClient.getId()) != null).collect(Collectors.toList());
         return userSessionsForClient;
     }
@@ -172,7 +187,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
             case UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION:
                 logger.info("Terminating oldest session");
-                var removedSessions = logoutOldestSessions(userSessions, limit, context.getEvent());
+                var removedSessions = logoutOldestSessions(context, userSessions, limit, context.getEvent());
                 context.success();
                 return removedSessions;
         }
@@ -183,31 +198,48 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
     /**
      * @return A list of logged-out user sessions, if any.
      */
-    private List<UserSessionModel> logoutOldestSessions(List<UserSessionModel> userSessions, long limit, EventBuilder eventBuilder) {
+    private List<UserSessionModel> logoutOldestSessions(AuthenticationFlowContext context, List<UserSessionModel> userSessions, long limit, EventBuilder eventBuilder) {
         long numberOfSessionsThatNeedToBeLoggedOut = getNumberOfSessionsThatNeedToBeLoggedOut(userSessions.size(), limit);
 
-        if (numberOfSessionsThatNeedToBeLoggedOut == 0) {
-            logger.debug("No additional sessions that need to be logged out");
-            return Collections.emptyList();
-        } else if (numberOfSessionsThatNeedToBeLoggedOut == 1) {
+        if (numberOfSessionsThatNeedToBeLoggedOut == 1) {
             logger.info("Logging out oldest session");
         } else {
             logger.infof("Logging out oldest %s sessions", numberOfSessionsThatNeedToBeLoggedOut);
         }
 
+        // Find ID of the client the user is currently trying to log into
+        String currentClientId = context.getAuthenticationSession().getClient().getId();
+
+        // Prioritize current client's sessions for removal
+        Comparator<UserSessionModel> clientPriorityComparator = (s1, s2) -> {
+            boolean s1IsCurrent = s1.getAuthenticatedClientSessionByClient(currentClientId) != null;
+            boolean s2IsCurrent = s2.getAuthenticatedClientSessionByClient(currentClientId) != null;
+
+            // Pick the current client's sessions first
+            if (s1IsCurrent && !s2IsCurrent) return -1;
+            if (!s1IsCurrent && s2IsCurrent) return 1;
+
+            // Fallback to age (Note: using getLastSessionRefresh, which is in seconds)
+            int timeCompare = Integer.compare(s1.getLastSessionRefresh(), s2.getLastSessionRefresh());
+            if (timeCompare != 0) return timeCompare;
+
+            // Original Tie-Breaker
+            return s1.getId().compareTo(s2.getId());
+        };
+
         List<UserSessionModel> userSessionsToBeRemoved = userSessions
-            .stream()
-            .sorted(Comparator.comparingInt(UserSessionModel::getLastSessionRefresh))
-            .limit(numberOfSessionsThatNeedToBeLoggedOut)
-            .toList();
+                .stream()
+                .sorted(clientPriorityComparator)
+                .limit(numberOfSessionsThatNeedToBeLoggedOut)
+                .toList();
 
         for (UserSessionModel userSession : userSessionsToBeRemoved) {
             AuthenticationManager.backchannelLogout(session, userSession, true);
             eventBuilder.clone()
-                .event(EventType.LOGOUT)
-                .user(userSession.getUser())
-                .session(userSession.getId())
-                .success();
+                    .event(EventType.LOGOUT)
+                    .user(userSession.getUser())
+                    .session(userSession.getId())
+                    .success();
         }
 
         return userSessionsToBeRemoved;
