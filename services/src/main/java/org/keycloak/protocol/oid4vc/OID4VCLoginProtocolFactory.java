@@ -156,6 +156,10 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     public void addClientScopeDefaults(ClientScopeRepresentation clientScope) {
         String scopeName = clientScope.getName();
 
+        if (clientScope.getAttributes() == null) {
+            clientScope.setAttributes(new HashMap<>());
+        }
+        
         clientScope.getAttributes().computeIfAbsent(VC_FORMAT, k -> VCFormat.getFromScope(scopeName));
         String format = clientScope.getAttributes().get(VC_FORMAT);
 
