@@ -108,6 +108,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
 
     private static volatile UPConfig PARSED_DEFAULT_RAW_CONFIG;
     private final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry = new HashMap<>();
+    private UPConfig parsedConfig;
 
     public static void setDefaultConfig(UPConfig defaultConfig) {
         if (PARSED_DEFAULT_RAW_CONFIG == null) {
@@ -396,7 +397,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
      */
     protected UserProfileMetadata configureUserProfile(UserProfileMetadata metadata) {
         // default metadata for each context is based on the default realm configuration
-        return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, PARSED_DEFAULT_RAW_CONFIG);
+        return new DeclarativeUserProfileProvider(null, this).decorateUserProfileForCache(metadata, parsedConfig);
     }
 
     private AttributeValidatorMetadata createReadOnlyAttributeUnchangedValidator(Pattern pattern) {
@@ -548,7 +549,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
     // GETTER METHODS FOR INTERNAL FIELDS
 
     protected UPConfig getParsedDefaultRawConfig() {
-        return PARSED_DEFAULT_RAW_CONFIG;
+        return parsedConfig;
     }
 
     protected Map<UserProfileContext, UserProfileMetadata> getContextualMetadataRegistry() {
@@ -560,7 +561,7 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         // The user-defined configuration is always parsed during init and should be avoided as much as possible
         // If no user-defined configuration is set, the system default configuration must have been set
         // In Quarkus, the system default configuration is set at build time for optimization purposes
-        UPConfig parsedConfig = ofNullable(config.get("configFile"))
+        parsedConfig = ofNullable(config.get("configFile"))
                 .map(Paths::get)
                 .map(UPConfigUtils::parseConfig)
                 .orElse(PARSED_DEFAULT_RAW_CONFIG);
@@ -569,8 +570,6 @@ public class DeclarativeUserProfileProviderFactory implements UserProfileProvide
         if (parsedConfig == null) {
             parsedConfig = UPConfigUtils.parseSystemDefaultConfig();
         }
-
-        setDefaultConfig(parsedConfig);
     }
 
     private static Map<String, Object> getEmailAnnotationDecorator(AttributeContext c) {
