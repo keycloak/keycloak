@@ -17,7 +17,11 @@ import {
 import { Table, Thead, Tr, Th, Tbody, Td } from "@patternfly/react-table";
 import { useAdminClient } from "../admin-client";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useAlerts } from "@keycloak/keycloak-ui-shared";
+import { useEnvironment, useAlerts } from "@keycloak/keycloak-ui-shared";
+import {
+  base64ToBytes,
+  bytesToBase64,
+} from "../tide-change-requests/utils/blockchain/tideSerialization";
 import {
   CheckCircleIcon,
   BanIcon,
@@ -38,6 +42,7 @@ interface ServerCertEntry {
 
 export const ServerCertsTab = () => {
   const { adminClient } = useAdminClient();
+  const { approveTideRequests } = useEnvironment();
   const { realm } = useRealm();
   const { t } = useTranslation();
   const { addAlert } = useAlerts();
@@ -74,52 +79,112 @@ export const ServerCertsTab = () => {
 
   const handleApprove = async (changeRequestId: string) => {
     try {
-      const token = await adminClient.getAccessToken();
-      const payload = {
-        changeSetId: changeRequestId,
-        changeSetType: "SERVER_CERT",
-        actionType: "CREATE",
-      };
-
-      // Sign
-      await fetch(
-        `${adminClient.baseUrl}/admin/realms/${realm}/tide-admin/change-set/sign`,
+      const changeRequests = [
         {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
+          changeSetId: changeRequestId,
+          changeSetType: "SERVER_CERT",
+          actionType: "CREATE",
+        },
+      ];
+
+      const respObj: any = await adminClient.tideUsersExt.approveDraftChangeSet(
+        {
+          changeSets: changeRequests,
         },
       );
 
-      // Commit
-      const commitResponse = await fetch(
-        `${adminClient.baseUrl}/admin/realms/${realm}/tide-admin/change-set/commit`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        },
-      );
+      if (respObj.length > 0) {
+        try {
+          const firstRespObj = respObj[0];
+          if (
+            firstRespObj.requiresApprovalPopup === true ||
+            firstRespObj.requiresApprovalPopup === "true"
+          ) {
+            const respMetaMap: Record<
+              string,
+              { actionType: string; changeSetType: string }
+            > = {};
 
-      if (commitResponse.ok) {
-        addAlert(
-          "Server certificate approved and signed",
-          AlertVariant.success,
-        );
-      } else {
-        const err = await commitResponse.text();
-        addAlert(`Approval failed: ${err}`, AlertVariant.danger);
+            const missingDraft = respObj.find(
+              (resp: any) => !resp.changeSetDraftRequests,
+            );
+            if (missingDraft) {
+              addAlert(
+                "Server cert request model not available. Please rebuild the IGA extensions.",
+                AlertVariant.danger,
+              );
+              return;
+            }
+
+            const changereqs = respObj.map((resp: any) => {
+              respMetaMap[resp.changesetId] = {
+                actionType: resp.actionType || "CREATE",
+                changeSetType: resp.changeSetType || "SERVER_CERT",
+              };
+              return {
+                id: resp.changesetId,
+                request: base64ToBytes(resp.changeSetDraftRequests),
+              };
+            });
+
+            const reviewResponses = await approveTideRequests(changereqs);
+
+            for (const reviewResp of reviewResponses) {
+              if (reviewResp.approved) {
+                const meta = respMetaMap[reviewResp.id] || {
+                  actionType: "CREATE",
+                  changeSetType: "SERVER_CERT",
+                };
+                const msg = reviewResp.approved.request;
+                const formData = new FormData();
+                formData.append("changeSetId", reviewResp.id);
+                formData.append("actionType", meta.actionType);
+                formData.append("changeSetType", meta.changeSetType);
+                formData.append("requests", bytesToBase64(msg));
+
+                await adminClient.tideAdmin.addReview(formData);
+              } else if (reviewResp.denied) {
+                const meta = respMetaMap[reviewResp.id] || {
+                  actionType: "CREATE",
+                  changeSetType: "SERVER_CERT",
+                };
+                const formData = new FormData();
+                formData.append("changeSetId", reviewResp.id);
+                formData.append("actionType", meta.actionType);
+                formData.append("changeSetType", meta.changeSetType);
+
+                await adminClient.tideAdmin.addRejection(formData);
+              }
+            }
+            // Commit after enclave approval
+            await adminClient.tideUsersExt.commitDraftChangeSet({
+              changeSets: changeRequests,
+            });
+            addAlert(
+              "Server certificate approved and signed",
+              AlertVariant.success,
+            );
+          } else {
+            // No enclave needed — commit directly
+            await adminClient.tideUsersExt.commitDraftChangeSet({
+              changeSets: changeRequests,
+            });
+            addAlert(
+              "Server certificate approved and signed",
+              AlertVariant.success,
+            );
+          }
+        } catch (error: any) {
+          addAlert(
+            error.responseData || "Approval failed",
+            AlertVariant.danger,
+          );
+        } finally {
+          void fetchCerts();
+        }
       }
-      void fetchCerts();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Approval failed";
-      addAlert(msg, AlertVariant.danger);
+    } catch (error: any) {
+      addAlert(error.responseData || "Approval failed", AlertVariant.danger);
     }
   };
 
@@ -260,6 +325,37 @@ export const ServerCertsTab = () => {
                       onClick={() => void handleApprove(cert.changeRequestId)}
                     >
                       Approve
+                    </Button>
+                  )}
+                  {cert.status === "APPROVED" && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await adminClient.tideUsersExt.commitDraftChangeSet({
+                            changeSets: [
+                              {
+                                changeSetId: cert.changeRequestId,
+                                changeSetType: "SERVER_CERT",
+                                actionType: "CREATE",
+                              },
+                            ],
+                          });
+                          addAlert(
+                            "Server certificate signed and committed",
+                            AlertVariant.success,
+                          );
+                          void fetchCerts();
+                        } catch (e: any) {
+                          addAlert(
+                            e.responseData || "Commit failed",
+                            AlertVariant.danger,
+                          );
+                        }
+                      }}
+                    >
+                      Commit
                     </Button>
                   )}
                   {cert.status === "ACTIVE" && !cert.revoked && (
