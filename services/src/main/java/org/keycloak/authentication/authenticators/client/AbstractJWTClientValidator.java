@@ -103,8 +103,10 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
 
         String clientIdParam = context.getHttpRequest().getDecodedFormParameters().getFirst(OAuth2Constants.CLIENT_ID);
         if (clientIdParam != null && !clientIdParam.equals(clientId)) {
-            logger.debug("client_id parameter does not match JWT subject");
-            return failure("client_id parameter does not match sub claim");
+            if (isClientIdParamValidationEnabled()) {
+                return failure("client_id parameter does not match sub claim");
+            }
+            logger.debugf("client_id parameter '%s' does not match JWT subject, but validation is disabled", clientIdParam);
         }
 
         String expectedTokenIssuer = getExpectedTokenIssuer();
@@ -177,6 +179,19 @@ public abstract class AbstractJWTClientValidator extends AbstractBaseJWTValidato
     protected abstract boolean isReusePermitted();
 
     protected abstract String getExpectedSignatureAlgorithm();
+
+    /**
+     * Controls whether the {@code client_id} form parameter, when present, must match the JWT
+     * {@code sub} claim. Returns {@code true} by default.
+     *
+     * <p>For federated client assertions (e.g., Kubernetes, SPIFFE), the JWT subject represents
+     * an external identity that differs from the Keycloak client ID. In those cases, subclasses
+     * should return {@code false}. The client is still securely resolved via JWT claims, not the
+     * form parameter.</p>
+     */
+    protected boolean isClientIdParamValidationEnabled() {
+        return true;
+    }
 
     public interface SignatureValidator {
 

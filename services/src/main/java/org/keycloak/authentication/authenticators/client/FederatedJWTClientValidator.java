@@ -13,13 +13,16 @@ public class FederatedJWTClientValidator extends AbstractJWTClientValidator {
     private final boolean reusePermitted;
     private int maximumExpirationTime = 300;
     private final List<String> validAudiences;
+    private final boolean clientIdParamValidationEnabled;
 
     public FederatedJWTClientValidator(ClientAuthenticationFlowContext context, SignatureValidator signatureValidator,
-            String expectedTokenIssuer, int allowedClockSkew, boolean reusePermitted, String... validAudiences) throws Exception {
+            String expectedTokenIssuer, int allowedClockSkew, boolean reusePermitted, boolean clientIdParamValidationEnabled,
+            String... validAudiences) throws Exception {
         super(context, signatureValidator, null);
         this.expectedTokenIssuer = expectedTokenIssuer;
         this.allowedClockSkew = allowedClockSkew;
         this.reusePermitted = reusePermitted;
+        this.clientIdParamValidationEnabled = clientIdParamValidationEnabled;
         this.validAudiences = validAudiences == null ? Collections.emptyList() : List.of(validAudiences);
     }
 
@@ -66,5 +69,10 @@ public class FederatedJWTClientValidator extends AbstractJWTClientValidator {
 
     public void setExpectedClientAssertionType(String clientAssertionType) {
         this.expectedClientAssertionType = clientAssertionType;
+    }
+
+    @Override
+    protected boolean isClientIdParamValidationEnabled() {
+        return clientIdParamValidationEnabled;
     }
 }

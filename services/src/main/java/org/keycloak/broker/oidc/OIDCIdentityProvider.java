@@ -1111,9 +1111,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         FederatedJWTClientValidator validator = config.isAllowClientIdAsAudience() && config.getClientId() != null
                 ? new FederatedJWTClientValidator(context, v -> verifySignature(v.getJws()), config.getIssuer(),
-                        config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse(), config.getClientId())
+                        config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse(), true, config.getClientId())
                 : new FederatedJWTClientValidator(context, v -> verifySignature(v.getJws()), config.getIssuer(),
-                        config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse());
+                        config.getAllowedClockSkew(), config.isSupportsClientAssertionReuse(), true);
 
         if (!Profile.isFeatureEnabled(Profile.Feature.CLIENT_AUTH_FEDERATED)) {
             return false;

@@ -17,6 +17,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testsuite.util.IdentityProviderBuilder;
+import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
@@ -68,6 +69,30 @@ public class KubernetesClientAuthTest extends AbstractBaseClientAuthTest {
         JsonWebToken jwt = createDefaultToken();
         jwt.iat((long) (Time.currentTime() - 3550));
         assertSuccess(internalClientId, doClientGrant(jwt));
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testValidTokenWithClientId() {
+        JsonWebToken jwt = createDefaultToken();
+        String jws = getIdentityProvider().encodeToken(jwt);
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
+                .client(INTERNAL_CLIENT_ID)
+                .clientJwt(jws, getClientAssertionType())
+                .send();
+        assertSuccess(internalClientId, response);
+        assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
+    }
+
+    @Test
+    public void testWrongClientIdDoesNotAffectClientResolution() {
+        JsonWebToken jwt = createDefaultToken();
+        String jws = getIdentityProvider().encodeToken(jwt);
+        AccessTokenResponse response = oAuthClient.clientCredentialsGrantRequest()
+                .client("completely-wrong-id")
+                .clientJwt(jws, getClientAssertionType())
+                .send();
+        assertSuccess(internalClientId, response);
         assertSuccess(internalClientId, jwt.getId(), expectedTokenIssuer, externalClientId, events.poll());
     }
 

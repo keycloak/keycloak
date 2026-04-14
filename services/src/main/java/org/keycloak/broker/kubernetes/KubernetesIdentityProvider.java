@@ -30,7 +30,7 @@ public class KubernetesIdentityProvider implements ClientAssertionIdentityProvid
 
     @Override
     public boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception {
-        FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, this::verifySignature, config.getIssuer(), config.getAllowedClockSkew(), true);
+        FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, this::verifySignature, config.getIssuer(), config.getAllowedClockSkew(), true, false);
         if (config.getFederatedClientAssertionMaxExpiration() != 0) {
             validator.setMaximumExpirationTime(config.getFederatedClientAssertionMaxExpiration());
         } else {
