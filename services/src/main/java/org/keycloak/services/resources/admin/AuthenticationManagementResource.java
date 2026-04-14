@@ -379,7 +379,8 @@ public class AuthenticationManagementResource {
                 () -> {}, // allow deleting even with missing references
                 () -> {
                     throw new BadRequestException("Can't delete built in flow");
-                }
+                },
+                flow.isBuiltIn()
         );
 
         // Use just one event for top-level flow. Using separate events won't work properly for flows of depth 2 or bigger
@@ -1034,7 +1035,8 @@ public class AuthenticationManagementResource {
                 () -> {}, // allow deleting even with missing references
                 () -> {
                     throw new BadRequestException("It is illegal to remove execution from a built in flow");
-                }
+                },
+                parentFlow.isBuiltIn()
         );
 
         adminEvent.operation(OperationType.DELETE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).success();
