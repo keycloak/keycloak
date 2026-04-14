@@ -49,7 +49,7 @@ public class SpiffeIdentityProvider implements ClientAssertionIdentityProvider<S
     @Override
     public boolean verifyClientAssertion(ClientAuthenticationFlowContext context) throws Exception {
         FederatedJWTClientValidator validator = new FederatedJWTClientValidator(context, this::verifySignature,
-                    null, config.getAllowedClockSkew(), true, true);
+                    null, config.getAllowedClockSkew(), true, false);
         validator.setExpectedClientAssertionType(SpiffeConstants.CLIENT_ASSERTION_TYPE);
 
         if (config.getFederatedClientAssertionMaxExpiration() != 0) {
