@@ -8,7 +8,7 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 
 public class MigrateTo26_6_1 extends RealmMigration {
 
-    public static final ModelVersion VERSION = new ModelVersion("26.6.0");
+    public static final ModelVersion VERSION = new ModelVersion("26.6.1");
 
     @Override
     public ModelVersion getVersion() {
