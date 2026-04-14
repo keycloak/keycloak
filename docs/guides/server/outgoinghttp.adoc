@@ -45,6 +45,11 @@ Maximum time an idle connection stays in the connection pool, in milliseconds. I
 *disable-cookies*::
 Enable or disable caching of cookies. Default: true.
 
+*allow-redirects*::
+Whether to allow following HTTP redirects. Default: false.
+This option is deprecated, only provided for backwards compatibility, and will be removed in a future release.
+It is recommended to be `false` to avoid redirects that could lead for example to server-side request forgery (SSRF).
+
 *client-keystore*::
 File path to a Java keystore file. This keystore contains client certificates for mTLS.
 
