@@ -27,9 +27,7 @@ import org.keycloak.models.sessions.infinispan.changes.sessions.AbstractLastSess
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
-import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
-import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -44,9 +42,6 @@ import org.junit.jupiter.api.Test;
  */
 @KeycloakIntegrationTest
 public class LastSessionRefreshUnitTest {
-
-    @InjectRealm
-    ManagedRealm managedRealm;
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;

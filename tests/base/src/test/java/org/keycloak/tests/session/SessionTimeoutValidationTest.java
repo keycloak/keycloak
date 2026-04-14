@@ -19,8 +19,6 @@ package org.keycloak.tests.session;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserManager;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -29,10 +27,7 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.remote.annotations.TestOnServer;
-import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
-import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 
 @KeycloakIntegrationTest
@@ -40,23 +35,6 @@ public class SessionTimeoutValidationTest {
 
     @InjectRealm(config = SessionTimeoutValidationRealmConfig.class)
     ManagedRealm managedRealm;
-
-    @InjectRunOnServer
-    RunOnServerClient runOnServer;
-
-    @AfterEach
-    public void after() {
-        runOnServer.run( session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            session.sessions().removeUserSessions(realm);
-            UserModel user1 = session.users().getUserByUsername(realm, "user1");
-
-            UserManager um = new UserManager(session);
-            if (user1 != null) {
-                um.removeUser(realm, user1);
-            }
-        });
-    }
 
 
     @TestOnServer
