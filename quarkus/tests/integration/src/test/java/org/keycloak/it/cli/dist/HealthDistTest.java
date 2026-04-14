@@ -104,7 +104,7 @@ public class HealthDistTest {
                 .body("checks.size()", equalTo(3))
                 .body(containsString("\"Keycloak Initialized\""));
         assertTrue(result.getOutput().indexOf(LISTENING_ON_HTTP) < result.getOutput().indexOf(BOOTSTRAP_COMPLETED),
-                () -> "Should first listen, then boostrap");
+                () -> "Should first listen, then bootstrap");
     }
 
     @Test
