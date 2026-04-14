@@ -91,6 +91,6 @@
   }, {
     "class" : "org.keycloak.migration.migrators.MigrateTo26_4_0"
   }, {
-    "class" : "org.keycloak.migration.migrators.MigrateTo26_6_0"
+    "class" : "org.keycloak.migration.migrators.MigrateTo26_6_1"
   } ]
 }
