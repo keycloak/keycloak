@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 
 import { FormattedLink } from "../../components/external-link/FormattedLink";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import type { Environment } from "../../environment";
+import type { Environment } from "../../environment.d";
 import { DisplayOrder } from "../component/DisplayOrder";
 import { RedirectUrl } from "../component/RedirectUrl";
 

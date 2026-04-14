@@ -22,7 +22,7 @@ import { AccessContextProvider } from "./context/access/Access";
 import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { ServerInfoProvider } from "./context/server-info/ServerInfoProvider";
 import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
-import type { Environment } from "./environment";
+import type { Environment } from "./environment.d";
 import { SubGroups } from "./groups/SubGroupsContext";
 import { AuthWall } from "./root/AuthWall";
 import { Banners } from "./Banners";

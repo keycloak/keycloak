@@ -4,7 +4,7 @@ import {
   useRequiredContext,
 } from "@keycloak/keycloak-ui-shared";
 import type Keycloak from "keycloak-js";
-import type { Environment } from "./environment";
+import type { Environment } from "./environment.d";
 
 export type AdminClientProps = {
   keycloak: Keycloak;

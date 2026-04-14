@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient } from "../../admin-client";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import type { Environment } from "../../environment";
+import type { Environment } from "../../environment.d";
 import { addTrailingSlash } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
