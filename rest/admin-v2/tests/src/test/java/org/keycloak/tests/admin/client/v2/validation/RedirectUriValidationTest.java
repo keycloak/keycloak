@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -376,57 +377,49 @@ class RedirectUriValidationTest {
         @DisplayName("provides correct error for empty URI")
         void providesCorrectErrorForEmptyUri() {
             String error = ValidRedirectUrisValidator.validateRedirectUri("", false);
-            assertNotNull(error);
-            assertTrue(error.contains("empty"));
+            assertEquals("Redirect URI cannot be empty", error);
         }
 
         @Test
         @DisplayName("provides correct error for relative URI without root URL")
         void providesCorrectErrorForRelativeUriWithoutRootUrl() {
             String error = ValidRedirectUrisValidator.validateRedirectUri("foo/bar", false);
-            assertNotNull(error);
-            assertTrue(error.contains("absolute"));
+            assertEquals("Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set", error);
         }
 
         @Test
         @DisplayName("provides correct error for wildcard not at end")
         void providesCorrectErrorForWildcardNotAtEnd() {
             String error = ValidRedirectUrisValidator.validateRedirectUri("https://foo/*/bar", false);
-            assertNotNull(error);
-            assertTrue(error.contains("end"));
+            assertEquals("Wildcard (*) must be at the end of the URI", error);
         }
 
         @Test
         @DisplayName("provides correct error for wildcard not preceded by slash")
         void providesCorrectErrorForWildcardNotPrecededBySlash() {
             String error = ValidRedirectUrisValidator.validateRedirectUri("https://foo/bar*", false);
-            assertNotNull(error);
-            assertTrue(error.contains("slash"));
+            assertEquals("Wildcard (*) must be preceded by a slash (/)", error);
         }
 
         @Test
         @DisplayName("provides correct error for wildcard with query parameters")
         void providesCorrectErrorForWildcardWithQueryParams() {
             String error = ValidRedirectUrisValidator.validateRedirectUri("https://foo/bar/*?query", false);
-            assertNotNull(error);
-            assertTrue(error.contains("query"));
+            assertEquals("Wildcard (*) must be at the end of the URI", error);
         }
 
         @Test
         @DisplayName("provides correct error for wildcard with fragment")
         void providesCorrectErrorForWildcardWithFragment() {
             String error = ValidRedirectUrisValidator.validateRedirectUri("https://foo/bar/*#frag", false);
-            assertNotNull(error);
-            assertTrue(error.contains("fragment"));
+            assertEquals("Wildcard (*) must be at the end of the URI", error);
         }
 
         @Test
         @DisplayName("provides correct error for multiple wildcards")
         void providesCorrectErrorForMultipleWildcards() {
             String error = ValidRedirectUrisValidator.validateRedirectUri("https://foo/*/bar/*", false);
-            assertNotNull(error);
-            // First error encountered is "wildcard not at end" since there's a wildcard in the middle
-            assertTrue(error.contains("end"));
+            assertEquals("Only one wildcard (*) is allowed at the end of the URI", error);
         }
     }
 }
