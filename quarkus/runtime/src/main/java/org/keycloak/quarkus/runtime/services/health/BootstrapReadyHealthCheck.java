@@ -33,7 +33,7 @@ import org.eclipse.microprofile.health.Readiness;
  */
 @Readiness
 @ApplicationScoped
-public class BoostrapReadyHealthCheck implements AsyncHealthCheck {
+public class BootstrapReadyHealthCheck implements AsyncHealthCheck {
 
     private static final HealthCheckResponse UP = builder().up().build();
     private boolean bootstrapCompleted;
