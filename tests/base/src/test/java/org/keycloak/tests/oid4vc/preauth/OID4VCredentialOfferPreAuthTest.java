@@ -52,7 +52,10 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         try {
             IllegalStateException error = assertThrows(IllegalStateException.class,
-                    () -> wallet.createCredentialOfferPreAuth(ctx, ctx.getHolder()));
+                    () -> wallet.createCredentialOffer(ctx, req -> {
+                        req.targetUser(ctx.getHolder());
+                        req.preAuthorized(true);
+                    }));
             assertTrue(error.getMessage().contains("User 'alice' disabled"), error.getMessage());
         } finally {
             userRep.setEnabled(true);
@@ -67,7 +70,11 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         // Create Pre-Authorized CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createCredentialOfferPreAuth(ctx, null);
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.preAuthorized(true);
+            req.targetUser(null);
+        });
+
         String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken
@@ -97,7 +104,11 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
 
         // Create Pre-Authorized CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createCredentialOfferPreAuth(ctx, ctx.getHolder());
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+            req.preAuthorized(true);
+        });
+
         String preAuthCode = credOffer.getPreAuthorizedCode();
 
         // Redeem Pre-Authorized Code for AccessToken

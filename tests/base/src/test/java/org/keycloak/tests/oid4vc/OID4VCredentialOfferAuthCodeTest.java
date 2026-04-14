@@ -4,8 +4,10 @@ import java.net.URI;
 import java.util.List;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
+import org.keycloak.protocol.oid4vc.model.OfferResponseType;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.sdjwt.IssuerSignedJWT;
@@ -14,8 +16,10 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase.VCTestServerConfig;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
 import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferUriResponse;
 import org.keycloak.util.JsonSerialization;
 
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 
 import static org.keycloak.OID4VCConstants.CLAIM_NAME_VCT;
@@ -51,7 +55,10 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
         // Create Authorization Code CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createCredentialOfferAuthCode(ctx, null);
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(null);
+        });
+
         String issuerState = credOffer.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
@@ -91,8 +98,11 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
         // Create Authorization Code CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createCredentialOfferAuthCode(ctx1, null);
-        String issuerState = credOffer.getIssuerState();
+        CredentialsOffer credOffer1 = wallet.createCredentialOffer(ctx1, req -> {
+            req.targetUser(null);
+        });
+
+        String issuerState = credOffer1.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
         // Send AuthorizationRequest
@@ -123,7 +133,10 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
         // Create Authorization Code CredentialOffer and obtain 2nd access-token for different VC
         //
-        CredentialsOffer credOffer2 = wallet.createCredentialOfferAuthCode(ctx2, null);
+        CredentialsOffer credOffer2 = wallet.createCredentialOffer(ctx2, req -> {
+            req.targetUser(null);
+        });
+
         issuerState = credOffer2.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
@@ -176,7 +189,10 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
         // Create Authorization Code CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createCredentialOfferAuthCode(ctx, null);
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(null);
+        });
+
         String issuerState = credOffer.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
@@ -219,7 +235,10 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
 
         // Create Authorization Code CredentialOffer
         //
-        CredentialsOffer credOffer = wallet.createCredentialOfferAuthCode(ctx, ctx.getHolder());
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.targetUser(ctx.getHolder());
+        });
+
         String issuerState = credOffer.getIssuerState();
         assertNotNull(issuerState, "No IssuerState");
 
@@ -250,6 +269,46 @@ public class OID4VCredentialOfferAuthCodeTest extends OID4VCIssuerTestBase {
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
+    }
+
+    @Test
+    public void testAuthCodeOffer_QRCode() {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        CredentialsOffer credOffer = wallet.createCredentialOffer(ctx, req -> {
+            req.responseType(OfferResponseType.URI_QR);
+        });
+
+        String issuerState = credOffer.getIssuerState();
+        assertNotNull(issuerState, "No IssuerState");
+
+        CredentialOfferURI credOfferURI = ctx.getCredentialsOfferUriResponse().get().getCredentialOfferURI();
+        assertNotNull(credOfferURI, "No CredentialOfferURI");
+        assertNotNull(credOfferURI.getQrCode(), "No QR Code");
+    }
+
+    @Test
+    public void testAuthCodeOffer_QRCode_InvalidDimensions() {
+
+        var ctx = new OID4VCTestContext(client, jwtTypeCredentialScope);
+
+        var ex = assertThrows(IllegalStateException.class, () -> wallet.createCredentialOfferUri(ctx, req -> {
+            req.responseType(OfferResponseType.URI_QR);
+            req.width(1000).height(1000);
+        }));
+        CredentialOfferUriResponse res = ctx.getCredentialsOfferUriResponse().orElseThrow();
+
+        String error = res.getError();
+        assertNotNull(error, "No Error");
+
+        String errorDescription = res.getErrorDescription();
+        assertNotNull(errorDescription, "No ErrorDescription");
+
+        assertEquals(HttpStatus.SC_BAD_REQUEST, res.getStatusCode());
+        assertEquals("invalid_credential_offer_request", error);
+        assertEquals("Requested QR Code too large, allowed maximum is 800x800", errorDescription);
+        assertEquals(String.format("[%s] %s", error, errorDescription), ex.getMessage());
     }
 
     // Private ---------------------------------------------------------------------------------------------------------
