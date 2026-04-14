@@ -116,37 +116,43 @@ public class OID4VCTestContext {
                 .orElse(null);
     }
 
-    public Optional<AccessTokenResponse> getAccessTokenResponse() {
+    public AccessTokenResponse getAccessTokenResponse() {
         var tokenResponse = getAttachment(ACCESS_TOKEN_RESPONSE_ATTACHMENT_KEY);
-        return Optional.ofNullable(tokenResponse);
+        return tokenResponse;
     }
 
-    public Optional<CredentialOfferUriResponse> getCredentialsOfferUriResponse() {
+    public CredentialOfferUriResponse getCredentialsOfferUriResponse() {
         var credOfferUriResponse = getAttachment(CREDENTIALS_OFFER_URI_RESPONSE_ATTACHMENT_KEY);
-        return Optional.ofNullable(credOfferUriResponse);
+        return credOfferUriResponse;
     }
 
-    public Optional<CredentialOfferURI> getCredentialsOfferUri() {
-        return getCredentialsOfferUriResponse().map(CredentialOfferUriResponse::getCredentialOfferURI);
+    public CredentialOfferURI getCredentialsOfferUri() {
+        return Optional.ofNullable(getCredentialsOfferUriResponse())
+                .map(CredentialOfferUriResponse::getCredentialOfferURI)
+                .orElse(null);
     }
 
-    public Optional<CredentialOfferResponse> getCredentialsOfferResponse() {
+    public CredentialOfferResponse getCredentialsOfferResponse() {
         var credOfferResponse = getAttachment(CREDENTIALS_OFFER_RESPONSE_ATTACHMENT_KEY);
-        return Optional.ofNullable(credOfferResponse);
+        return credOfferResponse;
     }
 
-    public Optional<CredentialsOffer> getCredentialsOffer() {
-        return getCredentialsOfferResponse().map(CredentialOfferResponse::getCredentialsOffer);
+    public CredentialsOffer getCredentialsOffer() {
+        return Optional.ofNullable(getCredentialsOfferResponse())
+                .map(CredentialOfferResponse::getCredentialsOffer)
+                .orElse(null);
     }
 
-    public Optional<Oid4vcCredentialResponse> getOid4vcCredentialResponse() {
+    public Oid4vcCredentialResponse getOid4vcCredentialResponse() {
         var credResponse = getAttachment(CREDENTIALS_RESPONSE_ATTACHMENT_KEY);
-        return Optional.ofNullable(credResponse);
+        return credResponse;
     }
 
-    public Optional<CredentialResponse> getCredentialResponse() {
+    public CredentialResponse getCredentialResponse() {
         var credResponse = getOid4vcCredentialResponse();
-        return credResponse.map(Oid4vcCredentialResponse::getCredentialResponse);
+        return Optional.ofNullable(credResponse)
+                .map(Oid4vcCredentialResponse::getCredentialResponse)
+                .orElse(null);
     }
 
     public String getCredentialConfigurationId() {

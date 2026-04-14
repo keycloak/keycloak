@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.protocol.oid4vc.model.CredentialOfferURI;
 import org.keycloak.protocol.oid4vc.model.CredentialResponse;
 import org.keycloak.protocol.oid4vc.model.CredentialsOffer;
 import org.keycloak.protocol.oid4vc.model.VerifiableCredential;
@@ -14,6 +15,7 @@ import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.oid4vc.CredentialOfferResponse;
 import org.keycloak.util.JsonSerialization;
 
 import org.junit.jupiter.api.Test;
@@ -110,6 +112,16 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
         });
 
         String preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
+
+        CredentialOfferURI offerURI = ctx.getCredentialsOfferUri();
+        assertNotNull(offerURI, "No CredentialOfferURI");
+
+        // Fetch credential offer again
+        // https://github.com/keycloak/keycloak/issues/48014
+        credOffer = wallet.credentialsOfferRequest(ctx, offerURI).send().getCredentialsOffer();
+        preAuthCode = credOffer.getPreAuthorizedCode();
+        assertNotNull(preAuthCode, "preAuthCode");
 
         // Redeem Pre-Authorized Code for AccessToken
         //
@@ -130,6 +142,11 @@ public class OID4VCredentialOfferPreAuthTest extends OID4VCIssuerTestBase {
                 .send().getCredentialResponse();
 
         verifyCredentialResponse(ctx, ctx.getHolder(), credResponse);
+
+        // Attempt to fetch the credential offer again after it has been consumed
+        CredentialOfferResponse res = wallet.credentialsOfferRequest(ctx, offerURI).send();
+        assertEquals("invalid_credential_offer_request", res.getError());
+        assertEquals("Credential offer not found or already consumed", res.getErrorDescription());
     }
 
     // Private ---------------------------------------------------------------------------------------------------------

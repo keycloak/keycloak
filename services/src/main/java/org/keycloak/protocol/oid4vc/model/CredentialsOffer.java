@@ -124,6 +124,11 @@ public class CredentialsOffer {
                 .orElse(null);
     }
 
+    @JsonIgnore
+    public boolean hasPreAuthorizedGrant() {
+        return grants.get(PRE_AUTH_GRANT_TYPE) != null;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

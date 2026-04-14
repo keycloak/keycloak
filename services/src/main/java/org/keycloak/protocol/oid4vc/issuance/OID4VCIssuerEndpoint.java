@@ -606,6 +606,7 @@ public class OID4VCIssuerEndpoint {
         checkIsOid4vciEnabled(eventBuilder);
 
         // Retrieve the associated credential offer state
+        // The credential offer state remains in storage until it expires or the associated credential is fetched
         CredentialOfferStorage offerStorage = session.getProvider(CredentialOfferStorage.class);
         CredentialOfferState offerState = offerStorage.getOfferStateByNonce(nonce);
         if (offerState == null) {
@@ -617,7 +618,7 @@ public class OID4VCIssuerEndpoint {
         // We treat the credential offer URI as an unprotected capability URL and rely solely on the later authorization step
         // i.e. an authenticated client/user session is not required nor checked against the offer state
         CredentialsOffer credOffer = offerState.getCredentialsOffer();
-        LOGGER.debugf("Found credential offer state: [ids=%s, cid=%s, uid=%s, nonce=%s]",
+        LOGGER.debugf("Found credential offer: [ids=%s, cid=%s, uid=%s, nonce=%s]",
                 credOffer.getCredentialConfigurationIds(), offerState.getTargetClientId(), offerState.getTargetUserId(), offerState.getNonce());
 
         if (offerState.isExpired()) {
@@ -625,18 +626,6 @@ public class OID4VCIssuerEndpoint {
             eventBuilder.detail(Details.REASON, errorMessage).error(Errors.EXPIRED_CODE);
             throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST, errorMessage));
         }
-
-        // Remove the nonce entry atomically for replay protection
-        // This prevents the same offer URL from being accessed multiple times
-        // while keeping offerId entries available
-        Map<String, String> removed = session.singleUseObjects().remove(nonce);
-        if (removed == null) {
-            var errorMessage = "Credential offer not found or already consumed";
-            LOGGER.debugf("Credential offer with nonce %s not found or already consumed", nonce);
-            eventBuilder.detail(Details.REASON, errorMessage).error(ErrorType.INVALID_REQUEST.getValue());
-            throw new BadRequestException(getErrorResponse(ErrorType.INVALID_CREDENTIAL_OFFER_REQUEST, errorMessage));
-        }
-        LOGGER.debugf("Removed credential offer nonce %s for replay protection", nonce);
 
         // Add event details
         if (offerState.getTargetClientId() != null) {
