@@ -27,6 +27,7 @@ import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.wrapper.Clients;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -36,7 +37,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectClient;

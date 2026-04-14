@@ -9,6 +9,8 @@ import java.lang.annotation.Target;
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
+import org.keycloak.representations.admin.v2.RepresentationWithUuid;
+
 /**
  * Constraint annotation for validating that UUID was not modified by the user.
  *
@@ -16,11 +18,11 @@ import jakarta.validation.Payload;
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = {UuidUnmodifiedValidator.class})
 @Documented
+@Constraint(validatedBy = {})
 public @interface UuidUnmodified {
     String message() default "UUID is server-managed and must not be user-specified";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
-    Class<? extends UuidProvider> uuidProvider();
+    Class<? extends RepresentationWithUuid> type();
 }

@@ -1,4 +1,4 @@
-package org.keycloak.representations.admin.v2.validation;
+package org.keycloak.representations.admin.v2.validation.impl;
 
 import java.util.Optional;
 

@@ -1,4 +1,4 @@
-package org.keycloak.representations.admin.v2.validation;
+package org.keycloak.representations.admin.v2.validation.impl;
 
 import org.keycloak.representations.admin.v2.RepresentationWithUuid;
 import org.keycloak.validation.jakarta.ValidationContext;

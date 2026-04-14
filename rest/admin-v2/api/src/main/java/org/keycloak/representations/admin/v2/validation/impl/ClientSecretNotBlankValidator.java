@@ -1,4 +1,4 @@
-package org.keycloak.representations.admin.v2.validation;
+package org.keycloak.representations.admin.v2.validation.impl;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
@@ -6,6 +6,7 @@ import jakarta.validation.ConstraintValidatorContext;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
+import org.keycloak.representations.admin.v2.validation.ClientSecretNotBlank;
 import org.keycloak.utils.StringUtil;
 
 /**
@@ -32,4 +33,5 @@ public class ClientSecretNotBlankValidator implements ConstraintValidator<Client
         return ClientIdAndSecretAuthenticator.PROVIDER_ID.equals(method)
                 || JWTClientSecretAuthenticator.PROVIDER_ID.equals(method);
     }
+
 }

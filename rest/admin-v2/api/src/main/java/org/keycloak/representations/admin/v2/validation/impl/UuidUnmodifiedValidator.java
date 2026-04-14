@@ -1,9 +1,11 @@
-package org.keycloak.representations.admin.v2.validation;
+package org.keycloak.representations.admin.v2.validation.impl;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
+import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.representations.admin.v2.RepresentationWithUuid;
+import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
 import org.keycloak.validation.jakarta.ValidationContext;
 
 /**
@@ -23,10 +25,11 @@ public class UuidUnmodifiedValidator implements ConstraintValidator<UuidUnmodifi
 
     @Override
     public void initialize(UuidUnmodified constraintAnnotation) {
-        try {
-            uuidProvider = constraintAnnotation.uuidProvider().getDeclaredConstructor().newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Failed to instantiate UUID provider: " + constraintAnnotation.uuidProvider().getName(), e);
+        Class<?> type = constraintAnnotation.type();
+        if (type == BaseClientRepresentation.class) {
+            uuidProvider = new ClientUuidProvider();
+        } else {
+            throw new AssertionError("Not Uuid Provider defined for " + type);
         }
     }
 
@@ -41,7 +44,9 @@ public class UuidUnmodifiedValidator implements ConstraintValidator<UuidUnmodifi
         String persistedUuid = uuidProvider.getPersistedUuid(validationContext, representation);
 
         if (persistedUuid != null) { // resource exists
-            if (persistedUuid.equals(providedUuid)) return true;
+            if (persistedUuid.equals(providedUuid)) {
+                return true;
+            }
         } else if (!uuidProvider.uuidExists(validationContext, providedUuid)) { // additional check for PUT create to check the resource was just not renamed
             return true;
         }

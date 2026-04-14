@@ -1,4 +1,4 @@
-package org.keycloak.admin.api.client;
+package org.keycloak.rest.admin.api.client;
 
 import java.util.stream.Stream;
 
@@ -10,6 +10,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.api.client.ClientApi;
+import org.keycloak.admin.api.client.ClientsApi;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;

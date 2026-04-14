@@ -1,14 +1,13 @@
-package org.keycloak.admin.api;
+package org.keycloak.rest.admin.api;
 
 import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
 
+import org.keycloak.admin.api.AdminApi;
 import org.keycloak.admin.api.client.ClientsApi;
-import org.keycloak.admin.api.client.DefaultClientsApi;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.rest.admin.api.client.DefaultClientsApi;
 import org.keycloak.services.resources.admin.AdminRoot;
 import org.keycloak.services.resources.admin.RealmAdminResource;
 import org.keycloak.services.resources.admin.RealmsAdminResource;
@@ -32,9 +31,8 @@ public class DefaultAdminApi implements AdminApi {
         this.realmAdminResource = new RealmsAdminResource(session, authInfo, new TokenManager()).getRealmAdmin(realmName);
     }
 
-    @Path("clients/{version:v\\d+}")
     @Override
-    public ClientsApi clients(@PathParam("version") String version) {
+    public ClientsApi clients(String version) {
         return switch (version) {
             case "v2" -> new DefaultClientsApi(session, realm, permissions, realmAdminResource);
             default -> throw new NotFoundException();

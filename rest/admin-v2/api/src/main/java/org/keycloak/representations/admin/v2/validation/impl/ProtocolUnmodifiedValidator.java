@@ -1,4 +1,4 @@
-package org.keycloak.representations.admin.v2.validation;
+package org.keycloak.representations.admin.v2.validation.impl;
 
 import java.util.Optional;
 
@@ -7,6 +7,7 @@ import jakarta.validation.ConstraintValidatorContext;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
+import org.keycloak.representations.admin.v2.validation.ProtocolUnmodified;
 import org.keycloak.validation.jakarta.ValidationContext;
 
 public class ProtocolUnmodifiedValidator implements ConstraintValidator<ProtocolUnmodified, BaseClientRepresentation> {

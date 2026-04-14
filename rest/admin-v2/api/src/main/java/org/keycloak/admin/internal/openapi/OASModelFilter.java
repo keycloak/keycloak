@@ -35,7 +35,7 @@ import org.jboss.jandex.MethodInfo;
 import org.jboss.jandex.Type;
 import org.jboss.logging.Logger;
 
-import static org.keycloak.services.PatchTypeNames.JSON_MERGE;
+import static org.keycloak.admin.api.PatchTypeNames.JSON_MERGE;
 import static org.keycloak.utils.StringUtil.isNullOrEmpty;
 
 public class OASModelFilter implements OASFilter {

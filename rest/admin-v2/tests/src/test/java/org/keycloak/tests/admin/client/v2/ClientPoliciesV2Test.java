@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
@@ -40,7 +41,6 @@ import org.keycloak.representations.idm.ClientPolicyExecutorRepresentation;
 import org.keycloak.representations.idm.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
-import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.client.ClientServiceHelper;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;

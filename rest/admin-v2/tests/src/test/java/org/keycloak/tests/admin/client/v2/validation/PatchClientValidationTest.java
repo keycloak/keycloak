@@ -1,8 +1,8 @@
 package org.keycloak.tests.admin.client.v2.validation;
 
+import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.representations.admin.v2.OIDCClientRepresentation;
 import org.keycloak.representations.admin.v2.SAMLClientRepresentation;
-import org.keycloak.services.PatchTypeNames;
 import org.keycloak.services.error.ViolationExceptionResponse;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 

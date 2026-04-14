@@ -1,4 +1,4 @@
-package org.keycloak.admin.api.client;
+package org.keycloak.rest.admin.api.client;
 
 import java.io.InputStream;
 
@@ -12,6 +12,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.api.client.ClientApi;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;

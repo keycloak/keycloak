@@ -12,8 +12,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.admin.api.PatchTypeNames;
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
-import org.keycloak.services.PatchTypeNames;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;

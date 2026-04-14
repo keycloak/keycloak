@@ -41,7 +41,7 @@ import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 import org.keycloak.validation.jakarta.ValidationContext;
 
-import static org.keycloak.representations.admin.v2.validation.ClientSecretNotBlankValidator.isClientSecret;
+import static org.keycloak.representations.admin.v2.validation.impl.ClientSecretNotBlankValidator.isClientSecret;
 import static org.keycloak.utils.StringUtil.isBlank;
 
 /**

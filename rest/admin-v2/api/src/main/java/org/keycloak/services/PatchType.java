@@ -4,6 +4,8 @@ import java.util.Optional;
 
 import jakarta.ws.rs.core.MediaType;
 
+import org.keycloak.admin.api.PatchTypeNames;
+
 public enum PatchType {
     JSON_MERGE(PatchTypeNames.JSON_MERGE);
 
