@@ -18,7 +18,6 @@ import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -30,9 +29,12 @@ public class SsfStreamVerificationResource {
 
     private static final Logger log = Logger.getLogger(SsfStreamVerificationResource.class);
 
-    private final StreamVerificationService verificationService;
+    protected final KeycloakSession session;
 
-    public SsfStreamVerificationResource(StreamVerificationService verificationService) {
+    protected final StreamVerificationService verificationService;
+
+    public SsfStreamVerificationResource(KeycloakSession session, StreamVerificationService verificationService) {
+        this.session = session;
         this.verificationService = verificationService;
     }
 
@@ -54,7 +56,6 @@ public class SsfStreamVerificationResource {
             }
 
             String streamId = verificationRequest.getStreamId();
-            KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
             ClientModel client = session.getContext().getClient();
             if (streamId == null) {
                 // use streamId from client attributes
