@@ -16,10 +16,13 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.ssf.Ssf;
+import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
+import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.util.JsonSerialization;
@@ -51,14 +54,14 @@ public class SsfStreamManagementResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createStream(StreamConfig streamConfig) {
+    public Response createStream(StreamConfigInputRepresentation input) {
 
         if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_MANAGE)) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
         try {
-            StreamConfig createdStream = streamService.createStream(streamConfig);
+            StreamConfig createdStream = streamService.createStream(input);
             log.debugf("Created stream: %s", JsonSerialization.writeValueAsPrettyString(createdStream));
             var responseBuilder = Response.status(Response.Status.CREATED);
             return responseBuilder.entity(createdStream)
@@ -68,6 +71,11 @@ public class SsfStreamManagementResource {
             log.errorf(dsce, "Error creating stream: Duplicate stream configuration");
             return Response.status(Response.Status.CONFLICT)
                     .entity(new SsfErrorRepresentation("stream_error", dsce.getMessage()))
+                    .build();
+        } catch (SsfException e) {
+            log.debugf(e, "Rejected stream create: %s", e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("stream_error", e.getMessage()))
                     .build();
         } catch (Exception e) {
             log.errorf(e, "Error creating stream");
@@ -134,32 +142,39 @@ public class SsfStreamManagementResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateStream(StreamConfig streamConfig) {
+    public Response updateStream(StreamConfigUpdateRepresentation update) {
 
         if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_MANAGE)) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
-        if (streamConfig == null || streamConfig.getStreamId() == null) {
+        if (update == null || update.getStreamId() == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("stream_error", "Stream ID is required"))
                     .build();
         }
 
-        if (!isCurrentClientStream(streamConfig.getStreamId())) {
+        String streamId = update.getStreamId();
+
+        if (!isCurrentClientStream(streamId)) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         try {
-            StreamConfig updatedStream = streamService.updateStream(streamConfig);
+            StreamConfig updatedStream = streamService.updateStream(update);
 
             if (updatedStream == null) {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
 
             return Response.ok(updatedStream).build();
+        } catch (SsfException e) {
+            log.debugf(e, "Rejected stream update streamId=%s: %s", streamId, e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("stream_error", e.getMessage()))
+                    .build();
         } catch (Exception e) {
-            log.errorf(e,"Error updating stream steamId=%s", streamConfig.getStreamId());
+            log.errorf(e, "Error updating stream streamId=%s", streamId);
             return Response.serverError()
                     .entity(new SsfErrorRepresentation("stream_error", "Failed to update stream"))
                     .build();
@@ -176,32 +191,39 @@ public class SsfStreamManagementResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response replaceStream(StreamConfig streamConfig) {
+    public Response replaceStream(StreamConfigUpdateRepresentation update) {
 
         if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_MANAGE)) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
-        if (streamConfig == null || streamConfig.getStreamId() == null) {
+        if (update == null || update.getStreamId() == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("stream_error", "Stream ID is required"))
                     .build();
         }
 
-        if (!isCurrentClientStream(streamConfig.getStreamId())) {
+        String streamId = update.getStreamId();
+
+        if (!isCurrentClientStream(streamId)) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
 
         try {
-            StreamConfig replacedStream = streamService.replaceStream(streamConfig);
+            StreamConfig replacedStream = streamService.replaceStream(update);
 
             if (replacedStream == null) {
                 return Response.status(Response.Status.NOT_FOUND).build();
             }
 
             return Response.ok(replacedStream).build();
+        } catch (SsfException e) {
+            log.debugf(e, "Rejected stream replace streamId=%s: %s", streamId, e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("stream_error", e.getMessage()))
+                    .build();
         } catch (Exception e) {
-            log.errorf(e,"Error replacing stream steamId=%s", streamConfig.getStreamId());
+            log.errorf(e, "Error replacing stream streamId=%s", streamId);
             return Response.serverError()
                     .entity(new SsfErrorRepresentation("stream_error", "Error updating stream"))
                     .build();

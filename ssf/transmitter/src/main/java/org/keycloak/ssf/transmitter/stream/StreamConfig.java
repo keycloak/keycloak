@@ -112,14 +112,6 @@ public class StreamConfig {
     @JsonProperty("kc_updated_at")
     protected Integer updatedAt;
 
-    /**
-     * The subject identifier format expected for any SET transmitted. Defaults to `iss_sub`.
-     *
-     * Non-standard format field needed for compatibility, e.g. for Apple Business Manager
-     */
-    @JsonProperty("format")
-    protected String format = "iss_sub";
-
     @JsonIgnore
     protected SsfProfile profile;
 
@@ -269,15 +261,6 @@ public class StreamConfig {
     public void setUpdatedAt(Integer updatedAt) {
         this.updatedAt = updatedAt;
     }
-
-    public String getFormat() {
-        return format;
-    }
-
-    public void setFormat(String format) {
-        this.format = format;
-    }
-
 
     public void setProfile(SsfProfile profile) {
         this.profile = profile;
