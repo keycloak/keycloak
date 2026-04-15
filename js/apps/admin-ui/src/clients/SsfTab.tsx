@@ -77,6 +77,7 @@ type SsfClientStream = {
   eventsDelivered?: string[];
   createdAt?: number;
   updatedAt?: number;
+  lastVerifiedAt?: number;
 };
 
 export type SsfTabProps = {
@@ -137,6 +138,9 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
         );
       }
       addAlert(t("ssfVerifyStreamSuccess"), AlertVariant.success);
+      // Refetch the stream endpoint so the Last verified field in the UI
+      // picks up the new timestamp the backend just stamped.
+      refresh();
     } catch (error) {
       addError("ssfVerifyStreamError", error);
     }
@@ -605,6 +609,29 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
                         />
                       </FormGroup>
                     )}
+                    <FormGroup
+                      label={t("ssfStreamLastVerifiedAt")}
+                      fieldId="ssfStreamLastVerifiedAt"
+                      labelIcon={
+                        <HelpItem
+                          helpText={t("ssfStreamLastVerifiedAtHelp")}
+                          fieldLabelId="ssfStreamLastVerifiedAt"
+                        />
+                      }
+                    >
+                      <TextInput
+                        id="ssfStreamLastVerifiedAt"
+                        data-testid="ssfStreamLastVerifiedAt"
+                        readOnlyVariant="default"
+                        value={
+                          clientStream.lastVerifiedAt
+                            ? formatDate(
+                                new Date(clientStream.lastVerifiedAt * 1000),
+                              )
+                            : ""
+                        }
+                      />
+                    </FormGroup>
                     <FormGroup
                       label={t("ssfStreamAudience")}
                       fieldId="ssfStreamAudienceCurrent"

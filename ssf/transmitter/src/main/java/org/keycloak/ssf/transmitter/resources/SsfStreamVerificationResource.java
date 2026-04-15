@@ -110,7 +110,7 @@ public class SsfStreamVerificationResource {
             return;
         }
 
-        String lastVerifiedAt = client.getAttribute("ssf.lastVerifiedAt");
+        String lastVerifiedAt = client.getAttribute(ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY);
         long currentTime = Time.currentTime();
 
         if (lastVerifiedAt != null) {
@@ -126,6 +126,6 @@ public class SsfStreamVerificationResource {
             }
         }
 
-        client.setAttribute("ssf.lastVerifiedAt", String.valueOf(currentTime));
+        client.setAttribute(ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY, String.valueOf(currentTime));
     }
 }

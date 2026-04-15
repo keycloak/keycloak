@@ -85,6 +85,20 @@ public interface SsfStreamStore {
      */
     void deleteStream(String streamId);
 
+    /**
+     * Records the current time on the receiver client's "last verified at"
+     * attribute for the stream identified by {@code streamId}. Called from
+     * {@link org.keycloak.ssf.transmitter.stream.StreamVerificationService#triggerVerification}
+     * so every verification path — receiver-initiated, admin-initiated, and
+     * transmitter-initiated automatic post-create — records a consistent
+     * timestamp without each caller having to stamp the attribute itself.
+     *
+     * <p>Silently no-ops if no client/stream can be resolved for
+     * {@code streamId}; the verification dispatch itself is authoritative
+     * for whether anything was actually sent.
+     */
+    void recordStreamVerification(String streamId);
+
     StreamVerificationConfig getStreamVerificationConfig(String streamId, ClientModel client);
 
     SsfEventsConfig getEventsConfig(ClientModel client, Set<String> eventsRequested);
