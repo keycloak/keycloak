@@ -465,6 +465,126 @@ public class SsfTransmitterStreamManagementTests {
     }
 
     @Test
+    public void testCreateStreamRejectsOversizedDescription() throws IOException {
+
+        // description > 255 characters must be rejected with 400.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        request.setDescription("x".repeat(256));
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "oversized description must be rejected");
+        }
+    }
+
+    @Test
+    public void testCreateStreamRejectsOversizedEndpointUrl() throws IOException {
+
+        // delivery.endpoint_url > 512 characters must be rejected with 400.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        request.getDelivery().setEndpointUrl("https://example.com/" + "x".repeat(520));
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "oversized delivery.endpoint_url must be rejected");
+        }
+    }
+
+    @Test
+    public void testCreateStreamRejectsOversizedAuthorizationHeader() throws IOException {
+
+        // delivery.authorization_header > 1024 characters must be rejected with 400.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        request.getDelivery().setAuthorizationHeader("Bearer " + "x".repeat(1024));
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "oversized delivery.authorization_header must be rejected");
+        }
+    }
+
+    @Test
+    public void testCreateStreamRejectsTooManyEventsRequested() throws IOException {
+
+        // events_requested with > 32 entries must be rejected with 400.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        Set<String> tooMany = new java.util.LinkedHashSet<>();
+        for (int i = 0; i < 33; i++) {
+            tooMany.add("https://example.com/event/" + i);
+        }
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(tooMany);
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "events_requested exceeding 32 entries must be rejected");
+        }
+    }
+
+    @Test
+    public void testCreateStreamRejectsOversizedEventType() throws IOException {
+
+        // An events_requested entry > 256 characters must be rejected with 400.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(
+                Set.of("https://example.com/event/" + "x".repeat(260)));
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "oversized events_requested entry must be rejected");
+        }
+    }
+
+    @Test
+    public void testPatchStreamRejectsOversizedDescription() throws IOException {
+
+        // A PATCH that tries to grow the description past the cap must be
+        // rejected with 400 and leave the stored stream intact.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        String streamId;
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus());
+            streamId = response.asJson(StreamConfig.class).getStreamId();
+        }
+
+        StreamConfigUpdateRepresentation patch = new StreamConfigUpdateRepresentation();
+        patch.setStreamId(streamId);
+        patch.setDescription("x".repeat(256));
+
+        try (SimpleHttpResponse response = patchStream(token, patch)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "oversized description on PATCH must be rejected");
+        }
+    }
+
+    @Test
+    public void testCreateStreamEnforcesTotalPersistedSizeGuard() throws IOException {
+
+        // The per-field caps are calibrated so a single maxed-out field is
+        // accepted, but stacking several large fields at once pushes the
+        // serialized StreamConfig past the 2000-byte column safety margin
+        // and must be rejected at storage time with 400 (not a downstream
+        // DB overflow 500).
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        // description (255) + endpoint_url (~512) + auth header (1024) totals
+        // ~1800 raw chars; plus issuer, audience, events_*, timestamps,
+        // JSON overhead, the serialized blob exceeds 2000 bytes.
+        request.setDescription("x".repeat(255));
+        request.getDelivery().setEndpointUrl("https://example.com/" + "x".repeat(490));
+        request.getDelivery().setAuthorizationHeader("Bearer " + "x".repeat(1016));
+
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "oversized serialized stream configuration must be rejected at storage time");
+        }
+    }
+
+    @Test
     public void testCreateStreamHonoursClientSupportedEvents() throws IOException {
 
         // RECEIVER_SCOPED is configured with ssf.supportedEvents=CaepSessionRevoked

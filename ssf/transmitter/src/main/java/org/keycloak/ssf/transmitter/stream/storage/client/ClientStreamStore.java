@@ -1,6 +1,7 @@
 package org.keycloak.ssf.transmitter.stream.storage.client;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.ssf.Ssf;
+import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.stream.StreamStatus;
@@ -48,6 +50,18 @@ public class ClientStreamStore implements SsfStreamStore {
 
     public static final String SSF_STATUS_KEY = "ssf.status";
     public static final String SSF_STATUS_REASON_KEY = "ssf.status_reason";
+
+    /**
+     * Hard ceiling on the serialized-JSON size of the stored
+     * {@link StreamConfig} blob. Keycloak's {@code CLIENT_ATTRIBUTES.VALUE}
+     * column is {@code VARCHAR(2048)} — we keep a 48-byte safety margin so
+     * a borderline-oversized receiver gets a clean
+     * {@link SsfException} → HTTP 400 instead of a DB column-overflow 500.
+     * Per-field caps in {@link org.keycloak.ssf.transmitter.stream.StreamService}
+     * keep well-behaved receivers well below this; the check here is the
+     * final guardrail.
+     */
+    public static final int MAX_STREAM_CONFIG_JSON_BYTES = 2000;
 
     /**
      * Attributes that describe a concrete, registered SSF stream for a
@@ -250,6 +264,18 @@ public class ClientStreamStore implements SsfStreamStore {
 
     protected void storeStreamConfig(ClientModel client, StreamConfig streamConfig) {
 
+        // Serialize first so we can size-check against the column limit
+        // before any side-effecting setAttribute calls. Throwing here lands
+        // as a 400 via the SsfException handler in
+        // SsfStreamManagementResource — much cleaner than a downstream DB
+        // column-overflow 500.
+        String serialized = JsonSerialization.valueAsString(streamConfig);
+        int bytes = serialized.getBytes(StandardCharsets.UTF_8).length;
+        if (bytes > MAX_STREAM_CONFIG_JSON_BYTES) {
+            throw new SsfException("Stream configuration too large: serialized size " + bytes
+                    + " bytes exceeds limit of " + MAX_STREAM_CONFIG_JSON_BYTES + " bytes");
+        }
+
         client.setAttribute(SSF_STREAM_ID_KEY, streamConfig.getStreamId());
 
         StreamStatusValue status = streamConfig.getStatus();
@@ -258,7 +284,7 @@ public class ClientStreamStore implements SsfStreamStore {
         }
         client.setAttribute(SSF_STATUS_KEY, status.name());
         client.setAttribute(SSF_STATUS_REASON_KEY, streamConfig.getStatusReason());
-        client.setAttribute(SSF_STREAM_CONFIG_KEY, JsonSerialization.valueAsString(streamConfig));
+        client.setAttribute(SSF_STREAM_CONFIG_KEY, serialized);
     }
 
     protected void deleteStreamConfig(ClientModel client, String streamId) {
