@@ -309,8 +309,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 return null;
             }
 
-            String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValueOrDefault("");
-            String dbUrlProperties = Configuration.getKcConfigValue(DatabaseOptions.DB_URL_PROPERTIES.getKey()).getValueOrDefault("");
+            String dbUrl = findDatabaseUrl(datasource).orElse("");
+            String dbUrlProperties = getDatasourceOptionValue(DatabaseOptions.DB_URL_PROPERTIES, datasource).orElse("");
 
             // Property already set explicitly by the user — do not override
             if  (dbUrl.contains(timeoutProperty) || dbUrlProperties.contains(timeoutProperty)) {
