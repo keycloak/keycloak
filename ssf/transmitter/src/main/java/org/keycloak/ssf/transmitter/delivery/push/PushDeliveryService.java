@@ -90,8 +90,8 @@ public class PushDeliveryService {
                     log.warnf("Failed to deliver event %s to url %s. Got status=%s response='%s'",
                             eventToken.getJti(), endpointUrl, response.getStatus(), responseString);
                 } else {
-                    log.debugf("Delivery of event %s to url %s successful. Got status=%s",
-                            eventToken.getJti(), endpointUrl, response.getStatus());
+                    log.debugf("Delivery of event %s to url %s successful. Got status=%s. events=%s",
+                            eventToken.getJti(), endpointUrl, response.getStatus(), eventToken.getEvents());
                 }
 
                 return success;
