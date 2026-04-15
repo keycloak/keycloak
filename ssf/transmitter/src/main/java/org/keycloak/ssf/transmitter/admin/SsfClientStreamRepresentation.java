@@ -13,6 +13,8 @@ public class SsfClientStreamRepresentation {
 
     private String streamId;
 
+    private String description;
+
     private Set<String> audience;
 
     private Set<String> eventsSupported;
@@ -21,12 +23,24 @@ public class SsfClientStreamRepresentation {
 
     private Set<String> eventsDelivered;
 
+    private Integer createdAt;
+
+    private Integer updatedAt;
+
     public String getStreamId() {
         return streamId;
     }
 
     public void setStreamId(String streamId) {
         this.streamId = streamId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Set<String> getAudience() {
@@ -59,5 +73,21 @@ public class SsfClientStreamRepresentation {
 
     public void setEventsDelivered(Set<String> eventsDelivered) {
         this.eventsDelivered = eventsDelivered;
+    }
+
+    public Integer getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Integer createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Integer getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Integer updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

@@ -106,10 +106,10 @@ public class StreamConfig {
     @JsonProperty("kc_status_reason")
     protected String statusReason;
 
-    @JsonIgnore
+    @JsonProperty("kc_created_at")
     protected Integer createdAt;
 
-    @JsonIgnore
+    @JsonProperty("kc_updated_at")
     protected Integer updatedAt;
 
     /**
