@@ -21,13 +21,13 @@ import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
 import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
-import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.ssf.transmitter.stream.SsfEventsConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationConfig;
 import org.keycloak.ssf.transmitter.stream.VerificationTrigger;
 import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;

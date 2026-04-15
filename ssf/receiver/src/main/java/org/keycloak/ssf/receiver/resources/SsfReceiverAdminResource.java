@@ -8,10 +8,10 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.ssf.receiver.SsfReceiver;
-import org.keycloak.ssf.receiver.registration.SsfReceiverRegistrationProviderFactory;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.ssf.receiver.SsfReceiver;
+import org.keycloak.ssf.receiver.registration.SsfReceiverRegistrationProviderFactory;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;

@@ -15,10 +15,11 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
+import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.receiver.resources.SsfReceiverAdminResource;
@@ -33,8 +34,8 @@ import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
-import org.keycloak.services.resources.admin.AdminEventBuilder;
-import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+
+import org.jboss.logging.Logger;
 
 /**
  * SsfAdmin resource to manage SSF related components.

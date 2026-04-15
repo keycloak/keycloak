@@ -2,10 +2,10 @@ package org.keycloak.ssf.services;
 
 import jakarta.ws.rs.Path;
 
+import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.receiver.resources.SsfReceiversResource;
 import org.keycloak.ssf.transmitter.resources.SsfTransmitterResource;
-import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 /**

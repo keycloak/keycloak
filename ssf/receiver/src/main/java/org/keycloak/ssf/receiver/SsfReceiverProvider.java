@@ -1,11 +1,11 @@
 package org.keycloak.ssf.receiver;
 
+import org.keycloak.provider.Provider;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.receiver.event.processor.SsfEventContext;
 import org.keycloak.ssf.receiver.transmitter.SsfTransmitterClient;
 import org.keycloak.ssf.receiver.verification.SsfStreamVerificationStore;
 import org.keycloak.ssf.receiver.verification.SsfVerificationClient;
-import org.keycloak.provider.Provider;
 
 /**
  * SsfProvider exposes the SSF Receiver infrastructure components.

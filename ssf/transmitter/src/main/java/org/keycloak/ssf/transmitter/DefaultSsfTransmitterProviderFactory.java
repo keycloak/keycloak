@@ -7,9 +7,10 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.ssf.event.SsfEventProviderFactory;
 import org.keycloak.ssf.event.SsfEventRegistry;
-import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
@@ -17,8 +18,7 @@ import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.provider.ProviderConfigurationBuilder;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 
 public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProviderFactory {
 

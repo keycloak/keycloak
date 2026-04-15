@@ -20,12 +20,12 @@ import org.keycloak.ssf.event.InitiatingEntity;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
+import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.EmailSubjectId;
 import org.keycloak.ssf.subject.IssuerSubjectId;
 import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
-import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 

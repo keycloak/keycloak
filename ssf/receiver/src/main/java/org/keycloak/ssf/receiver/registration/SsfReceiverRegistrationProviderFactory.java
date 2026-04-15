@@ -9,9 +9,9 @@ import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.ssf.receiver.DefaultSsfReceiver;
 import org.keycloak.ssf.receiver.SsfReceiver;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 public class SsfReceiverRegistrationProviderFactory extends AbstractIdentityProviderFactory<SsfReceiverRegistrationProvider> implements IdentityProviderFactory<SsfReceiverRegistrationProvider>, EnvironmentDependentProviderFactory {
 

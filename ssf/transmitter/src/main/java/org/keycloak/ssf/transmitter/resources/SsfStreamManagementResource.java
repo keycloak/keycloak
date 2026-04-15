@@ -18,14 +18,14 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfException;
-import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
-import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
+import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;

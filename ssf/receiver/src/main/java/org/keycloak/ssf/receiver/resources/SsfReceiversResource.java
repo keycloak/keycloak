@@ -15,15 +15,15 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.receiver.SsfReceiver;
-import org.keycloak.ssf.receiver.event.parser.SecurityEventTokenParsingException;
-import org.keycloak.ssf.receiver.event.processor.SsfEventContext;
 import org.keycloak.ssf.receiver.SsfReceiverProvider;
 import org.keycloak.ssf.receiver.SsfReceivers;
+import org.keycloak.ssf.receiver.event.parser.SecurityEventTokenParsingException;
+import org.keycloak.ssf.receiver.event.processor.SsfEventContext;
 import org.keycloak.ssf.receiver.registration.SsfReceiverRegistrationProviderFactory;
-import org.keycloak.services.resources.KeycloakOpenAPI;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
