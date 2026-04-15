@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
 
 import org.jgroups.Address;
@@ -55,7 +56,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             .thenComparing(PingData::getAddress);
     private JpaConnectionProviderFactory factory;
 
-    @Property(description="Staleness timeout in milliseconds. Should be double the time of MERGE3 max interval, as MERGE3 will use an interval up to (max_interval) + max_interval/2", type= AttributeType.TIME)
+    @Property(description="Staleness timeout in milliseconds. The coordinator will update the entries once 50%-75% of the time have passed.", type= AttributeType.TIME)
     protected long stateless_timeout = 60000L;
 
     @Override
@@ -115,7 +116,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             ps.setString(3, clustername);
             ps.setString(4, ip);
             ps.setBoolean(5, data.isCoord());
-            ps.setLong(6, TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()));
+            ps.setLong(6, TimeUnit.MILLISECONDS.toSeconds(Time.currentTimeMillis()));
             ps.setString(7, view != null && view.getCoord() != null ? Util.addressToString(view.getCoord()) : null);
             if (log.isTraceEnabled())
                 log.trace("%s: SQL for insertion: %s", local_addr, ps);
@@ -161,6 +162,19 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
         } catch (Exception e) {
             log.error(String.format("%s: failed reading from the DB", local_addr), e);
         }
+    }
+
+    /**
+     * The infowriter will run on the coordinator only. It will continue to run while this is the coordinator, not only after the view change
+     */
+    protected synchronized void startInfoWriter() {
+        if(info_writer == null || info_writer.isDone())
+            info_writer=timer.scheduleWithDynamicInterval(new InfoWriter(info_writer_max_writes_after_view, info_writer_sleep_time) {
+                @Override
+                public long nextInterval() {
+                    return is_coord ? (stateless_timeout / 2 + Util.random(sleep_interval / 4)) : 0;
+                }
+            });
     }
 
     protected List<PingData> readFromDB(String cluster) throws Exception {
@@ -220,7 +234,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     }
 
     private long getStalenessCutoff() {
-        return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - stateless_timeout);
+        return TimeUnit.MILLISECONDS.toSeconds(Time.currentTimeMillis() - stateless_timeout);
     }
 
     public void setJpaConnectionProviderFactory(JpaConnectionProviderFactory factory) {
