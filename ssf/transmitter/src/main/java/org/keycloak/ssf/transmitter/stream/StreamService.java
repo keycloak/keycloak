@@ -1,0 +1,460 @@
+package org.keycloak.ssf.transmitter.stream;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import org.keycloak.common.util.Time;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
+import org.keycloak.ssf.Ssf;
+import org.keycloak.ssf.SsfException;
+import org.keycloak.ssf.stream.StreamStatus;
+import org.keycloak.ssf.metadata.TransmitterMetadata;
+import org.keycloak.ssf.stream.StreamStatusValue;
+import org.keycloak.ssf.transmitter.SsfTransmitter;
+import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
+import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
+import org.keycloak.ssf.transmitter.event.SsfUserSubjectFormats;
+import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
+import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
+import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.utils.KeycloakSessionUtil;
+
+import org.jboss.logging.Logger;
+
+/**
+ * Service for managing SSF streams.
+ */
+public class StreamService {
+
+    protected static final Logger log = Logger.getLogger(StreamService.class);
+
+    protected final SsfStreamStore streamStore;
+
+    protected final TransmitterMetadataService transmitterService;
+
+    public StreamService(SsfStreamStore streamStore, TransmitterMetadataService transmitterService) {
+        this.streamStore = streamStore;
+        this.transmitterService = transmitterService;
+    }
+
+    /**
+     * Creates a new stream.
+     *
+     * @param streamConfig The stream configuration
+     * @return The created stream configuration
+     */
+    public StreamConfig createStream(StreamConfig streamConfig) {
+
+        validate(streamConfig);
+
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        checkClient();
+
+        streamConfig.setStreamId(createStreamId(session, streamConfig));
+
+        // Set default status if not provided
+        // should we enable stream status by default?
+        streamConfig.setStatus(StreamStatusValue.enabled);
+
+        // set issuer
+        String iss = transmitterService.getTransmitterMetadata().getIssuer();
+        streamConfig.setIssuer(iss);
+
+        // set audience
+        ClientModel receiverClient = session.getContext().getClient();
+        Set<String> audience = createAudience(streamConfig, receiverClient);
+        streamConfig.setAudience(audience);
+
+        // Requested events
+        Set<String> eventsRequested = streamConfig.getEventsRequested();
+        streamConfig.setEventsRequested(eventsRequested);
+
+        // Compute delivered events based on requested events
+        SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, eventsRequested);
+        streamConfig.setEventsDelivered(eventsConfig.eventsDelivered());
+        // Return supported events
+        streamConfig.setEventsSupported(eventsConfig.eventsSupported());
+
+        // Set timestamps
+        int now = Time.currentTime();
+        streamConfig.setCreatedAt(now);
+        streamConfig.setUpdatedAt(now);
+
+        streamConfig.setMinVerificationInterval(SsfTransmitter.current().getConfig().getMinVerificationIntervalSeconds());
+
+        applySignatureAlgorithmFromClient(streamConfig, receiverClient);
+        applyUserSubjectFormatFromClient(streamConfig, receiverClient);
+
+        streamConfig.setStatus(StreamStatusValue.enabled);
+
+        // Store the stream configuration
+        streamStore.saveStream(streamConfig);
+
+        StreamVerificationConfig streamVerificationConfig = streamStore.getStreamVerificationConfig(streamConfig.getStreamId(), session.getContext().getClient());
+        if (streamVerificationConfig.verificationTrigger() == VerificationTrigger.TRANSMITTER_INITIATED) {
+            scheduleTransmitterInitiatedAsyncStreamVerification(streamConfig, streamVerificationConfig, session);
+        }
+
+        return streamConfig;
+    }
+
+    protected Set<String> createAudience(StreamConfig streamConfig, ClientModel receiverClient) {
+        Set<String> audience = new HashSet<>();
+        String ssfClientAudience = receiverClient.getAttribute(ClientStreamStore.SSF_STREAM_AUDIENCE_KEY);
+        if (ssfClientAudience != null) {
+            audience.add(ssfClientAudience);
+        } else {
+            String streamAudience = receiverClient.getClientId() + "/" + streamConfig.getStreamId();
+            audience.add(streamAudience);
+        }
+        return audience;
+    }
+
+    protected void checkClient() {
+        List<StreamConfig> availableStreams = streamStore.getAvailableStreams();
+        if (availableStreams != null && !availableStreams.isEmpty()) {
+            throw new DuplicateStreamConfigException("Only one stream per receiver is allowed");
+        }
+    }
+
+    protected String createStreamId(KeycloakSession session, StreamConfig streamConfig) {
+        return UUID.randomUUID().toString();
+    }
+
+    protected void scheduleTransmitterInitiatedAsyncStreamVerification(StreamConfig streamConfig, StreamVerificationConfig streamVerificationConfig, KeycloakSession session) {
+        StreamVerificationRequest verificationRequest = new StreamVerificationRequest();
+        verificationRequest.setStreamId(streamConfig.getStreamId());
+        // If the Verification Event is initiated by the Transmitter then this parameter MUST not be set.
+        // https://openid.github.io/sharedsignals/openid-sharedsignals-framework-1_0.html#section-8.1.4.2-5
+        // verificationRequest.setState(UUID.randomUUID().toString());
+
+        SsfTransmitterProvider provider = session.getProvider(SsfTransmitterProvider.class);
+        TransmitterMetadata transmitterMetadata = provider.metadataService().getTransmitterMetadata();
+
+        log.debugf("Scheduling Verification request after stream creation for stream %s", streamConfig.getStreamId());
+
+        String realmId = session.getContext().getRealm().getId();
+        String clientId = session.getContext().getClient().getClientId();
+        HttpRequest httpRequest = session.getContext().getHttpRequest();
+        KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
+
+        var executor = Executors.newSingleThreadScheduledExecutor();
+        int delay = streamVerificationConfig.verificationDelayMillis();
+        executor.schedule(() -> {
+            try (KeycloakSession subSession = keycloakSessionFactory.create()) {
+                subSession.getTransactionManager().begin();
+                subSession.setAttribute("ssfTransmitterMetadata", transmitterMetadata);
+
+                RealmModel realm = subSession.realms().getRealm(realmId);
+                ClientModel clientById = realm.getClientByClientId(clientId);
+                subSession.getContext().setRealm(realm);
+                subSession.getContext().setClient(clientById);
+                subSession.getContext().setHttpRequest(httpRequest);
+
+                KeycloakSessionUtil.setKeycloakSession(subSession);
+                try {
+                    log.debugf("Sending transmitter initiated Verification request after stream creation for stream %s", streamConfig.getStreamId());
+                    boolean verificationSent = triggerTransmitterInitiatedStreamVerification(streamConfig, subSession, verificationRequest);
+                    if (verificationSent) {
+                        log.debugf("Verification transmitter initiated request sent after stream creation for stream %s", streamConfig.getStreamId());
+                    }
+                    subSession.getTransactionManager().commit();
+                } finally {
+                    KeycloakSessionUtil.setKeycloakSession(null);
+                }
+
+            } catch (Exception e) {
+                log.errorf(e, "Failed to send transmitter initiated verification request after stream creation for stream %s", streamConfig.getStreamId());
+            } finally {
+                executor.shutdown();
+            }
+        }, delay, TimeUnit.MILLISECONDS);
+    }
+
+    protected boolean triggerTransmitterInitiatedStreamVerification(StreamConfig streamConfig, KeycloakSession subSession, StreamVerificationRequest verificationRequest) {
+        var ssfProvider = subSession.getProvider(SsfTransmitterProvider.class);
+        return ssfProvider.verificationService().triggerVerification(verificationRequest);
+    }
+
+    protected void validate(StreamConfig streamConfig) {
+
+        StreamDeliveryConfig delivery = streamConfig.getDelivery();
+        if (delivery == null) {
+            throw new SsfException("Invalid stream configuration: missing delivery configuration");
+        }
+
+        if (delivery.getMethod() == null) {
+            throw new SsfException("Invalid stream configuration: missing delivery method");
+        }
+
+        switch (delivery.getMethod()) {
+            case Ssf.DELIVERY_METHOD_PUSH_URI, Ssf.DELIVERY_METHOD_RISC_PUSH_URI -> {
+                if (delivery.getEndpointUrl() == null) {
+                    throw new SsfException("Invalid stream configuration: missing delivery endpoint push URL");
+                }
+            }
+            case Ssf.DELIVERY_METHOD_POLL_URI, Ssf.DELIVERY_METHOD_RISC_POLL_URI -> {
+                if (delivery.getEndpointUrl() != null) {
+                    if (!delivery.getEndpointUrl().startsWith(transmitterService.getTransmitterMetadata().getIssuer())) {
+                        throw new SsfException("Invalid stream configuration: delivery endpoint poll URL is defined by transmitter");
+                    }
+                }
+                throw new SsfException("Invalid stream configuration: unsupported delivery method");
+            }
+            default -> throw new SsfException("Invalid stream configuration: unsupported delivery method");
+        }
+    }
+
+    /**
+     * Gets a stream by ID.
+     *
+     * @param streamId The stream ID
+     * @return The stream configuration, or null if not found
+     */
+    public StreamConfig getStream(String streamId) {
+        return streamStore.getStream(streamId);
+    }
+
+    /**
+     * Gets all streams for the current client context.
+     *
+     * @return A list of all stream configurations
+     */
+    public List<StreamConfig> getAvailableStreams() {
+        return streamStore.getAvailableStreams();
+    }
+
+    /**
+     * Returns every stream configuration attached to a client whose SSF
+     * receiver capability is enabled. Does not filter by per-stream status
+     * — the dispatcher applies {@code StreamStatusValue} gating before
+     * actually delivering events. See
+     * {@link SsfStreamStore#findStreamsForSsfReceiverClients()}
+     * for details.
+     */
+    public List<StreamConfig> findStreamsForSsfReceiverClients() {
+        return streamStore.findStreamsForSsfReceiverClients();
+    }
+
+    /**
+     * Finds a stream by ID across all clients in the realm.
+     *
+     * @param streamId The stream ID
+     * @return The stream configuration, or null if not found
+     */
+    public StreamConfig findStreamById(String streamId) {
+        return streamStore.findStreamById(streamId);
+    }
+
+    /**
+     * Updates a stream.
+     *
+     * @param streamConfig The updated stream configuration
+     * @return The updated stream configuration, or null if not found
+     */
+    public StreamConfig updateStream(StreamConfig streamConfig) {
+
+        String streamId = streamConfig.getStreamId();
+        StreamConfig existingStream = streamStore.getStream(streamId);
+
+        if (existingStream == null) {
+            return null;
+        }
+
+        validate(streamConfig);
+
+        // Update timestamp
+        existingStream.setUpdatedAt(Time.currentTime());
+        existingStream.setDescription(streamConfig.getDescription());
+
+        // set events requested
+        Set<String> eventsRequested = streamConfig.getEventsRequested();
+        existingStream.setEventsRequested(eventsRequested);
+
+        // set events delivered
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        ClientModel receiverClient = session.getContext().getClient();
+        SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, eventsRequested);
+        existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
+
+        applySignatureAlgorithmFromClient(existingStream, receiverClient);
+        applyUserSubjectFormatFromClient(existingStream, receiverClient);
+
+        // Store the updated stream configuration
+        streamStore.saveStream(existingStream);
+
+        return existingStream;
+    }
+
+
+    public StreamConfig replaceStream(StreamConfig streamConfig) {
+
+        String streamId = streamConfig.getStreamId();
+        StreamConfig existingStream = streamStore.getStream(streamId);
+
+        if (existingStream == null) {
+            return null;
+        }
+
+        validate(streamConfig);
+
+        // Update timestamp
+        existingStream.setUpdatedAt(Time.currentTime());
+        existingStream.setDescription(streamConfig.getDescription());
+
+        // set events requested
+        Set<String> eventsRequested = streamConfig.getEventsRequested();
+        existingStream.setEventsRequested(eventsRequested);
+
+        // set events delivered
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        ClientModel receiverClient = session.getContext().getClient();
+        SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, eventsRequested);
+        existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
+
+        applySignatureAlgorithmFromClient(existingStream, receiverClient);
+        applyUserSubjectFormatFromClient(existingStream, receiverClient);
+
+        // Store the updated stream configuration
+        streamStore.saveStream(existingStream);
+
+        return existingStream;
+    }
+
+    /**
+     * Reads the receiver client's {@code ssf.signatureAlgorithm} attribute,
+     * validates it against {@link SsfSignatureAlgorithms#ALLOWED}, and
+     * copies it onto the given {@link StreamConfig} so the dispatcher can
+     * pick it up at delivery time. Rejects the stream create/update with
+     * {@link SsfException} when the attribute is set to a value the
+     * transmitter does not support, giving the receiver a clean 400
+     * instead of a silent drop later during SET signing.
+     *
+     * <p>A {@code null} or blank attribute is intentionally allowed — it
+     * means "use the transmitter-wide default", which the dispatcher
+     * resolves via {@link SsfSignatureAlgorithms#resolveForStream}.
+     */
+    protected void applySignatureAlgorithmFromClient(StreamConfig streamConfig, ClientModel receiverClient) {
+        String signatureAlgorithm = receiverClient.getAttribute(ClientStreamStore.SSF_STREAM_SIGNATURE_ALGORITHM_KEY);
+        if (signatureAlgorithm == null || signatureAlgorithm.isBlank()) {
+            streamConfig.setSignatureAlgorithm(null);
+            return;
+        }
+        if (!SsfSignatureAlgorithms.isAllowed(signatureAlgorithm)) {
+            throw new SsfException("Invalid stream configuration: signature algorithm " + signatureAlgorithm
+                    + " is not in the transmitter allow-list " + SsfSignatureAlgorithms.ALLOWED);
+        }
+        streamConfig.setSignatureAlgorithm(signatureAlgorithm);
+    }
+
+    /**
+     * Reads the receiver client's {@code ssf.userSubjectFormat} attribute,
+     * validates it against {@link SsfUserSubjectFormats#ALLOWED}, and copies
+     * it onto the given {@link StreamConfig} so the mapper can pick it up
+     * when building the user portion of an SSF SET. Rejects the stream
+     * create/update with {@link SsfException} when the attribute is set to
+     * an unsupported format, giving the receiver a clean 400 instead of a
+     * silent fallback at emission time.
+     *
+     * <p>A {@code null} or blank attribute is intentionally allowed — it
+     * means "use {@link SsfUserSubjectFormats#DEFAULT}", which matches the
+     * transmitter's behavior before this knob was added.
+     */
+    protected void applyUserSubjectFormatFromClient(StreamConfig streamConfig, ClientModel receiverClient) {
+        String userSubjectFormat = receiverClient.getAttribute(ClientStreamStore.SSF_STREAM_USER_SUBJECT_FORMAT_KEY);
+        if (userSubjectFormat == null || userSubjectFormat.isBlank()) {
+            streamConfig.setUserSubjectFormat(null);
+            return;
+        }
+        if (!SsfUserSubjectFormats.isAllowed(userSubjectFormat)) {
+            throw new SsfException("Invalid stream configuration: user subject format " + userSubjectFormat
+                    + " is not in the transmitter allow-list " + SsfUserSubjectFormats.ALLOWED);
+        }
+        streamConfig.setUserSubjectFormat(userSubjectFormat);
+    }
+
+    /**
+     * Deletes a stream.
+     *
+     * @param streamId The stream ID
+     * @return true if the stream was deleted, false if not found
+     */
+    public boolean deleteStream(String streamId) {
+        StreamConfig existingStream = streamStore.getStream(streamId);
+
+        if (existingStream == null) {
+            return false;
+        }
+
+        streamStore.deleteStream(streamId);
+        return true;
+    }
+
+    /**
+     * Gets the status of a stream.
+     *
+     * @param streamId The stream ID
+     * @return The stream status, or null if not found
+     */
+    public StreamStatus getStreamStatus(String streamId) {
+        StreamConfig stream = streamStore.getStream(streamId);
+
+        if (stream == null) {
+            return null;
+        }
+
+        StreamStatus status = new StreamStatus();
+        status.setStreamId(streamId);
+        status.setStatus(stream.getStatus().getStatusCode());
+        status.setReason(stream.getStatusReason());
+
+        return status;
+    }
+
+    /**
+     * Updates the status of a stream.
+     *
+     * @param newStreamStatus The updated stream status
+     * @return The updated stream status, or null if not found
+     */
+    public StreamStatus updateStreamStatus(StreamStatus newStreamStatus) {
+
+        if (newStreamStatus == null) {
+            return null;
+        }
+
+        String streamId = newStreamStatus.getStreamId();
+        if (streamId == null) {
+            return null;
+        }
+
+        StreamConfig stream = streamStore.getStream(streamId);
+        if (stream == null) {
+            return null;
+        }
+
+        StreamStatus currentStreamStatus = streamStore.getStreamStatus(streamId);
+        if (Objects.equals(currentStreamStatus.getStatus(), newStreamStatus.getStatus())) {
+            // return current stream status
+            return currentStreamStatus;
+        }
+
+        // TODO check if new status is allowed
+
+        // Update the stream status
+        streamStore.updateStreamStatus(streamId, newStreamStatus);
+        stream.setUpdatedAt(Time.currentTime());
+
+        // Update stream status
+        return streamStore.updateStreamStatus(streamId, newStreamStatus);
+    }
+}
