@@ -604,6 +604,17 @@ public class ClientAuthSignedJWTTest extends AbstractClientAuthSignedJWTTest {
         assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, AuthenticationFlowError.CLIENT_CREDENTIALS_SETUP_REQUIRED.toString().toLowerCase());
     }
 
+    @Test
+    public void testAssertionWithNoneAlgorithm() throws Exception {
+        String client1Jwt = getClient1SignedJWT();
+
+        JsonWebToken client1JsonWebToken = new JWSInput(client1Jwt).readJsonContent(JsonWebToken.class);
+        String request = new JWSBuilder().jsonContent(client1JsonWebToken).none();
+        AccessTokenResponse response = doClientCredentialsGrantRequest(request);
+
+        assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS.toString().toLowerCase());
+    }
+
 
     @Test
     public void testAssertionExpired() throws Exception {
