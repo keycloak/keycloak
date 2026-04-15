@@ -117,6 +117,31 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
     setConfigFetchKey((k) => k + 1);
   };
 
+  const triggerVerifyStream = async () => {
+    if (!client.id) {
+      return;
+    }
+    try {
+      const response = await fetch(
+        `${addTrailingSlash(
+          adminClient.baseUrl,
+        )}admin/realms/${realm}/ssf/clients/${client.id}/stream/verify`,
+        {
+          method: "POST",
+          headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(
+          `${response.status} ${response.statusText || "Request failed"}`,
+        );
+      }
+      addAlert(t("ssfVerifyStreamSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("ssfVerifyStreamError", error);
+    }
+  };
+
   const [toggleDeleteStreamDialog, DeleteStreamConfirm] = useConfirmDialog({
     titleKey: "ssfDeleteStreamConfirmTitle",
     messageKey: "ssfDeleteStreamConfirmMessage",
@@ -782,6 +807,13 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
                         data-testid="ssfStreamRevert"
                       >
                         {t("revert")}
+                      </Button>
+                      <Button
+                        variant="tertiary"
+                        onClick={triggerVerifyStream}
+                        data-testid="ssfStreamVerify"
+                      >
+                        {t("ssfVerifyStream")}
                       </Button>
                       <Button
                         variant="danger"
