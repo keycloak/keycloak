@@ -55,19 +55,37 @@ public class SecurityEventTokenDispatcher {
         }
 
         if (!isStreamEnabled(stream)) {
-            log.debugf("Skipping event delivery for stream %s: status=%s jti=%s",
-                    stream.getStreamId(), stream.getStatus(), eventToken.getJti());
+            log.debugf("Skipping event delivery for stream because of unsupported stream status. streamId=%s jti=%s status=%s",
+                    stream.getStreamId(), eventToken.getJti(), stream.getStatus());
             return;
         }
 
         // Check if the stream is interested in this event type
-        String eventType = getEventType(eventToken);
-        if (eventType != null && stream.getEventsRequested() != null &&
-            !stream.getEventsRequested().contains(eventType)) {
+        if (isEventEnabledForStream(eventToken, stream)){
+            log.debugf("Skipping event delivery for stream because of unsupported event. streamId=%s jti=%s events=%s",
+                    stream.getStreamId(), eventToken.getJti(), eventToken.getEvents());
             return;
         }
 
         deliverEvent(eventToken, stream);
+    }
+
+    protected boolean isEventEnabledForStream(SsfSecurityEventToken eventToken, StreamConfig stream) {
+        String eventType = getEventType(eventToken);
+        if (eventType != null && stream.getEventsRequested() != null &&
+            !stream.getEventsRequested().contains(eventType)) {
+            return true;
+        }
+        return false;
+    }
+
+    protected boolean isStreamEnabled(StreamConfig stream) {
+        StreamStatusValue status = stream.getStatus();
+        if (status == null) {
+            // some SSF receivers don't provide a status
+            return true;
+        }
+        return StreamStatusValue.enabled == status;
     }
 
     public void deliverEvent(SsfSecurityEventToken eventToken, StreamConfig stream) {
@@ -97,10 +115,14 @@ public class SecurityEventTokenDispatcher {
 
     protected void deliverEvent(StreamConfig stream, SecurityEventToken narrowedEventToken, String encodedEvent) {
 
-        ExecutorsProvider executorsProvider = session.getProvider(ExecutorsProvider.class);
+        ExecutorsProvider executorsProvider = getExecutorsProvider();
         var executor = executorsProvider.getExecutor("ssf-push-event-dispatcher");
         // FIXME use a virtual thread to deliver events via push
         executor.execute(() -> pushDeliveryService.deliverEvent(stream, narrowedEventToken, encodedEvent));
+    }
+
+    protected ExecutorsProvider getExecutorsProvider() {
+        return session.getProvider(ExecutorsProvider.class);
     }
 
     protected SecurityEventToken getNarrowedEventToken(SsfSecurityEventToken eventToken, StreamConfig stream) {
@@ -128,14 +150,5 @@ public class SecurityEventTokenDispatcher {
 
     protected SseCaepSecurityEventToken narrowCaepSseEventToken(SsfSecurityEventToken eventToken) {
         return SseCaepEventConverter.convert(eventToken);
-    }
-
-    protected boolean isStreamEnabled(StreamConfig stream) {
-        StreamStatusValue status = stream.getStatus();
-        if (status == null) {
-            // some SSF receivers don't provide a status
-            return true;
-        }
-        return StreamStatusValue.enabled == status;
     }
 }
