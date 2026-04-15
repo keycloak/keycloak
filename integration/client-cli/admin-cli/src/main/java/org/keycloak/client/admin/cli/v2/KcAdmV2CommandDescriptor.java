@@ -128,6 +128,10 @@ public class KcAdmV2CommandDescriptor {
             return variants;
         }
 
+        public boolean hasVariants() {
+            return variants != null && !variants.isEmpty();
+        }
+
         public void setVariants(List<VariantDescriptor> variants) {
             this.variants = variants;
         }

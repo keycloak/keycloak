@@ -49,6 +49,12 @@ class KcAdmV2RequestExecutor extends AbstractTargetAuthOptionsCmd {
     static final String API_VERSION = "v2";
     static final String DEFAULT_REALM = "master";
 
+    // Maps resource name to the JSON field that holds its ID, used to extract
+    // the path parameter from --file content when no positional <id> is given
+    private static final Map<String, String> RESOURCE_ID_FIELDS = Map.of(
+            "client", "clientId"
+    );
+
     @Spec CommandSpec spec;
     private final CommandDescriptor descriptor;
     private final VariantDescriptor variant;
@@ -57,6 +63,10 @@ class KcAdmV2RequestExecutor extends AbstractTargetAuthOptionsCmd {
         super();
         this.descriptor = descriptor;
         this.variant = variant;
+    }
+
+    private boolean isVariantParent() {
+        return variant == null && descriptor.hasVariants();
     }
 
     @Override
@@ -145,8 +155,12 @@ class KcAdmV2RequestExecutor extends AbstractTargetAuthOptionsCmd {
             }
             configData.setRealm(requestRealm);
 
-            String url = buildUrl(configData);
             String body = buildRequestBody();
+            if (body == null && isVariantParent()) {
+                throw new RuntimeException(
+                        "No file specified. Use -f/--file to provide a request body.");
+            }
+            String url = buildUrl(configData, body);
 
             Headers headers = new Headers();
             if (token != null) {
@@ -184,25 +198,45 @@ class KcAdmV2RequestExecutor extends AbstractTargetAuthOptionsCmd {
         }
     }
 
-    private String buildUrl(ConfigData configData) {
+    private String buildUrl(ConfigData configData, String body) {
         String path = descriptor.getPath()
                 .replace("{realmName}", HttpUtil.urlencode(configData.getRealm()))
                 .replace("{version}", API_VERSION);
 
         if (descriptor.isRequiresId()) {
             var positional = spec.commandLine().getParseResult().matchedPositional(0);
-            if (positional == null) {
-                throw new RuntimeException("Missing required ID argument");
+            final String id;
+            if (positional != null) {
+                id = positional.getValue();
+            } else {
+                id = extractIdFromBody(body);
             }
-            path = path.replace(KcAdmV2DescriptorBuilder.ID_PATH_PARAM, HttpUtil.urlencode(positional.getValue()));
+            path = path.replace(KcAdmV2DescriptorBuilder.ID_PATH_PARAM, HttpUtil.urlencode(id));
         }
 
         return configData.getServerUrl() + path;
     }
 
+    private String extractIdFromBody(String body) {
+        String idField = RESOURCE_ID_FIELDS.get(descriptor.getResourceName());
+        if (idField == null) {
+            throw new RuntimeException("Cannot extract '" + descriptor.getResourceName()
+                    + "' resource ID from file. Use a subcommand that accepts <id> instead.");
+        }
+        try {
+            JsonNode node = JsonSerialization.readValue(body, JsonNode.class);
+            JsonNode idNode = node.get(idField);
+            if (idNode == null || idNode.isNull() || idNode.asText().isBlank()) {
+                throw new RuntimeException("File does not contain required '" + idField + "' field");
+            }
+            return idNode.asText();
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot parse JSON to extract ID: " + e.getMessage(), e);
+        }
+    }
+
     private String buildRequestBody() throws IOException {
-        String file = spec.commandLine().getParseResult()
-                .matchedOptionValue(KcAdmV2CommandBuilder.OPT_FILE, null);
+        String file = resolveFileOption();
 
         List<OptionDescriptor> options = variant != null
                 ? variant.getOptions() : descriptor.getOptions();
@@ -273,6 +307,20 @@ class KcAdmV2RequestExecutor extends AbstractTargetAuthOptionsCmd {
             }
         }
         return false;
+    }
+
+    private String resolveFileOption() {
+        String file = spec.commandLine().getParseResult().matchedOptionValue(KcAdmV2CommandBuilder.OPT_FILE, null);
+        CommandLine parent = spec.commandLine().getParent();
+        String parentFile = parent != null
+                ? parent.getParseResult().matchedOptionValue(KcAdmV2CommandBuilder.OPT_FILE, null)
+                : null;
+
+        if (file != null && parentFile != null) {
+            throw new RuntimeException(
+                    "Option -f/--file specified twice. Use it either before or after the subcommand, not both.");
+        }
+        return file != null ? file : parentFile;
     }
 
     private String formatOutput(String json) {
