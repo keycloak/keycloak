@@ -26,4 +26,12 @@ public @interface InjectUser {
     String ref() default "";
 
     String realmRef() default "";
+
+    /**
+     * Attach to an existing user instead of creating one; when attaching to an existing user the config will be ignored
+     * and the user will not be deleted automatically.
+     *
+     * @return the username of the existing user to attach to
+     */
+    String attachTo() default "";
 }
