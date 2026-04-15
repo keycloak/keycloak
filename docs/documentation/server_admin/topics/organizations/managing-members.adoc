@@ -157,10 +157,10 @@ NOTE: When a user successfully accepts an invitation, the invitation is automati
 
 Organization invitations can also be managed programmatically through the Admin REST API:
 
-* `GET /admin/realms/{realm}/orgs/{orgId}/invitations` - List all invitations
-* `GET /admin/realms/{realm}/orgs/{orgId}/invitations/{invitationId}` - Get specific invitation
-* `POST /admin/realms/{realm}/orgs/{orgId}/invitations/{invitationId}/resend` - Resend invitation
-* `DELETE /admin/realms/{realm}/orgs/{orgId}/invitations/{invitationId}` - Delete invitation
+* `GET /admin/realms/{realm-name}/orgs/{orgId}/invitations` - List all invitations
+* `GET /admin/realms/{realm-name}/orgs/{orgId}/invitations/{invitationId}` - Get specific invitation
+* `POST /admin/realms/{realm-name}/orgs/{orgId}/invitations/{invitationId}/resend` - Resend invitation
+* `DELETE /admin/realms/{realm-name}/orgs/{orgId}/invitations/{invitationId}` - Delete invitation
 
 For detailed API documentation, refer to the {project_name} Admin REST API documentation.
 
