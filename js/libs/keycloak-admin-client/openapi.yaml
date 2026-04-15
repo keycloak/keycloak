@@ -255,7 +255,9 @@ paths:
       - Clients (v2)
       requestBody:
         content:
-          application/merge-patch+json: {}
+          application/merge-patch+json:
+            schema:
+              type: object
         required: true
       responses:
         "200":
