@@ -67,6 +67,7 @@ Without this restriction, clients could bypass the proxy and send forged forward
 
 When using passthrough:
 
+* Restrict network access so that {project_name} accepts connections only from the proxy.
 * Forwarded headers are not applicable because the proxy cannot modify the encrypted traffic.
 * Enable the PROXY protocol (`--proxy-protocol-enabled=true`) to see the real client IP address.
 Note that the PROXY protocol is not compatible with the `--proxy-headers` option.
