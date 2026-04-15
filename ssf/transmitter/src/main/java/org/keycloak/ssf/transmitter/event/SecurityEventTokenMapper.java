@@ -12,6 +12,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -253,6 +254,53 @@ public class SecurityEventTokenMapper {
         return user.getEmail();
     }
 
+    /**
+     * Cheap predicate that returns {@code true} iff
+     * {@link #toSecurityEvent(Event, StreamConfig)} would produce a
+     * non-null SET for {@code event}, based only on event type + details
+     * currently present on the event. Callers use this to short-circuit
+     * the per-event stream lookup in {@code SsfTransmitterEventListener}
+     * — if no mapping is possible, there is no point in hitting the
+     * client store to find eligible streams.
+     *
+     * <p>The check deliberately mirrors the {@code switch} in
+     * {@link #toSecurityEvent(Event, StreamConfig)} so the two stay in
+     * sync. New event types added to the mapper must be reflected here
+     * too, otherwise the listener will silently drop them.
+     */
+    public boolean canConvert(Event event) {
+        if (event == null || shouldIgnoreEvent(event)) {
+            return false;
+        }
+        return switch (event.getType()) {
+            case LOGOUT -> !shouldIgnoreLogout(event);
+            case UPDATE_CREDENTIAL -> !shouldIgnoreCredentialChange(event);
+            default -> false;
+        };
+    }
+
+    /**
+     * Cheap predicate that returns {@code true} iff
+     * {@link #toSecurityEvent(AdminEvent, StreamConfig)} would produce a
+     * non-null SET for {@code adminEvent}. Currently the only mapped
+     * admin operation is the "log out all user sessions" path
+     * ({@code users/{userId}/logout}); everything else returns null and
+     * should short-circuit before any stream lookup happens.
+     */
+    public boolean canConvert(AdminEvent adminEvent) {
+        if (adminEvent == null) {
+            return false;
+        }
+        if (!ResourceType.USER.equals(adminEvent.getResourceType())) {
+            return false;
+        }
+        String path = adminEvent.getResourcePath();
+        if (path == null) {
+            return false;
+        }
+        return USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN.matcher(path).matches();
+    }
+
     public SsfSecurityEventToken toSecurityEvent(Event event, StreamConfig stream) {
 
         SsfSecurityEventToken securityEvent = switch (event.getType()) {
@@ -260,7 +308,7 @@ public class SecurityEventTokenMapper {
             case LOGOUT -> {
 
                 // ignore expired session cleanup, we only want to propagate real logouts!
-                if (shouldIgnoreLogout(event, stream)) {
+                if (shouldIgnoreLogout(event)) {
                     yield null;
                 }
 
@@ -270,7 +318,7 @@ public class SecurityEventTokenMapper {
             case UPDATE_CREDENTIAL -> {
 
                 // ignore credential changes for credentials that are not used for authentication
-                if (shouldIgnoreCredentialChange(event, stream)) {
+                if (shouldIgnoreCredentialChange(event)) {
                     yield null;
                 }
 
@@ -280,7 +328,7 @@ public class SecurityEventTokenMapper {
 
             default -> {
 
-                if (shouldIgnoreEvent(event, stream)) {
+                if (shouldIgnoreEvent(event)) {
                     yield null;
                 }
 
@@ -292,15 +340,15 @@ public class SecurityEventTokenMapper {
         return securityEvent;
     }
 
-    protected boolean shouldIgnoreEvent(Event event, StreamConfig stream) {
+    protected boolean shouldIgnoreEvent(Event event) {
         return false;
     }
 
-    protected boolean shouldIgnoreCredentialChange(Event event, StreamConfig stream) {
+    protected boolean shouldIgnoreCredentialChange(Event event) {
         return false;
     }
 
-    protected boolean shouldIgnoreLogout(Event event, StreamConfig stream) {
+    protected boolean shouldIgnoreLogout(Event event) {
         String reason = event.getDetails().get(Details.REASON);
         return Details.USER_SESSION_EXPIRED_REASON.equals(reason) || Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(reason);
     }
