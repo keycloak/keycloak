@@ -47,36 +47,40 @@ public class StreamService {
     }
 
     /**
-     * Creates a new stream.
+     * Creates a new stream from a receiver-supplied {@link StreamConfigInputRepresentation}
+     * request body (SSF spec §8.1.1.2).
      *
-     * @param streamConfig The stream configuration
-     * @return The created stream configuration
+     * <p>Transmitter-controlled fields ({@code stream_id}, {@code iss},
+     * {@code aud}, {@code events_supported}, {@code events_delivered}, the
+     * {@code kc_*} extensions, …) are computed here and are intentionally
+     * absent from {@link StreamConfigUpdateRepresentation}/{@link StreamConfigInputRepresentation} so a
+     * receiver cannot supply them over the wire: Jackson rejects unknown
+     * fields with 400 at bind time.
+     *
+     * @param input The receiver-supplied create request.
+     * @return The created stream configuration.
      */
-    public StreamConfig createStream(StreamConfig streamConfig) {
-
-        validate(streamConfig);
+    public StreamConfig createStream(StreamConfigInputRepresentation input) {
 
         KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
         checkClient();
 
+        StreamConfig streamConfig = new StreamConfig();
+        // Receiver-writable fields first so validate() sees the delivery
+        // configuration the receiver actually supplied.
+        replaceReceiverFields(input, streamConfig);
+
+        validate(streamConfig);
+
+        // Transmitter-supplied identity fields.
         streamConfig.setStreamId(createStreamId(session, streamConfig));
-
-        // Set default status if not provided
-        // should we enable stream status by default?
         streamConfig.setStatus(StreamStatusValue.enabled);
+        streamConfig.setIssuer(transmitterService.getTransmitterMetadata().getIssuer());
 
-        // set issuer
-        String iss = transmitterService.getTransmitterMetadata().getIssuer();
-        streamConfig.setIssuer(iss);
-
-        // set audience
         ClientModel receiverClient = session.getContext().getClient();
-        Set<String> audience = createAudience(streamConfig, receiverClient);
-        streamConfig.setAudience(audience);
+        streamConfig.setAudience(createAudience(streamConfig, receiverClient));
 
-        // Requested events
         Set<String> eventsRequested = streamConfig.getEventsRequested();
-        streamConfig.setEventsRequested(eventsRequested);
 
         // Compute delivered events based on requested events
         SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, eventsRequested);
@@ -185,6 +189,48 @@ public class StreamService {
         return ssfProvider.verificationService().triggerVerification(verificationRequest);
     }
 
+    /**
+     * Applies the receiver-writable fields of {@code input} to
+     * {@code target} using §8.1.1.3 merge semantics: only non-null fields
+     * are copied; null fields leave the corresponding value on
+     * {@code target} untouched.
+     *
+     * <p>Java beans collapse "field absent from the body" and "field present
+     * and explicitly null" into the same state, so we define a null in a
+     * PATCH body as "don't change this". To explicitly clear a
+     * receiver-writable field a receiver must use PUT (full replace) instead.
+     */
+    protected void mergeReceiverFields(StreamConfigInputRepresentation input, StreamConfig target) {
+        if (input.getDescription() != null) {
+            target.setDescription(input.getDescription());
+        }
+        if (input.getEventsRequested() != null) {
+            target.setEventsRequested(input.getEventsRequested());
+        }
+        if (input.getDelivery() != null) {
+            target.setDelivery(input.getDelivery());
+        }
+    }
+
+    /**
+     * Applies the receiver-writable fields of {@code input} to
+     * {@code target} using replace semantics: all receiver-writable fields
+     * are unconditionally copied, so absent fields on {@code input} reset
+     * the corresponding value on {@code target} to {@code null}.
+     *
+     * <p>Transmitter-controlled fields on {@code target} ({@code stream_id},
+     * {@code iss}, {@code aud}, {@code events_supported}, the {@code kc_*}
+     * extensions, …) are left untouched — this method only replaces the
+     * receiver-writable subset. Used for both {@code POST /streams} (apply
+     * onto a fresh {@link StreamConfig}) and {@code PUT /streams} (apply
+     * onto the stored {@link StreamConfig}).
+     */
+    protected void replaceReceiverFields(StreamConfigInputRepresentation input, StreamConfig target) {
+        target.setDescription(input.getDescription());
+        target.setEventsRequested(input.getEventsRequested());
+        target.setDelivery(input.getDelivery());
+    }
+
     protected void validate(StreamConfig streamConfig) {
 
         StreamDeliveryConfig delivery = streamConfig.getDelivery();
@@ -256,75 +302,108 @@ public class StreamService {
     }
 
     /**
-     * Updates a stream.
+     * Updates a stream using SSF spec §8.1.1.3 merge semantics.
      *
-     * @param streamConfig The updated stream configuration
-     * @return The updated stream configuration, or null if not found
+     * <p>Only non-null fields on {@code update} are applied to the stored
+     * stream; null/absent fields retain their current value. Transmitter-
+     * controlled fields are not on {@link StreamConfigUpdateRepresentation} at all, so
+     * Jackson rejects any such field in the request body with 400 at bind
+     * time — the receiver cannot clobber transmitter state such as
+     * {@code iss}, {@code aud}, or {@code kc_created_at} by round-tripping
+     * a previously fetched representation.
+     *
+     * <p>Note on null vs. absent: Java beans collapse the two into the same
+     * state, so we define null-in-a-PATCH-body as "don't change this". To
+     * explicitly clear a receiver-writable field, use PUT (full replace).
+     *
+     * @return The updated stream configuration, or {@code null} if the stream
+     *         identified by {@code update.streamId} does not exist.
      */
-    public StreamConfig updateStream(StreamConfig streamConfig) {
+    public StreamConfig updateStream(StreamConfigUpdateRepresentation update) {
 
-        String streamId = streamConfig.getStreamId();
-        StreamConfig existingStream = streamStore.getStream(streamId);
+        if (update == null || update.getStreamId() == null) {
+            throw new SsfException("Invalid stream update: stream_id is required");
+        }
 
+        StreamConfig existingStream = streamStore.getStream(update.getStreamId());
         if (existingStream == null) {
             return null;
         }
 
-        validate(streamConfig);
+        boolean eventsRequestedChanged = update.getEventsRequested() != null;
 
-        // Update timestamp
-        existingStream.setUpdatedAt(Time.currentTime());
-        existingStream.setDescription(streamConfig.getDescription());
+        mergeReceiverFields(update, existingStream);
 
-        // set events requested
-        Set<String> eventsRequested = streamConfig.getEventsRequested();
-        existingStream.setEventsRequested(eventsRequested);
+        // Re-run full validation against the merged result; delivery method /
+        // push endpoint constraints are enforced on the combined state.
+        validate(existingStream);
 
-        // set events delivered
         KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
         ClientModel receiverClient = session.getContext().getClient();
-        SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, eventsRequested);
-        existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
+
+        // Recompute events_delivered only when events_requested actually changed —
+        // a pure description or delivery update should not touch the delivered set.
+        if (eventsRequestedChanged) {
+            SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, existingStream.getEventsRequested());
+            existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
+        }
 
         applySignatureAlgorithmFromClient(existingStream, receiverClient);
         applyUserSubjectFormatFromClient(existingStream, receiverClient);
 
-        // Store the updated stream configuration
+        existingStream.setUpdatedAt(Time.currentTime());
+
         streamStore.saveStream(existingStream);
 
         return existingStream;
     }
 
+    /**
+     * Replaces a stream using SSF spec §8.1.1.4 semantics.
+     *
+     * <p>The receiver sends the entire receiver-writable stream configuration.
+     * Receiver-updatable fields on the stored stream are replaced with the
+     * values from the request (including being reset to {@code null} when
+     * absent). Transmitter-controlled fields ({@code iss}, {@code aud},
+     * {@code events_supported}, the {@code kc_*} extensions, …) are preserved
+     * from storage: they are not on {@link StreamConfigUpdateRepresentation}, so Jackson
+     * rejects them in the request body with 400 at bind time.
+     *
+     * @return The replaced stream configuration, or {@code null} if the stream
+     *         does not exist.
+     */
+    public StreamConfig replaceStream(StreamConfigUpdateRepresentation update) {
 
-    public StreamConfig replaceStream(StreamConfig streamConfig) {
+        if (update == null || update.getStreamId() == null) {
+            throw new SsfException("Invalid stream replace: stream_id is required");
+        }
 
-        String streamId = streamConfig.getStreamId();
-        StreamConfig existingStream = streamStore.getStream(streamId);
-
+        StreamConfig existingStream = streamStore.getStream(update.getStreamId());
         if (existingStream == null) {
             return null;
         }
 
-        validate(streamConfig);
+        if (update.getDelivery() == null) {
+            throw new SsfException("Invalid stream replace: delivery is required");
+        }
 
-        // Update timestamp
-        existingStream.setUpdatedAt(Time.currentTime());
-        existingStream.setDescription(streamConfig.getDescription());
+        // Replace receiver-updatable fields on existingStream. Omitted receiver
+        // fields are reset — that is the whole point of PUT vs PATCH.
+        replaceReceiverFields(update, existingStream);
 
-        // set events requested
-        Set<String> eventsRequested = streamConfig.getEventsRequested();
-        existingStream.setEventsRequested(eventsRequested);
+        validate(existingStream);
 
-        // set events delivered
         KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
         ClientModel receiverClient = session.getContext().getClient();
-        SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, eventsRequested);
+
+        SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, existingStream.getEventsRequested());
         existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
 
         applySignatureAlgorithmFromClient(existingStream, receiverClient);
         applyUserSubjectFormatFromClient(existingStream, receiverClient);
 
-        // Store the updated stream configuration
+        existingStream.setUpdatedAt(Time.currentTime());
+
         streamStore.saveStream(existingStream);
 
         return existingStream;

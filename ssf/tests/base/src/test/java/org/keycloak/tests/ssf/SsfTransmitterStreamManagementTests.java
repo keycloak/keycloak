@@ -1,7 +1,9 @@
 package org.keycloak.tests.ssf;
 
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.keycloak.admin.client.Keycloak;
@@ -14,6 +16,8 @@ import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.transmitter.SsfScopes;
 import org.keycloak.ssf.transmitter.SsfTransmitterUrls;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
+import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -118,7 +122,7 @@ public class SsfTransmitterStreamManagementTests {
         String readOnlyToken = obtainReceiverAccessToken(RECEIVER_RO, RECEIVER_RO_SECRET, SsfScopes.SCOPE_SSF_READ);
         Assertions.assertNotNull(readOnlyToken, "should obtain a token with just the ssf.read scope");
 
-        StreamConfig request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
 
         try (SimpleHttpResponse response = postStream(readOnlyToken, request)) {
             Assertions.assertEquals(401, response.getStatus(),
@@ -131,7 +135,7 @@ public class SsfTransmitterStreamManagementTests {
 
         String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
 
-        StreamConfig request = buildPushStreamRequest(Set.of(
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(
                 CaepCredentialChange.TYPE,
                 CaepSessionRevoked.TYPE));
 
@@ -175,7 +179,7 @@ public class SsfTransmitterStreamManagementTests {
     public void testDuplicateStreamRejected() throws IOException {
 
         String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
-        StreamConfig request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
 
         try (SimpleHttpResponse response = postStream(token, request)) {
             Assertions.assertEquals(201, response.getStatus(), "first stream creation should succeed");
@@ -191,7 +195,7 @@ public class SsfTransmitterStreamManagementTests {
     public void testGetStreamByIdReturnsRegisteredStream() throws IOException {
 
         String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
-        StreamConfig request = buildPushStreamRequest(Set.of(CaepSessionRevoked.TYPE));
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepSessionRevoked.TYPE));
 
         String createdStreamId;
         try (SimpleHttpResponse response = postStream(token, request)) {
@@ -217,7 +221,7 @@ public class SsfTransmitterStreamManagementTests {
     public void testPatchStreamNarrowsRequestedEvents() throws IOException {
 
         String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
-        StreamConfig request = buildPushStreamRequest(Set.of(
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(
                 CaepCredentialChange.TYPE,
                 CaepSessionRevoked.TYPE));
 
@@ -227,7 +231,7 @@ public class SsfTransmitterStreamManagementTests {
             streamId = response.asJson(StreamConfig.class).getStreamId();
         }
 
-        StreamConfig patch = buildPushStreamRequest(Set.of(CaepSessionRevoked.TYPE));
+        StreamConfigUpdateRepresentation patch = buildPushStreamRequest(Set.of(CaepSessionRevoked.TYPE));
         patch.setStreamId(streamId);
 
         try (SimpleHttpResponse response = patchStream(token, patch)) {
@@ -242,13 +246,232 @@ public class SsfTransmitterStreamManagementTests {
     }
 
     @Test
+    public void testPatchStreamPreservesOmittedEventsRequested() throws IOException {
+
+        // Exercises §8.1.1.3 merge semantics: a PATCH that only carries
+        // description must not wipe events_requested. Guards against the
+        // pre-refactor bug where updateStream unconditionally called
+        // existingStream.setEventsRequested(patch.getEventsRequested()),
+        // which clobbered events_requested to null on a description-only
+        // update.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        String streamId;
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus());
+            streamId = response.asJson(StreamConfig.class).getStreamId();
+        }
+
+        StreamConfigUpdateRepresentation patch = new StreamConfigUpdateRepresentation();
+        patch.setStreamId(streamId);
+        patch.setDescription("updated description only");
+
+        try (SimpleHttpResponse response = patchStream(token, patch)) {
+            Assertions.assertEquals(200, response.getStatus(), "PATCH should succeed");
+            StreamConfig updated = response.asJson(StreamConfig.class);
+            Assertions.assertEquals("updated description only", updated.getDescription(),
+                    "description should reflect the PATCH");
+            Assertions.assertEquals(Set.of(CaepCredentialChange.TYPE), updated.getEventsRequested(),
+                    "events_requested must be preserved when absent from the PATCH body");
+            Assertions.assertTrue(updated.getEventsDelivered().contains(CaepCredentialChange.TYPE),
+                    "events_delivered must be preserved when events_requested did not change");
+        }
+    }
+
+    @Test
+    public void testPatchStreamPreservesOmittedDescription() throws IOException {
+
+        // Exercises §8.1.1.3 merge semantics: a PATCH that only narrows
+        // events_requested must not wipe the existing description.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(
+                CaepCredentialChange.TYPE,
+                CaepSessionRevoked.TYPE));
+        String originalDescription = request.getDescription();
+
+        String streamId;
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus());
+            streamId = response.asJson(StreamConfig.class).getStreamId();
+        }
+
+        StreamConfigUpdateRepresentation patch = new StreamConfigUpdateRepresentation();
+        patch.setStreamId(streamId);
+        patch.setEventsRequested(Set.of(CaepSessionRevoked.TYPE));
+
+        try (SimpleHttpResponse response = patchStream(token, patch)) {
+            Assertions.assertEquals(200, response.getStatus(), "PATCH should succeed");
+            StreamConfig updated = response.asJson(StreamConfig.class);
+            Assertions.assertEquals(originalDescription, updated.getDescription(),
+                    "description must be preserved when absent from the PATCH body");
+            Assertions.assertEquals(Set.of(CaepSessionRevoked.TYPE), updated.getEventsRequested());
+        }
+    }
+
+    @Test
+    public void testPatchStreamRejectsTransmitterControlledFields() throws IOException {
+
+        // §8.1.1.3: "Only the fields that the Receiver wishes to modify are
+        // included in the patch object". A receiver attempting to change
+        // transmitter-supplied fields such as iss/aud or the Keycloak
+        // extension timestamps must be rejected with 400 rather than
+        // silently ignored — ignoring them would make the request look
+        // successful to a compromised/misbehaving receiver.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        String streamId;
+        Integer originalCreatedAt;
+        Set<String> originalAudience;
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus());
+            StreamConfig created = response.asJson(StreamConfig.class);
+            streamId = created.getStreamId();
+            originalCreatedAt = created.getCreatedAt();
+            originalAudience = created.getAudience();
+        }
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("stream_id", streamId);
+        body.put("description", "attempted take-over");
+        body.put("iss", "https://attacker.example.com");
+        body.put("aud", Set.of("https://attacker.example.com"));
+        body.put("kc_created_at", 0);
+
+        try (SimpleHttpResponse response = http.doPatch(streamsEndpoint())
+                .json(body)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "PATCH with transmitter-controlled fields must be rejected");
+        }
+
+        // Double-check: nothing on the stored stream actually changed.
+        try (SimpleHttpResponse response = http.doGet(streamsEndpoint())
+                .param("stream_id", streamId)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+            StreamConfig fetched = response.asJson(StreamConfig.class);
+            Assertions.assertEquals(originalCreatedAt, fetched.getCreatedAt(),
+                    "kc_created_at must not be altered by a rejected PATCH");
+            Assertions.assertEquals(originalAudience, fetched.getAudience(),
+                    "aud must not be altered by a rejected PATCH");
+            Assertions.assertNotEquals("attempted take-over", fetched.getDescription(),
+                    "a rejected PATCH must not leave partial writes behind");
+        }
+    }
+
+    @Test
+    public void testPatchStreamPreservesCreatedAtAndStampsUpdatedAt() throws IOException {
+
+        // Regression for the timestamp plumbing: create stamps both
+        // kc_created_at and kc_updated_at, update preserves kc_created_at
+        // and refreshes kc_updated_at.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        Integer originalCreatedAt;
+        String streamId;
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus());
+            StreamConfig created = response.asJson(StreamConfig.class);
+            streamId = created.getStreamId();
+            originalCreatedAt = created.getCreatedAt();
+            Assertions.assertNotNull(originalCreatedAt,
+                    "create must stamp kc_created_at");
+            Assertions.assertNotNull(created.getUpdatedAt(),
+                    "create must stamp kc_updated_at");
+        }
+
+        StreamConfigUpdateRepresentation patch = new StreamConfigUpdateRepresentation();
+        patch.setStreamId(streamId);
+        patch.setDescription("second revision");
+
+        try (SimpleHttpResponse response = patchStream(token, patch)) {
+            Assertions.assertEquals(200, response.getStatus());
+            StreamConfig updated = response.asJson(StreamConfig.class);
+            Assertions.assertEquals(originalCreatedAt, updated.getCreatedAt(),
+                    "kc_created_at must not change across updates");
+            Assertions.assertNotNull(updated.getUpdatedAt(),
+                    "kc_updated_at must remain set after a PATCH");
+        }
+    }
+
+    @Test
+    public void testPutStreamRejectsReceiverSuppliedTransmitterFields() throws IOException {
+
+        // §8.1.1.4: a receiver round-tripping a GET response must NOT include
+        // transmitter-controlled fields (iss, aud, events_supported, the
+        // kc_* extensions, …) in a PUT body. The wire DTO
+        // StreamConfigUpdateRepresentation does not declare those fields, so
+        // Jackson rejects the request at bind time with 400 and nothing on
+        // the stored stream is touched.
+        String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+
+        String streamId;
+        Integer originalCreatedAt;
+        Set<String> originalAudience;
+        String originalIssuer;
+        try (SimpleHttpResponse response = postStream(token, request)) {
+            Assertions.assertEquals(201, response.getStatus());
+            StreamConfig created = response.asJson(StreamConfig.class);
+            streamId = created.getStreamId();
+            originalCreatedAt = created.getCreatedAt();
+            originalAudience = created.getAudience();
+            originalIssuer = created.getIssuer();
+        }
+
+        // Hand-built raw body so we can smuggle fields Jackson would never
+        // write from a StreamConfigUpdateRepresentation instance.
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("stream_id", streamId);
+        body.put("description", "attempted take-over");
+        body.put("events_requested", Set.of(CaepSessionRevoked.TYPE));
+        body.put("iss", "https://attacker.example.com");
+        body.put("aud", Set.of("https://attacker.example.com"));
+        body.put("kc_created_at", 0);
+
+        try (SimpleHttpResponse response = http.doPut(streamsEndpoint())
+                .json(body)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(400, response.getStatus(),
+                    "PUT with transmitter-controlled fields must be rejected at bind time");
+        }
+
+        // Stored stream must be unchanged.
+        try (SimpleHttpResponse response = http.doGet(streamsEndpoint())
+                .param("stream_id", streamId)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+            StreamConfig fetched = response.asJson(StreamConfig.class);
+            Assertions.assertEquals(originalIssuer, fetched.getIssuer(),
+                    "iss must not be altered by a rejected PUT");
+            Assertions.assertEquals(originalAudience, fetched.getAudience(),
+                    "aud must not be altered by a rejected PUT");
+            Assertions.assertEquals(originalCreatedAt, fetched.getCreatedAt(),
+                    "kc_created_at must not be altered by a rejected PUT");
+            Assertions.assertNotEquals("attempted take-over", fetched.getDescription(),
+                    "a rejected PUT must not leave partial writes behind");
+        }
+    }
+
+    @Test
     public void testCreateStreamHonoursClientSupportedEvents() throws IOException {
 
         // RECEIVER_SCOPED is configured with ssf.supportedEvents=CaepSessionRevoked
         // so requesting additional events should still yield a delivered set
         // narrowed to the client-configured allow list.
         String token = obtainManageToken(RECEIVER_SCOPED, RECEIVER_SCOPED_SECRET);
-        StreamConfig request = buildPushStreamRequest(Set.of(
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(
                 CaepCredentialChange.TYPE,
                 CaepSessionRevoked.TYPE));
 
@@ -267,7 +490,7 @@ public class SsfTransmitterStreamManagementTests {
     public void testDeleteStreamClearsOnlyStreamAttributes() throws IOException {
 
         String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
-        StreamConfig request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
 
         try (SimpleHttpResponse response = postStream(token, request)) {
             Assertions.assertEquals(201, response.getStatus());
@@ -296,7 +519,7 @@ public class SsfTransmitterStreamManagementTests {
     public void testAdminDeleteClientStreamEndpoint() throws IOException {
 
         String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
-        StreamConfig request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
+        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
 
         try (SimpleHttpResponse response = postStream(token, request)) {
             Assertions.assertEquals(201, response.getStatus());
@@ -338,30 +561,40 @@ public class SsfTransmitterStreamManagementTests {
         return SsfTransmitterUrls.streamsEndpoint(realm.getBaseUrl());
     }
 
-    protected StreamConfig buildPushStreamRequest(Set<String> eventsRequested) {
+    /**
+     * Builds a {@link StreamConfigUpdateRepresentation} populated with a dummy
+     * push-delivery configuration, the given events_requested set, and a
+     * description. The returned type is the PATCH/PUT DTO ({@code Update})
+     * rather than the POST DTO ({@code Input}) so tests can call
+     * {@link StreamConfigUpdateRepresentation#setStreamId(String)} on it when
+     * exercising update/replace paths; on create the null {@code stream_id}
+     * is omitted from the wire JSON and the POST handler binds the rest into
+     * a {@link StreamConfigInputRepresentation} via the inherited setters.
+     */
+    protected StreamConfigUpdateRepresentation buildPushStreamRequest(Set<String> eventsRequested) {
         StreamDeliveryConfig delivery = new StreamDeliveryConfig();
         delivery.setMethod(Ssf.DELIVERY_METHOD_PUSH_URI);
         delivery.setEndpointUrl(DUMMY_PUSH_ENDPOINT);
         delivery.setAuthorizationHeader(DUMMY_PUSH_AUTH_HEADER);
 
-        StreamConfig streamConfig = new StreamConfig();
-        streamConfig.setDelivery(delivery);
-        streamConfig.setEventsRequested(eventsRequested);
-        streamConfig.setDescription("Stream management integration test");
-        return streamConfig;
+        StreamConfigUpdateRepresentation request = new StreamConfigUpdateRepresentation();
+        request.setDelivery(delivery);
+        request.setEventsRequested(eventsRequested);
+        request.setDescription("Stream management integration test");
+        return request;
     }
 
-    protected SimpleHttpResponse postStream(String accessToken, StreamConfig streamConfig) throws IOException {
+    protected SimpleHttpResponse postStream(String accessToken, StreamConfigInputRepresentation input) throws IOException {
         return http.doPost(streamsEndpoint())
-                .json(streamConfig)
+                .json(input)
                 .auth(accessToken)
                 .acceptJson()
                 .asResponse();
     }
 
-    protected SimpleHttpResponse patchStream(String accessToken, StreamConfig streamConfig) throws IOException {
+    protected SimpleHttpResponse patchStream(String accessToken, StreamConfigUpdateRepresentation update) throws IOException {
         return http.doPatch(streamsEndpoint())
-                .json(streamConfig)
+                .json(update)
                 .auth(accessToken)
                 .acceptJson()
                 .asResponse();
