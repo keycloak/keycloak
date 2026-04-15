@@ -80,6 +80,7 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_STREAM_DESCRIPTION_KEY = "ssf.stream.description";
     public static final String SSF_STREAM_MIN_VERIFICATION_INTERVAL_KEY = "ssf.stream.minVerificationInterval";
     public static final String SSF_STREAM_INACTIVITY_TIMEOUT_KEY = "ssf.stream.inactivityTimeout";
+    public static final String SSF_STREAM_FORMAT_KEY = "ssf.stream.format";
     public static final String SSF_STREAM_CREATED_AT_KEY = "ssf.stream.createdAt";
     public static final String SSF_STREAM_UPDATED_AT_KEY = "ssf.stream.updatedAt";
 
@@ -110,6 +111,7 @@ public class ClientStreamStore implements SsfStreamStore {
             SSF_STREAM_DESCRIPTION_KEY,
             SSF_STREAM_MIN_VERIFICATION_INTERVAL_KEY,
             SSF_STREAM_INACTIVITY_TIMEOUT_KEY,
+            SSF_STREAM_FORMAT_KEY,
             SSF_STREAM_CREATED_AT_KEY,
             SSF_STREAM_UPDATED_AT_KEY);
 
@@ -301,6 +303,7 @@ public class ClientStreamStore implements SsfStreamStore {
         streamConfig.setDescription(client.getAttribute(SSF_STREAM_DESCRIPTION_KEY));
         streamConfig.setMinVerificationInterval(parseIntAttribute(client, SSF_STREAM_MIN_VERIFICATION_INTERVAL_KEY));
         streamConfig.setInactivityTimeout(parseIntAttribute(client, SSF_STREAM_INACTIVITY_TIMEOUT_KEY));
+        streamConfig.setFormat(client.getAttribute(SSF_STREAM_FORMAT_KEY));
         streamConfig.setCreatedAt(parseIntAttribute(client, SSF_STREAM_CREATED_AT_KEY));
         streamConfig.setUpdatedAt(parseIntAttribute(client, SSF_STREAM_UPDATED_AT_KEY));
 
@@ -390,6 +393,7 @@ public class ClientStreamStore implements SsfStreamStore {
         setOrRemove(client, SSF_STREAM_DESCRIPTION_KEY, streamConfig.getDescription());
         setIntOrRemove(client, SSF_STREAM_MIN_VERIFICATION_INTERVAL_KEY, streamConfig.getMinVerificationInterval());
         setIntOrRemove(client, SSF_STREAM_INACTIVITY_TIMEOUT_KEY, streamConfig.getInactivityTimeout());
+        setOrRemove(client, SSF_STREAM_FORMAT_KEY, streamConfig.getFormat());
         setIntOrRemove(client, SSF_STREAM_CREATED_AT_KEY, streamConfig.getCreatedAt());
         setIntOrRemove(client, SSF_STREAM_UPDATED_AT_KEY, streamConfig.getUpdatedAt());
 

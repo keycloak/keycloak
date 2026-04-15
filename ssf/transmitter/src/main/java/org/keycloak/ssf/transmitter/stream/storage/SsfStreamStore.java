@@ -61,7 +61,7 @@ public interface SsfStreamStore {
      * an SSF-enabled client is returned regardless of whether it is
      * {@code enabled}, {@code paused}, or {@code disabled}; the dispatcher
      * applies the per-stream status filter in
-     * {@code SecurityEventTokenDispatcher#isStreamEnabled} before actually
+     * {@code SecurityEventTokenDispatcher#dispatchEvent} before actually
      * delivering an event.
      *
      * <p>Used when there is no specific client context on the session, e.g.

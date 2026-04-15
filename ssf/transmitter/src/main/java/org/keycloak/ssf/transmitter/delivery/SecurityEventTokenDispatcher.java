@@ -55,6 +55,8 @@ public class SecurityEventTokenDispatcher {
         }
 
         if (!isStreamEnabled(stream)) {
+            log.debugf("Skipping event delivery for stream %s: status=%s jti=%s",
+                    stream.getStreamId(), stream.getStatus(), eventToken.getJti());
             return;
         }
 

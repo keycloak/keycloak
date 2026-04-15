@@ -16,6 +16,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfException;
+import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.metadata.TransmitterMetadata;
 import org.keycloak.ssf.stream.StreamStatusValue;
@@ -83,20 +84,34 @@ public class StreamService {
 
         checkClient();
 
+        ClientModel receiverClient = session.getContext().getClient();
+        SsfProfile profile = resolveReceiverProfile(receiverClient);
+
+        // iss / aud / format are transmitter-supplied under SSF 1.0 §8.1.1 and
+        // MUST NOT be set by a receiver. The legacy SSE CAEP profile (Apple
+        // Business Manager / Apple School Manager) does allow receivers to
+        // include them in the create body, so we only reject when the
+        // receiver client is not on that profile.
+        validateLegacyFieldsForProfile(input, profile);
+
         StreamConfig streamConfig = new StreamConfig();
         // Receiver-writable fields first so validate() sees the delivery
         // configuration the receiver actually supplied.
         replaceReceiverFields(input, streamConfig);
+        applyLegacyFields(input, streamConfig, receiverClient, profile);
 
         validate(streamConfig);
 
         // Transmitter-supplied identity fields.
         streamConfig.setStreamId(createStreamId(session, streamConfig));
         streamConfig.setStatus(StreamStatusValue.enabled);
+        // iss is always the transmitter's own issuer — any receiver-supplied
+        // value was already rejected for SSF 1.0 above and is intentionally
+        // ignored for SSE_CAEP (Apple echoes it from discovery, so overwriting
+        // is a no-op in practice).
         streamConfig.setIssuer(transmitterService.getTransmitterMetadata().getIssuer());
 
-        ClientModel receiverClient = session.getContext().getClient();
-        streamConfig.setAudience(createAudience(streamConfig, receiverClient));
+        streamConfig.setAudience(createAudience(input, streamConfig, receiverClient));
 
         Set<String> eventsRequested = streamConfig.getEventsRequested();
 
@@ -132,16 +147,129 @@ public class StreamService {
         return streamConfig;
     }
 
-    protected Set<String> createAudience(StreamConfig streamConfig, ClientModel receiverClient) {
-        Set<String> audience = new HashSet<>();
+    /**
+     * Computes the {@code aud} for a freshly created stream using a three-tier
+     * priority:
+     * <ol>
+     *   <li>Admin-configured {@link ClientStreamStore#SSF_STREAM_AUDIENCE_KEY
+     *       ssf.streamAudience} client attribute — always wins so the admin
+     *       can pin a realm-specific audience regardless of receiver input.</li>
+     *   <li>Receiver-supplied {@code aud} from the create body — only honored
+     *       when it arrives, intended for legacy SSE CAEP receivers (Apple
+     *       Business Manager) that carry their feed URL in the request. The
+     *       profile gate on {@link #validateLegacyFieldsForProfile} already
+     *       rejects this tier for SSF 1.0 receivers.</li>
+     *   <li>Transmitter-generated default {@code clientId/streamId}.</li>
+     * </ol>
+     */
+    protected Set<String> createAudience(StreamConfigInputRepresentation input,
+                                         StreamConfig streamConfig,
+                                         ClientModel receiverClient) {
         String ssfClientAudience = receiverClient.getAttribute(ClientStreamStore.SSF_STREAM_AUDIENCE_KEY);
-        if (ssfClientAudience != null) {
+        if (ssfClientAudience != null && !ssfClientAudience.isBlank()) {
+            Set<String> audience = new HashSet<>();
             audience.add(ssfClientAudience);
-        } else {
-            String streamAudience = receiverClient.getClientId() + "/" + streamConfig.getStreamId();
-            audience.add(streamAudience);
+            return audience;
         }
+        if (input.getAudience() != null && !input.getAudience().isEmpty()) {
+            return new HashSet<>(input.getAudience());
+        }
+        Set<String> audience = new HashSet<>();
+        audience.add(receiverClient.getClientId() + "/" + streamConfig.getStreamId());
         return audience;
+    }
+
+    /**
+     * Reads the receiver client's {@link ClientStreamStore#SSF_PROFILE_KEY
+     * ssf.profile} attribute and returns the corresponding {@link SsfProfile}.
+     * Defaults to {@link SsfProfile#SSF_1_0 SSF_1_0} when unset or invalid so
+     * the strict legacy-field gate applies by default.
+     */
+    protected SsfProfile resolveReceiverProfile(ClientModel receiverClient) {
+        String profileValue = receiverClient.getAttribute(ClientStreamStore.SSF_PROFILE_KEY);
+        if (profileValue == null || profileValue.isBlank()) {
+            return SsfProfile.SSF_1_0;
+        }
+        try {
+            return SsfProfile.valueOf(profileValue);
+        } catch (IllegalArgumentException e) {
+            log.warnf("Unknown ssf.profile '%s' on client %s — defaulting to SSF_1_0",
+                    profileValue, receiverClient.getClientId());
+            return SsfProfile.SSF_1_0;
+        }
+    }
+
+    /**
+     * Rejects a create/update/replace body that carries {@code iss},
+     * {@code aud}, or {@code format} when the receiver client is not on the
+     * legacy SSE CAEP profile. Per SSF 1.0 §8.1.1 those fields are
+     * transmitter-supplied and MUST NOT be set by the receiver; the SSE CAEP
+     * profile relaxes this specifically so Apple Business Manager's
+     * round-tripping-the-metadata create flow keeps working.
+     */
+    protected void validateLegacyFieldsForProfile(StreamConfigInputRepresentation input, SsfProfile profile) {
+        if (profile == SsfProfile.SSE_CAEP) {
+            return;
+        }
+        List<String> offending = new java.util.ArrayList<>(3);
+        if (input.getIssuer() != null) {
+            offending.add("iss");
+        }
+        if (input.getAudience() != null) {
+            offending.add("aud");
+        }
+        if (input.getFormat() != null) {
+            offending.add("format");
+        }
+        if (!offending.isEmpty()) {
+            throw new SsfException("Invalid stream configuration: " + offending
+                    + " are transmitter-supplied under SSF 1.0 §8.1.1 and may only be set by"
+                    + " receivers configured with the SSE_CAEP profile");
+        }
+    }
+
+    /**
+     * Applies the receiver-supplied legacy fields onto {@code target} for
+     * receivers on the SSE CAEP profile. {@code iss} and {@code aud} are
+     * still owned by the transmitter — iss is ignored here and aud is
+     * wired through {@link #createAudience} — so this method carries
+     * {@code format} onto the stored stream so CAEP receivers can
+     * round-trip it in their GET response <em>and</em> mirrors it onto
+     * the receiver client's
+     * {@link ClientStreamStore#SSF_STREAM_USER_SUBJECT_FORMAT_KEY
+     * ssf.userSubjectFormat} attribute.
+     *
+     * <p>The mirror is the important part: SSE CAEP's {@code format} and
+     * Keycloak's {@code ssf.userSubjectFormat} use identical code strings
+     * ({@code iss_sub}, {@code email}, …), so persisting the receiver's
+     * choice onto the client attribute means
+     * {@link #applyUserSubjectFormatFromClient} (which runs later in the
+     * same create/update flow) picks it up and the dispatcher uses the
+     * receiver-requested subject format at SET emission time. Without the
+     * mirror, Apple would ask for {@code iss_sub} and we'd still emit
+     * events using whatever subject format the admin had preconfigured
+     * (or the transmitter-wide default) — a silent mismatch.
+     */
+    protected void applyLegacyFields(StreamConfigInputRepresentation input,
+                                     StreamConfig target,
+                                     ClientModel receiverClient,
+                                     SsfProfile profile) {
+        if (profile != SsfProfile.SSE_CAEP) {
+            return;
+        }
+        String format = input.getFormat();
+        if (format == null) {
+            return;
+        }
+        // Validate against the allow-list so an unsupported format surfaces
+        // as a clean 400 at stream create/update time rather than a silent
+        // drop later at SET emission.
+        if (!SsfUserSubjectFormats.isAllowed(format)) {
+            throw new SsfException("Invalid stream configuration: format '" + format
+                    + "' is not in the transmitter allow-list " + SsfUserSubjectFormats.ALLOWED);
+        }
+        target.setFormat(format);
+        receiverClient.setAttribute(ClientStreamStore.SSF_STREAM_USER_SUBJECT_FORMAT_KEY, format);
     }
 
     protected void checkClient() {
@@ -418,16 +546,18 @@ public class StreamService {
             return null;
         }
 
+        ClientModel receiverClient = session.getContext().getClient();
+        SsfProfile profile = resolveReceiverProfile(receiverClient);
+        validateLegacyFieldsForProfile(streamUpdate, profile);
+
         boolean eventsRequestedChanged = streamUpdate.getEventsRequested() != null;
 
         mergeReceiverFields(streamUpdate, existingStream);
+        applyLegacyFields(streamUpdate, existingStream, receiverClient, profile);
 
         // Re-run full validation against the merged result; delivery method /
         // push endpoint constraints are enforced on the combined state.
         validate(existingStream);
-
-        
-        ClientModel receiverClient = session.getContext().getClient();
 
         // Recompute events_delivered only when events_requested actually changed —
         // a pure description or delivery update should not touch the delivered set.
@@ -474,6 +604,10 @@ public class StreamService {
             return null;
         }
 
+        ClientModel receiverClient = session.getContext().getClient();
+        SsfProfile profile = resolveReceiverProfile(receiverClient);
+        validateLegacyFieldsForProfile(streamUpdate, profile);
+
         if (streamUpdate.getDelivery() == null) {
             throw new SsfException("Invalid stream replace: delivery is required");
         }
@@ -481,11 +615,9 @@ public class StreamService {
         // Replace receiver-updatable fields on existingStream. Omitted receiver
         // fields are reset — that is the whole point of PUT vs PATCH.
         replaceReceiverFields(streamUpdate, existingStream);
+        applyLegacyFields(streamUpdate, existingStream, receiverClient, profile);
 
         validate(existingStream);
-
-        
-        ClientModel receiverClient = session.getContext().getClient();
 
         SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, existingStream.getEventsRequested());
         existingStream.setEventsDelivered(eventsConfig.eventsDelivered());

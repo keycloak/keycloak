@@ -112,6 +112,18 @@ public class StreamConfig {
     @JsonProperty("kc_updated_at")
     protected Integer updatedAt;
 
+    /**
+     * Subject identifier format. Not part of SSF 1.0 §8.1.1 — only valid
+     * on streams whose receiver client uses the legacy
+     * {@link SsfProfile#SSE_CAEP SSE_CAEP} profile (Apple Business
+     * Manager / Apple School Manager). Persisted and echoed back in wire
+     * responses so CAEP receivers can round-trip their stream
+     * representation. For SSF 1.0 receivers this field stays {@code null}
+     * and never appears on the wire thanks to {@code @JsonInclude(NON_NULL)}.
+     */
+    @JsonProperty("format")
+    protected String format;
+
     @JsonIgnore
     protected SsfProfile profile;
 
@@ -260,6 +272,14 @@ public class StreamConfig {
 
     public void setUpdatedAt(Integer updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
     }
 
     public void setProfile(SsfProfile profile) {
