@@ -37,6 +37,22 @@ public class StreamService {
 
     protected static final Logger log = Logger.getLogger(StreamService.class);
 
+    /**
+     * Length caps for receiver-supplied fields on {@code /streams}
+     * POST/PATCH/PUT. Chosen so that even a maximally-populated stream fits
+     * inside the client attribute value column with a safety margin — see
+     * {@link ClientStreamStore#MAX_STREAM_CONFIG_JSON_BYTES} for the overall
+     * total-size guard. Violations produce {@link SsfException} → HTTP 400.
+     */
+    protected static final int MAX_DESCRIPTION_LENGTH = 255;
+    protected static final int MAX_EVENTS_REQUESTED_COUNT = 32;
+    protected static final int MAX_EVENT_TYPE_LENGTH = 256;
+    protected static final int MAX_DELIVERY_ENDPOINT_URL_LENGTH = 512;
+    protected static final int MAX_DELIVERY_AUTHORIZATION_HEADER_LENGTH = 1024;
+    protected static final int MAX_DELIVERY_ADDITIONAL_PARAMETERS_COUNT = 8;
+    protected static final int MAX_DELIVERY_ADDITIONAL_PARAMETER_KEY_LENGTH = 64;
+    protected static final int MAX_DELIVERY_ADDITIONAL_PARAMETER_VALUE_LENGTH = 256;
+
     protected final SsfStreamStore streamStore;
 
     protected final TransmitterMetadataService transmitterService;
@@ -257,6 +273,73 @@ public class StreamService {
                 throw new SsfException("Invalid stream configuration: unsupported delivery method");
             }
             default -> throw new SsfException("Invalid stream configuration: unsupported delivery method");
+        }
+
+        validateFieldLengths(streamConfig);
+    }
+
+    /**
+     * Enforces per-field length caps on receiver-supplied fields so oversized
+     * inputs are rejected with a clean {@link SsfException} → HTTP 400 rather
+     * than leaking through to a DB column overflow when the stream is
+     * persisted. The overall persisted-blob size is additionally capped in
+     * {@link ClientStreamStore#storeStreamConfig}.
+     */
+    protected void validateFieldLengths(StreamConfig streamConfig) {
+
+        String description = streamConfig.getDescription();
+        if (description != null && description.length() > MAX_DESCRIPTION_LENGTH) {
+            throw new SsfException("Invalid stream configuration: description exceeds "
+                    + MAX_DESCRIPTION_LENGTH + " characters");
+        }
+
+        Set<String> eventsRequested = streamConfig.getEventsRequested();
+        if (eventsRequested != null) {
+            if (eventsRequested.size() > MAX_EVENTS_REQUESTED_COUNT) {
+                throw new SsfException("Invalid stream configuration: events_requested exceeds "
+                        + MAX_EVENTS_REQUESTED_COUNT + " entries");
+            }
+            for (String eventType : eventsRequested) {
+                if (eventType != null && eventType.length() > MAX_EVENT_TYPE_LENGTH) {
+                    throw new SsfException("Invalid stream configuration: events_requested entry exceeds "
+                            + MAX_EVENT_TYPE_LENGTH + " characters");
+                }
+            }
+        }
+
+        StreamDeliveryConfig delivery = streamConfig.getDelivery();
+        if (delivery != null) {
+            String endpointUrl = delivery.getEndpointUrl();
+            if (endpointUrl != null && endpointUrl.length() > MAX_DELIVERY_ENDPOINT_URL_LENGTH) {
+                throw new SsfException("Invalid stream configuration: delivery.endpoint_url exceeds "
+                        + MAX_DELIVERY_ENDPOINT_URL_LENGTH + " characters");
+            }
+
+            String authorizationHeader = delivery.getAuthorizationHeader();
+            if (authorizationHeader != null && authorizationHeader.length() > MAX_DELIVERY_AUTHORIZATION_HEADER_LENGTH) {
+                throw new SsfException("Invalid stream configuration: delivery.authorization_header exceeds "
+                        + MAX_DELIVERY_AUTHORIZATION_HEADER_LENGTH + " characters");
+            }
+
+            java.util.Map<String, Object> additionalParameters = delivery.getAdditionalParameters();
+            if (additionalParameters != null) {
+                if (additionalParameters.size() > MAX_DELIVERY_ADDITIONAL_PARAMETERS_COUNT) {
+                    throw new SsfException("Invalid stream configuration: delivery.additional_parameters exceeds "
+                            + MAX_DELIVERY_ADDITIONAL_PARAMETERS_COUNT + " entries");
+                }
+                for (java.util.Map.Entry<String, Object> entry : additionalParameters.entrySet()) {
+                    if (entry.getKey() != null && entry.getKey().length() > MAX_DELIVERY_ADDITIONAL_PARAMETER_KEY_LENGTH) {
+                        throw new SsfException("Invalid stream configuration: delivery.additional_parameters key exceeds "
+                                + MAX_DELIVERY_ADDITIONAL_PARAMETER_KEY_LENGTH + " characters");
+                    }
+                    Object value = entry.getValue();
+                    if (value != null && value.toString().length() > MAX_DELIVERY_ADDITIONAL_PARAMETER_VALUE_LENGTH) {
+                        throw new SsfException("Invalid stream configuration: delivery.additional_parameters value for key '"
+                                + entry.getKey() + "' exceeds "
+                                + MAX_DELIVERY_ADDITIONAL_PARAMETER_VALUE_LENGTH + " characters");
+                    }
+                }
+            }
         }
     }
 
