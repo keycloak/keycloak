@@ -149,10 +149,6 @@ public class DatabaseOptions {
             .description("The type of the truststore file. Common values include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the driver's default.")
             .build();
 
-    public static final Option<String> DB_ORACLE_TLS_TRANSPORT = new OptionBuilder<>("db-oracle-protocol", String.class)
-            .hidden()
-            .build();
-
     public static final class Datasources {
         /**
          * Options that have their sibling for a named datasource
@@ -179,8 +175,7 @@ public class DatabaseOptions {
                 DB_TLS_MODE,
                 DB_TLS_TRUST_STORE_FILE,
                 DB_TLS_TRUST_STORE_PASSWORD,
-                DB_TLS_TRUST_STORE_TYPE,
-                DB_ORACLE_TLS_TRANSPORT
+                DB_TLS_TRUST_STORE_TYPE
         ).map(Option::getKey).toList();
 
         /**

@@ -66,7 +66,7 @@ public class TelemetryOptions {
 
     public static final Option<List<String>> TELEMETRY_LOGS_HEADERS = OptionBuilder.listOptionBuilder("telemetry-logs-headers", String.class)
             .category(OptionCategory.TELEMETRY)
-            .hidden()
+            .synthetic()
             .description("Hidden option for OpenTelemetry headers that will be part of the exporter request. Values in format 'key1=val1,key2=val2'. Overrides the 'telemetry-logs-header-<header>' options.")
             .build();
 
@@ -102,7 +102,7 @@ public class TelemetryOptions {
 
     public static final Option<List<String>> TELEMETRY_METRICS_HEADERS = OptionBuilder.listOptionBuilder("telemetry-metrics-headers", String.class)
             .category(OptionCategory.TELEMETRY)
-            .hidden()
+            .synthetic()
             .description("Hidden option for OpenTelemetry headers that will be part of the exporter request. Values in format 'key1=val1,key2=val2'. Overrides the 'telemetry-metrics-header-<header>' options.")
             .build();
 }

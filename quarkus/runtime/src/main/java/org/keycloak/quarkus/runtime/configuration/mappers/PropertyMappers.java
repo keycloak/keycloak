@@ -323,10 +323,31 @@ public final class PropertyMappers {
 
             sanitizeMappers(buildTimeMappers, disabledBuildTimeMappers, command);
             sanitizeMappers(runtimeTimeMappers, disabledRuntimeMappers, command);
-
-            entrySet().stream().filter(e -> e.getValue().size() > 1).findFirst().ifPresent(e -> {
-                throw new PropertyException(String.format("Duplicated mapper for key '%s'.", e.getKey()));
+            
+            // enforce single mappings - by dropping multiple mapping synthetics
+            entrySet().stream().forEach(e -> {
+                if (e.getValue().size() <= 1) {
+                    return;
+                }
+                if (e.getKey().startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+                    PropertyMapper<?> canonicalMapper = null;
+                    for (PropertyMapper<?> mapper : e.getValue()) {
+                        if (canonicalMapper != null) {
+                            if (mapper.option.isSynthetic()) {
+                                continue;
+                            }
+                            if (!canonicalMapper.option.isSynthetic()) {
+                                throw new PropertyException(String.format("Duplicated mapper for key '%s'.", e.getKey()));                    
+                            }
+                        }
+                        canonicalMapper = mapper;
+                    }
+                    e.setValue(List.of(canonicalMapper));
+                } else {
+                    throw new PropertyException(String.format("Duplicated mapper for key '%s'.", e.getKey()));
+                }
             });
+
         }
 
         public Map<OptionCategory, List<PropertyMapper<?>>> getRuntimeMappers() {
@@ -359,10 +380,7 @@ public final class PropertyMappers {
         }
 
         private static void handleMapper(PropertyMapper<?> mapper, BiConsumer<String, PropertyMapper<?>> operation) {
-            // skip accounting for the from if it is a synthetic option
-            if (!mapper.getOption().isSynthetic()) {
-                operation.accept(mapper.getFrom(), mapper);
-            }
+            operation.accept(mapper.getFrom(), mapper);
             if (!mapper.getFrom().equals(mapper.getTo())) {
                 String to = mapper.getTo();
                 operation.accept(to, mapper);

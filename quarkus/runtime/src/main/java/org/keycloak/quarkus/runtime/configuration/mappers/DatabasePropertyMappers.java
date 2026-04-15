@@ -32,7 +32,6 @@ import io.smallrye.config.ConfigValue;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.config.DatabaseOptions.DB;
-import static org.keycloak.config.DatabaseOptions.DB_ORACLE_TLS_TRANSPORT;
 import static org.keycloak.config.DatabaseOptions.DB_POOL_INITIAL_SIZE;
 import static org.keycloak.config.DatabaseOptions.DB_POOL_MAX_SIZE;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_MODE;
@@ -163,8 +162,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 // Database TLS configuration
                 fromOption(DB_TLS_MODE)
                         .paramLabel("mode")
-                        .transformer(DatabasePropertyMappers::transformOracleProtocol)
-                        .to(NS_KEYCLOAK_PREFIX + DB_ORACLE_TLS_TRANSPORT.getKey())
                         .build(),
                 fromOption(DB_TLS_TRUST_STORE_FILE)
                         .paramLabel("path")
@@ -381,6 +378,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 url += urlProps;
             }
             url = amendH2(url);
+        } else if (Database.getVendor(value).filter(Vendor.ORACLE::equals).isPresent()) {
+            var tlsMode = getDatabaseTlsMode(name);
+            if (tlsMode != DatabaseOptions.DatabaseTlsMode.DISABLED) {
+                url = Database.ORACLE_URL_PREFIX + "tcps:" + url.substring(Database.ORACLE_URL_PREFIX.length());
+            }
         }
         return url;
     }
@@ -494,11 +496,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             }
             return to;
         }
-    }
-
-    private static String transformOracleProtocol(String datasource, String value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        var tlsMode = DatabaseOptions.DatabaseTlsMode.fromCliValue(value);
-        return tlsMode != DatabaseOptions.DatabaseTlsMode.DISABLED ? "@tcps:" : "@";
     }
 
     private static PropertyMapper<?> setTlsJdbcProperty(String jdbcPropertyKey, Map<Database.Vendor, String> vendorValues) {
