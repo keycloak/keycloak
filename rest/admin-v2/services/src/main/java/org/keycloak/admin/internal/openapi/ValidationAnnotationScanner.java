@@ -236,6 +236,15 @@ public class ValidationAnnotationScanner {
     }
 
     private String getDefaultMessage(DotName annotationName) {
+        // Try to get the default value from the annotation class definition
+        ClassInfo annotationClass = indexView.getClassByName(annotationName);
+        if (annotationClass != null) {
+            var messageMethod = annotationClass.method("message");
+            if (messageMethod != null && messageMethod.defaultValue() != null) {
+                return messageMethod.defaultValue().asString();
+            }
+        }
+        // Fall back to standard message key format
         return "{" + annotationName.toString() + ".message}";
     }
 
