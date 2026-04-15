@@ -265,6 +265,40 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testRealmSessionLimitExceededButClientLimitNotExceededShouldNotThrow() throws Exception {
+        // Reproduces: realm limit exceeded on client-a, then login to client-b whose client
+        // session count is below the client limit. Without the fix, logoutOldestSessions()
+        // receives a negative count and Stream.limit() throws IllegalArgumentException.
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "2");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "3");
+
+            AccessTokenResponse response = oauth.client("direct-grant-1", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            response = oauth.client("direct-grant-1", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            // realm limit reached (2 sessions on direct-grant-1); direct-grant-2 has 0 sessions,
+            // below the client limit of 3. login must succeed and must not throw a 500.
+            response = oauth.client("direct-grant-2", "password")
+                    .doPasswordGrantRequest("test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 2));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-1", 1));
+            testingClient.server(realmName).run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
+    }
+
+    @Test
     public void testRealmSessionCountAndClientSessionCountExceededAndOldestClientSessionShouldBePrioritized() throws Exception {
         try {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
