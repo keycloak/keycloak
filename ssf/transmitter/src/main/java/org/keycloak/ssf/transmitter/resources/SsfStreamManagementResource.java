@@ -27,7 +27,6 @@ import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.util.JsonSerialization;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
@@ -65,7 +64,8 @@ public class SsfStreamManagementResource {
         }
 
         try {
-            StreamConfig createdStream = streamService.createStream(input);
+            ClientModel receiverClient = session.getContext().getClient();
+            StreamConfig createdStream = streamService.createStream(input, receiverClient);
             log.debugf("Created stream: %s", JsonSerialization.writeValueAsPrettyString(createdStream));
             var responseBuilder = Response.status(Response.Status.CREATED);
             return responseBuilder.entity(createdStream)
@@ -119,7 +119,7 @@ public class SsfStreamManagementResource {
     }
 
     protected Response getStreams() {
-        List<StreamConfig> streams = streamService.getAvailableStreams();
+        List<StreamConfig> streams = streamService.getStreamsByClient(session.getContext().getClient());
         return Response.ok(streams).build();
     }
 

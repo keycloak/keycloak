@@ -80,19 +80,50 @@ public class StreamService {
      * @param input The receiver-supplied create request.
      * @return The created stream configuration.
      */
-    public StreamConfig createStream(StreamConfigInputRepresentation input) {
+    public StreamConfig createStream(StreamConfigInputRepresentation input, ClientModel receiverClient) {
+        return createStream(receiverClient, input, false);
+    }
 
-        checkClient();
+    /**
+     * Admin-initiated create path: same flow as {@link #createStream(StreamConfigInputRepresentation)}
+     * but explicitly associated with a receiver client that the admin
+     * selected from the admin UI, and trusted to set transmitter-supplied
+     * fields ({@code iss}/{@code aud}/{@code format}) regardless of the
+     * receiver client's SSF profile.
+     *
+     * <p>Temporarily rewrites {@code session.getContext().getClient()} to
+     * the target receiver so the downstream code (and
+     * {@link ClientStreamStore}, which pulls the client from session
+     * context) sees the correct client for attribute reads and the
+     * duplicate-stream guard. Restored in a finally so the admin's own
+     * session context isn't left pointing at the receiver.
+     */
+    public StreamConfig createStreamAsAdmin(StreamConfigInputRepresentation input, ClientModel receiverClient) {
+        ClientModel previousClient = session.getContext().getClient();
+        session.getContext().setClient(receiverClient);
+        try {
+            return createStream(receiverClient, input, true);
+        } finally {
+            session.getContext().setClient(previousClient);
+        }
+    }
 
-        ClientModel receiverClient = session.getContext().getClient();
+    protected StreamConfig createStream(ClientModel receiverClient, StreamConfigInputRepresentation input, boolean adminInitiated) {
+
+        checkClient(receiverClient);
+
         SsfProfile profile = resolveReceiverProfile(receiverClient);
 
         // iss / aud / format are transmitter-supplied under SSF 1.0 §8.1.1 and
         // MUST NOT be set by a receiver. The legacy SSE CAEP profile (Apple
         // Business Manager / Apple School Manager) does allow receivers to
         // include them in the create body, so we only reject when the
-        // receiver client is not on that profile.
-        validateLegacyFieldsForProfile(input, profile);
+        // receiver client is not on that profile. Admin-initiated creates
+        // skip this check — the admin is trusted to set any field on any
+        // profile from the admin UI's create-stream form.
+        if (!adminInitiated) {
+            validateLegacyFieldsForProfile(input, profile);
+        }
 
         StreamConfig streamConfig = new StreamConfig();
         // Receiver-writable fields first so validate() sees the delivery
@@ -137,9 +168,9 @@ public class StreamService {
         streamStore.saveStream(streamConfig);
 
         log.debugf("Stream created. realm=%s client=%s streamId=%s",
-                session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamConfig.getStreamId());
+                session.getContext().getRealm().getName(), receiverClient.getClientId(), streamConfig.getStreamId());
 
-        StreamVerificationConfig streamVerificationConfig = streamStore.getStreamVerificationConfig(streamConfig.getStreamId(), session.getContext().getClient());
+        StreamVerificationConfig streamVerificationConfig = streamStore.getStreamVerificationConfig(streamConfig.getStreamId(), receiverClient);
         if (streamVerificationConfig.verificationTrigger() == VerificationTrigger.TRANSMITTER_INITIATED) {
             scheduleTransmitterInitiatedAsyncStreamVerification(streamConfig, streamVerificationConfig, session);
         }
@@ -272,8 +303,8 @@ public class StreamService {
         receiverClient.setAttribute(ClientStreamStore.SSF_STREAM_USER_SUBJECT_FORMAT_KEY, format);
     }
 
-    protected void checkClient() {
-        List<StreamConfig> availableStreams = streamStore.getAvailableStreams();
+    protected void checkClient(ClientModel receiverClient) {
+        List<StreamConfig> availableStreams = streamStore.getAvailableStreams(receiverClient);
         if (availableStreams != null && !availableStreams.isEmpty()) {
             throw new DuplicateStreamConfigException("Only one stream per receiver is allowed");
         }
@@ -491,8 +522,8 @@ public class StreamService {
      *
      * @return A list of all stream configurations
      */
-    public List<StreamConfig> getAvailableStreams() {
-        return streamStore.getAvailableStreams();
+    public List<StreamConfig> getStreamsByClient(ClientModel receiverClient) {
+        return streamStore.getAvailableStreams(receiverClient);
     }
 
     /**

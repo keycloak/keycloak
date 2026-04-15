@@ -2,6 +2,8 @@ package org.keycloak.ssf.transmitter.admin;
 
 import java.util.Set;
 
+import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
@@ -20,6 +22,8 @@ public class SsfClientStreamRepresentation {
     private String statusReason;
 
     private Set<String> audience;
+
+    private StreamDeliveryConfig delivery;
 
     private Set<String> eventsSupported;
 
@@ -71,6 +75,14 @@ public class SsfClientStreamRepresentation {
 
     public void setAudience(Set<String> audience) {
         this.audience = audience;
+    }
+
+    public StreamDeliveryConfig getDelivery() {
+        return delivery;
+    }
+
+    public void setDelivery(StreamDeliveryConfig delivery) {
+        this.delivery = delivery;
     }
 
     public Set<String> getEventsSupported() {

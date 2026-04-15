@@ -51,7 +51,7 @@ public interface SsfStreamStore {
      *
      * @return A list of all stream configurations
      */
-    List<StreamConfig> getAvailableStreams();
+    List<StreamConfig> getAvailableStreams(ClientModel receiverClient);
 
     /**
      * Returns every stream configuration attached to a client whose SSF

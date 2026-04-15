@@ -28,8 +28,11 @@ public class SsfStreamVerificationEvent extends SsfStreamEvent {
 
     @Override
     public String toString() {
-        return "VerificationEvent{" +
-               "state='" + state + '\'' +
-               '}';
+        // Render absent state as an empty object rather than "state='null'"
+        // so the log representation matches what Jackson actually puts on
+        // the wire (omitted thanks to @JsonInclude(NON_NULL)).
+        return state == null
+                ? "VerificationEvent{}"
+                : "VerificationEvent{state='" + state + "'}";
     }
 }

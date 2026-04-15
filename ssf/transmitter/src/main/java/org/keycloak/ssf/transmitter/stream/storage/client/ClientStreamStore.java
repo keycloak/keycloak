@@ -10,8 +10,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.jspecify.annotations.NonNull;
-
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -196,15 +194,19 @@ public class ClientStreamStore implements SsfStreamStore {
     }
 
     @Override
-    public List<StreamConfig> getAvailableStreams() {
-        ClientModel client = session.getContext().getClient();
-        StreamConfig streamConfig = extractStreamConfig(client);
+    public List<StreamConfig> getAvailableStreams(ClientModel receiverClient) {
+
+        if (receiverClient == null) {
+            return List.of();
+        }
+
+        StreamConfig streamConfig = extractStreamConfig(receiverClient);
 
         if (streamConfig == null) {
             return List.of();
         }
 
-        if (!Boolean.parseBoolean(client.getAttribute("ssf.enabled"))) {
+        if (!Boolean.parseBoolean(receiverClient.getAttribute("ssf.enabled"))) {
             return List.of();
         }
 
