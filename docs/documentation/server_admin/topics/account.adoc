@@ -132,7 +132,7 @@ If you select *Direct membership* checkbox, you will see only the groups you are
 
 .Prerequisites
 
-* You need to have the *view-groups* account role for being able to view *Groups* menu.
+* You need to have the *view-groups* account role for being able to view *Groups* menu. For newly created realms, this role is automatically granted through the *manage-account* composite role.
 
 .View group memberships
 .View group memberships

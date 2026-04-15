@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -12,11 +13,15 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.NotFoundException;
 
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.UserConfigBuilder;
 import org.keycloak.tests.suites.DatabaseTest;
@@ -186,6 +191,47 @@ public class RealmCreateTest extends AbstractRealmTest {
         adminClient.realms().create(rep);
         assertRealm(rep, adminClient.realm(rep.getRealm()).toRepresentation());
         adminClient.realms().realm(rep.getRealm()).remove();
+    }
+
+    @Test
+    public void createRealmManageAccountCompositeRole() {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("new-realm");
+
+        adminClient.realms().create(rep);
+
+        try {
+            RealmResource realm = adminClient.realms().realm("new-realm");
+
+            String accountClientId = realm.clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).getId();
+            ClientResource accountClient = realm.clients().get(accountClientId);
+
+            // manage-account should be a composite super role
+            Set<String> composites = accountClient.roles().get(AccountRoles.MANAGE_ACCOUNT).getRoleComposites()
+                    .stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+
+            Assert.assertNames(composites,
+                    AccountRoles.VIEW_PROFILE,
+                    AccountRoles.MANAGE_ACCOUNT_LINKS,
+                    AccountRoles.VIEW_APPLICATIONS,
+                    AccountRoles.MANAGE_CONSENT,
+                    AccountRoles.VIEW_GROUPS);
+
+            // manage-consent should still include view-consent
+            Set<String> consentComposites = accountClient.roles().get(AccountRoles.MANAGE_CONSENT).getRoleComposites()
+                    .stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+
+            Assert.assertNames(consentComposites, AccountRoles.VIEW_CONSENT);
+
+            // account-console should have scope mappings for manage-account and delete-account
+            String accountConsoleId = realm.clients().findByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID).get(0).getId();
+            MappingsRepresentation scopes = realm.clients().get(accountConsoleId).getScopeMappings().getAll();
+
+            Assert.assertNames(scopes.getClientMappings().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(),
+                    AccountRoles.MANAGE_ACCOUNT, AccountRoles.DELETE_ACCOUNT);
+        } finally {
+            adminClient.realms().realm("new-realm").remove();
+        }
     }
 
     private void assertRealm(RealmRepresentation realm, RealmRepresentation storedRealm) {
