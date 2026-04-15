@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -84,6 +85,7 @@ public class ClientStreamStore implements SsfStreamStore {
 
         streamConfig.setStatus(StreamStatusValue.valueOf(streamStatus.getStatus()));
         streamConfig.setStatusReason(streamStatus.getReason());
+        streamConfig.setUpdatedAt(Time.currentTime());
 
         // Persist the updated stream config back to the client attribute so
         // subsequent extractStreamConfig calls (e.g. from the dispatcher)

@@ -34,6 +34,7 @@ import { FormAccess } from "../components/form/FormAccess";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { addTrailingSlash, convertAttributeNameToForm } from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
+import useFormatDate from "../utils/useFormatDate";
 import type { FormFields, SaveOptions } from "./ClientDetails";
 
 const FALLBACK_DEFAULT_SUPPORTED_EVENTS =
@@ -67,10 +68,13 @@ const FALLBACK_DEFAULT_USER_SUBJECT_FORMAT = "iss_sub";
 
 type SsfClientStream = {
   streamId?: string;
+  description?: string;
   audience?: string[];
   eventsSupported?: string[];
   eventsRequested?: string[];
   eventsDelivered?: string[];
+  createdAt?: number;
+  updatedAt?: number;
 };
 
 export type SsfTabProps = {
@@ -83,6 +87,7 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
+  const formatDate = useFormatDate();
 
   const { control, watch, setValue } = useFormContext<FormFields>();
 
@@ -501,6 +506,67 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
                         value={clientStream.streamId ?? ""}
                       />
                     </FormGroup>
+                    {clientStream.description && (
+                      <FormGroup
+                        label={t("ssfStreamDescription")}
+                        fieldId="ssfStreamDescription"
+                        labelIcon={
+                          <HelpItem
+                            helpText={t("ssfStreamDescriptionHelp")}
+                            fieldLabelId="ssfStreamDescription"
+                          />
+                        }
+                      >
+                        <TextInput
+                          id="ssfStreamDescription"
+                          data-testid="ssfStreamDescription"
+                          readOnlyVariant="default"
+                          value={clientStream.description}
+                        />
+                      </FormGroup>
+                    )}
+                    {clientStream.createdAt && (
+                      <FormGroup
+                        label={t("ssfStreamCreatedAt")}
+                        fieldId="ssfStreamCreatedAt"
+                        labelIcon={
+                          <HelpItem
+                            helpText={t("ssfStreamCreatedAtHelp")}
+                            fieldLabelId="ssfStreamCreatedAt"
+                          />
+                        }
+                      >
+                        <TextInput
+                          id="ssfStreamCreatedAt"
+                          data-testid="ssfStreamCreatedAt"
+                          readOnlyVariant="default"
+                          value={formatDate(
+                            new Date(clientStream.createdAt * 1000),
+                          )}
+                        />
+                      </FormGroup>
+                    )}
+                    {clientStream.updatedAt && (
+                      <FormGroup
+                        label={t("ssfStreamUpdatedAt")}
+                        fieldId="ssfStreamUpdatedAt"
+                        labelIcon={
+                          <HelpItem
+                            helpText={t("ssfStreamUpdatedAtHelp")}
+                            fieldLabelId="ssfStreamUpdatedAt"
+                          />
+                        }
+                      >
+                        <TextInput
+                          id="ssfStreamUpdatedAt"
+                          data-testid="ssfStreamUpdatedAt"
+                          readOnlyVariant="default"
+                          value={formatDate(
+                            new Date(clientStream.updatedAt * 1000),
+                          )}
+                        />
+                      </FormGroup>
+                    )}
                     <FormGroup
                       label={t("ssfStreamAudience")}
                       fieldId="ssfStreamAudienceCurrent"
@@ -542,8 +608,57 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
                       ]}
                     />
                     <FormGroup
+                      label={t("ssfEventsRequested")}
+                      fieldId="ssfEventsRequested"
+                      labelIcon={
+                        <HelpItem
+                          helpText={t("ssfEventsRequestedHelp")}
+                          fieldLabelId="ssfEventsRequested"
+                        />
+                      }
+                    >
+                      {clientStream.eventsRequested &&
+                      clientStream.eventsRequested.length > 0 ? (
+                        <KeycloakSelect
+                          toggleId="ssfEventsRequested"
+                          data-testid="ssfEventsRequested"
+                          variant={SelectVariant.typeaheadMulti}
+                          isDisabled
+                          chipGroupProps={{
+                            numChips: 5,
+                            expandedText: t("hide"),
+                            collapsedText: t("showRemaining"),
+                          }}
+                          typeAheadAriaLabel={t("ssfEventsRequested")}
+                          onToggle={noop}
+                          isOpen={false}
+                          selections={clientStream.eventsRequested}
+                          onSelect={noop}
+                        >
+                          {clientStream.eventsRequested.map((event) => (
+                            <SelectOption key={event} value={event}>
+                              {event}
+                            </SelectOption>
+                          ))}
+                        </KeycloakSelect>
+                      ) : (
+                        <TextInput
+                          id="ssfEventsRequested"
+                          data-testid="ssfEventsRequested"
+                          readOnlyVariant="default"
+                          value={t("ssfEventsRequestedEmpty")}
+                        />
+                      )}
+                    </FormGroup>
+                    <FormGroup
                       label={t("ssfEventsDelivered")}
                       fieldId="ssfEventsDelivered"
+                      labelIcon={
+                        <HelpItem
+                          helpText={t("ssfEventsDeliveredHelp")}
+                          fieldLabelId="ssfEventsDelivered"
+                        />
+                      }
                     >
                       {clientStream.eventsDelivered &&
                       clientStream.eventsDelivered.length > 0 ? (

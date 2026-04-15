@@ -114,10 +114,13 @@ public class SsfAdminResource {
 
         SsfClientStreamRepresentation rep = new SsfClientStreamRepresentation();
         rep.setStreamId(streamConfig.getStreamId());
+        rep.setDescription(streamConfig.getDescription());
         rep.setAudience(streamConfig.getAudience());
         rep.setEventsSupported(toEventAliases(transmitter, streamConfig.getEventsSupported()));
         rep.setEventsRequested(toEventAliases(transmitter, streamConfig.getEventsRequested()));
         rep.setEventsDelivered(toEventAliases(transmitter, streamConfig.getEventsDelivered()));
+        rep.setCreatedAt(streamConfig.getCreatedAt());
+        rep.setUpdatedAt(streamConfig.getUpdatedAt());
         return rep;
     }
 
