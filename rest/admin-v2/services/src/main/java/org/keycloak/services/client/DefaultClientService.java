@@ -59,7 +59,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 
-import static org.keycloak.representations.admin.v2.validation.impl.ClientSecretNotBlankValidator.isClientSecret;
+import static org.keycloak.representations.admin.v2.validators.ClientSecretNotBlankValidator.isClientSecret;
 
 /**
  * Legacy implementation of ClientService for Admin API v2 that uses Admin API v1 under hood.

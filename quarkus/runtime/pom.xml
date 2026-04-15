@@ -424,7 +424,7 @@
 
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-v2-rest</artifactId>
+            <artifactId>keycloak-admin-v2-services</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -433,17 +433,6 @@
             </exclusions>
         </dependency>
         
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-v2-api</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-scim-services</artifactId>

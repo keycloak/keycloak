@@ -1,4 +1,4 @@
-package org.keycloak.representations.admin.v2.validation;
+package org.keycloak.representations.admin.v2.validators;
 
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -7,6 +7,7 @@ import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
 import org.keycloak.representations.admin.v2.BaseClientRepresentation;
+import org.keycloak.representations.admin.v2.validation.ValidRedirectUris;
 
 /**
  * Validates redirect URIs according to Keycloak's redirect URI rules.

@@ -1,3 +1,0 @@
-org.keycloak.representations.admin.v2.validation.impl.ClientSecretNotBlankValidator
-org.keycloak.representations.admin.v2.validation.impl.ProtocolUnmodifiedValidator
-org.keycloak.representations.admin.v2.validation.impl.UuidUnmodifiedValidator

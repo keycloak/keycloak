@@ -25,7 +25,7 @@ import jakarta.validation.Payload;
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = {ValidRedirectUrisValidator.class})
+@Constraint(validatedBy = {})
 @Documented
 public @interface ValidRedirectUris {
     String message() default "Invalid redirect URI";
