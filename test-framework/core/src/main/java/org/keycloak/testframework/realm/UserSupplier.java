@@ -30,31 +30,45 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
     public ManagedUser getValue(InstanceContext<ManagedUser, InjectUser> instanceContext) {
         ManagedRealm realm = instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef());
 
-        UserConfig config = SupplierHelpers.getInstanceWithInjectedFields(instanceContext.getAnnotation().config(), instanceContext);
-        UserRepresentation userRepresentation = config.configure(UserConfigBuilder.create()).build();
+        String attachTo = instanceContext.getAnnotation().attachTo();
+        boolean managed = attachTo.isEmpty();
 
-        if (userRepresentation.getUsername() == null) {
-            String username = SupplierHelpers.createName(instanceContext);
-            userRepresentation.setUsername(username);
-        }
+        UserRepresentation userRepresentation;
 
-        if (userRepresentation.getRealmRoles() != null  || userRepresentation.getClientRoles() != null) {
-            throw new UnsupportedOperationException("Creating user with roles or client roles is not supported!");
-        }
+        if (managed) {
+            UserConfig config = SupplierHelpers.getInstanceWithInjectedFields(instanceContext.getAnnotation().config(), instanceContext);
+            userRepresentation = config.configure(UserConfigBuilder.create()).build();
 
-        try (Response response = realm.admin().users().create(userRepresentation)) {
-            if (Status.CONFLICT.equals(Status.fromStatusCode(response.getStatus()))) {
-                throw new IllegalStateException("User already exist with username: " + userRepresentation.getUsername());
+            if (userRepresentation.getUsername() == null) {
+                String username = SupplierHelpers.createName(instanceContext);
+                userRepresentation.setUsername(username);
             }
-            String uuid = ApiUtil.getCreatedId(response);
 
-            instanceContext.addNote(USER_UUID_KEY, uuid);
+            if (userRepresentation.getRealmRoles() != null || userRepresentation.getClientRoles() != null) {
+                throw new UnsupportedOperationException("Creating user with roles or client roles is not supported!");
+            }
 
-            UserResource userResource = realm.admin().users().get(uuid);
-            userRepresentation.setId(uuid);
+            try (Response response = realm.admin().users().create(userRepresentation)) {
+                if (Status.CONFLICT.equals(Status.fromStatusCode(response.getStatus()))) {
+                    throw new IllegalStateException("User already exist with username: " + userRepresentation.getUsername());
+                }
+                String uuid = ApiUtil.getCreatedId(response);
+                userRepresentation.setId(uuid);
 
-            return new ManagedUser(userRepresentation, userResource);
+                instanceContext.addNote(USER_UUID_KEY, uuid);
+            }
+        } else {
+            List<UserRepresentation> users = realm.admin().users().searchByUsername(attachTo, true);
+            if (users.isEmpty()) {
+                throw new IllegalStateException("No user found with username: " + attachTo);
+            }
+            userRepresentation = users.get(0);
         }
+
+        instanceContext.addNote("managed", managed);
+
+        UserResource userResource = realm.admin().users().get(userRepresentation.getId());
+        return new ManagedUser(userRepresentation, userResource);
     }
 
     @Override
@@ -64,9 +78,11 @@ public class UserSupplier implements Supplier<ManagedUser, InjectUser> {
 
     @Override
     public void close(InstanceContext<ManagedUser, InjectUser> instanceContext) {
-        try {
-            instanceContext.getValue().admin().remove();
-        } catch (NotFoundException ex) {}
+        if (instanceContext.getNote("managed", Boolean.class)) {
+            try {
+                instanceContext.getValue().admin().remove();
+            } catch (NotFoundException ex) {
+            }
+        }
     }
-
 }
