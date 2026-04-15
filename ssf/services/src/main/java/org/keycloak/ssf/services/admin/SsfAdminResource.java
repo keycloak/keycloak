@@ -115,6 +115,10 @@ public class SsfAdminResource {
         SsfClientStreamRepresentation rep = new SsfClientStreamRepresentation();
         rep.setStreamId(streamConfig.getStreamId());
         rep.setDescription(streamConfig.getDescription());
+        if (streamConfig.getStatus() != null) {
+            rep.setStatus(streamConfig.getStatus().name());
+        }
+        rep.setStatusReason(streamConfig.getStatusReason());
         rep.setAudience(streamConfig.getAudience());
         rep.setEventsSupported(toEventAliases(transmitter, streamConfig.getEventsSupported()));
         rep.setEventsRequested(toEventAliases(transmitter, streamConfig.getEventsRequested()));
