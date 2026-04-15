@@ -8,6 +8,7 @@ import org.keycloak.ssf.subject.SubjectIdJsonDeserializer;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  *
  * See: https://datatracker.ietf.org/doc/html/rfc8417
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class SsfEvent {
 
     /**
@@ -32,10 +34,15 @@ public abstract class SsfEvent {
     protected String eventType;
 
     /**
-     * The time of the event (UNIX timestamp)
+     * The time of the event (UNIX timestamp). Nullable so events that do
+     * not carry a timestamp — e.g. {@code ssf/event-type/verification}
+     * (SSF §8.1.4 carries only {@code state}) and other stream-management
+     * events — are omitted from the wire JSON instead of being serialized
+     * as {@code "event_timestamp": 0} (the default value of a primitive
+     * {@code long}, which Jackson always emits).
      */
     @JsonProperty("event_timestamp")
-    protected long eventTimestamp;
+    protected Long eventTimestamp;
 
     /**
      * The entity that initiated the event
@@ -71,7 +78,7 @@ public abstract class SsfEvent {
         return subjectId;
     }
 
-    public long getEventTimestamp() {
+    public Long getEventTimestamp() {
         return eventTimestamp;
     }
 

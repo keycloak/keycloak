@@ -6,6 +6,7 @@ import java.util.Set;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -23,6 +24,7 @@ import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
 import org.keycloak.ssf.transmitter.admin.SsfConfigRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
@@ -126,6 +128,54 @@ public class SsfAdminResource {
         rep.setCreatedAt(streamConfig.getCreatedAt());
         rep.setUpdatedAt(streamConfig.getUpdatedAt());
         return rep;
+    }
+
+    /**
+     * Sends an unsolicited verification Security Event Token (SET) to a
+     * receiver client's registered SSF stream. Triggers the same delivery
+     * path the receiver-initiated {@code /streams/verify} endpoint uses,
+     * but driven by an admin from the admin console so operators can
+     * sanity-check a stream without credentials for the receiver side.
+     *
+     * <p>Returns 204 on success, 404 if the client does not exist or has
+     * no registered stream. The push itself is fire-and-forget — the
+     * dispatcher schedules the delivery on the push executor so this
+     * endpoint returns as soon as the verification SET has been handed
+     * off, not when the receiver has acknowledged it.
+     *
+     * <p>The endpoint is available via
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream/verify}.
+     */
+    @POST
+    @Path("clients/{clientId}/stream/verify")
+    public Response verifyClientStream(@PathParam("clientId") String clientId) {
+
+        ClientModel client = realm.getClientById(clientId);
+        if (client == null) {
+            throw new NotFoundException("Client not found");
+        }
+
+        auth.clients().requireManage(client);
+
+        ClientStreamStore store = new ClientStreamStore(session);
+        StreamConfig streamConfig = store.getStreamForClient(client);
+        if (streamConfig == null) {
+            throw new NotFoundException("No SSF stream registered for client");
+        }
+
+        StreamVerificationRequest verificationRequest = new StreamVerificationRequest();
+        verificationRequest.setStreamId(streamConfig.getStreamId());
+        // Per SSF §8.1.4.2-5 a transmitter-initiated verification MUST NOT
+        // include a state nonce — only receiver-initiated requests may set
+        // one — so we leave the state null here.
+
+        SsfTransmitterProvider transmitter = SsfTransmitter.current();
+        boolean triggered = transmitter.verificationService().triggerVerification(verificationRequest);
+        if (!triggered) {
+            throw new NotFoundException("No SSF stream registered for client");
+        }
+
+        return Response.noContent().build();
     }
 
     /**
