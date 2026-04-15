@@ -67,7 +67,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 
-import static org.keycloak.representations.admin.v2.validation.ClientSecretNotBlankValidator.isClientSecret;
+import static org.keycloak.representations.admin.v2.validators.ClientSecretNotBlankValidator.isClientSecret;
 import static org.keycloak.utils.StringUtil.isBlank;
 
 /**
