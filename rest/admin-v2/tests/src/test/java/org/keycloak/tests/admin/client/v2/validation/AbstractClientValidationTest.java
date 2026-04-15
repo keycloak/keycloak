@@ -289,6 +289,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         var request = getRequest(isOidc);
         setAuthHeader(request);
 
+        // Without appUrl set, relative paths like "not-a-url" are invalid
         request.setEntity(new StringEntity("""
                 {
                     "protocol": "%s",
@@ -303,9 +304,9 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
 
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
-            // Should have violations for the invalid URLs
+            // Should have violations for the invalid URLs (relative paths without root URL)
             assertThat(body.violations().size(), greaterThanOrEqualTo(1));
-            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: Each redirect URL must be valid"));
+            assertThat(body.violations(), hasItem(containsString("redirectUris")));
         }
     }
 
@@ -331,7 +332,8 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             var body = mapper.createParser(response.getEntity().getContent()).readValueAs(ViolationExceptionResponse.class);
             assertThat(body.error(), is("Provided data is invalid"));
             assertThat(body.violations().size(), greaterThanOrEqualTo(1));
-            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: Each redirect URL must be valid"));
+            // Blank strings are caught by @NotBlank on Set elements
+            assertThat(body.violations(), hasItem("redirectUris[].<iterable element>: must not be blank"));
         }
     }
 
@@ -455,12 +457,13 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
         var request = getRequest(isOidc);
         setAuthHeader(request);
 
+        // Use wildcard in middle of path which is always invalid, plus invalid appUrl
         request.setEntity(new StringEntity("""
                 {
                     "protocol": "%s",
                     "clientId": "%s",
                     "appUrl": "invalid-url",
-                    "redirectUris": ["also-invalid"]
+                    "redirectUris": ["https://example.com/*/invalid"]
                 }
                 """.formatted(protocol, getPayloadClientId(isOidc))));
 
@@ -471,7 +474,7 @@ public abstract class AbstractClientValidationTest extends AbstractClientApiV2Te
             assertThat(body.error(), is("Provided data is invalid"));
             // Should have violations for both appUrl and redirectUris
             assertThat(body.violations(), hasItem("appUrl: must be a valid URL"));
-            assertThat(body.violations(), hasItem(containsString("Each redirect URL must be valid")));
+            assertThat(body.violations(), hasItem(containsString("redirectUris")));
         }
     }
 

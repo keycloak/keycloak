@@ -11,6 +11,7 @@ import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.ProtocolUnmodified;
 import org.keycloak.representations.admin.v2.validation.PutClient;
 import org.keycloak.representations.admin.v2.validation.UuidUnmodified;
+import org.keycloak.representations.admin.v2.validation.ValidRedirectUris;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
@@ -31,6 +32,7 @@ import org.hibernate.validator.constraints.URL;
 })
 @UuidUnmodified(uuidProvider = ClientUuidProvider.class, groups = {PutClient.class, PatchClient.class})
 @ProtocolUnmodified(groups = {PutClient.class, PatchClient.class})
+@ValidRedirectUris
 public abstract class BaseClientRepresentation extends BaseRepresentation implements RepresentationWithUuid {
     public static final String DISCRIMINATOR_FIELD = "protocol";
 
@@ -57,7 +59,7 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("URIs that the browser can redirect to after login")
-    private Set<@NotBlank @URL(message = "Each redirect URL must be valid") String> redirectUris = new LinkedHashSet<>();
+    private Set<@NotBlank String> redirectUris = new LinkedHashSet<>();
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @JsonPropertyDescription("Roles associated with this client")

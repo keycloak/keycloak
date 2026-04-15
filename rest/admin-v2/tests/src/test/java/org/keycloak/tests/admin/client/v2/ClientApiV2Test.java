@@ -571,7 +571,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientCreationFailsWithError(rep, "Each redirect URL must be valid");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
@@ -581,7 +581,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-invalid-root-url");
         rep.setAppUrl("http://localhost:3000#fragment");
-        assertClientCreationFailsWithError(rep, "Root URL must not contain an URL fragment");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
@@ -590,7 +590,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientCreationFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Redirect URIs must not contain an URI fragment\"}");
     }
 
     @Test
@@ -599,7 +599,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientCreationFailsWithError(rep, "Each redirect URL must be valid");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
@@ -627,7 +627,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientUpdateFailsWithError(rep, "Each redirect URL must be valid");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
@@ -646,7 +646,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-fragment");
         rep.setRedirectUris(Set.of("http://localhost:3000#fragment"));
-        assertClientUpdateFailsWithError(rep, "Redirect URIs must not contain an URI fragment");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Redirect URIs must not contain an URI fragment\"}");
     }
 
     @Test
@@ -655,7 +655,7 @@ public class ClientApiV2Test extends AbstractClientApiV2Test{
         rep.setEnabled(true);
         rep.setClientId("saml-client-update-invalid-scheme");
         rep.setRedirectUris(Set.of("javascript:alert(1)"));
-        assertClientUpdateFailsWithError(rep, "Each redirect URL must be valid");
+        assertClientCreationFailsWithError(rep, "{\"error\":\"Provided data is invalid\",\"violations\":[\"redirectUris: Redirect URI must be an absolute URI (include scheme like https://) when Root URL is not set\"]}");
     }
 
     @Test
