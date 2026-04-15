@@ -81,23 +81,23 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
     }
 
     @Override
-    public SsfStreamManagementResource streamManagementEndpoint() {
-        return new SsfStreamManagementResource(streamService());
-    }
-
-    @Override
     public StreamService streamService() {
-        return new StreamService(new ClientStreamStore(session), transmitterService);
+        return new StreamService(session, new ClientStreamStore(session), transmitterService);
     }
 
     @Override
-    public SsfStreamStatusResource streamStatusEndpoint() {
-        return new SsfStreamStatusResource(streamService());
+    public SsfStreamManagementResource streamManagementResource() {
+        return new SsfStreamManagementResource(session, streamService());
     }
 
     @Override
-    public SsfStreamVerificationResource verificationEndpoint() {
-        return new SsfStreamVerificationResource(verificationService);
+    public SsfStreamStatusResource streamStatusResource() {
+        return new SsfStreamStatusResource(session, streamService());
+    }
+
+    @Override
+    public SsfStreamVerificationResource streamVerificationResource() {
+        return new SsfStreamVerificationResource(session, verificationService);
     }
 
     @Override

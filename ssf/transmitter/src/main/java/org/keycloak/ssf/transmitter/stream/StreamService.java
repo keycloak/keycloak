@@ -53,11 +53,14 @@ public class StreamService {
     protected static final int MAX_DELIVERY_ADDITIONAL_PARAMETER_KEY_LENGTH = 64;
     protected static final int MAX_DELIVERY_ADDITIONAL_PARAMETER_VALUE_LENGTH = 256;
 
+    protected final KeycloakSession session;
+
     protected final SsfStreamStore streamStore;
 
     protected final TransmitterMetadataService transmitterService;
 
-    public StreamService(SsfStreamStore streamStore, TransmitterMetadataService transmitterService) {
+    public StreamService(KeycloakSession session, SsfStreamStore streamStore, TransmitterMetadataService transmitterService) {
+        this.session = session;
         this.streamStore = streamStore;
         this.transmitterService = transmitterService;
     }
@@ -78,7 +81,6 @@ public class StreamService {
      */
     public StreamConfig createStream(StreamConfigInputRepresentation input) {
 
-        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
         checkClient();
 
         StreamConfig streamConfig = new StreamConfig();
@@ -118,6 +120,9 @@ public class StreamService {
 
         // Store the stream configuration
         streamStore.saveStream(streamConfig);
+
+        log.debugf("Stream created. realm=%s client=%s streamId=%s",
+                session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamConfig.getStreamId());
 
         StreamVerificationConfig streamVerificationConfig = streamStore.getStreamVerificationConfig(streamConfig.getStreamId(), session.getContext().getClient());
         if (streamVerificationConfig.verificationTrigger() == VerificationTrigger.TRANSMITTER_INITIATED) {
@@ -402,26 +407,26 @@ public class StreamService {
      * @return The updated stream configuration, or {@code null} if the stream
      *         identified by {@code update.streamId} does not exist.
      */
-    public StreamConfig updateStream(StreamConfigUpdateRepresentation update) {
+    public StreamConfig updateStream(StreamConfigUpdateRepresentation streamUpdate) {
 
-        if (update == null || update.getStreamId() == null) {
+        if (streamUpdate == null || streamUpdate.getStreamId() == null) {
             throw new SsfException("Invalid stream update: stream_id is required");
         }
 
-        StreamConfig existingStream = streamStore.getStream(update.getStreamId());
+        StreamConfig existingStream = streamStore.getStream(streamUpdate.getStreamId());
         if (existingStream == null) {
             return null;
         }
 
-        boolean eventsRequestedChanged = update.getEventsRequested() != null;
+        boolean eventsRequestedChanged = streamUpdate.getEventsRequested() != null;
 
-        mergeReceiverFields(update, existingStream);
+        mergeReceiverFields(streamUpdate, existingStream);
 
         // Re-run full validation against the merged result; delivery method /
         // push endpoint constraints are enforced on the combined state.
         validate(existingStream);
 
-        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        
         ClientModel receiverClient = session.getContext().getClient();
 
         // Recompute events_delivered only when events_requested actually changed —
@@ -437,6 +442,9 @@ public class StreamService {
         existingStream.setUpdatedAt(Time.currentTime());
 
         streamStore.saveStream(existingStream);
+
+        log.debugf("Stream updated. realm=%s client=%s streamId=%s",
+                session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamUpdate.getStreamId());
 
         return existingStream;
     }
@@ -455,28 +463,28 @@ public class StreamService {
      * @return The replaced stream configuration, or {@code null} if the stream
      *         does not exist.
      */
-    public StreamConfig replaceStream(StreamConfigUpdateRepresentation update) {
+    public StreamConfig replaceStream(StreamConfigUpdateRepresentation streamUpdate) {
 
-        if (update == null || update.getStreamId() == null) {
+        if (streamUpdate == null || streamUpdate.getStreamId() == null) {
             throw new SsfException("Invalid stream replace: stream_id is required");
         }
 
-        StreamConfig existingStream = streamStore.getStream(update.getStreamId());
+        StreamConfig existingStream = streamStore.getStream(streamUpdate.getStreamId());
         if (existingStream == null) {
             return null;
         }
 
-        if (update.getDelivery() == null) {
+        if (streamUpdate.getDelivery() == null) {
             throw new SsfException("Invalid stream replace: delivery is required");
         }
 
         // Replace receiver-updatable fields on existingStream. Omitted receiver
         // fields are reset — that is the whole point of PUT vs PATCH.
-        replaceReceiverFields(update, existingStream);
+        replaceReceiverFields(streamUpdate, existingStream);
 
         validate(existingStream);
 
-        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        
         ClientModel receiverClient = session.getContext().getClient();
 
         SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, existingStream.getEventsRequested());
@@ -488,6 +496,9 @@ public class StreamService {
         existingStream.setUpdatedAt(Time.currentTime());
 
         streamStore.saveStream(existingStream);
+
+        log.debugf("Stream replaced. realm=%s client=%s streamId=%s",
+                session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamUpdate.getStreamId());
 
         return existingStream;
     }
@@ -558,6 +569,10 @@ public class StreamService {
         }
 
         streamStore.deleteStream(streamId);
+
+        log.debugf("Stream deleted. realm=%s client=%s streamId=%s",
+                session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamId);
+
         return true;
     }
 
@@ -617,6 +632,13 @@ public class StreamService {
         stream.setUpdatedAt(Time.currentTime());
 
         // Update stream status
-        return streamStore.updateStreamStatus(streamId, newStreamStatus);
+        StreamStatus streamStatus = streamStore.updateStreamStatus(streamId, newStreamStatus);
+
+        log.debugf("Stream status updated. realm=%s client=%s streamId=%s status_old=%s status_new=%s",
+                session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamId,
+                currentStreamStatus.getStatus(), streamStatus.getStatus()
+        );
+
+        return streamStatus;
     }
 }

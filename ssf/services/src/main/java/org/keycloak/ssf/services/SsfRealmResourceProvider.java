@@ -6,6 +6,7 @@ import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.receiver.resources.SsfReceiversResource;
 import org.keycloak.ssf.transmitter.resources.SsfTransmitterResource;
 import org.keycloak.services.resource.RealmResourceProvider;
+import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
  * Exposes the realm specific SSF resource endpoints.
@@ -26,7 +27,7 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
      */
     @Path(Ssf.SSF_RECEIVERS_PATH)
     public SsfReceiversResource receivers() {
-        return new SsfReceiversResource();
+        return new SsfReceiversResource(KeycloakSessionUtil.getKeycloakSession());
     }
 
     /**
@@ -38,7 +39,7 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
      */
     @Path(Ssf.SSF_TRANSMITTER_PATH)
     public SsfTransmitterResource transmitter() {
-        return new SsfTransmitterResource();
+        return new SsfTransmitterResource(KeycloakSessionUtil.getKeycloakSession());
     }
 
     @Override

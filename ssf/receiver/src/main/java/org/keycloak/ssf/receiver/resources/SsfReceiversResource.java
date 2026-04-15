@@ -24,7 +24,6 @@ import org.keycloak.ssf.receiver.SsfReceiverProvider;
 import org.keycloak.ssf.receiver.SsfReceivers;
 import org.keycloak.ssf.receiver.registration.SsfReceiverRegistrationProviderFactory;
 import org.keycloak.services.resources.KeycloakOpenAPI;
-import org.keycloak.utils.KeycloakSessionUtil;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -35,6 +34,12 @@ import org.jboss.logging.Logger;
 public class SsfReceiversResource {
 
     protected static final Logger LOG = Logger.getLogger(SsfReceiversResource.class);
+
+    private final KeycloakSession session;
+
+    public SsfReceiversResource(KeycloakSession session) {
+        this.session = session;
+    }
 
     /**
      * Handles legacy SSF requests, which don't send the `Content-type: application/secevent+jwt` in the request.
@@ -84,7 +89,6 @@ public class SsfReceiversResource {
                                              @HeaderParam(HttpHeaders.CONTENT_TYPE) String contentType //
     ) {
 
-        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
         KeycloakContext context = session.getContext();
 
         SsfReceiver receiver = lookupReceiver(session, receiverAlias, context);

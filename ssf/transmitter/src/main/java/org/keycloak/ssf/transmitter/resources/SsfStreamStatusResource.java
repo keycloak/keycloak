@@ -9,6 +9,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
@@ -27,9 +28,12 @@ public class SsfStreamStatusResource {
 
     private static final Logger log = Logger.getLogger(SsfStreamStatusResource.class);
 
-    private final StreamService streamService;
+    protected final KeycloakSession session;
 
-    public SsfStreamStatusResource(StreamService streamService) {
+    protected final StreamService streamService;
+
+    public SsfStreamStatusResource(KeycloakSession session, StreamService streamService) {
+        this.session = session;
         this.streamService = streamService;
     }
 
@@ -113,7 +117,7 @@ public class SsfStreamStatusResource {
     }
 
     protected boolean isClientStream(String streamId) {
-        ClientModel client = KeycloakSessionUtil.getKeycloakSession().getContext().getClient();
+        ClientModel client = session.getContext().getClient();
         String clientStreamId = client.getAttribute(ClientStreamStore.SSF_STREAM_ID_KEY);
         if (clientStreamId == null || !clientStreamId.equals(streamId)) {
             log.debugf("Stream access denied. clientId=%s requestedStreamId=%s clientStreamId=%s", client.getClientId(), streamId, clientStreamId);

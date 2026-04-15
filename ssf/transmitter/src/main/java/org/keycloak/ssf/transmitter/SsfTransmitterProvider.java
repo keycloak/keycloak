@@ -66,7 +66,7 @@ public interface SsfTransmitterProvider extends Provider {
      *
      * @return the stream management endpoint
      */
-    SsfStreamManagementResource streamManagementEndpoint();
+    SsfStreamManagementResource streamManagementResource();
 
     /**
      * Returns the service for managing SSF streams (create, update, delete, lookup).
@@ -80,14 +80,14 @@ public interface SsfTransmitterProvider extends Provider {
      *
      * @return the stream status endpoint
      */
-    SsfStreamStatusResource streamStatusEndpoint();
+    SsfStreamStatusResource streamStatusResource();
 
     /**
      * Returns the JAX-RS sub-resource for triggering stream verification.
      *
      * @return the stream verification endpoint
      */
-    SsfStreamVerificationResource verificationEndpoint();
+    SsfStreamVerificationResource streamVerificationResource();
 
     /**
      * The default set of supported events.
