@@ -7,9 +7,12 @@ import org.keycloak.testframework.annotations.InjectRealm;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.realm.ManagedClient;
 import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfig;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -17,10 +20,13 @@ import org.junit.jupiter.api.TestMethodOrder;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class AttachToTest {
 
+    @InjectRealm(config = AttachToTestRealmConfig.class)
+    ManagedRealm managedRealm;
+
     @InjectAdminClient
     Keycloak adminClient;
 
-    @InjectRealm(attachTo = "master")
+    @InjectRealm(ref = "master", attachTo = "master")
     ManagedRealm attachedRealm;
 
     @InjectClient
@@ -28,6 +34,9 @@ public class AttachToTest {
 
     @InjectClient(ref = "admin-cli", attachTo = "admin-cli")
     ManagedClient attachedClient;
+
+    @InjectClient(ref = "my-client", attachTo = "my-client")
+    ManagedClient myClient;
 
     @Test
     public void aAttachedRealm() {
@@ -43,7 +52,7 @@ public class AttachToTest {
 
     @Test
     public void cManagedClient() {
-        Assertions.assertEquals("default", adminClient.realm("master").clients().get(managedClient.getId()).toRepresentation().getClientId());
+        Assertions.assertEquals("default", adminClient.realm("default").clients().get(managedClient.getId()).toRepresentation().getClientId());
     }
 
     @Test
@@ -56,5 +65,28 @@ public class AttachToTest {
     public void eManagedClient() {
         Assertions.assertEquals("default", managedClient.getClientId());
         Assertions.assertEquals("default", managedClient.admin().toRepresentation().getClientId());
+    }
+    
+    @Test
+    @Order(1)
+    public void testingUpdateWithCleanupWithAttachToChanged() {
+        myClient.updateWithCleanup(c -> c.description("new description"));
+        Assertions.assertNotNull(myClient.admin().toRepresentation().getDescription());
+    }
+
+    @Test
+    @Order(2)
+    public void testingUpdateWithCleanupWithAttachToOriginal() {
+        Assertions.assertNull(myClient.admin().toRepresentation().getDescription());
+    }
+
+    private static class AttachToTestRealmConfig implements RealmConfig {
+
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder builder) {
+            builder.addClient("my-client");
+
+            return builder;
+        }
     }
 }

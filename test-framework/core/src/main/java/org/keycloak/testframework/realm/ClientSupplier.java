@@ -3,6 +3,7 @@ package org.keycloak.testframework.realm;
 import java.util.List;
 
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotSupportedException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -71,6 +72,18 @@ public class ClientSupplier implements Supplier<ManagedClient, InjectClient> {
             try {
                 instanceContext.getValue().admin().remove();
             } catch (NotFoundException ex) {}
+        } else {
+            if (instanceContext.getValue().isForCleanup()) {
+                try {
+                    ClientRepresentation clientRep = instanceContext.getValue().getClientRepForCleanup();
+                    if (clientRep.getClientId().equals("admin-cli")) {
+                        throw new NotSupportedException("Cleanup for admin-cli client via updateWithCleanup is not supported, please use cleanup().add(c -> c...) instead!");
+                    }
+                    instanceContext.getValue().admin().remove();
+                    instanceContext.getDependency(ManagedRealm.class, instanceContext.getAnnotation().realmRef()).admin().clients().create(clientRep);
+                } catch (NotFoundException ex) {
+                }
+            }
         }
     }
 

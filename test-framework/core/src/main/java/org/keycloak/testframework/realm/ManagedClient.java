@@ -11,12 +11,15 @@ public class ManagedClient extends ManagedTestResource {
 
     private final ClientRepresentation createdRepresentation;
     private final ClientResource clientResource;
+    private final ClientRepresentation clientRepForCleanup;
 
     private ManagedClientCleanup cleanup;
+    private boolean forCleanup = false;
 
     public ManagedClient(ClientRepresentation createdRepresentation, ClientResource clientResource) {
         this.createdRepresentation = createdRepresentation;
         this.clientResource = clientResource;
+        this.clientRepForCleanup = clientResource.toRepresentation();
     }
 
     /**
@@ -62,6 +65,8 @@ public class ManagedClient extends ManagedTestResource {
     public void updateWithCleanup(ManagedClient.ClientUpdate... updates) {
         ClientRepresentation rep = admin().toRepresentation();
 
+        forCleanup = true;
+
         // TODO Admin v2 - Setting a field to `null` is ignored when updating the client (for example `adminUrl`), which
         // makes it impossible to reset to the original. For now we are just re-creating the client by marking it as dirty
         // cleanup().resetToOriginalRepresentation(rep);
@@ -79,6 +84,14 @@ public class ManagedClient extends ManagedTestResource {
         // is not a complete solution to resetting to the original
         // ClientRepresentation original = cleanup().getOriginalRepresentation();
         // updated.getAttributes().keySet().stream().filter(k -> !original.getAttributes().containsKey(k)).forEach(k -> original.getAttributes().put(k, ""));
+    }
+
+    public boolean isForCleanup() {
+        return forCleanup;
+    }
+
+    public ClientRepresentation getClientRepForCleanup() {
+        return clientRepForCleanup;
     }
 
     public ManagedClientCleanup cleanup() {
