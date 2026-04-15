@@ -116,7 +116,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
     }
 
     private long getNumberOfSessionsThatNeedToBeLoggedOut(long count, long limit) {
-        return count - (limit - 1);
+        return Math.max(0, count - (limit - 1));
     }
 
     private int getIntConfigProperty(String key, Map<String, String> config) {
