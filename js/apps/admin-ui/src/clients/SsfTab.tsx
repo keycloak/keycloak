@@ -69,6 +69,8 @@ const FALLBACK_DEFAULT_USER_SUBJECT_FORMAT = "iss_sub";
 type SsfClientStream = {
   streamId?: string;
   description?: string;
+  status?: string;
+  statusReason?: string;
   audience?: string[];
   eventsSupported?: string[];
   eventsRequested?: string[];
@@ -264,6 +266,17 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
     },
     (stream) => {
       setClientStream(stream);
+      if (stream?.status) {
+        // Re-seed the form-bound status field so clicking "Refresh"
+        // picks up receiver-driven status changes (e.g. the receiver
+        // paused the stream via POST /streams/status) instead of
+        // showing the stale value the page loaded with.
+        setValue(
+          convertAttributeNameToForm<FormFields>("attributes.ssf.status"),
+          stream.status,
+          { shouldDirty: false },
+        );
+      }
     },
     [client.id, streamFetchKey],
   );
@@ -607,6 +620,23 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
                         },
                       ]}
                     />
+                    <FormGroup
+                      label={t("ssfStreamStatusReason")}
+                      fieldId="ssfStreamStatusReason"
+                      labelIcon={
+                        <HelpItem
+                          helpText={t("ssfStreamStatusReasonHelp")}
+                          fieldLabelId="ssfStreamStatusReason"
+                        />
+                      }
+                    >
+                      <TextInput
+                        id="ssfStreamStatusReason"
+                        data-testid="ssfStreamStatusReason"
+                        readOnlyVariant="default"
+                        value={clientStream.statusReason ?? ""}
+                      />
+                    </FormGroup>
                     <FormGroup
                       label={t("ssfEventsRequested")}
                       fieldId="ssfEventsRequested"
