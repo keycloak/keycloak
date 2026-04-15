@@ -31,6 +31,8 @@ public class SsfClientStreamRepresentation {
 
     private Integer updatedAt;
 
+    private Integer lastVerifiedAt;
+
     public String getStreamId() {
         return streamId;
     }
@@ -109,5 +111,13 @@ public class SsfClientStreamRepresentation {
 
     public void setUpdatedAt(Integer updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Integer getLastVerifiedAt() {
+        return lastVerifiedAt;
+    }
+
+    public void setLastVerifiedAt(Integer lastVerifiedAt) {
+        this.lastVerifiedAt = lastVerifiedAt;
     }
 }

@@ -127,6 +127,15 @@ public class SsfAdminResource {
         rep.setEventsDelivered(toEventAliases(transmitter, streamConfig.getEventsDelivered()));
         rep.setCreatedAt(streamConfig.getCreatedAt());
         rep.setUpdatedAt(streamConfig.getUpdatedAt());
+        String lastVerifiedAtRaw = client.getAttribute(ClientStreamStore.SSF_LAST_VERIFIED_AT_KEY);
+        if (lastVerifiedAtRaw != null && !lastVerifiedAtRaw.isBlank()) {
+            try {
+                rep.setLastVerifiedAt(Integer.valueOf(lastVerifiedAtRaw));
+            } catch (NumberFormatException ignored) {
+                // Defensive: ignore a malformed attribute value rather than
+                // failing the whole admin GET for this stream.
+            }
+        }
         return rep;
     }
 
@@ -174,6 +183,12 @@ public class SsfAdminResource {
         if (!triggered) {
             throw new NotFoundException("No SSF stream registered for client");
         }
+
+        // The ssf.lastVerifiedAt stamp is written centrally inside
+        // StreamVerificationService.triggerVerification so every
+        // verification entry point (receiver-initiated, admin-initiated,
+        // transmitter-initiated post-create auto-fire) records a
+        // consistent timestamp.
 
         return Response.noContent().build();
     }

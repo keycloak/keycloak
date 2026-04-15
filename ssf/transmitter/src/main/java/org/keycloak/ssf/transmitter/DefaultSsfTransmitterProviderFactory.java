@@ -52,7 +52,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         var encoder = new SecurityEventTokenEncoder(session);
         var pushDelivery = new PushDeliveryService(session, transmitterConfig);
         var dispatcher = new SecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig);
-        var verificationService = new StreamVerificationService(new ClientStreamStore(session), mapper, dispatcher);
+        var verificationService = new StreamVerificationService(session, new ClientStreamStore(session), mapper, dispatcher);
 
         return new DefaultSsfTransmitterProvider(session, new TransmitterMetadataService(session), verificationService, mapper, dispatcher, transmitterConfig, configuredDefaultSupportedEventAliases);
     }

@@ -6,8 +6,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+
+import org.jspecify.annotations.NonNull;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
@@ -40,6 +43,7 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_PROFILE_KEY = "ssf.profile";
     public static final String SSF_VERIFICATION_TRIGGER_KEY = "ssf.verificationTrigger";
     public static final String SSF_VERIFICATION_DELAY_MILLIS_KEY = "ssf.verificationDelayMillis";
+    public static final String SSF_LAST_VERIFIED_AT_KEY = "ssf.lastVerifiedAt";
     public static final String SSF_STREAM_AUDIENCE_KEY = "ssf.streamAudience";
     public static final String SSF_STREAM_SUPPORTED_EVENTS_KEY = "ssf.supportedEvents";
     public static final String SSF_PUSH_ENDPOINT_CONNECT_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointConnectTimeoutMillis";
@@ -234,6 +238,24 @@ public class ClientStreamStore implements SsfStreamStore {
     public void deleteStream(String streamId) {
         ClientModel client = session.getContext().getClient();
         deleteStreamConfig(client, streamId);
+    }
+
+    @Override
+    public void recordStreamVerification(String streamId) {
+        if (streamId == null) {
+            return;
+        }
+        findClientByStreamId(streamId, session.getContext().getRealm()).ifPresent(this::updateLastVerified);
+    }
+
+    protected void updateLastVerified(ClientModel client) {
+        client.setAttribute(SSF_LAST_VERIFIED_AT_KEY,String.valueOf(Time.currentTime()));
+    }
+
+    protected Optional<ClientModel> findClientByStreamId(String streamId, RealmModel realm) {
+        return session.clients()
+                .searchClientsByAttributes(realm, Map.of(SSF_STREAM_ID_KEY, streamId), 0, 1)
+                .findFirst();
     }
 
     public StreamConfig getStreamForClient(ClientModel client) {
