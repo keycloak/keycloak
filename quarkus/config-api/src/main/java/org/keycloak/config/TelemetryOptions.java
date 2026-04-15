@@ -4,12 +4,6 @@ import java.util.List;
 
 public class TelemetryOptions {
 
-    public static final Option<Boolean> TELEMETRY_ENABLED = new OptionBuilder<>("telemetry-enabled", Boolean.class)
-            .category(OptionCategory.TELEMETRY)
-            .buildTime(true)
-            .hidden()
-            .build();
-
     public static final Option<String> TELEMETRY_ENDPOINT = new OptionBuilder<>("telemetry-endpoint", String.class)
             .category(OptionCategory.TELEMETRY)
             .description("OpenTelemetry endpoint to connect to.")

@@ -220,7 +220,7 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         // finally add mappers that aren't intended to work with other datasources
         // - also this usage of isEnabled won't work correctly with wildcard mappers
         result.addAll(List.of(
-                fromOption(DatabaseOptions.DB_POSTGRESQL_TARGET_SERVER_TYPE)
+                fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "primary")
                         .to(PG_TARGET_SERVER_TYPE)
                         .isEnabled(DatabasePropertyMappers::isPostgresqlTargetServerTypeEnabled)
                         .build(),

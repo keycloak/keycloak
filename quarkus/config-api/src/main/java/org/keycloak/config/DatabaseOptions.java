@@ -118,12 +118,6 @@ public class DatabaseOptions {
             .description("If the named datasource <datasource> should be enabled at runtime.")
             .build();
 
-    public static final Option<String> DB_POSTGRESQL_TARGET_SERVER_TYPE = new OptionBuilder<>("db-postgres-target-server-type", String.class)
-            .category(OptionCategory.DATABASE)
-            .defaultValue("primary") // cause the propertymapping logic to always advertise this property
-            .hidden()
-            .build();
-
     public static final Option<String> DB_CONNECT_TIMEOUT = new OptionBuilder<>("db-connect-timeout", String.class)
             .category(OptionCategory.DATABASE)
             .description("Sets the JDBC driver connection timeout and login timeout. " + DURATION_DESCRIPTION)
