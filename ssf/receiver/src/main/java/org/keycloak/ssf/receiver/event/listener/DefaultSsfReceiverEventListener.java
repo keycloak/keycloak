@@ -12,10 +12,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
-import org.keycloak.ssf.subject.SubjectId;
-import org.keycloak.ssf.subject.SubjectUserLookup;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.receiver.event.processor.SsfEventContext;
+import org.keycloak.ssf.subject.SubjectId;
+import org.keycloak.ssf.subject.SubjectUserLookup;
 import org.keycloak.util.JsonSerialization;
 
 import org.jboss.logging.Logger;

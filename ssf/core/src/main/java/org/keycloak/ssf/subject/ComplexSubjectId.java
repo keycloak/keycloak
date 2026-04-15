@@ -1,8 +1,9 @@
 package org.keycloak.ssf.subject;
 
+import org.keycloak.ssf.event.caep.CaepSessionRevoked;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 
 /**
  * See: https://openid.net/specs/openid-sse-framework-1_0.html#complex-subjects

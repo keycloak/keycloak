@@ -8,9 +8,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfException;
+import org.keycloak.ssf.metadata.TransmitterMetadata;
 import org.keycloak.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig;
 import org.keycloak.ssf.receiver.transmitter.SsfTransmitterClient;
-import org.keycloak.ssf.metadata.TransmitterMetadata;
 import org.keycloak.ssf.receiver.verification.SsfStreamVerificationState;
 import org.keycloak.ssf.receiver.verification.SsfStreamVerificationStore;
 

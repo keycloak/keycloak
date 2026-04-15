@@ -5,11 +5,10 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
-import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.utils.KeycloakSessionUtil;
+import org.keycloak.ssf.transmitter.SsfTransmitter;
+import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 
 public class SsfTransmitterResource {
 

@@ -1,8 +1,8 @@
 package org.keycloak.ssf.receiver;
 
+import org.keycloak.provider.Provider;
 import org.keycloak.ssf.metadata.TransmitterMetadata;
 import org.keycloak.ssf.receiver.registration.SsfReceiverRegistrationProviderConfig;
-import org.keycloak.provider.Provider;
 
 /**
  * Represents a SSF Receiver.
