@@ -15,4 +15,3 @@
 # limitations under the License.
 #
 org.keycloak.protocol.oidc.grants.device.endpoints.DeviceEndpointFactory
-org.keycloak.ssf.endpoint.SsfRealmResourceProviderFactory
