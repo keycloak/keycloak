@@ -304,6 +304,14 @@ public class OASModelFilter implements OASFilter {
                         // Build validation description from field-level annotations
                         String fieldValidation = validationScanner.buildDescription(classInfo, propertyName);
 
+                        // Include class-level validation if this field is affected
+                        String classLevelValidation = classLevelValidations.get(propertyName);
+                        if (classLevelValidation != null) {
+                            fieldValidation = fieldValidation != null
+                                    ? fieldValidation + "; " + classLevelValidation
+                                    : classLevelValidation;
+                        }
+
                         // Append validation description if any
                         if (fieldValidation != null) {
                             String existingDesc = propertySchema.getDescription();
@@ -314,18 +322,6 @@ public class OASModelFilter implements OASFilter {
                             log.debugf("Added validation description to '%s.%s': %s", schemaName, propertyName, fieldValidation);
                         }
                     });
-
-                    // Add class-level validations to the schema description
-                    if (!classLevelValidations.isEmpty()) {
-                        String validationDesc = classLevelValidations.values().stream()
-                                .collect(Collectors.joining("; "));
-                        String existingDesc = schema.getDescription();
-                        String newDesc = isNullOrEmpty(existingDesc)
-                                ? "Validation: " + validationDesc
-                                : existingDesc + ". Validation: " + validationDesc;
-                        schema.setDescription(newDesc);
-                        log.debugf("Added class-level validation description to '%s': %s", schemaName, validationDesc);
-                    }
                 }
             }
         });
