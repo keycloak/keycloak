@@ -562,25 +562,91 @@ public class SsfTransmitterStreamManagementTests {
     }
 
     @Test
-    public void testCreateStreamEnforcesTotalPersistedSizeGuard() throws IOException {
+    public void testLegacyStreamConfigBlobIsReadableAndMigratedOnUpdate() throws IOException {
 
-        // The per-field caps are calibrated so a single maxed-out field is
-        // accepted, but stacking several large fields at once pushes the
-        // serialized StreamConfig past the 2000-byte column safety margin
-        // and must be rejected at storage time with 400 (not a downstream
-        // DB overflow 500).
+        // Pre-refactor installations stored the whole StreamConfig as one
+        // serialized-JSON client attribute. ClientStreamStore.extractStreamConfig
+        // must still be able to read those blobs (forward-compat for existing
+        // data), and the next storeStreamConfig() call (triggered here by a
+        // PATCH) must migrate the stream onto the split-attribute layout —
+        // including removing the legacy blob key so subsequent reads go
+        // through the split path.
+        String legacyStreamId = "legacy-stream-" + java.util.UUID.randomUUID();
+        String legacyBlob = "{"
+                + "\"stream_id\":\"" + legacyStreamId + "\","
+                + "\"iss\":\"https://legacy.example.com/realms/test\","
+                + "\"aud\":[\"https://legacy.example.com/receiver\"],"
+                + "\"events_supported\":[\"" + CaepCredentialChange.TYPE + "\"],"
+                + "\"events_requested\":[\"" + CaepCredentialChange.TYPE + "\"],"
+                + "\"events_delivered\":[\"" + CaepCredentialChange.TYPE + "\"],"
+                + "\"delivery\":{\"method\":\"" + Ssf.DELIVERY_METHOD_PUSH_URI + "\","
+                + "\"endpoint_url\":\"" + DUMMY_PUSH_ENDPOINT + "\","
+                + "\"authorization_header\":\"" + DUMMY_PUSH_AUTH_HEADER + "\"},"
+                + "\"description\":\"legacy stream from pre-refactor data\","
+                + "\"kc_status\":\"enabled\","
+                + "\"kc_created_at\":100,"
+                + "\"kc_updated_at\":100"
+                + "}";
+
+        ClientRepresentation rwClient = findClientByClientId(RECEIVER_RW);
+        Assertions.assertNotNull(rwClient);
+        rwClient.getAttributes().put(ClientStreamStore.SSF_STREAM_ID_KEY, legacyStreamId);
+        rwClient.getAttributes().put(ClientStreamStore.SSF_STREAM_CONFIG_KEY, legacyBlob);
+        rwClient.getAttributes().put(ClientStreamStore.SSF_STATUS_KEY, "enabled");
+        realm.admin().clients().get(rwClient.getId()).update(rwClient);
+
         String token = obtainManageToken(RECEIVER_RW, RECEIVER_RW_SECRET);
-        StreamConfigUpdateRepresentation request = buildPushStreamRequest(Set.of(CaepCredentialChange.TYPE));
-        // description (255) + endpoint_url (~512) + auth header (1024) totals
-        // ~1800 raw chars; plus issuer, audience, events_*, timestamps,
-        // JSON overhead, the serialized blob exceeds 2000 bytes.
-        request.setDescription("x".repeat(255));
-        request.getDelivery().setEndpointUrl("https://example.com/" + "x".repeat(490));
-        request.getDelivery().setAuthorizationHeader("Bearer " + "x".repeat(1016));
 
-        try (SimpleHttpResponse response = postStream(token, request)) {
-            Assertions.assertEquals(400, response.getStatus(),
-                    "oversized serialized stream configuration must be rejected at storage time");
+        // GET must read the legacy blob transparently.
+        try (SimpleHttpResponse response = http.doGet(streamsEndpoint())
+                .param("stream_id", legacyStreamId)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    "GET should read a pre-refactor legacy blob transparently");
+            StreamConfig fetched = response.asJson(StreamConfig.class);
+            Assertions.assertEquals(legacyStreamId, fetched.getStreamId());
+            Assertions.assertEquals(Set.of(CaepCredentialChange.TYPE), fetched.getEventsRequested());
+            Assertions.assertEquals("legacy stream from pre-refactor data", fetched.getDescription());
+        }
+
+        // PATCH the description. This goes through storeStreamConfig, which
+        // removes the legacy blob and writes the split attributes.
+        StreamConfigUpdateRepresentation patch = new StreamConfigUpdateRepresentation();
+        patch.setStreamId(legacyStreamId);
+        patch.setDescription("migrated description");
+        try (SimpleHttpResponse response = patchStream(token, patch)) {
+            Assertions.assertEquals(200, response.getStatus(),
+                    "PATCH against a legacy stream should succeed and migrate its storage");
+        }
+
+        // Verify the legacy blob is gone and the split attributes are present.
+        ClientRepresentation migrated = findClientByClientId(RECEIVER_RW);
+        Assertions.assertNotNull(migrated.getAttributes());
+        Assertions.assertNull(
+                migrated.getAttributes().get(ClientStreamStore.SSF_STREAM_CONFIG_KEY),
+                "legacy blob attribute must be removed after a storing write");
+        Assertions.assertEquals("migrated description",
+                migrated.getAttributes().get(ClientStreamStore.SSF_STREAM_DESCRIPTION_KEY),
+                "description should now live in its dedicated split attribute");
+        Assertions.assertEquals(Ssf.DELIVERY_METHOD_PUSH_URI,
+                migrated.getAttributes().get(ClientStreamStore.SSF_STREAM_DELIVERY_METHOD_KEY),
+                "delivery.method should have been migrated into its split attribute");
+        Assertions.assertEquals(DUMMY_PUSH_ENDPOINT,
+                migrated.getAttributes().get(ClientStreamStore.SSF_STREAM_DELIVERY_ENDPOINT_URL_KEY),
+                "delivery.endpoint_url should have been migrated into its split attribute");
+
+        // And the stream is still readable via the public API.
+        try (SimpleHttpResponse response = http.doGet(streamsEndpoint())
+                .param("stream_id", legacyStreamId)
+                .auth(token)
+                .acceptJson()
+                .asResponse()) {
+            Assertions.assertEquals(200, response.getStatus());
+            StreamConfig fetched = response.asJson(StreamConfig.class);
+            Assertions.assertEquals("migrated description", fetched.getDescription());
+            Assertions.assertEquals(Set.of(CaepCredentialChange.TYPE), fetched.getEventsRequested());
         }
     }
 
