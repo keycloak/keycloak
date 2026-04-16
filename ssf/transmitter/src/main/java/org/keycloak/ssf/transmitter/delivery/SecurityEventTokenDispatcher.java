@@ -16,6 +16,8 @@ import org.keycloak.ssf.transmitter.stream.StreamConfig;
 
 import org.jboss.logging.Logger;
 
+import java.util.concurrent.ExecutorService;
+
 public class SecurityEventTokenDispatcher {
 
     protected static final Logger log = Logger.getLogger(SecurityEventTokenDispatcher.class);
@@ -88,8 +90,37 @@ public class SecurityEventTokenDispatcher {
         return StreamStatusValue.enabled == status;
     }
 
+    /**
+     * Asynchronously delivers an event to the receiver. The push runs on a
+     * dedicated virtual thread so a slow or unresponsive receiver doesn't
+     * block other dispatches and doesn't tie up a platform-thread pool.
+     * Fire-and-forget — the absence of a return value reflects "we handed
+     * the push off to its own thread", not "the receiver acknowledged".
+     *
+     * <p>Used by the event listener for user/admin SETs where best-effort
+     * delivery is appropriate. For verification SETs the caller wants to
+     * know whether the receiver actually accepted the push, so use
+     * {@link #deliverEventSync(SsfSecurityEventToken, StreamConfig)}.
+     */
     public void deliverEvent(SsfSecurityEventToken eventToken, StreamConfig stream) {
-        // Deliver the event based on the stream's delivery method
+        deliverEventInternal(eventToken, stream, true);
+    }
+
+    /**
+     * Synchronously delivers an event to the receiver and returns the
+     * result. Runs on the caller's thread — used by the verification path
+     * so the admin "Verify" button and the receiver-initiated
+     * {@code POST /streams/verify} endpoint can report a real success or
+     * failure to the caller, not just "we scheduled it".
+     *
+     * @return {@code true} if the receiver accepted the push,
+     *         {@code false} on any delivery error.
+     */
+    public boolean deliverEventSync(SsfSecurityEventToken eventToken, StreamConfig stream) {
+        return deliverEventInternal(eventToken, stream, false);
+    }
+
+    private boolean deliverEventInternal(SsfSecurityEventToken eventToken, StreamConfig stream, boolean async) {
         var delivery = stream.getDelivery();
         String deliveryMethodUri = delivery.getMethod();
         DeliveryMethod deliveryMethod = DeliveryMethod.valueOfUri(deliveryMethodUri);
@@ -102,23 +133,45 @@ public class SecurityEventTokenDispatcher {
                     String signatureAlgorithm = SsfSignatureAlgorithms.resolveForStream(stream, transmitterConfig);
                     String encodedEvent = securityEventTokenEncoder.encode(narrowedEventToken, signatureAlgorithm);
 
-                    deliverEvent(stream, narrowedEventToken, encodedEvent);
+                    log.debugf("Delivering event to stream via %s. streamId=%s jti=%s async=%s",
+                            deliveryMethod.name(), stream.getStreamId(), eventToken.getJti(), async);
+
+                    if (async) {
+                        deliverEventAsync(stream, narrowedEventToken, encodedEvent);
+                        return true;
+                    }
+                    return pushDeliveryService.deliverEvent(stream, narrowedEventToken, encodedEvent);
                 } catch (Exception e) {
                     log.errorf(e, "Error delivering event via PUSH to stream %s", stream.getStreamId());
+                    return false;
                 }
             }
             case POLL, RISC_POLL -> {
                 log.warnf("Poll delivery not supported for %s", stream.getStreamId());
+                return false;
             }
         }
+        return false;
     }
 
-    protected void deliverEvent(StreamConfig stream, SecurityEventToken narrowedEventToken, String encodedEvent) {
-
-        ExecutorsProvider executorsProvider = getExecutorsProvider();
-        var executor = executorsProvider.getExecutor("ssf-push-event-dispatcher");
-        // FIXME use a virtual thread to deliver events via push
+    /**
+     * Submits the push to Keycloak's managed executor for asynchronous
+     * delivery. Virtual threads ({@code Thread.ofVirtual()}) would be a
+     * better fit here — one thread per push, naturally handling blocking
+     * I/O and isolating slow receivers — but the project compiles with
+     * {@code --release 17} and the API is JDK 21+, so we stay on the
+     * shared bounded pool for now. Worth revisiting once Keycloak bumps
+     * its source level.
+     */
+    protected void deliverEventAsync(StreamConfig stream, SecurityEventToken narrowedEventToken, String encodedEvent) {
+        ExecutorService executor = getPushExecutorService();
         executor.execute(() -> pushDeliveryService.deliverEvent(stream, narrowedEventToken, encodedEvent));
+    }
+
+    protected ExecutorService getPushExecutorService() {
+        ExecutorsProvider executorsProvider = getExecutorsProvider();
+        ExecutorService executor = executorsProvider.getExecutor("ssf-push-event");
+        return executor;
     }
 
     protected ExecutorsProvider getExecutorsProvider() {
