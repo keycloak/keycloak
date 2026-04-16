@@ -18,13 +18,14 @@ Monitoring standby health helps detect replication issues early and ensures a sa
 * A CloudNativePG cluster deployed according to steps described in the <@links.ha id="single-cluster-deploy-cnpg" /> {section}.
 
 To see the status on the command line:
+
 * The `kubectl` command-line utility.
 * The `kubectl cnpg` plugin.
 Please follow the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/kubectl-plugin[CloudNativePG documentation] for installation steps.
 
 To monitor the status via metrics and dashboards:
-* Prometheus and Grafana installed on the {kubernetes} cluster.
-Basic installation steps can be found in the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/quickstart[Quickstart section of the CloudNativePG documentation].
+
+* https://prometheus.io/[Prometheus] and https://grafana.com/[Grafana] installed on the {kubernetes} cluster.
 
 == Review the status through command-line
 
@@ -102,7 +103,7 @@ The following fields help determine whether standbys are healthy and replication
 
 The `Current LSN` shows the latest position recorded by a particular instance.
 
-The `Sent`, `Write`, `Flush` and `Replay LSN` show the latest position for a particular standby which has been sent to it by the primary, written to the file system, safely written to a storage device (flushed from cache), and replayed by the database. Differences between values indicate a lag between individual phases in terms of bytes.
+The `Sent`, `Write`, `Flush` and `Replay` LSNs show the latest position for a particular standby which has been sent to it by the primary, written to the file system, safely written to a storage device (flushed from cache), and replayed by the database. Differences between values indicate a lag between individual phases in terms of bytes.
 
 The difference between a standby's `Replay LSN` and the primary's `Current LSN` indicates the overall replication lag for the particular standby in terms of bytes.
 
@@ -112,11 +113,22 @@ The difference between a standby's `Replay LSN` and the primary's `Current LSN` 
 
 | `State`
 | `streaming`
-| The standby is connected to the primary and actively receiving WAL data.
+a| Current WAL sender state. Possible values are:
+
+* `startup`: This WAL sender is starting up.
+* `catchup`: This WAL sender's connected standby is catching up with the primary.
+* `streaming`: This WAL sender is streaming changes after its connected standby server has caught up with the primary.
+* `backup`: This WAL sender is sending a backup.
+* `stopping`: This WAL sender is stopping.
 
 | `Sync State`
 | `quorum` or `sync`
-| Indicates synchronous replication is active for this standby. In a quorum-based synchronous setup, at least one standby should be in `quorum`.
+a| Synchronous state of this standby server. Possible values are:
+
+* `async`: This standby server is asynchronous.
+* `potential`: This standby server is now asynchronous, but can potentially become synchronous if one of current synchronous servers fails.
+* `sync`: This standby server is synchronous.
+* `quorum`: This standby server is considered as a candidate for quorum standbys.
 
 | `Replication Slot`
 | `active`
@@ -125,15 +137,7 @@ The difference between a standby's `Replay LSN` and the primary's `Current LSN` 
 
 == Review the status through Prometheus and Grafana
 
-Monitor CloudNativePG clusters leveraging https://prometheus.io/[Prometheus] and https://grafana.com/[Grafana].
-
-=== Set up monitoring through Prometheus and Grafana 
-
-Installation of the Prometheus stack is out of scope of this guide.
-Basic installation steps can be found in the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/quickstart[Quickstart section of the CloudNativePG documentation].
-Additional details on how to customize the monitoring can be found in the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/monitoring#monitoring-instances[Monitoring section of the CloudNativePG documentation].
-
-Assuming Prometheus and Grafana are installed on the {kubernetes} cluster the following steps can be used to enable monitoring for a particular CloudNativePG cluster:
+=== Enable monitoring of the CloudNativePG cluster
 
 . Enable collection of metrics by creating a PodMonitor resource:
 +
@@ -156,10 +160,12 @@ EOF
 <1> Name of the CloudNativePG cluster to be monitored.
 +
 . Add the https://raw.githubusercontent.com/cloudnative-pg/grafana-dashboards/refs/heads/main/charts/cluster/grafana-dashboard.json[grafana-dashboard.json] from the https://github.com/cloudnative-pg/grafana-dashboards[cloudnative-pg/grafana-dashboards GitHub project] to your Grafana instance.
++
+. Optionally, customize the monitoring according to the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/monitoring#monitoring-instances[Monitoring section of the CloudNativePG documentation].
 
-=== Replication
+=== Observe Replication Status
 
-Once Prometheus is scraping metrics, use the following key metrics in Grafana to observe standby health:
+Use the following metrics to observe standby health:
 
 [%autowidth]
 |===
@@ -181,9 +187,9 @@ Once Prometheus is scraping metrics, use the following key metrics in Grafana to
 | Time elapsed between WAL flushed on the primary and replayed on the standby.
 |===
 
-=== Backups
+=== Observe Backups
 
-If backups are enabled, use the https://cloudnative-pg.io/plugin-barman-cloud/docs/observability/[metrics exposed by the Barman Cloud Plugin] to monitor the status:
+If backups are enabled, use the https://cloudnative-pg.io/plugin-barman-cloud/docs/observability/[metrics exposed by the Barman Cloud Plugin] to monitor their status:
 
 [%autowidth]
 |===
