@@ -29,11 +29,11 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.Config;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.exceptions.TokenVerificationException;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -47,16 +47,19 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.saml.RandomSecret;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Strings;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
+
 import static org.keycloak.OAuth2Constants.CLIENT_ID;
+import static org.keycloak.OAuthErrorException.INVALID_CLIENT_ATTESTATION;
 
 
 /**
@@ -124,8 +127,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         } catch (Exception ex) {
             ServicesLogger.LOGGER.errorValidatingAssertion(ex);
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), OAuthErrorException.INVALID_CLIENT_ATTESTATION, ex.getMessage());
-            context.failure(AuthenticationFlowError.INVALID_CLIENT_ATTESTATION, challengeResponse);
+            Response response = ClientAuthUtil.errorResponse(BAD_REQUEST.getStatusCode(), INVALID_CLIENT_ATTESTATION, ex.getMessage());
+            context.failure(AuthenticationFlowError.INVALID_CLIENT_ATTESTATION, response);
         }
     }
 
@@ -194,13 +197,19 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             return cnf;
         }
 
-        public void setConfirmation(Confirmation cnf) {
-            this.cnf = cnf;
+        public ClientAttestationJwt confirmation(JWK jwk) {
+            cnf = new Confirmation().setJwk(jwk);
+            return this;
         }
 
         @Override
-        public ClientAttestationJwt issuedFor(String issuedFor) {
-            return (ClientAttestationJwt) super.issuedFor(issuedFor);
+        public ClientAttestationJwt id(String id) {
+            return (ClientAttestationJwt) super.id(id);
+        }
+
+        @Override
+        public ClientAttestationJwt issuer(String issuer) {
+            return (ClientAttestationJwt) super.issuer(issuer);
         }
 
         @Override
@@ -211,12 +220,6 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         @Override
         public ClientAttestationJwt issuedNowWithTTL(int ttl) {
             return (ClientAttestationJwt) super.issuedNowWithTTL(ttl);
-        }
-
-        @JsonIgnore
-        public ClientAttestationJwt confirmation(JWK jwk) {
-            cnf = new Confirmation().setJwk(jwk);
-            return this;
         }
     }
 
@@ -248,8 +251,40 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             return challenge;
         }
 
-        public void setChallenge(String challenge) {
+        public ClientAttestationPoPJwt challenge(String challenge) {
             this.challenge = challenge;
+            return this;
+        }
+
+        public ClientAttestationPoPJwt randomId() {
+            id = Base64Url.encode(RandomSecret.createRandomSecret(64));
+            return this;
+        }
+
+        @Override
+        public ClientAttestationPoPJwt id(String id) {
+            Base64Url.encode(RandomSecret.createRandomSecret(64));
+            return (ClientAttestationPoPJwt) super.id(id);
+        }
+
+        @Override
+        public ClientAttestationPoPJwt audience(String... audience) {
+            return (ClientAttestationPoPJwt) super.audience(audience);
+        }
+
+        @Override
+        public ClientAttestationPoPJwt issuer(String issuer) {
+            return (ClientAttestationPoPJwt) super.issuer(issuer);
+        }
+
+        @Override
+        public ClientAttestationPoPJwt subject(String subject) {
+            return (ClientAttestationPoPJwt) super.subject(subject);
+        }
+
+        @Override
+        public ClientAttestationPoPJwt issuedNowWithTTL(int ttl) {
+            return (ClientAttestationPoPJwt) super.issuedNowWithTTL(ttl);
         }
     }
 
@@ -260,24 +295,22 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         if (Strings.isEmpty(kid))
             throw new IllegalArgumentException("Invalid attester kid: " + kid);
 
-        String configName = OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS;
-        String abcaConfigValue = Optional.ofNullable(context.getAuthenticatorConfig())
-                .map(AuthenticatorConfigModel::getConfig).orElse(Map.of()).get(configName);
-        if (abcaConfigValue == null)
-            throw new IllegalStateException("Cannot load ABCA config from: " + configName);
+        String configAlias = OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS;
+        AuthenticatorConfigModel configModel = context.getRealm().getAuthenticatorConfigByAlias(configAlias);
+        String configValue = Optional.ofNullable(configModel)
+                .map(AuthenticatorConfigModel::getConfig)
+                .orElse(Map.of())
+                .get(configAlias);
+        if (configValue == null)
+            throw new IllegalStateException("Cannot load ABCA config from: " + configAlias);
 
-        ABCAConfig attesterKeys = JsonSerialization.valueFromString(abcaConfigValue, ABCAConfig.class);
-        for (JWK key : attesterKeys.keys) {
-            if (kid.equals(key.getKeyId())) {
-                String kty = key.getKeyType();
-                if (!"RSA".equals(kty)) {
-                    throw new IllegalStateException("Unsupported key type: " + kty);
-                }
-                return new JWKParser(key).toPublicKey();
-            }
-        }
-
-        throw new IllegalStateException("No matching key found for kid: " + kid);
+        ABCAConfig attesterKeys = JsonSerialization.valueFromString(configValue, ABCAConfig.class);
+        PublicKey foundKey = attesterKeys.getKeys().stream()
+                .filter(k -> kid.equals(k.getKeyId()))
+                .map(k -> new JWKParser(k).toPublicKey())
+                .findAny()
+                .orElseThrow(() -> new IllegalStateException("No matching key found for kid: " + kid));
+        return foundKey;
     }
 
     // Validate the Client Attestation JWT
