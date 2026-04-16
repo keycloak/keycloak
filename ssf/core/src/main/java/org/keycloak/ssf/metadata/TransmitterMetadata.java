@@ -1,6 +1,8 @@
 package org.keycloak.ssf.metadata;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -50,6 +52,36 @@ public class TransmitterMetadata {
 
     @JsonIgnore
     private final Map<String, Object> metadata = new HashMap<String, Object>();
+
+    public TransmitterMetadata() {
+    }
+
+    /**
+     * Copy constructor. Shallow-copies the collection fields so the new
+     * instance can be mutated independently of {@code other}. Inner
+     * {@code Map<String, Object>} entries inside
+     * {@link #authorizationSchemes} are shared by reference — callers
+     * that need to mutate individual scheme maps should copy them
+     * themselves.
+     */
+    public TransmitterMetadata(TransmitterMetadata other) {
+        this.specVersion = other.specVersion;
+        this.issuer = other.issuer;
+        this.jwksUri = other.jwksUri;
+        this.deliveryMethodSupported = other.deliveryMethodSupported == null
+                ? null : new HashSet<>(other.deliveryMethodSupported);
+        this.configurationEndpoint = other.configurationEndpoint;
+        this.statusEndpoint = other.statusEndpoint;
+        this.addSubjectEndpoint = other.addSubjectEndpoint;
+        this.removeSubjectEndpoint = other.removeSubjectEndpoint;
+        this.verificationEndpoint = other.verificationEndpoint;
+        this.criticalSubjectMembers = other.criticalSubjectMembers == null
+                ? null : new HashSet<>(other.criticalSubjectMembers);
+        this.defaultSubjects = other.defaultSubjects;
+        this.authorizationSchemes = other.authorizationSchemes == null
+                ? null : new ArrayList<>(other.authorizationSchemes);
+        this.metadata.putAll(other.metadata);
+    }
 
     public String getSpecVersion() {
         return specVersion;
