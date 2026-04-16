@@ -4,18 +4,15 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProviderFactory;
-import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.ssf.Ssf;
 
 /**
  * Exposes the {@link SsfAdminResource}
  */
-public class SsfAdminRealmResourceProviderFactory implements AdminRealmResourceProvider, AdminRealmResourceProviderFactory, EnvironmentDependentProviderFactory {
+public class SsfAdminRealmResourceProviderFactory implements AdminRealmResourceProviderFactory, EnvironmentDependentProviderFactory {
 
     /**
      * The SSF endpoints are available under {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf}.
@@ -35,11 +32,6 @@ public class SsfAdminRealmResourceProviderFactory implements AdminRealmResourceP
         }
 
         return new SsfAdminRealmResourceProvider();
-    }
-
-    @Override
-    public Object getResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        return new SsfAdminResource(session, realm, auth, adminEvent);
     }
 
     @Override

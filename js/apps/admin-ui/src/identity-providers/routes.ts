@@ -4,7 +4,6 @@ import { IdentityProviderKeycloakOidcRoute } from "./routes/IdentityProviderKeyc
 import { IdentityProviderOidcRoute } from "./routes/IdentityProviderOidc";
 import { IdentityProviderSamlRoute } from "./routes/IdentityProviderSaml";
 import { IdentityProviderSpiffeRoute } from "./routes/IdentityProviderSpiffe";
-import { IdentityProviderSsfReceiverRoute } from "./routes/IdentityProviderSsfReceiver";
 import { IdentityProviderKubernetesRoute } from "./routes/IdentityProviderKubernetes";
 import { IdentityProvidersRoute } from "./routes/IdentityProviders";
 import { IdentityProviderAddMapperRoute } from "./routes/AddMapper";
@@ -20,7 +19,6 @@ const routes: AppRouteObject[] = [
   IdentityProviderOidcRoute,
   IdentityProviderSamlRoute,
   IdentityProviderSpiffeRoute,
-  IdentityProviderSsfReceiverRoute,
   IdentityProviderJWTAuthorizationGrantRoute,
   IdentityProviderKubernetesRoute,
   IdentityProviderKeycloakOidcRoute,

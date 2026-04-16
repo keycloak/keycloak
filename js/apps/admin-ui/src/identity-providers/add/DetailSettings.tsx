@@ -1,4 +1,3 @@
-import { fetchWithError } from "@keycloak/keycloak-admin-client";
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import IdentityProviderRepresentation, {
   IdentityProviderType,
@@ -50,8 +49,6 @@ import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { toUpperCase } from "../../util";
-import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
-import { joinPath } from "../../utils/joinPath";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { useParams } from "../../utils/useParams";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
@@ -73,8 +70,6 @@ import { OIDCGeneralSettings } from "./OIDCGeneralSettings";
 import { ReqAuthnConstraints } from "./ReqAuthnConstraintsSettings";
 import { SamlGeneralSettings } from "./SamlGeneralSettings";
 import { SpiffeSettings } from "./SpiffeSettings";
-import { SsfReceiverSettings } from "./SsfReceiverSettings";
-import { SsfReceiverStreamSettings } from "./SsfReceiverStreamSettings";
 import { AdminEvents } from "../../events/AdminEvents";
 import { UserProfileClaimsSettings } from "./OAuth2UserProfileClaimsSettings";
 import { KubernetesSettings } from "./KubernetesSettings";
@@ -180,28 +175,6 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     }
   };
 
-  const triggerSsfVerification = async (alias: string) => {
-    try {
-      await fetchWithError(
-        joinPath(
-          adminClient.baseUrl,
-          "admin/realms",
-          encodeURIComponent(adminClient.realmName),
-          "ssf/receivers",
-          encodeURIComponent(alias),
-          "verify",
-        ),
-        {
-          method: "POST",
-          headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
-        },
-      );
-      addAlert(t("ssfTriggerVerificationSuccess"), AlertVariant.success);
-    } catch (error) {
-      addError("ssfTriggerVerificationError", error);
-    }
-  };
-
   return (
     <>
       <DisableConfirm />
@@ -248,16 +221,6 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
                   </DropdownItem>,
                 ]
               : []),
-          ...(provider?.providerId?.includes("ssf-receiver")
-            ? [
-                <DropdownItem
-                  key="triggerVerification"
-                  onClick={() => triggerSsfVerification(provider.alias!)}
-                >
-                  {t("ssfTriggerVerification")}
-                </DropdownItem>,
-              ]
-            : []),
           <Divider key="separator" />,
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
             {t("delete")}
@@ -471,7 +434,6 @@ export default function DetailSettings() {
   const isSAML = provider.providerId!.includes("saml");
   const isOAuth2 = provider.providerId!.includes("oauth2");
   const isSPIFFE = provider.providerId!.includes("spiffe");
-  const isSsfReceiver = provider.providerId!.includes("ssf-receiver");
   const isKubernetes = provider.providerId!.includes("kubernetes");
   const isJWTAuthorizationGrant = provider.providerId!.includes(
     "jwt-authorization-grant",
@@ -513,8 +475,7 @@ export default function DetailSettings() {
   const sections = [
     {
       title: t("generalSettings"),
-      isHidden:
-        isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isSsfReceiver,
+      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -607,34 +568,6 @@ export default function DetailSettings() {
     },
     {
       title: t("generalSettings"),
-      isHidden: !isSsfReceiver,
-      panel: (
-        <Form
-          isHorizontal
-          className="pf-v5-u-py-lg"
-          onSubmit={handleSubmit(save)}
-        >
-          <SsfReceiverSettings />
-          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
-        </Form>
-      ),
-    },
-    {
-      title: t("ssfStreamSettings"),
-      isHidden: !isSsfReceiver,
-      panel: (
-        <Form
-          isHorizontal
-          className="pf-v5-u-py-lg"
-          onSubmit={handleSubmit(save)}
-        >
-          <SsfReceiverStreamSettings />
-          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
-        </Form>
-      ),
-    },
-    {
-      title: t("generalSettings"),
       isHidden: !isJWTAuthorizationGrant,
       panel: (
         <Form
@@ -691,8 +624,7 @@ export default function DetailSettings() {
     },
     {
       title: t("advancedSettings"),
-      isHidden:
-        isSPIFFE || isKubernetes || isJWTAuthorizationGrant || isSsfReceiver,
+      isHidden: isSPIFFE || isKubernetes || isJWTAuthorizationGrant,
       panel: (
         <FormAccess
           role="manage-identity-providers"
@@ -749,12 +681,7 @@ export default function DetailSettings() {
           </Tab>
           <Tab
             id="mappers"
-            isHidden={
-              isSPIFFE ||
-              isKubernetes ||
-              isJWTAuthorizationGrant ||
-              isSsfReceiver
-            }
+            isHidden={isSPIFFE || isKubernetes || isJWTAuthorizationGrant}
             data-testid="mappers-tab"
             title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}

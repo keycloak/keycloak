@@ -19,7 +19,6 @@
     <modules>
         <module>core</module>
         <module>transmitter</module>
-        <module>receiver</module>
         <module>services</module>
         <module>tests</module>
     </modules>

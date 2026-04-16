@@ -20,9 +20,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
-import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfException;
-import org.keycloak.ssf.receiver.resources.SsfReceiverAdminResource;
 import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
@@ -310,36 +308,5 @@ public class SsfAdminResource {
             aliases.add(alias != null ? alias : eventType);
         }
         return aliases;
-    }
-
-    /**
-     * Exposes the {@link SsfReceiverAdminResource} for managing SSF Receivers as a custom endpoint.
-     *
-     * Checks if the current user can access the SSF admin resource for receivers.
-     *
-     * The endpoint is available via {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/receivers}
-     * @return
-     */
-    @Path(Ssf.SSF_RECEIVERS_PATH)
-    public SsfReceiverAdminResource receiverManagementEndpoint() {
-
-        checkReceiverAdminResourceAccess();
-
-        return receiverAdminResource();
-    }
-
-    /**
-     * Provies the actual {@link SsfReceiverAdminResource}.
-     * @return
-     */
-    protected SsfReceiverAdminResource receiverAdminResource() {
-        return new SsfReceiverAdminResource(session, auth);
-    }
-
-    /**
-     * Checks if the current user can access the SSF admin resource for receivers.
-     */
-    protected void checkReceiverAdminResourceAccess() {
-        auth.realm().requireManageIdentityProviders();
     }
 }
