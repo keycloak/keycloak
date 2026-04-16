@@ -1,68 +1,32 @@
 package org.keycloak.ssf.transmitter.metadata;
 
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.ssf.metadata.TransmitterMetadata;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
+import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.wellknown.WellKnownProvider;
-import org.keycloak.wellknown.WellKnownProviderFactory;
 
-
+/**
+ * Well-Known Provider implementation for SSF (Shared Signals and Events) protocol metadata.
+ * This provider is responsible for exposing SSF-related metadata through Keycloak's Well-Known Provider infrastructure.
+ */
 public class SsfTransmitterMetadataWellKnownProvider implements WellKnownProvider {
 
+    protected final KeycloakSession session;
+
+    public SsfTransmitterMetadataWellKnownProvider(KeycloakSession session) {
+        this.session = session;
+    }
+
     @Override
-    public Object getConfig() {
-        TransmitterMetadata transmitterMetadata = SsfTransmitter.current().metadataService().getTransmitterMetadata();
+    public TransmitterMetadata getConfig() {
+        SsfTransmitterProvider ssfProvider = session.getProvider(SsfTransmitterProvider.class);
+        TransmitterMetadata transmitterMetadata = ssfProvider.metadataService().getTransmitterMetadata();
         return transmitterMetadata;
     }
 
     @Override
     public void close() {
-
+        // NOOP
     }
 
-    public static class Factory implements WellKnownProviderFactory, EnvironmentDependentProviderFactory {
-
-        private final static SsfTransmitterMetadataWellKnownProvider INSTANCE = new SsfTransmitterMetadataWellKnownProvider();
-
-        public static final String PROVIDER_ID = "ssf-configuration";
-
-        @Override
-        public WellKnownProvider create(KeycloakSession session) {
-            return INSTANCE;
-        }
-
-        @Override
-        public void init(Config.Scope config) {
-
-        }
-
-        @Override
-        public boolean isAvailableViaServerMetadata() {
-            return true;
-        }
-
-        @Override
-        public void postInit(KeycloakSessionFactory factory) {
-
-        }
-
-        @Override
-        public void close() {
-
-        }
-
-        @Override
-        public String getId() {
-            return PROVIDER_ID;
-        }
-
-        @Override
-        public boolean isSupported(Config.Scope config) {
-            return Profile.isFeatureEnabled(Profile.Feature.SSF);
-        }
-    }
 }

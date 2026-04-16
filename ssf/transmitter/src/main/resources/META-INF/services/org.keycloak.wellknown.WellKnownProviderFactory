@@ -1,2 +1,2 @@
-org.keycloak.ssf.transmitter.metadata.SseTransmitterMetadataWellKnownProvider$Factory
-org.keycloak.ssf.transmitter.metadata.SsfTransmitterMetadataWellKnownProvider$Factory
+org.keycloak.ssf.transmitter.metadata.SseTransmitterMetadataWellKnownProviderFactory
+org.keycloak.ssf.transmitter.metadata.SsfTransmitterMetadataWellKnownProviderFactory
