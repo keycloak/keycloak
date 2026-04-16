@@ -371,6 +371,8 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
         validateClientMetadata(clientIdURI, redirectUriURI, clientOIDCWithCacheControl.getOidcClientRepresentation());
 
         if (fetchOp == FetchOperation.CREATE) {
+            // Check max clients per realm before creating a new client
+            checkClientsLimit();
             // Create Client Metadata
             provider.createClientMetadata(clientOIDCWithCacheControl);
         } else if (fetchOp == FetchOperation.UPDATE) {
@@ -415,6 +417,22 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
     // Implementation
     // Fetch Client Metadata
     public static final String ERR_METADATA_FETCH_FAILED = "Client Metadata fetch failed";
+
+    // Max Clients per realm
+    public static final String ERR_CLIENTS_LIMIT_REACHED = "Max clients per realm reached";
+
+    private void checkClientsLimit() throws ClientPolicyException {
+        int maxClients = providerConfig.getMaxClients();
+        if (maxClients <= 0) {
+            // 0 or negative means unlimited
+            return;
+        }
+        long currentCount = session.getContext().getRealm().getClientsCount();
+        if (currentCount >= maxClients) {
+            getLogger().warnv("Max clients per realm reached: max={0}, current={1}", maxClients, currentCount);
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, ERR_CLIENTS_LIMIT_REACHED);
+        }
+    }
 
     /**
      * Verifies an authorization request to check if the request includes required parameters and follows the expected format.
