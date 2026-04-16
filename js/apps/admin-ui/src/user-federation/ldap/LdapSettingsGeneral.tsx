@@ -138,7 +138,7 @@ export const LdapSettingsGeneral = ({
             control={form.control}
             render={({ field }) => (
               <KeycloakSelect
-                isDisabled={!!vendorEdit}
+                isDisabled={vendorEdit}
                 toggleId="kc-vendor"
                 onToggle={() => setIsVendorDropdownOpen(!isVendorDropdownOpen)}
                 isOpen={isVendorDropdownOpen}

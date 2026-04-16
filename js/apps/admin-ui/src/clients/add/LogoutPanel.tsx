@@ -78,8 +78,7 @@ export const LogoutPanel = ({
           label={t("frontchannelLogoutUrl")}
           labelIcon={t("frontchannelLogoutUrlHelp")}
           rules={{
-            validate: (uri) =>
-              validateUrl(uri, t("frontchannelUrlInvalid").toString()),
+            validate: (uri) => validateUrl(uri, t("frontchannelUrlInvalid")),
           }}
         />
       )}
@@ -105,8 +104,7 @@ export const LogoutPanel = ({
             label={t("backchannelLogoutUrl")}
             labelIcon={t("backchannelLogoutUrlHelp")}
             rules={{
-              validate: (uri) =>
-                validateUrl(uri, t("backchannelUrlInvalid").toString()),
+              validate: (uri) => validateUrl(uri, t("backchannelUrlInvalid")),
             }}
           />
           <FormGroup

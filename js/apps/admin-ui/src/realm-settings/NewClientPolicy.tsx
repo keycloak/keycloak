@@ -479,7 +479,7 @@ export default function NewClientPolicy() {
                 required: t("required"),
                 validate: (value) =>
                   policies.some((policy) => policy.name === value)
-                    ? t("createClientProfileNameHelperText").toString()
+                    ? t("createClientProfileNameHelperText")
                     : true,
               }}
             />

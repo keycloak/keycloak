@@ -440,10 +440,7 @@ export const AdminEvents = ({ resourcePath }: AdminEventsProps) => {
                             }
                           >
                             {operationTypes?.map((option) => (
-                              <SelectOption
-                                key={option.toString()}
-                                value={option}
-                              >
+                              <SelectOption key={option} value={option}>
                                 {option}
                               </SelectOption>
                             ))}
