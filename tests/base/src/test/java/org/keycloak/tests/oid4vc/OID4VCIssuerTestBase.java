@@ -39,7 +39,6 @@ import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.EventType;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.oid4vci.CredentialScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCAuthorizationDetailsParser;
 import org.keycloak.protocol.oid4vc.issuance.TimeProvider;
@@ -94,6 +93,10 @@ import static org.keycloak.OID4VCConstants.OID4VCI_ENABLED_ATTRIBUTE_KEY;
 import static org.keycloak.OID4VCConstants.OPENID_CREDENTIAL;
 import static org.keycloak.constants.OID4VCIConstants.CREDENTIAL_OFFER_CREATE;
 import static org.keycloak.models.Constants.CREATE_DEFAULT_CLIENT_SCOPES;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_FORMAT_DEFAULT;
 
 /**
@@ -447,10 +450,9 @@ public abstract class OID4VCIssuerTestBase {
                     List.of(OID4VCConstants.KeyAttestationResistanceLevels.HIGH, OID4VCConstants.KeyAttestationResistanceLevels.MODERATE)
             );
             Map<String, String> sdJwtAttrs = Optional.ofNullable(sdJwtScope.getAttributes()).orElseGet(HashMap::new);
-            sdJwtAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
-            sdJwtAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
-            sdJwtAttrs.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS,
-                    CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+            sdJwtAttrs.put(VC_BINDING_REQUIRED, "true");
+            sdJwtAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt");
+            sdJwtAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
             sdJwtScope.setAttributes(sdJwtAttrs);
             realm.addClientScope(sdJwtScope);
 
@@ -465,10 +467,9 @@ public abstract class OID4VCIssuerTestBase {
                     Collections.emptyList()
             );
             Map<String, String> jwtVcAttrs = Optional.ofNullable(jwtVcScope.getAttributes()).orElseGet(HashMap::new);
-            jwtVcAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED, "true");
-            jwtVcAttrs.put(CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES, "jwt,attestation");
-            jwtVcAttrs.put(CredentialScopeModel.VC_CRYPTOGRAPHIC_BINDING_METHODS,
-                    CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
+            jwtVcAttrs.put(VC_BINDING_REQUIRED, "true");
+            jwtVcAttrs.put(VC_BINDING_REQUIRED_PROOF_TYPES, "jwt,attestation");
+            jwtVcAttrs.put(VC_CRYPTOGRAPHIC_BINDING_METHODS, CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT);
             jwtVcScope.setAttributes(jwtVcAttrs);
             realm.addClientScope(jwtVcScope);
 
