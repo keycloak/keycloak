@@ -15,13 +15,11 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.session;
+package org.keycloak.tests.session;
 
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -29,30 +27,29 @@ import org.keycloak.models.sessions.infinispan.changes.sessions.AbstractLastSess
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.SessionData;
-import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.runonserver.RunOnServer;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.remote.providers.runonserver.RunOnServer;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.timer.TimerProvider;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
+@KeycloakIntegrationTest
+public class LastSessionRefreshUnitTest {
 
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
-    }
-
-    @After
+    @AfterEach
     public void cleanupPeriodicTask() {
         // Cleanup unneeded periodic task, which was added during this test
-        testingClient.server().run((session -> {
+        runOnServer.run((session -> {
 
             TimerProvider timer = session.getProvider(TimerProvider.class);
             timer.cancelTask(PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
@@ -63,10 +60,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
     @Test
     public void testLastSessionRefreshCounters() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.CLUSTERLESS);
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MULTI_SITE);
-
-        testingClient.server().run(new  LastSessionRefreshServerCounterTest());
+        runOnServer.run(new LastSessionRefreshServerCounterTest());
     }
 
     public static class LastSessionRefreshServerCounterTest extends LastSessionRefreshServerTest {
@@ -83,25 +77,25 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
             for (int i=0 ; i<8 ; i++){
                 customStore.putLastSessionRefresh(session, "session-" + i, "master", lastSessionRefresh);
             }
-            Assert.assertEquals(0, counter.get());
+            Assertions.assertEquals(0, counter.get());
 
             // Add 2 other items. Message sent now due the maxCount is 10
             for (int i=8 ; i<10 ; i++){
                 customStore.putLastSessionRefresh(session, "session-" + i, "master", lastSessionRefresh);
             }
-            Assert.assertEquals(1, counter.get());
+            Assertions.assertEquals(1, counter.get());
 
             // Add 5 items. No additional message
             for (int i=10 ; i<15 ; i++){
                 customStore.putLastSessionRefresh(session, "session-" + i, "master", lastSessionRefresh);
             }
-            Assert.assertEquals(1, counter.get());
+            Assertions.assertEquals(1, counter.get());
 
             // Add 20 items. 2 additional messages
             for (int i=15 ; i<35 ; i++){
                 customStore.putLastSessionRefresh(session, "session-" + i, "master", lastSessionRefresh);
             }
-            Assert.assertEquals(3, counter.get());
+            Assertions.assertEquals(3, counter.get());
 
         }
 
@@ -110,10 +104,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
     @Test
     public void testLastSessionRefreshIntervals() {
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.CLUSTERLESS);
-        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MULTI_SITE);
-
-        testingClient.server().run(new  LastSessionRefreshServerIntervalsTest());
+        runOnServer.run(new LastSessionRefreshServerIntervalsTest());
     }
 
     public static class LastSessionRefreshServerIntervalsTest extends LastSessionRefreshServerTest {
@@ -130,17 +121,17 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
                 } catch (InterruptedException ie) {
                     throw new RuntimeException();
                 }
-                Assert.assertEquals(0, counter.get());
+                Assertions.assertEquals(0, counter.get());
 
                 // Short timer interval 10 ms. 1 message due the interval is executed and lastRun was in the past due to Time.setOffset
                 AbstractLastSessionRefreshStore customStore2 = createStoreInstance(session, 10, 10);
                 Time.setOffset(200);
 
                 Retry.execute(() -> {
-                    Assert.assertEquals(1, counter.get());
+                    Assertions.assertEquals(1, counter.get());
                 }, 100, 10);
 
-                Assert.assertEquals(1, counter.get());
+                Assertions.assertEquals(1, counter.get());
 
                 // Another sleep won't send message. lastRun was updated
                 try {
@@ -148,7 +139,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
                 } catch (InterruptedException ie) {
                     throw new RuntimeException();
                 }
-                Assert.assertEquals(1, counter.get());
+                Assertions.assertEquals(1, counter.get());
             } finally {
                 Time.setOffset(0);
             }

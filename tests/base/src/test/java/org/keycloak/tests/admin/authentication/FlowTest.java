@@ -123,6 +123,45 @@ public class FlowTest extends AbstractAuthenticationTest {
         addFlowToParent("child", "grandchild");
     }
 
+    @Test
+    public void testRemoveBuiltinSubflowFromCustomBrowserFlow() {
+        // Create a custom top-level browser flow that is NOT marked as builtin
+        createFlow(newFlow("CustomBrowser", "Custom Browser flow", "basic-flow", true, false));
+
+        // Add a sub-flow to the custom browser flow (it is not builtin by default)
+        addFlowToParent("CustomBrowser", "builtin-child");
+
+        // Locate the child sub-flow execution in the parent flow
+        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("CustomBrowser");
+        AuthenticationExecutionInfoRepresentation childExecution = executions.stream()
+                .filter(r -> "builtin-child".equals(r.getDisplayName()) && r.getLevel() == 0)
+                .findAny().orElse(null);
+        Assertions.assertNotNull(childExecution, "Expected to find the child sub-flow execution");
+
+        // Mark the sub-flow itself as builtin via the update API
+        String subFlowId = childExecution.getFlowId();
+        Assertions.assertNotNull(subFlowId, "Expected the child execution to reference a sub-flow");
+        AuthenticationFlowRepresentation subFlow = authMgmtResource.getFlow(subFlowId);
+        subFlow.setBuiltIn(true);
+        authMgmtResource.updateFlow(subFlowId, subFlow);
+        Assertions.assertTrue(authMgmtResource.getFlow(subFlowId).isBuiltIn(),
+                "Sub-flow should now be marked as builtin");
+
+        // Skip the admin events produced by addFlowToParent (CREATE AUTH_EXECUTION_FLOW)
+        // and updateFlow (UPDATE AUTH_FLOW) since they are not the focus of this test
+        adminEvents.skip(2);
+
+        // Removing the builtin-marked sub-flow from a non-builtin parent flow must succeed
+        authMgmtResource.removeExecution(childExecution.getId());
+        AdminEventAssertion.assertEvent(adminEvents.poll(), OperationType.DELETE,
+                AdminEventPaths.authExecutionPath(childExecution.getId()), ResourceType.AUTH_EXECUTION);
+
+        // Verify the sub-flow execution is no longer present in the parent flow
+        executions = authMgmtResource.getExecutions("CustomBrowser");
+        Assertions.assertTrue(executions.isEmpty(),
+                "Expected no executions remaining in the custom browser flow after removal");
+    }
+
     private void addFlowToParent(String parentAlias, String childAlias) {
         Map<String, Object> data = new HashMap<>();
         data.put("alias", childAlias);

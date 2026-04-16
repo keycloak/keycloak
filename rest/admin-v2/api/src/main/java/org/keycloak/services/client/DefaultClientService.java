@@ -1,6 +1,7 @@
 package org.keycloak.services.client;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -49,9 +50,10 @@ import org.keycloak.validation.jakarta.HibernateValidatorProvider;
 import org.keycloak.validation.jakarta.JakartaValidatorProvider;
 import org.keycloak.validation.jakarta.ValidationContext;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.http.HttpEntity;
@@ -224,20 +226,23 @@ public class DefaultClientService implements ClientService {
     }
 
     @Override
-    public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, JsonNode patch) throws ServiceException {
+    public BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, InputStream patch) throws ServiceException {
         Supplier<BaseClientRepresentation> getOriginalClient = () -> getClient(realm, clientId)
                 .orElseThrow(() -> new ServiceException("Cannot find the specified client", Response.Status.NOT_FOUND));
 
         BaseClientRepresentation updated;
         switch (patchType) {
             case JSON_MERGE -> {
-                try {
-                    if (patch == null) {
-                        // based on the RFC 7396 JSON Merge Patch should replace the whole entity if the patch is not an object - we can't do it
-                        throw new ServiceException("Cannot replace client resource with null", Response.Status.BAD_REQUEST);
-                    }
+                try (JsonParser parser = MAPPER.getFactory().createParser(patch)) {
                     final ObjectReader objectReader = MAPPER.readerForUpdating(getOriginalClient.get());
-                    updated = objectReader.readValue(patch);
+                    JsonToken nextToken = parser.nextToken();
+                    if (nextToken != JsonToken.START_OBJECT) {
+                        throw new ServiceException("Cannot replace client resource with non-object", Response.Status.BAD_REQUEST);
+                    }
+                    updated = objectReader.readValue(parser);
+                    if (parser.nextToken() != null) {
+                        throw new ServiceException("Patch contains additional content", Response.Status.BAD_REQUEST);
+                    }
                 } catch (JsonMappingException e) {
                     var invalidFields = e.getPath().stream().map(JsonMappingException.Reference::getFieldName).collect(Collectors.joining(", "));
                     throw new ServiceException("Invalid values for these fields: %s".formatted((invalidFields)));

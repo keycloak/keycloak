@@ -57,7 +57,7 @@ public class BootstrapFilter {
         return Response
                 .status(Response.Status.SERVICE_UNAVAILABLE)
                 .type(MediaType.TEXT_PLAIN)
-                .entity("Boostrap in progress. Retry in " + retry + " seconds.")
+                .entity("Bootstrap in progress. Retry in " + retry + " seconds.")
                 .header(HttpHeaders.RETRY_AFTER, retry)
                 .header("Refresh", retry)
                 .build();

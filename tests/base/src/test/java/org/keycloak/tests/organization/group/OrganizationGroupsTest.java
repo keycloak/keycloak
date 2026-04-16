@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.organization.group;
+package org.keycloak.tests.organization.group;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -29,10 +30,11 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -41,15 +43,16 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
+@KeycloakIntegrationTest
 public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
     @Test
     public void testCreateOrganizationGroup() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("test-group");
@@ -76,7 +79,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testCreateDuplicateGroupName() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("duplicate-group");
@@ -94,7 +97,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testGetOrganizationGroup() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("test-group");
@@ -114,7 +117,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testOrgGroupAttributes() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create group with attributes
         GroupRepresentation groupRep = new GroupRepresentation();
@@ -140,7 +143,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testOrgGroupRoleMappingsIgnored() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create group with role mappings
         GroupRepresentation groupRep = new GroupRepresentation();
@@ -163,7 +166,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testUpdateOrganizationGroup() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("original-name");
@@ -194,7 +197,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testDeleteOrganizationGroup() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("test-group");
@@ -216,7 +219,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testCreateSubGroup() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create parent group
         GroupRepresentation parentRep = new GroupRepresentation();
@@ -250,7 +253,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testMemberJoinGroup() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create a member
         MemberRepresentation member = addMember(orgResource);
@@ -277,7 +280,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testMemberLeaveGroup() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create a member
         MemberRepresentation member = addMember(orgResource);
@@ -310,7 +313,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testNonMemberCannotJoinGroup() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create a user who is NOT a member of the organization
         UserRepresentation nonMember = new UserRepresentation();
@@ -319,11 +322,11 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         nonMember.setEnabled(true);
 
         String userId;
-        try (Response response = testRealm().users().create(nonMember)) {
+        try (Response response = realm.admin().users().create(nonMember)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
             userId = ApiUtil.getCreatedId(response);
         }
-        getCleanup().addCleanup(() -> testRealm().users().get(userId).remove());
+        realm.cleanup().add(r -> r.users().get(userId).remove());
 
         // Create a group
         GroupRepresentation groupRep = new GroupRepresentation();
@@ -347,7 +350,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testMemberAlreadyInGroup() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create a member
         MemberRepresentation member = addMember(orgResource);
@@ -377,7 +380,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testCannotJoinOrganizationGroupViaUserAPI() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create a member
         MemberRepresentation member = addMember(orgResource);
@@ -394,7 +397,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
 
         // Try to join group via User API - should fail
         try {
-            testRealm().users().get(member.getId()).joinGroup(groupId);
+            realm.admin().users().get(member.getId()).joinGroup(groupId);
             fail("Should not be able to join organization group via User API");
         } catch (Exception e) {
             assertThat(e.getMessage(), containsString(Status.BAD_REQUEST.toString()));
@@ -404,7 +407,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testMoveGroupWithinOrganization() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create parent group 1
         GroupRepresentation parent1Rep = new GroupRepresentation();
@@ -472,11 +475,11 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     public void testCannotMoveGroupToDifferentOrganization() {
         // Create first organization
         OrganizationRepresentation org1Rep = createOrganization("org1");
-        OrganizationResource org1Resource = testRealm().organizations().get(org1Rep.getId());
+        OrganizationResource org1Resource = realm.admin().organizations().get(org1Rep.getId());
 
         // Create second organization
         OrganizationRepresentation org2Rep = createOrganization("org2");
-        OrganizationResource org2Resource = testRealm().organizations().get(org2Rep.getId());
+        OrganizationResource org2Resource = realm.admin().organizations().get(org2Rep.getId());
 
         // Create a group in org1
         GroupRepresentation groupRep = new GroupRepresentation();
@@ -511,7 +514,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testSearchGroupsByNameNonExact() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create multiple groups with different names
         GroupRepresentation group1 = new GroupRepresentation();
@@ -548,7 +551,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testFindGroupByPathWithNestedOrganizationGroups() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create a 3-level hierarchy: parent/child/grandchild
         GroupRepresentation parentRep = new GroupRepresentation();
@@ -606,7 +609,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testSubGroupCountQueryParameter() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create parent with 3 subgroups
         GroupRepresentation parentRep = new GroupRepresentation();
@@ -666,7 +669,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
     @Test
     public void testMoveGroupToTopLevel() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create parent group
         GroupRepresentation parentRep = new GroupRepresentation();
@@ -713,19 +716,19 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
         // Verify getAll returns both as top-level groups
         List<GroupRepresentation> topLevelGroups = orgResource.groups().getAll(null, null, null, null, null, true, false);
         assertThat(topLevelGroups, hasSize(2));
-        Set<String> groupNames = topLevelGroups.stream().map(GroupRepresentation::getName).collect(java.util.stream.Collectors.toSet());
+        Set<String> groupNames = topLevelGroups.stream().map(GroupRepresentation::getName).collect(Collectors.toSet());
         assertThat(groupNames, containsInAnyOrder("parent-group", "child-group"));
     }
 
     @Test
     public void testMoveGroupToTopLevelValidation() {
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create a realm group (not org group)
         GroupRepresentation realmGroupRep = new GroupRepresentation();
         realmGroupRep.setName("realm-group");
-        try (Response response = testRealm().groups().add(realmGroupRep)) {
+        try (Response response = realm.admin().groups().add(realmGroupRep)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
             String realmGroupId = ApiUtil.getCreatedId(response);
 
@@ -737,7 +740,7 @@ public class OrganizationGroupsTest extends AbstractOrganizationTest {
                 assertThat(moveResponse.getStatus(), is(Status.BAD_REQUEST.getStatusCode()));
             }
 
-            testRealm().groups().group(realmGroupId).remove();
+            realm.admin().groups().group(realmGroupId).remove();
         }
 
         // Try to move non-existent group - should fail

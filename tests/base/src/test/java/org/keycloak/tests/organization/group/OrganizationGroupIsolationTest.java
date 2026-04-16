@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.organization.group;
+package org.keycloak.tests.organization.group;
 
 import java.util.List;
 
@@ -30,10 +30,11 @@ import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
 import org.keycloak.representations.idm.authorization.GroupPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -41,16 +42,17 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
+@KeycloakIntegrationTest
 public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
 
     @Test
     public void testOrgGroupsNotInRealmGroupsAPI() {
         // Org groups should NOT appear in the main realm groups tree
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create org group
         GroupRepresentation orgGroupRep = new GroupRepresentation();
@@ -63,13 +65,13 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
         GroupRepresentation realmGroupRep = new GroupRepresentation();
         realmGroupRep.setName("RealmGroup");
         String realmGroupId;
-        try (Response response = testRealm().groups().add(realmGroupRep)) {
+        try (Response response = realm.admin().groups().add(realmGroupRep)) {
             realmGroupId = ApiUtil.getCreatedId(response);
         }
-        getCleanup().addCleanup(() -> testRealm().groups().group(realmGroupId).remove());
+        realm.cleanup().add(r -> r.groups().group(realmGroupId).remove());
 
         // Get all realm groups - should only include realm groups, not org groups
-        List<String> realmGroupNames = testRealm().groups().groups().stream().map(GroupRepresentation::getName).toList();
+        List<String> realmGroupNames = realm.admin().groups().groups().stream().map(GroupRepresentation::getName).toList();
 
         // Should find only realm groups
         assertThat(realmGroupNames, hasItem("RealmGroup"));
@@ -80,10 +82,10 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
     public void testOrgGroupsIsolatedBetweenOrganizations() {
         // Organizations should not see each other's groups
         OrganizationRepresentation orgA = createOrganization("OrgA", "orga.com");
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
+        OrganizationResource orgAResource = realm.admin().organizations().get(orgA.getId());
 
         OrganizationRepresentation orgB = createOrganization("OrgB", "orgb.com");
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        OrganizationResource orgBResource = realm.admin().organizations().get(orgB.getId());
 
         // Create group in Org A
         GroupRepresentation groupA = new GroupRepresentation();
@@ -134,10 +136,10 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
     public void testCannotAddMemberFromDifferentOrg() {
         // Cannot add member of Org A to a group in Org B
         OrganizationRepresentation orgA = createOrganization("OrgA", "orga.com");
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
+        OrganizationResource orgAResource = realm.admin().organizations().get(orgA.getId());
 
         OrganizationRepresentation orgB = createOrganization("OrgB", "orgb.com");
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        OrganizationResource orgBResource = realm.admin().organizations().get(orgB.getId());
 
         // Create member in Org A
         MemberRepresentation memberA = addMember(orgAResource, "alice@orga.com");
@@ -164,10 +166,10 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
     public void testMultiOrgUserSeesGroupsFromBothOrgs() {
         // User who is member of multiple orgs should see groups from all their orgs
         OrganizationRepresentation orgA = createOrganization("OrgA", "orga.com");
-        OrganizationResource orgAResource = testRealm().organizations().get(orgA.getId());
+        OrganizationResource orgAResource = realm.admin().organizations().get(orgA.getId());
 
         OrganizationRepresentation orgB = createOrganization("OrgB", "orgb.com");
-        OrganizationResource orgBResource = testRealm().organizations().get(orgB.getId());
+        OrganizationResource orgBResource = realm.admin().organizations().get(orgB.getId());
 
         // Create a user who is member of both orgs
         String userEmail = "multiorg@example.com";
@@ -213,7 +215,7 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
     public void testOrgGroupsSeparateFromRealmGroupsWithSameName() {
         // Org groups and realm groups can have same name without conflict
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         String groupName = "Engineering";
 
@@ -230,17 +232,17 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
         GroupRepresentation realmGroupRep = new GroupRepresentation();
         realmGroupRep.setName(groupName);
         String realmGroupId;
-        try (Response response = testRealm().groups().add(realmGroupRep)) {
+        try (Response response = realm.admin().groups().add(realmGroupRep)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
             realmGroupId = ApiUtil.getCreatedId(response);
         }
-        getCleanup().addCleanup(() -> testRealm().groups().group(realmGroupId).remove());
+        realm.cleanup().add(r -> r.groups().group(realmGroupId).remove());
 
         // Both should exist and be different groups
         GroupRepresentation orgGroup = orgResource.groups().group(orgGroupId).toRepresentation(false);
         assertThat(orgGroup.getName(), is(groupName));
 
-        GroupRepresentation realmGroup = testRealm().groups().group(realmGroupId).toRepresentation();
+        GroupRepresentation realmGroup = realm.admin().groups().group(realmGroupId).toRepresentation();
         assertThat(realmGroup.getName(), is(groupName));
 
         // They should have different IDs
@@ -252,7 +254,7 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
     public void testSearchOrgGroupsDoesNotReturnRealmGroups() {
         // Searching org groups should not return realm groups
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create org group with "Engineering" name
         GroupRepresentation orgGroupRep = new GroupRepresentation();
@@ -265,11 +267,11 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
         GroupRepresentation realmGroupRep = new GroupRepresentation();
         realmGroupRep.setName("Engineering-Realm");
         String realmGroupId;
-        try (Response response = testRealm().groups().add(realmGroupRep)) {
+        try (Response response = realm.admin().groups().add(realmGroupRep)) {
             assertThat(response.getStatus(), is(Status.CREATED.getStatusCode()));
             realmGroupId = ApiUtil.getCreatedId(response);
         }
-        getCleanup().addCleanup(() -> testRealm().groups().group(realmGroupId).remove());
+        realm.cleanup().add(r -> r.groups().group(realmGroupId).remove());
 
         // Search org groups for "Engineering"
         List<GroupRepresentation> results = orgResource.groups().getAll("Engineering", null, null, null, null, true, false);
@@ -283,7 +285,7 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
     public void testCannotUseOrgGroupInAuthorizationPolicy() {
         // Organization groups cannot be used in authorization policies - only realm groups are allowed
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create organization group
         GroupRepresentation orgGroupRep = new GroupRepresentation();
@@ -303,12 +305,12 @@ public class OrganizationGroupIsolationTest extends AbstractOrganizationTest {
         clientRep.setPublicClient(false);
 
         String clientId;
-        try (Response response = testRealm().clients().create(clientRep)) {
+        try (Response response = realm.admin().clients().create(clientRep)) {
             clientId = ApiUtil.getCreatedId(response);
         }
-        getCleanup().addCleanup(() -> testRealm().clients().get(clientId).remove());
+        realm.cleanup().add(r -> r.clients().get(clientId).remove());
 
-        ClientResource clientResource = testRealm().clients().get(clientId);
+        ClientResource clientResource = realm.admin().clients().get(clientId);
 
         // Try to create a group policy using the organization group - should fail
         GroupPolicyRepresentation policy = new GroupPolicyRepresentation();

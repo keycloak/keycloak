@@ -62,6 +62,7 @@ body:
         - translations
         - user-profile
         - welcome/ui
+        - workflows
     validations:
       required: true
   - type: textarea

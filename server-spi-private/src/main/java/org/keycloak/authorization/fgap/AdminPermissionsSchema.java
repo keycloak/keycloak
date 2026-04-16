@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -136,25 +137,11 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
             return resource;
         }
 
-        String name;
-
-        switch (resourceType) {
-            case CLIENTS_RESOURCE_TYPE -> name = resolveClient(session, id).map(ClientModel::getId)
-                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
-            case GROUPS_RESOURCE_TYPE -> name = resolveGroup(session, id).map(GroupModel::getId)
-                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
-            case ROLES_RESOURCE_TYPE -> name = resolveRole(session, id).map(RoleModel::getId)
-                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
-            case USERS_RESOURCE_TYPE -> name = resolveUser(session, id).map(UserModel::getId)
-                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
-
-            default -> throw new IllegalStateException("Resource type [" + resourceType + "] not found.");
-        }
-
-        resource = resourceStore.findByName(resourceServer, name);
+        String resourceName = getResourceName(session, resourceType, id);
+        resource = resourceStore.findByName(resourceServer, resourceName);
 
         if (resource == null) {
-            resource = resourceStore.create(resourceServer, name, resourceServer.getClientId());
+            resource = resourceStore.create(resourceServer, resourceName, resourceServer.getClientId());
             ScopeStore scopeStore = storeFactory.getScopeStore();
             resource.updateScopes(getResourceTypes().get(resourceType).getScopes().stream().map(scopeName -> {
                 Scope findByName = scopeStore.findByName(resourceServer, scopeName);
@@ -164,6 +151,23 @@ public class AdminPermissionsSchema extends AuthorizationSchema {
         }
 
         return resource;
+    }
+
+    private String getResourceName(KeycloakSession session, String resourceType, String id) {
+        if(Objects.equals(resourceType, id)) {
+            return id;
+        }
+        return switch (resourceType) {
+            case CLIENTS_RESOURCE_TYPE -> resolveClient(session, id).map(ClientModel::getId)
+                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
+            case GROUPS_RESOURCE_TYPE -> resolveGroup(session, id).map(GroupModel::getId)
+                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
+            case ROLES_RESOURCE_TYPE -> resolveRole(session, id).map(RoleModel::getId)
+                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
+            case USERS_RESOURCE_TYPE -> resolveUser(session, id).map(UserModel::getId)
+                    .orElseThrow(() -> new ModelValidationException("Resource [" + id + "] does not exist for type [" + resourceType + "]"));
+            default -> throw new IllegalStateException("Resource type [" + resourceType + "] not found.");
+        };
     }
 
     public Resource getResourceTypeResource(KeycloakSession session, ResourceServer resourceServer, String resourceType) {

@@ -24,7 +24,6 @@ policy,6
 providers,4
 saml,6
 script,6
-session,6
 sessionlimits,6
 ssl,6
 theme,6

@@ -509,6 +509,15 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
 
     @Test
     public void testShowOnlyBrokersLinkedUserInPasswordPage() {
+        assertOrganizationBrokerVisibilityWhenUserIsLinkedElsewhere(false);
+    }
+
+    @Test
+    public void testShowOrganizationBrokerLinkedElsewhereInPasswordPage() {
+        assertOrganizationBrokerVisibilityWhenUserIsLinkedElsewhere(true);
+    }
+
+    private void assertOrganizationBrokerVisibilityWhenUserIsLinkedElsewhere(boolean showWhenLinkedElsewhere) {
         OrganizationResource organization = testRealm().organizations().get(createOrganization().getId());
         OrganizationIdentityProviderResource broker = organization.identityProviders().get(bc.getIDPAlias());
         IdentityProviderRepresentation brokerRep = broker.toRepresentation();
@@ -520,6 +529,7 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         secondIdp.setInternalId(null);
         secondIdp.setHideOnLogin(false);
         secondIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        secondIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.toString(showWhenLinkedElsewhere));
         testRealm().identityProviders().create(secondIdp).close();
         getCleanup().addCleanup(testRealm().identityProviders().get("second-idp")::remove);
         organization.identityProviders().addIdentityProvider(secondIdp.getAlias()).close();
@@ -553,8 +563,90 @@ public abstract class AbstractBrokerSelfRegistrationTest extends AbstractOrganiz
         Assert.assertFalse(loginPage.isUsernameInputPresent());
         Assert.assertTrue(loginPage.isPasswordInputPresent());
         Assert.assertTrue(loginPage.isSocialButtonPresent(bc.getIDPAlias()));
-        // second-idp not shown because user is linked to another broker
-        Assert.assertFalse(loginPage.isSocialButtonPresent(secondIdp.getAlias()));
+        Assert.assertEquals(showWhenLinkedElsewhere, loginPage.isSocialButtonPresent(secondIdp.getAlias()));
+    }
+
+    @Test
+    public void testShowWhenLinkedElsewhereEdgeCases() {
+        OrganizationResource orgA = testRealm().organizations().get(createOrganization("org-a").getId());
+        OrganizationResource orgB = testRealm().organizations().get(createOrganization("org-b").getId());
+        IdentityProviderRepresentation orgABroker = orgA.identityProviders().getIdentityProviders().get(0);
+        orgABroker.setHideOnLogin(false);
+        orgABroker.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        orgABroker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
+        testRealm().identityProviders().get(orgABroker.getAlias()).update(orgABroker);
+        IdentityProviderRepresentation orgBBroker = orgB.identityProviders().getIdentityProviders().get(0);
+        orgBBroker.setHideOnLogin(false);
+        orgBBroker.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        orgBBroker.getConfig().put(IdentityProviderRedirectMode.EMAIL_MATCH.getKey(), Boolean.FALSE.toString());
+        testRealm().identityProviders().get(orgBBroker.getAlias()).update(orgBBroker);
+        String hideUnknownAlias = "hide-unknown-idp-" + KeycloakModelUtils.generateId();
+        IdentityProviderRepresentation hideUnknownIdp = bc.setUpIdentityProvider();
+        hideUnknownIdp.setAlias(hideUnknownAlias);
+        hideUnknownIdp.setInternalId(null);
+        hideUnknownIdp.setHideOnLogin(false);
+        hideUnknownIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        hideUnknownIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        hideUnknownIdp.getConfig().put(OrganizationModel.HIDE_IDP_ON_LOGIN_WHEN_ORGANIZATION_UNKNOWN, Boolean.TRUE.toString());
+        testRealm().identityProviders().create(hideUnknownIdp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get(hideUnknownAlias)::remove);
+        orgA.identityProviders().addIdentityProvider(hideUnknownAlias).close();
+        String username = "user-" + KeycloakModelUtils.generateId();
+        String unresolvedEmail = username + "@user.org";
+        UserRepresentation account = UserBuilder.create().username(username).email(unresolvedEmail).password("updated-password").enabled(true).build();
+        try (Response response = testRealm().users().create(account)) {
+            account.setId(ApiUtil.getCreatedId(response));
+        }
+        UserRepresentation finalAccount = account;
+        getCleanup().addCleanup(() -> testRealm().users().get(finalAccount.getId()).remove());
+        FederatedIdentityRepresentation identity = new FederatedIdentityRepresentation();
+        identity.setIdentityProvider(orgABroker.getAlias());
+        identity.setUserId(KeycloakModelUtils.generateId());
+        identity.setUserName(username);
+        try (Response response = testRealm().users().get(account.getId()).addFederatedIdentity(orgABroker.getAlias(), identity)) {
+            assertEquals(Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        }
+        orgA.members().addMember(account.getId()).close();
+        orgB.members().addMember(account.getId()).close();
+        realmsResouce().realm(bc.consumerRealmName()).users().get(account.getId()).logout();
+        realmsResouce().realm(bc.providerRealmName()).logoutAll();
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(username);
+        Assert.assertTrue(loginPage.isSocialButtonPresent(orgABroker.getAlias()));
+        Assert.assertTrue(loginPage.isSocialButtonPresent(orgBBroker.getAlias()));
+        Assert.assertFalse(loginPage.isSocialButtonPresent(hideUnknownAlias));
+        String resolvedEmail = username + "@org-a.org";
+        UserRepresentation updatedAccount = testRealm().users().get(account.getId()).toRepresentation();
+        updatedAccount.setEmail(resolvedEmail);
+        testRealm().users().get(account.getId()).update(updatedAccount);
+        String disabledAlias = "disabled-idp-" + KeycloakModelUtils.generateId();
+        IdentityProviderRepresentation disabledIdp = bc.setUpIdentityProvider();
+        disabledIdp.setAlias(disabledAlias);
+        disabledIdp.setInternalId(null);
+        disabledIdp.setEnabled(false);
+        disabledIdp.setHideOnLogin(false);
+        disabledIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        disabledIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        testRealm().identityProviders().create(disabledIdp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get(disabledAlias)::remove);
+        orgA.identityProviders().addIdentityProvider(disabledAlias).close();
+        String linkOnlyAlias = "link-only-idp-" + KeycloakModelUtils.generateId();
+        IdentityProviderRepresentation linkOnlyIdp = bc.setUpIdentityProvider();
+        linkOnlyIdp.setAlias(linkOnlyAlias);
+        linkOnlyIdp.setInternalId(null);
+        linkOnlyIdp.setLinkOnly(true);
+        linkOnlyIdp.setHideOnLogin(false);
+        linkOnlyIdp.getConfig().remove(OrganizationModel.ORGANIZATION_DOMAIN_ATTRIBUTE);
+        linkOnlyIdp.getConfig().put(OrganizationModel.SHOW_IDP_ON_LOGIN_WHEN_LINKED_ELSEWHERE, Boolean.TRUE.toString());
+        testRealm().identityProviders().create(linkOnlyIdp).close();
+        getCleanup().addCleanup(testRealm().identityProviders().get(linkOnlyAlias)::remove);
+        orgA.identityProviders().addIdentityProvider(linkOnlyAlias).close();
+        loginPage.open(bc.consumerRealmName());
+        loginPage.loginUsername(resolvedEmail);
+        Assert.assertTrue(loginPage.isSocialButtonPresent(hideUnknownAlias));
+        Assert.assertFalse(loginPage.isSocialButtonPresent(disabledAlias));
+        Assert.assertFalse(loginPage.isSocialButtonPresent(linkOnlyAlias));
     }
 
     @Test

@@ -41,6 +41,7 @@ import org.keycloak.protocol.LoginProtocolFactory;
 import org.keycloak.protocol.oid4vc.issuance.OID4VCIssuerEndpoint;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCSubjectIdMapper;
 import org.keycloak.protocol.oid4vc.issuance.mappers.OID4VCUserAttributeMapper;
+import org.keycloak.protocol.oid4vc.model.ProofType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -55,6 +56,8 @@ import static org.keycloak.constants.OID4VCIConstants.OID4VC_PROTOCOL;
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.CRYPTOGRAPHIC_BINDING_METHODS_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VCT;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED;
+import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BINDING_REQUIRED_PROOF_TYPES;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_HASH_ALGORITHM_DEFAULT;
 import static org.keycloak.models.oid4vci.CredentialScopeModel.VC_BUILD_CONFIG_SD_JWT_VISIBLE_CLAIMS;
@@ -81,7 +84,6 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
 
 	private static final Logger LOGGER = Logger.getLogger(OID4VCLoginProtocolFactory.class);
 
-	private static final String CLIENT_ROLES_MAPPER = "client-roles";
 	private static final String USERNAME_MAPPER = "username";
 	private static final String SUBJECT_ID_MAPPER = "subject-id";
 	private static final String EMAIL_MAPPER = "email";
@@ -141,6 +143,11 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
                 clientScope.addProtocolMapper(builtins.get(LAST_NAME_MAPPER));
 
                 ClientScopeRepresentation clientScopeRep = ModelToRepresentation.toRepresentation(clientScope);
+                clientScopeRep.setAttributes(new HashMap<>(Map.of(
+                        VC_BINDING_REQUIRED, "true",
+                        VC_BINDING_REQUIRED_PROOF_TYPES, ProofType.JWT + "," + ProofType.ATTESTATION
+                )));
+
                 addClientScopeDefaults(clientScopeRep);
                 RepresentationToModel.updateClientScope(clientScopeRep, clientScope);
             }
@@ -156,6 +163,10 @@ public class OID4VCLoginProtocolFactory implements LoginProtocolFactory, OID4VCE
     public void addClientScopeDefaults(ClientScopeRepresentation clientScope) {
         String scopeName = clientScope.getName();
 
+        if (clientScope.getAttributes() == null) {
+            clientScope.setAttributes(new HashMap<>());
+        }
+        
         clientScope.getAttributes().computeIfAbsent(VC_FORMAT, k -> VCFormat.getFromScope(scopeName));
         String format = clientScope.getAttributes().get(VC_FORMAT);
 

@@ -163,4 +163,12 @@ public class EventAssertion {
         return this;
     }
 
+    /**
+     * Return the event associated to the assertion.
+     *
+     * @return the asserted {@link EventRepresentation}
+     */
+    public EventRepresentation getEvent() {
+        return event;
+    }
 }

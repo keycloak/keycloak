@@ -38,7 +38,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import static org.keycloak.authentication.authenticators.util.AuthenticatorUtils.getDisabledByBruteForceEventError;
 import static org.keycloak.services.validation.Validation.FIELD_PASSWORD;
 import static org.keycloak.services.validation.Validation.FIELD_USERNAME;
 
@@ -200,14 +199,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
         if (!enabledUser(context, user)) {
             return false;
         }
-        String rememberMe = inputData.getFirst("rememberMe");
-        boolean remember = context.getRealm().isRememberMe() && rememberMe != null && rememberMe.equalsIgnoreCase("on");
-        if (remember) {
-            context.getAuthenticationSession().setAuthNote(Details.REMEMBER_ME, "true");
-            context.getEvent().detail(Details.REMEMBER_ME, "true");
-        } else {
-            context.getAuthenticationSession().removeAuthNote(Details.REMEMBER_ME);
-        }
+        AuthenticatorUtils.processRememberMe(context, inputData);
         context.setUser(user);
         return true;
     }
@@ -249,7 +241,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     protected boolean isDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
-        String bruteForceError = getDisabledByBruteForceEventError(context, user);
+        String bruteForceError = AuthenticatorUtils.getDisabledByBruteForceEventError(context, user);
         if (bruteForceError != null) {
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);

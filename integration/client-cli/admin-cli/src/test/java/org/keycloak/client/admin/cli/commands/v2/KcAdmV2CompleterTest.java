@@ -113,6 +113,19 @@ public class KcAdmV2CompleterTest {
     }
 
     @Test
+    public void testFileOptionInAutocompleteForCreateParent() {
+        List<String> candidates = complete("client", "create", "-");
+        assertTrue("Should suggest '-f' at parent level", candidates.contains("-f"));
+    }
+
+    @Test
+    public void testFieldOptionsNotInAutocompleteForCreateParent() {
+        List<String> candidates = complete("client", "create", "--");
+        assertFalse("Should not suggest '--client-id' at parent level", candidates.contains("--client-id"));
+        assertFalse("Should not suggest '--login-flows' at parent level", candidates.contains("--login-flows"));
+    }
+
+    @Test
     public void testFileOptionNotInAutocompleteForList() {
         List<String> candidates = complete("client", "list", "-");
         assertFalse("list should not suggest '-f'", candidates.contains("-f"));

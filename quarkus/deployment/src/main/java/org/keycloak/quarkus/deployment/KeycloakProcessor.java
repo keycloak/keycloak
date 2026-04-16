@@ -98,7 +98,7 @@ import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakHandlerChainCustomizer;
 import org.keycloak.quarkus.runtime.integration.resteasy.KeycloakTracingCustomizer;
 import org.keycloak.quarkus.runtime.logging.ClearMappedDiagnosticContextFilter;
-import org.keycloak.quarkus.runtime.services.health.BoostrapReadyHealthCheck;
+import org.keycloak.quarkus.runtime.services.health.BootstrapReadyHealthCheck;
 import org.keycloak.quarkus.runtime.services.health.KeycloakClusterReadyHealthCheck;
 import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
@@ -849,7 +849,7 @@ class KeycloakProcessor {
     }
 
     private static void disableBootstrapReadyHealthCheck(BuildProducer<BuildTimeConditionBuildItem> removeBeans, CombinedIndexBuildItem index) {
-        ClassInfo disabledBean = index.getIndex().getClassByName(DotName.createSimple(BoostrapReadyHealthCheck.class.getName()));
+        ClassInfo disabledBean = index.getIndex().getClassByName(DotName.createSimple(BootstrapReadyHealthCheck.class.getName()));
         removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
     }
 

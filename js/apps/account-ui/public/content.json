@@ -12,7 +12,11 @@
       }
     ]
   },
-  { "label": "applications", "path": "applications" },
+  {
+    "label": "applications",
+    "path": "applications",
+    "isVisible": "isViewApplicationsEnabled"
+  },
   {
     "label": "groups",
     "path": "groups",

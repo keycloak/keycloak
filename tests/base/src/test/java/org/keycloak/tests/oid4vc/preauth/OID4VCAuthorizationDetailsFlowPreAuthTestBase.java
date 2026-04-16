@@ -79,7 +79,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
         AccessTokenResponse tokenResponse = oauthClient
                 .openid(false)
                 .scope(scopeName)
-                .doPasswordGrantRequest("john", "password");
+                .doPasswordGrantRequest("john", TEST_PASSWORD);
         assertEquals(HttpStatus.SC_OK, tokenResponse.getStatusCode());
         return tokenResponse.getAccessToken();
     }
@@ -628,7 +628,7 @@ public abstract class OID4VCAuthorizationDetailsFlowPreAuthTestBase extends OID4
 
         AccessTokenResponse response = oauth.client(OID4VCI_CLIENT_ID, "test-secret")
                 .scope(OAuth2Constants.SCOPE_OPENID)
-                .doPasswordGrantRequest("john", "password");
+                .doPasswordGrantRequest("john", TEST_PASSWORD);
         String accessToken = response.getAccessToken();
 
         UserInfoResponse userInfoResponse = oauth.doUserInfoRequest(accessToken);

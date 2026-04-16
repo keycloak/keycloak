@@ -5,7 +5,6 @@ KcAdmSessionTest
 TransientSessionTest
 OAuthDanceClientSessionExtensionTest
 SessionNotOnOrAfterTest
-SessionTimeoutValidationTest
 KcOidcUserSessionLimitsBrokerTest
 KcSamlUserSessionLimitsBrokerTest
 AbstractUserSessionLimitsBrokerTest

@@ -602,6 +602,189 @@ public class KcAdmV2ClientCLITest extends AbstractKcAdmV2CLITest {
                 result.err(), containsString("config openapi"));
     }
 
+    @Test
+    void testClientCreateOidcFromFile() throws Exception {
+        Path jsonFile = new File(tempDir, "create-from-file-oidc.json").toPath();
+        Files.writeString(jsonFile, """
+                {"clientId": "file-no-disc", "protocol": "openid-connect", "enabled": true}
+                """);
+
+        CommandResult result = kcAdmV2Cmd("client", "create", "--file", jsonFile.toString());
+        assertThat("'client create --file' should succeed: " + result.err(), result.exitCode(), is(0));
+        assertThat(result.out(), containsString("file-no-disc"));
+
+        String id = extractId(result);
+        CommandResult getResult = kcAdmV2Cmd("client", "get", id);
+        assertThat("get should succeed", getResult.exitCode(), is(0));
+        assertThat(getResult.out(), containsString("file-no-disc"));
+    }
+
+    @Test
+    void testClientCreateSamlFromFile() throws Exception {
+        Path jsonFile = new File(tempDir, "create-from-file-saml.json").toPath();
+        Files.writeString(jsonFile, """
+                {"clientId": "saml-no-disc", "protocol": "saml", "enabled": true}
+                """);
+
+        CommandResult result = kcAdmV2Cmd("client", "create", "-f", jsonFile.toString());
+        assertThat("'client create -f' for SAML should succeed: " + result.err(), result.exitCode(), is(0));
+        assertThat(result.out(), containsString("saml-no-disc"));
+
+        String id = extractId(result);
+        CommandResult getResult = kcAdmV2Cmd("client", "get", id);
+        assertThat("get should succeed", getResult.exitCode(), is(0));
+        assertThat(getResult.out(), containsString("saml-no-disc"));
+    }
+
+    @Test
+    void testClientUpdateFromFile() throws Exception {
+        CommandResult createResult = kcAdmV2Cmd("client", "create", "oidc",
+                "--client-id", "update-no-disc", "--enabled", "true");
+        assertThat("setup: create should succeed", createResult.exitCode(), is(0));
+
+        Path jsonFile = new File(tempDir, "update-from-file.json").toPath();
+        Files.writeString(jsonFile, """
+                {"clientId": "update-no-disc", "protocol": "openid-connect", "enabled": false}
+                """);
+
+        CommandResult result = kcAdmV2Cmd("client", "update", "-f", jsonFile.toString());
+        assertThat("'client update -f' should succeed: " + result.err(), result.exitCode(), is(0));
+        assertThat(result.out(), containsString("\"enabled\" : false"));
+    }
+
+    @Test
+    void testClientPatchFromFile() throws Exception {
+        CommandResult createResult = kcAdmV2Cmd("client", "create", "oidc",
+                "--client-id", "patch-no-disc", "--enabled", "true");
+        assertThat("setup: create should succeed", createResult.exitCode(), is(0));
+        String id = extractId(createResult);
+
+        Path jsonFile = new File(tempDir, "patch-from-file.json").toPath();
+        Files.writeString(jsonFile, """
+                {"clientId": "%s", "enabled": false}
+                """.formatted(id));
+
+        CommandResult result = kcAdmV2Cmd("client", "patch", "-f", jsonFile.toString());
+        assertThat("'client patch -f' should succeed: " + result.err(), result.exitCode(), is(0));
+        assertThat(result.out(), containsString("\"enabled\" : false"));
+    }
+
+    @Test
+    void testClientCreateWithoutFileOrSubcommandFails() {
+        CommandResult result = kcAdmV2Cmd("client", "create");
+        assertThat("'client create' without file or subcommand should fail", result.exitCode(), is(not(0)));
+        assertThat("should tell user to provide a file: " + result.err(), result.err(), containsString("-f/--file"));
+    }
+
+    @Test
+    void testClientCreateFileNotFound() {
+        CommandResult result = kcAdmV2Cmd("client", "create", "-f", "/nonexistent/file.json");
+        assertThat("should fail for non-existent file", result.exitCode(), is(not(0)));
+        assertThat(result.err(), containsString("not found"));
+    }
+
+    @Test
+    void testClientPatchFromFileMissingClientId() throws Exception {
+        Path jsonFile = new File(tempDir, "patch-no-id.json").toPath();
+        Files.writeString(jsonFile, """
+                {"enabled": false}
+                """);
+
+        CommandResult result = kcAdmV2Cmd("client", "patch", "-f", jsonFile.toString());
+        assertThat("'client patch -f' without clientId in file should fail", result.exitCode(), is(not(0)));
+        assertThat("should report the missing field", result.err(), containsString("does not contain required"));
+        assertThat("should name the expected field", result.err(), containsString("clientId"));
+    }
+
+    @Test
+    void testClientPatchFromFileBlankClientId() throws Exception {
+        Path jsonFile = new File(tempDir, "patch-blank-id.json").toPath();
+        Files.writeString(jsonFile, """
+                {"clientId": "", "enabled": false}
+                """);
+
+        CommandResult result = kcAdmV2Cmd("client", "patch", "-f", jsonFile.toString());
+        assertThat("'client patch -f' with blank clientId should fail, err: " + result.err(), result.exitCode(), is(not(0)));
+        assertThat("should report the missing field, err: " + result.err(), result.err(),
+                containsString("does not contain required"));
+        assertThat("should name the expected field, err: " + result.err(), result.err(), containsString("clientId"));
+    }
+
+    @Test
+    void testClientPatchFromFileMalformedJson() throws Exception {
+        Path jsonFile = new File(tempDir, "patch-bad.json").toPath();
+        Files.writeString(jsonFile, "{ not valid json }");
+
+        CommandResult result = kcAdmV2Cmd("client", "patch", "-f", jsonFile.toString());
+        assertThat("'client patch -f' with malformed JSON should fail, err: " + result.err(),
+                result.exitCode(), is(not(0)));
+        assertThat("should report local JSON parsing failure from ID extraction, err: " + result.err(),
+                result.err(), containsString("Cannot parse JSON to extract ID"));
+    }
+
+    @Test
+    void testClientCreateFromFileBeforeSubcommand() throws Exception {
+        Path jsonFile = new File(tempDir, "create-before-sub.json").toPath();
+        Files.writeString(jsonFile, """
+                {"clientId": "create-before-sub", "protocol": "openid-connect", "enabled": true}
+                """);
+
+        // -f before the variant subcommand: parent consumes -f, leaf must pick it up
+        CommandResult result = kcAdmV2Cmd("client", "create", "-f", jsonFile.toString(), "oidc");
+        assertThat("-f before subcommand should not be silently ignored, err: " + result.err()
+                        + ", out: " + result.out(),
+                result.exitCode(), is(0));
+        assertThat("file content should be used as request body, out: " + result.out(),
+                result.out(), containsString("create-before-sub"));
+    }
+
+    @Test
+    void testClientPatchFromFileBeforeSubcommand() throws Exception {
+        CommandResult createResult = kcAdmV2Cmd("client", "create", "saml",
+                "--client-id", "patch-before-sub", "--enabled", "true");
+        assertThat("setup: create should succeed", createResult.exitCode(), is(0));
+        String id = extractId(createResult);
+
+        Path jsonFile = new File(tempDir, "patch-before-sub.json").toPath();
+        Files.writeString(jsonFile, """
+                {"enabled": false}
+                """);
+
+        // -f before the variant subcommand: parent consumes -f, leaf must pick it up
+        CommandResult result = kcAdmV2Cmd("client", "patch", "-f", jsonFile.toString(),
+                "saml", id);
+        assertThat("-f before subcommand should not be silently ignored, err: " + result.err()
+                        + ", out: " + result.out(),
+                result.exitCode(), is(0));
+        assertThat("file content should be applied as patch body, out: " + result.out(),
+                result.out(), containsString("\"enabled\" : false"));
+    }
+
+    @Test
+    void testFileBeforeSubcommandAndFieldOptionsMutuallyExclusive() {
+        // -f on parent + field options on leaf should still be rejected as mutually exclusive
+        // no real file needed — mutual exclusivity check fires before file access
+        CommandResult result = kcAdmV2Cmd("client", "update", "-f", "/any/path.json",
+                "oidc", "exclusive-test", "--client-id", "exclusive-test");
+        assertThat("-f before subcommand with field options should fail, err: " + result.err()
+                        + ", out: " + result.out(),
+                result.exitCode(), is(not(0)));
+        assertThat("should report mutual exclusivity, err: " + result.err(),
+                result.err(), containsString("mutually exclusive"));
+    }
+
+    @Test
+    void testFileSpecifiedOnBothParentAndSubcommandFails() {
+        // no real files needed — duplicate check fires before file access
+        CommandResult result = kcAdmV2Cmd("client", "create",
+                "-f", "/first.json", "oidc", "-f", "/second.json");
+        assertThat("-f on both parent and subcommand should fail, err: " + result.err()
+                        + ", out: " + result.out(),
+                result.exitCode(), is(not(0)));
+        assertThat("should report duplicate -f, err: " + result.err(),
+                result.err(), containsString("-f/--file"));
+    }
+
     private String createClientWithAllParams(String clientId) {
         CommandResult result = kcAdmV2Cmd("client", "create", "oidc",
                 "--client-id", clientId,

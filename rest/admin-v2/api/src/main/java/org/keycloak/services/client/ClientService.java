@@ -1,5 +1,6 @@
 package org.keycloak.services.client;
 
+import java.io.InputStream;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -8,8 +9,6 @@ import org.keycloak.representations.admin.v2.BaseClientRepresentation;
 import org.keycloak.services.PatchType;
 import org.keycloak.services.Service;
 import org.keycloak.services.ServiceException;
-
-import com.fasterxml.jackson.databind.JsonNode;
 
 public interface ClientService extends Service {
 
@@ -50,5 +49,5 @@ public interface ClientService extends Service {
 
     BaseClientRepresentation createClient(RealmModel realm, BaseClientRepresentation client) throws ServiceException;
 
-    BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, JsonNode patch) throws ServiceException;
+    BaseClientRepresentation patchClient(RealmModel realm, String clientId, PatchType patchType, InputStream patch) throws ServiceException;
 }

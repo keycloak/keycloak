@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.organization.group;
+package org.keycloak.tests.organization.group;
 
 import java.util.List;
 
@@ -25,10 +25,11 @@ import jakarta.ws.rs.core.Response.Status;
 import org.keycloak.admin.client.resource.OrganizationResource;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -38,16 +39,17 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
+@KeycloakIntegrationTest
 public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
 
     @Test
     public void testTopLevelGroupIsChildOfInternalGroup() {
         // Create a group and set its parent to the internal group
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         GroupRepresentation groupRep = new GroupRepresentation();
         groupRep.setName("Engineering");
@@ -70,7 +72,7 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
     public void testNestedGroupHierarchy() {
         // reate Engineering -> Backend hierarchy
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create parent group (Engineering)
         GroupRepresentation engineeringRep = new GroupRepresentation();
@@ -107,7 +109,7 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
     public void testMultiLevelNesting() {
         // Test deeper hierarchy: Engineering -> Backend -> Platform
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Level 1: Engineering
         GroupRepresentation engineeringRep = new GroupRepresentation();
@@ -152,7 +154,7 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
     public void testMultipleTopLevelGroups() {
         // Multiple top-level groups should all be children of internal group
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create Engineering
         GroupRepresentation engineeringRep = new GroupRepresentation();
@@ -185,7 +187,7 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
         // Engineering -> Backend, Frontend
         // Sales -> Enterprise, SMB
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Engineering branch
         GroupRepresentation engineeringRep = new GroupRepresentation();
@@ -256,7 +258,7 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
     public void testDeleteParentCascadesToChildren() {
         // When deleting a parent group, children should be deleted too
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create Engineering -> Backend
         GroupRepresentation engineeringRep = new GroupRepresentation();
@@ -292,7 +294,7 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
         // Verify that searching with populateHierarchy=true does not expose
         // the internal organization root group (named by org UUID)
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create Engineering -> Backend
         GroupRepresentation engineeringRep = new GroupRepresentation();
@@ -324,7 +326,7 @@ public class OrganizationGroupHierarchyTest extends AbstractOrganizationTest {
     public void testGetAllGroupsReturnsTopLevelOnly() {
         // getAll() should return only top-level groups, not nested ones
         OrganizationRepresentation orgRep = createOrganization();
-        OrganizationResource orgResource = testRealm().organizations().get(orgRep.getId());
+        OrganizationResource orgResource = realm.admin().organizations().get(orgRep.getId());
 
         // Create Engineering -> Backend
         GroupRepresentation engineeringRep = new GroupRepresentation();

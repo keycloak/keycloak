@@ -153,7 +153,6 @@ public abstract class OID4VCIssuerTestBase {
     protected CredentialScopeRepresentation jwtTypeCredentialScope;
     protected CredentialScopeRepresentation sdJwtTypeCredentialScope;
 
-    protected String clientId = "test-app";
     protected ClientRepresentation client;
     protected ClientRepresentation pubClient;
     protected OID4VCBasicWallet wallet;
@@ -298,7 +297,7 @@ public abstract class OID4VCIssuerTestBase {
         if (scope != null) {
             oAuthClient.scope(scope);
         }
-        var authorizationEndpointResponse = oAuthClient.doLogin(username, "password");
+        var authorizationEndpointResponse = oAuthClient.doLogin(username, TEST_PASSWORD);
         return authorizationEndpointResponse;
     }
 
@@ -549,7 +548,7 @@ public abstract class OID4VCIssuerTestBase {
                     .emailVerified(true)
                     .firstName(firstName)
                     .lastName(lastName)
-                    .password("password")
+                    .password(TEST_PASSWORD)
                     .attribute("address_street_address", "221B Baker Street")
                     .attribute("address_locality", "London")
                     .roles("account", "manage-account", "view-profile");
@@ -689,6 +688,28 @@ public abstract class OID4VCIssuerTestBase {
                             "claim.name", subjectProperty,
                             "userAttribute", attributeName)
             );
+            return protocolMapperRepresentation;
+        }
+
+        static ProtocolMapperRepresentation getRoleMapper(String clientId) {
+            ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+            protocolMapperRepresentation.setName("role-mapper");
+            protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+            protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+            protocolMapperRepresentation.setProtocolMapper("oid4vc-target-role-mapper");
+            protocolMapperRepresentation.setConfig(
+                    Map.of("claim.name", "roles", "clientId", clientId)
+            );
+            return protocolMapperRepresentation;
+        }
+
+        static ProtocolMapperRepresentation getProtocolMapper(String name, String type, Map<String, String> config) {
+            ProtocolMapperRepresentation protocolMapperRepresentation = new ProtocolMapperRepresentation();
+            protocolMapperRepresentation.setName(name);
+            protocolMapperRepresentation.setId(UUID.randomUUID().toString());
+            protocolMapperRepresentation.setProtocol(OID4VCIConstants.OID4VC_PROTOCOL);
+            protocolMapperRepresentation.setProtocolMapper(type);
+            protocolMapperRepresentation.setConfig(config);
             return protocolMapperRepresentation;
         }
     }
