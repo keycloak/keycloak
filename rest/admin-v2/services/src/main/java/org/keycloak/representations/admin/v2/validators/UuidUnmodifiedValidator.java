@@ -21,20 +21,16 @@ import org.keycloak.validation.jakarta.ValidationContext;
  */
 public class UuidUnmodifiedValidator implements ConstraintValidator<UuidUnmodified, RepresentationWithUuid> {
 
-    private UuidProvider uuidProvider;
-
-    @Override
-    public void initialize(UuidUnmodified constraintAnnotation) {
-        Class<?> type = constraintAnnotation.type();
-        if (type == BaseClientRepresentation.class) {
-            uuidProvider = new ClientUuidProvider();
-        } else {
-            throw new AssertionError("Not Uuid Provider defined for " + type);
-        }
-    }
-
     @Override
     public boolean isValid(RepresentationWithUuid representation, ConstraintValidatorContext context) {
+        Class<?> type = representation.getClass();
+        UuidProvider uuidProvider = null;
+        if (BaseClientRepresentation.class.isAssignableFrom(type)) {
+            uuidProvider = new ClientUuidProvider();
+        } else {
+            throw new AssertionError("No UuidProvider defined for " + type);
+        }
+        
         String providedUuid = representation.getUuid();
         if (providedUuid == null || providedUuid.isEmpty()) { // no UUID provided, so nothing to validate
             return true;
