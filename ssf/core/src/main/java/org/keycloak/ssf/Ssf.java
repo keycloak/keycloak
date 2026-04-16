@@ -20,8 +20,6 @@ public class Ssf {
 
     public static final String SSF_TRANSMITTER_PATH = "transmitter";
 
-    public static final String SSF_RECEIVERS_PATH = "receivers";
-
     public static final String APPLICATION_SECEVENT_JWT_TYPE = "application/secevent+jwt";
 
     /**
