@@ -196,6 +196,7 @@ public class RealmRepresentation {
     protected Boolean adminEventsDetailsEnabled;
 
     private List<IdentityProviderRepresentation> identityProviders;
+    private List<EventHookTargetRepresentation> eventHookTargets;
     private List<IdentityProviderMapperRepresentation> identityProviderMappers;
     private List<ProtocolMapperRepresentation> protocolMappers;
     private MultivaluedHashMap<String, ComponentExportRepresentation> components;
@@ -942,6 +943,19 @@ public class RealmRepresentation {
     public void addIdentityProvider(IdentityProviderRepresentation identityProviderRepresentation) {
         if (identityProviders == null) identityProviders = new LinkedList<>();
         identityProviders.add(identityProviderRepresentation);
+    }
+
+    public List<EventHookTargetRepresentation> getEventHookTargets() {
+        return eventHookTargets;
+    }
+
+    public void setEventHookTargets(List<EventHookTargetRepresentation> eventHookTargets) {
+        this.eventHookTargets = eventHookTargets;
+    }
+
+    public void addEventHookTarget(EventHookTargetRepresentation eventHookTargetRepresentation) {
+        if (eventHookTargets == null) eventHookTargets = new LinkedList<>();
+        eventHookTargets.add(eventHookTargetRepresentation);
     }
 
     public List<ProtocolMapperRepresentation> getProtocolMappers() {

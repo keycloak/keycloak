@@ -36,6 +36,7 @@ public class PartialImportRepresentation {
     protected List<GroupRepresentation> groups;
     protected List<ClientRepresentation> clients;
     protected List<IdentityProviderRepresentation> identityProviders;
+    protected List<EventHookTargetRepresentation> eventHookTargets;
     protected List<IdentityProviderMapperRepresentation> identityProviderMappers;
     protected RolesRepresentation roles;
 
@@ -53,6 +54,10 @@ public class PartialImportRepresentation {
 
     public boolean hasIdps() {
         return (identityProviders != null) && !identityProviders.isEmpty();
+    }
+
+    public boolean hasEventHookTargets() {
+        return (eventHookTargets != null) && !eventHookTargets.isEmpty();
     }
 
     public boolean hasRealmRoles() {
@@ -106,6 +111,14 @@ public class PartialImportRepresentation {
 
     public void setIdentityProviders(List<IdentityProviderRepresentation> identityProviders) {
         this.identityProviders = identityProviders;
+    }
+
+    public List<EventHookTargetRepresentation> getEventHookTargets() {
+        return eventHookTargets;
+    }
+
+    public void setEventHookTargets(List<EventHookTargetRepresentation> eventHookTargets) {
+        this.eventHookTargets = eventHookTargets;
     }
 
     public List<IdentityProviderMapperRepresentation> getIdentityProviderMappers() {

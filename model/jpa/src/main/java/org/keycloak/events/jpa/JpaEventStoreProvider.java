@@ -36,8 +36,10 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.hooks.EventHookSourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.events.hooks.jpa.EventHookMessageEntity;
 import org.keycloak.models.jpa.entities.RealmAttributeEntity;
 import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.models.jpa.entities.RealmEntity;
@@ -67,16 +69,19 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void clear() {
+        deleteEventHookMessagesForAllUserEvents();
         em.createQuery("delete from EventEntity").executeUpdate();
     }
 
     @Override
     public void clear(RealmModel realm) {
+        deleteEventHookMessagesForUserEvents(realm);
         em.createQuery("delete from EventEntity where realmId = :realmId").setParameter("realmId", realm.getId()).executeUpdate();
     }
 
     @Override
     public void clear(RealmModel realm, long olderThan) {
+        deleteEventHookMessagesForUserEvents(realm, olderThan);
         em.createQuery("delete from EventEntity where realmId = :realmId and time < :time").setParameter("realmId", realm.getId()).setParameter("time", olderThan).executeUpdate();
     }
 
@@ -91,6 +96,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
             List<String> realmIds = em.createQuery("select realm.id from RealmEntity realm where realm.eventsExpiration = :expiration")
                     .setParameter("expiration", expiration)
                     .getResultList();
+            deleteExpiredEventHookMessages(realmIds, currentTimeMillis - (expiration * 1000), EventHookSourceType.USER);
             int currentNumDeleted = em.createQuery("delete from EventEntity where realmId in :realmIds and time < :eventTime")
                     .setParameter("realmIds", realmIds)
                     .setParameter("eventTime", currentTimeMillis - (expiration * 1000))
@@ -113,16 +119,19 @@ public class JpaEventStoreProvider implements EventStoreProvider {
 
     @Override
     public void clearAdmin() {
+        deleteEventHookMessagesForAllAdminEvents();
         em.createQuery("delete from AdminEventEntity").executeUpdate();
     }
 
     @Override
     public void clearAdmin(RealmModel realm) {
+        deleteEventHookMessagesForAdminEvents(realm);
         em.createQuery("delete from AdminEventEntity where realmId = :realmId").setParameter("realmId", realm.getId()).executeUpdate();
     }
 
     @Override
     public void clearAdmin(RealmModel realm, long olderThan) {
+        deleteEventHookMessagesForAdminEvents(realm, olderThan);
         em.createQuery("delete from AdminEventEntity where realmId = :realmId and time < :time").setParameter("realmId", realm.getId()).setParameter("time", olderThan).executeUpdate();
     }
 
@@ -251,12 +260,73 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         long current = Time.currentTimeMillis();
         realms.forEach((key, value) -> {
             List<String> realmIds = value.stream().map(RealmAttributeEntity::getRealm).map(RealmEntity::getId).collect(Collectors.toList());
+            deleteExpiredEventHookMessages(realmIds, current - (key * 1000), EventHookSourceType.ADMIN);
             int currentNumDeleted = em.createQuery("delete from AdminEventEntity where realmId in :realmIds and time < :eventTime")
                     .setParameter("realmIds", realmIds)
                     .setParameter("eventTime", current - (key * 1000))
                     .executeUpdate();
             logger.tracef("Deleted %d admin events for the expiration %d", currentNumDeleted, key);
         });
+    }
+
+    private void deleteEventHookMessagesForAllUserEvents() {
+        deleteEventHookMessagesBySourceType(EventHookSourceType.USER);
+    }
+
+    private void deleteEventHookMessagesForUserEvents(RealmModel realm) {
+        em.createQuery("delete from EventHookMessageEntity where realmId = :realmId and sourceType = :sourceType")
+                .setParameter("realmId", realm.getId())
+                .setParameter("sourceType", EventHookSourceType.USER.name())
+                .executeUpdate();
+    }
+
+    private void deleteEventHookMessagesForUserEvents(RealmModel realm, long olderThan) {
+        em.createQuery("delete from EventHookMessageEntity where realmId = :realmId and sourceType = :sourceType and sourceEventId in "
+                + "(select event.id from EventEntity event where event.realmId = :realmId and event.time < :time)")
+                .setParameter("realmId", realm.getId())
+                .setParameter("sourceType", EventHookSourceType.USER.name())
+                .setParameter("time", olderThan)
+                .executeUpdate();
+    }
+
+    private void deleteEventHookMessagesForAllAdminEvents() {
+        deleteEventHookMessagesBySourceType(EventHookSourceType.ADMIN);
+    }
+
+    private void deleteEventHookMessagesForAdminEvents(RealmModel realm) {
+        em.createQuery("delete from EventHookMessageEntity where realmId = :realmId and sourceType = :sourceType")
+                .setParameter("realmId", realm.getId())
+                .setParameter("sourceType", EventHookSourceType.ADMIN.name())
+                .executeUpdate();
+    }
+
+    private void deleteEventHookMessagesForAdminEvents(RealmModel realm, long olderThan) {
+        em.createQuery("delete from EventHookMessageEntity where realmId = :realmId and sourceType = :sourceType and sourceEventId in "
+                + "(select event.id from AdminEventEntity event where event.realmId = :realmId and event.time < :time)")
+                .setParameter("realmId", realm.getId())
+                .setParameter("sourceType", EventHookSourceType.ADMIN.name())
+                .setParameter("time", olderThan)
+                .executeUpdate();
+    }
+
+    private void deleteExpiredEventHookMessages(List<String> realmIds, long eventTime, EventHookSourceType sourceType) {
+        if (realmIds.isEmpty()) {
+            return;
+        }
+
+        String eventEntityName = sourceType == EventHookSourceType.ADMIN ? "AdminEventEntity" : "EventEntity";
+        em.createQuery("delete from EventHookMessageEntity where realmId in :realmIds and sourceType = :sourceType and sourceEventId in "
+                + "(select event.id from " + eventEntityName + " event where event.realmId in :realmIds and event.time < :eventTime)")
+                .setParameter("realmIds", realmIds)
+                .setParameter("sourceType", sourceType.name())
+                .setParameter("eventTime", eventTime)
+                .executeUpdate();
+    }
+
+    private void deleteEventHookMessagesBySourceType(EventHookSourceType sourceType) {
+        em.createQuery("delete from EventHookMessageEntity where sourceType = :sourceType")
+                .setParameter("sourceType", sourceType.name())
+                .executeUpdate();
     }
 
     private static void setDetails(Consumer<String> setter, Map<String, String> details) {

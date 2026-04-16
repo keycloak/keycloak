@@ -25,6 +25,7 @@ public class ExportOptions {
     private boolean usersIncluded = true;
     private boolean clientsIncluded = true;
     private boolean groupsAndRolesIncluded = true;
+    private boolean eventHookTargetsIncluded = true;
     private boolean onlyServiceAccountsIncluded = false;
     private boolean partial;
 
@@ -32,9 +33,15 @@ public class ExportOptions {
     }
 
     public ExportOptions(boolean users, boolean clients, boolean groupsAndRoles, boolean onlyServiceAccounts, boolean partial) {
+        this(users, clients, groupsAndRoles, true, onlyServiceAccounts, partial);
+    }
+
+    public ExportOptions(boolean users, boolean clients, boolean groupsAndRoles, boolean eventHookTargetsIncluded,
+            boolean onlyServiceAccounts, boolean partial) {
         usersIncluded = users;
         clientsIncluded = clients;
         groupsAndRolesIncluded = groupsAndRoles;
+        eventHookTargetsIncluded = eventHookTargetsIncluded;
         onlyServiceAccountsIncluded = onlyServiceAccounts;
         this.partial = partial;
     }
@@ -51,6 +58,10 @@ public class ExportOptions {
         return groupsAndRolesIncluded;
     }
 
+    public boolean isEventHookTargetsIncluded() {
+        return eventHookTargetsIncluded;
+    }
+
     public boolean isOnlyServiceAccountsIncluded() {
         return onlyServiceAccountsIncluded;
     }
@@ -65,6 +76,10 @@ public class ExportOptions {
 
     public void setGroupsAndRolesIncluded(boolean value) {
         groupsAndRolesIncluded = value;
+    }
+
+    public void setEventHookTargetsIncluded(boolean value) {
+        eventHookTargetsIncluded = value;
     }
 
     public void setOnlyServiceAccountsIncluded(boolean value) {

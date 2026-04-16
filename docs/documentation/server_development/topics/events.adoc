@@ -6,3 +6,267 @@ and examples for complete details on how to do this.
 
 For details on how to package and deploy a custom provider refer to the <<_providers,Service Provider Interfaces>> chapter.
 
+[[_event_hook_target_spi]]
+=== Event Hook Target SPI
+
+You can add your own event hook target types if you want to deliver event hook messages to systems other than the built-in `http`, `pull`, and `sql` targets.
+Custom target types integrate with the Event Hooks admin REST API and Admin Console, where administrators can create targets of your custom type and configure provider-specific settings.
+
+The target provider API currently lives in `keycloak-server-spi-private`, which means it is a private SPI and may change between minor releases.
+
+An event hook target type consists of two parts:
+
+* an implementation of `org.keycloak.events.hooks.EventHookTargetProvider`, which performs the actual delivery
+* an implementation of `org.keycloak.events.hooks.EventHookTargetProviderFactory`, which creates providers, declares configuration metadata, and validates configuration
+
+The ID returned by `EventHookTargetProviderFactory.getId()` becomes the target type stored by Event Hooks and shown to administrators when they create a new target.
+
+.Procedure
+
+. Implement `EventHookTargetProviderFactory` and `EventHookTargetProvider`.
+. Register the factory through the service loader file `META-INF/services/org.keycloak.events.hooks.EventHookTargetProviderFactory`.
+. Package and deploy the provider JAR as described in <<_providers,Service Provider Interfaces>>.
+. Build or start the server with `--features=event-hooks` or `--features=preview`.
+
+Example factory:
+
+[source,java]
+----
+package org.acme.eventhooks;
+
+import java.util.List;
+import java.util.Map;
+
+import org.keycloak.Config;
+import org.keycloak.events.hooks.EventHookTargetProvider;
+import org.keycloak.events.hooks.EventHookTargetProviderFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
+public class AcmeEventHookTargetProviderFactory implements EventHookTargetProviderFactory {
+
+	@Override
+	public EventHookTargetProvider create(KeycloakSession session) {
+		return new AcmeEventHookTargetProvider();
+	}
+
+	@Override
+	public String getId() {
+		return "acme";
+	}
+
+	@Override
+	public List<ProviderConfigProperty> getConfigMetadata() {
+		return ProviderConfigurationBuilder.create()
+				.property()
+				.name("endpoint")
+				.label("Acme endpoint")
+				.helpText("Endpoint used by the Acme delivery service")
+				.type(ProviderConfigProperty.STRING_TYPE)
+				.required(true)
+				.add()
+				.property()
+				.name("apiKey")
+				.label("API key")
+				.helpText("Credential for the Acme delivery service")
+				.type(ProviderConfigProperty.PASSWORD)
+				.secret(true)
+				.add()
+				.property()
+				.name("maxAttempts")
+				.label("Maximum attempts")
+				.type(ProviderConfigProperty.INTEGER_TYPE)
+				.defaultValue(5)
+				.add()
+				.property()
+				.name("retryDelayMs")
+				.label("Initial retry delay")
+				.type(ProviderConfigProperty.INTEGER_TYPE)
+				.defaultValue(1000)
+				.add()
+				.build();
+	}
+
+	@Override
+	public void validateConfig(KeycloakSession session, Map<String, Object> settings) {
+		if (settings.get("endpoint") == null) {
+			throw new IllegalArgumentException("Missing required setting: endpoint");
+		}
+	}
+
+	@Override
+	public void init(Config.Scope config) {
+	}
+
+	@Override
+	public void postInit(KeycloakSessionFactory factory) {
+	}
+
+	@Override
+	public void close() {
+	}
+}
+----
+
+Example provider:
+
+[source,java]
+----
+package org.acme.eventhooks;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.keycloak.events.hooks.EventHookDeliveryResult;
+import org.keycloak.events.hooks.EventHookMessageModel;
+import org.keycloak.events.hooks.EventHookTargetModel;
+import org.keycloak.events.hooks.EventHookTargetProvider;
+
+public class AcmeEventHookTargetProvider implements EventHookTargetProvider {
+
+	@Override
+	public EventHookDeliveryResult deliver(EventHookTargetModel target, EventHookMessageModel message) throws IOException {
+		EventHookDeliveryResult result = new EventHookDeliveryResult();
+
+		// Perform the delivery using target.getSettings() and message payload.
+
+		result.setSuccess(true);
+		result.setRetryable(false);
+		result.setStatusCode("OK");
+		result.setDetails("Delivered one event");
+		return result;
+	}
+
+	@Override
+	public EventHookDeliveryResult deliverBatch(EventHookTargetModel target, List<EventHookMessageModel> messages) throws IOException {
+		EventHookDeliveryResult result = new EventHookDeliveryResult();
+
+		// Perform a bulk delivery when supportsBatch() returns true.
+
+		result.setSuccess(true);
+		result.setRetryable(false);
+		result.setStatusCode("OK");
+		result.setDetails("Delivered " + messages.size() + " event(s)");
+		return result;
+	}
+
+	@Override
+	public void close() {
+	}
+}
+----
+
+Example service loader file `META-INF/services/org.keycloak.events.hooks.EventHookTargetProviderFactory`:
+
+[source]
+----
+org.acme.eventhooks.AcmeEventHookTargetProviderFactory
+----
+
+==== Delivery contract
+
+The `deliver()` method receives the configured target and a single outbox message.
+Each `EventHookMessageModel` contains the persisted payload as a JSON string in `message.getPayload()` together with metadata such as the source event ID, retry counters, and timestamps.
+
+If your provider returns `supportsBatch() = true` and a target is configured for `BULK` delivery, the scheduler can call `deliverBatch()` with multiple messages at once.
+
+Your provider should return an `EventHookDeliveryResult` that tells Event Hooks how to proceed:
+
+* `success=true` marks the delivered message as successful.
+* `waiting=true` keeps the message in a waiting state until a later provider-specific action completes it, for example a pull-style consume endpoint.
+* `retryable=true` tells the scheduler that a failed delivery may be retried.
+* `statusCode` and `details` are stored in delivery logs and shown in the Admin Console.
+* `durationMillis` can be used to expose delivery latency.
+* `retryAfterMillis` can be set when the target system specifies a retry delay that should override the default exponential backoff if it is longer.
+
+==== Configuration metadata and the Admin Console
+
+The values returned by `getConfigMetadata()` are used in two places:
+
+* the Admin REST API response for available event hook providers
+* the dynamic target-configuration form in the Admin Console
+
+Each property should therefore have a stable `name` and an appropriate type.
+If you mark a property as secret with `property.secret(true)` or use `ProviderConfigProperty.PASSWORD`, the default `normalizeConfig()` and `redactConfig()` implementations preserve existing stored secrets when administrators edit a target and submit masked values.
+
+The provider metadata returned to the Admin Console also includes the factory capabilities exposed through `supportsBatch()` and `supportsRetry()`.
+The built-in target dialog uses these flags to decide whether the generic bulk-delivery and retry settings should be shown.
+
+If you want labels and help texts to be translatable in the Admin Console, provide translation keys as `label` and `helpText` values, and add the corresponding entries to the Admin UI message bundles.
+
+==== Admin Console frontend checklist
+
+For custom target types deployed as provider JARs, you usually do not need to implement any additional frontend code.
+The Event Hooks page in the Admin Console already renders provider-specific target forms dynamically from the metadata returned by the backend.
+
+For a custom target type to work correctly in the existing frontend, make sure the backend provides all of the following:
+
+* `GET /admin/realms/{realm}/event-hooks/providers` returns your provider ID and the values from `getConfigMetadata()`.
+* that same provider response exposes the correct `supportsBatch` and `supportsRetry` flags.
+* each config property has a stable `name`, because the Admin Console stores and submits values under `settings.<name>`
+* secret fields are marked with `secret=true` or `type=Password`, so the edit dialog masks them correctly
+* list-based fields use `options(...)` in `ProviderConfigProperty`, so the dynamic form can render the select values
+* `GET /admin/realms/{realm}/event-hooks/targets` returns the persisted `settings` for existing targets
+
+The create and edit flow in the Admin Console then works as follows:
+
+. The *Targets* page loads the provider list from `/event-hooks/providers`.
+. The target dialog shows the provider IDs in the *Type* selector.
+. After an administrator chooses your provider type, the Admin Console renders the returned config metadata through the generic dynamic form components.
+. On save or test, the dialog submits the form values back as `settings` in the event hook target representation.
+
+If your provider follows the metadata contract above, the existing UI should pick it up automatically.
+
+==== Frontend steps for contributors to the built-in Admin UI
+
+If you are adding or changing a target type in the Keycloak codebase itself, these are the frontend integration points to review:
+
+* `js/apps/admin-ui/src/events/hooks/EventHookTargets.tsx` loads the available providers and target list.
+* `js/apps/admin-ui/src/events/hooks/EventHookTargetDialog.tsx` renders the target type selector and maps `settings` to and from form state.
+* `js/apps/admin-ui/src/components/dynamic/*` renders provider metadata into actual form controls.
+* `js/apps/admin-ui/maven-resources/theme/keycloak.v2/admin/messages/messages_en.properties` contains the built-in Admin Console translations.
+
+Use this checklist when changing the frontend:
+
+. Expose your provider through the backend provider endpoint.
+. Verify that the target dialog shows your provider ID in the type selector.
+. Verify that each config property is rendered with the expected dynamic control type.
+. If labels, help texts, or list options should be translated in the built-in Admin UI, add matching translation keys to the admin message bundles.
+. Verify secret fields remain masked during edit and are not overwritten when the user leaves them unchanged.
+. Verify the *Test target* action works with your provider type and that test deliveries do not create regular delivery log entries.
+
+The Event Hooks frontend currently expects provider-specific configuration to be metadata-driven.
+If your target type requires custom React components or a fully custom editing experience, that is no longer a pure provider extension and requires direct changes to the Admin UI application.
+
+==== Retry and batching settings recognized by the core scheduler
+
+The Event Hooks scheduler handles retries and message grouping before calling your provider.
+If your target type wants to use the built-in retry and bulk-delivery behavior, expose the following setting names with the same semantics as the built-in HTTP provider:
+
+* `maxAttempts` for the maximum number of delivery attempts
+* `retryDelayMs` for the exponential backoff base delay
+* `deliveryMode` with values `SINGLE` or `BULK`
+* `maxEventsPerBatch` for the maximum number of messages in a bulk delivery
+
+If these settings are absent, Event Hooks falls back to the built-in defaults.
+
+If your provider should not support one of these behaviors, override `supportsBatch()` or `supportsRetry()` and keep the corresponding settings out of your metadata.
+
+==== Pull-style target endpoints
+
+If your provider needs a target-specific endpoint, override `getTargetEndpointResource(...)` in the factory.
+The returned JAX-RS resource is exposed under `/admin/realms/{realm}/event-hooks/{targetId}/{endpoint}`.
+
+The built-in `pull` target also exposes its consume endpoint through `/realms/{realm}/event-hooks/{targetId}/consume` so consumers do not need admin authentication.
+Providers that use this pattern typically return `waiting=true` from deliveries and complete the message later when the custom endpoint is invoked.
+
+==== Test deliveries
+
+The Admin Console and Admin REST API can test a target before it is saved or updated.
+By default, the `EventHookTargetProviderFactory.test()` helper creates a synthetic message and calls your provider directly.
+These test deliveries bypass the persistent outbox and do not create normal delivery log entries.
+
+If your target type needs a different test payload shape, you can override `createTestMessages()` in the factory.
+

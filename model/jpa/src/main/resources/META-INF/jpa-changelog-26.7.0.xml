@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Copyright 2026 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-target-table">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <tableExists tableName="EVENT_HOOK_TARGET"/>
+            </not>
+        </preConditions>
+        <createTable tableName="EVENT_HOOK_TARGET">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="CONSTRAINT_EVENT_HOOK_TARGET"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NAME" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TYPE" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ENABLED" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UPDATED_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SETTINGS_JSON" type="CLOB"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-message-table">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <tableExists tableName="EVENT_HOOK_MESSAGE"/>
+            </not>
+        </preConditions>
+        <createTable tableName="EVENT_HOOK_MESSAGE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="CONSTRAINT_EVENT_HOOK_MESSAGE"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TARGET_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SOURCE_TYPE" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="SOURCE_EVENT_ID" type="VARCHAR(255)"/>
+            <column name="STATUS" type="VARCHAR(32)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PAYLOAD_JSON" type="CLOB"/>
+            <column name="ATTEMPT_COUNT" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NEXT_ATTEMPT_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UPDATED_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLAIM_OWNER" type="VARCHAR(255)"/>
+            <column name="CLAIMED_AT" type="BIGINT"/>
+            <column name="LAST_ERROR" type="VARCHAR(2048)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-log-table">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <tableExists tableName="EVENT_HOOK_LOG"/>
+            </not>
+        </preConditions>
+        <createTable tableName="EVENT_HOOK_LOG">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="CONSTRAINT_EVENT_HOOK_LOG"/>
+            </column>
+            <column name="EXECUTION_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="BATCH_EXECUTION" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="MESSAGE_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="TARGET_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STATUS" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATTEMPT_NUMBER" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STATUS_CODE" type="VARCHAR(255)"/>
+            <column name="DURATION_MS" type="BIGINT"/>
+            <column name="DETAILS" type="VARCHAR(2048)"/>
+            <column name="CREATED_AT" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-log-fk-message">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="FK_EVENT_HOOK_LOG_MESSAGE"/>
+            </not>
+        </preConditions>
+        <addForeignKeyConstraint baseTableName="EVENT_HOOK_LOG"
+                                 baseColumnNames="MESSAGE_ID"
+                                 constraintName="FK_EVENT_HOOK_LOG_MESSAGE"
+                                 referencedTableName="EVENT_HOOK_MESSAGE"
+                                 referencedColumnNames="ID"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-target-index-realm">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="EVENT_HOOK_TARGET" indexName="IDX_EVENT_HOOK_TARGET_REALM"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="EVENT_HOOK_TARGET" indexName="IDX_EVENT_HOOK_TARGET_REALM">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="ENABLED" type="BOOLEAN"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-message-index-status">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="EVENT_HOOK_MESSAGE" indexName="IDX_EVENT_HOOK_MSG_STATUS_NEXT"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="EVENT_HOOK_MESSAGE" indexName="IDX_EVENT_HOOK_MSG_STATUS_NEXT">
+            <column name="STATUS" type="VARCHAR(32)"/>
+            <column name="NEXT_ATTEMPT_AT" type="BIGINT"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-message-index-realm">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="EVENT_HOOK_MESSAGE" indexName="IDX_EVENT_HOOK_MSG_REALM"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="EVENT_HOOK_MESSAGE" indexName="IDX_EVENT_HOOK_MSG_REALM">
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="CREATED_AT" type="BIGINT"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-message-index-target">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="EVENT_HOOK_MESSAGE" indexName="IDX_EVENT_HOOK_MSG_TARGET"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="EVENT_HOOK_MESSAGE" indexName="IDX_EVENT_HOOK_MSG_TARGET">
+            <column name="TARGET_ID" type="VARCHAR(36)"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-message-index-source">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="EVENT_HOOK_MESSAGE" indexName="IDX_EVENT_HOOK_MSG_SOURCE_EVENT"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="EVENT_HOOK_MESSAGE" indexName="IDX_EVENT_HOOK_MSG_SOURCE_EVENT">
+            <column name="SOURCE_EVENT_ID" type="VARCHAR(255)"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-message-index-claimed">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="EVENT_HOOK_MESSAGE" indexName="IDX_EVENT_HOOK_MSG_CLAIMED"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="EVENT_HOOK_MESSAGE" indexName="IDX_EVENT_HOOK_MSG_CLAIMED">
+            <column name="CLAIMED_AT" type="BIGINT"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-log-index-message">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="EVENT_HOOK_LOG" indexName="IDX_EVENT_HOOK_LOG_MESSAGE"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="EVENT_HOOK_LOG" indexName="IDX_EVENT_HOOK_LOG_MESSAGE">
+            <column name="MESSAGE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-log-index-target">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="EVENT_HOOK_LOG" indexName="IDX_EVENT_HOOK_LOG_TARGET"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="EVENT_HOOK_LOG" indexName="IDX_EVENT_HOOK_LOG_TARGET">
+            <column name="TARGET_ID" type="VARCHAR(36)"/>
+            <column name="CREATED_AT" type="BIGINT"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="26.7.0-event-hook-log-index-execution">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <indexExists tableName="EVENT_HOOK_LOG" indexName="IDX_EVENT_HOOK_LOG_EXECUTION"/>
+            </not>
+        </preConditions>
+        <createIndex tableName="EVENT_HOOK_LOG" indexName="IDX_EVENT_HOOK_LOG_EXECUTION">
+            <column name="EXECUTION_ID" type="VARCHAR(36)"/>
+            <column name="CREATED_AT" type="BIGINT"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
