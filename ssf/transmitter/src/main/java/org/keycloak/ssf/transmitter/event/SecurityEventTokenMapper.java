@@ -7,7 +7,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.keycloak.TokenIdGenerator;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -33,7 +32,6 @@ import org.keycloak.ssf.transmitter.stream.StreamConfig;
 
 import org.jboss.logging.Logger;
 
-import org.keycloak.ssf.transmitter.support.SsfUtil;
 
 
 /**
@@ -45,16 +43,32 @@ public class SecurityEventTokenMapper {
 
     protected static final Pattern USER_LOGGED_OUT_BY_ADMIN_PATH_PATTERN = Pattern.compile("^users/(.*)/logout$");
 
-    private final String issuer;
+    /**
+     * Issuer URL resolver. Invoked lazily at token-build time rather than
+     * at construction so that off-request callers (e.g. the scheduled
+     * SSF outbox drainer) that only need a mapper-less slice of the
+     * transmitter provider don't trip over {@code HttpRequest}-bound
+     * hostname resolution.
+     */
+    protected final Function<KeycloakSession, String> issuerGenerator;
 
-    private final KeycloakSession session;
+    protected String issuer;
 
-    private final SsfTransmitterConfig transmitterConfig;
+    protected final KeycloakSession session;
+
+    protected final SsfTransmitterConfig transmitterConfig;
 
     public SecurityEventTokenMapper(KeycloakSession session, SsfTransmitterConfig transmitterConfig, Function<KeycloakSession, String> issuerGenerator) {
         this.session = session;
-        this.issuer = issuerGenerator.apply(session);
+        this.issuerGenerator = issuerGenerator;
         this.transmitterConfig = transmitterConfig;
+    }
+
+    protected String getIssuer() {
+        if (issuer == null) {
+            issuer = issuerGenerator.apply(session);
+        }
+        return issuer;
     }
 
     /**
@@ -94,7 +108,7 @@ public class SecurityEventTokenMapper {
         SsfSecurityEventToken securityEventToken = new SsfSecurityEventToken();
 
         securityEventToken.setJti(SecretGenerator.getInstance().generateSecureID());
-        securityEventToken.setIss(issuer);
+        securityEventToken.setIss(getIssuer());
         securityEventToken.setIat(Time.currentTime());
 
         // Set the SET audience to the stream's audience
@@ -128,7 +142,7 @@ public class SecurityEventTokenMapper {
             // Set subject ID (complex subject with user and session)
             ComplexSubjectId subId = new ComplexSubjectId();
 
-            SubjectId userSubject = buildUserSubjectId(userId, stream);
+            SubjectId userSubject = buildUserSubjectId(eventToken, userId, stream);
 
             OpaqueSubjectId sessionSubject = new OpaqueSubjectId();
             sessionSubject.setId(sessionId);
@@ -174,7 +188,7 @@ public class SecurityEventTokenMapper {
             event.setTxn(UUID.randomUUID().toString());
 
             // Set subject ID
-            event.setSubjectId(buildUserSubjectId(userId, stream));
+            event.setSubjectId(buildUserSubjectId(event, userId, stream));
 
             String caepCredentialType = narrowCaepCredentialType(credentialType);
 
@@ -216,7 +230,7 @@ public class SecurityEventTokenMapper {
      * receiver signal is worse than delivering it with a less-preferred
      * subject format.
      */
-    protected SubjectId buildUserSubjectId(String userId, StreamConfig stream) {
+    protected SubjectId buildUserSubjectId(SsfSecurityEventToken eventToken, String userId, StreamConfig stream) {
 
         String format = SsfUserSubjectFormats.resolveForStream(stream, transmitterConfig);
 
@@ -231,8 +245,11 @@ public class SecurityEventTokenMapper {
                     + "Falling back to 'iss_sub'. userId=%s streamId=%s", userId, stream != null ? stream.getStreamId() : null);
         }
 
+        // Reuse the issuer that newSecurityEventToken already resolved onto
+        // the token — one lookup per event instead of two, and the subject
+        // identity stays consistent with the SET's top-level iss.
         IssuerSubjectId issSubject = new IssuerSubjectId();
-        issSubject.setIss(issuer);
+        issSubject.setIss(eventToken.getIss());
         issSubject.setSub(userId);
         return issSubject;
     }

@@ -6,6 +6,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
+import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.admin.SsfConfigRepresentation;
 import org.keycloak.testframework.annotations.InjectAdminClient;
@@ -91,6 +92,11 @@ public class SsfTransmitterConfigOverrideTests {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name("ssf-transmitter-override");
+            // Opt the realm into SSF so SsfAdminRealmResourceProviderFactory
+            // actually registers the /ssf/* admin routes — without it, the
+            // factory's isTransmitterEnabled gate returns null and every
+            // request to /admin/realms/<realm>/ssf/config is a 404.
+            realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
             return realm;
         }
     }

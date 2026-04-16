@@ -17,12 +17,12 @@ import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.transmitter.SsfScopes;
-import org.keycloak.ssf.transmitter.SsfTransmitterUrls;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfigUpdateRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -883,6 +883,7 @@ public class SsfTransmitterStreamManagementTests {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name("ssf-transmitter-stream-mgmt");
+            realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
             // The ssf.read / ssf.manage client scopes are auto-created by the
             // SSF RealmPostCreateEvent listener only *after* the clients are

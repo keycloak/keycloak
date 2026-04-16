@@ -26,12 +26,13 @@ import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
+import org.keycloak.ssf.transmitter.DefaultSsfTransmitterProviderFactory;
 import org.keycloak.ssf.transmitter.SsfScopes;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
-import org.keycloak.ssf.transmitter.SsfTransmitterUrls;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
@@ -420,6 +421,10 @@ public class SsfTransmitterPushDeliveryTests {
             // tests aren't affected by it (they don't exercise /verify).
             config.spiOption("ssf-transmitter", "default",
                     SsfTransmitterConfig.CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS, "0");
+            // Async pushes flow through the outbox — the drainer needs to
+            // tick well inside PUSH_WAIT_SECONDS or every await times out.
+            config.spiOption("ssf-transmitter", "default",
+                    DefaultSsfTransmitterProviderFactory.CONFIG_OUTBOX_DRAINER_INTERVAL, "500ms");
             return configured;
         }
     }
@@ -429,6 +434,7 @@ public class SsfTransmitterPushDeliveryTests {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name("ssf-transmitter-push-delivery");
+            realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
             // Enable user events and register the SSF event listener so
             // LOGOUT user events flow into the SSF transmitter pipeline.

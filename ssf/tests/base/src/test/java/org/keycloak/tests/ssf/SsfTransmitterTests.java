@@ -11,8 +11,8 @@ import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.metadata.TransmitterMetadata;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
-import org.keycloak.ssf.transmitter.SsfTransmitterUrls;
 import org.keycloak.ssf.transmitter.admin.SsfConfigRepresentation;
+import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -177,6 +177,7 @@ public class SsfTransmitterTests {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name("ssf-transmitter-test");
+            realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
             return realm;
         }
     }

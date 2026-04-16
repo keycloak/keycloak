@@ -2,6 +2,7 @@ package org.keycloak.ssf.transmitter.outbox;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -9,7 +10,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * push delivery, and decides when a row has exhausted its budget and
  * should be transitioned to {@link SsfPendingEventStatus#DEAD_LETTER}.
  *
- * <p>Curve (attempt number → wait before next try):
+ * <p>Default Curve (attempt number → wait before next try):
  * <pre>
  *     1 →   1s
  *     2 →   5s
@@ -31,11 +32,11 @@ import java.util.concurrent.ThreadLocalRandom;
  * continued retrying on a permanently-broken receiver (wrong endpoint
  * URL, revoked auth token, …) just wastes transmitter work.
  */
-public final class SsfPushOutboxBackoff {
+public class SsfPushOutboxBackoff {
 
     public static final int DEFAULT_MAX_ATTEMPTS = 8;
 
-    private static final Duration[] CURVE = new Duration[] {
+    public static final List<Duration> DEFAULT_CURVE = List.of(
             Duration.ofSeconds(1),
             Duration.ofSeconds(5),
             Duration.ofSeconds(30),
@@ -44,19 +45,29 @@ public final class SsfPushOutboxBackoff {
             Duration.ofHours(1),
             Duration.ofHours(6),
             Duration.ofHours(24)
-    };
+    );
 
-    private final int maxAttempts;
+    protected final int maxAttempts;
+
+    protected final List<Duration> curve;
 
     public SsfPushOutboxBackoff() {
         this(DEFAULT_MAX_ATTEMPTS);
     }
 
     public SsfPushOutboxBackoff(int maxAttempts) {
+        this(maxAttempts, DEFAULT_CURVE);
+    }
+
+    public SsfPushOutboxBackoff(int maxAttempts, List<Duration> curve) {
         if (maxAttempts < 1) {
             throw new IllegalArgumentException("maxAttempts must be >= 1, got " + maxAttempts);
         }
+        if (curve == null || curve.isEmpty()) {
+            throw new IllegalArgumentException("curve must not be null or empty");
+        }
         this.maxAttempts = maxAttempts;
+        this.curve = curve;
     }
 
     /**
@@ -90,10 +101,15 @@ public final class SsfPushOutboxBackoff {
         return now.plusMillis(delayMillis);
     }
 
-    private Duration baseDelayFor(int attempts) {
+    protected Duration baseDelayFor(int attempts) {
         // attempts is 1-based after the first failed try.
-        int idx = Math.min(Math.max(attempts, 1), CURVE.length) - 1;
-        return CURVE[idx];
+        var curve = getCurve();
+        int idx = Math.min(Math.max(attempts, 1), curve.size()) - 1;
+        return curve.get(idx);
+    }
+
+    public List<Duration> getCurve() {
+        return curve;
     }
 
     public int getMaxAttempts() {

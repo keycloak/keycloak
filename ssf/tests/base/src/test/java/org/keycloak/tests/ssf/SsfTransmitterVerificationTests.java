@@ -26,12 +26,12 @@ import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
 import org.keycloak.ssf.transmitter.SsfScopes;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
-import org.keycloak.ssf.transmitter.SsfTransmitterUrls;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.VerificationTrigger;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
@@ -391,6 +391,7 @@ public class SsfTransmitterVerificationTests {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name("ssf-transmitter-verification");
+            realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
             // Default verification trigger is RECEIVER_INITIATED; this client
             // exercises the /verify endpoint and the min verification interval
