@@ -37,7 +37,7 @@ import static java.util.Arrays.asList;
 
 public final class Database {
     
-    public static String ORACLE_URL_PREFIX = "jdbc:oracle:thin:@";
+    public final static String ORACLE_URL_PREFIX = "jdbc:oracle:thin:@";
 
     private static final Map<String, Vendor> DATABASES = new HashMap<>();
 
