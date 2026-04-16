@@ -2,8 +2,11 @@ package org.keycloak.services.client;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -410,37 +413,56 @@ public class DefaultClientService implements ClientService {
         Set<RoleModel> currentRoles = serviceAccountUser.getRoleMappingsStream().collect(Collectors.toSet());
         Set<String> currentRoleNames = currentRoles.stream().map(RoleModel::getName).collect(Collectors.toSet());
 
-        // Get missing roles (in desired but not in current)
-        List<RoleRepresentation> missingRoles = desiredRoleNames.stream()
-                .filter(roleName -> !currentRoleNames.contains(roleName))
-                .map(roleName -> {
-                    try {
-                        return clientRoleResource.getRole(roleName); // client role
-                    } catch (NotFoundException e) {
-                        try {
-                            return realmRoleResource.getRole(roleName); // realm role
-                        } catch (NotFoundException e2) {
-                            throw new ServiceException("Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
-                        }
-                    }
-                })
-                .toList();
-
-        // Add missing roles (in desired but not in current)
-        if (!missingRoles.isEmpty()) {
-            serviceAccountRoleResource.addRealmRoleMappings(missingRoles);
+        // serviceAccountRoles are plain names; client roles on this client are resolved before realm roles (name collisions favor the client).
+        List<RoleRepresentation> realmRolesToAdd = new ArrayList<>();
+        List<RoleRepresentation> clientRolesToAdd = new ArrayList<>();
+        for (String roleName : desiredRoleNames) {
+            if (currentRoleNames.contains(roleName)) {
+                continue;
+            }
+            try {
+                clientRolesToAdd.add(clientRoleResource.getRole(roleName));
+            } catch (NotFoundException e) {
+                try {
+                    realmRolesToAdd.add(realmRoleResource.getRole(roleName));
+                } catch (NotFoundException e2) {
+                    throw new ServiceException("Cannot assign role to the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
+                }
+            }
         }
 
-        // Get extra roles (in current but not in desired)
-        List<RoleRepresentation> extraRoles = currentRoles.stream()
-                .filter(role -> !desiredRoleNames.contains(role.getName()))
-                .map(ModelToRepresentation::toRepresentation)
-                .toList();
+        if (!realmRolesToAdd.isEmpty()) {
+            serviceAccountRoleResource.addRealmRoleMappings(realmRolesToAdd);
+        }
+        if (!clientRolesToAdd.isEmpty()) {
+            serviceAccountRoleResource.getUserClientRoleMappingsResource(model.getId()).addClientRoleMapping(clientRolesToAdd);
+        }
 
-        // Remove extra roles (in current but not in desired)
-        if (!extraRoles.isEmpty()) {
+        List<RoleRepresentation> realmRolesToRemove = new ArrayList<>();
+        Map<String, List<RoleRepresentation>> clientRolesToRemoveByClient = new HashMap<>();
+        for (RoleModel role : currentRoles) {
+            if (desiredRoleNames.contains(role.getName())) {
+                continue;
+            }
+            if (!role.isClientRole()) {
+                realmRolesToRemove.add(ModelToRepresentation.toRepresentation(role));
+            } else {
+                clientRolesToRemoveByClient
+                        .computeIfAbsent(role.getContainerId(), k -> new ArrayList<>())
+                        .add(ModelToRepresentation.toRepresentation(role));
+            }
+        }
+
+        if (!realmRolesToRemove.isEmpty()) {
             try {
-                serviceAccountRoleResource.deleteRealmRoleMappings(extraRoles);
+                serviceAccountRoleResource.deleteRealmRoleMappings(realmRolesToRemove);
+            } catch (NotFoundException e) {
+                throw new ServiceException("Cannot unassign role from the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
+            }
+        }
+        for (Map.Entry<String, List<RoleRepresentation>> entry : clientRolesToRemoveByClient.entrySet()) {
+            try {
+                serviceAccountRoleResource.getUserClientRoleMappingsResource(entry.getKey()).deleteClientRoleMapping(entry.getValue());
             } catch (NotFoundException e) {
                 throw new ServiceException("Cannot unassign role from the service account (field 'serviceAccount.roles') as it does not exist", Response.Status.BAD_REQUEST);
             }
