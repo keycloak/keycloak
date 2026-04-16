@@ -8,11 +8,11 @@ import java.util.UUID;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
-import org.hibernate.LockMode;
-import org.hibernate.query.SelectionQuery;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 
+import org.hibernate.LockMode;
+import org.hibernate.query.SelectionQuery;
 import org.jboss.logging.Logger;
 
 /**
@@ -21,13 +21,13 @@ import org.jboss.logging.Logger;
  * {@link KeycloakSession} transaction, which Keycloak wraps around
  * request handlers and scheduled-task executions.
  */
-public class SsfOutboxStore {
+public class SsfPendingEventStore {
 
-    private static final Logger log = Logger.getLogger(SsfOutboxStore.class);
+    private static final Logger log = Logger.getLogger(SsfPendingEventStore.class);
 
     protected final KeycloakSession session;
 
-    public SsfOutboxStore(KeycloakSession session) {
+    public SsfPendingEventStore(KeycloakSession session) {
         this.session = session;
     }
 

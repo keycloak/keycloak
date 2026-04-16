@@ -1,4 +1,4 @@
-package org.keycloak.ssf.transmitter;
+package org.keycloak.ssf.transmitter.support;
 
 import org.keycloak.ssf.Ssf;
 

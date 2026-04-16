@@ -21,12 +21,13 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
+import org.keycloak.ssf.transmitter.DefaultSsfTransmitterProviderFactory;
 import org.keycloak.ssf.transmitter.SsfScopes;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
-import org.keycloak.ssf.transmitter.SsfTransmitterUrls;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectHttpServer;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
@@ -361,6 +362,11 @@ public class SsfTransmitterPushFailureTests {
             // oauth triggers aren't subject to the 60 s default.
             config.spiOption("ssf-transmitter", "default",
                     SsfTransmitterConfig.CONFIG_MIN_VERIFICATION_INTERVAL_SECONDS, "0");
+            // Async pushes (and retries) flow through the outbox — tick
+            // the drainer fast so the PUSH_WAIT_SECONDS awaits see the
+            // first attempt and at least one retry within the window.
+            config.spiOption("ssf-transmitter", "default",
+                    DefaultSsfTransmitterProviderFactory.CONFIG_OUTBOX_DRAINER_INTERVAL, "500ms");
             return configured;
         }
     }
@@ -370,6 +376,7 @@ public class SsfTransmitterPushFailureTests {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name("ssf-transmitter-push-failure");
+            realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
             realm.eventsEnabled(true);
             realm.adminEventsEnabled(true);

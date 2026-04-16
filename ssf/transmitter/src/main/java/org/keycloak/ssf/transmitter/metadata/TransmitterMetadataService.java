@@ -10,8 +10,7 @@ import java.util.function.Function;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.metadata.TransmitterMetadata;
-import org.keycloak.ssf.transmitter.SsfTransmitterUrls;
-import org.keycloak.ssf.transmitter.support.SsfUtil;
+import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 
 /**
  * Service for managing the SSF transmitter functionality.

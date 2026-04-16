@@ -17,11 +17,11 @@ import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.event.SsfEventProviderFactory;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.transmitter.SsfScopes;
-import org.keycloak.ssf.transmitter.SsfTransmitterUrls;
 import org.keycloak.ssf.transmitter.admin.SsfConfigRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 import org.keycloak.testframework.annotations.InjectAdminClient;
 import org.keycloak.testframework.annotations.InjectKeycloakUrls;
 import org.keycloak.testframework.annotations.InjectRealm;
@@ -245,6 +245,7 @@ public class SsfTransmitterCustomEventTests {
         @Override
         public RealmConfigBuilder configure(RealmConfigBuilder realm) {
             realm.name("ssf-transmitter-custom-event");
+            realm.attribute(Ssf.SSF_TRANSMITTER_ENABLED_KEY, "true");
 
             realm.addClient(RECEIVER_ID)
                     .secret(RECEIVER_SECRET)

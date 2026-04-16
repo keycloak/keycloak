@@ -22,7 +22,7 @@ import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
-import org.keycloak.ssf.transmitter.outbox.SsfOutboxStore;
+import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxBackoff;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTask;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
@@ -92,8 +92,9 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         var mapper = new SecurityEventTokenMapper(session, transmitterConfig, this::createSsfIssuerUrl);
         var encoder = new SecurityEventTokenEncoder(session);
         var pushDelivery = new PushDeliveryService(session, transmitterConfig);
-        var dispatcher = new SecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig);
-        var verificationService = new StreamVerificationService(session, new ClientStreamStore(session), mapper, dispatcher);
+        var dispatcher = new SecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig, this::createSsfPendingEventStore);
+        var streamStore = new ClientStreamStore(session);
+        var verificationService = new StreamVerificationService(session, streamStore, mapper, dispatcher);
         var transmitterMetadataService = new TransmitterMetadataService(session, this::createSsfIssuerUrl);
         return new DefaultSsfTransmitterProvider(session, transmitterMetadataService, verificationService, mapper,
                 dispatcher, transmitterConfig, configuredDefaultSupportedEventAliases);
@@ -259,7 +260,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 ? Duration.ofMillis(outboxDeadLetterRetentionMillis)
                 : null;
         return new SsfPushOutboxDrainerTask(outboxDrainerBatchSize, backoff, deadLetterRetention,
-                this::createSsfOutboxStore);
+                this::createSsfPendingEventStore);
     }
 
     /**
@@ -274,7 +275,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         public void onEvent(ProviderEvent event) {
             if (event instanceof RealmModel.RealmRemovedEvent ev) {
                 try {
-                    createSsfOutboxStore(ev.getKeycloakSession())
+                    createSsfPendingEventStore(ev.getKeycloakSession())
                             .deleteByRealm(ev.getRealm().getId());
                 } catch (RuntimeException e) {
                     // Don't block realm removal on outbox cleanup failures —
@@ -290,15 +291,15 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
 
     /**
      * Session-scoped factory for the outbox DAO. Extension point for
-     * deployments that want to plug in a custom {@link SsfOutboxStore}
+     * deployments that want to plug in a custom {@link SsfPendingEventStore}
      * subclass (e.g. for instrumentation or schema overrides) — the
-     * default is {@code SsfOutboxStore::new}.
+     * default is {@code SsfPendingEventStore::new}.
      *
      * @param session
      * @return
      */
-    protected SsfOutboxStore createSsfOutboxStore(KeycloakSession session) {
-        return new SsfOutboxStore(session);
+    protected SsfPendingEventStore createSsfPendingEventStore(KeycloakSession session) {
+        return new SsfPendingEventStore(session);
     }
 
     protected String createSsfIssuerUrl(KeycloakSession session) {

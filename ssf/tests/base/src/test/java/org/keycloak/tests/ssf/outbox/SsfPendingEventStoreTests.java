@@ -10,9 +10,9 @@ import jakarta.persistence.EntityManager;
 import org.keycloak.common.Profile;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.ssf.transmitter.outbox.SsfOutboxStore;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus;
+import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
 import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
 import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
@@ -24,18 +24,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration tests for {@link SsfOutboxStore}. Each test runs a lambda
+ * Integration tests for {@link SsfPendingEventStore}. Each test runs a lambda
  * against a real Keycloak session via {@code runOnServer}, exercising
  * the store against the actual JPA provider and the SSF outbox schema.
  *
  * <p>Tests are isolated by pinning each one to a unique synthetic
- * {@code realmId}; teardown calls {@link SsfOutboxStore#deleteByRealm}
+ * {@code realmId}; teardown calls {@link SsfPendingEventStore#deleteByRealm}
  * to remove every row enqueued during the test. No real Keycloak
  * realms/clients are created — the store treats realmId/clientId as
  * opaque strings, so synthetic UUIDs exercise the full path.
  */
-@KeycloakIntegrationTest(config = SsfOutboxStoreTests.OutboxStoreServerConfig.class)
-public class SsfOutboxStoreTests {
+@KeycloakIntegrationTest(config = SsfPendingEventStoreTests.OutboxStoreServerConfig.class)
+public class SsfPendingEventStoreTests {
 
     @InjectRunOnServer
     RunOnServerClient runOnServer;
@@ -47,14 +47,14 @@ public class SsfOutboxStoreTests {
     @AfterEach
     public void cleanupRealm() {
         final String realmId = testRealmId;
-        runOnServer.run(session -> new SsfOutboxStore(session).deleteByRealm(realmId));
+        runOnServer.run(session -> new SsfPendingEventStore(session).deleteByRealm(realmId));
     }
 
     @Test
     public void enqueuePendingPush_persistsRowWithExpectedDefaults() {
         final String realmId = testRealmId;
         runOnServer.run(session -> {
-            SsfOutboxStore store = new SsfOutboxStore(session);
+            SsfPendingEventStore store = new SsfPendingEventStore(session);
             String id = store.enqueuePendingPush(realmId, "client-a", "stream-a",
                     "jti-happy-path", "caep.credentialChange", "signed-set");
             Assertions.assertNotNull(id);
@@ -84,7 +84,7 @@ public class SsfOutboxStoreTests {
     public void enqueuePendingPush_deduplicatesOnClientAndJti() {
         final String realmId = testRealmId;
         runOnServer.run(session -> {
-            SsfOutboxStore store = new SsfOutboxStore(session);
+            SsfPendingEventStore store = new SsfPendingEventStore(session);
             String first = store.enqueuePendingPush(realmId, "client-dedup", "stream-a",
                     "jti-dedup", "caep.credentialChange", "encoded-1");
             String second = store.enqueuePendingPush(realmId, "client-dedup", "stream-b",
@@ -123,7 +123,7 @@ public class SsfOutboxStoreTests {
             em(session).flush();
             em(session).clear();
 
-            List<SsfPendingEventEntity> due = new SsfOutboxStore(session).lockDueForPush(10);
+            List<SsfPendingEventEntity> due = new SsfPendingEventStore(session).lockDueForPush(10);
             Assertions.assertEquals(1, due.size(),
                     "only rows whose nextAttemptAt is in the past should be returned");
             Assertions.assertEquals("jti-past", due.get(0).getJti());
@@ -143,7 +143,7 @@ public class SsfOutboxStoreTests {
             em(session).flush();
             em(session).clear();
 
-            List<SsfPendingEventEntity> batch = new SsfOutboxStore(session).lockDueForPush(3);
+            List<SsfPendingEventEntity> batch = new SsfPendingEventStore(session).lockDueForPush(3);
             Assertions.assertEquals(3, batch.size());
         });
     }
@@ -159,7 +159,7 @@ public class SsfOutboxStoreTests {
             em(session).flush();
             em(session).clear();
 
-            new SsfOutboxStore(session).markDelivered(findById(session, row.getId()));
+            new SsfPendingEventStore(session).markDelivered(findById(session, row.getId()));
             em(session).flush();
             em(session).clear();
 
@@ -184,7 +184,7 @@ public class SsfOutboxStoreTests {
 
             Instant nextAttempt = now.plus(Duration.ofMinutes(5));
             String hugeError = "x".repeat(3000);
-            new SsfOutboxStore(session)
+            new SsfPendingEventStore(session)
                     .recordFailure(findById(session, row.getId()), nextAttempt, hugeError);
             em(session).flush();
             em(session).clear();
@@ -212,7 +212,7 @@ public class SsfOutboxStoreTests {
             em(session).flush();
             em(session).clear();
 
-            new SsfOutboxStore(session)
+            new SsfPendingEventStore(session)
                     .markDeadLetter(findById(session, row.getId()), "giving up after 8 retries");
             em(session).flush();
             em(session).clear();
@@ -248,7 +248,7 @@ public class SsfOutboxStoreTests {
             em(session).flush();
             em(session).clear();
 
-            int purged = new SsfOutboxStore(session)
+            int purged = new SsfPendingEventStore(session)
                     .purgeDeliveredOlderThan(now.minus(Duration.ofDays(1)));
             Assertions.assertEquals(1, purged);
 
@@ -286,7 +286,7 @@ public class SsfOutboxStoreTests {
             em(session).flush();
             em(session).clear();
 
-            int purged = new SsfOutboxStore(session)
+            int purged = new SsfPendingEventStore(session)
                     .purgeDeadLetterOlderThan(now.minus(Duration.ofDays(30)));
             Assertions.assertEquals(1, purged);
 
@@ -322,7 +322,7 @@ public class SsfOutboxStoreTests {
                 em(session).flush();
                 em(session).clear();
 
-                int deleted = new SsfOutboxStore(session).deleteByRealm(realmId);
+                int deleted = new SsfPendingEventStore(session).deleteByRealm(realmId);
                 Assertions.assertEquals(3, deleted,
                         "deleteByRealm must remove every row for the realm regardless of status");
 
@@ -333,7 +333,7 @@ public class SsfOutboxStoreTests {
                         "rows from other realms must not be touched");
             });
         } finally {
-            runOnServer.run(session -> new SsfOutboxStore(session).deleteByRealm(otherRealmId));
+            runOnServer.run(session -> new SsfPendingEventStore(session).deleteByRealm(otherRealmId));
         }
     }
 

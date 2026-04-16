@@ -1,8 +1,7 @@
 package org.keycloak.ssf.transmitter.delivery;
 
-import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 
-import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.event.token.SecurityEventToken;
@@ -14,7 +13,7 @@ import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
-import org.keycloak.ssf.transmitter.outbox.SsfOutboxStore;
+import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 
 import org.jboss.logging.Logger;
@@ -23,19 +22,26 @@ public class SecurityEventTokenDispatcher {
 
     protected static final Logger log = Logger.getLogger(SecurityEventTokenDispatcher.class);
 
-    private final KeycloakSession session;
-    private final SecurityEventTokenEncoder securityEventTokenEncoder;
-    private final PushDeliveryService pushDeliveryService;
-    private final SsfTransmitterConfig transmitterConfig;
+    protected final KeycloakSession session;
+
+    protected final SecurityEventTokenEncoder securityEventTokenEncoder;
+
+    protected final PushDeliveryService pushDeliveryService;
+
+    protected final SsfTransmitterConfig transmitterConfig;
+
+    protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
 
     public SecurityEventTokenDispatcher(KeycloakSession session,
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
-                                        SsfTransmitterConfig transmitterConfig) {
+                                        SsfTransmitterConfig transmitterConfig,
+                                        Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
         this.session = session;
         this.securityEventTokenEncoder = securityEventTokenEncoder;
         this.pushDeliveryService = pushDeliveryService;
         this.transmitterConfig = transmitterConfig;
+        this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
     }
 
     /**
@@ -93,7 +99,7 @@ public class SecurityEventTokenDispatcher {
 
     /**
      * Asynchronously delivers an event to the receiver by enqueuing the
-     * signed SET into the durable {@link SsfOutboxStore push outbox}.
+     * signed SET into the durable {@link SsfPendingEventStore push outbox}.
      * The cluster-aware drainer picks the row up on its next tick and
      * pushes it to the receiver's endpoint, retrying with exponential
      * backoff and dead-lettering after the configured attempt budget is
@@ -196,8 +202,9 @@ public class SecurityEventTokenDispatcher {
             // poison the table with constraint failures.
             eventType = "<unknown>";
         }
-        new SsfOutboxStore(session).enqueuePendingPush(
-                realmId, clientId, streamId, jti, eventType, encodedEvent);
+
+        var pendingEventStore = pendingSsfEventStoreFactory.apply(session);
+        pendingEventStore.enqueuePendingPush(realmId, clientId, streamId, jti, eventType, encodedEvent);
     }
 
     protected SecurityEventToken getNarrowedEventToken(SsfSecurityEventToken eventToken, StreamConfig stream) {
@@ -219,10 +226,25 @@ public class SecurityEventTokenDispatcher {
         };
     }
 
+    /**
+     * Narrows a {@link SsfSecurityEventToken} into a more general {@link SecurityEventToken}.
+     *
+     * @param eventToken The security event token to be narrowed.
+     * @return The narrowed security event token.
+     */
     protected SecurityEventToken narrowSsfEventToken(SsfSecurityEventToken eventToken) {
         return eventToken;
     }
 
+    /**
+     * Converts an {@link SsfSecurityEventToken} into a narrower {@link SseCaepSecurityEventToken}.
+     * This method leverages the {@link SseCaepEventConverter} to transform the token according to
+     * the Shared Signals and Events (SSE) standard, which may be required for compatibility with
+     * legacy implementations.
+     *
+     * @param eventToken The security event token to be converted. Must not be null.
+     * @return The converted {@link SseCaepSecurityEventToken} instance.
+     */
     protected SseCaepSecurityEventToken narrowCaepSseEventToken(SsfSecurityEventToken eventToken) {
         return SseCaepEventConverter.convert(eventToken);
     }
