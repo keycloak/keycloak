@@ -19,7 +19,6 @@ package org.keycloak.authorization.authzen;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.common.util.Environment;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -37,9 +36,6 @@ public class AuthZenRealmResourceProviderFactory implements RealmResourceProvide
 
     @Override
     public void init(Config.Scope config) {
-        if (!Environment.isDevMode() && config.root().getBoolean("http-enabled", false)) {
-            throw new IllegalArgumentException("The AuthZen feature requires HTTPS in order to be compliant with the OpenID AuthZen specification.");
-        }
     }
 
     @Override
