@@ -33,6 +33,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.keycloak.component.ComponentModel;
+import org.keycloak.convert.ConverterConfig;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
@@ -276,6 +277,15 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                 }
             }
 
+            List<AttributeConverterMetadata> converters = new ArrayList<>();
+            Map<String, Map<String, Object>> convertersConfig = attrConfig.getConverters();
+
+            if (convertersConfig != null) {
+                for (Map.Entry<String, Map<String, Object>> cc : convertersConfig.entrySet()) {
+                    converters.add(createConfiguredConverter(cc.getKey(), cc.getValue()));
+                }
+            }
+
             UPAttributeRequired rc = attrConfig.getRequired();
             if (rc != null) {
                 validators.add(new AttributeValidatorMetadata(AttributeRequiredByMetadataValidator.ID));
@@ -376,6 +386,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                             .addReadCondition(readAllowed)
                             .addWriteCondition(writeAllowed)
                             .addValidators(validators)
+                            .addConverters(converters)
                             .setRequired(required)
                             .setDefaultValue(attrConfig.getDefaultValue())
                             .setMultivalued(attrConfig.isMultivalued());
@@ -385,6 +396,7 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                         .addAnnotations(annotations)
                         .setAttributeDisplayName(attrConfig.getDisplayName())
                         .setAttributeGroupMetadata(groupMetadata)
+                        .addConverters(converters)
                         .setDefaultValue(attrConfig.getDefaultValue())
                         .setMultivalued(attrConfig.isMultivalued());
             }
@@ -464,6 +476,17 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
         return new AttributeValidatorMetadata(validator, ValidatorConfig.builder().config(validatorConfig).config(AbstractSimpleValidator.IGNORE_EMPTY_VALUE, true).build());
     }
 
+    /**
+     * Create converter for conversion configured in the user profile config.
+     *
+     * @param converter id to create converter for
+     * @param converterConfig of the converter
+     * @return converter metadata to run given conversion
+     */
+    protected AttributeConverterMetadata createConfiguredConverter(String converter, Map<String, Object> converterConfig) {
+        return new AttributeConverterMetadata(converter, ConverterConfig.builder().config(converterConfig).build());
+    }
+
     private UPConfig getConfigFromComponentModel(ComponentModel model) {
         UPConfig cached = getParsedConfigFromCache(model);
 
@@ -526,6 +549,17 @@ public class DeclarativeUserProfileProvider implements UserProfileProvider {
                         // do not include the default validators for built-in attributes into the base metadata
                         // user-defined configuration will add its own validators
                         validators.removeIf(m -> m.getValidatorId().equals(id));
+                    }
+
+                    Map<String, Map<String, Object>> converters = Optional.ofNullable(upAttribute.getConverters()).orElse(Collections.emptyMap());
+
+                    for (String id : converters.keySet()) {
+                        List<AttributeConverterMetadata> converterMetadata = metadata.getConverters();
+                        if (converterMetadata != null) {
+                            // do not include the default converters for built-in attributes into the base metadata
+                            // user-defined configuration will add its own converters
+                            converterMetadata.removeIf(m -> m.getConverterId().equals(id));
+                        }
                     }
                 } else if (isOptionalBuiltInAttribute(attributeName)) {
                     // removes optional default attributes in favor of user-defined configuration
