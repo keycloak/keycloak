@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+    Master changelog for SSF-contributed JPA tables. Mirrors the same
+    pattern model/jpa uses (jpa-changelog-master.xml): one master file
+    that <include>s versioned change files in apply-order. New SSF
+    schema additions land in a fresh ssf-changelog-X.Y.Z.xml and get
+    appended here; existing files are never edited once released.
+
+    SsfJpaEntityProvider.getChangelogLocation() points to this master,
+    and Liquibase tracks the per-changeset history in the SSF-specific
+    tracking table (named after SsfJpaEntityProviderFactory.ID).
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <include file="META-INF/ssf-changelog-1.0.0.xml"/>
+
+</databaseChangeLog>

@@ -130,6 +130,18 @@ public class StreamConfig {
     @JsonIgnore
     protected Boolean enabled;
 
+    /**
+     * The receiver client's Keycloak id this stream is registered
+     * against. Populated at
+     * {@link org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore#extractStreamConfig
+     * extractStreamConfig} time so the dispatcher / outbox can
+     * identify the owning client without a second lookup. In
+     * particular, the push outbox row needs it to re-resolve the
+     * receiver on retries. Never serialized to the wire.
+     */
+    @JsonIgnore
+    protected String clientId;
+
     @JsonIgnore
     protected Integer pushEndpointConnectTimeoutMillis;
 
@@ -296,6 +308,14 @@ public class StreamConfig {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 
     public Integer getPushEndpointConnectTimeoutMillis() {

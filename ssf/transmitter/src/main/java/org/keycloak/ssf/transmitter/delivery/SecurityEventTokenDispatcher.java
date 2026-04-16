@@ -14,6 +14,7 @@ import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
+import org.keycloak.ssf.transmitter.outbox.SsfOutboxStore;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 
 import org.jboss.logging.Logger;
@@ -91,16 +92,21 @@ public class SecurityEventTokenDispatcher {
     }
 
     /**
-     * Asynchronously delivers an event to the receiver. The push runs on a
-     * dedicated virtual thread so a slow or unresponsive receiver doesn't
-     * block other dispatches and doesn't tie up a platform-thread pool.
-     * Fire-and-forget — the absence of a return value reflects "we handed
-     * the push off to its own thread", not "the receiver acknowledged".
+     * Asynchronously delivers an event to the receiver by enqueuing the
+     * signed SET into the durable {@link SsfOutboxStore push outbox}.
+     * The cluster-aware drainer picks the row up on its next tick and
+     * pushes it to the receiver's endpoint, retrying with exponential
+     * backoff and dead-lettering after the configured attempt budget is
+     * exhausted.
      *
-     * <p>Used by the event listener for user/admin SETs where best-effort
-     * delivery is appropriate. For verification SETs the caller wants to
-     * know whether the receiver actually accepted the push, so use
-     * {@link #deliverEventSync(SsfSecurityEventToken, StreamConfig)}.
+     * <p>Returns as soon as the row is enqueued — the receiver's
+     * acknowledgement is observed asynchronously by the drainer, not by
+     * this caller. Used by the event listener for user/admin SETs.
+     *
+     * <p>For verification SETs the caller needs the receiver's actual
+     * accept/reject outcome inline, so use
+     * {@link #deliverEventSync(SsfSecurityEventToken, StreamConfig)}
+     * instead, which bypasses the outbox and pushes synchronously.
      */
     public void deliverEvent(SsfSecurityEventToken eventToken, StreamConfig stream) {
         deliverEventInternal(eventToken, stream, true);
@@ -155,27 +161,33 @@ public class SecurityEventTokenDispatcher {
     }
 
     /**
-     * Submits the push to Keycloak's managed executor for asynchronous
-     * delivery. Virtual threads ({@code Thread.ofVirtual()}) would be a
-     * better fit here — one thread per push, naturally handling blocking
-     * I/O and isolating slow receivers — but the project compiles with
-     * {@code --release 17} and the API is JDK 21+, so we stay on the
-     * shared bounded pool for now. Worth revisiting once Keycloak bumps
-     * its source level.
+     * Persists the already-signed SET to the push outbox. Once the row
+     * is committed the cluster-aware drainer will pick it up on its
+     * next tick and dispatch it with bounded retries — this method
+     * does not perform any HTTP call itself.
+     *
+     * <p>The {@code clientId} on the stream is populated by
+     * {@link org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore#extractStreamConfig
+     * ClientStreamStore.extractStreamConfig}, so it is always set on
+     * stream configs the dispatcher receives.
      */
-    protected void deliverEventAsync(StreamConfig stream, SecurityEventToken narrowedEventToken, String encodedEvent) {
-        ExecutorService executor = getPushExecutorService();
-        executor.execute(() -> pushDeliveryService.deliverEvent(stream, narrowedEventToken, encodedEvent));
-    }
-
-    protected ExecutorService getPushExecutorService() {
-        ExecutorsProvider executorsProvider = getExecutorsProvider();
-        ExecutorService executor = executorsProvider.getExecutor("ssf-push-event");
-        return executor;
-    }
-
-    protected ExecutorsProvider getExecutorsProvider() {
-        return session.getProvider(ExecutorsProvider.class);
+    protected void deliverEventAsync(StreamConfig stream,
+                                     SsfSecurityEventToken eventToken,
+                                     String encodedEvent) {
+        String realmId = session.getContext().getRealm().getId();
+        String clientId = stream.getClientId();
+        String streamId = stream.getStreamId();
+        String jti = eventToken.getJti();
+        String eventType = getEventType(eventToken);
+        if (eventType == null) {
+            // EVENT_TYPE is NOT NULL in the schema; an event token with no
+            // events map shouldn't reach the dispatcher (dispatchEvent
+            // already operates on it), but guard so a malformed call can't
+            // poison the table with constraint failures.
+            eventType = "<unknown>";
+        }
+        new SsfOutboxStore(session).enqueuePendingPush(
+                realmId, clientId, streamId, jti, eventType, encodedEvent);
     }
 
     protected SecurityEventToken getNarrowedEventToken(SsfSecurityEventToken eventToken, StreamConfig stream) {

@@ -1,1 +1,2 @@
 org.keycloak.ssf.transmitter.event.SsfTransmitterEventListenerFactory
+org.keycloak.ssf.transmitter.outbox.SsfPushOutboxListenerFactory

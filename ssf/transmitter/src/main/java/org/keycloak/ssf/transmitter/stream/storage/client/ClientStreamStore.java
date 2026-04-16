@@ -301,6 +301,12 @@ public class ClientStreamStore implements SsfStreamStore {
             return null;
         }
 
+        // Stamp the receiver client's Keycloak id on every read so the
+        // dispatcher / outbox can identify the owning client without a
+        // second lookup. Not persisted, not echoed on the wire — covered
+        // by @JsonIgnore on the field.
+        streamConfig.setClientId(client.getId());
+
         applyReceiverAttributeOverlays(client, streamConfig);
         return streamConfig;
     }

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+    logicalFilePath pins the changeset identity to the original
+    META-INF/ssf-changelog.xml path used before this file was renamed
+    to follow the versioned-include pattern. Without it, Liquibase
+    would treat the same changeset as new (because identity is
+    (id, author, fileName)) and try to re-run on existing databases.
+-->
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   logicalFilePath="META-INF/ssf-changelog.xml"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <!--
+        SSF push outbox: persistent queue of Security Event Tokens (SETs)
+        pending delivery to receiver clients. The drainer polls this
+        table for due pending rows and pushes them to the receiver's
+        endpoint; failures are retried with exponential backoff and
+        eventually transitioned to DEAD_LETTER for admin visibility.
+
+        See:
+          - org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity
+          - org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTask
+    -->
+    <changeSet author="keycloak" id="ssf-1.0.0-outbox">
+
+        <createTable tableName="SSF_PENDING_EVENT">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SSF_PENDING_EVENT"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CLIENT_ID" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STREAM_ID" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="JTI" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="EVENT_TYPE" type="VARCHAR(256)">
+                <constraints nullable="false"/>
+            </column>
+            <!--
+                CLOB rather than VARCHAR: the signed SET JWT is opaque
+                and can exceed typical VARCHAR limits once the payload
+                and signature headers are included.
+            -->
+            <column name="ENCODED_SET" type="CLOB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DELIVERY_METHOD" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="STATUS" type="VARCHAR(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ATTEMPTS" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NEXT_ATTEMPT_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="LAST_ERROR" type="VARCHAR(2048)"/>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="DELIVERED_AT" type="TIMESTAMP"/>
+        </createTable>
+
+        <!-- Dedup: one outstanding row per (client, jti). -->
+        <addUniqueConstraint
+                tableName="SSF_PENDING_EVENT"
+                columnNames="CLIENT_ID, JTI"
+                constraintName="UC_SSF_PENDING_CLIENT_JTI"/>
+
+        <!-- Drainer query: WHERE status=? AND delivery_method=? AND next_attempt_at<=? -->
+        <createIndex tableName="SSF_PENDING_EVENT" indexName="IDX_SSF_PENDING_DRAIN">
+            <column name="STATUS"/>
+            <column name="DELIVERY_METHOD"/>
+            <column name="NEXT_ATTEMPT_AT"/>
+        </createIndex>
+
+        <!-- Admin UI / poll-endpoint: per-client scope. -->
+        <createIndex tableName="SSF_PENDING_EVENT" indexName="IDX_SSF_PENDING_CLIENT">
+            <column name="CLIENT_ID"/>
+            <column name="STATUS"/>
+        </createIndex>
+
+        <!--
+            Realm-scoped reads and realm-removed cascade deletes. REALM_ID
+            is a plain column here (no FK), so a RealmRemovedEvent listener
+            runs the purge explicitly when a realm is deleted.
+        -->
+        <createIndex tableName="SSF_PENDING_EVENT" indexName="IDX_SSF_PENDING_REALM">
+            <column name="REALM_ID"/>
+            <column name="STATUS"/>
+        </createIndex>
+
+    </changeSet>
+
+</databaseChangeLog>
