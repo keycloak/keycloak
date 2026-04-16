@@ -20,6 +20,7 @@ package org.keycloak.tests.organization.admin;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
@@ -104,13 +105,21 @@ public abstract class AbstractOrganizationTest {
         realmResource.identityProviders().create(broker).close();
 
         String brokerAlias = broker.getAlias();
-        realm.cleanup().add(r -> r.identityProviders().get(brokerAlias).remove());
+        realm.cleanup().add(r -> {
+            try {
+                r.identityProviders().get(brokerAlias).remove();
+            } catch (NotFoundException ignored) {}
+        });
 
         realmResource.organizations().get(id).identityProviders().addIdentityProvider(broker.getAlias()).close();
         org = realmResource.organizations().get(id).toRepresentation();
 
         String orgId = id;
-        realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
+        realm.cleanup().add(r -> {
+            try {
+                r.organizations().get(orgId).delete().close();
+            } catch (NotFoundException ignored) {}
+        });
 
         return org;
     }
