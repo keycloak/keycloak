@@ -282,6 +282,73 @@ public class UserSessionLimitsDirectGrantTest {
         }
     }
 
+    @Test
+    public void testComparatorPrioritizesCurrentClientSessionsForRemoval() {
+        try {
+            setAuthenticatorConfigItem(BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem(USER_REALM_LIMIT, "3");
+            setAuthenticatorConfigItem(USER_CLIENT_LIMIT, "0");
+
+            AccessTokenResponse response = oauth.client("direct-grant-1", password).doPasswordGrantRequest(username, password);
+            assertEquals(200, response.getStatusCode());
+            response = oauth.client("direct-grant-1", password).doPasswordGrantRequest(username, password);
+            assertEquals(200, response.getStatusCode());
+
+            response = oauth.client("direct-grant-2", password).doPasswordGrantRequest(username, password);
+            assertEquals(200, response.getStatusCode());
+
+            runOnServer.run(assertSessionCount(realmName, username, 3));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-1", 2));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
+
+            // The comparator should prioritize removing a direct-grant-2 session even though direct-grant-1 sessions older
+            response = oauth.client("direct-grant-2", password).doPasswordGrantRequest(username, password);
+            assertEquals(200, response.getStatusCode());
+
+            runOnServer.run(assertSessionCount(realmName, username, 3));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-1", 2));
+        } finally {
+            resetToDefaultConfig();
+        }
+    }
+
+    @Test
+    public void testComparatorFallsBackToAgeWhenNoCurrentClientSessions() {
+        try {
+            setAuthenticatorConfigItem(BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem(USER_REALM_LIMIT, "2");
+            setAuthenticatorConfigItem(USER_CLIENT_LIMIT, "0");
+
+            AccessTokenResponse response = oauth.client("direct-grant-1", password).doPasswordGrantRequest(username, password);
+            assertEquals(200, response.getStatusCode());
+
+            try {
+                Thread.sleep(1100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            response = oauth.client("direct-grant-2", password).doPasswordGrantRequest(username, password);
+            assertEquals(200, response.getStatusCode());
+
+            runOnServer.run(assertSessionCount(realmName, username, 2));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-1", 1));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
+
+            // comparator should fall back to age and remove the oldest session (direct-grant-1)
+            response = oauth.client("direct-grant-3", password).doPasswordGrantRequest(username, password);
+            assertEquals(200, response.getStatusCode());
+
+            runOnServer.run(assertSessionCount(realmName, username, 2));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-1", 0));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-3", 1));
+        } finally {
+            resetToDefaultConfig();
+        }
+    }
+
     private void awaitTwoSessionsOnePerClient() {
         Awaitility.await()
                 .pollInterval(java.time.Duration.ofMillis(200))
@@ -331,6 +398,10 @@ public class UserSessionLimitsDirectGrantTest {
                     .directAccessGrantsEnabled(true);
 
             realm.addClient("direct-grant-2")
+                    .secret(password)
+                    .directAccessGrantsEnabled(true);
+
+            realm.addClient("direct-grant-3")
                     .secret(password)
                     .directAccessGrantsEnabled(true);
 
