@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.mappers.DatabasePropertyMappers;
 
 import io.smallrye.config.Expressions;
 import io.smallrye.config.SmallRyeConfig;
@@ -24,6 +25,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
@@ -565,6 +567,22 @@ public class DatasourcesConfigurationTest extends AbstractConfigurationTest {
                 "javax.net.ssl.trustStore",
                 "javax.net.ssl.trustStorePassword",
                 "javax.net.ssl.trustStoreType");
+    }
+
+    @Test public void testDbConnectTimeout() {
+        var config = createConfigFromCliArguments("--db=mysql", "--db-kind-users=postgresql", "--db-connect-timeout=15");
+
+        assertEquals("15000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+
+        // uses the default value, rather than the primary timeout
+        assertEquals("10", config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.connectTimeout").getValue());
+
+        config = createConfigFromCliArguments("--db=mysql", "--db-kind-users=postgresql", "--db-connect-timeout-users=15");
+
+        assertEquals("10000", config.getConfigValue(DatabasePropertyMappers.CONNECT_TIMEOUT).getValue());
+        assertEquals("15", config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.connectTimeout").getValue());
+        // the to mapping for other source types should not be set
+        assertNull(config.getConfigValue("quarkus.datasource.\"users\".jdbc.additional-jdbc-properties.loginTimeout").getValue());
     }
 
     private static void doDatabaseTlsOptionTest(String dbKind, String dbUrl,

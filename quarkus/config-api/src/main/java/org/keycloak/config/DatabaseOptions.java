@@ -165,6 +165,7 @@ public class DatabaseOptions {
          * Example: for `db-dialect`, `db-dialect-<datasource>` is created
          */
         public static final List<String> OPTIONS_DATASOURCES = Stream.of(
+                DB_CONNECT_TIMEOUT,
                 DB_DIALECT,
                 DB_DRIVER,
                 DB,

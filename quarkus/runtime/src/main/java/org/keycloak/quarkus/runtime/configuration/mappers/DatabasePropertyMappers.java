@@ -19,9 +19,11 @@ import org.keycloak.config.Option;
 import org.keycloak.config.OptionsUtil;
 import org.keycloak.config.TransactionOptions;
 import org.keycloak.config.database.Database;
+import org.keycloak.config.database.Database.Vendor;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.cli.PropertyException;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.ValueMapper;
 import org.keycloak.utils.StringUtil;
 
 import io.quarkus.datasource.common.runtime.DatabaseKind;
@@ -95,6 +97,18 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(DatabaseOptions.DB_POOL_ACQUISITION_TIMEOUT)
                         .to(JDBC_ACQUISITION_TIMEOUT)
                         .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context) -> computeAcquisitionTimeout(value))
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.MARIADB, Database.Vendor.POSTGRES, Database.Vendor.TIDB), "connectTimeout"))
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(ORACLEDB_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.ORACLE), "oracle.net.CONNECT_TIMEOUT"))
+                        .build(),
+                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
+                        .to(MSSQL_CONNECT_TIMEOUT)
+                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, getConnectTimeout(EnumSet.of(Database.Vendor.MSSQL), "loginTimeout"))
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
                         .paramLabel("hostname")
@@ -203,8 +217,8 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 DB_POOL_MAX_SIZE, mapper -> mapper.mapFrom(DB_POOL_MAX_SIZE)
         ));
 
-        // finally add mappers that utilize isEnabled - that won't work as expected for multiple datasources
-        // so these will only affect the primary datasource
+        // finally add mappers that aren't intended to work with other datasources
+        // - also this usage of isEnabled won't work correctly with wildcard mappers
         result.addAll(List.of(
                 fromOption(DatabaseOptions.DB_POSTGRESQL_TARGET_SERVER_TYPE)
                         .to(PG_TARGET_SERVER_TYPE)
@@ -213,42 +227,6 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 fromOption(SYNTHETIC_RUNTIME_DB_OPTION).mapFrom(DB, (name, value, context) -> "false")
                         .to(MSSQL_SEND_STRING_PARAMETER_AS_UNICODE)
                         .isEnabled(DatabasePropertyMappers::isMssqlSendStringParametersAsUnicode)
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isMysqlConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isMariadbConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(ORACLEDB_CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isOracleConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(MSSQL_CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToSeconds(value))
-                        .isEnabled(DatabasePropertyMappers::isMssqlLoginTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToSeconds(value))
-                        .isEnabled(DatabasePropertyMappers::isPostgresConnectTimeoutEnabled)
-                        .build(),
-                fromOption(DatabaseOptions.DB_CONNECT_TIMEOUT)
-                        .to(CONNECT_TIMEOUT)
-                        .mapFrom(DatabaseOptions.DB_CONNECT_TIMEOUT, (name, value, context)
-                                -> durationToMillis(value))
-                        .isEnabled(DatabasePropertyMappers::isTidbConnectTimeoutEnabled)
                         .build()
         ));
         return result;
@@ -314,49 +292,36 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 !dbUrlProperties.contains("sendStringParametersAsUnicode");
     }
 
-    public static boolean isMysqlConnectTimeoutEnabled() {
-        return isConnectTimeoutEnabled(Database.Vendor.MYSQL, "connectTimeout");
-    }
+    private static ValueMapper getConnectTimeout(Collection<Database.Vendor> validForVendors, String timeoutProperty) {
+        return (String datasource, String value, ConfigSourceInterceptorContext context) -> {
+            String db = getDatasourceOptionValue(DB, datasource).orElse(null);
+            Database.Vendor vendor = Database.getVendor(db).orElse(null);
 
-    public static boolean isMariadbConnectTimeoutEnabled() {
-        return isConnectTimeoutEnabled(Database.Vendor.MARIADB, "connectTimeout");
-    }
+            if (!validForVendors.contains(vendor)) {
+                // this jdbc property is not for this vendor
+                return null;
+            }
 
-    public static boolean isOracleConnectTimeoutEnabled() {
-        return isConnectTimeoutEnabled(Database.Vendor.ORACLE, "oracle.net.CONNECT_TIMEOUT");
-    }
+            String dbDriver = getDatasourceOptionValue(DatabaseOptions.DB_DRIVER, datasource).orElse(null);
+            if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
+                    !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
+                // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
+                return null;
+            }
 
-    public static boolean isMssqlLoginTimeoutEnabled() {
-        return isConnectTimeoutEnabled(Database.Vendor.MSSQL, "loginTimeout");
-    }
+            String dbUrl = findDatabaseUrl(datasource).orElse("");
+            String dbUrlProperties = getDatasourceOptionValue(DatabaseOptions.DB_URL_PROPERTIES, datasource).orElse("");
 
-    public static boolean isPostgresConnectTimeoutEnabled() {
-        return isConnectTimeoutEnabled(Database.Vendor.POSTGRES, "connectTimeout");
-    }
+            // Property already set explicitly by the user — do not override
+            if  (dbUrl.contains(timeoutProperty) || dbUrlProperties.contains(timeoutProperty)) {
+                return null;
+            }
 
-    public static boolean isTidbConnectTimeoutEnabled() {
-        return isConnectTimeoutEnabled(Database.Vendor.TIDB, "connectTimeout");
-    }
-
-    private static boolean isConnectTimeoutEnabled(Database.Vendor expectedVendor, String timeoutProperty) {
-        String db = Configuration.getConfigValue(DB).getValue();
-        Database.Vendor vendor = Database.getVendor(db).orElse(null);
-        if (vendor != expectedVendor) {
-            return false;
-        }
-
-        String dbDriver = Configuration.getConfigValue(DatabaseOptions.DB_DRIVER).getValue();
-        if (!Objects.equals(Database.getDriver(db, true).orElse(null), dbDriver) &&
-                !Objects.equals(Database.getDriver(db, false).orElse(null), dbDriver)) {
-            // Custom JDBC driver (e.g. AWS JDBC Wrapper) — do not inject defaults
-            return false;
-        }
-
-        String dbUrl = Configuration.getConfigValue(DatabaseOptions.DB_URL).getValueOrDefault("");
-        String dbUrlProperties = Configuration.getKcConfigValue(DatabaseOptions.DB_URL_PROPERTIES.getKey()).getValueOrDefault("");
-
-        // Property already set explicitly by the user — do not override
-        return !dbUrl.contains(timeoutProperty) && !dbUrlProperties.contains(timeoutProperty);
+            if (vendor == Vendor.MSSQL || vendor == Vendor.POSTGRES) {
+                return durationToSeconds(value);
+            }
+            return durationToMillis(value);
+        };
     }
 
     private static String durationToMillis(String value) {
@@ -599,41 +564,31 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
         return findTlsTrustStoreFile(datasource).isEmpty() ? value : null;
     }
 
-    private static Optional<String> findDatabaseUrl(String datasource) {
+    private static Optional<String> getDatasourceOptionValue(Option<?> opt, String datasource) {
         var option = datasource == null ?
-                Optional.of(DB_URL.getKey()) :
-                getNamedKey(DB_URL, datasource);
+                Optional.of(opt.getKey()) :
+                getNamedKey(opt, datasource);
         return option.map(Configuration::getKcConfigValue)
                 .map(ConfigValue::getValue);
     }
 
+    private static Optional<String> findDatabaseUrl(String datasource) {
+        return getDatasourceOptionValue(DB_URL, datasource);
+    }
+
     private static Database.Vendor getDatabaseVendor(String datasource) {
-        var option = datasource == null ?
-                Optional.of(DB.getKey()) :
-                getNamedKey(DB, datasource);
-        return option.map(Configuration::getKcConfigValue)
-                .map(ConfigValue::getValue)
-                .flatMap(Database::getVendor)
-                .orElseThrow();
+        return getDatasourceOptionValue(DB, datasource).flatMap(Database::getVendor).orElseThrow();
     }
 
     private static DatabaseOptions.DatabaseTlsMode getDatabaseTlsMode(String datasource) {
-        var option = datasource == null ?
-                Optional.of(DB_TLS_MODE.getKey()) :
-                getNamedKey(DB_TLS_MODE, datasource);
-        return option.map(Configuration::getKcConfigValue)
-                .map(ConfigValue::getValue)
+        return getDatasourceOptionValue(DB_TLS_MODE, datasource)
                 .map(String::toUpperCase)
                 .map(DatabaseOptions.DatabaseTlsMode::fromCliValue)
                 .orElse(DatabaseOptions.DatabaseTlsMode.DISABLED);
     }
 
     private static Optional<String> findTlsTrustStoreFile(String datasource) {
-        var option = datasource == null ?
-                Optional.of(DB_TLS_TRUST_STORE_FILE.getKey()) :
-                getNamedKey(DB_TLS_TRUST_STORE_FILE, datasource);
-        return option.map(Configuration::getKcConfigValue)
-                .map(ConfigValue::getValue);
+        return getDatasourceOptionValue(DB_TLS_TRUST_STORE_FILE, datasource);
     }
 
     private static void validateConnectTimeout(String value) {
