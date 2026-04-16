@@ -25,7 +25,7 @@ public class SsfOutboxStore {
 
     private static final Logger log = Logger.getLogger(SsfOutboxStore.class);
 
-    private final KeycloakSession session;
+    protected final KeycloakSession session;
 
     public SsfOutboxStore(KeycloakSession session) {
         this.session = session;
@@ -60,8 +60,8 @@ public class SsfOutboxStore {
         // common no-op path.
         SsfPendingEventEntity existing = findByClientAndJti(em, clientId, jti);
         if (existing != null) {
-            log.debugf("SSF outbox enqueue deduplicated. clientId=%s jti=%s existingId=%s status=%s",
-                    clientId, jti, existing.getId(), existing.getStatus());
+            log.debugf("SSF outbox enqueue deduplicated. realmId=%s clientId=%s jti=%s existingId=%s status=%s",
+                    existing.getRealmId(), clientId, jti, existing.getId(), existing.getStatus());
             return existing.getId();
         }
 
@@ -83,8 +83,8 @@ public class SsfOutboxStore {
         entity.setCreatedAt(now);
 
         em.persist(entity);
-        log.debugf("SSF outbox enqueued. id=%s clientId=%s streamId=%s jti=%s eventType=%s",
-                entity.getId(), clientId, streamId, jti, eventType);
+        log.debugf("SSF outbox enqueued. id=%s realmId=%s clientId=%s streamId=%s jti=%s eventType=%s",
+                entity.getId(), realmId, clientId, streamId, jti, eventType);
         return entity.getId();
     }
 
@@ -142,35 +142,6 @@ public class SsfOutboxStore {
     }
 
     /**
-     * Admin-initiated retry: resets a dead-letter row back to PENDING
-     * with a fresh attempt counter and an immediate next-attempt-at
-     * so the next drainer tick picks it up.
-     */
-    public void requeueFromDeadLetter(SsfPendingEventEntity entity) {
-        entity.setStatus(SsfPendingEventStatus.PENDING);
-        entity.setAttempts(0);
-        entity.setNextAttemptAt(Instant.now());
-        entity.setLastError(null);
-        getEntityManager().merge(entity);
-    }
-
-    public long countByClientAndStatus(String clientId, SsfPendingEventStatus status) {
-        return getEntityManager()
-                .createNamedQuery("SsfPendingEvent.countByClientAndStatus", Long.class)
-                .setParameter("clientId", clientId)
-                .setParameter("status", status)
-                .getSingleResult();
-    }
-
-    /**
-     * Housekeeping: deletes {@link SsfPendingEventStatus#DELIVERED DELIVERED}
-     * rows whose {@code delivered_at} is older than the retention cut-off.
-     * Run from the drainer at a low cadence — the table should otherwise
-     * grow unbounded since delivered rows stay around purely for jti dedup.
-     *
-     * @return the number of rows purged.
-     */
-    /**
      * Realm-scoped cascade: deletes every outbox row belonging to the
      * given realm regardless of status. Invoked from the
      * {@link org.keycloak.models.RealmModel.RealmRemovedEvent
@@ -204,11 +175,27 @@ public class SsfOutboxStore {
         return purged;
     }
 
-    private SsfPendingEventEntity findByClientAndJti(EntityManager em, String clientId, String jti) {
+    /**
+     * Purges {@link SsfPendingEventStatus#DEAD_LETTER DEAD_LETTER} rows
+     * older than {@code cutoff}, anchored on {@code createdAt} (see the
+     * named query javadoc on {@link SsfPendingEventEntity} for the
+     * rationale).
+     */
+    public int purgeDeadLetterOlderThan(Instant cutoff) {
+        int purged = getEntityManager()
+                .createNamedQuery("SsfPendingEvent.deletePurgedDeadLetter")
+                .setParameter("status", SsfPendingEventStatus.DEAD_LETTER)
+                .setParameter("olderThan", cutoff)
+                .executeUpdate();
+        if (purged > 0) {
+            log.debugf("SSF outbox purged %d dead-letter rows older than %s", purged, cutoff);
+        }
+        return purged;
+    }
+
+    protected SsfPendingEventEntity findByClientAndJti(EntityManager em, String clientId, String jti) {
         List<SsfPendingEventEntity> hits = em
-                .createQuery("SELECT e FROM SsfPendingEventEntity e"
-                        + " WHERE e.clientId = :clientId AND e.jti = :jti",
-                        SsfPendingEventEntity.class)
+                .createNamedQuery("SsfPendingEvent.findByClientAndJti", SsfPendingEventEntity.class)
                 .setParameter("clientId", clientId)
                 .setParameter("jti", jti)
                 .setMaxResults(1)
@@ -216,11 +203,11 @@ public class SsfOutboxStore {
         return hits.isEmpty() ? null : hits.get(0);
     }
 
-    private EntityManager getEntityManager() {
+    protected EntityManager getEntityManager() {
         return session.getProvider(JpaConnectionProvider.class).getEntityManager();
     }
 
-    private static String truncateError(String error) {
+    protected String truncateError(String error) {
         if (error == null) {
             return null;
         }

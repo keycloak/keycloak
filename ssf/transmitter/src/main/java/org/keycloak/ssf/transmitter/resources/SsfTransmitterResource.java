@@ -4,7 +4,7 @@ import jakarta.ws.rs.Path;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
+import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 
 public class SsfTransmitterResource {
 
@@ -19,16 +19,16 @@ public class SsfTransmitterResource {
 
     @Path("/streams")
     public SsfStreamManagementResource getStreamManagementEndpoint() {
-        return SsfTransmitter.current().streamManagementResource();
+        return session.getProvider(SsfTransmitterProvider.class).streamManagementResource();
     }
 
     @Path("/streams/status")
     public SsfStreamStatusResource getStreamStatusEndpoint() {
-        return SsfTransmitter.current().streamStatusResource();
+        return session.getProvider(SsfTransmitterProvider.class).streamStatusResource();
     }
 
     @Path("/verify")
     public SsfStreamVerificationResource getVerificationEndpoint() {
-        return SsfTransmitter.current().streamVerificationResource();
+        return session.getProvider(SsfTransmitterProvider.class).streamVerificationResource();
     }
 }

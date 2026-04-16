@@ -12,7 +12,6 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamService;
@@ -39,7 +38,7 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
             return;
         }
 
-        SsfTransmitterProvider transmitter = SsfTransmitter.current();
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
         if (transmitter == null) {
             return;
         }
@@ -108,7 +107,7 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     @Override
     public void onEvent(AdminEvent adminEvent, boolean includeRepresentation) {
 
-        SsfTransmitterProvider transmitter = SsfTransmitter.current();
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
         if (transmitter == null) {
             return;
         }

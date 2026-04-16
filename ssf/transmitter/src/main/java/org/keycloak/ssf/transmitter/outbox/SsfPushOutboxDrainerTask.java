@@ -3,12 +3,12 @@ package org.keycloak.ssf.transmitter.outbox;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Function;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
@@ -43,14 +43,35 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
      * successful delivery. Well beyond the maximum backoff window, so
      * no in-flight retry can outlive this.
      */
-    private static final Duration DELIVERED_RETENTION = Duration.ofHours(24);
+    protected static final Duration DELIVERED_RETENTION = Duration.ofHours(24);
 
-    private final int batchSize;
-    private final SsfPushOutboxBackoff backoff;
+    protected final int batchSize;
 
-    public SsfPushOutboxDrainerTask(int batchSize, SsfPushOutboxBackoff backoff) {
+    protected final SsfPushOutboxBackoff backoff;
+
+    /**
+     * Retention for DEAD_LETTER rows. {@code null} or {@code Duration.ZERO}
+     * disables the purge (operators may want to retain dead-letters
+     * indefinitely for forensic/audit purposes).
+     */
+    protected final Duration deadLetterRetention;
+
+    /**
+     * Session-scoped factory for the outbox DAO. Extension point for
+     * deployments that want to plug in a custom {@link SsfOutboxStore}
+     * subclass (e.g. for instrumentation or schema overrides) — the
+     * default is {@code SsfOutboxStore::new}.
+     */
+    protected final Function<KeycloakSession, SsfOutboxStore> outboxStoreFactory;
+
+    public SsfPushOutboxDrainerTask(int batchSize,
+                                    SsfPushOutboxBackoff backoff,
+                                    Duration deadLetterRetention,
+                                    Function<KeycloakSession, SsfOutboxStore> outboxStoreFactory) {
         this.batchSize = batchSize;
         this.backoff = backoff;
+        this.deadLetterRetention = deadLetterRetention;
+        this.outboxStoreFactory = outboxStoreFactory;
     }
 
     @Override
@@ -60,27 +81,28 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         KeycloakSession previous = KeycloakSessionUtil.getKeycloakSession();
         KeycloakSessionUtil.setKeycloakSession(session);
         try {
-            drain(session);
-            purgeDeliveredOlderThanRetention(session);
+            SsfOutboxStore store = outboxStoreFactory.apply(session);
+            drain(session, store);
+            purgeDeliveredOlderThanRetention(store);
+            purgeDeadLetterOlderThanRetention(store);
         } finally {
             KeycloakSessionUtil.setKeycloakSession(previous);
         }
     }
 
-    protected void drain(KeycloakSession session) {
-        SsfOutboxStore store = new SsfOutboxStore(session);
+    protected void drain(KeycloakSession session, SsfOutboxStore store) {
         List<SsfPendingEventEntity> due = store.lockDueForPush(batchSize);
         if (due.isEmpty()) {
             return;
         }
         log.debugf("SSF outbox drainer processing %d due row(s)", due.size());
 
-        for (SsfPendingEventEntity row : due) {
-            processRow(session, store, row);
+        for (SsfPendingEventEntity pendingEvent : due) {
+            processPendingEvent(session, store, pendingEvent);
         }
     }
 
-    protected void processRow(KeycloakSession session, SsfOutboxStore store, SsfPendingEventEntity row) {
+    protected void processPendingEvent(KeycloakSession session, SsfOutboxStore store, SsfPendingEventEntity row) {
         // Resolve the realm + receiver client the row targets. The row
         // may outlive the client (e.g. admin deleted the client while a
         // push was pending) — treat that as a terminal failure so the
@@ -101,11 +123,6 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             return;
         }
 
-        // Push needs the realm and client on the session context for
-        // downstream attribute reads (push timeouts, sig algorithm).
-        session.getContext().setRealm(realm);
-        session.getContext().setClient(receiverClient);
-
         StreamConfig stream = new ClientStreamStore(session).getStreamForClient(receiverClient);
         if (stream == null || !row.getStreamId().equals(stream.getStreamId())) {
             // Stream was deleted (or recreated with a different id) while
@@ -118,7 +135,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             return;
         }
 
-        SsfTransmitterProvider transmitter = SsfTransmitter.current();
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
         if (transmitter == null) {
             // Feature disabled mid-flight — leave the row pending, try
             // again next tick. No counter bump: this isn't the receiver's
@@ -175,8 +192,16 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         }
     }
 
-    protected void purgeDeliveredOlderThanRetention(KeycloakSession session) {
+    protected void purgeDeliveredOlderThanRetention(SsfOutboxStore store) {
         Instant cutoff = Instant.now().minus(DELIVERED_RETENTION);
-        new SsfOutboxStore(session).purgeDeliveredOlderThan(cutoff);
+        store.purgeDeliveredOlderThan(cutoff);
+    }
+
+    protected void purgeDeadLetterOlderThanRetention(SsfOutboxStore store) {
+        if (deadLetterRetention == null || deadLetterRetention.isZero() || deadLetterRetention.isNegative()) {
+            return;
+        }
+        Instant cutoff = Instant.now().minus(deadLetterRetention);
+        store.purgeDeadLetterOlderThan(cutoff);
     }
 }

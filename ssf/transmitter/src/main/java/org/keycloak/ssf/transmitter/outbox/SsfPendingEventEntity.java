@@ -67,6 +67,10 @@ import jakarta.persistence.UniqueConstraint;
                         + "   AND e.nextAttemptAt <= :now"
                         + " ORDER BY e.nextAttemptAt ASC"),
         @NamedQuery(
+                name = "SsfPendingEvent.findByClientAndJti",
+                query = "SELECT e FROM SsfPendingEventEntity e"
+                        + " WHERE e.clientId = :clientId AND e.jti = :jti"),
+        @NamedQuery(
                 name = "SsfPendingEvent.countByClientAndStatus",
                 query = "SELECT COUNT(e) FROM SsfPendingEventEntity e"
                         + " WHERE e.clientId = :clientId AND e.status = :status"),
@@ -74,6 +78,15 @@ import jakarta.persistence.UniqueConstraint;
                 name = "SsfPendingEvent.deletePurgedDelivered",
                 query = "DELETE FROM SsfPendingEventEntity e"
                         + " WHERE e.status = :status AND e.deliveredAt < :olderThan"),
+        // Dead-letter rows don't have a deliveredAt timestamp, so we anchor
+        // retention on createdAt. This over-retains by at most the drainer's
+        // backoff window (seconds to minutes with defaults) relative to the
+        // point at which the row actually reached DEAD_LETTER — cheap vs
+        // adding a terminalAt column and a schema migration.
+        @NamedQuery(
+                name = "SsfPendingEvent.deletePurgedDeadLetter",
+                query = "DELETE FROM SsfPendingEventEntity e"
+                        + " WHERE e.status = :status AND e.createdAt < :olderThan"),
         @NamedQuery(
                 name = "SsfPendingEvent.deleteByRealm",
                 query = "DELETE FROM SsfPendingEventEntity e"
@@ -82,6 +95,7 @@ import jakarta.persistence.UniqueConstraint;
 public class SsfPendingEventEntity {
 
     public static final String DELIVERY_METHOD_PUSH = "PUSH";
+
     public static final String DELIVERY_METHOD_POLL = "POLL";
 
     @Id

@@ -1,13 +1,19 @@
 package org.keycloak.ssf.transmitter.support;
 
+import java.time.Duration;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.jboss.logging.Logger;
+
+import org.keycloak.Config;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
 public class SsfUtil {
+
+    private static final Logger log = Logger.getLogger(SsfUtil.class);
 
     public static String getIssuerUrl(KeycloakSession session) {
         KeycloakContext context = session.getContext();
@@ -20,20 +26,65 @@ public class SsfUtil {
 
         String hostnameUrl = System.getenv().get("KC_HOSTNAME_URL");
         if (hostnameUrl != null && !hostnameUrl.isBlank()) {
-            if (!hostnameUrl.endsWith("/")) {
-                hostnameUrl += "/";
-            }
-            return hostnameUrl + "realms/" + realm.getName();
+            return appendRealmPath(hostnameUrl, realm.getName());
         }
 
-        String baseUrl = context.getUri().getBaseUri().toString() + "realms/" + realm.getName();
-        if (baseUrl.endsWith("/")) {
-            baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+        String configuredHostname = Config.scope("hostname", "v2").get("hostname");
+        if (configuredHostname != null && !configuredHostname.isBlank()
+            && (configuredHostname.startsWith("http://") || configuredHostname.startsWith("https://"))) {
+            return appendRealmPath(configuredHostname, realm.getName());
         }
-        return baseUrl;
+
+        try {
+            return appendRealmPath(context.getUri().getBaseUri().toString(), realm.getName());
+        } catch (RuntimeException ignored) {
+            // No active HTTP request context (e.g. scheduled outbox drainer).
+        }
+
+        throw new IllegalStateException(
+                "Cannot resolve SSF issuer URL for realm '" + realm.getName() + "' outside an HTTP request. "
+                        + "Configure one of: the realm 'frontendUrl' attribute, the KC_HOSTNAME_URL environment variable, "
+                        + "or the Keycloak '--hostname' option with a full URL.");
+    }
+
+    private static String appendRealmPath(String baseUrl, String realmName) {
+        if (!baseUrl.endsWith("/")) {
+            baseUrl += "/";
+        }
+        return baseUrl + "realms/" + realmName;
     }
 
     public static Set<String> parseEventTypeAliases(String eventAliases) {
         return Set.copyOf(Stream.of(eventAliases.split(",")).map(String::trim).toList());
+    }
+
+    /**
+     * Minimal duration parser: supports {@code ms}, {@code s}, {@code m},
+     * {@code h}, {@code d} suffixes, falling back to seconds when no unit
+     * is given.
+     */
+    public static long parseDurationMillis(String value, long defaultMillis) {
+        try {
+            String trimmed = value.trim().toLowerCase();
+            if (trimmed.endsWith("ms")) {
+                return Long.parseLong(trimmed.substring(0, trimmed.length() - 2).trim());
+            }
+            if (trimmed.endsWith("s")) {
+                return Duration.ofSeconds(Long.parseLong(trimmed.substring(0, trimmed.length() - 1).trim())).toMillis();
+            }
+            if (trimmed.endsWith("m")) {
+                return Duration.ofMinutes(Long.parseLong(trimmed.substring(0, trimmed.length() - 1).trim())).toMillis();
+            }
+            if (trimmed.endsWith("h")) {
+                return Duration.ofHours(Long.parseLong(trimmed.substring(0, trimmed.length() - 1).trim())).toMillis();
+            }
+            if (trimmed.endsWith("d")) {
+                return Duration.ofDays(Long.parseLong(trimmed.substring(0, trimmed.length() - 1).trim())).toMillis();
+            }
+            return Duration.ofSeconds(Long.parseLong(trimmed)).toMillis();
+        } catch (NumberFormatException e) {
+            log.warnf("Invalid interval '%s' — falling back to default %dms", value, defaultMillis);
+            return defaultMillis;
+        }
     }
 }

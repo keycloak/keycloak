@@ -19,7 +19,6 @@ import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.stream.SsfEventsConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
@@ -521,7 +520,7 @@ public class ClientStreamStore implements SsfStreamStore {
             return Integer.parseInt(client.getAttribute(SSF_VERIFICATION_DELAY_MILLIS_KEY));
         }
         // Fallback to the transmitter-wide default configured via SPI
-        return SsfTransmitter.current().getConfig().getTransmitterInitiatedVerificationDelayMillis();
+        return session.getProvider(SsfTransmitterProvider.class).getConfig().getTransmitterInitiatedVerificationDelayMillis();
     }
 
     protected VerificationTrigger getVerificationTrigger(ClientModel client) {
@@ -542,7 +541,7 @@ public class ClientStreamStore implements SsfStreamStore {
 
     protected Set<String> getSupportedEvents(KeycloakSession session, ClientModel client) {
 
-        SsfTransmitterProvider transmitter = SsfTransmitter.current();
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
         SsfEventRegistry registry = Ssf.events().getRegistry();
 
         String supportedEventsAttribute = client.getAttribute(SSF_STREAM_SUPPORTED_EVENTS_KEY);

@@ -3,9 +3,11 @@ package org.keycloak.ssf.transmitter.event;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.keycloak.TokenIdGenerator;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
@@ -31,6 +33,8 @@ import org.keycloak.ssf.transmitter.stream.StreamConfig;
 
 import org.jboss.logging.Logger;
 
+import org.keycloak.ssf.transmitter.support.SsfUtil;
+
 
 /**
  * Generator for Security Event Tokens (SETs).
@@ -47,9 +51,9 @@ public class SecurityEventTokenMapper {
 
     private final SsfTransmitterConfig transmitterConfig;
 
-    public SecurityEventTokenMapper(KeycloakSession session, String issuer, SsfTransmitterConfig transmitterConfig) {
+    public SecurityEventTokenMapper(KeycloakSession session, SsfTransmitterConfig transmitterConfig, Function<KeycloakSession, String> issuerGenerator) {
         this.session = session;
-        this.issuer = issuer;
+        this.issuer = issuerGenerator.apply(session);
         this.transmitterConfig = transmitterConfig;
     }
 

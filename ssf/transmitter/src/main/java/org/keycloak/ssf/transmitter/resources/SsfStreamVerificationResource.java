@@ -11,7 +11,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
+import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
@@ -103,7 +103,7 @@ public class SsfStreamVerificationResource {
 
     protected void checkMinVerificationInterval(ClientModel client) {
 
-        int minVerificationIntervalSeconds = SsfTransmitter.current().getConfig().getMinVerificationIntervalSeconds();
+        int minVerificationIntervalSeconds = session.getProvider(SsfTransmitterProvider.class).getConfig().getMinVerificationIntervalSeconds();
         if (minVerificationIntervalSeconds <= 0) {
             // Rate limiting disabled.
             return;
