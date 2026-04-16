@@ -268,8 +268,8 @@ public class ValidationAnnotationScannerTest {
         assertNotNull(descriptions);
         assertEquals(1, descriptions.size());
         assertTrue(descriptions.containsKey("secret"));
-        // Falls back to annotation name when message can't be resolved from resource bundle
-        assertEquals("ClientSecretNotBlank", descriptions.get("secret"));
+        // Uses the default message from the annotation definition
+        assertEquals("Client secret must not be blank", descriptions.get("secret"));
     }
 
     @Test
@@ -291,10 +291,8 @@ public class ValidationAnnotationScannerTest {
 
         assertNotNull(descriptions);
         assertTrue(descriptions.containsKey("secret"));
-        String description = descriptions.get("secret");
-        assertTrue(description.contains("on create"));
-        // Falls back to annotation name when message can't be resolved
-        assertTrue(description.contains("ClientSecretNotBlank"));
+        // Uses the default message from the annotation definition with group context
+        assertEquals("on create: Client secret must not be blank", descriptions.get("secret"));
     }
 
     @Test
