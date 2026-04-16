@@ -186,17 +186,27 @@ public class OID4VCBasicWallet {
     public Proofs generateJwtProof(OID4VCTestContext ctx) {
         String aud = getIssuerMetadata(ctx).getCredentialIssuer();
         String nonce = oauth.oid4vc().doNonceRequest().getNonce();
-        KeyWrapper kw = getECKeyPair(ctx, null);
+        KeyWrapper kw = getECKeyPair(ctx, "proof-key");
         return Proofs.create(ProofType.JWT, OID4VCProofTestUtils.generateJwtProof(aud, kw, nonce));
     }
 
     public KeyWrapper getECKeyPair(OID4VCTestContext ctx, String keyId) {
-        String cacheKey = keyId != null ? keyId : ctx.getHolder() + "_key";
+        String cacheKey = keyId != null ? keyId : ctx.getHolder() + "_ec_key";
         AttachmentKey<KeyWrapper> attachmentKey = new AttachmentKey<>(cacheKey, KeyWrapper.class);
         KeyWrapper kw = ctx.getAttachment(attachmentKey);
         if (kw == null) {
-            kw = OID4VCProofTestUtils.createEcKeyPair();
-            if (keyId != null) kw.setKid(keyId);
+            kw = OID4VCProofTestUtils.createEcKeyPair(keyId);
+            ctx.putAttachment(attachmentKey, kw);
+        }
+        return kw;
+    }
+
+    public KeyWrapper getRSAKeyPair(OID4VCTestContext ctx, String keyId) {
+        String cacheKey = keyId != null ? keyId : ctx.getHolder() + "_rsa_key";
+        AttachmentKey<KeyWrapper> attachmentKey = new AttachmentKey<>(cacheKey, KeyWrapper.class);
+        KeyWrapper kw = ctx.getAttachment(attachmentKey);
+        if (kw == null) {
+            kw = OID4VCProofTestUtils.createRsaKeyPair(keyId);
             ctx.putAttachment(attachmentKey, kw);
         }
         return kw;

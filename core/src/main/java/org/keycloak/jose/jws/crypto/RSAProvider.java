@@ -72,7 +72,7 @@ public class RSAProvider implements SignatureProvider {
     }
 
     public static boolean verifyViaCertificate(JWSInput input, String cert) {
-        X509Certificate certificate = null;
+        X509Certificate certificate;
         try {
             certificate = PemUtils.decodeCertificate(cert);
         } catch (Exception e) {

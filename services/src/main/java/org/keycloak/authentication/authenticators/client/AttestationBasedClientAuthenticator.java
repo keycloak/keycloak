@@ -51,6 +51,7 @@ import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.Strings;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -109,6 +110,9 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         if (attestationValue == null && attestationPoPValue == null) {
             return;
         }
+
+        logger.debugf(OAUTH_CLIENT_ATTESTATION_HEADER + ": " + attestationValue);
+        logger.debugf(OAUTH_CLIENT_ATTESTATION_POP_HEADER + ": " + attestationPoPValue);
 
         context.attempted();
 
@@ -193,6 +197,27 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         public void setConfirmation(Confirmation cnf) {
             this.cnf = cnf;
         }
+
+        @Override
+        public ClientAttestationJwt issuedFor(String issuedFor) {
+            return (ClientAttestationJwt) super.issuedFor(issuedFor);
+        }
+
+        @Override
+        public ClientAttestationJwt subject(String subject) {
+            return (ClientAttestationJwt) super.subject(subject);
+        }
+
+        @Override
+        public ClientAttestationJwt issuedNowWithTTL(int ttl) {
+            return (ClientAttestationJwt) super.issuedNowWithTTL(ttl);
+        }
+
+        @JsonIgnore
+        public ClientAttestationJwt confirmation(JWK jwk) {
+            cnf = new Confirmation().setJwk(jwk);
+            return this;
+        }
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -206,8 +231,9 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             return jwk;
         }
 
-        public void setJwk(JWK jwk) {
+        public Confirmation setJwk(JWK jwk) {
             this.jwk = jwk;
+            return this;
         }
     }
 
@@ -390,9 +416,18 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
     /**
      * The AttestationBasedClientAuthenticator config
      */
-    static class ABCAConfig {
+    public static class ABCAConfig {
 
         @JsonProperty
-        List<JWK> keys;
+        private List<JWK> keys;
+
+        public List<JWK> getKeys() {
+            return keys;
+        }
+
+        public ABCAConfig setKeys(List<JWK> keys) {
+            this.keys = keys;
+            return this;
+        }
     }
 }
