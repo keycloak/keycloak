@@ -50,6 +50,7 @@ public class IdentityProviderModel implements Serializable {
     public static final String LEGACY_HIDE_ON_LOGIN_ATTR = "hideOnLoginPage";
     public static final String LINK_ONLY = "linkOnly";
     public static final String LOGIN_HINT = "loginHint";
+    public static final String ALLOW_LINKING_WITH_EXISTING_FEDERATED_IDENTITY = "allowLinkingWithExistingFederatedIdentity";
     public static final String METADATA_DESCRIPTOR_URL = "metadataDescriptorUrl";
     public static final String ORGANIZATION_ID = "organizationId";
     public static final String ORGANIZATION_ID_NOT_NULL = "organizationIdNotNull";
@@ -287,6 +288,14 @@ public class IdentityProviderModel implements Serializable {
 
     public void setLoginHint(Boolean loginHint) {
         setBooleanConfig(LOGIN_HINT, loginHint);
+    }
+
+    public boolean isAllowLinkingWithExistingFederatedIdentity() {
+        return getBooleanConfig(ALLOW_LINKING_WITH_EXISTING_FEDERATED_IDENTITY);
+    }
+
+    public void setAllowLinkingWithExistingFederatedIdentity(Boolean enabled) {
+        setBooleanConfig(ALLOW_LINKING_WITH_EXISTING_FEDERATED_IDENTITY, enabled);
     }
 
     public boolean isPassMaxAge() {
