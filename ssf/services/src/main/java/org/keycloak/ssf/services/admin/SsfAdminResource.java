@@ -21,7 +21,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.ssf.SsfException;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
@@ -73,7 +72,7 @@ public class SsfAdminResource {
 
         auth.realm().requireViewRealm();
 
-        SsfTransmitterProvider transmitter = SsfTransmitter.current();
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
         SsfTransmitterConfig transmitterConfig = transmitter.getConfig();
 
         SsfConfigRepresentation config = new SsfConfigRepresentation();
@@ -157,7 +156,7 @@ public class SsfAdminResource {
         auth.clients().requireManage(client);
 
         try {
-            StreamConfig created = SsfTransmitter.current().streamService().createStreamAsAdmin(input, client);
+            StreamConfig created = session.getProvider(SsfTransmitterProvider.class).streamService().createStreamAsAdmin(input, client);
             return Response.status(Response.Status.CREATED)
                     .entity(toClientStreamRepresentation(created, client))
                     .build();
@@ -182,7 +181,7 @@ public class SsfAdminResource {
      */
     protected SsfClientStreamRepresentation toClientStreamRepresentation(StreamConfig streamConfig, ClientModel client) {
 
-        SsfTransmitterProvider transmitter = SsfTransmitter.current();
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
 
         SsfClientStreamRepresentation rep = new SsfClientStreamRepresentation();
         rep.setStreamId(streamConfig.getStreamId());
@@ -249,7 +248,7 @@ public class SsfAdminResource {
         // include a state nonce — only receiver-initiated requests may set
         // one — so we leave the state null here.
 
-        SsfTransmitterProvider transmitter = SsfTransmitter.current();
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
         boolean triggered = transmitter.verificationService().triggerVerification(verificationRequest);
         if (!triggered) {
             throw new NotFoundException("No SSF stream registered for client");

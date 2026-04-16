@@ -14,4 +14,5 @@ public final class SsfTransmitter {
         }
         return session.getProvider(SsfTransmitterProvider.class);
     }
+
 }

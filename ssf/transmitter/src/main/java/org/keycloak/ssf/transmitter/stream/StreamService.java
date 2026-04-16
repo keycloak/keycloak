@@ -20,7 +20,6 @@ import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.metadata.TransmitterMetadata;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.event.SsfUserSubjectFormats;
@@ -157,7 +156,7 @@ public class StreamService {
         streamConfig.setCreatedAt(now);
         streamConfig.setUpdatedAt(now);
 
-        streamConfig.setMinVerificationInterval(SsfTransmitter.current().getConfig().getMinVerificationIntervalSeconds());
+        streamConfig.setMinVerificationInterval(session.getProvider(SsfTransmitterProvider.class).getConfig().getMinVerificationIntervalSeconds());
 
         applySignatureAlgorithmFromClient(streamConfig, receiverClient);
         applyUserSubjectFormatFromClient(streamConfig, receiverClient);

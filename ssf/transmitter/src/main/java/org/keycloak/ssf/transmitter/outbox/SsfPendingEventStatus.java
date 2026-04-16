@@ -12,7 +12,10 @@ package org.keycloak.ssf.transmitter.outbox;
  *
  * <p>Rows in {@link #DELIVERED} are kept briefly for audit/idempotency
  * (jti dedup) and then purged by the drainer's housekeeping pass. Rows
- * in {@link #DEAD_LETTER} persist until an admin acts on them.
+ * in {@link #DEAD_LETTER} are retained for the configured
+ * {@code outbox-dead-letter-retention} window (default 30d, anchored on
+ * {@code createdAt}) and then purged by the same housekeeping pass. Set
+ * the retention to {@code 0} to retain dead-letters indefinitely.
  */
 public enum SsfPendingEventStatus {
 

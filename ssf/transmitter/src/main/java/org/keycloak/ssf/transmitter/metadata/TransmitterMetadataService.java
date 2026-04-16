@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.Ssf;
@@ -17,10 +18,13 @@ import org.keycloak.ssf.transmitter.support.SsfUtil;
  */
 public class TransmitterMetadataService {
 
-    private final KeycloakSession session;
+    protected final KeycloakSession session;
 
-    public TransmitterMetadataService(KeycloakSession session) {
+    protected  final Function<KeycloakSession, String> issuerGenerator;
+
+    public TransmitterMetadataService(KeycloakSession session, Function<KeycloakSession, String> issuerGenerator) {
         this.session = session;
+        this.issuerGenerator = issuerGenerator;
     }
 
     /**
@@ -47,7 +51,7 @@ public class TransmitterMetadataService {
 
         metadata.setSpecVersion("1_0");
 
-        String issuerUrl = SsfUtil.getIssuerUrl(session);
+        String issuerUrl = issuerGenerator.apply(session);
 
         metadata.setIssuer(issuerUrl);
         metadata.setJwksUri(issuerUrl + "/protocol/openid-connect/certs");

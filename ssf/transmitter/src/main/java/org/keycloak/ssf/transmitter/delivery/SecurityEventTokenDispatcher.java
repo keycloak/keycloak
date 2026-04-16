@@ -143,7 +143,17 @@ public class SecurityEventTokenDispatcher {
                             deliveryMethod.name(), stream.getStreamId(), eventToken.getJti(), async);
 
                     if (async) {
-                        deliverEventAsync(stream, narrowedEventToken, encodedEvent);
+                        // Outbox row records the full, unnarrowed eventToken:
+                        // the stored encodedEvent is already the signed,
+                        // stream-narrowed payload that will go on the wire
+                        // verbatim at drainer time, so the row-level fields
+                        // (jti, eventType) are only used for logging,
+                        // dedup, and per-event bookkeeping — indexed on the
+                        // unnarrowed token so retries and admin queries see
+                        // stable identifiers independent of what the
+                        // narrowing step happened to strip for a given
+                        // stream profile.
+                        deliverEventAsync(stream, eventToken, encodedEvent);
                         return true;
                     }
                     return pushDeliveryService.deliverEvent(stream, narrowedEventToken, encodedEvent);
