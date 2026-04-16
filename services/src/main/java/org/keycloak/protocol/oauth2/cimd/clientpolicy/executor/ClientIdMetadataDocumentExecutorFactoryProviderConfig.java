@@ -33,6 +33,11 @@ public class ClientIdMetadataDocumentExecutorFactoryProviderConfig {
     private final long upperLimitMetadataBytes;
 
     /**
+     * Max Clients per realm
+     */
+    private final int maxClients;
+
+    /**
      * Default value for {@link #cimdProviderName} :
      */
     public static final String DEFAULT_CONFIG_CIMD_PROVIDER_NAME = PersistentClientIdMetadataDocumentProviderFactory.PROVIDER_ID;
@@ -52,6 +57,11 @@ public class ClientIdMetadataDocumentExecutorFactoryProviderConfig {
      */
     public static final long DEFAULT_CONFIG_UPPER_LIMIT_METADATA_BYTES = 5000;
 
+    /**
+     * Default value for {@link #maxClients} : 1000
+     */
+    public static final int DEFAULT_CONFIG_MAX_CLIENTS = 1000;
+
 
     public ClientIdMetadataDocumentExecutorFactoryProviderConfig(Config.Scope config) {
         this.config = config;
@@ -59,6 +69,7 @@ public class ClientIdMetadataDocumentExecutorFactoryProviderConfig {
         minCacheTime = config.getInt(AbstractClientIdMetadataDocumentExecutorFactory.CONFIG_MIN_CACHE_TIME, DEFAULT_CONFIG_MIN_CACHE_TIME);
         maxCacheTime = config.getInt(AbstractClientIdMetadataDocumentExecutorFactory.CONFIG_MAX_CACHE_TIME, DEFAULT_CONFIG_MAX_CACHE_TIME);
         upperLimitMetadataBytes = config.getLong(AbstractClientIdMetadataDocumentExecutorFactory.CONFIG_UPPER_LIMIT_METADATA_BYTES, DEFAULT_CONFIG_UPPER_LIMIT_METADATA_BYTES);
+        maxClients = config.getInt(AbstractClientIdMetadataDocumentExecutorFactory.CONFIG_MAX_CLIENTS, DEFAULT_CONFIG_MAX_CLIENTS);
     }
 
     public String getCimdProviderName() {
@@ -75,5 +86,9 @@ public class ClientIdMetadataDocumentExecutorFactoryProviderConfig {
 
     public long getUpperLimitMetadataBytes() {
         return upperLimitMetadataBytes;
+    }
+
+    public int getMaxClients() {
+        return maxClients;
     }
 }
