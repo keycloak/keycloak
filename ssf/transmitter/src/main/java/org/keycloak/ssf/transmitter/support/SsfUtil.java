@@ -4,12 +4,12 @@ import java.time.Duration;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.jboss.logging.Logger;
-
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+
+import org.jboss.logging.Logger;
 
 public class SsfUtil {
 
