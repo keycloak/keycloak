@@ -2,16 +2,8 @@ package org.keycloak.ssf.transmitter.metadata;
 
 import java.util.stream.Collectors;
 
-import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.ssf.metadata.TransmitterMetadata;
-import org.keycloak.ssf.transmitter.SsfTransmitter;
-import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
-import org.keycloak.wellknown.WellKnownProvider;
-import org.keycloak.wellknown.WellKnownProviderFactory;
 
 /**
  * Well-Known Provider implementation for the legacy SSE (Shared Signals and Events) protocol metadata.
