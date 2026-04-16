@@ -17,11 +17,7 @@ import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 
-import org.jboss.logging.Logger;
-
 public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
-
-    protected static final Logger LOG = Logger.getLogger(DefaultSsfTransmitterProvider.class);
 
     protected final KeycloakSession session;
 
