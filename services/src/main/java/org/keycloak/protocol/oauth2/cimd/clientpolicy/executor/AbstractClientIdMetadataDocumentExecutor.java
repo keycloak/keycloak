@@ -405,6 +405,11 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
             return;
         }
 
+        if (fetchOp == FetchOperation.CREATE) {
+            // Check max clients per realm before fetching the client metadata of a client that cannot be created
+            checkClientsLimit();
+        }
+
         // fetch Client ID Metadata
         OIDCClientRepresentationWithCacheControl clientOIDCWithCacheControl = fetchClientMetadata(clientIdURI, fetchOp == FetchOperation.UPDATE, provider);
         if (clientOIDCWithCacheControl == null) {
@@ -473,6 +478,34 @@ public abstract class AbstractClientIdMetadataDocumentExecutor<CONFIG extends Ab
 
     private static final ObjectMapper clientMetadataObjectMapper = JsonSerialization.createObjectMapperWithDefaults()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+    // Max Clients per realm
+    public static final String ERR_CLIENTS_LIMIT_REACHED = "Max clients per realm reached";
+
+    /**
+     * Checks the max clients per realm limit. It is called before the client metadata is fetched, so that no request
+     * is sent to the client_id URL of a client that cannot be created.
+     *
+     * <p>The check is not atomic with the creation, in the same way as the max clients policy of the dynamic client
+     * registration: it does not see a client that a concurrent request is creating or has created but not committed
+     * yet. Therefore, concurrent requests can exceed the limit, by at most the number of creations that are in
+     * progress at the same time. Once the committed number of clients has reached the limit, every further creation
+     * is rejected.
+     *
+     * @throws ClientPolicyException when the limit is reached.
+     */
+    private void checkClientsLimit() throws ClientPolicyException {
+        int maxClients = providerConfig.getMaxClients();
+        if (maxClients <= 0) {
+            // 0 or negative means unlimited
+            return;
+        }
+        long currentCount = session.getContext().getRealm().getClientsCount();
+        if (currentCount >= maxClients) {
+            getLogger().warnv("Max clients per realm reached: max={0}, current={1}", maxClients, currentCount);
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, ERR_CLIENTS_LIMIT_REACHED);
+        }
+    }
 
     /**
      * Verifies an authorization request to check if the request includes required parameters and follows the expected format.
