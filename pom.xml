@@ -1121,7 +1121,7 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-v2-rest</artifactId>
+                <artifactId>keycloak-admin-v2-services</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

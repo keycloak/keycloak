@@ -424,7 +424,7 @@
 
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-v2-rest</artifactId>
+            <artifactId>keycloak-admin-v2-services</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

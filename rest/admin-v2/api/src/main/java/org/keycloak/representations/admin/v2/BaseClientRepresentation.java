@@ -6,7 +6,6 @@ import java.util.Set;
 
 import jakarta.validation.constraints.NotBlank;
 
-import org.keycloak.representations.admin.v2.validation.ClientUuidProvider;
 import org.keycloak.representations.admin.v2.validation.PatchClient;
 import org.keycloak.representations.admin.v2.validation.ProtocolUnmodified;
 import org.keycloak.representations.admin.v2.validation.PutClient;
@@ -30,7 +29,7 @@ import org.hibernate.validator.constraints.URL;
     @JsonSubTypes.Type(value = OIDCClientRepresentation.class, name = OIDCClientRepresentation.PROTOCOL),
     @JsonSubTypes.Type(value = SAMLClientRepresentation.class, name = SAMLClientRepresentation.PROTOCOL)
 })
-@UuidUnmodified(uuidProvider = ClientUuidProvider.class, groups = {PutClient.class, PatchClient.class})
+@UuidUnmodified(groups = {PutClient.class, PatchClient.class})
 @ProtocolUnmodified(groups = {PutClient.class, PatchClient.class})
 @ValidRedirectUris
 public abstract class BaseClientRepresentation extends BaseRepresentation implements RepresentationWithUuid {
@@ -141,7 +140,9 @@ public abstract class BaseClientRepresentation extends BaseRepresentation implem
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof BaseClientRepresentation that)) return false;
+        if (!(o instanceof BaseClientRepresentation that)) {
+            return false;
+        }
         return Objects.equals(uuid, that.uuid) && Objects.equals(clientId, that.clientId) && Objects.equals(displayName, that.displayName) && Objects.equals(description, that.description) && Objects.equals(enabled, that.enabled) && Objects.equals(appUrl, that.appUrl) && Objects.equals(redirectUris, that.redirectUris) && Objects.equals(roles, that.roles);
     }
 

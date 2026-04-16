@@ -19,8 +19,6 @@ package org.keycloak.quarkus.runtime.configuration;
 
 import java.util.List;
 
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
-
 import picocli.CommandLine;
 
 /**
@@ -38,9 +36,6 @@ public class KcUnmatchedArgumentException extends CommandLine.UnmatchedArgumentE
 
     @Override
     public List<String> getSuggestions() {
-        // filter out disabled mappers
-        return super.getSuggestions().stream()
-                .filter(f -> PropertyMappers.getKcKeyFromCliKey(f).filter(PropertyMappers::isDisabledMapper).isEmpty())
-                .toList();
+        return super.getSuggestions();
     }
 }

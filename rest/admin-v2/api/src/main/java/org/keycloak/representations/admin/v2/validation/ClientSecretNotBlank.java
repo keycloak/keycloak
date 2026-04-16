@@ -15,11 +15,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Validation constraint that requires the {@link OIDCClientRepresentation.Auth#getSecret()} is not blank
  * when {@link OIDCClientRepresentation.Auth#getMethod()} is the (JWT) client secret.
  *
- * @see ClientSecretNotBlankValidator#isClientSecret(String)
  */
 @Target(TYPE)
 @Retention(RUNTIME)
-@Constraint(validatedBy = ClientSecretNotBlankValidator.class)
+@Constraint(validatedBy = {})
 public @interface ClientSecretNotBlank {
 
     String message() default "Client secret must not be blank";

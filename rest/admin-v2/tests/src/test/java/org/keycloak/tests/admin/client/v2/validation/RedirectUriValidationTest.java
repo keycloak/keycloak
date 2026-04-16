@@ -1,6 +1,6 @@
 package org.keycloak.tests.admin.client.v2.validation;
 
-import org.keycloak.representations.admin.v2.validation.ValidRedirectUrisValidator;
+import org.keycloak.representations.admin.v2.validators.ValidRedirectUrisValidator;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
