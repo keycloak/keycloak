@@ -16,7 +16,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
@@ -59,7 +58,7 @@ public class SsfStreamManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response createStream(StreamConfigInputRepresentation input) {
 
-        if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_MANAGE)) {
+        if (!SsfAuthUtil.canManage()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
@@ -100,7 +99,7 @@ public class SsfStreamManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getStream(@QueryParam("stream_id") String streamId) {
 
-        if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_READ)) {
+        if (!SsfAuthUtil.canRead()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
@@ -148,7 +147,7 @@ public class SsfStreamManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateStream(StreamConfigUpdateRepresentation update) {
 
-        if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_MANAGE)) {
+        if (!SsfAuthUtil.canManage()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
@@ -197,7 +196,7 @@ public class SsfStreamManagementResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response replaceStream(StreamConfigUpdateRepresentation update) {
 
-        if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_MANAGE)) {
+        if (!SsfAuthUtil.canManage()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
@@ -244,7 +243,7 @@ public class SsfStreamManagementResource {
     @NoCache
     public Response deleteStream(@QueryParam("stream_id") String streamId) {
 
-        if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_MANAGE)) {
+        if (!SsfAuthUtil.canManage()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 

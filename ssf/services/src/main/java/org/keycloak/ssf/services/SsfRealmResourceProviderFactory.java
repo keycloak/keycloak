@@ -8,6 +8,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
+import org.keycloak.ssf.Ssf;
 
 public class SsfRealmResourceProviderFactory implements RealmResourceProviderFactory, EnvironmentDependentProviderFactory {
 
@@ -26,7 +27,12 @@ public class SsfRealmResourceProviderFactory implements RealmResourceProviderFac
     }
 
     @Override
-    public RealmResourceProvider create(KeycloakSession keycloakSession) {
+    public RealmResourceProvider create(KeycloakSession session) {
+
+        if (!Ssf.isTransmitterEnabled(session.getContext().getRealm())) {
+            return null;
+        }
+
         return INSTANCE;
     }
 

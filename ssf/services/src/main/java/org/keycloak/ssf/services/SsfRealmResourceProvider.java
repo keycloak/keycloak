@@ -6,6 +6,7 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.receiver.resources.SsfReceiversResource;
 import org.keycloak.ssf.transmitter.resources.SsfTransmitterResource;
+import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 /**
@@ -27,6 +28,7 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
      */
     @Path(Ssf.SSF_RECEIVERS_PATH)
     public SsfReceiversResource receivers() {
+        // authentication is perform on by validating SET signature and with Push auth header on stream level
         return new SsfReceiversResource(KeycloakSessionUtil.getKeycloakSession());
     }
 
@@ -39,7 +41,8 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
      */
     @Path(Ssf.SSF_TRANSMITTER_PATH)
     public SsfTransmitterResource transmitter() {
-        return new SsfTransmitterResource(KeycloakSessionUtil.getKeycloakSession());
+        var authResult = SsfAuthUtil.authenticate();
+        return new SsfTransmitterResource(KeycloakSessionUtil.getKeycloakSession(), authResult);
     }
 
     @Override

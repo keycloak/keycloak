@@ -1,5 +1,7 @@
 package org.keycloak.ssf.transmitter.delivery;
 
+import java.util.concurrent.ExecutorService;
+
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.SsfProfile;
@@ -15,8 +17,6 @@ import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 
 import org.jboss.logging.Logger;
-
-import java.util.concurrent.ExecutorService;
 
 public class SecurityEventTokenDispatcher {
 
