@@ -57,18 +57,31 @@ public class StreamVerificationService {
 
         log.debugf("Triggering verification for stream %s", streamId);
 
-        // Generate a verification event
+        // Generate the verification event and push it synchronously so the
+        // caller (admin Verify button / receiver POST /streams/verify /
+        // post-create auto-fire) gets a real success/failure indication
+        // rather than just "we scheduled it on the executor". Verification
+        // is by nature an explicit, low-throughput interaction where the
+        // caller wants to know the receiver's actual response — async
+        // would mean reporting "OK" before the push has even started.
         SsfSecurityEventToken verificationEventToken = mapper.generateVerificationEvent(stream, verificationRequest.getState());
-        dispatcher.deliverEvent(verificationEventToken, stream);
+        boolean delivered = dispatcher.deliverEventSync(verificationEventToken, stream);
 
         // Record the dispatch timestamp on the receiver client so the admin
         // UI's "last verified" field and the rate-limit check see the same
         // value regardless of whether the dispatch originated from a
-        // receiver, an admin, or the post-create auto-trigger.
+        // receiver, an admin, or the post-create auto-trigger. We stamp
+        // even on a delivery failure — the rate-limit semantics are
+        // "when did we last attempt this", and the failure detail surfaces
+        // separately via the boolean return.
         streamStore.recordStreamVerification(streamId);
 
-        log.debugf("Delivered verification event for stream %s", streamId);
+        if (delivered) {
+            log.debugf("Delivered verification event for stream %s", streamId);
+        } else {
+            log.warnf("Verification event push failed for stream %s — see prior errors for the underlying cause", streamId);
+        }
 
-        return true;
+        return delivered;
     }
 }
