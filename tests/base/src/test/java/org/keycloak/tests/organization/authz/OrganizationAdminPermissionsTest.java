@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.organization.authz;
+package org.keycloak.tests.organization.authz;
 
 import jakarta.ws.rs.ForbiddenException;
 import jakarta.ws.rs.core.Response;
@@ -27,42 +27,43 @@ import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.organization.admin.AbstractOrganizationTest;
-import org.keycloak.testsuite.util.AdminClientUtil;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testframework.admin.AdminClientFactory;
+import org.keycloak.testframework.annotations.InjectAdminClientFactory;
+import org.keycloak.testframework.annotations.InjectRealm;
+import org.keycloak.testframework.annotations.KeycloakIntegrationTest;
+import org.keycloak.testframework.realm.ManagedRealm;
+import org.keycloak.testframework.realm.RealmConfigBuilder;
+import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.util.ApiUtil;
+import org.keycloak.tests.organization.admin.AbstractOrganizationTest;
 
 import org.hamcrest.Matchers;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.fail;
 
+@KeycloakIntegrationTest
 public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
 
-    @Override
-    public void configureTestRealm(RealmRepresentation testRealm) {
-        testRealm.getUsers().add(UserBuilder.create().username("realmAdmin").password("password")
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_REALM)
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_IDENTITY_PROVIDERS)
-                .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.MANAGE_USERS)
-                .build());
-        super.configureTestRealm(testRealm);
-    }
+    @InjectRealm(config = OrganizationAdminPermissionsRealmConfig.class)
+    ManagedRealm realm;
+
+    @InjectAdminClientFactory
+    AdminClientFactory adminClientFactory;
 
     @Test
     public void testManageRealmRole() throws Exception {
         try (
-                Keycloak manageRealmAdminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                        TEST_REALM_NAME, "realmAdmin", "password", Constants.ADMIN_CLI_CLIENT_ID, null);
-                Keycloak userAdminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
-                        TEST_REALM_NAME, "test-user@localhost", "password", Constants.ADMIN_CLI_CLIENT_ID, null)
+                Keycloak manageRealmAdminClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("realm-admin").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build();
+                Keycloak userAdminClient = adminClientFactory.create()
+                        .realm(realm.getName()).username("test-user").password("password").clientId(Constants.ADMIN_CLI_CLIENT_ID).build();
         ) {
-            RealmResource realmAdminResource = manageRealmAdminClient.realm(TEST_REALM_NAME);
-            RealmResource realmUserResource = userAdminClient.realm(TEST_REALM_NAME);
+            RealmResource realmAdminResource = manageRealmAdminClient.realm(realm.getName());
+            RealmResource realmUserResource = userAdminClient.realm(realm.getName());
 
             /* Org */
             //create org
@@ -75,7 +76,7 @@ public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
                 assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
                 assertThat(adminResponse.getStatus(), equalTo(Status.CREATED.getStatusCode()));
                 orgId = ApiUtil.getCreatedId(adminResponse);
-                getCleanup().addCleanup(() -> testRealm().organizations().get(orgId).delete().close());
+                realm.cleanup().add(r -> r.organizations().get(orgId).delete().close());
             }
 
             //search for org
@@ -115,7 +116,7 @@ public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
             ) {
                 assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
                 assertThat(adminResponse.getStatus(), equalTo(Status.NO_CONTENT.getStatusCode()));
-                getCleanup().addCleanup(() -> testRealm().organizations().get(orgId).identityProviders().get(idpRep.getAlias()).delete().close());
+                realm.cleanup().add(r -> r.organizations().get(orgId).identityProviders().get(idpRep.getAlias()).delete().close());
             }
 
             //get IdP
@@ -136,7 +137,7 @@ public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
             }
 
             /* Members */
-            UserRepresentation userRep = UserBuilder.create()
+            UserRepresentation userRep = UserConfigBuilder.create()
                     .username("user@testOrg.org")
                     .email("user@testOrg.org")
                     .build();
@@ -156,7 +157,7 @@ public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
                 assertThat(adminResponse.getStatus(), equalTo(Status.CREATED.getStatusCode()));
                 userId = ApiUtil.getCreatedId(adminResponse);
                 assertThat(userId, Matchers.notNullValue());
-                getCleanup().addCleanup(() -> testRealm().organizations().get(orgId).members().member(userId).delete().close());
+                realm.cleanup().add(r -> r.organizations().get(orgId).members().member(userId).delete().close());
             }
 
             //get members
@@ -182,6 +183,31 @@ public class OrganizationAdminPermissionsTest extends AbstractOrganizationTest {
             try (Response userResponse = realmUserResource.organizations().get(orgId).members().member(userId).delete()) {
                 assertThat(userResponse.getStatus(), equalTo(Status.FORBIDDEN.getStatusCode()));
             }
+        }
+    }
+
+    /**
+     * Realm configuration with organizations enabled as well as 'realmAdmin' and 'testUser' users.
+     */
+    public static class OrganizationAdminPermissionsRealmConfig extends OrganizationRealmConfig {
+        @Override
+        public RealmConfigBuilder configure(RealmConfigBuilder realm) {
+            super.configure(realm);
+            realm.addUser("realm-admin")
+                    .password("password")
+                    .name("realm", "admin")
+                    .email("admin-user@localhost")
+                    .emailVerified(true)
+                    .clientRoles(Constants.REALM_MANAGEMENT_CLIENT_ID,
+                            AdminRoles.MANAGE_REALM,
+                            AdminRoles.MANAGE_IDENTITY_PROVIDERS,
+                            AdminRoles.MANAGE_USERS);
+            realm.addUser("test-user")
+                    .password("password")
+                    .name("test", "user")
+                    .email("test-user@localhost")
+                    .emailVerified(true);
+            return realm;
         }
     }
 }
