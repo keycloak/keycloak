@@ -15,7 +15,8 @@ It also lists significant changes to internal APIs.
 When user self-registration is enabled for the realm together with *Verify Email*, then users will not see password by default
 on the registration screen. After registration of user's profile, user would be required to verify email and then he can setup password
 (or eventually other credentials like OTP or Passkey) as a subsequent step. It is possible to disable and stick to the old behavior by
-enable switch *Always set password on register form* on the realm registration flow on the *Password validation* authenticator.
+enable switch *Always set password on register form* on the realm registration flow on the *Password validation* authenticator. Note
+that this option is deprecated and exists mostly for the backwards compatibility. It may be removed in the future.
 
 For the details, see the link:{adminguide_link}[{adminguide_name}].
 

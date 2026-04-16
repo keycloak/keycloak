@@ -34,6 +34,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
@@ -72,7 +73,7 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
                 .label("Always set password on register form")
                 .helpText("When this option is false and 'Verify Email' is enabled for the realm, then the password will not be set by the user on the registration form, but rather in the later stage once "
                         + " user's email address is successfully verified. This is recommended for security reasons. When true, the password fields will be available directly on the registration form and can be set "
-                        + " by the user before his email is verified.")
+                        + " by the user before his email is verified. This option is deprecated and might be removed in the future.")
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .add()
                 .build();
@@ -141,7 +142,11 @@ public class RegistrationPassword implements FormAction, FormActionFactory {
         String alwaysSetPasswordCfg = context.getAuthenticatorConfig() == null ? null : context.getAuthenticatorConfig().getConfig().get(ALWAYS_SET_PASSWORD_ON_REGISTER_FORM);
         if ("true".equals(alwaysSetPasswordCfg)) return false;
 
-        return context.getRealm().isVerifyEmail();
+        if (context.getRealm().isVerifyEmail()) return true;
+
+        // Check if verifyEmail is set as default required action. In that case, newly registered users are also required to verify their emails
+        RequiredActionProviderModel verifyEmailAction = context.getRealm().getRequiredActionProviderByAlias(UserModel.RequiredAction.VERIFY_EMAIL.name());
+        return verifyEmailAction != null && verifyEmailAction.isDefaultAction();
     }
 
     @Override

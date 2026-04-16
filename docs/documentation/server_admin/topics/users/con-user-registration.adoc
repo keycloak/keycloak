@@ -31,7 +31,9 @@ to enable <<enabling-forgot-password, Forget password>>, so that if user fails t
 
 If you still prefer to keep password on the initial registration form and make email verification to be done once user self-registers with his password, you can
 setup the configuration option on the <<_authentication-flows,Registration authentication flow>>. It can be done in the admin console by following tab *Authentication* ->
-flow *registration* (or other flow, which you bind as registration flow) -> Settings of *Password validation* -> Enable *Always set password on register form*
+flow *registration* (or other flow, which you bind as registration flow) -> Settings of *Password validation* -> Enable *Always set password on register form*.
+
+Note that this option is deprecated and exists mostly for the backwards compatibility. It may be removed in the future.
 
 .Registration validation configuration
 image:images/registration-always-set-password-on-register-form-config.png[]
