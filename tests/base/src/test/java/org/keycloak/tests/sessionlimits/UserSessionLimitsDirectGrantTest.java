@@ -52,10 +52,9 @@ import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.assertSessi
 import static org.keycloak.tests.sessionlimits.UserSessionLimitsUtil.configureSessionLimits;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 
-@TestInstance(PER_CLASS)
 @KeycloakIntegrationTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class UserSessionLimitsDirectGrantTest {
 
     @InjectRealm(config = SessionLimitsRealmConfig.class)
@@ -344,6 +343,73 @@ public class UserSessionLimitsDirectGrantTest {
             runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-1", 0));
             runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
             runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-3", 1));
+        } finally {
+            resetToDefaultConfig();
+        }
+    }
+
+    @Test
+    public void testRealmLimitExceededWithNewClientAndOldestSessionRemovedFromOtherClients() {
+        try {
+            setAuthenticatorConfigItem(BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem(USER_REALM_LIMIT, "2");
+            setAuthenticatorConfigItem(USER_CLIENT_LIMIT, "2");
+
+            AccessTokenResponse response = oauth.client("direct-grant-1", password)
+                    .doPasswordGrantRequest(username, password);
+            assertEquals(200, response.getStatusCode());
+
+            response = oauth.client("direct-grant-2", password)
+                    .doPasswordGrantRequest(username, password);
+            assertEquals(200, response.getStatusCode());
+
+            runOnServer.run(assertSessionCount(realmName, username, 2));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-1", 1));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-2", 1));
+
+            // Login to client-3 - should remove oldest session from other clients
+            response = oauth.client("direct-grant-3", password)
+                    .doPasswordGrantRequest(username, password);
+            assertEquals(200, response.getStatusCode());
+
+            runOnServer.run(assertSessionCount(realmName, username, 2));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-3", 1));
+        } finally {
+            resetToDefaultConfig();
+        }
+    }
+
+    @Test
+    public void testRealmAndClientLimitExceededAndClientSessionRemovalSufficient() {
+        try {
+            setAuthenticatorConfigItem(BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem(USER_REALM_LIMIT, "4");
+            setAuthenticatorConfigItem(USER_CLIENT_LIMIT, "2");
+
+            for (int i = 0; i < 2; i++) {
+                AccessTokenResponse response = oauth.client("direct-grant-1", password)
+                        .doPasswordGrantRequest(username, password);
+                assertEquals(200, response.getStatusCode());
+            }
+
+            for (int i = 0; i < 2; i++) {
+                AccessTokenResponse response = oauth.client("direct-grant-2", password)
+                        .doPasswordGrantRequest(username, password);
+                assertEquals(200, response.getStatusCode());
+            }
+
+            runOnServer.run(assertSessionCount(realmName, username, 4));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-1", 2));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-2", 2));
+
+            // Login to client-1 again - should remove oldest client-1 session only
+            AccessTokenResponse response = oauth.client("direct-grant-1", password)
+                    .doPasswordGrantRequest(username, password);
+            assertEquals(200, response.getStatusCode());
+
+            runOnServer.run(assertSessionCount(realmName, username, 4));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-1", 2));
+            runOnServer.run(assertClientSessionCount(realmName, username, "direct-grant-2", 2));
         } finally {
             resetToDefaultConfig();
         }
