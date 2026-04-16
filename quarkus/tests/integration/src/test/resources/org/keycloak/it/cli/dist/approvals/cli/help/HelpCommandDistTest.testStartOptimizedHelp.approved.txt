@@ -363,6 +363,10 @@ HTTP Access log:
 
 Management:
 
+--http-management-host <host>
+                     Host of the management interface. If not given, the value is inherited from
+                       HTTP options. Relevant only when something is exposed on the management
+                       interface - see the guide for details.
 --http-management-port <port>
                      Port of the management interface. Relevant only when something is exposed on
                        the management interface - see the guide for details. Default: 9000.
@@ -392,6 +396,11 @@ Management:
                        only when something is exposed on the management interface - see the guide
                        for details. Default: 1h. Available only when http-management-scheme is
                        inherited.
+--https-management-cipher-suites <ciphers>
+                     The cipher suites to use for the management server. If not given, the value is
+                       inherited from HTTP options. Relevant only when something is exposed on the
+                       management interface - see the guide for details. Available only when
+                       http-management-scheme is inherited.
 --https-management-key-store-file <file>
                      The key store which holds the certificate information instead of specifying
                        separate files for the management server. If not given, the value is
@@ -403,6 +412,17 @@ Management:
                        the value is inherited from HTTP options. Relevant only when something is
                        exposed on the management interface - see the guide for details. Default:
                        password. Available only when http-management-scheme is inherited.
+--https-management-key-store-type <type>
+                     The type of the key store file for the management server. If not given, the
+                       value is inherited from HTTP options. Relevant only when something is
+                       exposed on the management interface - see the guide for details. Available
+                       only when http-management-scheme is inherited.
+--https-management-protocols <protocols>
+                     The list of protocols to explicitly enable for the management server. If not
+                       given, the value is inherited from HTTP options. Relevant only when
+                       something is exposed on the management interface - see the guide for
+                       details. Default: TLSv1.3,TLSv1.2. Available only when
+                       http-management-scheme is inherited.
 
 Proxy:
 
