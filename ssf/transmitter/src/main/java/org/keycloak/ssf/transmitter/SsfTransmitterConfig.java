@@ -2,6 +2,7 @@ package org.keycloak.ssf.transmitter;
 
 import org.keycloak.Config;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.ssf.metadata.DefaultSubjects;
 import org.keycloak.ssf.subject.IssuerSubjectId;
 
 /**
@@ -24,6 +25,8 @@ public class SsfTransmitterConfig {
     public static final String CONFIG_SIGNATURE_ALGORITHM = "signature-algorithm";
 
     public static final String CONFIG_USER_SUBJECT_FORMAT = "user-subject-format";
+
+    public static final String CONFIG_DEFAULT_SUBJECTS = "default-subjects";
 
     /**
      * Default connect timeout (in milliseconds) for delivering SSF events via
@@ -67,6 +70,17 @@ public class SsfTransmitterConfig {
      */
     public static final String DEFAULT_USER_SUBJECT_FORMAT = IssuerSubjectId.TYPE;
 
+    /**
+     * Default value for the transmitter's {@code default_subjects} metadata
+     * field (SSF 1.0 §7.1). {@link DefaultSubjects#ALL ALL} preserves the
+     * transmitter's pre-subject-management behaviour — events are delivered
+     * to every matching stream regardless of per-subject subscriptions.
+     * Set to {@link DefaultSubjects#NONE NONE} to require explicit opt-in
+     * via {@code ssf.notify.<clientId>} attributes before an event is
+     * delivered.
+     */
+    public static final DefaultSubjects DEFAULT_DEFAULT_SUBJECTS = DefaultSubjects.ALL;
+
     private final int pushEndpointConnectTimeoutMillis;
 
     private final int pushEndpointSocketTimeoutMillis;
@@ -79,18 +93,22 @@ public class SsfTransmitterConfig {
 
     private final String userSubjectFormat;
 
+    private final DefaultSubjects defaultSubjects;
+
     public SsfTransmitterConfig(int pushEndpointConnectTimeoutMillis,
                                 int pushEndpointSocketTimeoutMillis,
                                 int transmitterInitiatedVerificationDelayMillis,
                                 int minVerificationIntervalSeconds,
                                 String signatureAlgorithm,
-                                String userSubjectFormat) {
+                                String userSubjectFormat,
+                                DefaultSubjects defaultSubjects) {
         this.pushEndpointConnectTimeoutMillis = pushEndpointConnectTimeoutMillis;
         this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
         this.transmitterInitiatedVerificationDelayMillis = transmitterInitiatedVerificationDelayMillis;
         this.minVerificationIntervalSeconds = minVerificationIntervalSeconds;
         this.signatureAlgorithm = signatureAlgorithm;
         this.userSubjectFormat = userSubjectFormat;
+        this.defaultSubjects = defaultSubjects;
     }
 
     /**
@@ -111,7 +129,9 @@ public class SsfTransmitterConfig {
                 config.get(CONFIG_SIGNATURE_ALGORITHM,
                         DEFAULT_SIGNATURE_ALGORITHM),
                 config.get(CONFIG_USER_SUBJECT_FORMAT,
-                        DEFAULT_USER_SUBJECT_FORMAT));
+                        DEFAULT_USER_SUBJECT_FORMAT),
+                DefaultSubjects.parseOrDefault(config.get(CONFIG_DEFAULT_SUBJECTS),
+                        DEFAULT_DEFAULT_SUBJECTS));
     }
 
     /**
@@ -126,7 +146,8 @@ public class SsfTransmitterConfig {
                 DEFAULT_TRANSMITTER_INITIATED_VERIFICATION_DELAY_MILLIS,
                 DEFAULT_MIN_VERIFICATION_INTERVAL_SECONDS,
                 DEFAULT_SIGNATURE_ALGORITHM,
-                DEFAULT_USER_SUBJECT_FORMAT);
+                DEFAULT_USER_SUBJECT_FORMAT,
+                DEFAULT_DEFAULT_SUBJECTS);
     }
 
     /**
@@ -184,5 +205,16 @@ public class SsfTransmitterConfig {
      */
     public String getUserSubjectFormat() {
         return userSubjectFormat;
+    }
+
+    /**
+     * Default behaviour the transmitter advertises for subject-scoped
+     * event delivery. Echoed back as {@code default_subjects} on the
+     * transmitter's SSF metadata document and consulted by the dispatcher
+     * when deciding whether to apply per-stream subject subscription
+     * filtering. See {@link DefaultSubjects} for semantics.
+     */
+    public DefaultSubjects getDefaultSubjects() {
+        return defaultSubjects;
     }
 }

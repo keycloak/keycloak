@@ -10,6 +10,7 @@ import java.util.function.Function;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.metadata.TransmitterMetadata;
+import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.support.SsfTransmitterUrls;
 
 /**
@@ -21,9 +22,14 @@ public class TransmitterMetadataService {
 
     protected  final Function<KeycloakSession, String> issuerGenerator;
 
-    public TransmitterMetadataService(KeycloakSession session, Function<KeycloakSession, String> issuerGenerator) {
+    protected final SsfTransmitterConfig transmitterConfig;
+
+    public TransmitterMetadataService(KeycloakSession session,
+                                      Function<KeycloakSession, String> issuerGenerator,
+                                      SsfTransmitterConfig transmitterConfig) {
         this.session = session;
         this.issuerGenerator = issuerGenerator;
+        this.transmitterConfig = transmitterConfig;
     }
 
     /**
@@ -48,12 +54,12 @@ public class TransmitterMetadataService {
 
         TransmitterMetadata metadata = new TransmitterMetadata();
 
-        metadata.setSpecVersion("1_0");
+        metadata.setSpecVersion(Ssf.SSF_VERSION_1_0);
 
         String issuerUrl = issuerGenerator.apply(session);
 
         metadata.setIssuer(issuerUrl);
-        metadata.setJwksUri(issuerUrl + "/protocol/openid-connect/certs");
+        metadata.setJwksUri(createJwksUri(issuerUrl));
         metadata.setDeliveryMethodSupported(Set.of( //
                 // PUSH
                 Ssf.DELIVERY_METHOD_PUSH_URI,
@@ -63,17 +69,20 @@ public class TransmitterMetadataService {
                 // "urn:ietf:rfc:8936",
         ));
 
-        // Set endpoints
+        // Stream management endpoints
         metadata.setConfigurationEndpoint(SsfTransmitterUrls.streamsEndpoint(issuerUrl));
         metadata.setStatusEndpoint(SsfTransmitterUrls.streamStatusEndpoint(issuerUrl));
         metadata.setVerificationEndpoint(SsfTransmitterUrls.streamVerificationEndpoint(issuerUrl));
 
-        // Set authorization schemes
         metadata.setAuthorizationSchemes(createAuthorizationSchemes());
 
-        metadata.setDefaultSubjects("ALL");
+        metadata.setDefaultSubjects(transmitterConfig.getDefaultSubjects().name());
 
         return metadata;
+    }
+
+    protected String createJwksUri(String issuerUrl) {
+        return issuerUrl + "/protocol/openid-connect/certs";
     }
 
     protected List<Map<String, Object>> createAuthorizationSchemes() {
@@ -82,7 +91,7 @@ public class TransmitterMetadataService {
 
     protected Map<String, Object> createOAuthAuthorizationScheme() {
         Map<String, Object> oauthScheme = new HashMap<>();
-        oauthScheme.put("spec_urn", "urn:ietf:rfc:6749");
+        oauthScheme.put("spec_urn", Ssf.SSF_OAUTH_AUTHORIZATION_SCHEME_URN);
         return oauthScheme;
     }
 }
