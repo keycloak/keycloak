@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.events.Details;
 import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
+import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
@@ -92,8 +95,13 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
     }
 
     protected boolean shouldIgnoreEvent(Event event) {
-        // HACK ignore calls from user session expiration logic, as we only want to deliver user events
-        return isCalledFromUserSessionExpirationLogic();
+
+        if (!Ssf.isTransmitterEnabled(session.getContext().getRealm())) {
+            return true;
+        }
+
+        // ignore calls from user session expiration logic, as we only want to deliver user events
+        return isUserSessionExpiration(event);
     }
 
 
@@ -156,13 +164,10 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
         return transmitter.securityEventTokenMapper().toSecurityEvent(adminEvent, stream);
     }
 
-    protected boolean isCalledFromUserSessionExpirationLogic() {
-        for (var ste : Thread.currentThread().getStackTrace()) {
-            if (ste.getClassName().contains("UserSessionExpirationLogic")) {
-                return true;
-            }
-        }
-        return false;
+    protected boolean isUserSessionExpiration(Event event) {
+        return EventType.USER_SESSION_DELETED.equals(event.getType()) &&
+               (Details.INVALID_USER_SESSION_REMEMBER_ME_REASON.equals(event.getDetails().get(Details.REASON))
+               || Details.USER_SESSION_EXPIRED_REASON.equals(event.getDetails().get(Details.REASON)));
     }
 
     @Override
