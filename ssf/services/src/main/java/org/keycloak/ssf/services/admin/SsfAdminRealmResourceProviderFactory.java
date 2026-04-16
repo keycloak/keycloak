@@ -10,6 +10,7 @@ import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProviderFactory;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.ssf.Ssf;
 
 /**
  * Exposes the {@link SsfAdminResource}
@@ -28,6 +29,11 @@ public class SsfAdminRealmResourceProviderFactory implements AdminRealmResourceP
 
     @Override
     public AdminRealmResourceProvider create(KeycloakSession session) {
+
+        if (!Ssf.isTransmitterEnabled(session.getContext().getRealm())) {
+            return null;
+        }
+
         return new SsfAdminRealmResourceProvider();
     }
 

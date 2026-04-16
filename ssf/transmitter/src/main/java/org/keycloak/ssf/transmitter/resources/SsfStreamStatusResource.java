@@ -10,7 +10,6 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
@@ -47,7 +46,7 @@ public class SsfStreamStatusResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getStreamStatus(@QueryParam("stream_id") String streamId) {
 
-        if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_READ)) {
+        if (!SsfAuthUtil.canRead()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 
@@ -87,7 +86,7 @@ public class SsfStreamStatusResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateStreamStatus(StreamStatus streamStatus) {
 
-        if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_MANAGE)) {
+        if (!SsfAuthUtil.canManage()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
         }
 

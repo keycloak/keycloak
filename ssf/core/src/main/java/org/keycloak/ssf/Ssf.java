@@ -1,5 +1,6 @@
 package org.keycloak.ssf;
 
+import org.keycloak.models.RealmModel;
 import org.keycloak.ssf.event.SsfEventProvider;
 
 import static org.keycloak.utils.KeycloakSessionUtil.getKeycloakSession;
@@ -38,6 +39,8 @@ public class Ssf {
 
     public static final String DELIVERY_METHOD_RISC_POLL_URI = "https://schemas.openid.net/secevent/risc/delivery-method/poll";
 
+    public static final String SSF_TRANSMITTER_ENABLED_KEY = "ssf.transmitterEnabled";
+
     private Ssf() {
     }
 
@@ -47,6 +50,10 @@ public class Ssf {
             return null;
         }
         return session.getProvider(SsfEventProvider.class);
+    }
+
+    public static boolean isTransmitterEnabled(RealmModel realm) {
+        return Boolean.parseBoolean(realm.getAttribute(SSF_TRANSMITTER_ENABLED_KEY));
     }
 
 }

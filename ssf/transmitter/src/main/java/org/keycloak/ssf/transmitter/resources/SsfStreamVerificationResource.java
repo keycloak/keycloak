@@ -11,7 +11,6 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.transmitter.SsfTransmitter;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
@@ -51,7 +50,7 @@ public class SsfStreamVerificationResource {
     public Response triggerVerification(StreamVerificationRequest verificationRequest) {
         try {
 
-            if (!SsfAuthUtil.hasScope(Ssf.SCOPE_SSF_MANAGE)) {
+            if (!SsfAuthUtil.canManage()) {
                 return Response.status(Response.Status.UNAUTHORIZED).build();
             }
 
