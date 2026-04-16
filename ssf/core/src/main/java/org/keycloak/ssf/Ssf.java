@@ -10,6 +10,10 @@ import static org.keycloak.utils.KeycloakSessionUtil.getKeycloakSession;
  */
 public class Ssf {
 
+    public static final String SSF_VERSION_1_0 = "1_0";
+
+    public static final String SSF_OAUTH_AUTHORIZATION_SCHEME_URN = "urn:ietf:rfc:6749";
+
     public static final String SCOPE_SSF_READ = "ssf.read";
 
     public static final String SCOPE_SSF_MANAGE = "ssf.manage";

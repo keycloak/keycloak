@@ -95,7 +95,7 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         var dispatcher = new SecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig, this::createSsfPendingEventStore);
         var streamStore = new ClientStreamStore(session);
         var verificationService = new StreamVerificationService(session, streamStore, mapper, dispatcher);
-        var transmitterMetadataService = new TransmitterMetadataService(session, this::createSsfIssuerUrl);
+        var transmitterMetadataService = new TransmitterMetadataService(session, this::createSsfIssuerUrl, transmitterConfig);
         return new DefaultSsfTransmitterProvider(session, transmitterMetadataService, verificationService, mapper,
                 dispatcher, transmitterConfig, configuredDefaultSupportedEventAliases);
     }
@@ -176,6 +176,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .type("string")
                 .helpText("Default subject identifier format for the user portion of outgoing SSF Security Event Tokens when a receiver client does not configure its own ssf.userSubjectFormat attribute. Defaults to iss_sub (realm issuer + user ID). Allowed values: iss_sub, email.")
                 .defaultValue(SsfTransmitterConfig.DEFAULT_USER_SUBJECT_FORMAT)
+                .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_DEFAULT_SUBJECTS)
+                .type("string")
+                .helpText("Value advertised as default_subjects on the transmitter's SSF metadata document. ALL means the transmitter delivers events for every matching subject unless a stream narrows it explicitly; NONE means events are only delivered for subjects that have been explicitly subscribed (via receiver add-subject calls or admin-curated ssf.notify.<clientId> attributes). Allowed values: ALL, NONE.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_DEFAULT_SUBJECTS.name())
                 .add()
                 .property()
                 .name(CONFIG_OUTBOX_DRAINER_INTERVAL)
