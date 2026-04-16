@@ -18,6 +18,10 @@ public class SsfTransmitterEventListenerFactory implements EventListenerProvider
         return new SsfTransmitterEventListener(session);
     }
 
+    @Override
+    public boolean isGlobal() {
+        return true;
+    }
 
     @Override
     public void init(Config.Scope config) {
