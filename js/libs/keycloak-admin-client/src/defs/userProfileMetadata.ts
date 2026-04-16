@@ -7,6 +7,7 @@ export interface UserProfileAttribute {
   name?: string;
   validations?: Record<string, unknown>;
   validators?: Record<string, unknown>;
+  converters?: Record<string, unknown>;
   annotations?: Record<string, unknown>;
   required?: UserProfileAttributeRequired;
   readOnly?: boolean;

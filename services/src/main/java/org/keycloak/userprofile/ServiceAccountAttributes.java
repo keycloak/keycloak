@@ -27,6 +27,12 @@ public class ServiceAccountAttributes extends DefaultAttributes {
         super(context, attributes, user, profileMetadata, session, unmanagedAttributePolicy);
     }
 
+    public ServiceAccountAttributes(UserProfileContext context, Map<String, ?> attributes, UserModel user,
+                                    UserProfileMetadata profileMetadata, KeycloakSession session,
+                                    UnmanagedAttributePolicy unmanagedAttributePolicy, boolean applyConverters) {
+        super(context, attributes, user, profileMetadata, session, unmanagedAttributePolicy, applyConverters);
+    }
+
     @Override
     public boolean isReadOnly(String name) {
         if (UserModel.USERNAME.equals(name)) {

@@ -36,6 +36,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.convert.Converter;
+import org.keycloak.convert.ConverterConfig;
+import org.keycloak.convert.ConverterContext;
+import org.keycloak.convert.Converters;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -114,7 +118,26 @@ public class UPConfigUtils {
      * @return list of errors, empty if no error found
      */
     public static List<String> validate(KeycloakSession session, UPConfig config) {
-        List<String> errors = validateAttributes(session, config);
+        return validate(session, config, false);
+    }
+
+    /**
+     * Validate the configuration of an existing user profile when it is loaded.
+     * <p>
+     * Unlike {@link #validate(KeycloakSession, UPConfig)}, converters that are not available are not reported as errors.
+     * They are skipped when converting attribute values, so that removing a converter provider does not make the user
+     * profile of the realm unusable.
+     *
+     * @param session to be used for Validator SPI integration
+     * @param config to validate
+     * @return list of errors, empty if no error found
+     */
+    public static List<String> validateExisting(KeycloakSession session, UPConfig config) {
+        return validate(session, config, true);
+    }
+
+    private static List<String> validate(KeycloakSession session, UPConfig config, boolean allowUnavailableConverters) {
+        List<String> errors = validateAttributes(session, config, allowUnavailableConverters);
         errors.addAll(validateAttributeGroups(config));
         return errors;
     }
@@ -129,7 +152,7 @@ public class UPConfigUtils {
         return Collections.emptyList();
     }
 
-    private static List<String> validateAttributes(KeycloakSession session, UPConfig config) {
+    private static List<String> validateAttributes(KeycloakSession session, UPConfig config, boolean allowUnavailableConverters) {
         List<String> errors = new ArrayList<>();
         Set<String> groups = config.getGroups().stream()
                 .map(g -> g.getName())
@@ -137,7 +160,7 @@ public class UPConfigUtils {
 
         if (config.getAttributes() != null) {
             Set<String> attNamesCache = new HashSet<>();
-            config.getAttributes().forEach((attribute) -> validateAttribute(session, attribute, groups, errors, attNamesCache));
+            config.getAttributes().forEach((attribute) -> validateAttribute(session, attribute, groups, errors, attNamesCache, allowUnavailableConverters));
             errors.addAll(validateRootAttributes(config));
             errors.addAll(validateScimAttributeMappings(config));
         }
@@ -272,7 +295,7 @@ public class UPConfigUtils {
      * @param errors to add error message in if something is invalid
      * @param attNamesCache cache of already existing attribute names so we can check uniqueness
      */
-    private static void validateAttribute(KeycloakSession session, UPAttribute attributeConfig, Set<String> groups, List<String> errors, Set<String> attNamesCache) {
+    private static void validateAttribute(KeycloakSession session, UPAttribute attributeConfig, Set<String> groups, List<String> errors, Set<String> attNamesCache, boolean allowUnavailableConverters) {
         String attributeName = attributeConfig.getName();
         if (isBlank(attributeName)) {
             errors.add("Attribute configuration without 'name' is not allowed");
@@ -286,9 +309,24 @@ public class UPConfigUtils {
                 }
             }
         }
+        // converters are validated first because the default value is converted with them before it is validated
+        boolean convertersValid = true;
+        if (attributeConfig.getConverters() != null) {
+            int errorCount = errors.size();
+            attributeConfig.getConverters().forEach((converter, converterConfig) -> validateConverterConfig(session, converter, converterConfig, attributeName, errors, allowUnavailableConverters));
+            convertersValid = errors.size() == errorCount;
+            if (convertersValid && allowUnavailableConverters && session != null) {
+                // a converter that is not available anymore was accepted when loading the configuration. The default value
+                // was validated after it was converted when the configuration was saved, so it cannot be validated now.
+                convertersValid = attributeConfig.getConverters().keySet().stream()
+                        .allMatch(converter -> isBlank(converter) || Converters.converter(session, converter) != null);
+            }
+        }
         if (attributeConfig.getValidations() != null) {
             attributeConfig.getValidations().forEach((validator, validatorConfig) -> validateValidationConfig(session, validator, validatorConfig, attributeName, errors));
-            validateDefaultValue(session, attributeConfig, errors);
+            if (convertersValid) {
+                validateDefaultValue(session, attributeConfig, errors);
+            }
         }
         if (attributeConfig.getPermissions() != null) {
             if (attributeConfig.getPermissions().getView() != null) {
@@ -329,13 +367,39 @@ public class UPConfigUtils {
         if (isRootAttribute(attributeName)) {
             errors.add("Default value not supported for attribute '" + attributeName + "'");
         } else {
+            // converters run before validators at runtime, so validate the default value as it will be stored
+            Object convertedDefaultValue = convertDefaultValue(session, attributeConfig, defaultValue);
             attributeConfig.getValidations().forEach((validator, validatorConfig) -> {
-                ValidationContext context = Validators.validator(session, validator).validate(defaultValue, attributeName, ValidatorConfig.configFromMap(validatorConfig));
+                ValidationContext context = Validators.validator(session, validator).validate(convertedDefaultValue, attributeName, ValidatorConfig.configFromMap(validatorConfig));
                 if (!context.isValid()) {
                     errors.add("Default value for attribute '" + attributeName + "' is invalid");
                 }
             });
         }
+    }
+
+    private static Object convertDefaultValue(KeycloakSession session, UPAttribute attributeConfig, String defaultValue) {
+        Map<String, Map<String, Object>> converters = attributeConfig.getConverters();
+
+        if (session == null || converters == null) {
+            return defaultValue;
+        }
+
+        Object value = defaultValue;
+        ConverterContext context = new ConverterContext(session);
+
+        for (Map.Entry<String, Map<String, Object>> entry : converters.entrySet()) {
+            Converter converter = isBlank(entry.getKey()) ? null : Converters.converter(session, entry.getKey());
+
+            if (converter == null || value == null) {
+                // unknown converters are reported by validateConverterConfig, or skipped when the configuration is loaded
+                continue;
+            }
+
+            value = converter.convert(value, context, ConverterConfig.configFromMap(entry.getValue()));
+        }
+
+        return value;
     }
 
     private static void validateAnnotations(Map<String, Object> annotations, List<String> errors, String attributeName) {
@@ -410,6 +474,37 @@ public class UPConfigUtils {
                         result.forEachError(err -> sb.append(err.toString()+", "));
                         errors.add("Validator '" + validator + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Validate that converter configuration is correct.
+     *
+     * @param session to be used for Converter SPI integration
+     * @param converter id of the converter
+     * @param converterConfig config to be checked
+     * @param attributeName for error messages
+     * @param errors to add error message in if something is invalid
+     * @param allowUnavailableConverters whether a converter that is not available is accepted
+     */
+    private static void validateConverterConfig(KeycloakSession session, String converter, Map<String, Object> converterConfig, String attributeName, List<String> errors, boolean allowUnavailableConverters) {
+
+        if (isBlank(converter)) {
+            errors.add("Converter without converter id is defined for attribute '" + attributeName + "'");
+        } else if (session != null) {
+            if (Converters.converter(session, converter) == null) {
+                if (allowUnavailableConverters) {
+                    return;
+                }
+                errors.add("Converter '" + converter + "' defined for attribute '" + attributeName + "' doesn't exist");
+            } else {
+                ValidationResult result = Converters.validateConfig(session, converter, ConverterConfig.configFromMap(converterConfig));
+                if (!result.isValid()) {
+                    final StringBuilder sb = new StringBuilder();
+                    result.forEachError(err -> sb.append(err.toString()).append(", "));
+                    errors.add("Converter '" + converter + "' defined for attribute '" + attributeName + "' has incorrect configuration: " + sb.toString());
                 }
             }
         }

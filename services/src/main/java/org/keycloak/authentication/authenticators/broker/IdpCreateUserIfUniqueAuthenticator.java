@@ -41,6 +41,9 @@ import org.keycloak.services.ErrorPageException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.Attributes;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
@@ -73,6 +76,8 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
             context.attempted();
             return;
         }
+
+        brokerContext = applyUserProfileConverters(context, serializedCtx, brokerContext);
 
         String username = getUsername(context, serializedCtx, brokerContext);
         if (username == null || username.trim().isEmpty()) {
@@ -221,6 +226,43 @@ public class IdpCreateUserIfUniqueAuthenticator extends AbstractIdpAuthenticator
         }
 
         return null;
+    }
+
+    /**
+     * Applies the converters configured in the user profile to the attributes received from the identity provider, so
+     * that duplicate detection and the created user use the same values as the user profile validation. The converted
+     * attributes are stored back into the brokered context.
+     *
+     * @return the brokered context with the converted attributes
+     */
+    private BrokeredIdentityContext applyUserProfileConverters(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {
+        KeycloakSession session = context.getSession();
+        Map<String, List<String>> received = serializedCtx.getAttributes();
+        Attributes attributes = session.getProvider(UserProfileProvider.class).create(UserProfileContext.IDP_REVIEW, received).getAttributes();
+        boolean changed = false;
+
+        for (Map.Entry<String, List<String>> entry : received.entrySet()) {
+            AttributeMetadata metadata = attributes.getMetadata(entry.getKey());
+
+            if (metadata == null || metadata.getConverters() == null || metadata.getConverters().isEmpty()) {
+                continue;
+            }
+
+            List<String> converted = attributes.get(entry.getKey());
+
+            if (converted != null && !converted.equals(entry.getValue())) {
+                serializedCtx.setAttribute(entry.getKey(), converted);
+                changed = true;
+            }
+        }
+
+        if (!changed) {
+            return brokerContext;
+        }
+
+        AuthenticationSessionModel authSession = context.getAuthenticationSession();
+        serializedCtx.saveToAuthenticationSession(authSession, BROKERED_CONTEXT_NOTE);
+        return serializedCtx.deserialize(session, authSession);
     }
 
     protected String getUsername(AuthenticationFlowContext context, SerializedBrokeredIdentityContext serializedCtx, BrokeredIdentityContext brokerContext) {

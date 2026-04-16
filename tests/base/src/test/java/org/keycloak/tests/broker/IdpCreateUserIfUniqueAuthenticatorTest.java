@@ -161,6 +161,31 @@ public class IdpCreateUserIfUniqueAuthenticatorTest {
         Assertions.assertEquals("[def]", stored);
     }
 
+    @Test
+    public void testIdpBrokerLoginStoresConvertedUsername() {
+        UPConfig originalConfig = consumerRealm.admin().users().userProfile().getConfiguration();
+        UPConfig config = consumerRealm.admin().users().userProfile().getConfiguration();
+        config.getAttribute(UserModel.USERNAME).addConverter("trim-whitespace", Map.of());
+        consumerRealm.admin().users().userProfile().update(config);
+        consumerRealm.cleanup().add(r -> r.users().userProfile().update(originalConfig));
+
+        // the identity provider sends a username with surrounding whitespace
+        addUsernameTemplateMapper("padded-username-mapper", "  padded-user  ");
+
+        createProviderUser();
+        oauth.openLoginForm();
+        loginPage.clickSocial(IDP_ALIAS);
+        loginPage.fillLogin(PROVIDER_USERNAME, "password");
+        loginPage.submit();
+
+        // the profile is valid once converted, so the review page is skipped and the converted username is stored
+        assertNotEquals("login-idp-review-user-profile", driver.page().getCurrentPageId());
+        List<UserRepresentation> created = consumerRealm.admin().users().search("padded-user", true);
+        created.forEach(u -> consumerRealm.cleanup().add(r -> r.users().get(u.getId()).remove()));
+        Assertions.assertEquals(1, created.size());
+        Assertions.assertEquals("padded-user", created.get(0).getUsername());
+    }
+
     @Test // 1131
     public void testAutoLinkBlockedWhenEmailNotVerifiedAndTrustEmailDisabled() {
         String flowAlias = "AutoLinkFlow-blocked";

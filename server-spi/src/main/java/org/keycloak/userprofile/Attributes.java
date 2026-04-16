@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.keycloak.validate.ValidationError;
 
@@ -181,6 +180,17 @@ public interface Attributes {
      * @param name the name of the attribute
      * @return the annotations
      */
+    /**
+     * Returns the default value of the attribute with the given {@code name} as it should be stored.
+     *
+     * @param name the name of the attribute
+     * @return the default value, or {@code null} if the attribute has no default value
+     */
+    default String getDefaultValue(String name) {
+        AttributeMetadata metadata = getMetadata(name);
+        return metadata == null ? null : metadata.getDefaultValue();
+    }
+
     default Map<String, Object> getAnnotations(String name) {
         AttributeMetadata metadata = getMetadata(name);
 

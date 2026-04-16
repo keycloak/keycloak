@@ -29,10 +29,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.convert.ConverterContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -80,15 +82,30 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
     private final UnmanagedAttributePolicy unmanagedAttributePolicy;
     protected final UserModel user;
     private final Map<String, List<String>> unmanagedAttributes = new HashMap<>();
+    private final boolean applyConverters;
+    private ConverterContext converterContext;
 
     public DefaultAttributes(UserProfileContext context, Map<String, ?> attributes, UserModel user,
             UserProfileMetadata profileMetadata, KeycloakSession session,
             UnmanagedAttributePolicy unmanagedAttributePolicy) {
+        this(context, attributes, user, profileMetadata, session, unmanagedAttributePolicy, true);
+    }
+
+    /**
+     * @param applyConverters whether the converters of the attributes are applied to the given {@code attributes}. Set to
+     *                        {@code false} when the attributes are the values stored for the {@code user} and not values
+     *                        submitted for an update, so that reads return the stored values and validation does not
+     *                        accept values that were converted but never stored.
+     */
+    public DefaultAttributes(UserProfileContext context, Map<String, ?> attributes, UserModel user,
+            UserProfileMetadata profileMetadata, KeycloakSession session,
+            UnmanagedAttributePolicy unmanagedAttributePolicy, boolean applyConverters) {
         this.context = context;
         this.user = user;
         this.session = session;
         this.metadataByAttribute = configureMetadata(profileMetadata.getAttributes(), profileMetadata);
         this.unmanagedAttributePolicy = unmanagedAttributePolicy;
+        this.applyConverters = applyConverters;
         putAll(Collections.unmodifiableMap(normalizeAttributes(attributes)));
     }
 
@@ -480,11 +497,23 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
 
         AttributeMetadata metadata = metadataByAttribute.get(name);
 
+        boolean isDefaultValue = false;
+
         if (values.isEmpty() && metadata != null && metadata.getDefaultValue() != null) {
             values = List.of(metadata.getDefaultValue());
+            isDefaultValue = true;
         }
 
         Stream<String> valuesStream = values.stream().filter(Objects::nonNull);
+
+        // apply converters before any further normalization so subsequent steps and validators operate on the converted value
+        if (isApplyConverters(name, metadata, isDefaultValue)) {
+            List<UnaryOperator<Object>> converters = metadata.getConverters().stream()
+                    .map(converter -> converter.bind(getConverterContext()))
+                    .toList();
+            // converters may return null to remove a value
+            valuesStream = valuesStream.map(v -> applyConverters(converters, v)).filter(Objects::nonNull);
+        }
 
         // do not normalize the username if a federated user because we need to respect the format from the external identity store
         if ((UserModel.USERNAME.equals(name) && !isFederated()) || UserModel.EMAIL.equals(name)) {
@@ -492,6 +521,65 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
         }
 
         return valuesStream.collect(Collectors.toList());
+    }
+
+    /**
+     * Returns the configured default value after it was converted by the converters of the attribute.
+     */
+    @Override
+    public String getDefaultValue(String name) {
+        AttributeMetadata metadata = metadataByAttribute.get(name);
+
+        if (metadata == null || metadata.getDefaultValue() == null) {
+            return null;
+        }
+
+        List<String> values = normalizeAttributeValues(name, EMPTY_VALUE);
+
+        return values.isEmpty() ? null : values.get(0);
+    }
+
+    private boolean isApplyConverters(String name, AttributeMetadata metadata, boolean isDefaultValue) {
+        if (metadata == null || metadata.getConverters() == null || metadata.getConverters().isEmpty()) {
+            return false;
+        }
+
+        // do not convert the username if a federated user because we need to respect the format from the external identity store
+        if (UserModel.USERNAME.equals(name) && isFederated()) {
+            return false;
+        }
+
+        // the default value is not a stored value, so always convert it the same way the configuration was validated
+        if (isDefaultValue) {
+            return true;
+        }
+
+        // the values are the ones stored for the user and not submitted for an update
+        if (!applyConverters) {
+            return false;
+        }
+
+        // read-only attributes cannot be changed in the current context, and their values usually come from the stored user.
+        // Converting them would only make the value differ from the stored one and fail the read-only checks.
+        return !isReadOnly(name);
+    }
+
+    private ConverterContext getConverterContext() {
+        if (converterContext == null) {
+            converterContext = new ConverterContext(session);
+        }
+        return converterContext;
+    }
+
+    private static String applyConverters(List<UnaryOperator<Object>> converters, String input) {
+        Object current = input;
+        for (UnaryOperator<Object> converter : converters) {
+            if (current == null) {
+                return null;
+            }
+            current = converter.apply(current);
+        }
+        return current == null ? null : current.toString();
     }
 
     protected boolean isAllowUnmanagedAttribute() {

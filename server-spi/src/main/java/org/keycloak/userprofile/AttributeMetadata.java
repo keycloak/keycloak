@@ -50,6 +50,7 @@ public class AttributeMetadata {
     private Predicate<AttributeContext> required;
     private final List<Predicate<AttributeContext>> readAllowed = new ArrayList<>();
     private List<AttributeValidatorMetadata> validators;
+    private List<AttributeConverterMetadata> converters;
     private Map<String, Object> annotations;
     private int guiOrder;
     private boolean multivalued;
@@ -192,6 +193,26 @@ public class AttributeMetadata {
         return this;
     }
 
+    public List<AttributeConverterMetadata> getConverters() {
+        return converters;
+    }
+
+    public AttributeMetadata addConverters(List<AttributeConverterMetadata> converters) {
+        if (this.converters == null) {
+            this.converters = new ArrayList<>();
+        }
+
+        this.converters.removeIf(converters::contains);
+        this.converters.addAll(converters.stream().filter(Objects::nonNull).collect(Collectors.toList()));
+
+        return this;
+    }
+
+    public AttributeMetadata setConverters(List<AttributeConverterMetadata> converters) {
+        this.converters = converters;
+        return this;
+    }
+
     public Map<String, Object> getAnnotations() {
         return annotations;
     }
@@ -222,6 +243,10 @@ public class AttributeMetadata {
         // itself are not cloned as we do not expect them to be reconfigured.
         if (validators != null) {
             cloned.addValidators(validators);
+        }
+        // same principle as validators: clone the list to allow adding or removing converters
+        if (converters != null) {
+            cloned.addConverters(converters);
         }
         //we clone annotations map to allow adding to or removing from it
         if(annotations != null) {
