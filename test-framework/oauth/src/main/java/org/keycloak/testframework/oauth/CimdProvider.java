@@ -3,6 +3,7 @@ package org.keycloak.testframework.oauth;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
@@ -31,6 +32,7 @@ public class CimdProvider implements Closeable {
     private String cacheControlHeader;
     private Map<String, Object> additionalProperties;
     private String rawMetadata;
+    private boolean serveRequestedClientId;
 
     public CimdProvider(HttpServer httpServer, OIDCClientRepresentation client) {
         this.httpServer = httpServer;
@@ -68,6 +70,15 @@ public class CimdProvider implements Closeable {
         this.rawMetadata = rawMetadata;
     }
 
+    /**
+     * When enabled, the {@code client_id} property of the served client metadata document is the URL that was
+     * requested, so that the same representation can be served for several client IDs under the
+     * <em>/cimd/metadata</em> context (for example <em>/cimd/metadata/client-1</em>).
+     */
+    public void setServeRequestedClientId(boolean serveRequestedClientId) {
+        this.serveRequestedClientId = serveRequestedClientId;
+    }
+
     @Override
     public void close() {
         httpServer.removeContext(CONTEXT);
@@ -81,9 +92,15 @@ public class CimdProvider implements Closeable {
                 switch (responseStatus) {
                     case OK -> {
                         String metadata = rawMetadata != null ? rawMetadata : JsonSerialization.writeValueAsString(client);
-                        if (rawMetadata == null && additionalProperties != null && !additionalProperties.isEmpty()) {
+                        boolean hasAdditionalProperties = additionalProperties != null && !additionalProperties.isEmpty();
+                        if (rawMetadata == null && (hasAdditionalProperties || serveRequestedClientId)) {
                             ObjectNode node = (ObjectNode) JsonSerialization.mapper.readTree(metadata);
-                            additionalProperties.forEach((name, value) -> node.set(name, JsonSerialization.mapper.valueToTree(value)));
+                            if (hasAdditionalProperties) {
+                                additionalProperties.forEach((name, value) -> node.set(name, JsonSerialization.mapper.valueToTree(value)));
+                            }
+                            if (serveRequestedClientId) {
+                                node.put("client_id", URI.create(client.getClientId()).resolve(exchange.getRequestURI().getRawPath()).toString());
+                            }
                             metadata = JsonSerialization.writeValueAsString(node);
                         }
                         exchange.getResponseHeaders().add("Content-Type", "application/json");
