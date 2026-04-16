@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
@@ -38,6 +37,7 @@ import javax.net.ssl.TrustManager;
 
 import org.keycloak.Config;
 import org.keycloak.common.util.Retry;
+import org.keycloak.common.util.Time;
 import org.keycloak.config.CachingOptions;
 import org.keycloak.config.Option;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
@@ -314,7 +314,7 @@ public final class JGroupsConfigurator {
                 s.setString(3, clusterName); // cluster name
                 s.setString(4, "127.0.0.1:0"); // ip = new IpAddress("localhost", 0).toString()
                 s.setBoolean(5, false); // coord
-                s.setLong(6, TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis())); // coord
+                s.setLong(6, Time.currentTime()); // last_update
                 s.execute();
             }
         });

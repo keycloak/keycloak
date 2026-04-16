@@ -17,7 +17,7 @@
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet author="keycloak" id="26.6.0-jdbcping-timestamp">
+    <changeSet author="keycloak" id="26.7.0-jdbcping-timestamp">
         <addColumn tableName="JGROUPS_PING">
             <column name="LAST_UPDATE" type="BIGINT" />
             <column name="COORDINATED_BY" type="VARCHAR(200)" />

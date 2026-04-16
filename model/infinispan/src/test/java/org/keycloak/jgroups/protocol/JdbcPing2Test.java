@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -189,7 +188,7 @@ public class JdbcPing2Test {
                     ps.setString(3, jdbcPing.getClusterName());
                     ps.setString(4, ip);
                     ps.setBoolean(5, data.isCoord());
-                    ps.setLong(6, TimeUnit.MILLISECONDS.toSeconds(Time.currentTimeMillis()));
+                    ps.setLong(6, Time.currentTime());
                     ps.setString(7, Util.addressToString(data.getAddress()));
                     ps.executeUpdate();
                 }
@@ -205,7 +204,7 @@ public class JdbcPing2Test {
                 jdbcPing.writeAll();
                 jdbcPing.findMembers(null, false, responses);
                 assertThat(responses.size(), CoreMatchers.equalTo(1));
-                // The entry is still in the database though as it will only be cleard on view change
+                // The entry is still in the database though as it will only be cleared on view change
                 try (PreparedStatement ps= con.prepareStatement(jdbcPing.getSelectAllPingdataSql())) {
                     ps.setString(1, jdbcPing.getClusterName());
                     try (ResultSet resultSet = ps.executeQuery()) {

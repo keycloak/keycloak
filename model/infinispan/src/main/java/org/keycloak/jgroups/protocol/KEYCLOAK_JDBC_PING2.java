@@ -52,12 +52,10 @@ import static java.sql.ResultSet.TYPE_FORWARD_ONLY;
 
 public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
 
-    public static final Comparator<PingData> C = Comparator.<PingData, Integer>comparing(p -> p.mbrs() != null ? p.mbrs().size() : 0).reversed()
-            .thenComparing(PingData::getAddress);
     private JpaConnectionProviderFactory factory;
 
-    @Property(description="Staleness timeout in milliseconds. The coordinator will update the entries once 50%-75% of the time have passed.", type= AttributeType.TIME)
-    protected long stateless_timeout = 60000L;
+    @Property(description="Staleness timeout in milliseconds. The coordinator will update the entries once 50%-75% of the time has passed.", type= AttributeType.TIME)
+    protected long staleness_timeout = 60000L;
 
     @Override
     protected void loadDriver() {
@@ -80,6 +78,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     }
 
     public KEYCLOAK_JDBC_PING2() {
+        // Move these new SQL statements to JDBC_PING2 once we provide this change to upstream.
         initialize_sql = "CREATE TABLE jgroups (address varchar(200) NOT NULL, " +
                 "name varchar(200), " +
                 "cluster varchar(200) NOT NULL, " +
@@ -116,7 +115,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             ps.setString(3, clustername);
             ps.setString(4, ip);
             ps.setBoolean(5, data.isCoord());
-            ps.setLong(6, TimeUnit.MILLISECONDS.toSeconds(Time.currentTimeMillis()));
+            ps.setLong(6, Time.currentTime());
             ps.setString(7, view != null && view.getCoord() != null ? Util.addressToString(view.getCoord()) : null);
             if (log.isTraceEnabled())
                 log.trace("%s: SQL for insertion: %s", local_addr, ps);
@@ -145,7 +144,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             return;
         }
         String cluster_name = getClusterName();
-        try (var conn = getConnection()) {
+        try {
             List<PingData> list = readFromDB(getClusterName());
             PingData my_data = list.stream().filter(p -> Objects.equals(p.getAddress(), addr())).findFirst().orElse(null);
             if (my_data == null || my_data.mbrs() == null) {
@@ -155,8 +154,10 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
                 Address addr = data.getAddress();
                 // Only delete an entry if it is currently allocated to us, and not someone else
                 if (!local_view.containsMember(addr) && my_data.mbrs().contains(addr)) {
-                    addDiscoveryResponseToCaches(addr, data.getLogicalName(), data.getPhysicalAddr());
-                    delete(conn, cluster_name, addr);
+                    try (var conn = getConnection()) {
+                        addDiscoveryResponseToCaches(addr, data.getLogicalName(), data.getPhysicalAddr());
+                        delete(conn, cluster_name, addr);
+                    }
                 }
             }
         } catch (Exception e) {
@@ -172,7 +173,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
             info_writer=timer.scheduleWithDynamicInterval(new InfoWriter(info_writer_max_writes_after_view, info_writer_sleep_time) {
                 @Override
                 public long nextInterval() {
-                    return is_coord ? (stateless_timeout / 2 + Util.random(sleep_interval / 4)) : 0;
+                    return is_coord ? (staleness_timeout / 2 + Util.random(sleep_interval / 4)) : 0;
                 }
             });
     }
@@ -234,7 +235,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     }
 
     private long getStalenessCutoff() {
-        return TimeUnit.MILLISECONDS.toSeconds(Time.currentTimeMillis() - stateless_timeout);
+        return TimeUnit.MILLISECONDS.toSeconds(Time.currentTimeMillis() - staleness_timeout);
     }
 
     public void setJpaConnectionProviderFactory(JpaConnectionProviderFactory factory) {
@@ -242,7 +243,7 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     }
 
     // Pick the largest partition first, then order by address to allow for a stable result
-    Comparator<PingData> SPLIT_BRAIN_DECIDER = Comparator
+    private final static Comparator<PingData> SPLIT_BRAIN_DECIDER = Comparator
             .<PingData, Integer>comparing(p -> p.mbrs() != null ? p.mbrs().size() : 0).reversed()
             .thenComparing(PingData::getAddress);
 
