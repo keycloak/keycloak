@@ -135,4 +135,28 @@ This feature is not yet supported by {project_name}, because Google does not all
 XOAUTH2 is not supported by the AWS-SMTP service.
 The AWS-service requires the use of a password.
 
+== Verifying a user email address
+
+{project_name} can send a verification email to a user to confirm that the email address they registered is valid and accessible.
+This is useful when onboarding new users or when an administrator wants to ensure a user's email address is correct.
+
+.Prerequisites
+* Email is configured for the realm.
+See <<_email, Configuring email for a realm>>.
+
+.Procedure
+. Click *Users* in the menu.
+. Select the user whose email address you want to verify.
+. Click the *Details* tab.
+. Confirm that the *Email* field is populated with the user's email address.
+. Click *Send verification email*.
++
+{project_name} sends an email to the user containing a link.
+The user must click the link to confirm ownership of the email address.
+
+.Result
+Once the user clicks the verification link in the email, the *Email Verified* field in their account is set to *Yes*.
+
+NOTE: If the user does not receive the verification email, check that the realm's SMTP settings are correctly configured and that the user's email address is valid.
+
 endif::[]
