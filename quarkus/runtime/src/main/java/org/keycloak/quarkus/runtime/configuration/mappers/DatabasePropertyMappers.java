@@ -32,6 +32,9 @@ import io.smallrye.config.ConfigValue;
 import org.jboss.logging.Logger;
 
 import static org.keycloak.config.DatabaseOptions.DB;
+import static org.keycloak.config.DatabaseOptions.DB_MTLS_KEY_STORE_FILE;
+import static org.keycloak.config.DatabaseOptions.DB_MTLS_KEY_STORE_PASSWORD;
+import static org.keycloak.config.DatabaseOptions.DB_MTLS_KEY_STORE_TYPE;
 import static org.keycloak.config.DatabaseOptions.DB_POOL_INITIAL_SIZE;
 import static org.keycloak.config.DatabaseOptions.DB_POOL_MAX_SIZE;
 import static org.keycloak.config.DatabaseOptions.DB_TLS_MODE;
@@ -173,11 +176,30 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
+                fromOption(DB_MTLS_KEY_STORE_FILE)
+                        .paramLabel("path")
+                        .build(),
+                fromOption(DB_MTLS_KEY_STORE_TYPE)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(DB_MTLS_KEY_STORE_PASSWORD)
+                        .paramLabel("password")
+                        .isMasked(true)
+                        .build(),
+
                 // Oracle
                 setTlsJdbcProperty("ssl_server_dn_match", Map.of(Database.Vendor.ORACLE, "true")),
                 setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_FILE, "javax.net.ssl.trustStore", EnumSet.of(Database.Vendor.ORACLE)),
                 setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_PASSWORD, "javax.net.ssl.trustStorePassword", EnumSet.of(Database.Vendor.ORACLE)),
                 setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_TYPE, "javax.net.ssl.trustStoreType", EnumSet.of(Database.Vendor.ORACLE)),
+
+                setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_FILE, "javax.net.ssl.keyStore", EnumSet.of(Database.Vendor.ORACLE)),
+                setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_PASSWORD, "javax.net.ssl.keyStorePassword", EnumSet.of(Database.Vendor.ORACLE)),
+                setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_TYPE, "javax.net.ssl.keyStoreType", EnumSet.of(Database.Vendor.ORACLE)),
+                fromOption(DB_MTLS_KEY_STORE_FILE)
+                        .mapFrom(DB_MTLS_KEY_STORE_FILE, (name, value, context) -> computeOracleAuthenticationServices(name, value))
+                        .to("quarkus.datasource.jdbc.additional-jdbc-properties.oracle.net.authentication_services")
+                        .build(),
 
                 // MSSQL
                 setTlsJdbcProperty("encrypt", Map.of(Database.Vendor.MSSQL, "true")),
@@ -195,7 +217,14 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                 ),
                 setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_FILE, "trustCertificateKeyStoreUrl", EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.TIDB)),
                 setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_PASSWORD, "trustCertificateKeyStorePassword", EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.TIDB)),
+
+                setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_FILE, "clientCertificateKeyStoreUrl", EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.TIDB)),
+                setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_PASSWORD, "clientCertificateKeyStorePassword", EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.TIDB)),
+                setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_TYPE, "clientCertificateKeyStoreType", EnumSet.of(Database.Vendor.MYSQL, Database.Vendor.TIDB)),
+
                 setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_FILE, "serverSslCert", EnumSet.of(Database.Vendor.MARIADB)),
+                setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_FILE, "keyStore", EnumSet.of(Database.Vendor.MARIADB)),
+                setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_PASSWORD, "keyStorePassword", EnumSet.of(Database.Vendor.MARIADB)),
 
                 // PostgreSQL
                 setTlsJdbcProperty("sslmode", Map.of(Database.Vendor.POSTGRES, "verify-full")),
@@ -204,7 +233,11 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
                         .transformer(DatabasePropertyMappers::computePostgresSSLFactory)
                         .to("quarkus.datasource.jdbc.additional-jdbc-properties.sslfactory")
                         .build(),
-                setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_FILE, "sslrootcert", EnumSet.of(Database.Vendor.POSTGRES))
+                setInputTlsJdbcProperty(DB_TLS_TRUST_STORE_FILE, "sslrootcert", EnumSet.of(Database.Vendor.POSTGRES)),
+
+                // PostgreSQL mTLS (pgjdbc supports PKCS#12 via sslkey with .p12/.pfx extension since 42.2.9)
+                setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_FILE, "sslkey", EnumSet.of(Database.Vendor.POSTGRES)),
+                setInputTlsJdbcProperty(DB_MTLS_KEY_STORE_PASSWORD, "sslpassword", EnumSet.of(Database.Vendor.POSTGRES))
         );
 
         List<PropertyMapper<?>> result = appendDatasourceMappers(mappers, Map.of(
@@ -496,6 +529,25 @@ public final class DatabasePropertyMappers implements PropertyMapperGrouping {
             }
             return to;
         }
+    }
+
+    private static String computeOracleAuthenticationServices(String datasource, String keyStoreFile) {
+        if (keyStoreFile == null) {
+            return null;
+        }
+        var vendor = getDatabaseVendor(datasource);
+        if (vendor != Database.Vendor.ORACLE) {
+            return null;
+        }
+        var tlsMode = getDatabaseTlsMode(datasource);
+        if (tlsMode != DatabaseOptions.DatabaseTlsMode.VERIFY_SERVER) {
+            return null;
+        }
+        var jdbcUrl = findDatabaseUrl(datasource).orElse("");
+        if (jdbcUrl.contains("oracle.net.authentication_services")) {
+            return null;
+        }
+        return "(TCPS)";
     }
 
     private static PropertyMapper<?> setTlsJdbcProperty(String jdbcPropertyKey, Map<Database.Vendor, String> vendorValues) {

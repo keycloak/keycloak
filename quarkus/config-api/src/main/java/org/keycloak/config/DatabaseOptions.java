@@ -149,6 +149,22 @@ public class DatabaseOptions {
             .description("The type of the truststore file. Common values include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the driver's default.")
             .build();
 
+    // mTLS keystore options
+    public static final Option<File> DB_MTLS_KEY_STORE_FILE = new OptionBuilder<>("db-mtls-key-store-file", File.class)
+            .category(OptionCategory.DATABASE)
+            .description("The path to the keystore file containing the client certificate and private key used for mTLS authentication with the database server.")
+            .build();
+
+    public static final Option<String> DB_MTLS_KEY_STORE_PASSWORD = new OptionBuilder<>("db-mtls-key-store-password", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("The password to access the keystore file specified in db-mtls-key-store-file.")
+            .build();
+
+    public static final Option<String> DB_MTLS_KEY_STORE_TYPE = new OptionBuilder<>("db-mtls-key-store-type", String.class)
+            .category(OptionCategory.DATABASE)
+            .description("The type of the keystore file. Common values include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the driver's default.")
+            .build();
+
     public static final class Datasources {
         /**
          * Options that have their sibling for a named datasource
@@ -175,7 +191,10 @@ public class DatabaseOptions {
                 DB_TLS_MODE,
                 DB_TLS_TRUST_STORE_FILE,
                 DB_TLS_TRUST_STORE_PASSWORD,
-                DB_TLS_TRUST_STORE_TYPE
+                DB_TLS_TRUST_STORE_TYPE,
+                DB_MTLS_KEY_STORE_FILE,
+                DB_MTLS_KEY_STORE_PASSWORD,
+                DB_MTLS_KEY_STORE_TYPE
         ).map(Option::getKey).toList();
 
         /**
