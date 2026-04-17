@@ -58,6 +58,8 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 
 import org.jboss.logging.Logger;
 
+import static org.keycloak.services.managers.AuthenticationManager.NEW_USER_REGISTERED;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -65,6 +67,9 @@ import org.jboss.logging.Logger;
 public class VerifyEmail implements RequiredActionProvider, RequiredActionFactory {
     public static final String EMAIL_RESEND_COOLDOWN_KEY_PREFIX = "verify-email-cooldown-";
     private static final Logger logger = Logger.getLogger(VerifyEmail.class);
+
+    // Auth note to set that verifyEmail is triggered during registration
+    private static final String VERIFY_EMAIL_DURING_REGISTRATION = "VERIFY_EMAIL_DURING_REGISTRATION";
 
     @Override
     public void evaluateTriggers(RequiredActionContext context) {
@@ -92,10 +97,15 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
     private void process(RequiredActionContext context, boolean isChallenge) {
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
 
-        if (context.getUser().isEmailVerified()) {
-            context.success();
-            authSession.removeAuthNote(Constants.VERIFY_EMAIL_KEY);
-            return;
+        // When triggered during registration, make sure to add requiredAction also to the authSession. If email is later verified in different authSession, this authSession should not continue
+        if ("true".equals(context.getAuthenticationSession().getAuthNote(NEW_USER_REGISTERED))) {
+            context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.VERIFY_EMAIL);
+        } else {
+            if (context.getUser().isEmailVerified()) {
+                context.success();
+                authSession.removeAuthNote(Constants.VERIFY_EMAIL_KEY);
+                return;
+            }
         }
 
         String email = context.getUser().getEmail();

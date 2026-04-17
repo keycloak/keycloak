@@ -62,6 +62,8 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 
+import static org.keycloak.services.managers.AuthenticationManager.NEW_USER_REGISTERED;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -153,6 +155,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
         UserProfile profile = getOrCreateUserProfile(context, formData);
         UserModel user = profile.create();
+        context.getAuthenticationSession().setAuthNote(NEW_USER_REGISTERED, "true");
 
         addOrganizationMember(context, user);
 
