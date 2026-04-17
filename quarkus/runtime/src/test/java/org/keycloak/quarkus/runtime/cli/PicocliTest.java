@@ -1230,12 +1230,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertNoError(nonRunningPicocli);
         // the last is accepted
         assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Content-Language=de-DE");
-        onAfter();
-
-        // Hidden 'telemetry-logs-headers' takes precedence
-        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-logs", "--telemetry-logs-enabled=true", "--telemetry-logs-headers=Overridden-by-me=yes", "--telemetry-logs-header-Authorization=Bearer asdlkfjadsflkj", "--telemetry-logs-header-Host=localhost:8080");
-        assertNoError(nonRunningPicocli);
-        assertExternalConfig("quarkus.otel.exporter.otlp.logs.headers", "Overridden-by-me=yes");
     }
 
     @Test
@@ -1268,29 +1262,18 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertNoError(nonRunningPicocli);
         // the last is accepted
         assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Content-Language=de-DE");
-        onAfter();
-
-        // Hidden 'telemetry-metrics-headers' takes precedence
-        nonRunningPicocli = pseudoLaunch("start-dev", "--features=opentelemetry-metrics", "--telemetry-metrics-enabled=true", "--metrics-enabled=true", "--telemetry-metrics-headers=Overridden-by-me=yes", "--telemetry-metrics-header-Authorization=Bearer asdlkfjadsflkj", "--telemetry-metrics-header-Host=localhost:8080");
-        assertNoError(nonRunningPicocli);
-        assertExternalConfig("quarkus.otel.exporter.otlp.metrics.headers", "Overridden-by-me=yes");
     }
 
     @Test
-    public void tracingHiddenParentHeaders() {
+    public void tracingSyntheticParentHeaders() {
         var nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-headers=Authorization=Bearer asdlkfjadsflkj");
         assertEquals(CommandLine.ExitCode.USAGE, nonRunningPicocli.exitCode);
-        assertThat(nonRunningPicocli.getErrString(), containsString("Disabled option: '--tracing-headers'. Available only when Tracing is enabled"));
+        assertThat(nonRunningPicocli.getErrString(), containsString("Unknown option: '--tracing-headers'"));
         onAfter();
 
         nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-headers=Authorization=Bearer asdlkfjadsflkj");
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer asdlkfjadsflkj");
-        onAfter();
-
-        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-headers=Authorization=Bearer asdlkfjadsflkj,Host=localhost:8080");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Authorization=Bearer asdlkfjadsflkj,Host=localhost:8080");
+        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "");
     }
 
     @Test
@@ -1323,12 +1306,6 @@ public class PicocliTest extends AbstractConfigurationTest {
         assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
         // the last is accepted
         assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Content-Language=de-DE");
-        onAfter();
-
-        // Hidden 'tracing-headers' takes precedence
-        nonRunningPicocli = pseudoLaunch("start-dev", "--tracing-enabled=true", "--tracing-headers=Overridden-by-me=yes", "--tracing-header-Authorization=Bearer asdlkfjadsflkj", "--tracing-header-Host=localhost:8080");
-        assertEquals(CommandLine.ExitCode.OK, nonRunningPicocli.exitCode);
-        assertExternalConfig("quarkus.otel.exporter.otlp.traces.headers", "Overridden-by-me=yes");
     }
 
     @Test

@@ -256,7 +256,7 @@ public class PropertyMapper<T> {
     }
 
     public boolean isHidden() {
-        return this.option.isHidden() || this.getDescription() == null;
+        return this.option.isHidden();
     }
 
     public boolean isBuildTime() {
@@ -589,6 +589,9 @@ public class PropertyMapper<T> {
             Option<T> opt = option;
             if (Objects.equals(option.getKey(), mapFrom)) {
                 opt = option.toBuilder().synthetic().build();
+            }
+            if (this.description == null && !opt.isHidden()) {
+                throw new AssertionError("Non-hidden options require a description");
             }
             if (option.getKey().contains(WildcardOptionsUtil.WILDCARD_START)) {
                 return new WildcardPropertyMapper<>(opt, to, enabled, enabledWhen, mapper, mapFrom, parentMapper, paramLabel, isMasked, validator, description, isRequired, requiredWhen, wildcardKeysTransformer, wildcardMapFrom);

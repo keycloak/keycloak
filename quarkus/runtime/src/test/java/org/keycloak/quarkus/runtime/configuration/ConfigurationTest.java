@@ -209,11 +209,11 @@ public class ConfigurationTest extends AbstractConfigurationTest {
     @Test
     public void testResolveTransformedValue() {
         ConfigArgsConfigSource.setCliArgs("");
-        assertEquals("false", createConfig().getConfigValue("kc.proxy-allow-forwarded-header").getValue());
+        assertNull(createConfig().getConfigValue("quarkus.http.proxy.allow-forwarded").getValue());
         ConfigArgsConfigSource.setCliArgs("--proxy-headers=xforwarded");
-        assertEquals("false", createConfig().getConfigValue("kc.proxy-allow-forwarded-header").getValue());
+        assertEquals("false", createConfig().getConfigValue("quarkus.http.proxy.allow-forwarded").getValue());
         ConfigArgsConfigSource.setCliArgs("--proxy-headers=forwarded");
-        assertEquals("true", createConfig().getConfigValue("kc.proxy-allow-forwarded-header").getValue());
+        assertEquals("true", createConfig().getConfigValue("quarkus.http.proxy.allow-forwarded").getValue());
     }
 
     @Test
@@ -402,44 +402,44 @@ public class ConfigurationTest extends AbstractConfigurationTest {
         assertEquals("test-schema", config.getConfigValue("kc.db-schema").getValue());
 
         config = createConfigFromCliArguments("--db=postgres");
-        assertTrue(DatabasePropertyMappers.isPostgresqlTargetServerTypeEnabled());
         assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).anyMatch(DatabasePropertyMappers.PG_TARGET_SERVER_TYPE::equals));
         assertEquals("primary", config.getConfigValue(DatabasePropertyMappers.PG_TARGET_SERVER_TYPE).getValue());
 
         config = createConfigFromCliArguments("--db=postgres", "--db-url-properties=?targetServerType=any");
-        assertFalse(DatabasePropertyMappers.isPostgresqlTargetServerTypeEnabled());
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false).noneMatch(DatabasePropertyMappers.PG_TARGET_SERVER_TYPE::equals));
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_TARGET_SERVER_TYPE).getValue());
 
         config = createConfigFromCliArguments("--db=postgres", "--db-driver=software.amazon.jdbc.Driver");
-        assertFalse(DatabasePropertyMappers.isPostgresqlTargetServerTypeEnabled());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_TARGET_SERVER_TYPE).getValue());
 
         config = createConfigFromCliArguments("--db=postgres", "--db-url=jdbc:postgresql://localhost:5432/keycloak?targetServerType=any");
-        assertFalse(DatabasePropertyMappers.isPostgresqlTargetServerTypeEnabled());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.PG_TARGET_SERVER_TYPE).getValue());
 
         // MSSQL: sendStringParametersAsUnicode should be set to false by default
         config = createConfigFromCliArguments("--db=mssql");
-        assertTrue(DatabasePropertyMappers.isMssqlSendStringParametersAsUnicode());
         assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false)
                 .anyMatch(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE::equals));
         assertEquals("false", config.getConfigValue(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE).getValue());
 
         // sendStringParametersAsUnicode already present in db-url-properties -> disabled
         config = createConfigFromCliArguments("--db=mssql", "--db-url-properties=;sendStringParametersAsUnicode=true");
-        assertFalse(DatabasePropertyMappers.isMssqlSendStringParametersAsUnicode());
+        assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false)
+                .noneMatch(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE::equals));
+        assertNull(config.getConfigValue(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE).getValue());
 
         // custom JDBC driver -> disabled
         config = createConfigFromCliArguments("--db=mssql", "--db-driver=com.custom.CustomSQLServerDriver");
-        assertFalse(DatabasePropertyMappers.isMssqlSendStringParametersAsUnicode());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE).getValue());
 
         // sendStringParametersAsUnicode already present in db-url -> disabled
         config = createConfigFromCliArguments("--db=mssql", "--db-url=jdbc:sqlserver://localhost:1433;databaseName=keycloak;sendStringParametersAsUnicode=false");
-        assertFalse(DatabasePropertyMappers.isMssqlSendStringParametersAsUnicode());
         assertTrue(StreamSupport.stream(config.getPropertyNames().spliterator(), false)
                 .noneMatch(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE::equals));
         assertNull(config.getConfigValue(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE).getValue());
 
         // other db vendor -> disabled (already covered implicitly but good to be explicit)
         config = createConfigFromCliArguments("--db=postgres");
-        assertFalse(DatabasePropertyMappers.isMssqlSendStringParametersAsUnicode());
+        assertNull(config.getConfigValue(DatabasePropertyMappers.MSSQL_SEND_STRING_PARAMETER_AS_UNICODE).getValue());
     }
 
     // KEYCLOAK-15632
