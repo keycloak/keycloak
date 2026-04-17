@@ -1,0 +1,48 @@
+// Release notes should contain only headline-worthy new features,
+// assuming that people who migrate will read the upgrading guide anyway.
+
+This release features new capabilities for users and administrators of {project_name}. The highlights of this release are:
+
+* *Event Hooks*, a new preview capability to deliver user and admin events through HTTP, SQL, or pull-based targets with delivery logs and retry handling.
+
+Read on to learn more about each new feature. If you are upgrading from a previous release, https://www.keycloak.org/docs/latest/upgrading/index.html[review also the changes listed in the upgrading guide].
+
+= Security and Standards
+
+This release does not include major highlights in this area.
+
+= Administration
+
+== Event Hooks (preview)
+
+{project_name} now includes Event Hooks, a preview feature for forwarding user and admin events to external systems.
+Event Hooks build on the existing events infrastructure and use an internal outbox so that deliveries happen asynchronously instead of during the original user or administrator request.
+
+In this first iteration, Event Hooks provide:
+
+* built-in `http`, `pull`, and `sql` target types
+* HTTP targets with support for `POST`, `PUT`, and `PATCH`
+* optional HMAC signing for HTTP deliveries
+* retry handling with exponential backoff, including manual retry from the delivery logs for retryable failures
+* support for honoring HTTP `Retry-After` responses during retries
+* single-event and bulk delivery modes where supported by the target type
+* delivery logs and queued message inspection through the Admin Console and Admin REST API
+* realm export, partial export, and partial import support for event hook targets
+
+For details, see the link:{adminguide_link}#_event-hooks[{adminguide_name}].
+
+= Configuring and Running
+
+This release does not include major highlights in this area.
+
+= Observability
+
+This release does not include major highlights in this area.
+
+= Extension Development
+
+[[_event_hook_target_spi]]
+=== Event Hook Target SPI
+You can add your own event hook target types if you want to deliver event hook messages to systems other than the built-in `http`, `pull`, and `sql` targets.
+Custom target types integrate with the Event Hooks admin REST API and Admin Console, where administrators can create targets of your custom type and configure provider-specific settings.
+

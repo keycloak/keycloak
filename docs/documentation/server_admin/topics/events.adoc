@@ -6,4 +6,5 @@
 
 include::events/login.adoc[]
 include::events/admin.adoc[]
+include::events/hooks.adoc[]
 

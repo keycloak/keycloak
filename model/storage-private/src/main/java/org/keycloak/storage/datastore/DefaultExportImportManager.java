@@ -45,6 +45,8 @@ import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.exportimport.util.ExportUtils;
+import org.keycloak.events.hooks.EventHookStoreProvider;
+import org.keycloak.events.hooks.EventHookTargetRepresentationUtil;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
@@ -365,6 +367,7 @@ public class DefaultExportImportManager implements ExportImportManager {
 
         importIdentityProviders(rep, newRealm, session);
         importIdentityProviderMappers(rep, session);
+        importEventHookTargets(rep, newRealm, session);
 
         Map<String, ClientScopeModel> clientScopes = new HashMap<>();
         if (rep.getClientScopes() != null) {
@@ -624,6 +627,16 @@ public class DefaultExportImportManager implements ExportImportManager {
         if (rep.getIdentityProviderMappers() != null) {
             for (IdentityProviderMapperRepresentation representation : rep.getIdentityProviderMappers()) {
                 session.identityProviders().createMapper(RepresentationToModel.toModel(representation));
+            }
+        }
+    }
+
+    private static void importEventHookTargets(RealmRepresentation rep, RealmModel newRealm, KeycloakSession session) {
+        if (rep.getEventHookTargets() != null) {
+            EventHookStoreProvider store = session.getProvider(EventHookStoreProvider.class);
+            long now = System.currentTimeMillis();
+            for (org.keycloak.representations.idm.EventHookTargetRepresentation representation : rep.getEventHookTargets()) {
+                store.createTarget(EventHookTargetRepresentationUtil.toModel(session, newRealm, representation, null, now, true, true));
             }
         }
     }

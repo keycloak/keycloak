@@ -10,7 +10,7 @@ type WarnBannerProps = {
   className?: string;
 };
 
-type EventsBannerType = "userEvents" | "adminEvents";
+type EventsBannerType = "hookEvents" | "userEvents" | "adminEvents";
 
 const WarnBanner = ({ msg, className }: WarnBannerProps) => {
   const { t } = useTranslation();
@@ -42,7 +42,7 @@ export const Banners = () => {
 
 export const EventsBanners = ({ type }: { type: EventsBannerType }) => {
   const msg =
-    type === "userEvents" ? "savingUserEventsOff" : "savingAdminEventsOff";
+    type === "hookEvents" ? "savingHookEventsOff" : type === "userEvents" ? "savingUserEventsOff" : "savingAdminEventsOff";
 
   return <WarnBanner msg={msg} className="pf-v5-u-mt-md pf-v5-u-mx-md" />;
 };

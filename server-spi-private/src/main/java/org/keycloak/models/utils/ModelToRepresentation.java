@@ -55,6 +55,8 @@ import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
+import org.keycloak.events.hooks.EventHookStoreProvider;
+import org.keycloak.events.hooks.EventHookTargetRepresentationUtil;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -634,6 +636,9 @@ public class ModelToRepresentation {
         }
 
         if (export) {
+            rep.setEventHookTargets(session.getProvider(EventHookStoreProvider.class).getTargetsStream(realm.getId())
+                .map(target -> EventHookTargetRepresentationUtil.toRepresentation(session, target, false))
+                .collect(Collectors.toList()));
             List<IdentityProviderRepresentation> identityProviders = session.identityProviders().getAllStream(IdentityProviderQuery.any())
                     .map(provider -> toRepresentation(session, realm, provider, export)).collect(Collectors.toList());
             rep.setIdentityProviders(identityProviders);

@@ -1,0 +1,32 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+This release does not include breaking changes related to Event Hooks.
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+=== New preview event-hooks
+
+The delivery model is at-least-once rather than exactly-once.
+Receivers must therefore be prepared to handle duplicate deliveries.
+
+For HTTP targets, {project_name} retries failed deliveries with exponential backoff.
+If the receiving service returns a `Retry-After` response header, {project_name} honors that delay when it is longer than the computed retry delay.
+
+The Admin Console and Admin REST API also expose delivery logs, queued message inspection, and manual retry for failed, exhausted, or dead deliveries.
+
+If you use the JPA-based storage, the migration adds the tables `EVENT_HOOK_TARGET`, `EVENT_HOOK_MESSAGE`, and `EVENT_HOOK_LOG`.
+Realm export and partial export/import now also support event hook target definitions.
+
+There are no migration steps for existing realms unless you want to enable the new feature.
+
+// ------------------------ Deprecated features ------------------------ //
+== Deprecated features
+
+This release does not deprecate Event Hooks or related APIs.
+
+// ------------------------ Removed features ------------------------ //
+== Removed features
+
+This release does not remove Event Hooks or related APIs.

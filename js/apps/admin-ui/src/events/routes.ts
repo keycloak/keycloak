@@ -1,6 +1,14 @@
 import type { AppRouteObject } from "../routes";
-import { EventsRoute, EventsRouteWithTab } from "./routes/Events";
+import {
+    EventsRoute,
+    EventsRouteWithSubTab,
+    EventsRouteWithTab,
+} from "./routes/Events";
 
-const routes: AppRouteObject[] = [EventsRoute, EventsRouteWithTab];
+const routes: AppRouteObject[] = [
+    EventsRoute,
+    EventsRouteWithTab,
+    EventsRouteWithSubTab,
+];
 
 export default routes;

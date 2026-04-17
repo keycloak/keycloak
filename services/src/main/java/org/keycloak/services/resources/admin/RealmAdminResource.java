@@ -647,6 +647,11 @@ public class RealmAdminResource {
         return new WorkflowsResource(session, auth);
     }
 
+    @Path("event-hooks")
+    public EventHooksResource eventHooks() {
+        return new EventHooksResource(session, auth, adminEvent);
+    }
+
     @Path("{extension}")
     public Object extension(@PathParam("extension") String extension) {
         AdminRealmResourceProvider provider = session.getProvider(AdminRealmResourceProvider.class, extension);
@@ -1351,6 +1356,7 @@ public class RealmAdminResource {
      *
      * @param exportGroupsAndRoles
      * @param exportClients
+    * @param exportEventHookTargets
      * @return
      */
     @Path("partial-export")
@@ -1363,11 +1369,13 @@ public class RealmAdminResource {
         @APIResponse(responseCode = "403", description = "Forbidden")
     })
     public Response partialExport(@QueryParam("exportGroupsAndRoles") Boolean exportGroupsAndRoles,
-                                  @QueryParam("exportClients") Boolean exportClients) {
+                                  @QueryParam("exportClients") Boolean exportClients,
+                                  @QueryParam("exportEventHookTargets") Boolean exportEventHookTargets) {
         auth.realm().requireManageRealm();
 
         boolean groupsAndRolesExported = exportGroupsAndRoles != null && exportGroupsAndRoles;
         boolean clientsExported = exportClients != null && exportClients;
+        boolean eventHookTargetsExported = exportEventHookTargets != null && exportEventHookTargets;
 
         if (groupsAndRolesExported) {
             auth.groups().requireList();
@@ -1379,7 +1387,8 @@ public class RealmAdminResource {
         // service accounts are exported if the clients are exported
         // this means that if clients is true but groups/roles is false the service account is exported without roles
         // the other option is just include service accounts if clientsExported && groupsAndRolesExported
-        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported, true);
+        ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported,
+            eventHookTargetsExported, clientsExported, true);
 
         ExportImportManager exportProvider = session.getProvider(DatastoreProvider.class).getExportImportManager();
 

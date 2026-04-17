@@ -6,6 +6,7 @@ import { ClientPolicies } from "./resources/clientPolicies.js";
 import { Clients } from "./resources/clients.js";
 import { ClientScopes } from "./resources/clientScopes.js";
 import { Components } from "./resources/components.js";
+import { EventHooks } from "./resources/eventHooks.js";
 import { Groups } from "./resources/groups.js";
 import { IdentityProviders } from "./resources/identityProviders.js";
 import { Realms } from "./resources/realms.js";
@@ -56,6 +57,7 @@ export class KeycloakAdminClient {
   public clientPolicies: ClientPolicies;
   public identityProviders: IdentityProviders;
   public components: Components;
+  public eventHooks: EventHooks;
   public serverInfo: ServerInfo;
   public whoAmI: WhoAmI;
   public attackDetection: AttackDetection;
@@ -100,6 +102,7 @@ export class KeycloakAdminClient {
     this.clientPolicies = new ClientPolicies(this);
     this.identityProviders = new IdentityProviders(this);
     this.components = new Components(this);
+    this.eventHooks = new EventHooks(this);
     this.authenticationManagement = new AuthenticationManagement(this);
     this.serverInfo = new ServerInfo(this);
     this.whoAmI = new WhoAmI(this);

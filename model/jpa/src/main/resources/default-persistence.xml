@@ -66,6 +66,9 @@
         <!-- JpaAuditProviders -->
         <class>org.keycloak.events.jpa.EventEntity</class>
         <class>org.keycloak.events.jpa.AdminEventEntity</class>
+        <class>org.keycloak.events.hooks.jpa.EventHookTargetEntity</class>
+        <class>org.keycloak.events.hooks.jpa.EventHookMessageEntity</class>
+        <class>org.keycloak.events.hooks.jpa.EventHookLogEntity</class>
 
         <!-- Authorization -->
         <class>org.keycloak.authorization.jpa.entities.ResourceServerEntity</class>
