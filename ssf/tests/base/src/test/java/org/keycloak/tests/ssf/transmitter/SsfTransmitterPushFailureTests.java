@@ -226,7 +226,7 @@ public class SsfTransmitterPushFailureTests {
         streamConfig.setEventsRequested(eventsRequested);
         streamConfig.setDescription("Push failure integration test");
 
-        try (SimpleHttpResponse response = http.doPost(SsfTransmitterUrls.streamsEndpoint(realm.getBaseUrl()))
+        try (SimpleHttpResponse response = http.doPost(SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl()))
                 .json(streamConfig)
                 .auth(token)
                 .acceptJson()

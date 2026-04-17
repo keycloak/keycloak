@@ -328,11 +328,11 @@ public class SsfTransmitterPushDeliveryTests {
     }
 
     protected String streamsEndpoint() {
-        return SsfTransmitterUrls.streamsEndpoint(realm.getBaseUrl());
+        return SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl());
     }
 
     protected String streamsStatusEndpoint() {
-        return SsfTransmitterUrls.streamStatusEndpoint(realm.getBaseUrl());
+        return SsfTransmitterUrls.getStreamStatusEndpointUrl(realm.getBaseUrl());
     }
 
     protected String obtainReceiverToken(String clientId, String secret) throws IOException {

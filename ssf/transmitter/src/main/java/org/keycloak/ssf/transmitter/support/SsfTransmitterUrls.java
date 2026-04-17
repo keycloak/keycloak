@@ -13,23 +13,23 @@ public final class SsfTransmitterUrls {
         return issuerUrl + "/" + SSF_TRANSMITTER_BASE_PATH_SUFFIX;
     }
 
-    public static String streamsEndpoint(String issuerUrl) {
+    public static String getStreamsEndpointUrl(String issuerUrl) {
         return getSsfTransmitterBasePath(issuerUrl) + "/streams";
     }
 
-    public static String streamStatusEndpoint(String issuerUrl) {
+    public static String getStreamStatusEndpointUrl(String issuerUrl) {
         return getSsfTransmitterBasePath(issuerUrl) + "/streams/status";
     }
 
-    public static String streamVerificationEndpoint(String issuerUrl) {
+    public static String getStreamVerificationEndpointUrl(String issuerUrl) {
         return getSsfTransmitterBasePath(issuerUrl) + "/verify";
     }
 
-    public static String addSubjectEndpoint(String issuerUrl) {
+    public static String getAddSubjectEndpointUrl(String issuerUrl) {
         return getSsfTransmitterBasePath(issuerUrl) + "/subjects/add";
     }
 
-    public static String removeSubjectEndpoint(String issuerUrl) {
+    public static String getRemoveSubjectEndpointUrl(String issuerUrl) {
         return getSsfTransmitterBasePath(issuerUrl) + "/subjects/remove";
     }
 }

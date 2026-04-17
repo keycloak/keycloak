@@ -18,7 +18,6 @@ import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.transmitter.DefaultSsfTransmitterProviderFactory;
@@ -289,7 +288,7 @@ public class SsfSubjectManagementTests {
         streamConfig.setEventsRequested(Set.of(CaepSessionRevoked.TYPE));
         streamConfig.setDescription("Subject management integration test");
 
-        try (SimpleHttpResponse response = http.doPost(SsfTransmitterUrls.streamsEndpoint(realm.getBaseUrl()))
+        try (SimpleHttpResponse response = http.doPost(SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl()))
                 .json(streamConfig)
                 .auth(token)
                 .acceptJson()

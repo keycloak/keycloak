@@ -70,14 +70,14 @@ public class TransmitterMetadataService {
         ));
 
         // Stream management endpoints
-        metadata.setConfigurationEndpoint(SsfTransmitterUrls.streamsEndpoint(issuerUrl));
-        metadata.setStatusEndpoint(SsfTransmitterUrls.streamStatusEndpoint(issuerUrl));
-        metadata.setVerificationEndpoint(SsfTransmitterUrls.streamVerificationEndpoint(issuerUrl));
+        metadata.setConfigurationEndpoint(SsfTransmitterUrls.getStreamsEndpointUrl(issuerUrl));
+        metadata.setStatusEndpoint(SsfTransmitterUrls.getStreamStatusEndpointUrl(issuerUrl));
+        metadata.setVerificationEndpoint(SsfTransmitterUrls.getStreamVerificationEndpointUrl(issuerUrl));
 
         // Subject management endpoints (only advertised when enabled)
         if (transmitterConfig.isSubjectManagementEnabled()) {
-            metadata.setAddSubjectEndpoint(SsfTransmitterUrls.addSubjectEndpoint(issuerUrl));
-            metadata.setRemoveSubjectEndpoint(SsfTransmitterUrls.removeSubjectEndpoint(issuerUrl));
+            metadata.setAddSubjectEndpoint(SsfTransmitterUrls.getAddSubjectEndpointUrl(issuerUrl));
+            metadata.setRemoveSubjectEndpoint(SsfTransmitterUrls.getRemoveSubjectEndpointUrl(issuerUrl));
         }
 
         metadata.setAuthorizationSchemes(createAuthorizationSchemes());
