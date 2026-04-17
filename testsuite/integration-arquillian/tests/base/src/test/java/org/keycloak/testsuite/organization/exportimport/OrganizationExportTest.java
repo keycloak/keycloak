@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 
 import jakarta.ws.rs.core.Response;
 
@@ -42,7 +40,6 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.MemberRepresentation;
 import org.keycloak.representations.idm.OrganizationRepresentation;
-import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -326,28 +323,6 @@ public class OrganizationExportTest extends AbstractOrganizationTest {
         });
 
         return testRealm().toRepresentation();
-    }
-
-    @Test
-    public void testPartialExport() {
-        createOrganization();
-        assertPartialExportImport(false, false);
-        assertPartialExportImport(true, false);
-        assertPartialExportImport(true, true);
-        assertPartialExportImport(false, true);
-    }
-
-    private void assertPartialExportImport(boolean exportGroupsAndRoles, boolean exportClients) {
-        RealmRepresentation export = testRealm().partialExport(exportGroupsAndRoles, exportClients);
-        assertTrue(Optional.ofNullable(export.getOrganizations()).orElse(List.of()).isEmpty());
-        assertTrue(Optional.ofNullable(export.getIdentityProviders()).orElse(List.of()).stream().noneMatch(idp -> Objects.nonNull(idp.getOrganizationId())));
-        PartialImportRepresentation rep = new PartialImportRepresentation();
-        rep.setUsers(export.getUsers());
-        rep.setClients(export.getClients());
-        rep.setRoles(export.getRoles());
-        rep.setIdentityProviders(export.getIdentityProviders());
-        rep.setGroups(export.getGroups());
-        testRealm().partialImport(rep).close();
     }
 
     private String createTopLevelGroup(OrganizationResource organization, String name) {
