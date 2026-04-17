@@ -26,6 +26,7 @@ public class EventHookDeliveryResult {
     private String details;
     private long durationMillis;
     private Long retryAfterMillis;
+    private boolean autoDisableEligible;
 
     public boolean isSuccess() {
         return success;
@@ -81,5 +82,13 @@ public class EventHookDeliveryResult {
 
     public void setRetryAfterMillis(Long retryAfterMillis) {
         this.retryAfterMillis = retryAfterMillis;
+    }
+
+    public boolean isAutoDisableEligible() {
+        return autoDisableEligible;
+    }
+
+    public void setAutoDisableEligible(boolean autoDisableEligible) {
+        this.autoDisableEligible = autoDisableEligible;
     }
 }

@@ -23,11 +23,15 @@ public class EventHookTargetModel {
 
     private String id;
     private String realmId;
+    private String realmName;
     private String name;
     private String type;
     private boolean enabled;
     private long createdAt;
     private long updatedAt;
+    private Long autoDisabledUntil;
+    private String autoDisabledReason;
+    private Integer consecutive429Count;
     private Map<String, Object> settings;
 
     public String getId() {
@@ -44,6 +48,14 @@ public class EventHookTargetModel {
 
     public void setRealmId(String realmId) {
         this.realmId = realmId;
+    }
+
+    public String getRealmName() {
+        return realmName;
+    }
+
+    public void setRealmName(String realmName) {
+        this.realmName = realmName;
     }
 
     public String getName() {
@@ -84,6 +96,30 @@ public class EventHookTargetModel {
 
     public void setUpdatedAt(long updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Long getAutoDisabledUntil() {
+        return autoDisabledUntil;
+    }
+
+    public void setAutoDisabledUntil(Long autoDisabledUntil) {
+        this.autoDisabledUntil = autoDisabledUntil;
+    }
+
+    public String getAutoDisabledReason() {
+        return autoDisabledReason;
+    }
+
+    public void setAutoDisabledReason(String autoDisabledReason) {
+        this.autoDisabledReason = autoDisabledReason;
+    }
+
+    public Integer getConsecutive429Count() {
+        return consecutive429Count;
+    }
+
+    public void setConsecutive429Count(Integer consecutive429Count) {
+        this.consecutive429Count = consecutive429Count;
     }
 
     public Map<String, Object> getSettings() {

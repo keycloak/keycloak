@@ -1,6 +1,7 @@
 package org.keycloak.events.hooks;
 
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -24,6 +25,51 @@ import static org.junit.Assert.assertTrue;
 public class EventHooksResourceTargetEndpointTest {
 
         @Test
+        public void shouldConsumeBufferedPullTestEntriesThroughDedicatedEndpoint() {
+                                RecordingStoreProvider store = new RecordingStoreProvider();
+                                RealmModel realm = realm("realm-1");
+                                KeycloakSession session = session(realm, store, new PullEventHookTargetProviderFactory());
+                                HttpHeaders headers = headers("top-secret", null);
+
+                EventHookTargetModel target = new EventHookTargetModel();
+                target.setId("target-1");
+                target.setRealmId("realm-1");
+                target.setType(PullEventHookTargetProviderFactory.ID);
+                target.setEnabled(true);
+                target.setSettings(Map.of("pullSecret", "top-secret", "deliveryMode", "SINGLE"));
+
+                EventHookMessageModel message = new EventHookMessageModel();
+                message.setId("msg-test-1");
+                message.setRealmId("realm-1");
+                message.setTargetId("target-1");
+                message.setSourceType(EventHookSourceType.USER);
+                message.setSourceEventId("event-test-1");
+                message.setAttemptCount(1);
+                                message.setStatus(EventHookMessageStatus.WAITING);
+                                message.setTest(true);
+                message.setPayload("{\"deliveryTest\":true,\"eventType\":\"LOGIN\"}");
+                message.setUpdatedAt(100L);
+
+                store.target = target;
+                                store.testMessages = List.of(message);
+                                store.hasMoreTestMessages = false;
+
+                Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "test");
+                EventHookPullRepresentation representation = ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
+
+                assertNotNull(representation.getEvent());
+                assertEquals("LOGIN", ((Map<?, ?>) representation.getEvent()).get("eventType"));
+                assertNotNull(representation.getEntry());
+                assertEquals(Boolean.TRUE, representation.getEntry().getTest());
+                                assertEquals("PULL_TEST_CONSUMED", store.createdLog.getStatusCode());
+                assertFalse(representation.isHasMoreEvents());
+                                assertNotNull(store.updatedMessage);
+                                assertEquals(EventHookMessageStatus.SUCCESS, store.updatedMessage.getStatus());
+                                assertNotNull(store.createdLog);
+                                assertEquals(Boolean.TRUE, store.createdLog.isTest());
+        }
+
+        @Test
         public void shouldConsumeWaitingEntriesWithoutSecretWhenPullTargetHasNoSecret() {
                                 RecordingStoreProvider store = new RecordingStoreProvider();
                                 RealmModel realm = realm("realm-1");
@@ -42,7 +88,7 @@ public class EventHooksResourceTargetEndpointTest {
                 message.setTargetId("target-1");
                 message.setSourceEventId("event-1");
                 message.setAttemptCount(1);
-                message.setStatus(EventHookMessageStatus.CLAIMED);
+                message.setStatus(EventHookMessageStatus.WAITING);
                 message.setPayload("{\"event\":\"LOGIN\"}");
                 message.setUpdatedAt(100L);
 
@@ -95,16 +141,13 @@ public class EventHooksResourceTargetEndpointTest {
         message.setTargetId("target-1");
         message.setSourceEventId("event-1");
         message.setAttemptCount(1);
-        message.setStatus(EventHookMessageStatus.CLAIMED);
+        message.setStatus(EventHookMessageStatus.WAITING);
         message.setPayload("{\"event\":\"LOGIN\"}");
         message.setUpdatedAt(100L);
 
         EventHookLogModel waitingLog = new EventHookLogModel();
         waitingLog.setId("log-1");
         waitingLog.setExecutionId("exec-1");
-        waitingLog.setBatchExecution(false);
-        waitingLog.setMessageId("msg-1");
-        waitingLog.setTargetId("target-1");
         waitingLog.setStatus(EventHookLogStatus.WAITING);
         waitingLog.setAttemptNumber(1);
         waitingLog.setStatusCode("PULL_WAITING");
@@ -135,14 +178,95 @@ public class EventHooksResourceTargetEndpointTest {
                 assertNotNull(store.updatedMessage);
                 assertEquals(EventHookMessageStatus.SUCCESS, store.updatedMessage.getStatus());
                 assertEquals(1, store.updatedMessage.getAttemptCount());
-                assertNull(store.updatedMessage.getClaimOwner());
-                assertNull(store.updatedMessage.getClaimedAt());
 
                 assertNotNull(store.createdLog);
                 assertEquals(EventHookLogStatus.SUCCESS, store.createdLog.getStatus());
                 assertEquals(1, store.createdLog.getAttemptNumber());
                 assertEquals("PULL_CONSUMED", store.createdLog.getStatusCode());
+                                assertFalse(store.createdLog.isTest());
     }
+
+        @Test
+        public void shouldConsumePullMessagesInFifoOrder() {
+                                RecordingStoreProvider store = new RecordingStoreProvider();
+                                RealmModel realm = realm("realm-1");
+                                KeycloakSession session = session(realm, store, new PullEventHookTargetProviderFactory());
+                                HttpHeaders headers = headers("top-secret", null);
+
+                EventHookTargetModel target = new EventHookTargetModel();
+                target.setId("target-1");
+                target.setType(PullEventHookTargetProviderFactory.ID);
+                target.setEnabled(true);
+                target.setSettings(Map.of("pullSecret", "top-secret", "deliveryMode", "BULK", "maxEventsPerBatch", 10));
+
+                EventHookMessageModel newestMessage = message("msg-3", "event-3", 300L);
+                EventHookMessageModel oldestMessage = message("msg-1", "event-1", 100L);
+                EventHookMessageModel middleMessage = message("msg-2", "event-2", 200L);
+
+                store.target = target;
+                store.messages = List.of(newestMessage, oldestMessage, middleMessage);
+                store.hasMoreMessages = false;
+
+                Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "consume");
+                EventHookPullRepresentation representation = ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
+
+                assertNotNull(representation.getEvents());
+                assertEquals(List.of("event-1", "event-2", "event-3"), representation.getEvents().stream()
+                                .map(Map.class::cast)
+                                .map(event -> String.valueOf(event.get("event")))
+                                .toList());
+                assertNotNull(representation.getEntries());
+                assertEquals(List.of("msg-1", "msg-2", "msg-3"), representation.getEntries().stream()
+                                .map(EventHookPullEntryRepresentation::getMessageId)
+                                .toList());
+                assertEquals(List.of("event-1", "event-2", "event-3"), representation.getEntries().stream()
+                                .map(EventHookPullEntryRepresentation::getData)
+                                .map(Map.class::cast)
+                                .map(event -> String.valueOf(event.get("event")))
+                                .toList());
+                assertEquals(List.of("msg-1", "msg-2", "msg-3"), store.updatedMessages.stream()
+                                .map(EventHookMessageModel::getId)
+                                .toList());
+                assertEquals(3, store.createdLogs.size());
+                assertTrue(store.createdLogs.stream().allMatch(log -> "PULL_CONSUMED".equals(log.getStatusCode())));
+        }
+
+        @Test
+        public void shouldParseRepresentationJsonForPullDelivery() {
+                                RecordingStoreProvider store = new RecordingStoreProvider();
+                                RealmModel realm = realm("realm-1");
+                                KeycloakSession session = session(realm, store, new PullEventHookTargetProviderFactory());
+                                HttpHeaders headers = headers("top-secret", null);
+
+                EventHookTargetModel target = new EventHookTargetModel();
+                target.setId("target-1");
+                target.setType(PullEventHookTargetProviderFactory.ID);
+                target.setEnabled(true);
+                target.setSettings(Map.of("pullSecret", "top-secret", "deliveryMode", "SINGLE"));
+
+                EventHookMessageModel message = new EventHookMessageModel();
+                message.setId("msg-1");
+                message.setRealmId("realm-1");
+                message.setTargetId("target-1");
+                message.setSourceEventId("event-1");
+                message.setAttemptCount(1);
+                message.setStatus(EventHookMessageStatus.WAITING);
+                message.setPayload("{\"event\":\"UPDATE\",\"representation\":\"{\\\"id\\\":\\\"user-1\\\",\\\"enabled\\\":true}\"}");
+                message.setUpdatedAt(100L);
+
+                store.target = target;
+                store.messages = List.of(message);
+                store.hasMoreMessages = false;
+
+                Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "consume");
+                EventHookPullRepresentation representation = ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
+
+                assertTrue(representation.getEvent() instanceof Map<?, ?>);
+                assertTrue(((Map<?, ?>) representation.getEvent()).get("representation") instanceof Map<?, ?>);
+                assertEquals("user-1", ((Map<?, ?>) ((Map<?, ?>) representation.getEvent()).get("representation")).get("id"));
+                assertTrue(representation.getEntry().getData() instanceof Map<?, ?>);
+                assertTrue(((Map<?, ?>) representation.getEntry().getData()).get("representation") instanceof Map<?, ?>);
+        }
 
         @Test(expected = NotAuthorizedException.class)
         public void shouldRejectBearerAuthorizationForPullEndpoint() {
@@ -223,14 +347,32 @@ public class EventHooksResourceTargetEndpointTest {
                                 });
         }
 
+                        private EventHookMessageModel message(String id, String event, long createdAt) {
+                                EventHookMessageModel message = new EventHookMessageModel();
+                                message.setId(id);
+                                message.setRealmId("realm-1");
+                                message.setTargetId("target-1");
+                                message.setSourceEventId(event);
+                                message.setAttemptCount(1);
+                                message.setStatus(EventHookMessageStatus.WAITING);
+                                message.setPayload("{\"event\":\"" + event + "\"}");
+                                message.setCreatedAt(createdAt);
+                                message.setUpdatedAt(createdAt);
+                                return message;
+                        }
+
         private static final class RecordingStoreProvider implements EventHookStoreProvider {
 
                 private EventHookTargetModel target;
                 private List<EventHookMessageModel> messages = List.of();
+                                private List<EventHookMessageModel> testMessages = List.of();
                 private EventHookLogModel latestLog;
                 private boolean hasMoreMessages;
+                                private boolean hasMoreTestMessages;
                 private EventHookMessageModel updatedMessage;
+                                private final List<EventHookMessageModel> updatedMessages = new ArrayList<>();
                 private EventHookLogModel createdLog;
+                                private final List<EventHookLogModel> createdLogs = new ArrayList<>();
 
                 @Override
                 public EventHookTargetModel getTarget(String realmId, String targetId) {
@@ -238,10 +380,16 @@ public class EventHooksResourceTargetEndpointTest {
                 }
 
                 @Override
-                public List<EventHookMessageModel> claimAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
-                                long staleClaimBefore, String claimOwner) {
+                public List<EventHookMessageModel> reserveAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
+                                long executionTimeoutMillis, String executionId) {
                         return messages;
                 }
+
+                                @Override
+                                public List<EventHookMessageModel> reserveAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
+                                                                long executionTimeoutMillis, String executionId, boolean test) {
+                                                return test ? testMessages : messages;
+                                }
 
                 @Override
                 public Stream<EventHookLogModel> getLogsStream(String realmId, String messageId, String targetId, String targetType,
@@ -252,19 +400,26 @@ public class EventHooksResourceTargetEndpointTest {
                 }
 
                 @Override
-                public boolean hasAvailableMessages(String realmId, String targetId, long now, long staleClaimBefore) {
+                public boolean hasAvailableMessages(String realmId, String targetId, long now) {
                         return hasMoreMessages;
                 }
+
+                                @Override
+                                public boolean hasAvailableMessages(String realmId, String targetId, long now, boolean test) {
+                                                return test ? hasMoreTestMessages : hasMoreMessages;
+                                }
 
                 @Override
                 public EventHookMessageModel updateMessage(EventHookMessageModel message) {
                         updatedMessage = message;
+                        updatedMessages.add(message);
                         return message;
                 }
 
                 @Override
                 public void createLog(EventHookLogModel log) {
                         createdLog = log;
+                        createdLogs.add(log);
                 }
 
                 @Override
@@ -308,9 +463,14 @@ public class EventHooksResourceTargetEndpointTest {
                 }
 
                 @Override
-                public List<EventHookMessageModel> claimAvailableMessages(int maxResults, long now, long staleClaimBefore, String claimOwner) {
+                public List<EventHookMessageModel> reserveAvailableMessages(int maxResults, long now, long executionTimeoutMillis) {
                         throw new UnsupportedOperationException();
                 }
+
+                                @Override
+                                public void clearExpiredMessagesAndLogs(long olderThan) {
+                                                throw new UnsupportedOperationException();
+                                }
 
                 @Override
                 public void close() {

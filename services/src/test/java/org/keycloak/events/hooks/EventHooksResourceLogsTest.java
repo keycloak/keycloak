@@ -10,6 +10,7 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.EventHookLogRepresentation;
+import org.keycloak.representations.idm.EventHookMessageRepresentation;
 import org.keycloak.services.resources.admin.EventHooksResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.RealmPermissionEvaluator;
@@ -17,6 +18,7 @@ import org.keycloak.services.util.DateUtil;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class EventHooksResourceLogsTest {
 
@@ -26,12 +28,6 @@ public class EventHooksResourceLogsTest {
         EventHookLogModel log = new EventHookLogModel();
         log.setId("log-1");
         log.setExecutionId("exec-1");
-        log.setBatchExecution(false);
-        log.setMessageId("msg-1");
-        log.setTargetId("target-1");
-        log.setSourceType(EventHookSourceType.ADMIN);
-        log.setSourceEventId("event-1");
-        log.setSourceEventName("CREATE");
         log.setStatus(EventHookLogStatus.SUCCESS);
         log.setMessageStatus(EventHookMessageStatus.SUCCESS);
         log.setAttemptNumber(2);
@@ -39,6 +35,7 @@ public class EventHooksResourceLogsTest {
         log.setDurationMs(15L);
         log.setDetails("ok");
         log.setCreatedAt(1234L);
+        log.setTest(true);
         store.logs = List.of(log);
 
         List<EventHookLogRepresentation> logs = new EventHooksResource(session(realm("realm-1"), store), auth(), null)
@@ -68,11 +65,66 @@ public class EventHooksResourceLogsTest {
 
         assertEquals(1, logs.size());
         EventHookLogRepresentation representation = logs.get(0);
+        assertEquals("exec-1", representation.getExecutionId());
+        assertEquals("SUCCESS", representation.getStatus());
+        assertEquals("SUCCESS", representation.getMessageStatus());
+        assertEquals(Boolean.TRUE, representation.getTest());
+        assertNotNull(representation.getCreatedAt());
+    }
+
+    @Test
+    public void shouldForwardStructuredMessageFiltersAndExposeMessageFields() {
+        RecordingStoreProvider store = new RecordingStoreProvider();
+        EventHookMessageModel message = new EventHookMessageModel();
+        message.setId("msg-1");
+        message.setTargetId("target-1");
+        message.setExecutionId("exec-1");
+        message.setSourceType(EventHookSourceType.ADMIN);
+        message.setSourceEventId("event-1");
+        message.setSourceEventName("CREATE");
+        message.setUserId("user-1");
+        message.setResourcePath("users/123");
+        message.setExecutionBatch(true);
+        message.setStatus(EventHookMessageStatus.SUCCESS);
+        message.setAttemptCount(2);
+        message.setNextAttemptAt(100L);
+        message.setCreatedAt(1234L);
+        message.setUpdatedAt(1235L);
+        message.setTest(true);
+        message.setPayload("{\"operationType\":\"CREATE\"}");
+        store.messages = List.of(message);
+
+        List<EventHookMessageRepresentation> messages = new EventHooksResource(session(realm("realm-1"), store), auth(), null)
+                .getMessages("SUCCESS", "target-1", "http", "ADMIN", "CREATE", "security-admin-console",
+                        "user-1", "127.0.0.1", "USER", "users/123", "exec-1", "retry", 5, 10);
+
+        assertEquals("realm-1", store.messageRealmId);
+        assertEquals("SUCCESS", store.messageQueryStatus);
+        assertEquals("target-1", store.messageQueryTargetId);
+        assertEquals("http", store.messageQueryTargetType);
+        assertEquals("ADMIN", store.messageQuerySourceType);
+        assertEquals("CREATE", store.messageQueryEvent);
+        assertEquals("security-admin-console", store.messageQueryClient);
+        assertEquals("user-1", store.messageQueryUser);
+        assertEquals("127.0.0.1", store.messageQueryIpAddress);
+        assertEquals("USER", store.messageQueryResourceType);
+        assertEquals("users/123", store.messageQueryResourcePath);
+        assertEquals("exec-1", store.messageQueryExecutionId);
+        assertEquals("retry", store.messageQuerySearch);
+        assertEquals(Integer.valueOf(5), store.messageQueryFirst);
+        assertEquals(Integer.valueOf(10), store.messageQueryMax);
+
+        assertEquals(1, messages.size());
+        EventHookMessageRepresentation representation = messages.get(0);
+        assertEquals("exec-1", representation.getExecutionId());
         assertEquals("ADMIN", representation.getSourceType());
         assertEquals("CREATE", representation.getSourceEventName());
         assertEquals("event-1", representation.getSourceEventId());
+        assertEquals("user-1", representation.getUserId());
+        assertEquals("users/123", representation.getResourcePath());
+        assertEquals(Boolean.TRUE, representation.getExecutionBatch());
         assertEquals("SUCCESS", representation.getStatus());
-        assertEquals("SUCCESS", representation.getMessageStatus());
+        assertEquals(Boolean.TRUE, representation.getTest());
         assertNotNull(representation.getCreatedAt());
     }
 
@@ -124,6 +176,7 @@ public class EventHooksResourceLogsTest {
     private static final class RecordingStoreProvider implements EventHookStoreProvider {
 
         private List<EventHookLogModel> logs = List.of();
+        private List<EventHookMessageModel> messages = List.of();
         private String realmId;
         private String messageId;
         private String targetId;
@@ -143,6 +196,44 @@ public class EventHooksResourceLogsTest {
         private String search;
         private Integer first;
         private Integer max;
+        private String messageRealmId;
+        private String messageQueryStatus;
+        private String messageQueryTargetId;
+        private String messageQueryTargetType;
+        private String messageQuerySourceType;
+        private String messageQueryEvent;
+        private String messageQueryClient;
+        private String messageQueryUser;
+        private String messageQueryIpAddress;
+        private String messageQueryResourceType;
+        private String messageQueryResourcePath;
+        private String messageQueryExecutionId;
+        private String messageQuerySearch;
+        private Integer messageQueryFirst;
+        private Integer messageQueryMax;
+
+        @Override
+        public Stream<EventHookMessageModel> getMessagesStream(String realmId, String status, String targetId, String targetType,
+                String sourceType, String event, String client, String user, String ipAddress,
+                String resourceType, String resourcePath, String executionId, String search,
+                Integer first, Integer max) {
+            this.messageRealmId = realmId;
+            this.messageQueryStatus = status;
+            this.messageQueryTargetId = targetId;
+            this.messageQueryTargetType = targetType;
+            this.messageQuerySourceType = sourceType;
+            this.messageQueryEvent = event;
+            this.messageQueryClient = client;
+            this.messageQueryUser = user;
+            this.messageQueryIpAddress = ipAddress;
+            this.messageQueryResourceType = resourceType;
+            this.messageQueryResourcePath = resourcePath;
+            this.messageQueryExecutionId = executionId;
+            this.messageQuerySearch = search;
+            this.messageQueryFirst = first;
+            this.messageQueryMax = max;
+            return messages.stream();
+        }
 
         @Override
         public Stream<EventHookLogModel> getLogsStream(String realmId, String messageId, String targetId, String targetType,
@@ -203,7 +294,7 @@ public class EventHooksResourceLogsTest {
 
         @Override
         public Stream<EventHookMessageModel> getMessagesStream(String realmId, String status, String targetId, Integer first, Integer max) {
-            throw new UnsupportedOperationException();
+            return messages.stream();
         }
 
         @Override
@@ -217,18 +308,34 @@ public class EventHooksResourceLogsTest {
         }
 
         @Override
-        public List<EventHookMessageModel> claimAvailableMessages(int maxResults, long now, long staleClaimBefore, String claimOwner) {
+        public List<EventHookMessageModel> reserveAvailableMessages(int maxResults, long now, long executionTimeoutMillis) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public List<EventHookMessageModel> claimAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
-                long staleClaimBefore, String claimOwner) {
+        public List<EventHookMessageModel> reserveAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
+                long executionTimeoutMillis, String executionId, boolean test) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public boolean hasAvailableMessages(String realmId, String targetId, long now, long staleClaimBefore) {
+        public boolean hasAvailableMessages(String realmId, String targetId, long now, boolean test) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clearExpiredMessagesAndLogs(long olderThan) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<EventHookMessageModel> reserveAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
+                long executionTimeoutMillis, String executionId) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean hasAvailableMessages(String realmId, String targetId, long now) {
             throw new UnsupportedOperationException();
         }
 

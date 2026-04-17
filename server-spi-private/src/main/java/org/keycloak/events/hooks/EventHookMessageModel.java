@@ -17,22 +17,31 @@
 
 package org.keycloak.events.hooks;
 
+import java.util.Map;
+
+import org.keycloak.util.JsonSerialization;
+
 public class EventHookMessageModel {
 
     private String id;
     private String realmId;
     private String targetId;
+    private String executionId;
     private EventHookSourceType sourceType;
     private String sourceEventId;
+    private String sourceEventName;
+    private String userId;
+    private String resourcePath;
     private EventHookMessageStatus status;
     private String payload;
     private int attemptCount;
     private long nextAttemptAt;
+    private Long executionStartedAt;
     private long createdAt;
     private long updatedAt;
-    private String claimOwner;
-    private Long claimedAt;
     private String lastError;
+    private boolean executionBatch;
+    private boolean test;
 
     public String getId() {
         return id;
@@ -58,6 +67,14 @@ public class EventHookMessageModel {
         this.targetId = targetId;
     }
 
+    public String getExecutionId() {
+        return executionId;
+    }
+
+    public void setExecutionId(String executionId) {
+        this.executionId = executionId;
+    }
+
     public EventHookSourceType getSourceType() {
         return sourceType;
     }
@@ -72,6 +89,30 @@ public class EventHookMessageModel {
 
     public void setSourceEventId(String sourceEventId) {
         this.sourceEventId = sourceEventId;
+    }
+
+    public String getSourceEventName() {
+        return sourceEventName;
+    }
+
+    public void setSourceEventName(String sourceEventName) {
+        this.sourceEventName = sourceEventName;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getResourcePath() {
+        return resourcePath;
+    }
+
+    public void setResourcePath(String resourcePath) {
+        this.resourcePath = resourcePath;
     }
 
     public EventHookMessageStatus getStatus() {
@@ -106,6 +147,14 @@ public class EventHookMessageModel {
         this.nextAttemptAt = nextAttemptAt;
     }
 
+    public Long getExecutionStartedAt() {
+        return executionStartedAt;
+    }
+
+    public void setExecutionStartedAt(Long executionStartedAt) {
+        this.executionStartedAt = executionStartedAt;
+    }
+
     public long getCreatedAt() {
         return createdAt;
     }
@@ -122,27 +171,41 @@ public class EventHookMessageModel {
         this.updatedAt = updatedAt;
     }
 
-    public String getClaimOwner() {
-        return claimOwner;
-    }
-
-    public void setClaimOwner(String claimOwner) {
-        this.claimOwner = claimOwner;
-    }
-
-    public Long getClaimedAt() {
-        return claimedAt;
-    }
-
-    public void setClaimedAt(Long claimedAt) {
-        this.claimedAt = claimedAt;
-    }
-
     public String getLastError() {
         return lastError;
     }
 
     public void setLastError(String lastError) {
         this.lastError = lastError;
+    }
+
+    public boolean isExecutionBatch() {
+        return executionBatch;
+    }
+
+    public void setExecutionBatch(boolean executionBatch) {
+        this.executionBatch = executionBatch;
+    }
+
+    public boolean isTest() {
+        if (test) {
+            return true;
+        }
+
+        if (payload == null || payload.isBlank()) {
+            return false;
+        }
+
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> parsedPayload = JsonSerialization.readValue(payload, Map.class);
+            return Boolean.TRUE.equals(parsedPayload.get("deliveryTest"));
+        } catch (Exception exception) {
+            return false;
+        }
+    }
+
+    public void setTest(boolean test) {
+        this.test = test;
     }
 }

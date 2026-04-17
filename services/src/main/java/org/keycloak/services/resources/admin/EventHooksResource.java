@@ -39,11 +39,15 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.hooks.EventHookDeliveryResult;
+import org.keycloak.events.hooks.EventHookDeliveryTask;
 import org.keycloak.events.hooks.EventHookLogModel;
 import org.keycloak.events.hooks.EventHookLogStatus;
 import org.keycloak.events.hooks.EventHookMessageModel;
 import org.keycloak.events.hooks.EventHookMessageStatus;
+import org.keycloak.events.hooks.EventHookPayloadNormalizer;
 import org.keycloak.events.hooks.EventHookStoreProvider;
+import org.keycloak.events.hooks.EventHookTestExample;
+import org.keycloak.events.hooks.EventHookTestExamples;
 import org.keycloak.events.hooks.EventHookTargetModel;
 import org.keycloak.events.hooks.EventHookTargetProvider;
 import org.keycloak.events.hooks.EventHookTargetProviderFactory;
@@ -58,6 +62,7 @@ import org.keycloak.representations.idm.EventHookLogRepresentation;
 import org.keycloak.representations.idm.EventHookMessageRepresentation;
 import org.keycloak.representations.idm.EventHookProviderRepresentation;
 import org.keycloak.representations.idm.EventHookTargetRepresentation;
+import org.keycloak.representations.idm.EventHookTestExampleRepresentation;
 import org.keycloak.representations.idm.EventHookTestResultRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.util.DateUtil;
@@ -124,7 +129,8 @@ public class EventHooksResource {
 
     @POST
     @Path("targets/test")
-    public EventHookTestResultRepresentation testTarget(EventHookTargetRepresentation representation) {
+    public EventHookTestResultRepresentation testTarget(EventHookTargetRepresentation representation,
+            @QueryParam("exampleId") String exampleId) {
         auth.realm().requireManageRealm();
         validateRepresentation(representation);
 
@@ -137,9 +143,21 @@ public class EventHooksResource {
         }
 
         EventHookTargetModel target = toTargetModel(representation, existing);
+        if (target.getId() == null || target.getId().isBlank()) {
+            target.setId(UUID.randomUUID().toString());
+        }
         EventHookTargetProviderFactory providerFactory = getTargetProviderFactory(target.getType());
-        // Test deliveries intentionally bypass the persistent outbox and delivery log store.
-        EventHookDeliveryResult result = providerFactory.test(session, realm, target);
+        EventHookStoreProvider store = session.getProvider(EventHookStoreProvider.class);
+        List<EventHookMessageModel> messages;
+        try {
+            messages = providerFactory.createTestMessages(session, realm, target, exampleId);
+        } catch (Exception exception) {
+            throw ErrorResponse.error("Failed to create test event hook message: " + exception.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+        }
+
+        store.createMessages(messages);
+        EventHookDeliveryResult result = providerFactory.test(session, realm, target, messages);
+        createTestExecution(store, target, messages, result);
 
         adminEvent.operation(OperationType.ACTION)
                 .resourcePath(session.getContext().getUri())
@@ -186,14 +204,34 @@ public class EventHooksResource {
     }
 
     @GET
+    @Path("test-examples")
+    public List<EventHookTestExampleRepresentation> getTestExamples() {
+        auth.realm().requireManageRealm();
+        EventHookTargetModel target = new EventHookTargetModel();
+        target.setRealmId(realm.getId());
+        return EventHookTestExamples.all(realm, target).stream().map(this::toRepresentation).toList();
+    }
+
+    @GET
     @Path("messages")
     public List<EventHookMessageRepresentation> getMessages(@QueryParam("status") String status,
             @QueryParam("targetId") String targetId,
+            @QueryParam("targetType") String targetType,
+            @QueryParam("sourceType") String sourceType,
+            @QueryParam("event") String event,
+            @QueryParam("client") String client,
+            @QueryParam("user") String user,
+            @QueryParam("ipAddress") String ipAddress,
+            @QueryParam("resourceType") String resourceType,
+            @QueryParam("resourcePath") String resourcePath,
+            @QueryParam("executionId") String executionId,
+            @QueryParam("search") String search,
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max) {
         auth.realm().requireManageRealm();
         return session.getProvider(EventHookStoreProvider.class)
-                .getMessagesStream(realm.getId(), status, targetId, first, max)
+            .getMessagesStream(realm.getId(), status, targetId, targetType, sourceType, event, client, user,
+                ipAddress, resourceType, resourcePath, executionId, search, first, max)
                 .map(this::toRepresentation)
                 .toList();
     }
@@ -210,41 +248,53 @@ public class EventHooksResource {
     }
 
     @POST
-    @Path("messages/{messageId}/retry")
-    public EventHookMessageRepresentation retryMessage(@PathParam("messageId") String messageId) {
+    @Path("executions/{executionId}/retry")
+    public List<EventHookMessageRepresentation> retryExecution(@PathParam("executionId") String executionId) {
         auth.realm().requireManageRealm();
 
         EventHookStoreProvider store = session.getProvider(EventHookStoreProvider.class);
-        EventHookMessageModel message = store.getMessage(realm.getId(), messageId);
-        if (message == null) {
-            throw new NotFoundException("Event hook message not found");
-        }
-        if (!RETRYABLE_MESSAGE_STATUSES.contains(message.getStatus())) {
-            throw ErrorResponse.error("Event hook message cannot be retried from status: " + message.getStatus(), Response.Status.BAD_REQUEST);
+        List<EventHookMessageModel> executionMessages = store
+                .getMessagesStream(realm.getId(), null, null, null, null, null, null, null, null, null, null,
+                        executionId, null, null, null)
+                .toList();
+        if (executionMessages.isEmpty()) {
+            throw new NotFoundException("Event hook execution not found");
         }
 
-        int previousAttemptCount = message.getAttemptCount();
+        List<EventHookMessageModel> retryableMessages = executionMessages.stream()
+                .filter(message -> RETRYABLE_MESSAGE_STATUSES.contains(message.getStatus()))
+                .toList();
+        if (retryableMessages.isEmpty()) {
+            throw ErrorResponse.error("Event hook execution cannot be retried from current message statuses",
+                    Response.Status.BAD_REQUEST);
+        }
+
+        int previousAttemptCount = retryableMessages.stream()
+                .mapToInt(EventHookMessageModel::getAttemptCount)
+                .max()
+                .orElse(0);
         long now = currentTimeMillis();
-        message.setStatus(EventHookMessageStatus.PENDING);
-        message.setAttemptCount(0);
-        message.setNextAttemptAt(now);
-        message.setUpdatedAt(now);
-        message.setClaimOwner(null);
-        message.setClaimedAt(null);
-        message.setLastError(null);
+        String retriedExecutionId = UUID.randomUUID().toString();
+        boolean executionBatch = retryableMessages.size() > 1;
 
-        EventHookMessageModel updated = store.updateMessage(message);
-        EventHookMessageModel retriedMessage = updated == null ? message : updated;
-        createRetryLog(store, retriedMessage, previousAttemptCount, now);
+        List<EventHookMessageRepresentation> representations = retryableMessages.stream()
+                .map(message -> {
+                    queueMessageForRetry(message, retriedExecutionId, now);
+                message.setExecutionBatch(executionBatch);
+                    EventHookMessageModel updated = store.updateMessage(message);
+                    return toRepresentation(updated == null ? message : updated);
+                })
+                .toList();
 
-        EventHookMessageRepresentation representation = toRepresentation(retriedMessage);
+        createRetryLog(store, retryableMessages.get(0), retriedExecutionId, previousAttemptCount, now);
+
         if (adminEvent != null) {
             adminEvent.operation(OperationType.ACTION)
                     .resourcePath(session.getContext().getUri())
-                    .representation(representation)
+                    .representation(representations)
                     .success();
         }
-        return representation;
+        return representations;
     }
 
     @GET
@@ -376,17 +426,31 @@ public class EventHooksResource {
         EventHookMessageRepresentation representation = new EventHookMessageRepresentation();
         representation.setId(model.getId());
         representation.setTargetId(model.getTargetId());
+        representation.setExecutionId(model.getExecutionId());
         representation.setSourceType(model.getSourceType().name());
         representation.setSourceEventId(model.getSourceEventId());
+        representation.setSourceEventName(model.getSourceEventName());
+        representation.setUserId(model.getUserId());
+        representation.setResourcePath(model.getResourcePath());
+        representation.setExecutionBatch(model.isExecutionBatch());
         representation.setStatus(model.getStatus().name());
         representation.setAttemptCount(model.getAttemptCount());
         representation.setNextAttemptAt(model.getNextAttemptAt());
+        representation.setExecutionStartedAt(model.getExecutionStartedAt());
         representation.setCreatedAt(model.getCreatedAt());
         representation.setUpdatedAt(model.getUpdatedAt());
-        representation.setClaimOwner(model.getClaimOwner());
-        representation.setClaimedAt(model.getClaimedAt());
         representation.setLastError(model.getLastError());
+        representation.setTest(model.isTest());
         representation.setPayload(readPayload(model.getPayload()));
+        return representation;
+    }
+
+    private EventHookTestExampleRepresentation toRepresentation(EventHookTestExample model) {
+        EventHookTestExampleRepresentation representation = new EventHookTestExampleRepresentation();
+        representation.setId(model.getId());
+        representation.setSourceType(model.getSourceType().name());
+        representation.setEventName(model.getEventName());
+        representation.setPayload(model.getPayload());
         return representation;
     }
 
@@ -394,12 +458,6 @@ public class EventHooksResource {
         EventHookLogRepresentation representation = new EventHookLogRepresentation();
         representation.setId(model.getId());
         representation.setExecutionId(model.getExecutionId());
-        representation.setBatchExecution(model.isBatchExecution());
-        representation.setMessageId(model.getMessageId());
-        representation.setTargetId(model.getTargetId());
-        representation.setSourceType(model.getSourceType() == null ? null : model.getSourceType().name());
-        representation.setSourceEventId(model.getSourceEventId());
-        representation.setSourceEventName(model.getSourceEventName());
         representation.setStatus(model.getStatus().name());
         representation.setMessageStatus(model.getMessageStatus() == null ? null : model.getMessageStatus().name());
         representation.setAttemptNumber(model.getAttemptNumber());
@@ -407,6 +465,7 @@ public class EventHooksResource {
         representation.setDurationMs(model.getDurationMs());
         representation.setDetails(model.getDetails());
         representation.setCreatedAt(model.getCreatedAt());
+        representation.setTest(model.isTest());
         return representation;
     }
 
@@ -446,27 +505,61 @@ public class EventHooksResource {
             return null;
         }
         try {
-            return JsonSerialization.readValue(payload, Object.class);
+            return EventHookPayloadNormalizer.readPayload(payload);
         } catch (Exception exception) {
             return payload;
         }
     }
 
-    private void createRetryLog(EventHookStoreProvider store, EventHookMessageModel message, int previousAttemptCount, long now) {
+    private void queueMessageForRetry(EventHookMessageModel message, String executionId, long now) {
+        message.setExecutionId(executionId);
+        message.setExecutionBatch(false);
+        message.setStatus(EventHookMessageStatus.PENDING);
+        message.setAttemptCount(0);
+        message.setNextAttemptAt(now);
+        message.setExecutionStartedAt(null);
+        message.setUpdatedAt(now);
+        message.setLastError(null);
+    }
+
+        private void createRetryLog(EventHookStoreProvider store, EventHookMessageModel message, String executionId,
+            int previousAttemptCount, long now) {
         EventHookLogModel log = new EventHookLogModel();
         log.setId(UUID.randomUUID().toString());
-        log.setExecutionId(UUID.randomUUID().toString());
-        log.setBatchExecution(false);
-        log.setMessageId(message.getId());
-        log.setTargetId(message.getTargetId());
-        log.setSourceType(message.getSourceType());
-        log.setSourceEventId(message.getSourceEventId());
+        log.setExecutionId(executionId);
         log.setStatus(EventHookLogStatus.PENDING);
         log.setMessageStatus(message.getStatus());
         log.setAttemptNumber(previousAttemptCount);
         log.setStatusCode("MANUAL_RETRY");
         log.setDetails("Manual retry requested");
         log.setCreatedAt(now);
+        log.setTest(message.isTest());
+        store.createLog(log);
+    }
+
+    private void createTestExecution(EventHookStoreProvider store, EventHookTargetModel target, List<EventHookMessageModel> messages,
+            EventHookDeliveryResult result) {
+        String executionId = UUID.randomUUID().toString();
+        boolean batchExecution = messages.size() > 1;
+        long now = currentTimeMillis();
+        messages.forEach(message -> {
+            message.setExecutionId(executionId);
+            message.setExecutionBatch(batchExecution);
+            EventHookDeliveryTask.applyDeliveryResultToMessage(message, target, result, now);
+            store.updateMessage(message);
+        });
+
+        EventHookMessageModel representativeMessage = messages.get(0);
+        EventHookLogModel log = new EventHookLogModel();
+        log.setId(UUID.randomUUID().toString());
+        log.setExecutionId(executionId);
+        log.setStatus(result.isSuccess() ? EventHookLogStatus.SUCCESS : result.isWaiting() ? EventHookLogStatus.WAITING : EventHookLogStatus.FAILED);
+        log.setAttemptNumber(representativeMessage.getAttemptCount());
+        log.setStatusCode(result.getStatusCode());
+        log.setDurationMs(result.getDurationMillis());
+        log.setDetails(result.getDetails());
+        log.setCreatedAt(now);
+        log.setTest(representativeMessage.isTest());
         store.createLog(log);
     }
 

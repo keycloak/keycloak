@@ -38,6 +38,25 @@ public class EventHookTargetRepresentationUtilTest {
     }
 
     @Test
+    public void shouldExposeAutoDisableStateInRepresentation() {
+        EventHookTargetModel target = new EventHookTargetModel();
+        target.setId("target-auto-1");
+        target.setName("HTTP target");
+        target.setType(HttpEventHookTargetProviderFactory.ID);
+        target.setEnabled(false);
+        target.setAutoDisabledUntil(System.currentTimeMillis() + 60_000L);
+        target.setAutoDisabledReason("Automatically disabled after repeated 429 responses");
+        target.setSettings(Map.of("url", "https://example.org/hooks/keycloak"));
+
+        EventHookTargetRepresentation representation = EventHookTargetRepresentationUtil.toRepresentation(
+                session(new HttpEventHookTargetProviderFactory()), target, true);
+
+        assertTrue(Boolean.TRUE.equals(representation.getAutoDisabled()));
+        assertEquals(target.getAutoDisabledUntil(), representation.getAutoDisabledUntil());
+        assertEquals(target.getAutoDisabledReason(), representation.getAutoDisabledReason());
+    }
+
+    @Test
     public void shouldPreserveImportedMetadataWhenRequested() {
         EventHookTargetRepresentation representation = new EventHookTargetRepresentation();
         representation.setId("target-9");
@@ -99,6 +118,41 @@ public class EventHookTargetRepresentationUtilTest {
 
         assertEquals("custom-missing", target.getType());
         assertEquals("preserved", target.getSettings().get("apiKey"));
+    }
+
+    @Test
+    public void shouldClearAutoDisableStateWhenTargetIsEnabledManually() {
+        EventHookTargetRepresentation representation = new EventHookTargetRepresentation();
+        representation.setName("HTTP target");
+        representation.setType(HttpEventHookTargetProviderFactory.ID);
+        representation.setEnabled(true);
+        representation.setSettings(Map.of("url", "https://example.org/enabled"));
+
+        EventHookTargetModel existing = new EventHookTargetModel();
+        existing.setId("target-11");
+        existing.setRealmId("realm-3");
+        existing.setName("HTTP target");
+        existing.setType(HttpEventHookTargetProviderFactory.ID);
+        existing.setEnabled(false);
+        existing.setCreatedAt(1L);
+        existing.setUpdatedAt(2L);
+        existing.setAutoDisabledUntil(123_456L);
+        existing.setAutoDisabledReason("Automatically disabled after repeated 429 responses");
+        existing.setConsecutive429Count(3);
+        existing.setSettings(Map.of("url", "https://example.org/disabled"));
+
+        EventHookTargetModel target = EventHookTargetRepresentationUtil.toModel(
+                session(new HttpEventHookTargetProviderFactory()),
+                realm("realm-3"),
+                representation,
+                existing,
+                999L,
+                false);
+
+        assertTrue(target.isEnabled());
+        assertNull(target.getAutoDisabledUntil());
+        assertNull(target.getAutoDisabledReason());
+        assertNull(target.getConsecutive429Count());
     }
 
     private KeycloakSession session(EventHookTargetProviderFactory factory) {

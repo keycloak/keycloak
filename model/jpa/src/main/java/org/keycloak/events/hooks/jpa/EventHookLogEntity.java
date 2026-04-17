@@ -33,15 +33,6 @@ public class EventHookLogEntity {
     @Column(name = "EXECUTION_ID", length = 36, nullable = false)
     private String executionId;
 
-    @Column(name = "BATCH_EXECUTION", nullable = false)
-    private boolean batchExecution;
-
-    @Column(name = "MESSAGE_ID", length = 36, nullable = false)
-    private String messageId;
-
-    @Column(name = "TARGET_ID", length = 36, nullable = false)
-    private String targetId;
-
     @Column(name = "STATUS", length = 16, nullable = false)
     private String status;
 
@@ -74,30 +65,6 @@ public class EventHookLogEntity {
 
     public void setExecutionId(String executionId) {
         this.executionId = executionId;
-    }
-
-    public boolean isBatchExecution() {
-        return batchExecution;
-    }
-
-    public void setBatchExecution(boolean batchExecution) {
-        this.batchExecution = batchExecution;
-    }
-
-    public String getMessageId() {
-        return messageId;
-    }
-
-    public void setMessageId(String messageId) {
-        this.messageId = messageId;
-    }
-
-    public String getTargetId() {
-        return targetId;
-    }
-
-    public void setTargetId(String targetId) {
-        this.targetId = targetId;
     }
 
     public String getStatus() {

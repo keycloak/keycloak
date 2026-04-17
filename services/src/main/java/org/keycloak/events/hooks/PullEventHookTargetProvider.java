@@ -19,7 +19,16 @@ package org.keycloak.events.hooks;
 
 import java.util.List;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+
 public class PullEventHookTargetProvider implements EventHookTargetProvider {
+
+    private final KeycloakSession session;
+
+    public PullEventHookTargetProvider(KeycloakSession session) {
+        this.session = session;
+    }
 
     @Override
     public EventHookDeliveryResult deliver(EventHookTargetModel target, EventHookMessageModel message) {
@@ -36,6 +45,11 @@ public class PullEventHookTargetProvider implements EventHookTargetProvider {
     }
 
     private EventHookDeliveryResult waitingResult(EventHookTargetModel target) {
+        if (target.getRealmName() == null && target.getRealmId() != null && session != null) {
+            RealmModel realm = session.realms().getRealm(target.getRealmId());
+            target.setRealmName(realm == null ? null : realm.getName());
+        }
+
         EventHookDeliveryResult result = new EventHookDeliveryResult();
         result.setSuccess(false);
         result.setWaiting(true);

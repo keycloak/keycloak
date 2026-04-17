@@ -36,13 +36,17 @@ import org.keycloak.events.hooks.EventHookSourceType;
 import org.keycloak.events.hooks.EventHookStoreProvider;
 import org.keycloak.events.hooks.EventHookTargetModel;
 import org.keycloak.events.hooks.EventHookTargetStatus;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.util.JsonSerialization;
 
 public class JpaEventHookStoreProvider implements EventHookStoreProvider {
 
+    private final KeycloakSession session;
     private final EntityManager em;
 
-    public JpaEventHookStoreProvider(EntityManager em) {
+    public JpaEventHookStoreProvider(KeycloakSession session, EntityManager em) {
+        this.session = session;
         this.em = em;
     }
 
@@ -111,14 +115,52 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
 
     @Override
     public Stream<EventHookMessageModel> getMessagesStream(String realmId, String status, String targetId, Integer first, Integer max) {
-        StringBuilder query = new StringBuilder("from EventHookMessageEntity where realmId = :realmId");
+        return getMessagesStream(realmId, status, targetId, null, null, null, null, null, null, null, null, null, null, first, max);
+    }
+
+    @Override
+    public Stream<EventHookMessageModel> getMessagesStream(String realmId, String status, String targetId, String targetType,
+            String sourceType, String event, String client, String user, String ipAddress,
+            String resourceType, String resourcePath, String executionId, String search,
+            Integer first, Integer max) {
+        StringBuilder query = new StringBuilder("select message from EventHookMessageEntity message join EventHookTargetEntity target on target.id = message.targetId where message.realmId = :realmId");
         if (status != null) {
-            query.append(" and status = :status");
+            query.append(" and message.status = :status");
         }
         if (targetId != null) {
-            query.append(" and targetId = :targetId");
+            query.append(" and message.targetId = :targetId");
         }
-        query.append(" order by createdAt desc");
+        if (targetType != null) {
+            query.append(" and target.type = :targetType");
+        }
+        if (sourceType != null) {
+            query.append(" and message.sourceType = :sourceType");
+        }
+        if (event != null && !event.isBlank()) {
+            query.append(" and (lower(coalesce(message.payload, '')) like :userEvent or lower(coalesce(message.payload, '')) like :adminEvent)");
+        }
+        if (client != null && !client.isBlank()) {
+            query.append(" and lower(coalesce(message.payload, '')) like :client");
+        }
+        if (user != null && !user.isBlank()) {
+            query.append(" and lower(coalesce(message.payload, '')) like :user");
+        }
+        if (ipAddress != null && !ipAddress.isBlank()) {
+            query.append(" and lower(coalesce(message.payload, '')) like :ipAddress");
+        }
+        if (resourceType != null && !resourceType.isBlank()) {
+            query.append(" and lower(coalesce(message.payload, '')) like :resourceType");
+        }
+        if (resourcePath != null && !resourcePath.isBlank()) {
+            query.append(" and lower(coalesce(message.payload, '')) like :resourcePath");
+        }
+        if (executionId != null) {
+            query.append(" and message.executionId = :executionId");
+        }
+        if (search != null && !search.isBlank()) {
+            query.append(" and (lower(target.name) like :search or lower(target.type) like :search or lower(coalesce(message.sourceEventId, '')) like :search or lower(coalesce(message.executionId, '')) like :search or lower(coalesce(message.payload, '')) like :search)");
+        }
+        query.append(" order by message.createdAt desc, message.id desc");
 
         TypedQuery<EventHookMessageEntity> typedQuery = em.createQuery(query.toString(), EventHookMessageEntity.class)
                 .setParameter("realmId", realmId);
@@ -127,6 +169,37 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
         }
         if (targetId != null) {
             typedQuery.setParameter("targetId", targetId);
+        }
+        if (targetType != null) {
+            typedQuery.setParameter("targetType", targetType);
+        }
+        if (sourceType != null) {
+            typedQuery.setParameter("sourceType", sourceType);
+        }
+        if (event != null && !event.isBlank()) {
+            typedQuery.setParameter("userEvent", containsJsonValue("eventType", event));
+            typedQuery.setParameter("adminEvent", containsJsonValue("operationType", event));
+        }
+        if (client != null && !client.isBlank()) {
+            typedQuery.setParameter("client", containsJsonValue("clientId", client));
+        }
+        if (user != null && !user.isBlank()) {
+            typedQuery.setParameter("user", containsJsonValue("userId", user));
+        }
+        if (ipAddress != null && !ipAddress.isBlank()) {
+            typedQuery.setParameter("ipAddress", containsJsonValue("ipAddress", ipAddress));
+        }
+        if (resourceType != null && !resourceType.isBlank()) {
+            typedQuery.setParameter("resourceType", containsJsonValue("resourceType", resourceType));
+        }
+        if (resourcePath != null && !resourcePath.isBlank()) {
+            typedQuery.setParameter("resourcePath", containsJsonValue("resourcePath", resourcePath));
+        }
+        if (executionId != null) {
+            typedQuery.setParameter("executionId", executionId);
+        }
+        if (search != null && !search.isBlank()) {
+            typedQuery.setParameter("search", "%" + search.toLowerCase() + "%");
         }
         if (first != null && first >= 0) {
             typedQuery.setFirstResult(first);
@@ -153,42 +226,43 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
             String sourceType, String event, String client, String user, String ipAddress,
             String resourceType, String resourcePath, String status, String messageStatus,
             Long dateFrom, Long dateTo, String executionId, String search, Integer first, Integer max) {
-        StringBuilder query = new StringBuilder("select log, message from EventHookLogEntity log join EventHookMessageEntity message on message.id = log.messageId join EventHookTargetEntity target on target.id = log.targetId where message.realmId = :realmId");
+        StringBuilder query = new StringBuilder("select log, message from EventHookLogEntity log join EventHookMessageEntity message on message.executionId = log.executionId where message.id = (select min(representative.id) from EventHookMessageEntity representative where representative.executionId = log.executionId) and exists (select 1 from EventHookMessageEntity filterMessage join EventHookTargetEntity target on target.id = filterMessage.targetId where filterMessage.executionId = log.executionId and filterMessage.realmId = :realmId");
         if (messageId != null) {
-            query.append(" and log.messageId = :messageId");
+            query.append(" and filterMessage.id = :messageId");
         }
         if (targetId != null) {
-            query.append(" and log.targetId = :targetId");
+            query.append(" and filterMessage.targetId = :targetId");
         }
         if (targetType != null) {
             query.append(" and target.type = :targetType");
         }
         if (sourceType != null) {
-            query.append(" and message.sourceType = :sourceType");
+            query.append(" and filterMessage.sourceType = :sourceType");
         }
         if (event != null && !event.isBlank()) {
-            query.append(" and (lower(coalesce(message.payload, '')) like :userEvent or lower(coalesce(message.payload, '')) like :adminEvent)");
+            query.append(" and (lower(coalesce(filterMessage.payload, '')) like :userEvent or lower(coalesce(filterMessage.payload, '')) like :adminEvent)");
         }
         if (client != null && !client.isBlank()) {
-            query.append(" and lower(coalesce(message.payload, '')) like :client");
+            query.append(" and lower(coalesce(filterMessage.payload, '')) like :client");
         }
         if (user != null && !user.isBlank()) {
-            query.append(" and lower(coalesce(message.payload, '')) like :user");
+            query.append(" and lower(coalesce(filterMessage.payload, '')) like :user");
         }
         if (ipAddress != null && !ipAddress.isBlank()) {
-            query.append(" and lower(coalesce(message.payload, '')) like :ipAddress");
+            query.append(" and lower(coalesce(filterMessage.payload, '')) like :ipAddress");
         }
         if (resourceType != null && !resourceType.isBlank()) {
-            query.append(" and lower(coalesce(message.payload, '')) like :resourceType");
+            query.append(" and lower(coalesce(filterMessage.payload, '')) like :resourceType");
         }
         if (resourcePath != null && !resourcePath.isBlank()) {
-            query.append(" and lower(coalesce(message.payload, '')) like :resourcePath");
+            query.append(" and lower(coalesce(filterMessage.payload, '')) like :resourcePath");
         }
+        query.append(")");
         if (status != null) {
             query.append(" and log.status = :status");
         }
         if (messageStatus != null) {
-            query.append(" and message.status = :messageStatus");
+            query.append(" and exists (select 1 from EventHookMessageEntity statusMessage where statusMessage.executionId = log.executionId and statusMessage.realmId = :realmId and statusMessage.status = :messageStatus)");
         }
         if (dateFrom != null) {
             query.append(" and log.createdAt >= :dateFrom");
@@ -200,9 +274,9 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
             query.append(" and log.executionId = :executionId");
         }
         if (search != null && !search.isBlank()) {
-            query.append(" and (lower(target.name) like :search or lower(target.type) like :search or lower(log.executionId) like :search or lower(log.messageId) like :search or lower(log.targetId) like :search or lower(log.status) like :search or lower(coalesce(message.sourceEventId, '')) like :search or lower(coalesce(message.payload, '')) like :search or lower(coalesce(log.statusCode, '')) like :search or lower(coalesce(log.details, '')) like :search)");
+            query.append(" and (lower(log.executionId) like :search or lower(log.status) like :search or lower(coalesce(log.statusCode, '')) like :search or lower(coalesce(log.details, '')) like :search or exists (select 1 from EventHookMessageEntity searchMessage join EventHookTargetEntity searchTarget on searchTarget.id = searchMessage.targetId where searchMessage.executionId = log.executionId and searchMessage.realmId = :realmId and (lower(searchTarget.name) like :search or lower(searchTarget.type) like :search or lower(coalesce(searchMessage.sourceEventId, '')) like :search or lower(coalesce(searchMessage.payload, '')) like :search)))");
         }
-        query.append(" order by log.createdAt desc");
+        query.append(" order by log.createdAt desc, log.id desc");
 
         TypedQuery<Object[]> typedQuery = em.createQuery(query.toString(), Object[].class)
                 .setParameter("realmId", realmId);
@@ -266,15 +340,17 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
 
     @Override
     public Map<String, EventHookTargetStatus> getLatestTargetStatuses(String realmId) {
-        List<EventHookLogEntity> latestLogs = em.createQuery(
-                "select log from EventHookLogEntity log join EventHookMessageEntity message on message.id = log.messageId where message.realmId = :realmId and log.createdAt = (select max(innerLog.createdAt) from EventHookLogEntity innerLog join EventHookMessageEntity innerMessage on innerMessage.id = innerLog.messageId where innerMessage.realmId = :realmId and innerLog.targetId = log.targetId) order by log.targetId asc, log.attemptNumber desc",
-                EventHookLogEntity.class)
+        List<Object[]> latestLogs = em.createQuery(
+            "select log, message.targetId from EventHookLogEntity log join EventHookMessageEntity message on message.executionId = log.executionId where message.id = (select min(representative.id) from EventHookMessageEntity representative where representative.executionId = log.executionId) and message.realmId = :realmId and (message.test = false or message.test is null) order by message.targetId asc, log.createdAt desc, log.attemptNumber desc",
+            Object[].class)
                 .setParameter("realmId", realmId)
                 .getResultList();
 
         Map<String, EventHookTargetStatus> statuses = new LinkedHashMap<>();
-        for (EventHookLogEntity latestLog : latestLogs) {
-            statuses.putIfAbsent(latestLog.getTargetId(), toTargetStatus(EventHookLogStatus.valueOf(latestLog.getStatus())));
+        for (Object[] result : latestLogs) {
+            EventHookLogEntity latestLog = (EventHookLogEntity) result[0];
+            String latestTargetId = (String) result[1];
+            statuses.putIfAbsent(latestTargetId, toTargetStatus(EventHookLogStatus.valueOf(latestLog.getStatus())));
         }
 
         return statuses;
@@ -289,58 +365,68 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
     }
 
     @Override
-    public List<EventHookMessageModel> claimAvailableMessages(int maxResults, long now, long staleClaimBefore, String claimOwner) {
-        return em.createQuery("from EventHookMessageEntity where (status = :pending and nextAttemptAt <= :now) or (status = :claimed and claimedAt is not null and claimedAt < :staleClaimBefore) order by nextAttemptAt asc, createdAt asc", EventHookMessageEntity.class)
-                .setParameter("pending", EventHookMessageStatus.PENDING.name())
-                .setParameter("claimed", EventHookMessageStatus.CLAIMED.name())
+    public List<EventHookMessageModel> reserveAvailableMessages(int maxResults, long now, long executionTimeoutMillis) {
+        long staleBefore = now - executionTimeoutMillis;
+        return em.createQuery("from EventHookMessageEntity where ((status = :pending and nextAttemptAt <= :now) or (status = :executing and executionStartedAt <= :staleBefore)) and (test = false or test is null) order by coalesce(executionStartedAt, nextAttemptAt) asc, createdAt asc", EventHookMessageEntity.class)
+            .setParameter("pending", EventHookMessageStatus.PENDING.name())
+            .setParameter("executing", EventHookMessageStatus.EXECUTING.name())
                 .setParameter("now", now)
-                .setParameter("staleClaimBefore", staleClaimBefore)
+            .setParameter("staleBefore", staleBefore)
                 .setMaxResults(maxResults)
-                .getResultStream()
-                .map(entity -> claim(entity, now, claimOwner))
+            .getResultStream()
+            .map(entity -> reserve(entity, now, UUID.randomUUID().toString()))
                 .map(this::toModel)
                 .toList();
     }
 
     @Override
-    public List<EventHookMessageModel> claimAvailableMessages(int maxResults, long now, long staleClaimBefore, String claimOwner,
+    public List<EventHookMessageModel> reserveAvailableMessages(int maxResults, long now, long executionTimeoutMillis,
             List<String> targetTypes) {
         if (targetTypes == null || targetTypes.isEmpty()) {
             return List.of();
         }
 
-        return em.createQuery("select message from EventHookMessageEntity message join EventHookTargetEntity target on target.id = message.targetId where target.type in :targetTypes and ((message.status = :pending and message.nextAttemptAt <= :now) or (message.status = :claimed and message.claimedAt is not null and message.claimedAt < :staleClaimBefore)) order by message.nextAttemptAt asc, message.createdAt asc", EventHookMessageEntity.class)
+        long staleBefore = now - executionTimeoutMillis;
+        return em.createQuery("select message from EventHookMessageEntity message join EventHookTargetEntity target on target.id = message.targetId where target.type in :targetTypes and ((message.status = :pending and message.nextAttemptAt <= :now) or (message.status = :executing and message.executionStartedAt <= :staleBefore)) and (message.test = false or message.test is null) order by coalesce(message.executionStartedAt, message.nextAttemptAt) asc, message.createdAt asc", EventHookMessageEntity.class)
                 .setParameter("targetTypes", targetTypes)
                 .setParameter("pending", EventHookMessageStatus.PENDING.name())
-                .setParameter("claimed", EventHookMessageStatus.CLAIMED.name())
+            .setParameter("executing", EventHookMessageStatus.EXECUTING.name())
                 .setParameter("now", now)
-                .setParameter("staleClaimBefore", staleClaimBefore)
+            .setParameter("staleBefore", staleBefore)
                 .setMaxResults(maxResults)
-                .getResultStream()
-                .map(entity -> claim(entity, now, claimOwner))
+            .getResultStream()
+            .map(entity -> reserve(entity, now, UUID.randomUUID().toString()))
                 .map(this::toModel)
                 .toList();
     }
 
     @Override
-    public List<EventHookMessageModel> claimAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
-            long staleClaimBefore, String claimOwner) {
-        return em.createQuery("from EventHookMessageEntity where realmId = :realmId and targetId = :targetId and (status = :waiting or (status = :claimed and claimedAt is not null and claimedAt < :staleClaimBefore)) order by createdAt asc", EventHookMessageEntity.class)
+    public List<EventHookMessageModel> reserveAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
+            long executionTimeoutMillis, String executionId) {
+        return reserveAvailableMessagesForTarget(realmId, targetId, maxResults, now, executionTimeoutMillis, executionId, false);
+    }
+
+    @Override
+    public List<EventHookMessageModel> reserveAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
+            long executionTimeoutMillis, String executionId, boolean test) {
+        long staleBefore = now - executionTimeoutMillis;
+        return em.createQuery("from EventHookMessageEntity where realmId = :realmId and targetId = :targetId and ((status = :waiting) or (status = :executing and executionStartedAt <= :staleBefore)) and ((:test = true and test = true) or (:test = false and (test = false or test is null))) order by coalesce(executionStartedAt, createdAt) asc, createdAt asc, id asc", EventHookMessageEntity.class)
                 .setParameter("realmId", realmId)
                 .setParameter("targetId", targetId)
-            .setParameter("waiting", EventHookMessageStatus.WAITING.name())
-                .setParameter("claimed", EventHookMessageStatus.CLAIMED.name())
-                .setParameter("staleClaimBefore", staleClaimBefore)
+                .setParameter("waiting", EventHookMessageStatus.WAITING.name())
+            .setParameter("executing", EventHookMessageStatus.EXECUTING.name())
+            .setParameter("staleBefore", staleBefore)
+                .setParameter("test", test)
                 .setMaxResults(maxResults)
                 .getResultStream()
-                .map(entity -> claim(entity, now, claimOwner))
+            .map(entity -> reserve(entity, now, executionId))
                 .map(this::toModel)
                 .toList();
     }
 
     @Override
     public Long getPendingAggregationDeadline(String realmId, String targetId, long now) {
-        return em.createQuery("select min(message.nextAttemptAt) from EventHookMessageEntity message where message.realmId = :realmId and message.targetId = :targetId and message.status = :pending and message.nextAttemptAt > :now", Long.class)
+        return em.createQuery("select min(message.nextAttemptAt) from EventHookMessageEntity message where message.realmId = :realmId and message.targetId = :targetId and message.status = :pending and message.nextAttemptAt > :now and (message.test = false or message.test is null)", Long.class)
                 .setParameter("realmId", realmId)
                 .setParameter("targetId", targetId)
                 .setParameter("pending", EventHookMessageStatus.PENDING.name())
@@ -349,15 +435,59 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
     }
 
     @Override
-    public boolean hasAvailableMessages(String realmId, String targetId, long now, long staleClaimBefore) {
-        Long count = em.createQuery("select count(message.id) from EventHookMessageEntity message where message.realmId = :realmId and message.targetId = :targetId and (message.status = :waiting or (message.status = :claimed and message.claimedAt is not null and message.claimedAt < :staleClaimBefore))", Long.class)
+    public boolean hasAvailableMessages(String realmId, String targetId, long now) {
+        return hasAvailableMessages(realmId, targetId, now, false);
+    }
+
+    @Override
+    public boolean hasAvailableMessages(String realmId, String targetId, long now, boolean test) {
+        Long count = em.createQuery("select count(message.id) from EventHookMessageEntity message where message.realmId = :realmId and message.targetId = :targetId and message.status = :waiting and ((:test = true and message.test = true) or (:test = false and (message.test = false or message.test is null)))", Long.class)
                 .setParameter("realmId", realmId)
                 .setParameter("targetId", targetId)
-            .setParameter("waiting", EventHookMessageStatus.WAITING.name())
-                .setParameter("claimed", EventHookMessageStatus.CLAIMED.name())
-                .setParameter("staleClaimBefore", staleClaimBefore)
+                .setParameter("waiting", EventHookMessageStatus.WAITING.name())
+                .setParameter("test", test)
                 .getSingleResult();
-        return count != null && count.longValue() > 0;
+        if (count == null || count.longValue() == 0) {
+            return false;
+        }
+
+        return em.createQuery("from EventHookMessageEntity message where message.realmId = :realmId and message.targetId = :targetId and message.status = :waiting and ((:test = true and message.test = true) or (:test = false and (message.test = false or message.test is null))) order by message.createdAt asc, message.id asc", EventHookMessageEntity.class)
+                .setParameter("realmId", realmId)
+                .setParameter("targetId", targetId)
+                .setParameter("waiting", EventHookMessageStatus.WAITING.name())
+                .setParameter("test", test)
+                .setMaxResults(1)
+                .getResultStream()
+                .findFirst()
+                .isPresent();
+    }
+
+    @Override
+    public boolean hasAvailableMessages(String realmId, String targetId, long now, long executionTimeoutMillis, boolean test) {
+        long staleBefore = now - executionTimeoutMillis;
+        Long count = em.createQuery("select count(message.id) from EventHookMessageEntity message where message.realmId = :realmId and message.targetId = :targetId and ((message.status = :waiting) or (message.status = :executing and message.executionStartedAt <= :staleBefore)) and ((:test = true and message.test = true) or (:test = false and (message.test = false or message.test is null)))", Long.class)
+                .setParameter("realmId", realmId)
+                .setParameter("targetId", targetId)
+                .setParameter("waiting", EventHookMessageStatus.WAITING.name())
+                .setParameter("executing", EventHookMessageStatus.EXECUTING.name())
+                .setParameter("staleBefore", staleBefore)
+                .setParameter("test", test)
+                .getSingleResult();
+        if (count == null || count.longValue() == 0) {
+            return false;
+        }
+
+        return em.createQuery("from EventHookMessageEntity message where message.realmId = :realmId and message.targetId = :targetId and ((message.status = :waiting) or (message.status = :executing and message.executionStartedAt <= :staleBefore)) and ((:test = true and message.test = true) or (:test = false and (message.test = false or message.test is null))) order by coalesce(message.executionStartedAt, message.createdAt) asc, message.createdAt asc, message.id asc", EventHookMessageEntity.class)
+                .setParameter("realmId", realmId)
+                .setParameter("targetId", targetId)
+                .setParameter("waiting", EventHookMessageStatus.WAITING.name())
+                .setParameter("executing", EventHookMessageStatus.EXECUTING.name())
+                .setParameter("staleBefore", staleBefore)
+                .setParameter("test", test)
+                .setMaxResults(1)
+                .getResultStream()
+            .findFirst()
+            .isPresent();
     }
 
     @Override
@@ -376,9 +506,6 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
         EventHookLogEntity entity = new EventHookLogEntity();
         entity.setId(log.getId() == null ? UUID.randomUUID().toString() : log.getId());
         entity.setExecutionId(log.getExecutionId());
-        entity.setBatchExecution(log.isBatchExecution());
-        entity.setMessageId(log.getMessageId());
-        entity.setTargetId(log.getTargetId());
         entity.setStatus(log.getStatus().name());
         entity.setAttemptNumber(log.getAttemptNumber());
         entity.setStatusCode(log.getStatusCode());
@@ -389,13 +516,23 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
     }
 
     @Override
+    public void clearExpiredMessagesAndLogs(long olderThan) {
+        em.createQuery("delete from EventHookLogEntity where createdAt < :olderThan")
+                .setParameter("olderThan", olderThan)
+                .executeUpdate();
+        em.createQuery("delete from EventHookMessageEntity where createdAt < :olderThan")
+                .setParameter("olderThan", olderThan)
+                .executeUpdate();
+    }
+
+    @Override
     public void close() {
     }
 
-    private EventHookMessageEntity claim(EventHookMessageEntity entity, long now, String claimOwner) {
-        entity.setStatus(EventHookMessageStatus.CLAIMED.name());
-        entity.setClaimOwner(claimOwner);
-        entity.setClaimedAt(now);
+    private EventHookMessageEntity reserve(EventHookMessageEntity entity, long now, String executionId) {
+        entity.setExecutionId(executionId);
+        entity.setStatus(EventHookMessageStatus.EXECUTING.name());
+        entity.setExecutionStartedAt(now);
         entity.setUpdatedAt(now);
         return entity;
     }
@@ -408,6 +545,9 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
         entity.setEnabled(model.isEnabled());
         entity.setCreatedAt(create ? model.getCreatedAt() : entity.getCreatedAt());
         entity.setUpdatedAt(model.getUpdatedAt());
+        entity.setAutoDisabledUntil(model.getAutoDisabledUntil());
+        entity.setAutoDisabledReason(model.getAutoDisabledReason());
+        entity.setConsecutive429Count(model.getConsecutive429Count());
         entity.setSettingsJson(writeJson(model.getSettings()));
     }
 
@@ -415,13 +555,26 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
         EventHookTargetModel model = new EventHookTargetModel();
         model.setId(entity.getId());
         model.setRealmId(entity.getRealmId());
+        model.setRealmName(resolveRealmName(entity.getRealmId()));
         model.setName(entity.getName());
         model.setType(entity.getType());
         model.setEnabled(entity.isEnabled());
         model.setCreatedAt(entity.getCreatedAt());
         model.setUpdatedAt(entity.getUpdatedAt());
+        model.setAutoDisabledUntil(entity.getAutoDisabledUntil());
+        model.setAutoDisabledReason(entity.getAutoDisabledReason());
+        model.setConsecutive429Count(entity.getConsecutive429Count());
         model.setSettings(readJson(entity.getSettingsJson()));
         return model;
+    }
+
+    private String resolveRealmName(String realmId) {
+        if (realmId == null) {
+            return null;
+        }
+
+        RealmModel realm = session.realms().getRealm(realmId);
+        return realm == null ? null : realm.getName();
     }
 
     private EventHookMessageModel toModel(EventHookMessageEntity entity) {
@@ -429,17 +582,22 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
         model.setId(entity.getId());
         model.setRealmId(entity.getRealmId());
         model.setTargetId(entity.getTargetId());
+        model.setExecutionId(entity.getExecutionId());
         model.setSourceType(EventHookSourceType.valueOf(entity.getSourceType()));
         model.setSourceEventId(entity.getSourceEventId());
+        model.setSourceEventName(extractSourceEventName(entity.getPayload(), EventHookSourceType.valueOf(entity.getSourceType())));
+        model.setUserId(extractUserId(entity.getPayload(), EventHookSourceType.valueOf(entity.getSourceType())));
+        model.setResourcePath(extractResourcePath(entity.getPayload()));
         model.setStatus(EventHookMessageStatus.valueOf(entity.getStatus()));
         model.setPayload(entity.getPayload());
         model.setAttemptCount(entity.getAttemptCount());
         model.setNextAttemptAt(entity.getNextAttemptAt());
+        model.setExecutionStartedAt(entity.getExecutionStartedAt());
         model.setCreatedAt(entity.getCreatedAt());
         model.setUpdatedAt(entity.getUpdatedAt());
-        model.setClaimOwner(entity.getClaimOwner());
-        model.setClaimedAt(entity.getClaimedAt());
         model.setLastError(entity.getLastError());
+        model.setExecutionBatch(entity.isExecutionBatch());
+        model.setTest(entity.isTest());
         return model;
     }
 
@@ -447,12 +605,6 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
         EventHookLogModel model = new EventHookLogModel();
         model.setId(entity.getId());
         model.setExecutionId(entity.getExecutionId());
-        model.setBatchExecution(entity.isBatchExecution());
-        model.setMessageId(entity.getMessageId());
-        model.setTargetId(entity.getTargetId());
-        model.setSourceType(EventHookSourceType.valueOf(messageEntity.getSourceType()));
-        model.setSourceEventId(messageEntity.getSourceEventId());
-        model.setSourceEventName(extractSourceEventName(messageEntity.getPayload(), EventHookSourceType.valueOf(messageEntity.getSourceType())));
         model.setStatus(EventHookLogStatus.valueOf(entity.getStatus()));
         model.setMessageStatus(EventHookMessageStatus.valueOf(messageEntity.getStatus()));
         model.setAttemptNumber(entity.getAttemptNumber());
@@ -460,6 +612,7 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
         model.setDurationMs(entity.getDurationMs());
         model.setDetails(entity.getDetails());
         model.setCreatedAt(entity.getCreatedAt());
+        model.setTest(messageEntity.isTest());
         return model;
     }
 
@@ -473,17 +626,19 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
     private void applyMessage(EventHookMessageEntity entity, EventHookMessageModel model) {
         entity.setRealmId(model.getRealmId());
         entity.setTargetId(model.getTargetId());
+        entity.setExecutionId(model.getExecutionId());
         entity.setSourceType(model.getSourceType() == null ? EventHookSourceType.USER.name() : model.getSourceType().name());
         entity.setSourceEventId(model.getSourceEventId());
         entity.setStatus(model.getStatus().name());
         entity.setPayload(model.getPayload());
         entity.setAttemptCount(model.getAttemptCount());
         entity.setNextAttemptAt(model.getNextAttemptAt());
+        entity.setExecutionStartedAt(model.getExecutionStartedAt());
         entity.setCreatedAt(model.getCreatedAt());
         entity.setUpdatedAt(model.getUpdatedAt());
-        entity.setClaimOwner(model.getClaimOwner());
-        entity.setClaimedAt(model.getClaimedAt());
         entity.setLastError(model.getLastError());
+        entity.setExecutionBatch(model.isExecutionBatch());
+        entity.setTest(model.isTest());
     }
 
     private String writeJson(Map<String, Object> value) {
@@ -526,7 +681,47 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private String extractUserId(String payload, EventHookSourceType sourceType) {
+        if (payload == null || sourceType == null) {
+            return null;
+        }
+
+        try {
+            Map<String, Object> payloadMap = JsonSerialization.readValue(payload, Map.class);
+            if (sourceType == EventHookSourceType.ADMIN) {
+                Object auth = payloadMap.get("auth");
+                if (auth instanceof Map<?, ?> authMap) {
+                    Object userId = ((Map<String, Object>) authMap).get("userId");
+                    return userId == null ? null : userId.toString();
+                }
+                return null;
+            }
+
+            Object userId = payloadMap.get("userId");
+            return userId == null ? null : userId.toString();
+        } catch (IOException exception) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractResourcePath(String payload) {
+        if (payload == null) {
+            return null;
+        }
+
+        try {
+            Map<String, Object> payloadMap = JsonSerialization.readValue(payload, Map.class);
+            Object resourcePath = payloadMap.get("resourcePath");
+            return resourcePath == null ? null : resourcePath.toString();
+        } catch (IOException exception) {
+            return null;
+        }
+    }
+
     private String containsJsonValue(String key, String value) {
         return "%\"" + key.toLowerCase() + "\":\"" + value.toLowerCase() + "\"%";
     }
+
 }

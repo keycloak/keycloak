@@ -32,6 +32,10 @@ public final class EventHookTargetRepresentationUtil {
 
     public static EventHookTargetRepresentation toRepresentation(KeycloakSession session, EventHookTargetModel model, boolean redactSecrets) {
         EventHookTargetProviderFactory providerFactory = findProviderFactory(session, model.getType());
+        if (model.getRealmName() == null && model.getRealmId() != null) {
+            RealmModel realm = session.realms().getRealm(model.getRealmId());
+            model.setRealmName(realm == null ? null : realm.getName());
+        }
         EventHookTargetRepresentation representation = new EventHookTargetRepresentation();
         representation.setId(model.getId());
         representation.setName(model.getName());
@@ -39,6 +43,11 @@ public final class EventHookTargetRepresentationUtil {
         representation.setEnabled(model.isEnabled());
         representation.setCreatedAt(model.getCreatedAt());
         representation.setUpdatedAt(model.getUpdatedAt());
+        representation.setAutoDisabled(model.getAutoDisabledUntil() != null
+            && !model.isEnabled()
+            && model.getAutoDisabledUntil().longValue() > System.currentTimeMillis());
+        representation.setAutoDisabledUntil(model.getAutoDisabledUntil());
+        representation.setAutoDisabledReason(model.getAutoDisabledReason());
         representation.setSettings(providerFactory == null
                 ? safeSettings(model.getSettings())
                 : redactSecrets ? providerFactory.redactConfig(model.getSettings()) : safeSettings(model.getSettings()));
@@ -80,11 +89,17 @@ public final class EventHookTargetRepresentationUtil {
         EventHookTargetModel target = existing == null ? new EventHookTargetModel() : existing;
         target.setId(resolveId(representation, existing, preserveRepresentationMetadata));
         target.setRealmId(realm.getId());
+        target.setRealmName(realm.getName());
         target.setName(representation.getName().trim());
         target.setType(representation.getType());
         target.setEnabled(Boolean.TRUE.equals(representation.getEnabled()));
         target.setCreatedAt(resolveCreatedAt(representation, existing, now, preserveRepresentationMetadata));
         target.setUpdatedAt(resolveUpdatedAt(representation, now, preserveRepresentationMetadata));
+        if (target.isEnabled()) {
+            target.setAutoDisabledUntil(null);
+            target.setAutoDisabledReason(null);
+            target.setConsecutive429Count(null);
+        }
         target.setSettings(normalizedSettings);
         return target;
     }

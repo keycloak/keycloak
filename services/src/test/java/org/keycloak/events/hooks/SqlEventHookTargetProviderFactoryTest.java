@@ -14,6 +14,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class SqlEventHookTargetProviderFactoryTest {
@@ -29,7 +30,6 @@ public class SqlEventHookTargetProviderFactoryTest {
                 "jdbcUsername",
                 "jdbcPassword",
                 "sqlStatement",
-                "sqlParameters",
                 "queryTimeoutSeconds"
             ),
             factory.getConfigMetadata().stream().map(ProviderConfigProperty::getName).toList()
@@ -42,20 +42,72 @@ public class SqlEventHookTargetProviderFactoryTest {
     }
 
     @Test
+    public void shouldSupportTesting() {
+        String jdbcUrl = "jdbc:h2:mem:eventhook_test_capability;DB_CLOSE_DELAY=-1";
+        try {
+            createSchema(jdbcUrl);
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
+        }
+
+        EventHookTargetModel target = new EventHookTargetModel();
+        target.setId("target-1");
+        target.setRealmId("realm-1");
+        target.setType(SqlEventHookTargetProviderFactory.ID);
+        target.setName("SQL target");
+        target.setEnabled(true);
+        target.setSettings(Map.of(
+                "databaseKind", "h2",
+                "jdbcUrl", jdbcUrl,
+                "jdbcUsername", "sa",
+                "jdbcPassword", "",
+            "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, PAYLOAD_JSON) values (:eventId, :eventType, :payload)"
+        ));
+
+        EventHookDeliveryResult result = factory.test(null, realm("realm-1", "demo"), target);
+
+        assertTrue(result.isSuccess());
+    }
+
+    @Test
     public void shouldAcceptValidSqlSettings() {
         factory.validateConfig(null, Map.of(
                 "databaseKind", "h2",
                 "jdbcUrl", "jdbc:h2:mem:eventhook;DB_CLOSE_DELAY=-1",
                 "jdbcUsername", "sa",
                 "jdbcPassword", "secret",
+                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, PAYLOAD_JSON) values (:eventId, :eventType, :payload)",
+                "queryTimeoutSeconds", 10
+        ));
+    }
+
+    @Test
+    public void shouldContinueToAcceptLegacyStringifiedSqlParameters() {
+        factory.validateConfig(null, Map.of(
+                "databaseKind", "h2",
+                "jdbcUrl", "jdbc:h2:mem:eventhook;DB_CLOSE_DELAY=-1",
+                "jdbcUsername", "sa",
+                "jdbcPassword", "secret",
                 "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, PAYLOAD_JSON) values (?, ?, ?)",
-                "sqlParameters", List.of("eventId", "eventType", "$payload"),
+                "sqlParameters", "eventId##eventType##$payload",
                 "queryTimeoutSeconds", 10
         ));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void shouldRejectPlaceholderMismatch() {
+        factory.validateConfig(null, Map.of(
+                "databaseKind", "h2",
+                "jdbcUrl", "jdbc:h2:mem:eventhook;DB_CLOSE_DELAY=-1",
+                "jdbcUsername", "sa",
+                "jdbcPassword", "secret",
+                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE) values (:eventId, :eventType, ?)",
+                "queryTimeoutSeconds", 10
+        ));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectLegacyPlaceholderMismatch() {
         factory.validateConfig(null, Map.of(
                 "databaseKind", "h2",
                 "jdbcUrl", "jdbc:h2:mem:eventhook;DB_CLOSE_DELAY=-1",
@@ -73,7 +125,7 @@ public class SqlEventHookTargetProviderFactoryTest {
                 "jdbcUrl", "http://example.org/not-jdbc",
                 "jdbcUsername", "sa",
                 "jdbcPassword", "secret",
-                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID) values (?)",
+                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID) values (:eventId)",
                 "sqlParameters", List.of("eventId")
         ));
     }
@@ -84,7 +136,7 @@ public class SqlEventHookTargetProviderFactoryTest {
                 "databaseKind", "h2",
                 "jdbcUrl", "jdbc:h2:mem:eventhook;DB_CLOSE_DELAY=-1",
                 "jdbcPassword", "secret",
-                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID) values (?)",
+                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID) values (:eventId)",
                 "sqlParameters", List.of("eventId")
         ));
     }
@@ -96,7 +148,7 @@ public class SqlEventHookTargetProviderFactoryTest {
                 "jdbcUrl", "jdbc:h2:mem:eventhook;DB_CLOSE_DELAY=-1",
                 "jdbcUsername", "sa",
                 "jdbcPassword", "secret",
-                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID) values (?)",
+                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID) values (:eventId)",
                 "sqlParameters", List.of("eventId"),
                 "queryTimeoutSeconds", 0
         ));
@@ -140,8 +192,7 @@ public class SqlEventHookTargetProviderFactoryTest {
                 "jdbcUrl", jdbcUrl,
                 "jdbcUsername", "sa",
                 "jdbcPassword", "",
-                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, PAYLOAD_JSON) values (?, ?, ?)",
-                "sqlParameters", List.of("messageId", "eventType", "$payload"),
+            "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, PAYLOAD_JSON) values (:eventId, :eventType, :payload)",
                 "queryTimeoutSeconds", 10
         ));
 
@@ -155,7 +206,42 @@ public class SqlEventHookTargetProviderFactoryTest {
                 ResultSet resultSet = statement.executeQuery("select EVENT_ID, EVENT_TYPE from EVENT_HOOK_AUDIT")) {
             assertTrue(resultSet.next());
             assertTrue(resultSet.getString(1).startsWith("test-"));
-            assertEquals("EVENT_HOOK_TEST", resultSet.getString(2));
+            assertEquals("LOGIN", resultSet.getString(2));
+            assertFalse(resultSet.next());
+        }
+    }
+
+    @Test
+    public void shouldExecuteTestDeliveryAgainstSqlTargetWithInlineParametersEvenWhenLegacyMappingsExist() throws Exception {
+        String jdbcUrl = "jdbc:h2:mem:eventhook_factory_stringified_test;DB_CLOSE_DELAY=-1";
+        createSchema(jdbcUrl);
+
+        EventHookTargetModel target = new EventHookTargetModel();
+        target.setId("target-1");
+        target.setType(SqlEventHookTargetProviderFactory.ID);
+        target.setName("SQL target");
+        target.setEnabled(true);
+        target.setSettings(Map.of(
+                "databaseKind", "h2",
+                "jdbcUrl", jdbcUrl,
+                "jdbcUsername", "sa",
+                "jdbcPassword", "",
+            "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, PAYLOAD_JSON) values (:eventId, :eventType, :payload)",
+            "sqlParameters", "ignored##legacy##payload",
+                "queryTimeoutSeconds", 10
+        ));
+
+        EventHookDeliveryResult result = factory.test(null, realm("realm-1", "demo"), target);
+
+        assertTrue(result.isSuccess());
+        assertEquals("SQL_OK", result.getStatusCode());
+
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery("select EVENT_ID, EVENT_TYPE from EVENT_HOOK_AUDIT")) {
+            assertTrue(resultSet.next());
+            assertTrue(resultSet.getString(1).startsWith("test-"));
+            assertEquals("LOGIN", resultSet.getString(2));
             assertFalse(resultSet.next());
         }
     }
@@ -175,8 +261,7 @@ public class SqlEventHookTargetProviderFactoryTest {
                 "jdbcUrl", jdbcUrl,
                 "jdbcUsername", "sa",
                 "jdbcPassword", "",
-                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, REALM_NAME, TARGET_TYPE) values (?, ?, ?, ?)",
-                "sqlParameters", List.of("messageId", "eventType", "realm.name", "target.type"),
+            "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, REALM_NAME, TARGET_TYPE) values (:eventId, :eventType, :details.username, :target.type)",
                 "queryTimeoutSeconds", 10
         ));
 
@@ -190,9 +275,9 @@ public class SqlEventHookTargetProviderFactoryTest {
                 ResultSet resultSet = statement.executeQuery("select EVENT_ID, EVENT_TYPE, REALM_NAME, TARGET_TYPE from EVENT_HOOK_AUDIT")) {
             assertTrue(resultSet.next());
             assertTrue(resultSet.getString(1).startsWith("test-"));
-            assertEquals("EVENT_HOOK_TEST", resultSet.getString(2));
-            assertEquals("demo", resultSet.getString(3));
-            assertEquals("sql", resultSet.getString(4));
+            assertEquals("LOGIN", resultSet.getString(2));
+            assertEquals("test-user", resultSet.getString(3));
+            assertNull(resultSet.getString(4));
             assertFalse(resultSet.next());
         }
     }
@@ -212,8 +297,7 @@ public class SqlEventHookTargetProviderFactoryTest {
                 "jdbcUrl", jdbcUrl,
                 "jdbcUsername", "sa",
                 "jdbcPassword", "",
-                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, REALM_NAME, TARGET_TYPE) values (?, ?, ?, ?)",
-                "sqlParameters", List.of("messageId", "eventType", "$payload.realm.name", "$payload.target.type"),
+            "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, REALM_NAME, TARGET_TYPE) values (:eventId, :eventType, :payload.details.username, :payload.target.type)",
                 "queryTimeoutSeconds", 10
         ));
 
@@ -227,9 +311,9 @@ public class SqlEventHookTargetProviderFactoryTest {
                 ResultSet resultSet = statement.executeQuery("select EVENT_ID, EVENT_TYPE, REALM_NAME, TARGET_TYPE from EVENT_HOOK_AUDIT")) {
             assertTrue(resultSet.next());
             assertTrue(resultSet.getString(1).startsWith("test-"));
-            assertEquals("EVENT_HOOK_TEST", resultSet.getString(2));
-            assertEquals("demo", resultSet.getString(3));
-            assertEquals("sql", resultSet.getString(4));
+            assertEquals("LOGIN", resultSet.getString(2));
+            assertEquals("test-user", resultSet.getString(3));
+            assertNull(resultSet.getString(4));
             assertFalse(resultSet.next());
         }
     }

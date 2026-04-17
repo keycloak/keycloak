@@ -31,6 +31,7 @@ public class PullEventHookTargetProviderFactory implements EventHookTargetProvid
 
     public static final String ID = "pull";
     public static final String CONSUME_PATH_TEMPLATE = "/realms/{realm}/event-hooks/{targetId}/consume";
+    public static final String TEST_PATH_TEMPLATE = "/realms/{realm}/event-hooks/{targetId}/test";
 
     private static final List<ProviderConfigProperty> CONFIG = ProviderConfigurationBuilder.create()
             .property()
@@ -44,7 +45,7 @@ public class PullEventHookTargetProviderFactory implements EventHookTargetProvid
 
     @Override
     public EventHookTargetProvider create(KeycloakSession session) {
-        return new PullEventHookTargetProvider();
+        return new PullEventHookTargetProvider(session);
     }
 
     @Override
@@ -96,11 +97,19 @@ public class PullEventHookTargetProviderFactory implements EventHookTargetProvid
 
     @Override
     public Object getTargetEndpointResource(KeycloakSession session, RealmModel realm, EventHookTargetModel target, String endpointName) {
-        if (!"consume".equals(endpointName)) {
-            return null;
+        if (realm != null && target != null) {
+            target.setRealmName(realm.getName());
         }
 
-        return new PullEventHookTargetEndpointResource(session, target);
+        if ("consume".equals(endpointName)) {
+            return new PullEventHookTargetEndpointResource(session, target, false);
+        }
+
+        if ("test".equals(endpointName)) {
+            return new PullEventHookTargetEndpointResource(session, target, true);
+        }
+
+        return null;
     }
 
     @Override
@@ -109,28 +118,61 @@ public class PullEventHookTargetProviderFactory implements EventHookTargetProvid
 
     @Override
     public EventHookDeliveryResult test(KeycloakSession session, RealmModel realm, EventHookTargetModel target) {
+        return test(session, realm, target, (String) null);
+    }
+
+    @Override
+    public EventHookDeliveryResult test(KeycloakSession session, RealmModel realm, EventHookTargetModel target, String exampleId) {
+        return test(session, realm, target, createTestMessagesUnchecked(session, realm, target, exampleId));
+    }
+
+    @Override
+    public EventHookDeliveryResult test(KeycloakSession session, RealmModel realm, EventHookTargetModel target, List<EventHookMessageModel> messages) {
+        if (realm != null && target != null) {
+            target.setRealmName(realm.getName());
+        }
+
         EventHookDeliveryResult result = new EventHookDeliveryResult();
         result.setSuccess(true);
         result.setRetryable(false);
-        result.setStatusCode("PULL_READY");
-        result.setDetails(getDisplayInfo(target));
+        result.setStatusCode("PULL_TEST_READY");
+        result.setDetails(testPath(target));
         result.setDurationMillis(0);
         return result;
     }
 
     static String consumePath(EventHookTargetModel target) {
+        return path(CONSUME_PATH_TEMPLATE, target);
+    }
+
+    static String testPath(EventHookTargetModel target) {
+        return path(TEST_PATH_TEMPLATE, target);
+    }
+
+    private List<EventHookMessageModel> createTestMessagesUnchecked(KeycloakSession session, RealmModel realm, EventHookTargetModel target,
+            String exampleId) {
+        try {
+            return createTestMessages(session, realm, target, exampleId);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Could not create pull test message", exception);
+        }
+    }
+
+    private static String path(String template, EventHookTargetModel target) {
+        String realmName = target == null ? null : target.getRealmName();
         String realmId = target == null ? null : target.getRealmId();
         String targetId = target == null ? null : target.getId();
 
-        if (realmId == null || realmId.isBlank()) {
-            realmId = "{realm}";
+        String realm = realmName != null && !realmName.isBlank() ? realmName : realmId;
+        if (realm == null || realm.isBlank()) {
+            realm = "{realm}";
         }
         if (targetId == null || targetId.isBlank()) {
             targetId = "{targetId}";
         }
 
-        return CONSUME_PATH_TEMPLATE
-                .replace("{realm}", realmId)
+        return template
+                .replace("{realm}", realm)
                 .replace("{targetId}", targetId);
     }
 }

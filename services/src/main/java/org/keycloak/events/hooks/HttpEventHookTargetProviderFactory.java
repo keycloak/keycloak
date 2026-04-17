@@ -165,6 +165,11 @@ public class HttpEventHookTargetProviderFactory implements EventHookTargetProvid
         positiveInteger(settings, "readTimeoutMs");
     }
 
+    @Override
+    public Map<String, Object> redactConfig(Map<String, Object> settings) {
+        return EventHookAutoDisableSupport.redactLegacyState(EventHookTargetProviderFactory.super.redactConfig(settings));
+    }
+
     private String stringValue(Map<String, Object> settings, String key, boolean required) {
         Object value = settings == null ? null : settings.get(key);
         if (value == null) {

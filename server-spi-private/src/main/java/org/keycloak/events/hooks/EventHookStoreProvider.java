@@ -47,6 +47,13 @@ public interface EventHookStoreProvider extends Provider {
 
     Stream<EventHookMessageModel> getMessagesStream(String realmId, String status, String targetId, Integer first, Integer max);
 
+    default Stream<EventHookMessageModel> getMessagesStream(String realmId, String status, String targetId, String targetType,
+            String sourceType, String event, String client, String user, String ipAddress,
+            String resourceType, String resourcePath, String executionId, String search,
+            Integer first, Integer max) {
+        return getMessagesStream(realmId, status, targetId, first, max);
+    }
+
     EventHookMessageModel getMessage(String realmId, String messageId);
 
     default Stream<EventHookLogModel> getLogsStream(String realmId, String messageId, String targetId, Integer first, Integer max) {
@@ -79,23 +86,43 @@ public interface EventHookStoreProvider extends Provider {
 
     Map<String, EventHookTargetStatus> getLatestTargetStatuses(String realmId);
 
-    List<EventHookMessageModel> claimAvailableMessages(int maxResults, long now, long staleClaimBefore, String claimOwner);
+    List<EventHookMessageModel> reserveAvailableMessages(int maxResults, long now, long executionTimeoutMillis);
 
-    default List<EventHookMessageModel> claimAvailableMessages(int maxResults, long now, long staleClaimBefore, String claimOwner,
+    default List<EventHookMessageModel> reserveAvailableMessages(int maxResults, long now, long executionTimeoutMillis,
             List<String> targetTypes) {
-        return claimAvailableMessages(maxResults, now, staleClaimBefore, claimOwner);
+        return reserveAvailableMessages(maxResults, now, executionTimeoutMillis);
     }
 
-    List<EventHookMessageModel> claimAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
-            long staleClaimBefore, String claimOwner);
+    List<EventHookMessageModel> reserveAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
+            long executionTimeoutMillis, String executionId);
+
+    default List<EventHookMessageModel> reserveAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
+            long executionTimeoutMillis, String executionId, boolean test) {
+        return reserveAvailableMessagesForTarget(realmId, targetId, maxResults, now, executionTimeoutMillis, executionId);
+    }
 
     default Long getPendingAggregationDeadline(String realmId, String targetId, long now) {
         return null;
     }
 
-    boolean hasAvailableMessages(String realmId, String targetId, long now, long staleClaimBefore);
+    boolean hasAvailableMessages(String realmId, String targetId, long now);
+
+    default boolean hasAvailableMessages(String realmId, String targetId, long now, long executionTimeoutMillis) {
+        return hasAvailableMessages(realmId, targetId, now, executionTimeoutMillis, false);
+    }
+
+    default boolean hasAvailableMessages(String realmId, String targetId, long now, boolean test) {
+        return test ? hasAvailableMessages(realmId, targetId, now) : hasAvailableMessages(realmId, targetId, now);
+    }
+
+    default boolean hasAvailableMessages(String realmId, String targetId, long now, long executionTimeoutMillis, boolean test) {
+        return test ? hasAvailableMessages(realmId, targetId, now, test) : hasAvailableMessages(realmId, targetId, now);
+    }
 
     EventHookMessageModel updateMessage(EventHookMessageModel message);
 
     void createLog(EventHookLogModel log);
+
+    default void clearExpiredMessagesAndLogs(long olderThan) {
+    }
 }

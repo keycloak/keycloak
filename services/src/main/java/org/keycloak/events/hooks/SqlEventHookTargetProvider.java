@@ -33,8 +33,6 @@ import org.keycloak.util.JsonSerialization;
 public class SqlEventHookTargetProvider implements EventHookTargetProvider {
 
     private static final int DEFAULT_QUERY_TIMEOUT_SECONDS = 30;
-    private static final String FULL_PAYLOAD_PARAMETER = "$payload";
-    private static final String FULL_PAYLOAD_PREFIX = FULL_PAYLOAD_PARAMETER + ".";
 
     @Override
     public EventHookDeliveryResult deliver(EventHookTargetModel target, EventHookMessageModel message) throws IOException {
@@ -82,14 +80,14 @@ public class SqlEventHookTargetProvider implements EventHookTargetProvider {
         loadDriver(databaseType);
 
         String jdbcUrl = requiredString(settings, "jdbcUrl");
-        String statement = requiredString(settings, "sqlStatement");
-        List<String> parameterMappings = parameterMappings(settings.get("sqlParameters"));
+        SqlPreparedStatementTemplate preparedStatementTemplate = SqlPreparedStatementTemplate
+                .from(requiredString(settings, "sqlStatement"), settings.get("sqlParameters"));
         Map<String, Object> payload = readPayload(message.getPayload());
 
         try (Connection connection = DriverManager.getConnection(jdbcUrl, connectionProperties(settings));
-                PreparedStatement preparedStatement = connection.prepareStatement(statement)) {
+                PreparedStatement preparedStatement = connection.prepareStatement(preparedStatementTemplate.statement())) {
             preparedStatement.setQueryTimeout(intSetting(settings, "queryTimeoutSeconds", DEFAULT_QUERY_TIMEOUT_SECONDS));
-            bindParameters(preparedStatement, parameterMappings, payload, message.getPayload());
+            bindParameters(preparedStatement, preparedStatementTemplate.parameterMappings(), payload, message.getPayload());
             preparedStatement.executeUpdate();
         }
     }
@@ -123,12 +121,12 @@ public class SqlEventHookTargetProvider implements EventHookTargetProvider {
     }
 
     private Object parameterValue(String mapping, Map<String, Object> payload, String rawPayload) throws IOException {
-        if (FULL_PAYLOAD_PARAMETER.equals(mapping)) {
+        if (SqlPreparedStatementTemplate.FULL_PAYLOAD_PARAMETER.equals(mapping)) {
             return rawPayload;
         }
 
-        if (mapping != null && mapping.startsWith(FULL_PAYLOAD_PREFIX)) {
-            mapping = mapping.substring(FULL_PAYLOAD_PREFIX.length());
+        if (mapping != null && mapping.startsWith(SqlPreparedStatementTemplate.FULL_PAYLOAD_PREFIX)) {
+            mapping = mapping.substring(SqlPreparedStatementTemplate.FULL_PAYLOAD_PREFIX.length());
         }
 
         Object value = extractValue(payload, mapping);
@@ -198,27 +196,12 @@ public class SqlEventHookTargetProvider implements EventHookTargetProvider {
 
     @SuppressWarnings("unchecked")
     private Map<String, Object> readPayload(String payload) throws IOException {
-        return JsonSerialization.readValue(payload, Map.class);
-    }
-
-    private List<String> parameterMappings(Object configuredValue) {
-        if (configuredValue == null) {
-            return List.of(FULL_PAYLOAD_PARAMETER);
+        Object normalizedPayload = EventHookPayloadNormalizer.readPayload(payload);
+        if (normalizedPayload instanceof Map<?, ?> mapPayload) {
+            return (Map<String, Object>) mapPayload;
         }
 
-        if (configuredValue instanceof String stringValue) {
-            String trimmed = stringValue.trim();
-            return trimmed.isEmpty() ? List.of() : List.of(trimmed);
-        }
-
-        if (configuredValue instanceof Collection<?> values) {
-            return values.stream().map(value -> value == null ? null : value.toString().trim())
-                    .filter(value -> value != null && !value.isBlank())
-                    .toList();
-        }
-
-        String trimmed = configuredValue.toString().trim();
-        return trimmed.isEmpty() ? List.of() : List.of(trimmed);
+        throw new IllegalArgumentException("Event hook payload must be a JSON object");
     }
 
     private String requiredString(Map<String, Object> settings, String key) {

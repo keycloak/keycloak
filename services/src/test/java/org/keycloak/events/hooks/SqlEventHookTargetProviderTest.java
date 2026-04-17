@@ -133,6 +133,33 @@ public class SqlEventHookTargetProviderTest {
         }
     }
 
+    @Test
+    public void shouldResolveNestedRepresentationPropertyWhenRepresentationContainsJson() throws Exception {
+        String jdbcUrl = "jdbc:h2:mem:event_hook_target_representation;DB_CLOSE_DELAY=-1";
+        createSchema(jdbcUrl);
+
+        SqlEventHookTargetProvider provider = new SqlEventHookTargetProvider();
+        EventHookDeliveryResult result = provider.deliver(representationTarget(jdbcUrl), message(Map.of(
+                "eventId", "evt-5",
+                "eventType", "UPDATE",
+                "representation", "{\"id\":\"user-7\",\"enabled\":true}"
+        )));
+
+        assertTrue(result.isSuccess());
+        assertFalse(result.isRetryable());
+        assertEquals("SQL_OK", result.getStatusCode());
+
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery("select EVENT_ID, EVENT_TYPE, CLIENT_ID from EVENT_HOOK_AUDIT")) {
+            assertTrue(resultSet.next());
+            assertEquals("evt-5", resultSet.getString(1));
+            assertEquals("UPDATE", resultSet.getString(2));
+            assertEquals("user-7", resultSet.getString(3));
+            assertEquals(false, resultSet.next());
+        }
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void shouldRejectBatchDelivery() {
         new SqlEventHookTargetProvider().deliverBatch(target("jdbc:h2:mem:event_hook_batch;DB_CLOSE_DELAY=-1"), List.of());
@@ -153,8 +180,7 @@ public class SqlEventHookTargetProviderTest {
                 "jdbcUrl", jdbcUrl,
                 "jdbcUsername", "sa",
                 "jdbcPassword", "",
-                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, PAYLOAD_JSON) values (?, ?, ?)",
-                "sqlParameters", List.of("eventId", "eventType", "$payload"),
+            "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, PAYLOAD_JSON) values (:eventId, :eventType, :payload)",
                 "queryTimeoutSeconds", 10
         ));
         return target;
@@ -167,8 +193,7 @@ public class SqlEventHookTargetProviderTest {
                 "jdbcUrl", jdbcUrl,
                 "jdbcUsername", "sa",
                 "jdbcPassword", "",
-                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, CLIENT_ID, SOURCE) values (?, ?, ?, ?)",
-                "sqlParameters", List.of("eventId", "eventType", "details.clientId", "details.metadata.source"),
+            "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, CLIENT_ID, SOURCE) values (:eventId, :eventType, :details.clientId, :details.metadata.source)",
                 "queryTimeoutSeconds", 10
         ));
         return target;
@@ -181,8 +206,7 @@ public class SqlEventHookTargetProviderTest {
                 "jdbcUrl", jdbcUrl,
                 "jdbcUsername", "sa",
                 "jdbcPassword", "",
-                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, SOURCE) values (?, ?, ?)",
-                "sqlParameters", List.of("eventId", "eventType", "$payload.details.metadata.source"),
+            "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, SOURCE) values (:eventId, :eventType, :payload.details.metadata.source)",
                 "queryTimeoutSeconds", 10
         ));
         return target;
@@ -195,8 +219,20 @@ public class SqlEventHookTargetProviderTest {
                 "jdbcUrl", jdbcUrl,
                 "jdbcUsername", "sa",
                 "jdbcPassword", "",
-                "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, CLIENT_ID, SOURCE) values (?, ?, ?, ?)",
-                "sqlParameters", List.of("eventId", "eventType", "$payload.details.clientId", "$payload.details.roles.missing"),
+            "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, CLIENT_ID, SOURCE) values (:eventId, :eventType, :payload.details.clientId, :payload.details.roles.missing)",
+                "queryTimeoutSeconds", 10
+        ));
+        return target;
+    }
+
+    private EventHookTargetModel representationTarget(String jdbcUrl) {
+        EventHookTargetModel target = new EventHookTargetModel();
+        target.setSettings(Map.of(
+                "databaseKind", "h2",
+                "jdbcUrl", jdbcUrl,
+                "jdbcUsername", "sa",
+                "jdbcPassword", "",
+            "sqlStatement", "insert into EVENT_HOOK_AUDIT (EVENT_ID, EVENT_TYPE, CLIENT_ID) values (:eventId, :eventType, :payload.representation.id)",
                 "queryTimeoutSeconds", 10
         ));
         return target;

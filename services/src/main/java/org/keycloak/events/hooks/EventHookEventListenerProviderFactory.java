@@ -35,8 +35,9 @@ public class EventHookEventListenerProviderFactory implements EventListenerProvi
     public static final String ID = "event-hooks";
 
     private long pollIntervalMillis = TimeUnit.SECONDS.toMillis(30);
-    private long claimTimeoutMillis = TimeUnit.MINUTES.toMillis(5);
+    private long executionTimeoutMillis = TimeUnit.MINUTES.toMillis(5);
     private int maxPollBatchSize = 50;
+    private long retentionIntervalMillis = TimeUnit.HOURS.toMillis(24);
 
     @Override
     public EventListenerProvider create(KeycloakSession session) {
@@ -46,7 +47,7 @@ public class EventHookEventListenerProviderFactory implements EventListenerProvi
     @Override
     public void init(Config.Scope config) {
         pollIntervalMillis = config.getLong("pollIntervalMillis", pollIntervalMillis);
-        claimTimeoutMillis = config.getLong("claimTimeoutMillis", claimTimeoutMillis);
+        executionTimeoutMillis = config.getLong("executionTimeoutMillis", executionTimeoutMillis);
         maxPollBatchSize = config.getInt("maxPollBatchSize", maxPollBatchSize);
     }
 
@@ -55,7 +56,8 @@ public class EventHookEventListenerProviderFactory implements EventListenerProvi
         try (KeycloakSession session = factory.create()) {
             TimerProvider timer = session.getProvider(TimerProvider.class);
             if (timer != null) {
-                timer.schedule(new ClusterAwareScheduledTaskRunner(factory, new EventHookDeliveryTask(factory, maxPollBatchSize, claimTimeoutMillis), pollIntervalMillis), pollIntervalMillis, pollIntervalMillis);
+                timer.schedule(new ClusterAwareScheduledTaskRunner(factory, new EventHookDeliveryTask(factory, maxPollBatchSize, executionTimeoutMillis), pollIntervalMillis), pollIntervalMillis, pollIntervalMillis);
+                timer.schedule(new ClusterAwareScheduledTaskRunner(factory, new EventHookRetentionTask(factory, EventHookRetentionTask.DEFAULT_RETENTION_MILLIS), retentionIntervalMillis), retentionIntervalMillis, retentionIntervalMillis);
             }
         }
     }
@@ -85,11 +87,11 @@ public class EventHookEventListenerProviderFactory implements EventListenerProvi
                 .defaultValue((int) pollIntervalMillis)
                 .add()
                 .property()
-                .name("claimTimeoutMillis")
-            .label("eventHookListenerClaimTimeoutMillis")
-            .helpText("eventHookListenerClaimTimeoutMillisHelp")
+                .name("executionTimeoutMillis")
+            .label("eventHookListenerExecutionTimeoutMillis")
+            .helpText("eventHookListenerExecutionTimeoutMillisHelp")
                 .type(ProviderConfigProperty.INTEGER_TYPE)
-                .defaultValue((int) claimTimeoutMillis)
+                .defaultValue((int) executionTimeoutMillis)
                 .add()
                 .property()
                 .name("maxPollBatchSize")

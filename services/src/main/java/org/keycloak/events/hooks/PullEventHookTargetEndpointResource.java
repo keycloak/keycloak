@@ -19,6 +19,7 @@ package org.keycloak.events.hooks;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -40,15 +41,20 @@ import static org.keycloak.common.util.Time.currentTimeMillis;
 @Produces(MediaType.APPLICATION_JSON)
 public class PullEventHookTargetEndpointResource {
 
-    private static final long CLAIM_TIMEOUT_MILLIS = java.util.concurrent.TimeUnit.MINUTES.toMillis(5);
+    private static final long EXECUTION_TIMEOUT_MILLIS = java.util.concurrent.TimeUnit.MINUTES.toMillis(5);
     private static final String SECRET_HEADER = "X-Keycloak-Event-Hook-Secret";
+    private static final Comparator<EventHookMessageModel> FIFO_MESSAGE_ORDER = Comparator
+            .comparingLong(EventHookMessageModel::getCreatedAt)
+            .thenComparing(EventHookMessageModel::getId, Comparator.nullsLast(String::compareTo));
 
     private final KeycloakSession session;
     private final EventHookTargetModel target;
+    private final boolean testMode;
 
-    public PullEventHookTargetEndpointResource(KeycloakSession session, EventHookTargetModel target) {
+    public PullEventHookTargetEndpointResource(KeycloakSession session, EventHookTargetModel target, boolean testMode) {
         this.session = session;
         this.target = target;
+        this.testMode = testMode;
     }
 
     @GET
@@ -73,17 +79,20 @@ public class PullEventHookTargetEndpointResource {
         long now = currentTimeMillis();
         int maxResults = EventHookDeliveryTask.maxMessagesPerExecution(target, true);
         boolean batchMode = maxResults > 1;
-        List<EventHookMessageModel> messages = store.claimAvailableMessagesForTarget(realm.getId(), target.getId(), maxResults, now,
-                now - CLAIM_TIMEOUT_MILLIS, UUID.randomUUID().toString());
+        String executionId = UUID.randomUUID().toString();
+        List<EventHookMessageModel> messages = store.reserveAvailableMessagesForTarget(realm.getId(), target.getId(), maxResults, now,
+            EXECUTION_TIMEOUT_MILLIS, executionId, testMode).stream()
+                .sorted(FIFO_MESSAGE_ORDER)
+                .toList();
+        boolean batchExecution = messages.size() > 1;
+        messages.forEach(message -> message.setExecutionBatch(batchExecution));
 
         List<EventHookPullEntryRepresentation> entries = messages.stream()
                 .map(message -> toPullEntry(store, realm.getId(), message))
                 .toList();
 
         if (!messages.isEmpty()) {
-            String executionId = UUID.randomUUID().toString();
-            boolean batchExecution = messages.size() > 1;
-            messages.forEach(message -> completeMessage(store, message, executionId, batchExecution));
+            messages.forEach(message -> completeMessage(store, message, message.getExecutionId(), batchExecution));
         }
 
         EventHookPullRepresentation representation = new EventHookPullRepresentation();
@@ -94,7 +103,7 @@ public class PullEventHookTargetEndpointResource {
             representation.setEvents(messages.stream().map(message -> readPayload(message.getPayload())).toList());
             representation.setEntries(entries);
         }
-        representation.setHasMoreEvents(store.hasAvailableMessages(realm.getId(), target.getId(), currentTimeMillis(), currentTimeMillis() - CLAIM_TIMEOUT_MILLIS));
+            representation.setHasMoreEvents(store.hasAvailableMessages(realm.getId(), target.getId(), currentTimeMillis(), EXECUTION_TIMEOUT_MILLIS, testMode));
         return representation;
     }
 
@@ -121,38 +130,37 @@ public class PullEventHookTargetEndpointResource {
 
     private void completeMessage(EventHookStoreProvider store, EventHookMessageModel message, String executionId, boolean batchExecution) {
         long now = currentTimeMillis();
+        message.setExecutionId(executionId);
+        message.setExecutionBatch(batchExecution);
         message.setStatus(EventHookMessageStatus.SUCCESS);
-        message.setClaimOwner(null);
-        message.setClaimedAt(null);
         message.setUpdatedAt(now);
         message.setNextAttemptAt(now);
+        message.setExecutionStartedAt(null);
         message.setLastError(null);
         store.updateMessage(message);
 
         EventHookLogModel log = new EventHookLogModel();
         log.setId(UUID.randomUUID().toString());
         log.setExecutionId(executionId);
-        log.setBatchExecution(batchExecution);
-        log.setMessageId(message.getId());
-        log.setTargetId(message.getTargetId());
         log.setStatus(EventHookLogStatus.SUCCESS);
         log.setAttemptNumber(message.getAttemptCount());
-        log.setStatusCode("PULL_CONSUMED");
+        log.setStatusCode(testMode ? "PULL_TEST_CONSUMED" : "PULL_CONSUMED");
         log.setDurationMs(0L);
-        log.setDetails("Consumed through the pull endpoint");
+        log.setDetails(testMode ? "Consumed through the pull test endpoint" : "Consumed through the pull endpoint");
         log.setCreatedAt(now);
+        log.setTest(message.isTest());
         store.createLog(log);
     }
 
     private EventHookPullEntryRepresentation toPullEntry(EventHookStoreProvider store, String realmId, EventHookMessageModel message) {
         EventHookLogModel latestLog = store.getLogsStream(realmId, message.getId(), message.getTargetId(), null, null, null, 0, 1)
-                .findFirst()
-                .orElse(null);
+            .findFirst()
+            .orElse(null);
 
         EventHookPullEntryRepresentation entry = new EventHookPullEntryRepresentation();
         entry.setLogId(latestLog == null ? null : latestLog.getId());
-        entry.setExecutionId(latestLog == null ? null : latestLog.getExecutionId());
-        entry.setBatchExecution(latestLog == null ? null : latestLog.isBatchExecution());
+        entry.setExecutionId(message.getExecutionId());
+        entry.setBatchExecution(message.isExecutionBatch());
         entry.setMessageId(message.getId());
         entry.setTargetId(message.getTargetId());
         entry.setSourceEventId(message.getSourceEventId());
@@ -162,13 +170,14 @@ public class PullEventHookTargetEndpointResource {
         entry.setDurationMs(latestLog == null ? null : latestLog.getDurationMs());
         entry.setDetails(latestLog == null ? null : latestLog.getDetails());
         entry.setCreatedAt(latestLog == null ? message.getUpdatedAt() : latestLog.getCreatedAt());
+        entry.setTest(message.isTest());
         entry.setData(readPayload(message.getPayload()));
         return entry;
     }
 
     private Object readPayload(String payload) {
         try {
-            return JsonSerialization.readValue(payload, Object.class);
+            return EventHookPayloadNormalizer.readPayload(payload);
         } catch (Exception exception) {
             return payload;
         }

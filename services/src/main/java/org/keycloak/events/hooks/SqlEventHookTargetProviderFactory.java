@@ -17,7 +17,6 @@
 
 package org.keycloak.events.hooks;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -71,13 +70,6 @@ public class SqlEventHookTargetProviderFactory implements EventHookTargetProvide
             .helpText("eventHookTargetSqlStatementHelp")
             .type(ProviderConfigProperty.TEXT_TYPE)
             .required(true)
-            .add()
-            .property()
-            .name("sqlParameters")
-            .label("eventHookTargetSqlParameters")
-            .helpText("eventHookTargetSqlParametersHelp")
-            .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
-            .defaultValue("$payload")
             .add()
             .property()
             .name("queryTimeoutSeconds")
@@ -134,7 +126,8 @@ public class SqlEventHookTargetProviderFactory implements EventHookTargetProvide
 
         stringValue(settings, "jdbcUsername", true);
         String sqlStatement = stringValue(settings, "sqlStatement", true);
-        if (placeholderCount(sqlStatement) != parameterMappings(settings.get("sqlParameters")).size()) {
+        SqlPreparedStatementTemplate preparedStatement = SqlPreparedStatementTemplate.from(sqlStatement, settings.get("sqlParameters"));
+        if (placeholderCount(preparedStatement.statement()) != preparedStatement.parameterMappings().size()) {
             throw new IllegalArgumentException("Prepared statement placeholder count must match configured SQL parameters");
         }
         positiveInteger(settings, "queryTimeoutSeconds");
@@ -146,25 +139,6 @@ public class SqlEventHookTargetProviderFactory implements EventHookTargetProvide
         } catch (ClassNotFoundException exception) {
             throw new IllegalArgumentException("JDBC driver not available for database type: " + databaseType.id(), exception);
         }
-    }
-
-    private List<String> parameterMappings(Object configuredValue) {
-        if (configuredValue == null) {
-            return List.of("$payload");
-        }
-
-        if (configuredValue instanceof String stringValue) {
-            String trimmed = stringValue.trim();
-            return trimmed.isEmpty() ? List.of() : List.of(trimmed);
-        }
-
-        if (configuredValue instanceof Collection<?> values) {
-            return values.stream().map(value -> value == null ? null : value.toString().trim())
-                    .filter(value -> value != null && !value.isBlank())
-                    .toList();
-        }
-
-        return List.of(configuredValue.toString().trim());
     }
 
     private int placeholderCount(String sqlStatement) {

@@ -66,7 +66,8 @@ public class EventHookEventListenerProvider implements EventListenerProvider {
     private void enqueueUserEvent(Event event) {
         runJobInTransaction(sessionFactory, targetSession -> {
             EventHookStoreProvider store = targetSession.getProvider(EventHookStoreProvider.class);
-            List<EventHookTargetModel> targets = store.getEnabledTargets(event.getRealmId()).stream()
+            List<EventHookTargetModel> targets = store.getTargetsStream(event.getRealmId(), null)
+                    .filter(EventHookAutoDisableSupport::shouldProcessEvents)
                     .filter(target -> EventHookTargetEventFilter.matchesUserEvent(target, event))
                     .toList();
             if (targets.isEmpty()) {
@@ -85,7 +86,8 @@ public class EventHookEventListenerProvider implements EventListenerProvider {
     private void enqueueAdminEvent(AdminEvent event, boolean includeRepresentation) {
         runJobInTransaction(sessionFactory, targetSession -> {
             EventHookStoreProvider store = targetSession.getProvider(EventHookStoreProvider.class);
-            List<EventHookTargetModel> targets = store.getEnabledTargets(event.getRealmId()).stream()
+            List<EventHookTargetModel> targets = store.getTargetsStream(event.getRealmId(), null)
+                    .filter(EventHookAutoDisableSupport::shouldProcessEvents)
                     .filter(target -> EventHookTargetEventFilter.matchesAdminEvent(target, event))
                     .toList();
             if (targets.isEmpty()) {
@@ -113,13 +115,15 @@ public class EventHookEventListenerProvider implements EventListenerProvider {
         message.setSourceType(sourceType);
         message.setSourceEventId(sourceEventId);
         message.setStatus(EventHookMessageStatus.PENDING);
+        message.setTest(false);
         message.setPayload(payload);
         message.setAttemptCount(0);
-        message.setNextAttemptAt(EventHookDeliveryTask.initialNextAttemptAt(
+        long nextAttemptAt = EventHookDeliveryTask.initialNextAttemptAt(
             target,
             providerFactory,
             store.getPendingAggregationDeadline(realmId, target.getId(), now),
-            now));
+            now);
+        message.setNextAttemptAt(Math.max(nextAttemptAt, EventHookAutoDisableSupport.deliveryPausedUntil(target, now)));
         message.setCreatedAt(now);
         message.setUpdatedAt(now);
         return message;

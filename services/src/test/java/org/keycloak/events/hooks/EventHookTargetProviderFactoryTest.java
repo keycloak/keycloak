@@ -30,21 +30,15 @@ public class EventHookTargetProviderFactoryTest {
         assertTrue(result.isSuccess());
         assertEquals(1, factory.messages.size());
         assertEquals(target.getId(), factory.messages.get(0).getTargetId());
+        assertTrue(factory.messages.get(0).isTest());
 
         @SuppressWarnings("unchecked")
         Map<String, Object> payload = JsonSerialization.readValue(factory.messages.get(0).getPayload(), Map.class);
         assertEquals(Boolean.TRUE, payload.get("deliveryTest"));
-        assertEquals("EVENT_HOOK_TEST", payload.get("eventType"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> realm = (Map<String, Object>) payload.get("realm");
-        assertEquals("realm-1", realm.get("id"));
-        assertEquals("demo", realm.get("name"));
-
-        @SuppressWarnings("unchecked")
-        Map<String, Object> targetPayload = (Map<String, Object>) payload.get("target");
-        assertEquals(target.getId(), targetPayload.get("id"));
-        assertEquals(target.getType(), targetPayload.get("type"));
+        assertEquals("LOGIN", payload.get("eventType"));
+        assertEquals("USER", payload.get("sourceType"));
+        assertEquals("realm-1", payload.get("realmId"));
+        assertEquals("security-admin-console", payload.get("clientId"));
     }
 
     @Test

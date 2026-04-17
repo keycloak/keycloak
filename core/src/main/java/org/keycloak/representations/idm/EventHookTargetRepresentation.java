@@ -30,6 +30,9 @@ public class EventHookTargetRepresentation {
     private Map<String, Object> settings;
     private String displayInfo;
     private String status;
+    private Boolean autoDisabled;
+    private Long autoDisabledUntil;
+    private String autoDisabledReason;
 
     public String getId() {
         return id;
@@ -101,5 +104,29 @@ public class EventHookTargetRepresentation {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Boolean getAutoDisabled() {
+        return autoDisabled;
+    }
+
+    public void setAutoDisabled(Boolean autoDisabled) {
+        this.autoDisabled = autoDisabled;
+    }
+
+    public Long getAutoDisabledUntil() {
+        return autoDisabledUntil;
+    }
+
+    public void setAutoDisabledUntil(Long autoDisabledUntil) {
+        this.autoDisabledUntil = autoDisabledUntil;
+    }
+
+    public String getAutoDisabledReason() {
+        return autoDisabledReason;
+    }
+
+    public void setAutoDisabledReason(String autoDisabledReason) {
+        this.autoDisabledReason = autoDisabledReason;
     }
 }

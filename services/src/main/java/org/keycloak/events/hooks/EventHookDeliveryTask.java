@@ -39,30 +39,29 @@ public class EventHookDeliveryTask implements ScheduledTask {
 
     private final KeycloakSessionFactory sessionFactory;
     private final int maxPollBatchSize;
-    private final long claimTimeoutMillis;
+    private final long executionTimeoutMillis;
 
-    public EventHookDeliveryTask(KeycloakSessionFactory sessionFactory, int maxPollBatchSize, long claimTimeoutMillis) {
+    public EventHookDeliveryTask(KeycloakSessionFactory sessionFactory, int maxPollBatchSize, long executionTimeoutMillis) {
         this.sessionFactory = sessionFactory;
         this.maxPollBatchSize = maxPollBatchSize;
-        this.claimTimeoutMillis = claimTimeoutMillis;
+        this.executionTimeoutMillis = executionTimeoutMillis;
     }
 
     @Override
     public void run(KeycloakSession session) {
         long now = currentTimeMillis();
-        String claimOwner = UUID.randomUUID().toString();
         EventHookStoreProvider store = session.getProvider(EventHookStoreProvider.class);
-        List<EventHookMessageModel> claimedMessages = store.claimAvailableMessages(maxPollBatchSize, now, now - claimTimeoutMillis, claimOwner);
-        if (claimedMessages.isEmpty()) {
+        List<EventHookMessageModel> reservedMessages = store.reserveAvailableMessages(maxPollBatchSize, now, executionTimeoutMillis);
+        if (reservedMessages.isEmpty()) {
             return;
         }
 
         ExecutorService executor = session.getProvider(ExecutorsProvider.class).getExecutor(EXECUTOR_NAME);
-        groupByTarget(claimedMessages).forEach(batch -> executor.submit(() -> processBatch(batch)));
+        groupByTarget(reservedMessages).forEach(batch -> executor.submit(() -> processBatch(batch)));
     }
 
-    private List<List<EventHookMessageModel>> groupByTarget(List<EventHookMessageModel> claimedMessages) {
-        Map<String, List<EventHookMessageModel>> grouped = claimedMessages.stream()
+    private List<List<EventHookMessageModel>> groupByTarget(List<EventHookMessageModel> reservedMessages) {
+        Map<String, List<EventHookMessageModel>> grouped = reservedMessages.stream()
                 .sorted(Comparator.comparing(EventHookMessageModel::getCreatedAt))
                 .collect(java.util.stream.Collectors.groupingBy(EventHookMessageModel::getTargetId, java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
 
@@ -87,8 +86,24 @@ public class EventHookDeliveryTask implements ScheduledTask {
             EventHookStoreProvider store = session.getProvider(EventHookStoreProvider.class);
             EventHookMessageModel firstMessage = batch.get(0);
             EventHookTargetModel target = store.getTarget(firstMessage.getRealmId(), firstMessage.getTargetId());
+            long now = currentTimeMillis();
 
-            if (target == null || !target.isEnabled()) {
+            if (target == null) {
+                batch.forEach(message -> markDead(store, message, "Target not found or disabled"));
+                return;
+            }
+
+            if (EventHookAutoDisableSupport.shouldResume(target, now)) {
+                EventHookAutoDisableSupport.resume(target, now);
+                store.updateTarget(target);
+            }
+
+            if (!target.isEnabled()) {
+                if (EventHookAutoDisableSupport.isAutoDisabled(target)) {
+                    postponeBatch(store, batch, EventHookAutoDisableSupport.deliveryPausedUntil(target, now),
+                            "Target temporarily disabled after repeated 429 responses", now);
+                    return;
+                }
                 batch.forEach(message -> markDead(store, message, "Target not found or disabled"));
                 return;
             }
@@ -106,7 +121,14 @@ public class EventHookDeliveryTask implements ScheduledTask {
                 return;
             }
 
-            String executionId = UUID.randomUUID().toString();
+            String executionId = batchExecution ? UUID.randomUUID().toString() : firstMessage.getExecutionId();
+            if (batchExecution) {
+                batch.forEach(message -> {
+                    message.setExecutionId(executionId);
+                    message.setExecutionBatch(true);
+                    store.updateMessage(message);
+                });
+            }
 
             EventHookDeliveryResult result;
             try {
@@ -129,28 +151,38 @@ public class EventHookDeliveryTask implements ScheduledTask {
 
             EventHookDeliveryResult deliveryResult = result;
             boolean retryAvailable = providerFactory == null || providerFactory.supportsRetry();
-            batch.forEach(message -> applyDeliveryResult(store, message, target, executionId, batchExecution, retryAvailable, deliveryResult));
+            long completedAt = currentTimeMillis();
+            EventHookAutoDisableSupport.applyAutoDisableState(target, deliveryResult, completedAt);
+            store.updateTarget(target);
+            batch.forEach(message -> updateMessageFromDeliveryResult(message, executionId, batchExecution, target, deliveryResult, completedAt, retryAvailable));
+            batch.forEach(store::updateMessage);
+            createLog(store, batch.get(0), executionId, statusFor(deliveryResult), deliveryResult);
         });
     }
 
-    private void applyDeliveryResult(EventHookStoreProvider store, EventHookMessageModel message, EventHookTargetModel target,
-            String executionId, boolean batchExecution, boolean retryAvailable, EventHookDeliveryResult result) {
-        long now = currentTimeMillis();
-        applyDeliveryResultToMessage(message, target, result, now, retryAvailable);
+    private void postponeBatch(EventHookStoreProvider store, List<EventHookMessageModel> batch, long nextAttemptAt, String details, long now) {
+        batch.forEach(message -> {
+            message.setStatus(EventHookMessageStatus.PENDING);
+            message.setExecutionStartedAt(null);
+            message.setUpdatedAt(now);
+            message.setNextAttemptAt(nextAttemptAt);
+            message.setLastError(details);
+            store.updateMessage(message);
+        });
+    }
 
-        if (result.isSuccess()) {
-            createLog(store, message, executionId, batchExecution, EventHookLogStatus.SUCCESS, result);
-        } else if (result.isWaiting()) {
-            createLog(store, message, executionId, batchExecution, EventHookLogStatus.WAITING, result);
-        } else {
-            createLog(store, message, executionId, batchExecution, EventHookLogStatus.FAILED, result);
-        }
-
-        store.updateMessage(message);
+    private void updateMessageFromDeliveryResult(EventHookMessageModel message, String executionId, boolean executionBatch, EventHookTargetModel target,
+            EventHookDeliveryResult result, long now, boolean retryAvailable) {
+        message.setExecutionId(executionId);
+        message.setExecutionBatch(executionBatch);
+        EventHookDeliveryTask.applyDeliveryResultToMessage(message, target, result, now, retryAvailable);
     }
 
     private void markDead(EventHookStoreProvider store, EventHookMessageModel message, String details) {
         long now = currentTimeMillis();
+        String executionId = UUID.randomUUID().toString();
+        message.setExecutionId(executionId);
+        message.setExecutionBatch(false);
         applyTerminalMessageState(message, EventHookMessageStatus.DEAD, details, now);
         store.updateMessage(message);
 
@@ -159,11 +191,14 @@ public class EventHookDeliveryTask implements ScheduledTask {
         result.setRetryable(false);
         result.setDetails(details);
         result.setDurationMillis(0);
-        createLog(store, message, UUID.randomUUID().toString(), false, EventHookLogStatus.FAILED, result);
+        createLog(store, message, executionId, EventHookLogStatus.FAILED, result);
     }
 
     private void markFailed(EventHookStoreProvider store, EventHookMessageModel message, String details) {
         long now = currentTimeMillis();
+        String executionId = UUID.randomUUID().toString();
+        message.setExecutionId(executionId);
+        message.setExecutionBatch(false);
         applyTerminalMessageState(message, EventHookMessageStatus.FAILED, details, now);
         store.updateMessage(message);
 
@@ -172,41 +207,50 @@ public class EventHookDeliveryTask implements ScheduledTask {
         result.setRetryable(false);
         result.setDetails(details);
         result.setDurationMillis(0);
-        createLog(store, message, UUID.randomUUID().toString(), false, EventHookLogStatus.FAILED, result);
+        createLog(store, message, executionId, EventHookLogStatus.FAILED, result);
     }
 
-    private void createLog(EventHookStoreProvider store, EventHookMessageModel message, String executionId, boolean batchExecution,
+        private void createLog(EventHookStoreProvider store, EventHookMessageModel message, String executionId,
             EventHookLogStatus status, EventHookDeliveryResult result) {
         EventHookLogModel log = new EventHookLogModel();
         log.setId(UUID.randomUUID().toString());
         log.setExecutionId(executionId);
-        log.setBatchExecution(batchExecution);
-        log.setMessageId(message.getId());
-        log.setTargetId(message.getTargetId());
         log.setStatus(status);
         log.setAttemptNumber(message.getAttemptCount());
         log.setStatusCode(result.getStatusCode());
         log.setDurationMs(result.getDurationMillis());
         log.setDetails(truncate(result.getDetails(), 2048));
         log.setCreatedAt(currentTimeMillis());
+        log.setTest(message.isTest());
         store.createLog(log);
     }
 
-    static void applyDeliveryResultToMessage(EventHookMessageModel message, EventHookTargetModel target, EventHookDeliveryResult result, long now) {
+    private EventHookLogStatus statusFor(EventHookDeliveryResult result) {
+        if (result.isSuccess()) {
+            return EventHookLogStatus.SUCCESS;
+        }
+
+        if (result.isWaiting()) {
+            return EventHookLogStatus.WAITING;
+        }
+
+        return EventHookLogStatus.FAILED;
+    }
+
+    public static void applyDeliveryResultToMessage(EventHookMessageModel message, EventHookTargetModel target, EventHookDeliveryResult result, long now) {
         applyDeliveryResultToMessage(message, target, result, now, true);
     }
 
-    static void applyDeliveryResultToMessage(EventHookMessageModel message, EventHookTargetModel target, EventHookDeliveryResult result, long now,
+    public static void applyDeliveryResultToMessage(EventHookMessageModel message, EventHookTargetModel target, EventHookDeliveryResult result, long now,
             boolean retryAvailable) {
         int attemptNumber = message.getAttemptCount() + 1;
         int maxAttempts = intSetting(target.getSettings(), "maxAttempts", 5);
-        long retryDelayMs = intSetting(target.getSettings(), "retryDelayMs", 1000);
+        long retryDelayMs = intSetting(target.getSettings(), "retryDelayMs", 5000);
         boolean retryEnabled = retryAvailable && booleanSetting(target.getSettings(), "retryEnabled", true);
 
         message.setAttemptCount(attemptNumber);
         message.setUpdatedAt(now);
-        message.setClaimOwner(null);
-        message.setClaimedAt(null);
+        message.setExecutionStartedAt(null);
         message.setLastError(result.isSuccess() || result.isWaiting() ? null : result.getDetails());
 
         if (result.isSuccess()) {
@@ -255,7 +299,7 @@ public class EventHookDeliveryTask implements ScheduledTask {
             return 1;
         }
 
-        return intSetting(target == null ? null : target.getSettings(), "maxEventsPerBatch", 20);
+        return intSetting(target == null ? null : target.getSettings(), "maxEventsPerBatch", 1000);
     }
 
     static long initialNextAttemptAt(EventHookTargetModel target, EventHookTargetProviderFactory providerFactory,
@@ -269,7 +313,7 @@ public class EventHookDeliveryTask implements ScheduledTask {
             return now;
         }
 
-        long aggregationTimeoutMs = intSetting(target == null ? null : target.getSettings(), "aggregationTimeoutMs", 0);
+        long aggregationTimeoutMs = intSetting(target == null ? null : target.getSettings(), "aggregationTimeoutMs", 5000);
         if (aggregationTimeoutMs <= 0) {
             return now;
         }
@@ -287,10 +331,9 @@ public class EventHookDeliveryTask implements ScheduledTask {
 
     static void applyTerminalMessageState(EventHookMessageModel message, EventHookMessageStatus status, String details, long now) {
         message.setStatus(status);
-        message.setClaimOwner(null);
-        message.setClaimedAt(null);
         message.setUpdatedAt(now);
         message.setNextAttemptAt(now);
+        message.setExecutionStartedAt(null);
         message.setLastError(details);
     }
 

@@ -25,23 +25,35 @@ import static org.junit.Assert.assertNull;
 public class EventHooksResourceRetryTest {
 
     @Test
-    public void shouldQueueFailedMessageForManualRetry() {
+    public void shouldQueueFailedExecutionForManualRetry() {
         RecordingStoreProvider store = new RecordingStoreProvider();
-        store.message = message(EventHookMessageStatus.EXHAUSTED, 3);
+        store.messages = List.of(
+                message("msg-1", "exec-1", EventHookMessageStatus.EXHAUSTED, 3),
+                message("msg-2", "exec-1", EventHookMessageStatus.FAILED, 2));
 
-        EventHookMessageRepresentation retried = new EventHooksResource(session(realm("realm-1"), store), auth(), null)
-                .retryMessage("msg-1");
+        List<EventHookMessageRepresentation> retried = new EventHooksResource(session(realm("realm-1"), store), auth(), null)
+                .retryExecution("exec-1");
 
-        assertEquals("PENDING", retried.getStatus());
-        assertEquals(Integer.valueOf(0), retried.getAttemptCount());
-        assertNull(retried.getLastError());
+        assertEquals(2, retried.size());
+        retried.forEach(message -> {
+            assertEquals("PENDING", message.getStatus());
+            assertEquals(Integer.valueOf(0), message.getAttemptCount());
+            assertNull(message.getExecutionStartedAt());
+            assertNull(message.getLastError());
+            assertNotNull(message.getExecutionId());
+            assertEquals(Boolean.TRUE, message.getExecutionBatch());
+        });
 
-        assertNotNull(store.updatedMessage);
-        assertEquals(EventHookMessageStatus.PENDING, store.updatedMessage.getStatus());
-        assertEquals(0, store.updatedMessage.getAttemptCount());
-        assertNull(store.updatedMessage.getClaimOwner());
-        assertNull(store.updatedMessage.getClaimedAt());
-        assertNull(store.updatedMessage.getLastError());
+        assertEquals(2, store.updatedMessages.size());
+        store.updatedMessages.forEach(message -> {
+            assertEquals(EventHookMessageStatus.PENDING, message.getStatus());
+            assertEquals(0, message.getAttemptCount());
+            assertNull(message.getExecutionStartedAt());
+            assertNull(message.getLastError());
+            assertNotNull(message.getExecutionId());
+            assertEquals(true, message.isExecutionBatch());
+        });
+        assertEquals(store.updatedMessages.get(0).getExecutionId(), store.updatedMessages.get(1).getExecutionId());
 
         assertNotNull(store.createdLog);
         assertEquals(EventHookLogStatus.PENDING, store.createdLog.getStatus());
@@ -52,39 +64,38 @@ public class EventHooksResourceRetryTest {
     }
 
     @Test
-    public void shouldRejectRetryForSuccessfulMessage() {
+    public void shouldRejectRetryForExecutionWithoutRetryableMessages() {
         RecordingStoreProvider store = new RecordingStoreProvider();
-        store.message = message(EventHookMessageStatus.SUCCESS, 1);
+        store.messages = List.of(message("msg-1", "exec-1", EventHookMessageStatus.SUCCESS, 1));
 
         try {
-            new EventHooksResource(session(realm("realm-1"), store), auth(), null).retryMessage("msg-1");
+            new EventHooksResource(session(realm("realm-1"), store), auth(), null).retryExecution("exec-1");
         } catch (ErrorResponseException exception) {
             assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getResponse().getStatus());
-            assertNull(store.updatedMessage);
+            assertEquals(0, store.updatedMessages.size());
             assertNull(store.createdLog);
             return;
         }
 
-        throw new AssertionError("Expected retry to fail for successful message");
+        throw new AssertionError("Expected retry to fail for execution without retryable messages");
     }
 
     @Test(expected = NotFoundException.class)
-    public void shouldRejectRetryForUnknownMessage() {
+    public void shouldRejectRetryForUnknownExecution() {
         RecordingStoreProvider store = new RecordingStoreProvider();
-        new EventHooksResource(session(realm("realm-1"), store), auth(), null).retryMessage("missing");
+        new EventHooksResource(session(realm("realm-1"), store), auth(), null).retryExecution("missing");
     }
 
-    private EventHookMessageModel message(EventHookMessageStatus status, int attemptCount) {
+    private EventHookMessageModel message(String id, String executionId, EventHookMessageStatus status, int attemptCount) {
         EventHookMessageModel message = new EventHookMessageModel();
-        message.setId("msg-1");
+        message.setId(id);
         message.setRealmId("realm-1");
         message.setTargetId("target-1");
+        message.setExecutionId(executionId);
         message.setSourceType(EventHookSourceType.USER);
         message.setSourceEventId("event-1");
         message.setStatus(status);
         message.setAttemptCount(attemptCount);
-        message.setClaimOwner("worker-1");
-        message.setClaimedAt(100L);
         message.setNextAttemptAt(200L);
         message.setCreatedAt(1L);
         message.setUpdatedAt(2L);
@@ -139,22 +150,21 @@ public class EventHooksResourceRetryTest {
 
     private static final class RecordingStoreProvider implements EventHookStoreProvider {
 
-        private EventHookMessageModel message;
-        private EventHookMessageModel updatedMessage;
+        private List<EventHookMessageModel> messages = List.of();
+        private List<EventHookMessageModel> updatedMessages = new java.util.ArrayList<>();
         private EventHookLogModel createdLog;
 
         @Override
         public EventHookMessageModel getMessage(String realmId, String messageId) {
-            if (message != null && realmId.equals(message.getRealmId()) && messageId.equals(message.getId())) {
-                return message;
-            }
-            return null;
+            return messages.stream()
+                    .filter(message -> realmId.equals(message.getRealmId()) && messageId.equals(message.getId()))
+                    .findFirst()
+                    .orElse(null);
         }
 
         @Override
         public EventHookMessageModel updateMessage(EventHookMessageModel message) {
-            this.message = message;
-            this.updatedMessage = message;
+            this.updatedMessages.add(message);
             return message;
         }
 
@@ -195,7 +205,19 @@ public class EventHooksResourceRetryTest {
 
         @Override
         public Stream<EventHookMessageModel> getMessagesStream(String realmId, String status, String targetId, Integer first, Integer max) {
-            throw new UnsupportedOperationException();
+            return getMessagesStream(realmId, status, targetId, null, null, null, null, null, null, null, null, null, null, first, max);
+        }
+
+        @Override
+        public Stream<EventHookMessageModel> getMessagesStream(String realmId, String status, String targetId, String targetType,
+                String sourceType, String event, String client, String user, String ipAddress,
+                String resourceType, String resourcePath, String executionId, String search,
+                Integer first, Integer max) {
+            return messages.stream()
+                    .filter(message -> realmId.equals(message.getRealmId()))
+                    .filter(message -> status == null || message.getStatus().name().equals(status))
+                    .filter(message -> targetId == null || targetId.equals(message.getTargetId()))
+                    .filter(message -> executionId == null || executionId.equals(message.getExecutionId()));
         }
 
         @Override
@@ -212,18 +234,18 @@ public class EventHooksResourceRetryTest {
         }
 
         @Override
-        public List<EventHookMessageModel> claimAvailableMessages(int maxResults, long now, long staleClaimBefore, String claimOwner) {
+        public List<EventHookMessageModel> reserveAvailableMessages(int maxResults, long now, long executionTimeoutMillis) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public List<EventHookMessageModel> claimAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
-                long staleClaimBefore, String claimOwner) {
+        public List<EventHookMessageModel> reserveAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
+                long executionTimeoutMillis, String executionId) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public boolean hasAvailableMessages(String realmId, String targetId, long now, long staleClaimBefore) {
+        public boolean hasAvailableMessages(String realmId, String targetId, long now) {
             throw new UnsupportedOperationException();
         }
 

@@ -100,6 +100,7 @@ public class HttpEventHookTargetProvider implements EventHookTargetProvider {
             result.setDetails(truncate(responseBody, 1024));
             result.setSuccess(status >= 200 && status < 300);
             result.setRetryable(status == 429 || status >= 500);
+            result.setAutoDisableEligible(status == 429);
             result.setRetryAfterMillis(parseRetryAfterMillis(response.getFirstHeader("Retry-After")));
             return result;
         } catch (IOException exception) {
@@ -107,6 +108,7 @@ public class HttpEventHookTargetProvider implements EventHookTargetProvider {
             result.setDurationMillis(System.currentTimeMillis() - started);
             result.setSuccess(false);
             result.setRetryable(true);
+            result.setAutoDisableEligible(false);
             result.setDetails(truncate(exception.getMessage(), 1024));
             return result;
         }
@@ -138,29 +140,10 @@ public class HttpEventHookTargetProvider implements EventHookTargetProvider {
 
     private Object readPayload(String payload) {
         try {
-            return normalizeRepresentation(JsonSerialization.readValue(payload, Object.class));
+            return EventHookPayloadNormalizer.readPayload(payload);
         } catch (IOException exception) {
             throw new IllegalArgumentException("Failed to parse event hook payload", exception);
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private Object normalizeRepresentation(Object payload) {
-        if (!(payload instanceof Map<?, ?> mapPayload)) {
-            return payload;
-        }
-
-        Object representation = mapPayload.get("representation");
-        if (!(representation instanceof String representationValue) || representationValue.isBlank()) {
-            return payload;
-        }
-
-        try {
-            ((Map<String, Object>) mapPayload).put("representation", JsonSerialization.readValue(representationValue, Object.class));
-        } catch (IOException ignored) {
-        }
-
-        return payload;
     }
 
     @SuppressWarnings("unchecked")

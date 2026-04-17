@@ -2,165 +2,193 @@ import type { KeycloakAdminClient } from "../client.js";
 import type EventHookLogRepresentation from "../defs/eventHookLogRepresentation.js";
 import type EventHookMessageRepresentation from "../defs/eventHookMessageRepresentation.js";
 import type EventHookProviderRepresentation from "../defs/eventHookProviderRepresentation.js";
+import type EventHookTestExampleRepresentation from "../defs/eventHookTestExampleRepresentation.js";
 import type EventHookTargetRepresentation from "../defs/eventHookTargetRepresentation.js";
 import type EventHookTestResultRepresentation from "../defs/eventHookTestResultRepresentation.js";
 import Resource from "./resource.js";
 
 interface EventHookTargetQuery {
-    realm?: string;
+  realm?: string;
 }
 
 interface EventHookTargetByIdQuery extends EventHookTargetQuery {
-    targetId: string;
+  targetId: string;
+}
+
+interface EventHookTargetTestQuery extends EventHookTargetQuery {
+  exampleId?: string;
 }
 
 interface EventHookMessageQuery extends EventHookTargetQuery {
-    status?: string;
-    targetId?: string;
-    first?: number;
-    max?: number;
+  status?: string;
+  targetId?: string;
+  targetType?: string;
+  sourceType?: string;
+  event?: string;
+  client?: string;
+  user?: string;
+  ipAddress?: string;
+  resourceType?: string;
+  resourcePath?: string;
+  executionId?: string;
+  search?: string;
+  first?: number;
+  max?: number;
 }
 
 interface EventHookMessageByIdQuery extends EventHookTargetQuery {
-    messageId: string;
+  messageId: string;
+}
+
+interface EventHookExecutionByIdQuery extends EventHookTargetQuery {
+  executionId: string;
 }
 
 interface EventHookLogQuery extends EventHookTargetQuery {
-    sourceType?: string;
-    targetId?: string;
-    targetType?: string;
-    event?: string;
-    client?: string;
-    user?: string;
-    ipAddress?: string;
-    resourceType?: string;
-    resourcePath?: string;
-    status?: string;
-    messageStatus?: string;
-    dateFrom?: string;
-    dateTo?: string;
-    executionId?: string;
-    search?: string;
-    messageId?: string;
-    first?: number;
-    max?: number;
+  sourceType?: string;
+  targetId?: string;
+  targetType?: string;
+  event?: string;
+  client?: string;
+  user?: string;
+  ipAddress?: string;
+  resourceType?: string;
+  resourcePath?: string;
+  status?: string;
+  messageStatus?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  executionId?: string;
+  search?: string;
+  messageId?: string;
+  first?: number;
+  max?: number;
 }
 
 interface EventHookMessageLogQuery extends EventHookMessageByIdQuery {
-    first?: number;
-    max?: number;
+  first?: number;
+  max?: number;
 }
 
 export class EventHooks extends Resource<{ realm?: string }> {
-    constructor(client: KeycloakAdminClient) {
-        super(client, {
-            path: "/admin/realms/{realm}/event-hooks",
-            getUrlParams: () => ({
-                realm: client.realmName,
-            }),
-            getBaseUrl: () => client.baseUrl,
-        });
-    }
-
-    public findTargets = this.makeRequest<
-        EventHookTargetQuery,
-        EventHookTargetRepresentation[]
-    >({
-        method: "GET",
-        path: "/targets",
+  constructor(client: KeycloakAdminClient) {
+    super(client, {
+      path: "/admin/realms/{realm}/event-hooks",
+      getUrlParams: () => ({
+        realm: client.realmName,
+      }),
+      getBaseUrl: () => client.baseUrl,
     });
+  }
 
-    public findTarget = this.makeRequest<
-        EventHookTargetByIdQuery,
-        EventHookTargetRepresentation | undefined
-    >({
-        method: "GET",
-        path: "/targets/{targetId}",
-        urlParamKeys: ["targetId"],
-        catchNotFound: true,
-    });
+  public findTargets = this.makeRequest<
+    EventHookTargetQuery,
+    EventHookTargetRepresentation[]
+  >({
+    method: "GET",
+    path: "/targets",
+  });
 
-    public createTarget = this.makeRequest<
-        EventHookTargetRepresentation,
-        EventHookTargetRepresentation
-    >({
-        method: "POST",
-        path: "/targets",
-    });
+  public findTarget = this.makeRequest<
+    EventHookTargetByIdQuery,
+    EventHookTargetRepresentation | undefined
+  >({
+    method: "GET",
+    path: "/targets/{targetId}",
+    urlParamKeys: ["targetId"],
+    catchNotFound: true,
+  });
 
-    public updateTarget = this.makeUpdateRequest<
-        EventHookTargetByIdQuery,
-        EventHookTargetRepresentation,
-        EventHookTargetRepresentation
-    >({
-        method: "PUT",
-        path: "/targets/{targetId}",
-        urlParamKeys: ["targetId"],
-    });
+  public createTarget = this.makeRequest<
+    EventHookTargetRepresentation,
+    EventHookTargetRepresentation
+  >({
+    method: "POST",
+    path: "/targets",
+  });
 
-    public delTarget = this.makeRequest<EventHookTargetByIdQuery, void>({
-        method: "DELETE",
-        path: "/targets/{targetId}",
-        urlParamKeys: ["targetId"],
-    });
+  public updateTarget = this.makeUpdateRequest<
+    EventHookTargetByIdQuery,
+    EventHookTargetRepresentation,
+    EventHookTargetRepresentation
+  >({
+    method: "PUT",
+    path: "/targets/{targetId}",
+    urlParamKeys: ["targetId"],
+  });
 
-    public testTarget = this.makeRequest<
-        EventHookTargetRepresentation,
-        EventHookTestResultRepresentation
-    >({
-        method: "POST",
-        path: "/targets/test",
-    });
+  public delTarget = this.makeRequest<EventHookTargetByIdQuery, void>({
+    method: "DELETE",
+    path: "/targets/{targetId}",
+    urlParamKeys: ["targetId"],
+  });
 
-    public findProviders = this.makeRequest<
-        EventHookTargetQuery,
-        EventHookProviderRepresentation[]
-    >({
-        method: "GET",
-        path: "/providers",
-    });
+  public testTarget = this.makeRequest<
+    EventHookTargetRepresentation & EventHookTargetTestQuery,
+    EventHookTestResultRepresentation
+  >({
+    method: "POST",
+    path: "/targets/test",
+    queryParamKeys: ["exampleId"],
+  });
 
-    public findMessages = this.makeRequest<
-        EventHookMessageQuery,
-        EventHookMessageRepresentation[]
-    >({
-        method: "GET",
-        path: "/messages",
-    });
+  public findProviders = this.makeRequest<
+    EventHookTargetQuery,
+    EventHookProviderRepresentation[]
+  >({
+    method: "GET",
+    path: "/providers",
+  });
 
-    public findMessage = this.makeRequest<
-        EventHookMessageByIdQuery,
-        EventHookMessageRepresentation | undefined
-    >({
-        method: "GET",
-        path: "/messages/{messageId}",
-        urlParamKeys: ["messageId"],
-        catchNotFound: true,
-    });
+  public findTestExamples = this.makeRequest<
+    EventHookTargetQuery,
+    EventHookTestExampleRepresentation[]
+  >({
+    method: "GET",
+    path: "/test-examples",
+  });
 
-    public retryMessage = this.makeRequest<
-        EventHookMessageByIdQuery,
-        EventHookMessageRepresentation
-    >({
-        method: "POST",
-        path: "/messages/{messageId}/retry",
-        urlParamKeys: ["messageId"],
-    });
+  public findMessages = this.makeRequest<
+    EventHookMessageQuery,
+    EventHookMessageRepresentation[]
+  >({
+    method: "GET",
+    path: "/messages",
+  });
 
-    public findMessageLogs = this.makeRequest<
-        EventHookMessageLogQuery,
-        EventHookLogRepresentation[]
-    >({
-        method: "GET",
-        path: "/messages/{messageId}/logs",
-        urlParamKeys: ["messageId"],
-    });
+  public findMessage = this.makeRequest<
+    EventHookMessageByIdQuery,
+    EventHookMessageRepresentation | undefined
+  >({
+    method: "GET",
+    path: "/messages/{messageId}",
+    urlParamKeys: ["messageId"],
+    catchNotFound: true,
+  });
 
-    public findLogs = this.makeRequest<
-        EventHookLogQuery,
-        EventHookLogRepresentation[]
-    >({
-        method: "GET",
-        path: "/logs",
-    });
+  public retryExecution = this.makeRequest<
+    EventHookExecutionByIdQuery,
+    EventHookMessageRepresentation[]
+  >({
+    method: "POST",
+    path: "/executions/{executionId}/retry",
+    urlParamKeys: ["executionId"],
+  });
+
+  public findMessageLogs = this.makeRequest<
+    EventHookMessageLogQuery,
+    EventHookLogRepresentation[]
+  >({
+    method: "GET",
+    path: "/messages/{messageId}/logs",
+    urlParamKeys: ["messageId"],
+  });
+
+  public findLogs = this.makeRequest<
+    EventHookLogQuery,
+    EventHookLogRepresentation[]
+  >({
+    method: "GET",
+    path: "/logs",
+  });
 }

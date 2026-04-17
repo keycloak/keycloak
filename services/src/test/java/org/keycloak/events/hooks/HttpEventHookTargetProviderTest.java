@@ -147,6 +147,7 @@ public class HttpEventHookTargetProviderTest {
 
             assertFalse(result.isSuccess());
             assertTrue(result.isRetryable());
+            assertTrue(result.isAutoDisableEligible());
             assertEquals("429", result.getStatusCode());
             assertEquals("busy", result.getDetails());
             assertEquals(Long.valueOf(12_000L), result.getRetryAfterMillis());
@@ -163,6 +164,7 @@ public class HttpEventHookTargetProviderTest {
 
             assertFalse(result.isSuccess());
             assertFalse(result.isRetryable());
+            assertFalse(result.isAutoDisableEligible());
             assertEquals("400", result.getStatusCode());
             assertEquals("invalid", result.getDetails());
         }
@@ -179,6 +181,7 @@ public class HttpEventHookTargetProviderTest {
 
             assertFalse(result.isSuccess());
             assertTrue(result.isRetryable());
+            assertFalse(result.isAutoDisableEligible());
             assertNull(result.getStatusCode());
             assertNotNull(result.getDetails());
         }

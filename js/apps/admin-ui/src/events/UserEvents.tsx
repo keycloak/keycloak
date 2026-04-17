@@ -1,6 +1,7 @@
 import type EventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventRepresentation";
 import type EventType from "@keycloak/keycloak-admin-client/lib/defs/eventTypes";
 import {
+  Action,
   KeycloakDataTable,
   KeycloakSelect,
   ListEmptyState,
@@ -32,11 +33,12 @@ import { pickBy } from "lodash-es";
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAdminClient } from "../admin-client";
 import { EventsBanners } from "../Banners";
 import DropdownPanel from "../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { toEventHookLogs } from "./hooks/routes";
 import { toUser } from "../user/routes/User";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import useLocaleSort from "../utils/useLocaleSort";
@@ -119,6 +121,7 @@ type UserEventsProps = {
 
 export const UserEvents = ({ user, client }: UserEventsProps) => {
   const { adminClient } = useAdminClient();
+  const navigate = useNavigate();
 
   const { t } = useTranslation();
   const localeSort = useLocaleSort();
@@ -459,6 +462,26 @@ export const UserEvents = ({ user, client }: UserEventsProps) => {
         isPaginated
         ariaLabelKey="titleEvents"
         toolbarItem={userEventSearchFormDisplay()}
+        actions={
+          [
+            {
+              title: t("eventHookOpenLogsAction"),
+              onRowClick: (event: EventRepresentation) => {
+                if (!event.id) {
+                  return;
+                }
+
+                navigate(
+                  toEventHookLogs({
+                    realm,
+                    sourceType: "USER",
+                    search: event.id,
+                  }),
+                );
+              },
+            },
+          ] as Action<EventRepresentation>[]
+        }
         columns={[
           {
             name: "time",

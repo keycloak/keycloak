@@ -20,6 +20,7 @@ import org.keycloak.provider.ProviderConfigProperty;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 public class HttpEventHookTargetProviderFactoryTest {
 
@@ -93,11 +94,13 @@ public class HttpEventHookTargetProviderFactoryTest {
     public void shouldRedactConfiguredSecrets() {
         Map<String, Object> redacted = factory.redactConfig(Map.of(
                 "url", "https://example.org/hooks/keycloak",
-                "hmacSecret", "super-secret"
+                "hmacSecret", "super-secret",
+                EventHookAutoDisableSupport.LEGACY_AUTO_DISABLED_UNTIL, 1234L
         ));
 
         assertEquals(EventHookTargetProviderFactory.REDACTED_SECRET_VALUE, redacted.get("hmacSecret"));
         assertEquals("https://example.org/hooks/keycloak", redacted.get("url"));
+        assertEquals(null, redacted.get(EventHookAutoDisableSupport.LEGACY_AUTO_DISABLED_UNTIL));
     }
 
     @Test
@@ -168,6 +171,23 @@ public class HttpEventHookTargetProviderFactoryTest {
         } finally {
             server.stop(0);
         }
+    }
+
+    @Test
+    public void shouldCreateTestMessagesWithDatabaseSafeIdLength() throws Exception {
+        EventHookTargetModel target = new EventHookTargetModel();
+        target.setId("target-1");
+        target.setType(HttpEventHookTargetProviderFactory.ID);
+        target.setSettings(Map.of(
+                "url", "https://example.org/hooks/keycloak",
+                "method", "POST"
+        ));
+
+        EventHookMessageModel message = factory.createTestMessages(null, realm("realm-1", "demo"), target).get(0);
+
+        assertNotNull(message.getId());
+        assertEquals(36, message.getId().length());
+        assertTrue(message.isTest());
     }
 
     private RealmModel realm(String realmId, String realmName) {

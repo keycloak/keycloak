@@ -37,6 +37,9 @@ public class EventHookMessageEntity {
     @Column(name = "TARGET_ID", length = 36, nullable = false)
     private String targetId;
 
+    @Column(name = "EXECUTION_ID", length = 36)
+    private String executionId;
+
     @Column(name = "SOURCE_TYPE", length = 16, nullable = false)
     private String sourceType;
 
@@ -56,20 +59,23 @@ public class EventHookMessageEntity {
     @Column(name = "NEXT_ATTEMPT_AT", nullable = false)
     private long nextAttemptAt;
 
+    @Column(name = "EXECUTION_STARTED_AT")
+    private Long executionStartedAt;
+
     @Column(name = "CREATED_AT", nullable = false)
     private long createdAt;
 
     @Column(name = "UPDATED_AT", nullable = false)
     private long updatedAt;
 
-    @Column(name = "CLAIM_OWNER", length = 255)
-    private String claimOwner;
-
-    @Column(name = "CLAIMED_AT")
-    private Long claimedAt;
-
     @Column(name = "LAST_ERROR", length = 2048)
     private String lastError;
+
+    @Column(name = "EXECUTION_BATCH", nullable = false)
+    private boolean executionBatch;
+
+    @Column(name = "IS_TEST", nullable = false)
+    private boolean test;
 
     public String getId() {
         return id;
@@ -93,6 +99,14 @@ public class EventHookMessageEntity {
 
     public void setTargetId(String targetId) {
         this.targetId = targetId;
+    }
+
+    public String getExecutionId() {
+        return executionId;
+    }
+
+    public void setExecutionId(String executionId) {
+        this.executionId = executionId;
     }
 
     public String getSourceType() {
@@ -143,6 +157,14 @@ public class EventHookMessageEntity {
         this.nextAttemptAt = nextAttemptAt;
     }
 
+    public Long getExecutionStartedAt() {
+        return executionStartedAt;
+    }
+
+    public void setExecutionStartedAt(Long executionStartedAt) {
+        this.executionStartedAt = executionStartedAt;
+    }
+
     public long getCreatedAt() {
         return createdAt;
     }
@@ -159,27 +181,27 @@ public class EventHookMessageEntity {
         this.updatedAt = updatedAt;
     }
 
-    public String getClaimOwner() {
-        return claimOwner;
-    }
-
-    public void setClaimOwner(String claimOwner) {
-        this.claimOwner = claimOwner;
-    }
-
-    public Long getClaimedAt() {
-        return claimedAt;
-    }
-
-    public void setClaimedAt(Long claimedAt) {
-        this.claimedAt = claimedAt;
-    }
-
     public String getLastError() {
         return lastError;
     }
 
     public void setLastError(String lastError) {
         this.lastError = lastError;
+    }
+
+    public boolean isExecutionBatch() {
+        return executionBatch;
+    }
+
+    public void setExecutionBatch(boolean executionBatch) {
+        this.executionBatch = executionBatch;
+    }
+
+    public boolean isTest() {
+        return test;
+    }
+
+    public void setTest(boolean test) {
+        this.test = test;
     }
 }

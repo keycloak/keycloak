@@ -13,6 +13,7 @@ export const MultiValuedStringComponent = ({
   label,
   defaultValue,
   helpText,
+  options,
   stringify,
   required,
   isDisabled = false,
@@ -37,6 +38,7 @@ export const MultiValuedStringComponent = ({
         addButtonLabel={t("addMultivaluedLabel", {
           fieldLabel: t(label!).toLowerCase(),
         })}
+        options={options}
         stringify={stringify}
       />
     </FormGroup>

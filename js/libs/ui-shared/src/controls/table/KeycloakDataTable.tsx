@@ -73,6 +73,9 @@ type DataTableProps<T> = {
   isRadio?: boolean;
 };
 
+const getExpandableRowKey = <T,>(row: Row<T>, index: number) =>
+  String(get(row.data, "id") ?? `row-${index}`);
+
 type CellRendererProps = {
   row: IRow;
   index?: number;
@@ -126,7 +129,19 @@ function DataTable<T>({
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<T[]>(selected || []);
-  const [expandedRows, setExpandedRows] = useState<boolean[]>([]);
+  const [expandedRowIds, setExpandedRowIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const rowIds = (rows as Row<T>[])
+      .filter((_, index) => !onCollapse || index % 2 === 0)
+      .map((row, index) =>
+        getExpandableRowKey(row, onCollapse ? index * 2 : index),
+      );
+
+    setExpandedRowIds((current) =>
+      current.filter((rowId) => rowIds.includes(rowId)),
+    );
+  }, [rows, onCollapse]);
 
   const rowsSelectedOnPage = useMemo(
     () =>
@@ -223,7 +238,7 @@ function DataTable<T>({
       {!onCollapse ? (
         <Tbody>
           {(rows as IRow[]).map((row, index) => (
-            <Tr key={index} isExpanded={expandedRows[index]}>
+            <Tr key={getExpandableRowKey(row as Row<T>, index)}>
               {canSelect && (
                 <Td
                   select={{
@@ -250,7 +265,13 @@ function DataTable<T>({
         </Tbody>
       ) : (
         (rows as IRow[]).map((row, index) => (
-          <Tbody key={index}>
+          <Tbody
+            key={
+              index % 2 === 0
+                ? getExpandableRowKey(row as Row<T>, index)
+                : `${getExpandableRowKey(rows[index - 1] as Row<T>, index - 1)}-detail`
+            }
+          >
             {index % 2 === 0 ? (
               <Tr>
                 <Td
@@ -258,14 +279,22 @@ function DataTable<T>({
                     rows[index + 1].cells.length === 0
                       ? undefined
                       : {
-                          isExpanded: expandedRows[index] ?? false,
+                          isExpanded: expandedRowIds.includes(
+                            getExpandableRowKey(row as Row<T>, index),
+                          ),
                           rowIndex: index,
                           expandId: "expandable-row-",
                           onToggle: (_, rowIndex, isOpen) => {
                             onCollapse(isOpen, rowIndex);
-                            const expand = [...expandedRows];
-                            expand[index] = isOpen;
-                            setExpandedRows(expand);
+                            const rowId = getExpandableRowKey(
+                              row as Row<T>,
+                              index,
+                            );
+                            setExpandedRowIds((current) =>
+                              isOpen
+                                ? [...new Set([...current, rowId])]
+                                : current.filter((value) => value !== rowId),
+                            );
                           },
                         }
                   }
@@ -278,7 +307,11 @@ function DataTable<T>({
                 />
               </Tr>
             ) : (
-              <Tr isExpanded={expandedRows[index - 1] ?? false}>
+              <Tr
+                isExpanded={expandedRowIds.includes(
+                  getExpandableRowKey(rows[index - 1] as Row<T>, index - 1),
+                )}
+              >
                 <Td />
                 <Td colSpan={columns.length}>
                   <ExpandableRowContent>
@@ -341,6 +374,8 @@ export type DataListProps<T> = Omit<
   isNotCompact?: boolean;
   isRadio?: boolean;
   isSearching?: boolean;
+  refreshKey?: number | string;
+  onRefresh?: () => void;
 };
 
 /**
@@ -386,6 +421,8 @@ export function KeycloakDataTable<T>({
   emptyState,
   icon,
   isSearching = false,
+  refreshKey,
+  onRefresh,
   ...props
 }: DataListProps<T>) {
   const { t } = useTranslation();
@@ -407,6 +444,7 @@ export function KeycloakDataTable<T>({
 
   const [key, setKey] = useState(0);
   const prevKey = useRef<number>();
+  const prevRefreshKey = useRef<number | string | undefined>();
   const refresh = () => setKey(key + 1);
   const id = useId();
 
@@ -493,19 +531,21 @@ export function KeycloakDataTable<T>({
     async () => {
       setLoading(true);
       const newSearch = prevSearch.current === "" && search !== "";
+      const externalRefresh = refreshKey !== prevRefreshKey.current;
 
       if (newSearch) {
         setFirst(0);
       }
       prevSearch.current = search;
       return typeof loader === "function"
-        ? key === prevKey.current && unPaginatedData
+        ? key === prevKey.current && !externalRefresh && unPaginatedData
           ? unPaginatedData
           : await loader(newSearch ? 0 : first, max + 1, search)
         : loader;
     },
     (data) => {
       prevKey.current = key;
+      prevRefreshKey.current = refreshKey;
       if (!isPaginated) {
         setUnPaginatedData(data);
         if (data.length > first) {
@@ -521,6 +561,7 @@ export function KeycloakDataTable<T>({
     },
     [
       key,
+      refreshKey,
       first,
       max,
       search,
@@ -583,7 +624,11 @@ export function KeycloakDataTable<T>({
             <>
               {toolbarItem} <ToolbarItem variant="separator" />{" "}
               <ToolbarItem>
-                <Button variant="link" onClick={refresh} data-testid="refresh">
+                <Button
+                  variant="link"
+                  onClick={() => (onRefresh ? onRefresh() : refresh())}
+                  data-testid="refresh"
+                >
                   <SyncAltIcon /> {t("refresh")}
                 </Button>
               </ToolbarItem>

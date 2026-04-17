@@ -31,7 +31,7 @@ public class JpaEventHookStoreProviderFactory implements EventHookStoreProviderF
     @Override
     public EventHookStoreProvider create(KeycloakSession session) {
         JpaConnectionProvider connection = session.getProvider(JpaConnectionProvider.class);
-        return new JpaEventHookStoreProvider(connection.getEntityManager());
+        return new JpaEventHookStoreProvider(session, connection.getEntityManager());
     }
 
     @Override

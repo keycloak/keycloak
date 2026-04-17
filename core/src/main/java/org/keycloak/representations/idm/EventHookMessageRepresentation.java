@@ -21,16 +21,21 @@ public class EventHookMessageRepresentation {
 
     private String id;
     private String targetId;
+    private String executionId;
     private String sourceType;
     private String sourceEventId;
+    private String sourceEventName;
+    private String userId;
+    private String resourcePath;
+    private Boolean executionBatch;
     private String status;
     private Integer attemptCount;
     private Long nextAttemptAt;
+    private Long executionStartedAt;
     private Long createdAt;
     private Long updatedAt;
-    private String claimOwner;
-    private Long claimedAt;
     private String lastError;
+    private Boolean test;
     private Object payload;
 
     public String getId() {
@@ -49,6 +54,14 @@ public class EventHookMessageRepresentation {
         this.targetId = targetId;
     }
 
+    public String getExecutionId() {
+        return executionId;
+    }
+
+    public void setExecutionId(String executionId) {
+        this.executionId = executionId;
+    }
+
     public String getSourceType() {
         return sourceType;
     }
@@ -63,6 +76,38 @@ public class EventHookMessageRepresentation {
 
     public void setSourceEventId(String sourceEventId) {
         this.sourceEventId = sourceEventId;
+    }
+
+    public String getSourceEventName() {
+        return sourceEventName;
+    }
+
+    public void setSourceEventName(String sourceEventName) {
+        this.sourceEventName = sourceEventName;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getResourcePath() {
+        return resourcePath;
+    }
+
+    public void setResourcePath(String resourcePath) {
+        this.resourcePath = resourcePath;
+    }
+
+    public Boolean getExecutionBatch() {
+        return executionBatch;
+    }
+
+    public void setExecutionBatch(Boolean executionBatch) {
+        this.executionBatch = executionBatch;
     }
 
     public String getStatus() {
@@ -89,6 +134,14 @@ public class EventHookMessageRepresentation {
         this.nextAttemptAt = nextAttemptAt;
     }
 
+    public Long getExecutionStartedAt() {
+        return executionStartedAt;
+    }
+
+    public void setExecutionStartedAt(Long executionStartedAt) {
+        this.executionStartedAt = executionStartedAt;
+    }
+
     public Long getCreatedAt() {
         return createdAt;
     }
@@ -105,28 +158,20 @@ public class EventHookMessageRepresentation {
         this.updatedAt = updatedAt;
     }
 
-    public String getClaimOwner() {
-        return claimOwner;
-    }
-
-    public void setClaimOwner(String claimOwner) {
-        this.claimOwner = claimOwner;
-    }
-
-    public Long getClaimedAt() {
-        return claimedAt;
-    }
-
-    public void setClaimedAt(Long claimedAt) {
-        this.claimedAt = claimedAt;
-    }
-
     public String getLastError() {
         return lastError;
     }
 
     public void setLastError(String lastError) {
         this.lastError = lastError;
+    }
+
+    public Boolean getTest() {
+        return test;
+    }
+
+    public void setTest(Boolean test) {
+        this.test = test;
     }
 
     public Object getPayload() {

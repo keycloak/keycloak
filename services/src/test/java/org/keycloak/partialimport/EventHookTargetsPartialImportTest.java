@@ -216,18 +216,18 @@ public class EventHookTargetsPartialImportTest {
         }
 
         @Override
-        public List<org.keycloak.events.hooks.EventHookMessageModel> claimAvailableMessages(int maxResults, long now, long staleClaimBefore, String claimOwner) {
+        public List<org.keycloak.events.hooks.EventHookMessageModel> reserveAvailableMessages(int maxResults, long now, long executionTimeoutMillis) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public List<org.keycloak.events.hooks.EventHookMessageModel> claimAvailableMessagesForTarget(String realmId, String targetId,
-                int maxResults, long now, long staleClaimBefore, String claimOwner) {
+        public List<org.keycloak.events.hooks.EventHookMessageModel> reserveAvailableMessagesForTarget(String realmId, String targetId,
+                int maxResults, long now, long executionTimeoutMillis, String executionId) {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public boolean hasAvailableMessages(String realmId, String targetId, long now, long staleClaimBefore) {
+        public boolean hasAvailableMessages(String realmId, String targetId, long now) {
             throw new UnsupportedOperationException();
         }
 

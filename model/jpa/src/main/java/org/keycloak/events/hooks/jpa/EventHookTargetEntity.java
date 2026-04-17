@@ -49,6 +49,15 @@ public class EventHookTargetEntity {
     @Column(name = "UPDATED_AT", nullable = false)
     private long updatedAt;
 
+    @Column(name = "AUTO_DISABLED_UNTIL")
+    private Long autoDisabledUntil;
+
+    @Column(name = "AUTO_DISABLED_REASON", length = 255)
+    private String autoDisabledReason;
+
+    @Column(name = "CONSECUTIVE_429_COUNT")
+    private Integer consecutive429Count;
+
     @Lob
     @Column(name = "SETTINGS_JSON")
     private String settingsJson;
@@ -107,6 +116,30 @@ public class EventHookTargetEntity {
 
     public void setUpdatedAt(long updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Long getAutoDisabledUntil() {
+        return autoDisabledUntil;
+    }
+
+    public void setAutoDisabledUntil(Long autoDisabledUntil) {
+        this.autoDisabledUntil = autoDisabledUntil;
+    }
+
+    public String getAutoDisabledReason() {
+        return autoDisabledReason;
+    }
+
+    public void setAutoDisabledReason(String autoDisabledReason) {
+        this.autoDisabledReason = autoDisabledReason;
+    }
+
+    public Integer getConsecutive429Count() {
+        return consecutive429Count;
+    }
+
+    public void setConsecutive429Count(Integer consecutive429Count) {
+        this.consecutive429Count = consecutive429Count;
     }
 
     public String getSettingsJson() {

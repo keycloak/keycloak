@@ -19,7 +19,7 @@ package org.keycloak.events.hooks;
 
 public enum EventHookMessageStatus {
     PENDING,
-    CLAIMED,
+    EXECUTING,
     WAITING,
     SUCCESS,
     FAILED,

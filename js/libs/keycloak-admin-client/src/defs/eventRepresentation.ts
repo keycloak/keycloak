@@ -4,6 +4,7 @@
 import type EventType from "./eventTypes.js";
 
 export default interface EventRepresentation {
+  id?: string;
   clientId?: string;
   details?: Record<string, any>;
   error?: string;

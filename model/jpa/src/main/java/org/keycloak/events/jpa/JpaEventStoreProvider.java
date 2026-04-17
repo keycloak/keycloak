@@ -278,6 +278,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
                 .setParameter("realmId", realm.getId())
                 .setParameter("sourceType", EventHookSourceType.USER.name())
                 .executeUpdate();
+        deleteOrphanedEventHookLogs();
     }
 
     private void deleteEventHookMessagesForUserEvents(RealmModel realm, long olderThan) {
@@ -287,6 +288,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
                 .setParameter("sourceType", EventHookSourceType.USER.name())
                 .setParameter("time", olderThan)
                 .executeUpdate();
+        deleteOrphanedEventHookLogs();
     }
 
     private void deleteEventHookMessagesForAllAdminEvents() {
@@ -298,6 +300,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
                 .setParameter("realmId", realm.getId())
                 .setParameter("sourceType", EventHookSourceType.ADMIN.name())
                 .executeUpdate();
+        deleteOrphanedEventHookLogs();
     }
 
     private void deleteEventHookMessagesForAdminEvents(RealmModel realm, long olderThan) {
@@ -307,6 +310,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
                 .setParameter("sourceType", EventHookSourceType.ADMIN.name())
                 .setParameter("time", olderThan)
                 .executeUpdate();
+        deleteOrphanedEventHookLogs();
     }
 
     private void deleteExpiredEventHookMessages(List<String> realmIds, long eventTime, EventHookSourceType sourceType) {
@@ -321,11 +325,18 @@ public class JpaEventStoreProvider implements EventStoreProvider {
                 .setParameter("sourceType", sourceType.name())
                 .setParameter("eventTime", eventTime)
                 .executeUpdate();
+        deleteOrphanedEventHookLogs();
     }
 
     private void deleteEventHookMessagesBySourceType(EventHookSourceType sourceType) {
         em.createQuery("delete from EventHookMessageEntity where sourceType = :sourceType")
                 .setParameter("sourceType", sourceType.name())
+                .executeUpdate();
+        deleteOrphanedEventHookLogs();
+    }
+
+    private void deleteOrphanedEventHookLogs() {
+        em.createQuery("delete from EventHookLogEntity log where not exists (select 1 from EventHookMessageEntity message where message.executionId = log.executionId)")
                 .executeUpdate();
     }
 

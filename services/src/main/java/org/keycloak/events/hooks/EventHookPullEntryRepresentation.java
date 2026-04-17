@@ -31,6 +31,7 @@ public class EventHookPullEntryRepresentation {
     private Long durationMs;
     private String details;
     private Long createdAt;
+    private Boolean test;
     private Object data;
 
     public String getLogId() {
@@ -127,6 +128,14 @@ public class EventHookPullEntryRepresentation {
 
     public void setCreatedAt(Long createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Boolean getTest() {
+        return test;
+    }
+
+    public void setTest(Boolean test) {
+        this.test = test;
     }
 
     public Object getData() {

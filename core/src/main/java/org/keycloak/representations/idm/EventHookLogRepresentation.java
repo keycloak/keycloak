@@ -21,12 +21,6 @@ public class EventHookLogRepresentation {
 
     private String id;
     private String executionId;
-    private Boolean batchExecution;
-    private String messageId;
-    private String targetId;
-    private String sourceType;
-    private String sourceEventId;
-    private String sourceEventName;
     private String status;
     private String messageStatus;
     private Integer attemptNumber;
@@ -34,6 +28,7 @@ public class EventHookLogRepresentation {
     private Long durationMs;
     private String details;
     private Long createdAt;
+    private Boolean test;
 
     public String getId() {
         return id;
@@ -49,54 +44,6 @@ public class EventHookLogRepresentation {
 
     public void setExecutionId(String executionId) {
         this.executionId = executionId;
-    }
-
-    public Boolean getBatchExecution() {
-        return batchExecution;
-    }
-
-    public void setBatchExecution(Boolean batchExecution) {
-        this.batchExecution = batchExecution;
-    }
-
-    public String getMessageId() {
-        return messageId;
-    }
-
-    public void setMessageId(String messageId) {
-        this.messageId = messageId;
-    }
-
-    public String getTargetId() {
-        return targetId;
-    }
-
-    public void setTargetId(String targetId) {
-        this.targetId = targetId;
-    }
-
-    public String getSourceType() {
-        return sourceType;
-    }
-
-    public void setSourceType(String sourceType) {
-        this.sourceType = sourceType;
-    }
-
-    public String getSourceEventId() {
-        return sourceEventId;
-    }
-
-    public void setSourceEventId(String sourceEventId) {
-        this.sourceEventId = sourceEventId;
-    }
-
-    public String getSourceEventName() {
-        return sourceEventName;
-    }
-
-    public void setSourceEventName(String sourceEventName) {
-        this.sourceEventName = sourceEventName;
     }
 
     public String getStatus() {
@@ -153,5 +100,13 @@ public class EventHookLogRepresentation {
 
     public void setCreatedAt(Long createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Boolean getTest() {
+        return test;
+    }
+
+    public void setTest(Boolean test) {
+        this.test = test;
     }
 }
