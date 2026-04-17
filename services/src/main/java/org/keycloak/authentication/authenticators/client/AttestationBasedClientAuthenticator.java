@@ -18,6 +18,7 @@
 package org.keycloak.authentication.authenticators.client;
 
 
+import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +35,14 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.exceptions.TokenSignatureInvalidException;
 import org.keycloak.exceptions.TokenVerificationException;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticatorConfigModel;
@@ -290,33 +296,45 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
     // Private ---------------------------------------------------------------------------------------------------------
 
-    private PublicKey findAttesterPublicKey(ClientAuthenticationFlowContext context, String kid) {
+    private KeyWrapper findAttesterKey(ClientAuthenticationFlowContext context, String kid) {
 
         if (Strings.isEmpty(kid))
             throw new IllegalArgumentException("Invalid attester kid: " + kid);
 
-        String configAlias = OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS;
-        AuthenticatorConfigModel configModel = context.getRealm().getAuthenticatorConfigByAlias(configAlias);
-        String configValue = Optional.ofNullable(configModel)
-                .map(AuthenticatorConfigModel::getConfig)
-                .orElse(Map.of())
-                .get(configAlias);
+        AuthenticatorConfigModel configModel = context.getRealm().getAuthenticatorConfigByAlias(PROVIDER_ID);
+        if (configModel == null)
+            throw new IllegalStateException("No config for client authenticator: " + PROVIDER_ID);
+
+        String configValue = Optional.ofNullable(configModel.getConfig()).orElse(Map.of())
+                .get(OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS);
         if (configValue == null)
-            throw new IllegalStateException("Cannot load ABCA config from: " + configAlias);
+            throw new IllegalStateException("Cannot load attester keys: " + OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS);
 
         ABCAConfig attesterKeys = JsonSerialization.valueFromString(configValue, ABCAConfig.class);
-        PublicKey foundKey = attesterKeys.getKeys().stream()
+        JWK jwk = attesterKeys.getKeys().stream()
                 .filter(k -> kid.equals(k.getKeyId()))
-                .map(k -> new JWKParser(k).toPublicKey())
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("No matching key found for kid: " + kid));
-        return foundKey;
+
+        return toPublicKeyWrapper(jwk);
+    }
+
+    private KeyWrapper toPublicKeyWrapper(JWK jwk) {
+        PublicKey publicKey = new JWKParser(jwk).toPublicKey();
+        KeyWrapper kw = new KeyWrapper();
+        kw.setPublicKey(publicKey);
+        kw.setUse(KeyUse.SIG);
+        kw.setType(jwk.getKeyType());
+        kw.setAlgorithm(jwk.getAlgorithm());
+        return kw;
     }
 
     // Validate the Client Attestation JWT
     // https://www.ietf.org/archive/id/draft-ietf-oauth-attestation-based-client-auth-07.html#section-5.1
     private ClientAttestationJwt validateClientAttestationJwt(ClientAuthenticationFlowContext context) throws Exception {
-        RealmModel realmModel = context.getSession().getContext().getRealm();
+
+        KeycloakSession session = context.getSession();
+        RealmModel realmModel = session.getContext().getRealm();
 
         HttpHeaders headers = context.getHttpRequest().getHttpHeaders();
         String headerValue = Optional.ofNullable(headers.getHeaderString(OAUTH_CLIENT_ATTESTATION_HEADER))
@@ -330,10 +348,10 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
             throw new IllegalArgumentException("The JWS type MUST be " + OAUTH_CLIENT_ATTESTATION_JWT_TYPE + " instead of " + jwsType);
 
         // Get the client model from the JWT subject
-        ClientAttestationJwt attesterJwt = jws.readJsonContent(ClientAttestationJwt.class);
-        ClientModel clientModel = Optional.ofNullable(attesterJwt.getSubject())
+        ClientAttestationJwt attestationJwt = jws.readJsonContent(ClientAttestationJwt.class);
+        ClientModel clientModel = Optional.ofNullable(attestationJwt.getSubject())
                 .map(realmModel::getClientByClientId)
-                .orElseThrow(() -> new TokenVerificationException(attesterJwt, "The sub (subject) claim MUST identify a known client_id"));
+                .orElseThrow(() -> new TokenVerificationException(attestationJwt, "The sub (subject) claim MUST identify a known client_id"));
 
         // Set the target client in the context before we attempt signature verification
         context.setClient(clientModel);
@@ -363,24 +381,37 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         // The signature of the Client Attestation JWT verifies with the public key of a known and trusted Attester
         //
-        PublicKey publicKey = findAttesterPublicKey(context, jws.getHeader().getKeyId());
+        KeyWrapper attesterKey = findAttesterKey(context, jws.getHeader().getKeyId());
 
-        // Verification and Processing
+        // Client Attestation JWT verification without signature check
         //
-        TokenVerifier.create(headerValue, ClientAttestationJwt.class)
-                .publicKey(publicKey)
+        TokenVerifier.createWithoutSignature(attestationJwt)
                 .withChecks(subCheck, issCheck, cnfCheck, TokenVerifier.IS_ACTIVE)
-                .verify().getToken();
+                .verify();
+
+        // Client Attestation JWT signature check
+        //
+        Algorithm algorithm = jws.getHeader().getAlgorithm();
+        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm.name());
+        if (signatureProvider == null) {
+            throw new TokenVerificationException(attestationJwt, "Signature provider not found for algorithm: " + algorithm);
+        }
+        byte[] data = jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8);
+        if (!signatureProvider.verifier(attesterKey).verify(data, jws.getSignature())) {
+            throw new TokenSignatureInvalidException(attestationJwt, "Invalid token signature");
+        }
 
         // [TODO] The alg JOSE Header Parameter for both JWTs indicates a registered asymmetric digital signature algorithm
         // [TODO] The key contained in the cnf claim of the Client Attestation JWT is not a private key
 
-        return attesterJwt;
+        return attestationJwt;
     }
 
     // Validate the Client Attestation PoP JWT
     // https://www.ietf.org/archive/id/draft-ietf-oauth-attestation-based-client-auth-07.html#section-5.2
-    private void validateClientAttestationPoPJwt(ClientAuthenticationFlowContext context, ClientAttestationJwt attesterJwt) throws Exception {
+    private ClientAttestationPoPJwt validateClientAttestationPoPJwt(ClientAuthenticationFlowContext context, ClientAttestationJwt attesterJwt) throws Exception {
+
+        KeycloakSession session = context.getSession();
 
         HttpHeaders headers = context.getHttpRequest().getHttpHeaders();
         String headerValue = Optional.ofNullable(headers.getHeaderString(OAUTH_CLIENT_ATTESTATION_POP_HEADER))
@@ -390,6 +421,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         String jwsType = jws.getHeader().getType();
         if (!OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE.equals(jwsType))
             throw new IllegalArgumentException("The JWS type MUST be " + OAUTH_CLIENT_ATTESTATION_POP_JWT_TYPE + " instead of " + jwsType);
+
+        ClientAttestationPoPJwt attestationPoPJwt = jws.readJsonContent(ClientAttestationPoPJwt.class);
 
         // Define a few Client Attestation JWT checks
         //
@@ -421,17 +454,25 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
         // The public key used to verify the ClientAttestationPoP JWT MUST be the key located in the "cnf" claim of the corresponding ClientAttestation JWT
         //
         JWK jwk = attesterJwt.getConfirmation().getJwk();
-        PublicKey publicKey = JWKParser.create()
-                .parse(JsonSerialization.valueAsString(jwk))
-                .toPublicKey();
+        KeyWrapper clientKey = toPublicKeyWrapper(jwk);
 
-        // Verification and Processing
+        // Client Attestation PoP JWT verification without signature check
         //
-        TokenVerifier.create(headerValue, ClientAttestationPoPJwt.class)
-                .publicKey(publicKey)
+        TokenVerifier.createWithoutSignature(attestationPoPJwt)
                 .withChecks(jtiCheck, iatCheck, issCheck, audCheck)
-                .verify().getToken();
+                .verify();
 
+        // Client Attestation PoP JWT signature check
+        //
+        Algorithm algorithm = jws.getHeader().getAlgorithm();
+        SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm.name());
+        if (signatureProvider == null) {
+            throw new TokenVerificationException(attestationPoPJwt, "Signature provider not found for algorithm: " + algorithm);
+        }
+        byte[] data = jws.getEncodedSignatureInput().getBytes(StandardCharsets.UTF_8);
+        if (!signatureProvider.verifier(clientKey).verify(data, jws.getSignature())) {
+            throw new TokenSignatureInvalidException(attestationPoPJwt, "Invalid token signature");
+        }
 
         // [TODO] The aud (audience) claim MUST specify a value that identifies the authorization server as an intended audience
         // [TODO] The authorization server can utilize the jti value for replay attack detection
@@ -439,6 +480,8 @@ public class AttestationBasedClientAuthenticator extends AbstractClientAuthentic
 
         // [TODO] If the server provided a challenge value to the client, the challenge claim is present in the Client Attestation PoP JWT and matches the server-provided challenge value.
         // [TODO] Additional checks to guarantee replay protection for the Client Attestation PoP JWT might need to be applied
+
+        return attestationPoPJwt;
     }
 
     // Error Message specifically related to the use of client attestations

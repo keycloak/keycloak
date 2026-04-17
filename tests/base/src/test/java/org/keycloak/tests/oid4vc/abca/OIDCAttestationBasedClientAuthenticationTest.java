@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.keycloak.TokenVerifier;
+import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ABCAConfig;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationJwt;
 import org.keycloak.authentication.authenticators.client.AttestationBasedClientAuthenticator.ClientAttestationPoPJwt;
@@ -38,6 +39,7 @@ import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.tests.oid4vc.OID4VCIssuerTestBase;
 import org.keycloak.tests.oid4vc.OID4VCTestContext;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
+import org.keycloak.testsuite.util.oauth.AuthorizationEndpointResponse;
 import org.keycloak.testsuite.util.oauth.PkceGenerator;
 import org.keycloak.util.JsonSerialization;
 
@@ -52,6 +54,7 @@ import static org.keycloak.tests.oid4vc.OID4VCProofTestUtils.createRsaKeyPair;
 import static org.keycloak.tests.oid4vc.OID4VCTestContext.CLIENT_ATTESTER_ATTACHMENT_KEY;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
@@ -80,7 +83,7 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
         runOnServer.run(session -> {
             RealmModel realm = session.getContext().getRealm();
             AuthenticatorConfigModel configModel = new AuthenticatorConfigModel();
-            configModel.setAlias(OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS);
+            configModel.setAlias(AttestationBasedClientAuthenticator.PROVIDER_ID);
             configModel.setConfig(Map.of(OAUTH_CLIENT_ATTESTATION_CONFIG_ATTESTER_JWKS, abcaConfigValue));
             realm.addAuthenticatorConfig(configModel);
         });
@@ -129,7 +132,7 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
     }
 
     @Test
-    public void testClientAttestationHappyFlow() {
+    public void testClientAttestationHappyFlow_PublicClient() {
 
         var key = wallet.getRSAKeyPair(ctx);
         String attestationJwt = wallet.buildClientAttestationJWT(ctx, key.getPublicKey());
@@ -137,11 +140,12 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
 
         PkceGenerator pkce = PkceGenerator.s256();
 
-        String authCode = wallet.authorizationRequest()
+        AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
                 .scope(ctx.getScope())
                 .codeChallenge(pkce)
-                .send(ctx.getHolder(), TEST_PASSWORD)
-                .getCode();
+                .send(ctx.getHolder(), TEST_PASSWORD);
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No auth code");
 
         AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
                 .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
@@ -149,6 +153,7 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
                 .codeVerifier(pkce)
                 .send();
         String accessToken = tokenResponse.getAccessToken();
+        assertNotNull(authCode, "No accessToken");
 
         String credIdentifier = ctx.getAuthorizedCredentialIdentifier();
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
@@ -157,6 +162,38 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
                 .send().getCredentialResponse();
 
         assertFalse(credResponse.getCredentials().isEmpty(), "No credential");
+    }
 
+    @Test
+    public void testClientAttestationHappyFlow_ConfidentialClient() {
+
+        ctx = new OID4VCTestContext(client, sdJwtTypeCredentialScope);
+        ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
+        oauth.client(ctx.getClient().getClientId(), ctx.getClient().getSecret());
+
+        var key = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, key.getPublicKey());
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, key);
+
+        AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
+                .scope(ctx.getScope())
+                .send(ctx.getHolder(), TEST_PASSWORD);
+        String authCode = authResponse.getCode();
+        assertNotNull(authCode, "No auth code");
+
+        AccessTokenResponse tokenResponse = wallet.accessTokenRequest(ctx, authCode)
+                .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
+                .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
+                .send();
+        String accessToken = tokenResponse.getAccessToken();
+        assertNotNull(authCode, "No accessToken");
+
+        String credIdentifier = ctx.getAuthorizedCredentialIdentifier();
+        CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
+                .credentialIdentifier(credIdentifier)
+                .proofs(wallet.generateJwtProof(ctx))
+                .send().getCredentialResponse();
+
+        assertFalse(credResponse.getCredentials().isEmpty(), "No credential");
     }
 }
