@@ -8,6 +8,7 @@ import {
     Button,
     ButtonVariant,
     ClipboardCopy,
+    Divider,
     Form,
     FormGroup,
     Grid,
@@ -109,6 +110,7 @@ export const EventHookTargetDialog = ({
     const pullSecret = watch("config.pullSecret");
     const supportsBatch = Boolean(selectedProvider?.supportsBatch);
     const supportsRetry = selectedProvider?.supportsRetry !== false;
+    const supportsAggregation = Boolean(selectedProvider?.supportsAggregation);
     const isHttpTarget = selectedProvider?.id === "http";
     const isPullTarget = selectedProvider?.id === "pull";
     const isBulkDelivery = deliveryMode === "BULK";
@@ -142,8 +144,12 @@ export const EventHookTargetDialog = ({
         if (!supportsBatch) {
             delete settings.deliveryMode;
             delete settings.maxEventsPerBatch;
+            delete settings.aggregationTimeoutMs;
         } else if (config?.deliveryMode !== "BULK") {
             delete settings.maxEventsPerBatch;
+            delete settings.aggregationTimeoutMs;
+        } else if (!supportsAggregation) {
+            delete settings.aggregationTimeoutMs;
         }
 
         if (!supportsRetry) {
@@ -391,7 +397,7 @@ export const EventHookTargetDialog = ({
         );
     };
 
-    const renderDeliveryConfig = () => {
+    const renderBatchConfig = () => {
         if (!supportsBatch) {
             return null;
         }
@@ -431,13 +437,37 @@ export const EventHookTargetDialog = ({
                     />
                 </FormGroup>
                 {isBulkDelivery && (
-                    <TextControl
-                        name="config.maxEventsPerBatch"
-                        label={t("eventHookTargetMaxEventsPerBatch")}
-                        helperText={t("eventHookTargetMaxEventsPerBatchHelp")}
-                        type="number"
-                        rules={{ required: t("required") }}
-                    />
+                    <>
+                        {supportsAggregation ? (
+                            <Grid hasGutter>
+                                <GridItem lg={6} sm={12}>
+                                    <TextControl
+                                        name="config.maxEventsPerBatch"
+                                        label={t("eventHookTargetMaxEventsPerBatch")}
+                                        helperText={t("eventHookTargetMaxEventsPerBatchHelp")}
+                                        type="number"
+                                        rules={{ required: t("required") }}
+                                    />
+                                </GridItem>
+                                <GridItem lg={6} sm={12}>
+                                    <TextControl
+                                        name="config.aggregationTimeoutMs"
+                                        label={t("eventHookTargetAggregationTimeoutMs")}
+                                        helperText={t("eventHookTargetAggregationTimeoutMsHelp")}
+                                        type="number"
+                                    />
+                                </GridItem>
+                            </Grid>
+                        ) : (
+                            <TextControl
+                                name="config.maxEventsPerBatch"
+                                label={t("eventHookTargetMaxEventsPerBatch")}
+                                helperText={t("eventHookTargetMaxEventsPerBatchHelp")}
+                                type="number"
+                                rules={{ required: t("required") }}
+                            />
+                        )}
+                    </>
                 )}
             </>
         );
@@ -487,6 +517,7 @@ export const EventHookTargetDialog = ({
                             autoFocus
                             rules={{ required: t("required") }}
                         />
+                        <DynamicComponents stringify properties={[eventFilterProperty]} />
                         <Grid hasGutter>
                             <GridItem lg={8} sm={12}>
                                 <FormGroup label={t("provider")} fieldId="event-hook-target-type">
@@ -550,41 +581,50 @@ export const EventHookTargetDialog = ({
                                 </FormGroup>
                             </GridItem>
                         </Grid>
-                        <DynamicComponents stringify properties={[eventFilterProperty]} />
-                        {renderDeliveryConfig()}
-                        {renderRetryConfig()}
-                        {isHttpTarget
-                            ? renderHttpConfig()
-                            : selectedProvider && (
-                                <DynamicComponents
-                                    stringify
-                                    properties={configMetadata}
-                                />
-                            )}
-                        {isPullTarget && !isPullSecretConfigured && (
-                            <Alert
-                                isInline
-                                variant="warning"
-                                title={t("eventHookTargetPullSecretWarningTitle")}
-                            >
-                                {t("eventHookTargetPullSecretWarning")}
-                            </Alert>
-                        )}
-                        {pullPreviewUrl && (
-                            <FormGroup
-                                label={t("eventHookTargetPullUrlPreview")}
-                                fieldId="event-hook-target-pull-url-preview"
-                                labelIcon={
-                                    <HelpItem
-                                        helpText={t("eventHookTargetPullUrlPreviewHelp")}
-                                        fieldLabelId="eventHookTargetPullUrlPreview"
-                                    />
-                                }
-                            >
-                                <ClipboardCopy id="event-hook-target-pull-url-preview" isReadOnly>
-                                    {pullPreviewUrl}
-                                </ClipboardCopy>
-                            </FormGroup>
+                        {selectedProvider && (
+                            <>
+                                {renderBatchConfig()}
+                                {renderRetryConfig()}
+                                <div className="pf-v5-u-mt-md pf-v5-u-mb-md">
+                                    <div className="pf-v5-u-font-size-sm pf-v5-u-color-200 pf-v5-u-mb-sm">
+                                        {t("eventHookTargetTypeOptions")}
+                                    </div>
+                                    <Divider />
+                                </div>
+                                {isHttpTarget
+                                    ? renderHttpConfig()
+                                    : (
+                                        <DynamicComponents
+                                            stringify
+                                            properties={configMetadata}
+                                        />
+                                    )}
+                                {isPullTarget && !isPullSecretConfigured && (
+                                    <Alert
+                                        isInline
+                                        variant="warning"
+                                        title={t("eventHookTargetPullSecretWarningTitle")}
+                                    >
+                                        {t("eventHookTargetPullSecretWarning")}
+                                    </Alert>
+                                )}
+                                {pullPreviewUrl && (
+                                    <FormGroup
+                                        label={t("eventHookTargetPullUrlPreview")}
+                                        fieldId="event-hook-target-pull-url-preview"
+                                        labelIcon={
+                                            <HelpItem
+                                                helpText={t("eventHookTargetPullUrlPreviewHelp")}
+                                                fieldLabelId="eventHookTargetPullUrlPreview"
+                                            />
+                                        }
+                                    >
+                                        <ClipboardCopy id="event-hook-target-pull-url-preview" isReadOnly>
+                                            {pullPreviewUrl}
+                                        </ClipboardCopy>
+                                    </FormGroup>
+                                )}
+                            </>
                         )}
                     </FormProvider>
                 </Form>

@@ -120,6 +120,11 @@ public class HttpEventHookTargetProviderFactory implements EventHookTargetProvid
     }
 
     @Override
+    public boolean supportsAggregation() {
+        return true;
+    }
+
+    @Override
     public String getDisplayInfo(EventHookTargetModel target) {
         String method = stringValue(target.getSettings(), "method", false);
         String url = stringValue(target.getSettings(), "url", false);

@@ -1,29 +1,40 @@
 import type EventHookLogRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventHookLogRepresentation";
 import type EventHookTargetRepresentation from "@keycloak/keycloak-admin-client/lib/defs/eventHookTargetRepresentation";
-import { Action, KeycloakDataTable, KeycloakSelect, ListEmptyState, useAlerts } from "@keycloak/keycloak-ui-shared";
 import {
+    Action,
+    KeycloakDataTable,
+    KeycloakSelect,
+    ListEmptyState,
+    TextControl,
+    useAlerts,
+} from "@keycloak/keycloak-ui-shared";
+import {
+    ActionGroup,
     AlertVariant,
     Button,
+    Chip,
+    ChipGroup,
+    DatePicker,
+    Flex,
+    FlexItem,
+    Form,
+    FormGroup,
     Popover,
-    SearchInput,
     SelectOption,
     Spinner,
-    ToolbarItem,
 } from "@patternfly/react-core";
+import { pickBy } from "lodash-es";
 import { useEffect, useMemo, useState } from "react";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAdminClient } from "../../admin-client";
+import DropdownPanel from "../../components/dropdown-panel/DropdownPanel";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toEvents } from "../routes/Events";
 import useFormatDate from "../../utils/useFormatDate";
 
 type EventHookLogRecord = EventHookLogRepresentation & {
-    executionId?: string;
-    batchExecution?: boolean;
-    sourceType?: string;
-    sourceEventId?: string;
-    sourceEventName?: string;
     targetName?: string;
 };
 
@@ -31,6 +42,35 @@ type EventHookLogRow = EventHookLogRecord & {
     eventCount: number;
     groupedLogs: EventHookLogRecord[];
 };
+
+type EventHookLogSearchForm = {
+    sourceType: string;
+    targetType: string;
+    targetId: string;
+    event: string;
+    client: string;
+    user: string;
+    ipAddress: string;
+    resourceType: string;
+    resourcePath: string;
+    status: string;
+    messageStatus: string;
+    dateFrom: string;
+    dateTo: string;
+    search: string;
+};
+
+const sourceTypeOptions = ["USER", "ADMIN"];
+const logStatusOptions = ["WAITING", "PENDING", "SUCCESS", "FAILED"];
+const messageStatusOptions = [
+    "PENDING",
+    "CLAIMED",
+    "WAITING",
+    "SUCCESS",
+    "FAILED",
+    "EXHAUSTED",
+    "DEAD",
+];
 
 const eventTab = (sourceType?: string) =>
     sourceType === "ADMIN" ? "admin-events" : "user-events";
@@ -155,19 +195,84 @@ export const EventHookLogs = () => {
     const formatDate = useFormatDate();
     const { addAlert, addError } = useAlerts();
     const [searchParams, setSearchParams] = useSearchParams();
+    const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
+    const [sourceTypeOpen, setSourceTypeOpen] = useState(false);
     const [targetTypeOpen, setTargetTypeOpen] = useState(false);
     const [targetOpen, setTargetOpen] = useState(false);
+    const [statusOpen, setStatusOpen] = useState(false);
+    const [messageStatusOpen, setMessageStatusOpen] = useState(false);
     const [targets, setTargets] = useState<EventHookTargetRepresentation[]>([]);
-    const [searchValue, setSearchValue] = useState(searchParams.get("search") || "");
     const [refreshCount, setRefreshCount] = useState(0);
 
+    const sourceType = searchParams.get("sourceType") || "";
     const targetId = searchParams.get("targetId") || "";
     const targetType = searchParams.get("targetType") || "";
+    const event = searchParams.get("event") || "";
+    const client = searchParams.get("client") || "";
+    const user = searchParams.get("user") || "";
+    const ipAddress = searchParams.get("ipAddress") || "";
+    const resourceType = searchParams.get("resourceType") || "";
+    const resourcePath = searchParams.get("resourcePath") || "";
+    const status = searchParams.get("status") || "";
+    const messageStatus = searchParams.get("messageStatus") || "";
+    const dateFrom = searchParams.get("dateFrom") || "";
+    const dateTo = searchParams.get("dateTo") || "";
     const search = searchParams.get("search") || "";
+    const defaultValues: EventHookLogSearchForm = {
+        sourceType,
+        targetType,
+        targetId,
+        event,
+        client,
+        user,
+        ipAddress,
+        resourceType,
+        resourcePath,
+        status,
+        messageStatus,
+        dateFrom,
+        dateTo,
+        search,
+    };
+    const filterLabels: Record<keyof EventHookLogSearchForm, string> = {
+        sourceType: t("eventHookSourceTypeFilter"),
+        targetType: t("eventHookTargetTypeFilter"),
+        targetId: t("eventHookTargetFilter"),
+        event: t("eventHookEventFilter"),
+        client: t("client"),
+        user: t("userId"),
+        ipAddress: t("ipAddress"),
+        resourceType: t("resourceType"),
+        resourcePath: t("resourcePath"),
+        status: t("eventHookStatusFilter"),
+        messageStatus: t("eventHookMessageStatusFilter"),
+        dateFrom: t("dateFrom"),
+        dateTo: t("dateTo"),
+        search: t("searchEventHookLogs"),
+    };
+    const form = useForm<EventHookLogSearchForm>({
+        mode: "onChange",
+        defaultValues,
+    });
+    const {
+        control,
+        getValues,
+        handleSubmit,
+        reset,
+        setValue,
+        watch,
+        formState: { isDirty },
+    } = form;
+    const formTargetType = watch("targetType");
+    const activeFilters = useMemo(
+        () =>
+            pickBy(defaultValues, (value) => Boolean(value.trim())) as Partial<EventHookLogSearchForm>,
+        [defaultValues],
+    );
 
     useEffect(() => {
-        setSearchValue(search);
-    }, [search]);
+        reset(defaultValues);
+    }, [reset, sourceType, targetId, targetType, event, client, user, ipAddress, resourceType, resourcePath, status, messageStatus, dateFrom, dateTo, search]);
 
     useEffect(() => {
         adminClient.eventHooks.findTargets({ realm }).then(setTargets);
@@ -220,7 +325,7 @@ export const EventHookLogs = () => {
         addError("eventHookRetryError", (results.find((result) => result.status === "rejected") as PromiseRejectedResult).reason);
     };
 
-    const updateFilters = (updates: Record<string, string>) => {
+    const updateFilters = (updates: Partial<EventHookLogSearchForm>) => {
         const next = new URLSearchParams(searchParams);
 
         Object.entries(updates).forEach(([key, value]) => {
@@ -234,6 +339,65 @@ export const EventHookLogs = () => {
         setSearchParams(next, { replace: true });
     };
 
+    const commitFilters = (values = getValues()) => {
+        const nextFilters = pickBy(values, (value) => Boolean(value.trim())) as Partial<EventHookLogSearchForm>;
+
+        updateFilters({
+            sourceType: nextFilters.sourceType || "",
+            targetType: nextFilters.targetType || "",
+            targetId: nextFilters.targetId || "",
+            event: nextFilters.event || "",
+            client: nextFilters.client || "",
+            user: nextFilters.user || "",
+            ipAddress: nextFilters.ipAddress || "",
+            resourceType: nextFilters.resourceType || "",
+            resourcePath: nextFilters.resourcePath || "",
+            status: nextFilters.status || "",
+            messageStatus: nextFilters.messageStatus || "",
+            dateFrom: nextFilters.dateFrom || "",
+            dateTo: nextFilters.dateTo || "",
+            search: nextFilters.search || "",
+        });
+    };
+
+    const onSubmit = () => {
+        setSearchDropdownOpen(false);
+        commitFilters();
+    };
+
+    const resetSearch = () => {
+        const emptyValues: EventHookLogSearchForm = {
+            sourceType: "",
+            targetType: "",
+            targetId: "",
+            event: "",
+            client: "",
+            user: "",
+            ipAddress: "",
+            resourceType: "",
+            resourcePath: "",
+            status: "",
+            messageStatus: "",
+            dateFrom: "",
+            dateTo: "",
+            search: "",
+        };
+
+        reset(emptyValues);
+        commitFilters(emptyValues);
+    };
+
+    const removeFilter = (key: keyof EventHookLogSearchForm) => {
+        const formValues = { ...getValues(), [key]: "" };
+
+        if (key === "targetType") {
+            formValues.targetId = "";
+        }
+
+        reset(formValues);
+        commitFilters(formValues);
+    };
+
     const targetTypes = useMemo(
         () =>
             [...new Set(targets.map((target) => target.type).filter((value): value is string => Boolean(value)))].sort((a, b) =>
@@ -245,17 +409,302 @@ export const EventHookLogs = () => {
     const visibleTargets = useMemo(
         () =>
             [...targets]
-                .filter((target) => !targetType || target.type === targetType)
+                .filter((target) => !formTargetType || target.type === formTargetType)
                 .sort((a, b) => (a.name || "").localeCompare(b.name || "")),
-        [targetType, targets],
+        [formTargetType, targets],
+    );
+
+    const selectedTargetName =
+        targets.find((target) => target.id === targetId)?.name || targetId;
+
+    const searchFormDisplay = () => (
+        <FormProvider {...form}>
+            <Flex
+                direction={{ default: "column" }}
+                spaceItems={{ default: "spaceItemsNone" }}
+            >
+                <FlexItem>
+                    <DropdownPanel
+                        buttonText={t("search")}
+                        setSearchDropdownOpen={setSearchDropdownOpen}
+                        searchDropdownOpen={searchDropdownOpen}
+                        marginRight="2.5rem"
+                        width="15vw"
+                    >
+                        <Form onSubmit={handleSubmit(onSubmit)} isHorizontal>
+                            <FormGroup
+                                label={t("eventHookSourceTypeFilter")}
+                                fieldId="event-hook-log-source-type-filter"
+                            >
+                                <Controller
+                                    name="sourceType"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <KeycloakSelect
+                                            aria-label={t("eventHookSourceTypeFilter")}
+                                            isOpen={sourceTypeOpen}
+                                            onSelect={(value) => {
+                                                field.onChange(value.toString());
+                                                setSourceTypeOpen(false);
+                                            }}
+                                            onToggle={() => setSourceTypeOpen(!sourceTypeOpen)}
+                                            placeholderText={t("eventHookSourceTypeFilter")}
+                                            selections={field.value || t("allEventHookSourceTypes")}
+                                            variant="single"
+                                        >
+                                            <SelectOption value="">{t("allEventHookSourceTypes")}</SelectOption>
+                                            {sourceTypeOptions.map((option) => (
+                                                <SelectOption key={option} value={option}>
+                                                    {option}
+                                                </SelectOption>
+                                            ))}
+                                        </KeycloakSelect>
+                                    )}
+                                />
+                            </FormGroup>
+                            <FormGroup
+                                label={t("eventHookTargetTypeFilter")}
+                                fieldId="event-hook-log-target-type-filter"
+                            >
+                                <Controller
+                                    name="targetType"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <KeycloakSelect
+                                            aria-label={t("eventHookTargetTypeFilter")}
+                                            isOpen={targetTypeOpen}
+                                            onSelect={(value) => {
+                                                field.onChange(value.toString());
+                                                setValue("targetId", "");
+                                                setTargetTypeOpen(false);
+                                            }}
+                                            onToggle={() => setTargetTypeOpen(!targetTypeOpen)}
+                                            placeholderText={t("eventHookTargetTypeFilter")}
+                                            selections={field.value || t("allEventHookTargetTypes")}
+                                            variant="single"
+                                        >
+                                            <SelectOption value="">{t("allEventHookTargetTypes")}</SelectOption>
+                                            {targetTypes.map((option) => (
+                                                <SelectOption key={option} value={option}>
+                                                    {option}
+                                                </SelectOption>
+                                            ))}
+                                        </KeycloakSelect>
+                                    )}
+                                />
+                            </FormGroup>
+                            <FormGroup
+                                label={t("eventHookTargetFilter")}
+                                fieldId="event-hook-log-target-filter"
+                            >
+                                <Controller
+                                    name="targetId"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <KeycloakSelect
+                                            aria-label={t("eventHookTargetFilter")}
+                                            isOpen={targetOpen}
+                                            onSelect={(value) => {
+                                                field.onChange(value.toString());
+                                                setTargetOpen(false);
+                                            }}
+                                            onToggle={() => setTargetOpen(!targetOpen)}
+                                            placeholderText={t("eventHookTargetFilter")}
+                                            selections={
+                                                visibleTargets.find((target) => target.id === field.value)?.name ||
+                                                field.value ||
+                                                t("allEventHookTargets")
+                                            }
+                                            variant="single"
+                                        >
+                                            <SelectOption value="">{t("allEventHookTargets")}</SelectOption>
+                                            {visibleTargets.map((target) => (
+                                                <SelectOption key={target.id} value={target.id || ""}>
+                                                    {target.name || target.id || ""}
+                                                </SelectOption>
+                                            ))}
+                                        </KeycloakSelect>
+                                    )}
+                                />
+                            </FormGroup>
+                            <TextControl
+                                name="event"
+                                label={t("eventHookEventFilter")}
+                                data-testid="event-hook-logs-event-field"
+                            />
+                            <TextControl
+                                name="client"
+                                label={t("client")}
+                                data-testid="event-hook-logs-client-field"
+                            />
+                            <TextControl
+                                name="user"
+                                label={t("userId")}
+                                data-testid="event-hook-logs-user-field"
+                            />
+                            <TextControl
+                                name="ipAddress"
+                                label={t("ipAddress")}
+                                data-testid="event-hook-logs-ip-field"
+                            />
+                            <TextControl
+                                name="resourceType"
+                                label={t("resourceType")}
+                                data-testid="event-hook-logs-resource-type-field"
+                            />
+                            <TextControl
+                                name="resourcePath"
+                                label={t("resourcePath")}
+                                data-testid="event-hook-logs-resource-path-field"
+                            />
+                            <FormGroup
+                                label={t("eventHookStatusFilter")}
+                                fieldId="event-hook-log-status-filter"
+                            >
+                                <Controller
+                                    name="status"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <KeycloakSelect
+                                            aria-label={t("eventHookStatusFilter")}
+                                            isOpen={statusOpen}
+                                            onSelect={(value) => {
+                                                field.onChange(value.toString());
+                                                setStatusOpen(false);
+                                            }}
+                                            onToggle={() => setStatusOpen(!statusOpen)}
+                                            placeholderText={t("eventHookStatusFilter")}
+                                            selections={field.value || t("allEventHookStatuses")}
+                                            variant="single"
+                                        >
+                                            <SelectOption value="">{t("allEventHookStatuses")}</SelectOption>
+                                            {logStatusOptions.map((option) => (
+                                                <SelectOption key={option} value={option}>
+                                                    {option}
+                                                </SelectOption>
+                                            ))}
+                                        </KeycloakSelect>
+                                    )}
+                                />
+                            </FormGroup>
+                            <FormGroup
+                                label={t("eventHookMessageStatusFilter")}
+                                fieldId="event-hook-log-message-status-filter"
+                            >
+                                <Controller
+                                    name="messageStatus"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <KeycloakSelect
+                                            aria-label={t("eventHookMessageStatusFilter")}
+                                            isOpen={messageStatusOpen}
+                                            onSelect={(value) => {
+                                                field.onChange(value.toString());
+                                                setMessageStatusOpen(false);
+                                            }}
+                                            onToggle={() => setMessageStatusOpen(!messageStatusOpen)}
+                                            placeholderText={t("eventHookMessageStatusFilter")}
+                                            selections={field.value || t("allEventHookMessageStatuses")}
+                                            variant="single"
+                                        >
+                                            <SelectOption value="">{t("allEventHookMessageStatuses")}</SelectOption>
+                                            {messageStatusOptions.map((option) => (
+                                                <SelectOption key={option} value={option}>
+                                                    {option}
+                                                </SelectOption>
+                                            ))}
+                                        </KeycloakSelect>
+                                    )}
+                                />
+                            </FormGroup>
+                            <FormGroup label={t("dateFrom")} fieldId="event-hook-log-date-from">
+                                <Controller
+                                    name="dateFrom"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <DatePicker
+                                            className="pf-v5-u-w-100"
+                                            value={field.value}
+                                            onChange={(_, value) => field.onChange(value)}
+                                            inputProps={{ id: "event-hook-log-date-from" }}
+                                        />
+                                    )}
+                                />
+                            </FormGroup>
+                            <FormGroup label={t("dateTo")} fieldId="event-hook-log-date-to">
+                                <Controller
+                                    name="dateTo"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <DatePicker
+                                            className="pf-v5-u-w-100"
+                                            value={field.value}
+                                            onChange={(_, value) => field.onChange(value)}
+                                            inputProps={{ id: "event-hook-log-date-to" }}
+                                        />
+                                    )}
+                                />
+                            </FormGroup>
+                            <TextControl
+                                name="search"
+                                label={t("searchEventHookLogs")}
+                                data-testid="event-hook-logs-search-field"
+                            />
+                            <ActionGroup>
+                                <Button type="submit" isDisabled={!isDirty}>
+                                    {t("search")}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={resetSearch}
+                                    isDisabled={!isDirty}
+                                >
+                                    {t("resetBtn")}
+                                </Button>
+                            </ActionGroup>
+                        </Form>
+                    </DropdownPanel>
+                </FlexItem>
+                <FlexItem>
+                    {Object.entries(activeFilters).length > 0 && (
+                        <div className="keycloak__searchChips pf-v5-u-ml-md">
+                            {Object.entries(activeFilters).map(([key, value]) => (
+                                <ChipGroup
+                                    className="pf-v5-u-mt-md pf-v5-u-mr-md"
+                                    key={key}
+                                    categoryName={filterLabels[key as keyof EventHookLogSearchForm]}
+                                    onClick={() => removeFilter(key as keyof EventHookLogSearchForm)}
+                                    isClosable
+                                >
+                                    <Chip isReadOnly>
+                                        {key === "targetId" ? selectedTargetName : value}
+                                    </Chip>
+                                </ChipGroup>
+                            ))}
+                        </div>
+                    )}
+                </FlexItem>
+            </Flex>
+        </FormProvider>
     );
 
     const loader = async () => {
         const [logs, loadedTargets] = await Promise.all([
             adminClient.eventHooks.findLogs({
                 realm,
+                sourceType: sourceType || undefined,
                 targetId: targetId || undefined,
                 targetType: targetType || undefined,
+                event: event || undefined,
+                client: client || undefined,
+                user: user || undefined,
+                ipAddress: ipAddress || undefined,
+                resourceType: resourceType || undefined,
+                resourcePath: resourcePath || undefined,
+                status: status || undefined,
+                messageStatus: messageStatus || undefined,
+                dateFrom: dateFrom || undefined,
+                dateTo: dateTo || undefined,
                 search: search || undefined,
             }),
             adminClient.eventHooks.findTargets({ realm }),
@@ -295,73 +744,11 @@ export const EventHookLogs = () => {
 
     return (
         <KeycloakDataTable
-            key={refreshCount}
+            key={`${refreshCount}-${searchParams.toString()}`}
             loader={loader}
             ariaLabelKey="eventHookLogs"
-            isSearching={Boolean(targetId || targetType || search)}
-            toolbarItem={
-                <>
-                    <ToolbarItem>
-                        <KeycloakSelect
-                            aria-label={t("eventHookTargetTypeFilter")}
-                            isOpen={targetTypeOpen}
-                            onSelect={(value) => {
-                                updateFilters({ targetType: value.toString(), targetId: "" });
-                                setTargetTypeOpen(false);
-                            }}
-                            onToggle={() => setTargetTypeOpen(!targetTypeOpen)}
-                            placeholderText={t("eventHookTargetTypeFilter")}
-                            selections={targetType || t("allEventHookTargetTypes")}
-                            variant="single"
-                        >
-                            <SelectOption value="">{t("allEventHookTargetTypes")}</SelectOption>
-                            {targetTypes.map((option) => (
-                                <SelectOption key={option} value={option}>
-                                    {option}
-                                </SelectOption>
-                            ))}
-                        </KeycloakSelect>
-                    </ToolbarItem>
-                    <ToolbarItem>
-                        <KeycloakSelect
-                            aria-label={t("eventHookTargetFilter")}
-                            isOpen={targetOpen}
-                            onSelect={(value) => {
-                                updateFilters({ targetId: value.toString() });
-                                setTargetOpen(false);
-                            }}
-                            onToggle={() => setTargetOpen(!targetOpen)}
-                            placeholderText={t("eventHookTargetFilter")}
-                            selections={
-                                visibleTargets.find((target) => target.id === targetId)?.name ||
-                                targetId ||
-                                t("allEventHookTargets")
-                            }
-                            variant="single"
-                        >
-                            <SelectOption value="">{t("allEventHookTargets")}</SelectOption>
-                            {visibleTargets.map((target) => (
-                                <SelectOption key={target.id} value={target.id || ""}>
-                                    {target.name || target.id || ""}
-                                </SelectOption>
-                            ))}
-                        </KeycloakSelect>
-                    </ToolbarItem>
-                    <ToolbarItem>
-                        <SearchInput
-                            aria-label={t("searchEventHookLogs")}
-                            onChange={(_, value) => setSearchValue(value)}
-                            onClear={() => {
-                                setSearchValue("");
-                                updateFilters({ search: "" });
-                            }}
-                            onSearch={() => updateFilters({ search: searchValue.trim() })}
-                            placeholder={t("searchEventHookLogs")}
-                            value={searchValue}
-                        />
-                    </ToolbarItem>
-                </>
-            }
+            isSearching={Object.keys(activeFilters).length > 0}
+            toolbarItem={searchFormDisplay()}
             columns={[
                 {
                     name: "createdAt",

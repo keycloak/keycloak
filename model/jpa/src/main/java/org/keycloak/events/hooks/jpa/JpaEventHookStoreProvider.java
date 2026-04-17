@@ -150,7 +150,9 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
 
     @Override
     public Stream<EventHookLogModel> getLogsStream(String realmId, String messageId, String targetId, String targetType,
-            String executionId, String search, Integer first, Integer max) {
+            String sourceType, String event, String client, String user, String ipAddress,
+            String resourceType, String resourcePath, String status, String messageStatus,
+            Long dateFrom, Long dateTo, String executionId, String search, Integer first, Integer max) {
         StringBuilder query = new StringBuilder("select log, message from EventHookLogEntity log join EventHookMessageEntity message on message.id = log.messageId join EventHookTargetEntity target on target.id = log.targetId where message.realmId = :realmId");
         if (messageId != null) {
             query.append(" and log.messageId = :messageId");
@@ -160,6 +162,39 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
         }
         if (targetType != null) {
             query.append(" and target.type = :targetType");
+        }
+        if (sourceType != null) {
+            query.append(" and message.sourceType = :sourceType");
+        }
+        if (event != null && !event.isBlank()) {
+            query.append(" and (lower(coalesce(message.payload, '')) like :userEvent or lower(coalesce(message.payload, '')) like :adminEvent)");
+        }
+        if (client != null && !client.isBlank()) {
+            query.append(" and lower(coalesce(message.payload, '')) like :client");
+        }
+        if (user != null && !user.isBlank()) {
+            query.append(" and lower(coalesce(message.payload, '')) like :user");
+        }
+        if (ipAddress != null && !ipAddress.isBlank()) {
+            query.append(" and lower(coalesce(message.payload, '')) like :ipAddress");
+        }
+        if (resourceType != null && !resourceType.isBlank()) {
+            query.append(" and lower(coalesce(message.payload, '')) like :resourceType");
+        }
+        if (resourcePath != null && !resourcePath.isBlank()) {
+            query.append(" and lower(coalesce(message.payload, '')) like :resourcePath");
+        }
+        if (status != null) {
+            query.append(" and log.status = :status");
+        }
+        if (messageStatus != null) {
+            query.append(" and message.status = :messageStatus");
+        }
+        if (dateFrom != null) {
+            query.append(" and log.createdAt >= :dateFrom");
+        }
+        if (dateTo != null) {
+            query.append(" and log.createdAt <= :dateTo");
         }
         if (executionId != null) {
             query.append(" and log.executionId = :executionId");
@@ -179,6 +214,40 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
         }
         if (targetType != null) {
             typedQuery.setParameter("targetType", targetType);
+        }
+        if (sourceType != null) {
+            typedQuery.setParameter("sourceType", sourceType);
+        }
+        if (event != null && !event.isBlank()) {
+            typedQuery.setParameter("userEvent", containsJsonValue("eventType", event));
+            typedQuery.setParameter("adminEvent", containsJsonValue("operationType", event));
+        }
+        if (client != null && !client.isBlank()) {
+            typedQuery.setParameter("client", containsJsonValue("clientId", client));
+        }
+        if (user != null && !user.isBlank()) {
+            typedQuery.setParameter("user", containsJsonValue("userId", user));
+        }
+        if (ipAddress != null && !ipAddress.isBlank()) {
+            typedQuery.setParameter("ipAddress", containsJsonValue("ipAddress", ipAddress));
+        }
+        if (resourceType != null && !resourceType.isBlank()) {
+            typedQuery.setParameter("resourceType", containsJsonValue("resourceType", resourceType));
+        }
+        if (resourcePath != null && !resourcePath.isBlank()) {
+            typedQuery.setParameter("resourcePath", containsJsonValue("resourcePath", resourcePath));
+        }
+        if (status != null) {
+            typedQuery.setParameter("status", status);
+        }
+        if (messageStatus != null) {
+            typedQuery.setParameter("messageStatus", messageStatus);
+        }
+        if (dateFrom != null) {
+            typedQuery.setParameter("dateFrom", dateFrom.longValue());
+        }
+        if (dateTo != null) {
+            typedQuery.setParameter("dateTo", dateTo.longValue());
         }
         if (executionId != null) {
             typedQuery.setParameter("executionId", executionId);
@@ -267,6 +336,16 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
                 .map(entity -> claim(entity, now, claimOwner))
                 .map(this::toModel)
                 .toList();
+    }
+
+    @Override
+    public Long getPendingAggregationDeadline(String realmId, String targetId, long now) {
+        return em.createQuery("select min(message.nextAttemptAt) from EventHookMessageEntity message where message.realmId = :realmId and message.targetId = :targetId and message.status = :pending and message.nextAttemptAt > :now", Long.class)
+                .setParameter("realmId", realmId)
+                .setParameter("targetId", targetId)
+                .setParameter("pending", EventHookMessageStatus.PENDING.name())
+                .setParameter("now", now)
+                .getSingleResult();
     }
 
     @Override
@@ -445,5 +524,9 @@ public class JpaEventHookStoreProvider implements EventHookStoreProvider {
         } catch (IOException exception) {
             return null;
         }
+    }
+
+    private String containsJsonValue(String key, String value) {
+        return "%\"" + key.toLowerCase() + "\":\"" + value.toLowerCase() + "\"%";
     }
 }

@@ -53,8 +53,28 @@ public interface EventHookStoreProvider extends Provider {
         return getLogsStream(realmId, messageId, targetId, null, null, null, first, max);
     }
 
-        Stream<EventHookLogModel> getLogsStream(String realmId, String messageId, String targetId, String targetType,
-            String executionId, String search,
+    default Stream<EventHookLogModel> getLogsStream(String realmId, String messageId, String targetId, String targetType,
+            String executionId, String search, Integer first, Integer max) {
+        String sourceType = null;
+        String event = null;
+        String client = null;
+        String user = null;
+        String ipAddress = null;
+        String resourceType = null;
+        String resourcePath = null;
+        String status = null;
+        String messageStatus = null;
+        Long dateFrom = null;
+        Long dateTo = null;
+
+        return getLogsStream(realmId, messageId, targetId, targetType, sourceType, event, client, user, ipAddress,
+                resourceType, resourcePath, status, messageStatus, dateFrom, dateTo, executionId, search, first, max);
+    }
+
+    Stream<EventHookLogModel> getLogsStream(String realmId, String messageId, String targetId, String targetType,
+            String sourceType, String event, String client, String user, String ipAddress,
+            String resourceType, String resourcePath, String status, String messageStatus,
+            Long dateFrom, Long dateTo, String executionId, String search,
             Integer first, Integer max);
 
     Map<String, EventHookTargetStatus> getLatestTargetStatuses(String realmId);
@@ -68,6 +88,10 @@ public interface EventHookStoreProvider extends Provider {
 
     List<EventHookMessageModel> claimAvailableMessagesForTarget(String realmId, String targetId, int maxResults, long now,
             long staleClaimBefore, String claimOwner);
+
+    default Long getPendingAggregationDeadline(String realmId, String targetId, long now) {
+        return null;
+    }
 
     boolean hasAvailableMessages(String realmId, String targetId, long now, long staleClaimBefore);
 

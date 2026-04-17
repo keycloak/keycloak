@@ -4,5 +4,6 @@ export default interface EventHookProviderRepresentation {
     id: string;
     supportsBatch?: boolean;
     supportsRetry?: boolean;
+    supportsAggregation?: boolean;
     configMetadata?: ConfigPropertyRepresentation[];
 }

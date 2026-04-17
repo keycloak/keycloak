@@ -55,6 +55,11 @@ public class HttpEventHookTargetProviderFactoryTest {
         assertEquals(true, factory.supportsBatch());
     }
 
+    @Test
+    public void shouldSupportAggregation() {
+        assertTrue(factory.supportsAggregation());
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void shouldRejectInvalidScheme() {
         factory.validateConfig(null, Map.of("url", "ftp://example.org/hooks"));

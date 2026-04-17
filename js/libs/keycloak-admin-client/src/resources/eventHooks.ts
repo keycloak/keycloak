@@ -26,8 +26,19 @@ interface EventHookMessageByIdQuery extends EventHookTargetQuery {
 }
 
 interface EventHookLogQuery extends EventHookTargetQuery {
+    sourceType?: string;
     targetId?: string;
     targetType?: string;
+    event?: string;
+    client?: string;
+    user?: string;
+    ipAddress?: string;
+    resourceType?: string;
+    resourcePath?: string;
+    status?: string;
+    messageStatus?: string;
+    dateFrom?: string;
+    dateTo?: string;
     executionId?: string;
     search?: string;
     messageId?: string;

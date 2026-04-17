@@ -5,6 +5,34 @@ import { login } from "../utils/login.ts";
 import { clickRowKebabItem } from "../utils/table.ts";
 
 test.describe("Event hooks", () => {
+    test("should not show unknown target type for available providers after reload", async ({
+        page,
+    }) => {
+        const targetName = `playwright-hook-${Date.now()}`;
+
+        await login(page, { to: { pathname: "/master/events/hooks/targets" } });
+
+        await expect(
+            page.getByRole("button", { name: "Create target" }),
+        ).toBeVisible();
+
+        await page.getByRole("button", { name: "Create target" }).click();
+        await page.getByLabel("Name").fill(targetName);
+        await page.getByLabel("URL").fill("https://example.invalid/hook");
+        await page.getByRole("button", { name: "Save" }).click();
+
+        await expect(page.getByText("Event hook target created successfully.")).toBeVisible();
+
+        await page.reload();
+
+        const row = page.getByRole("row", { name: new RegExp(targetName) });
+
+        await expect(row).toBeVisible();
+        await expect(row).not.toContainText(
+            "Unknown target type. This target cannot be edited or tested until the provider is available again.",
+        );
+    });
+
     test("should preview the pull consume url when creating a pull target", async ({
         page,
     }) => {

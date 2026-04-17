@@ -57,6 +57,10 @@ public interface EventHookTargetProviderFactory extends ProviderFactory<EventHoo
         return true;
     }
 
+    default boolean supportsAggregation() {
+        return false;
+    }
+
     default Object getTargetEndpointResource(KeycloakSession session, RealmModel realm, EventHookTargetModel target, String endpointName) {
         return null;
     }

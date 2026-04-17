@@ -5,91 +5,75 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import jakarta.ws.rs.NotFoundException;
-import jakarta.ws.rs.core.Response;
-
 import org.junit.Test;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.representations.idm.EventHookMessageRepresentation;
-import org.keycloak.services.ErrorResponseException;
+import org.keycloak.representations.idm.EventHookLogRepresentation;
 import org.keycloak.services.resources.admin.EventHooksResource;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.fgap.RealmPermissionEvaluator;
+import org.keycloak.services.util.DateUtil;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
-public class EventHooksResourceRetryTest {
-
-    @Test
-    public void shouldQueueFailedMessageForManualRetry() {
-        RecordingStoreProvider store = new RecordingStoreProvider();
-        store.message = message(EventHookMessageStatus.EXHAUSTED, 3);
-
-        EventHookMessageRepresentation retried = new EventHooksResource(session(realm("realm-1"), store), auth(), null)
-                .retryMessage("msg-1");
-
-        assertEquals("PENDING", retried.getStatus());
-        assertEquals(Integer.valueOf(0), retried.getAttemptCount());
-        assertNull(retried.getLastError());
-
-        assertNotNull(store.updatedMessage);
-        assertEquals(EventHookMessageStatus.PENDING, store.updatedMessage.getStatus());
-        assertEquals(0, store.updatedMessage.getAttemptCount());
-        assertNull(store.updatedMessage.getClaimOwner());
-        assertNull(store.updatedMessage.getClaimedAt());
-        assertNull(store.updatedMessage.getLastError());
-
-        assertNotNull(store.createdLog);
-        assertEquals(EventHookLogStatus.PENDING, store.createdLog.getStatus());
-        assertEquals(EventHookMessageStatus.PENDING, store.createdLog.getMessageStatus());
-        assertEquals(3, store.createdLog.getAttemptNumber());
-        assertEquals("MANUAL_RETRY", store.createdLog.getStatusCode());
-        assertEquals("Manual retry requested", store.createdLog.getDetails());
-    }
+public class EventHooksResourceLogsTest {
 
     @Test
-    public void shouldRejectRetryForSuccessfulMessage() {
+    public void shouldForwardStructuredLogFiltersAndExposeSourceFields() {
         RecordingStoreProvider store = new RecordingStoreProvider();
-        store.message = message(EventHookMessageStatus.SUCCESS, 1);
+        EventHookLogModel log = new EventHookLogModel();
+        log.setId("log-1");
+        log.setExecutionId("exec-1");
+        log.setBatchExecution(false);
+        log.setMessageId("msg-1");
+        log.setTargetId("target-1");
+        log.setSourceType(EventHookSourceType.ADMIN);
+        log.setSourceEventId("event-1");
+        log.setSourceEventName("CREATE");
+        log.setStatus(EventHookLogStatus.SUCCESS);
+        log.setMessageStatus(EventHookMessageStatus.SUCCESS);
+        log.setAttemptNumber(2);
+        log.setStatusCode("200");
+        log.setDurationMs(15L);
+        log.setDetails("ok");
+        log.setCreatedAt(1234L);
+        store.logs = List.of(log);
 
-        try {
-            new EventHooksResource(session(realm("realm-1"), store), auth(), null).retryMessage("msg-1");
-        } catch (ErrorResponseException exception) {
-            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), exception.getResponse().getStatus());
-            assertNull(store.updatedMessage);
-            assertNull(store.createdLog);
-            return;
-        }
+        List<EventHookLogRepresentation> logs = new EventHooksResource(session(realm("realm-1"), store), auth(), null)
+                .getLogs("target-1", "http", "ADMIN", "CREATE", "security-admin-console", "user-1", "127.0.0.1",
+                        "USER", "users/123", "SUCCESS", "SUCCESS", "2026-04-01", "2026-04-16",
+                        "exec-1", "retry", "msg-1", 5, 10);
 
-        throw new AssertionError("Expected retry to fail for successful message");
-    }
+        assertEquals("realm-1", store.realmId);
+        assertEquals("msg-1", store.messageId);
+        assertEquals("target-1", store.targetId);
+        assertEquals("http", store.targetType);
+        assertEquals("ADMIN", store.sourceType);
+        assertEquals("CREATE", store.event);
+        assertEquals("security-admin-console", store.client);
+        assertEquals("user-1", store.user);
+        assertEquals("127.0.0.1", store.ipAddress);
+        assertEquals("USER", store.resourceType);
+        assertEquals("users/123", store.resourcePath);
+        assertEquals("SUCCESS", store.status);
+        assertEquals("SUCCESS", store.messageStatus);
+        assertEquals(Long.valueOf(DateUtil.toStartOfDay("2026-04-01")), store.dateFrom);
+        assertEquals(Long.valueOf(DateUtil.toEndOfDay("2026-04-16")), store.dateTo);
+        assertEquals("exec-1", store.executionId);
+        assertEquals("retry", store.search);
+        assertEquals(Integer.valueOf(5), store.first);
+        assertEquals(Integer.valueOf(10), store.max);
 
-    @Test(expected = NotFoundException.class)
-    public void shouldRejectRetryForUnknownMessage() {
-        RecordingStoreProvider store = new RecordingStoreProvider();
-        new EventHooksResource(session(realm("realm-1"), store), auth(), null).retryMessage("missing");
-    }
-
-    private EventHookMessageModel message(EventHookMessageStatus status, int attemptCount) {
-        EventHookMessageModel message = new EventHookMessageModel();
-        message.setId("msg-1");
-        message.setRealmId("realm-1");
-        message.setTargetId("target-1");
-        message.setSourceType(EventHookSourceType.USER);
-        message.setSourceEventId("event-1");
-        message.setStatus(status);
-        message.setAttemptCount(attemptCount);
-        message.setClaimOwner("worker-1");
-        message.setClaimedAt(100L);
-        message.setNextAttemptAt(200L);
-        message.setCreatedAt(1L);
-        message.setUpdatedAt(2L);
-        message.setLastError("boom");
-        return message;
+        assertEquals(1, logs.size());
+        EventHookLogRepresentation representation = logs.get(0);
+        assertEquals("ADMIN", representation.getSourceType());
+        assertEquals("CREATE", representation.getSourceEventName());
+        assertEquals("event-1", representation.getSourceEventId());
+        assertEquals("SUCCESS", representation.getStatus());
+        assertEquals("SUCCESS", representation.getMessageStatus());
+        assertNotNull(representation.getCreatedAt());
     }
 
     private RealmModel realm(String realmId) {
@@ -139,28 +123,52 @@ public class EventHooksResourceRetryTest {
 
     private static final class RecordingStoreProvider implements EventHookStoreProvider {
 
-        private EventHookMessageModel message;
-        private EventHookMessageModel updatedMessage;
-        private EventHookLogModel createdLog;
+        private List<EventHookLogModel> logs = List.of();
+        private String realmId;
+        private String messageId;
+        private String targetId;
+        private String targetType;
+        private String sourceType;
+        private String event;
+        private String client;
+        private String user;
+        private String ipAddress;
+        private String resourceType;
+        private String resourcePath;
+        private String status;
+        private String messageStatus;
+        private Long dateFrom;
+        private Long dateTo;
+        private String executionId;
+        private String search;
+        private Integer first;
+        private Integer max;
 
         @Override
-        public EventHookMessageModel getMessage(String realmId, String messageId) {
-            if (message != null && realmId.equals(message.getRealmId()) && messageId.equals(message.getId())) {
-                return message;
-            }
-            return null;
-        }
-
-        @Override
-        public EventHookMessageModel updateMessage(EventHookMessageModel message) {
-            this.message = message;
-            this.updatedMessage = message;
-            return message;
-        }
-
-        @Override
-        public void createLog(EventHookLogModel log) {
-            this.createdLog = log;
+        public Stream<EventHookLogModel> getLogsStream(String realmId, String messageId, String targetId, String targetType,
+                String sourceType, String event, String client, String user, String ipAddress,
+                String resourceType, String resourcePath, String status, String messageStatus,
+                Long dateFrom, Long dateTo, String executionId, String search, Integer first, Integer max) {
+            this.realmId = realmId;
+            this.messageId = messageId;
+            this.targetId = targetId;
+            this.targetType = targetType;
+            this.sourceType = sourceType;
+            this.event = event;
+            this.client = client;
+            this.user = user;
+            this.ipAddress = ipAddress;
+            this.resourceType = resourceType;
+            this.resourcePath = resourcePath;
+            this.status = status;
+            this.messageStatus = messageStatus;
+            this.dateFrom = dateFrom;
+            this.dateTo = dateTo;
+            this.executionId = executionId;
+            this.search = search;
+            this.first = first;
+            this.max = max;
+            return logs.stream();
         }
 
         @Override
@@ -199,10 +207,7 @@ public class EventHooksResourceRetryTest {
         }
 
         @Override
-        public Stream<EventHookLogModel> getLogsStream(String realmId, String messageId, String targetId, String targetType,
-                String sourceType, String event, String client, String user, String ipAddress,
-                String resourceType, String resourcePath, String status, String messageStatus,
-                Long dateFrom, Long dateTo, String executionId, String search, Integer first, Integer max) {
+        public EventHookMessageModel getMessage(String realmId, String messageId) {
             throw new UnsupportedOperationException();
         }
 
@@ -224,6 +229,16 @@ public class EventHooksResourceRetryTest {
 
         @Override
         public boolean hasAvailableMessages(String realmId, String targetId, long now, long staleClaimBefore) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public EventHookMessageModel updateMessage(EventHookMessageModel message) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void createLog(EventHookLogModel log) {
             throw new UnsupportedOperationException();
         }
 

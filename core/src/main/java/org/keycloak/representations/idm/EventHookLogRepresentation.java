@@ -24,7 +24,9 @@ public class EventHookLogRepresentation {
     private Boolean batchExecution;
     private String messageId;
     private String targetId;
+    private String sourceType;
     private String sourceEventId;
+    private String sourceEventName;
     private String status;
     private String messageStatus;
     private Integer attemptNumber;
@@ -73,12 +75,28 @@ public class EventHookLogRepresentation {
         this.targetId = targetId;
     }
 
+    public String getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(String sourceType) {
+        this.sourceType = sourceType;
+    }
+
     public String getSourceEventId() {
         return sourceEventId;
     }
 
     public void setSourceEventId(String sourceEventId) {
         this.sourceEventId = sourceEventId;
+    }
+
+    public String getSourceEventName() {
+        return sourceEventName;
+    }
+
+    public void setSourceEventName(String sourceEventName) {
+        this.sourceEventName = sourceEventName;
     }
 
     public String getStatus() {

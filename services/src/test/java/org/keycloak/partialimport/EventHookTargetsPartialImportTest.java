@@ -243,7 +243,9 @@ public class EventHookTargetsPartialImportTest {
 
         @Override
         public Stream<org.keycloak.events.hooks.EventHookLogModel> getLogsStream(String realmId, String messageId, String targetId,
-                String targetType, String executionId, String search, Integer first, Integer max) {
+                String targetType, String sourceType, String event, String client, String user, String ipAddress,
+                String resourceType, String resourcePath, String status, String messageStatus,
+                Long dateFrom, Long dateTo, String executionId, String search, Integer first, Integer max) {
             throw new UnsupportedOperationException();
         }
     }

@@ -60,8 +60,9 @@ import org.keycloak.representations.idm.EventHookProviderRepresentation;
 import org.keycloak.representations.idm.EventHookTargetRepresentation;
 import org.keycloak.representations.idm.EventHookTestResultRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.util.JsonSerialization;
+import org.keycloak.services.util.DateUtil;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.util.JsonSerialization;
 
 import static org.keycloak.common.util.Time.currentTimeMillis;
 
@@ -262,14 +263,47 @@ public class EventHooksResource {
     @Path("logs")
     public List<EventHookLogRepresentation> getLogs(@QueryParam("targetId") String targetId,
             @QueryParam("targetType") String targetType,
+            @QueryParam("sourceType") String sourceType,
+            @QueryParam("event") String event,
+            @QueryParam("client") String client,
+            @QueryParam("user") String user,
+            @QueryParam("ipAddress") String ipAddress,
+            @QueryParam("resourceType") String resourceType,
+            @QueryParam("resourcePath") String resourcePath,
+            @QueryParam("status") String status,
+            @QueryParam("messageStatus") String messageStatus,
+            @QueryParam("dateFrom") String dateFrom,
+            @QueryParam("dateTo") String dateTo,
             @QueryParam("executionId") String executionId,
             @QueryParam("search") String search,
             @QueryParam("messageId") String messageId,
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max) {
         auth.realm().requireManageRealm();
+
+        Long fromTime = null;
+        Long toTime = null;
+
+        if (dateFrom != null) {
+            try {
+                fromTime = DateUtil.toStartOfDay(dateFrom);
+            } catch (Throwable throwable) {
+                throw new BadRequestException("Invalid value for 'dateFrom', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
+
+        if (dateTo != null) {
+            try {
+                toTime = DateUtil.toEndOfDay(dateTo);
+            } catch (Throwable throwable) {
+                throw new BadRequestException("Invalid value for 'dateTo', expected format is yyyy-MM-dd or an Epoch timestamp");
+            }
+        }
+
         return session.getProvider(EventHookStoreProvider.class)
-                .getLogsStream(realm.getId(), messageId, targetId, targetType, executionId, search, first, max)
+                .getLogsStream(realm.getId(), messageId, targetId, targetType, sourceType, event, client, user,
+                        ipAddress, resourceType, resourcePath, status, messageStatus, fromTime, toTime,
+                        executionId, search, first, max)
                 .map(this::toRepresentation)
                 .toList();
     }
@@ -331,8 +365,9 @@ public class EventHooksResource {
     private EventHookProviderRepresentation toRepresentation(EventHookTargetProviderFactory factory) {
         EventHookProviderRepresentation representation = new EventHookProviderRepresentation();
         representation.setId(factory.getId());
-        representation.setSupportsBatch(factory.supportsBatch());
         representation.setSupportsRetry(factory.supportsRetry());
+        representation.setSupportsBatch(factory.supportsBatch());
+        representation.setSupportsAggregation(factory.supportsAggregation());
         representation.setConfigMetadata(factory.getConfigMetadata().stream().map(this::toRepresentation).toList());
         return representation;
     }
@@ -362,7 +397,9 @@ public class EventHooksResource {
         representation.setBatchExecution(model.isBatchExecution());
         representation.setMessageId(model.getMessageId());
         representation.setTargetId(model.getTargetId());
+        representation.setSourceType(model.getSourceType() == null ? null : model.getSourceType().name());
         representation.setSourceEventId(model.getSourceEventId());
+        representation.setSourceEventName(model.getSourceEventName());
         representation.setStatus(model.getStatus().name());
         representation.setMessageStatus(model.getMessageStatus() == null ? null : model.getMessageStatus().name());
         representation.setAttemptNumber(model.getAttemptNumber());

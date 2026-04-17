@@ -258,6 +258,29 @@ public class EventHookDeliveryTask implements ScheduledTask {
         return intSetting(target == null ? null : target.getSettings(), "maxEventsPerBatch", 20);
     }
 
+    static long initialNextAttemptAt(EventHookTargetModel target, EventHookTargetProviderFactory providerFactory,
+            Long pendingAggregationDeadline, long now) {
+        if (providerFactory == null || !providerFactory.supportsAggregation() || !providerFactory.supportsBatch()) {
+            return now;
+        }
+
+        String deliveryMode = stringSetting(target == null ? null : target.getSettings(), "deliveryMode", "SINGLE");
+        if (!"BULK".equalsIgnoreCase(deliveryMode)) {
+            return now;
+        }
+
+        long aggregationTimeoutMs = intSetting(target == null ? null : target.getSettings(), "aggregationTimeoutMs", 0);
+        if (aggregationTimeoutMs <= 0) {
+            return now;
+        }
+
+        if (pendingAggregationDeadline != null && pendingAggregationDeadline.longValue() > now) {
+            return pendingAggregationDeadline.longValue();
+        }
+
+        return now + aggregationTimeoutMs;
+    }
+
     static long retryDelay(long retryDelayMs, int attemptNumber) {
         return retryDelayMs * (1L << Math.max(0, Math.min(attemptNumber - 1, 10)));
     }

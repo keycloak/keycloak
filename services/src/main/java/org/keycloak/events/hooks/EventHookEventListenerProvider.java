@@ -104,6 +104,9 @@ public class EventHookEventListenerProvider implements EventListenerProvider {
     private EventHookMessageModel createMessage(EventHookTargetModel target, String realmId, EventHookSourceType sourceType,
             String sourceEventId, String payload, long now) {
         EventHookMessageModel message = new EventHookMessageModel();
+        EventHookStoreProvider store = session.getProvider(EventHookStoreProvider.class);
+        EventHookTargetProviderFactory providerFactory = (EventHookTargetProviderFactory) session.getKeycloakSessionFactory()
+            .getProviderFactory(EventHookTargetProvider.class, target.getType());
         message.setId(UUID.randomUUID().toString());
         message.setRealmId(realmId);
         message.setTargetId(target.getId());
@@ -112,7 +115,11 @@ public class EventHookEventListenerProvider implements EventListenerProvider {
         message.setStatus(EventHookMessageStatus.PENDING);
         message.setPayload(payload);
         message.setAttemptCount(0);
-        message.setNextAttemptAt(now);
+        message.setNextAttemptAt(EventHookDeliveryTask.initialNextAttemptAt(
+            target,
+            providerFactory,
+            store.getPendingAggregationDeadline(realmId, target.getId(), now),
+            now));
         message.setCreatedAt(now);
         message.setUpdatedAt(now);
         return message;

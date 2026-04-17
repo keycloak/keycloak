@@ -127,6 +127,39 @@ public class EventHookDeliveryTaskTest {
     }
 
     @Test
+    public void shouldDelayInitialBulkDeliveryWhenAggregationIsEnabled() {
+        assertEquals(
+                6_000L,
+                EventHookDeliveryTask.initialNextAttemptAt(
+                        target(Map.of("deliveryMode", "BULK", "aggregationTimeoutMs", 5_000)),
+                        new HttpEventHookTargetProviderFactory(),
+                        null,
+                        1_000L));
+    }
+
+    @Test
+    public void shouldReusePendingAggregationDeadlineForLaterMessages() {
+        assertEquals(
+                9_000L,
+                EventHookDeliveryTask.initialNextAttemptAt(
+                        target(Map.of("deliveryMode", "BULK", "aggregationTimeoutMs", 5_000)),
+                        new HttpEventHookTargetProviderFactory(),
+                        9_000L,
+                        4_000L));
+    }
+
+    @Test
+    public void shouldSkipAggregationForProvidersWithoutSupport() {
+        assertEquals(
+                2_000L,
+                EventHookDeliveryTask.initialNextAttemptAt(
+                        target(Map.of("deliveryMode", "BULK", "aggregationTimeoutMs", 5_000)),
+                        new PullEventHookTargetProviderFactory(),
+                        null,
+                        2_000L));
+    }
+
+    @Test
     public void shouldNotRetryWhenRetryDisabled() {
         EventHookMessageModel message = message("msg-4", 0);
 

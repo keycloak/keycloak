@@ -24,6 +24,7 @@ public class EventHookProviderRepresentation {
     private String id;
     private boolean supportsBatch;
     private boolean supportsRetry;
+    private boolean supportsAggregation;
     private List<ConfigPropertyRepresentation> configMetadata;
 
     public String getId() {
@@ -48,6 +49,14 @@ public class EventHookProviderRepresentation {
 
     public void setSupportsRetry(boolean supportsRetry) {
         this.supportsRetry = supportsRetry;
+    }
+
+    public boolean isSupportsAggregation() {
+        return supportsAggregation;
+    }
+
+    public void setSupportsAggregation(boolean supportsAggregation) {
+        this.supportsAggregation = supportsAggregation;
     }
 
     public List<ConfigPropertyRepresentation> getConfigMetadata() {

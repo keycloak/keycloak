@@ -25,6 +25,7 @@ export const EventHookTargets = () => {
     const [selectedTarget, setSelectedTarget] = useState<EventHookTargetRepresentation>();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [providers, setProviders] = useState<EventHookProviderRepresentation[]>([]);
+    const [providersLoaded, setProvidersLoaded] = useState(false);
     const [unknownTargets, setUnknownTargets] = useState<EventHookTargetRepresentation[]>([]);
 
     const providerIds = useMemo(
@@ -48,6 +49,7 @@ export const EventHookTargets = () => {
         setProviders(
             [...loadedProviders].sort((a, b) => a.id.localeCompare(b.id)),
         );
+        setProvidersLoaded(true);
         setUnknownTargets(
             sortedTargets.filter(
                 (target) => Boolean(target.type && !loadedProviderIds.has(target.type)),
@@ -58,7 +60,7 @@ export const EventHookTargets = () => {
     };
 
     const isUnknownTargetType = (target: EventHookTargetRepresentation) =>
-        Boolean(target.type && !providerIds.has(target.type));
+        providersLoaded && Boolean(target.type && !providerIds.has(target.type));
 
     const notifyUnknownTargetType = (target: EventHookTargetRepresentation) => {
         addAlert(

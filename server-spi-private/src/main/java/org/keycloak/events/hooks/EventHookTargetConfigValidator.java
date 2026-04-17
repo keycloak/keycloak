@@ -48,6 +48,20 @@ public final class EventHookTargetConfigValidator {
             throw new IllegalArgumentException("Setting must be greater than zero: maxEventsPerBatch");
         }
 
+        Integer aggregationTimeoutMs = integerSetting(settings, "aggregationTimeoutMs");
+        if (!providerFactory.supportsAggregation()) {
+            if (settings != null && settings.containsKey("aggregationTimeoutMs")) {
+                throw new IllegalArgumentException("Aggregation settings are not supported for target provider: " + providerFactory.getId());
+            }
+        } else if (aggregationTimeoutMs != null) {
+            if (!"BULK".equals(deliveryMode)) {
+                throw new IllegalArgumentException("Aggregation timeout requires BULK delivery mode");
+            }
+            if (aggregationTimeoutMs < 0) {
+                throw new IllegalArgumentException("Setting must not be negative: aggregationTimeoutMs");
+            }
+        }
+
         boolean retryEnabled = booleanSetting(settings, "retryEnabled", true);
         if (!providerFactory.supportsRetry()) {
             if (settings != null && settings.containsKey("retryEnabled")) {
