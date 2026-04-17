@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.keycloak.constants.OID4VCIConstants;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oid4vc.clientpolicy.CredentialClientPolicy;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 
 import static org.keycloak.models.ClientScopeModel.INCLUDE_IN_TOKEN_SCOPE;
@@ -277,6 +278,15 @@ public class CredentialScopeRepresentation extends ClientScopeRepresentation {
     public CredentialScopeRepresentation setRequiredKeyAttestationUserAuthentication(List<String> userAuthentication) {
         return setAttribute(VC_KEY_ATTESTATION_REQUIRED_USER_AUTH, Optional.ofNullable(userAuthentication)
                 .map(list -> String.join(",")).orElse(null));
+    }
+
+    public <T> T getCredentialPolicyValue(CredentialClientPolicy<T> policy) {
+        T currentValue = policy.getCurrentValue(this);
+        return currentValue;
+    }
+
+    public <T> CredentialScopeRepresentation setCredentialPolicyValue(CredentialClientPolicy<T> policy, T value) {
+        return setAttribute(policy.getAttrName(), String.valueOf(value));
     }
 
     public String getAttribute(String key) {
