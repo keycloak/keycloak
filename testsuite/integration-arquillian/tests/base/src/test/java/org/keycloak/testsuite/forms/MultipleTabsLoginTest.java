@@ -174,7 +174,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             loginPage.assertCurrent();
 
             loginPage.login("login-test", getPassword("login-test"));
-            updatePasswordPage.assertCurrent();
+            updateProfilePage.assertCurrent();
 
             // Simulate login in different browser tab tab2. I will be on loginPage again.
             tabUtil.newTab(oauth.loginForm().build());
@@ -285,10 +285,18 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
     private void loginSuccessAndDoRequiredActions() {
         loginPage.login("login-test", getPassword("login-test"));
-        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
+        updateProfile();
+        updatePassword();
+        appPage.assertCurrent();
+    }
+
+    private void updateProfile() {
         updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
                 .email("john@doe3.com").submit();
-        appPage.assertCurrent();
+    }
+
+    private void updatePassword() {
+        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
     }
 
     // Assert browser was redirected to the appPage with "error=temporarily_unavailable" and error_description corresponding to Constants.AUTHENTICATION_EXPIRED_MESSAGE
@@ -340,7 +348,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             oauth.openLoginForm();
             loginPage.assertCurrent();
             loginPage.login("login-test", getPassword("login-test"));
-            updatePasswordPage.assertCurrent();
+            updateProfilePage.assertCurrent();
             getLogger().info("URL in tab1: " + driver.getCurrentUrl());
 
             // Open new tab 2
@@ -366,7 +374,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             tabUtil.closeTab(1);
             assertThat(tabUtil.getCountOfTabs(), Matchers.equalTo(1));
 
-            waitForAppPage(() -> updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test")));
+            waitForAppPage(() -> updateProfile());
             assertOnAppPageWithAlreadyLoggedInError(EventType.CUSTOM_REQUIRED_ACTION);
         }
     }
@@ -459,7 +467,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             // continue with the login in the first tab
             util.switchToTab(originalTab);
             loginPage.login("login-test", getPassword("login-test"));
-            updatePasswordPage.assertCurrent();
+            updateProfilePage.assertCurrent();
         }
     }
 
@@ -522,7 +530,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
         // Authenticate in tab2
         loginPage.login("login-test", getPassword("login-test"));
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
         // Simulate going back to tab1 and confirm login form. Page "Page expired" should be shown (NOTE: WebDriver does it with GET, when real browser would do it with POST. Improve test if needed...)
         driver.navigate().to(actionUrl1);
@@ -530,11 +538,9 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
         // Finish login
         loginExpiredPage.clickLoginContinueLink();
-        updatePasswordPage.assertCurrent();
-
-        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
+        updateProfilePage.assertCurrent();
+        updateProfile();
+        updatePassword();
         appPage.assertCurrent();
     }
 
@@ -560,7 +566,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
         loginPage.assertCurrent();
 
         loginPage.login("login-test", getPassword("login-test"));
-        updatePasswordPage.assertCurrent();
+        updateProfilePage.assertCurrent();
 
         // Manually remove execution from the URL and try to simulate the request just with "code" parameter
         String actionUrl = ActionURIUtils.getActionURIFromPageSource(driver.getPageSource());
@@ -568,12 +574,10 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
 
         driver.navigate().to(actionUrl);
 
-        // Back on updatePasswordPage now
-        updatePasswordPage.assertCurrent();
-
-        updatePasswordPage.changePassword(getPassword("login-test"), getPassword("login-test"));
-        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
-                .email("john@doe3.com").submit();
+        // Back on updateProfilePage now
+        updateProfilePage.assertCurrent();
+        updateProfile();
+        updatePassword();
         appPage.assertCurrent();
     }
 
@@ -686,7 +690,7 @@ public class MultipleTabsLoginTest extends AbstractChangeImportedUserPasswordsTe
             loginPage.assertCurrent();
 
             loginPage.login("login-test", getPassword("login-test"));
-            updatePasswordPage.assertCurrent();
+            updateProfilePage.assertCurrent();
 
             String tab1Url = driver.getCurrentUrl();
 

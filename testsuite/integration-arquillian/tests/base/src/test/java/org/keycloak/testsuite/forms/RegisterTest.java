@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 
 import org.keycloak.authentication.AuthenticationFlow;
@@ -34,7 +33,6 @@ import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -51,12 +49,9 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.RegisterPage;
-import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.FlowUtil;
-import org.keycloak.testsuite.util.GreenMailRule;
-import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.UIUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.oauth.AccessTokenResponse;
@@ -97,13 +92,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     protected RegisterPage registerPage;
 
     @Page
-    protected VerifyEmailPage verifyEmailPage;
-
-    @Page
     protected LoginPasswordResetPage resetPasswordPage;
-
-    @Rule
-    public GreenMailRule greenMail = new GreenMailRule();
 
     private String idTokenHint;
 
@@ -475,103 +464,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         assertUserBasicRegisterAttributes(userId, username, email, "firstName", "lastName");
         return user;
-    }
-
-    @Test
-     // GreenMailRule is not working atm
-    public void registerUserSuccessWithEmailVerification() throws Exception {
-        try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
-            oauth.openLoginForm();
-            loginPage.clickRegister();
-            registerPage.assertCurrent();
-
-            registerPage.register("firstName", "lastName", "registerUserSuccessWithEmailVerification@email", "registerUserSuccessWithEmailVerification", generatePassword());
-            verifyEmailPage.assertCurrent();
-
-            String userId = events.expectRegister("registerUserSuccessWithEmailVerification", "registerUserSuccessWithEmailVerification@email").assertEvent().getUserId();
-
-            {
-                assertTrue("Expecting verify email", greenMail.waitForIncomingEmail(1000, 1));
-
-                events.expect(EventType.SEND_VERIFY_EMAIL)
-                  .detail(Details.EMAIL, "registerUserSuccessWithEmailVerification@email".toLowerCase())
-                  .user(userId)
-                  .assertEvent();
-
-                MimeMessage message = greenMail.getLastReceivedMessage();
-                String link = MailUtils.getPasswordResetEmailLink(message);
-
-                driver.navigate().to(link);
-            }
-
-            events.expectRequiredAction(EventType.VERIFY_EMAIL)
-              .detail(Details.EMAIL, "registerUserSuccessWithEmailVerification@email".toLowerCase())
-              .user(userId)
-              .assertEvent();
-
-            assertUserRegistered(userId, "registerUserSuccessWithEmailVerification", "registerUserSuccessWithEmailVerification@email");
-
-            appPage.assertCurrent();
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-            // test that timestamp is current with 10s tollerance
-            // test user info is set from form
-        }
-    }
-
-    @Test
-     // GreenMailRule is not working atm
-    public void registerUserSuccessWithEmailVerificationWithResend() throws Exception {
-        try (RealmAttributeUpdater rau = setVerifyEmail(true).update()) {
-            oauth.openLoginForm();
-            loginPage.clickRegister();
-            registerPage.assertCurrent();
-
-            registerPage.register("firstName", "lastName", "registerUserSuccessWithEmailVerificationWithResend@email", "registerUserSuccessWithEmailVerificationWithResend", generatePassword());
-            verifyEmailPage.assertCurrent();
-
-            String userId = events.expectRegister("registerUserSuccessWithEmailVerificationWithResend", "registerUserSuccessWithEmailVerificationWithResend@email").assertEvent().getUserId();
-
-            {
-                assertTrue("Expecting verify email", greenMail.waitForIncomingEmail(1000, 1));
-
-                events.expect(EventType.SEND_VERIFY_EMAIL)
-                  .detail(Details.EMAIL, "registerUserSuccessWithEmailVerificationWithResend@email".toLowerCase())
-                  .user(userId)
-                  .assertEvent();
-
-                setTimeOffset(40);
-                verifyEmailPage.clickResendEmail();
-                verifyEmailPage.assertCurrent();
-
-                assertTrue("Expecting second verify email", greenMail.waitForIncomingEmail(1000, 1));
-
-                events.expect(EventType.SEND_VERIFY_EMAIL)
-                  .detail(Details.EMAIL, "registerUserSuccessWithEmailVerificationWithResend@email".toLowerCase())
-                  .user(userId)
-                  .assertEvent();
-
-                MimeMessage message = greenMail.getLastReceivedMessage();
-                String link = MailUtils.getPasswordResetEmailLink(message);
-
-                driver.navigate().to(link);
-            }
-
-            events.expectRequiredAction(EventType.VERIFY_EMAIL)
-              .detail(Details.EMAIL, "registerUserSuccessWithEmailVerificationWithResend@email".toLowerCase())
-              .user(userId)
-              .assertEvent();
-
-            assertUserRegistered(userId, "registerUserSuccessWithEmailVerificationWithResend", "registerUserSuccessWithEmailVerificationWithResend@email");
-
-            appPage.assertCurrent();
-            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
-
-            // test that timestamp is current with 10s tollerance
-            // test user info is set from form
-        } finally {
-            setTimeOffset(0);
-        }
     }
 
     @Test

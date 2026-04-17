@@ -1,0 +1,26 @@
+// ------------------------ Breaking changes ------------------------  //
+== Breaking changes
+
+Breaking changes are identified as those that might require changes for existing users to their configurations or applications.
+In minor or patch releases, {project_name} will only introduce breaking changes to fix bugs.
+
+// ------------------------ Notable changes ------------------------ //
+== Notable changes
+
+Notable changes may include internal behavior changes that prevent common misconfigurations, bugs that are fixed, or changes to simplify running {project_name}.
+It also lists significant changes to internal APIs.
+
+=== Verify email required before credentials setup during user self-registration
+
+When user self-registration is enabled for the realm together with *Verify Email*, then users will not see password by default
+on the registration screen. After registration of user's profile, user would be required to verify email and then he can setup password
+(or eventually other credentials like OTP or Passkey) as a subsequent step. It is possible to disable and stick to the old behavior by
+enable switch *Always set password on register form* on the realm registration flow on the *Password validation* authenticator. Note
+that this option is deprecated and exists mostly for the backwards compatibility. It may be removed in the future.
+
+For the details, see the link:{adminguide_link}[{adminguide_name}].
+
+=== Configure TOTP and Update password required actions moved after Verify Email
+
+In relation to the previous point, the required actions *Configure OTP* and *Update password* are moved in the order of required actions after *Verify Email*
+required action. This is done automatically for new realm or during server update. If you prefer the old order, you can manually move required actions per your preference.

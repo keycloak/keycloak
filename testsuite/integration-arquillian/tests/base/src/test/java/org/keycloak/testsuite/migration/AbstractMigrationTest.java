@@ -1004,23 +1004,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
             log.info("Taking required actions from realm: " + realm.toRepresentation().getRealm());
             List<RequiredActionProviderRepresentation> actions = realm.flows().getRequiredActions();
 
-            // Checking the priority
-            int priority = 10;
-            for (RequiredActionProviderRepresentation action : actions) {
-                if (action.getAlias().equals("update_user_locale")) {
-                    assertEquals(1000, action.getPriority());
-                } else if (action.getAlias().equals("delete_credential")) {
-                    assertEquals(110, action.getPriority());
-                } else if (action.getAlias().equals("idp_link")) {
-                    assertEquals(120, action.getPriority());
-                } else if (action.getAlias().equals("verifiable_credential_offer")) {
-                    assertEquals(130, action.getPriority());
-                } else {
-                    assertEquals(priority, action.getPriority());
-                }
-
-                priority += 10;
-            }
+            // Checking the priority. Assert that specified required actions are in expected order
+            List<String> expectedReqActionAliases = Arrays.stream(new String[] { "TERMS_AND_CONDITIONS", "UPDATE_PROFILE", "VERIFY_EMAIL", "CONFIGURE_TOTP", "UPDATE_PASSWORD",
+                    "delete_credential", "idp_link", "update_user_locale" }).toList();
+            List<String> reqActionsAliases = actions.stream()
+                    .map(RequiredActionProviderRepresentation::getAlias)
+                    .filter(expectedReqActionAliases::contains)
+                    .toList();
+            assertEquals(reqActionsAliases, expectedReqActionAliases);
         }
     }
 

@@ -125,6 +125,11 @@ public class RealmConfigBuilder {
         return this;
     }
 
+    public RealmConfigBuilder verifyEmail(boolean verifyEmail) {
+        rep.setVerifyEmail(verifyEmail);
+        return this;
+    }
+
     public RealmConfigBuilder editUsernameAllowed(boolean allowed) {
         rep.setEditUsernameAllowed(allowed);
         return this;

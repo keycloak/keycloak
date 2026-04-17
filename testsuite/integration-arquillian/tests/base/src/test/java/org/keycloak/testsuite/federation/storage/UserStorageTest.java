@@ -401,7 +401,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
             oauth.openLoginForm();
             loginPage.clickRegister();
-            registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password");
+            registerPage.registerWithoutPassword("firstName", "lastName", "email@mail.com", "verifyEmail");
 
             verifyEmailPage.assertCurrent();
 
@@ -412,6 +412,9 @@ public class UserStorageTest extends AbstractAuthTest {
             String verificationUrl = getEmailLink(message);
 
             driver.navigate().to(verificationUrl.trim());
+
+            // Update password after email verified
+            updatePasswordPage.updatePasswords("password", "password");
 
             appPage.assertCurrent();
         }
