@@ -3,10 +3,10 @@ package org.keycloak.ssf.transmitter;
 import java.util.Set;
 
 import org.keycloak.provider.Provider;
-import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.event.SsfEventProviderFactory;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
+import org.keycloak.ssf.transmitter.emit.EventEmitterService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.resources.SsfStreamManagementResource;
@@ -73,6 +73,14 @@ public interface SsfTransmitterProvider extends Provider {
     SubjectManagementService subjectManagementService();
 
     /**
+     * Returns the service that pushes synthetic SSF events injected by
+     * a trusted IAM management client through the normal dispatch
+     * pipeline. Backs the {@code /admin/realms/{realm}/ssf/clients/{id}/events/emit}
+     * admin endpoint.
+     */
+    EventEmitterService eventEmitterService();
+
+    /**
      * Returns the JAX-RS sub-resource for stream CRUD operations (create, read, update, delete).
      *
      * @return the stream management endpoint
@@ -120,13 +128,6 @@ public interface SsfTransmitterProvider extends Provider {
      * @return
      */
     Set<String> getDefaultSupportedEvents();
-
-    /**
-     * Returns the event type of the given SSF event type string
-     * @param supportedEvent
-     * @return
-     */
-    Class<? extends SsfEvent> resolveSupportedEventType(String supportedEvent);
 
     /**
      * Resolves the event alias (e.g. {@code CaepCredentialChange}) for the given

@@ -215,6 +215,44 @@ public class SecurityEventTokenMapper {
     }
 
     /**
+     * Builds a Security Event Token for a synthetic event produced by the
+     * admin-facing event emitter endpoint — i.e. an event that Keycloak
+     * did not observe itself but that a trusted IAM management client
+     * wants the transmitter to forward as if it had.
+     *
+     * <p>The caller supplies the already-resolved event type URI, the
+     * deserialized event payload, and the RFC 9493 {@link SubjectId} the
+     * emitter chose. The {@code sub_id} is passed through verbatim — the
+     * emitter is trusted to pick a format appropriate for the receiver
+     * (which, unlike natively emitted events, is outside the transmitter's
+     * knowledge since the upstream system owns the subject identity).
+     *
+     * <p>The SET is otherwise built with the standard header
+     * (iss, jti, iat, aud, txn) identical to natively emitted events.
+     *
+     * <p>Returns {@code null} if construction fails (logged).
+     */
+    public SsfSecurityEventToken generateSyntheticEvent(StreamConfig stream,
+                                                        String eventTypeUri,
+                                                        Object eventPayload,
+                                                        SubjectId subjectId) {
+        try {
+            SsfSecurityEventToken token = newSecurityEventToken(stream);
+            token.setTxn(UUID.randomUUID().toString());
+            token.setSubjectId(subjectId);
+
+            Map<String, Object> events = new HashMap<>();
+            events.put(eventTypeUri, eventPayload);
+            token.setEvents(events);
+
+            return token;
+        } catch (Exception e) {
+            log.error("Error generating synthetic event", e);
+            return null;
+        }
+    }
+
+    /**
      * Builds the SSF subject identifier for a Keycloak user according to
      * the stream's configured user subject format (falling back to
      * {@link SsfUserSubjectFormats#DEFAULT iss_sub}). Invoked for every

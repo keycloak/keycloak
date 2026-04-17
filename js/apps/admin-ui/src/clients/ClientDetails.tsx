@@ -68,6 +68,7 @@ import {
 import { ClientParams, ClientTab, toClient } from "./routes/Client";
 import { toClientRole } from "./routes/ClientRole";
 import { ClientScopesTab, toClientScopesTab } from "./routes/ClientScopeTab";
+import { SsfClientTab, toSsfClientTab } from "./routes/ClientSsfTab";
 import { toClients } from "./routes/Clients";
 import { toCreateRole } from "./routes/NewRole";
 import { ClientScopes } from "./scopes/ClientScopes";
@@ -271,6 +272,16 @@ export default function ClientDetails() {
   const clientScopesEvaluateTab = useRoutableTab(
     clientScopesTabRoute("evaluate"),
   );
+
+  const ssfTabRoute = (tab: SsfClientTab) =>
+    toSsfClientTab({
+      realm,
+      clientId,
+      tab,
+    });
+  const ssfReceiverTab = useRoutableTab(ssfTabRoute("receiver"));
+  const ssfStreamTab = useRoutableTab(ssfTabRoute("stream"));
+  const ssfSubjectsTab = useRoutableTab(ssfTabRoute("subjects"));
 
   const authorizationTabRoute = (tab: AuthorizationTab) =>
     toAuthorizationTab({
@@ -704,7 +715,44 @@ export default function ClientDetails() {
                   title={<TabTitleText>{t("ssf")}</TabTitleText>}
                   {...ssfTab}
                 >
-                  <SsfTab save={save} client={client} />
+                  <RoutableTabs
+                    defaultLocation={ssfTabRoute("receiver")}
+                    mountOnEnter
+                    unmountOnExit
+                  >
+                    <Tab
+                      id="ssfReceiverTab"
+                      data-testid="ssfReceiverTab"
+                      title={<TabTitleText>{t("ssfTabReceiver")}</TabTitleText>}
+                      {...ssfReceiverTab}
+                    >
+                      <SsfTab
+                        save={save}
+                        client={client}
+                        activeTab="receiver"
+                      />
+                    </Tab>
+                    <Tab
+                      id="ssfStreamTab"
+                      data-testid="ssfStreamTab"
+                      title={<TabTitleText>{t("ssfTabStream")}</TabTitleText>}
+                      {...ssfStreamTab}
+                    >
+                      <SsfTab save={save} client={client} activeTab="stream" />
+                    </Tab>
+                    <Tab
+                      id="ssfSubjectsTab"
+                      data-testid="ssfSubjectsTab"
+                      title={<TabTitleText>{t("ssfTabSubjects")}</TabTitleText>}
+                      {...ssfSubjectsTab}
+                    >
+                      <SsfTab
+                        save={save}
+                        client={client}
+                        activeTab="subjects"
+                      />
+                    </Tab>
+                  </RoutableTabs>
                 </Tab>
               )}
             {hasAccess("view-events") && (

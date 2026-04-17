@@ -7,7 +7,7 @@ import org.keycloak.provider.Spi;
 /**
  * SPI that allows extensions to contribute additional SSF event types to the
  * shared {@link SsfEventRegistry}. Multiple factories can be registered and
- * each factory's {@link SsfEventProviderFactory#getContributedEvents()} is
+ * each factory's {@link SsfEventProviderFactory#getContributedEventFactories()} is
  * aggregated at startup.
  */
 public class SsfEventSpi implements Spi {

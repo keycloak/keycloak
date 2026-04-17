@@ -1,39 +1,50 @@
 package org.keycloak.ssf.event;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
+import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderFactory;
 
 /**
  * Factory contract for {@link SsfEventProvider} implementations.
  *
- * <p>Each registered factory contributes a set of {@link SsfEvent} instances
- * via {@link #getContributedEvents()}. At startup, the contributions of every
- * registered factory are merged into a single {@link SsfEventRegistry}, which
- * is then exposed through {@link SsfEventProvider#getRegistry()}.
+ * <p>Each registered factory contributes a map of event-type-URI to
+ * {@link SsfEvent} factory via {@link #getContributedEventFactories()}. At
+ * startup, the contributions of every registered factory are merged into a
+ * single {@link SsfEventRegistry}, which is then exposed through
+ * {@link SsfEventProvider#getRegistry()}.
  *
  * <p>To register custom events, drop a factory that implements this interface
  * into {@code META-INF/services/org.keycloak.protocol.ssf.event.SsfEventProviderFactory}
- * and return your additional events from {@link #getContributedEvents()}.
+ * and return your additional events from {@link #getContributedEventFactories()}.
  */
 public interface SsfEventProviderFactory extends ProviderFactory<SsfEventProvider> {
 
     /**
-     * Returns the set of {@link SsfEvent} instances this factory contributes
-     * to the global event registry. Called once at startup, after
+     * Returns the map of event-type URI to factory for the {@link SsfEvent}
+     * instances this provider contributes to the global event registry.
+     * Called once at startup, after
      * {@link ProviderFactory#init(org.keycloak.Config.Scope)} but before
      * {@link ProviderFactory#postInit(KeycloakSessionFactory)}.
      *
-     * <p>The default implementation returns an empty set.
+     * <p>The factory (typically a {@code SomeEvent::new} method reference)
+     * lets the registry mint fresh instances at runtime without reflection —
+     * used by the synthetic event emitter when the caller doesn't supply an
+     * event body. Keying by URI lets the registry skip a probing
+     * instantiation just to learn the event type.
+     *
+     * <p>The default implementation returns an empty map.
      */
-    default Set<SsfEvent> getContributedEvents() {
-        return Set.of();
+    default Map<String, Supplier<? extends SsfEvent>> getContributedEventFactories() {
+        return Map.of();
     }
 
     /**
-     * Returns the subset of {@link #getContributedEvents()} that this
+     * Returns the subset of {@link #getContributedEventFactories()} that this
      * extension actively emits from the transmitter (i.e. a Keycloak
      * event or other transmitter-side trigger is wired to produce an
      * SSF Security Event Token carrying the returned event type URI).
@@ -50,6 +61,16 @@ public interface SsfEventProviderFactory extends ProviderFactory<SsfEventProvide
      */
     default Set<String> getEmittableEventTypes() {
         return Set.of();
+    }
+
+    @Override
+    default void init(Config.Scope config) {
+        // no-op
+    }
+
+    @Override
+    default void close() {
+        // no-op
     }
 
     /**

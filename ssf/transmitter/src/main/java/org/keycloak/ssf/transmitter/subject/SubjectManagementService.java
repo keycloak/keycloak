@@ -166,7 +166,7 @@ public class SubjectManagementService {
         return new AdminSubjectResult(result, null, null);
     }
 
-    protected SubjectResolution resolveByAdminType(String type, String value) {
+    public SubjectResolution resolveByAdminType(String type, String value) {
         RealmModel realm = session.getContext().getRealm();
 
         if ("user-id".equals(type)) {

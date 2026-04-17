@@ -118,8 +118,21 @@ public class SsfAuthUtil {
      *         the specified client.</li>
      * </ul>
      */
-    private static boolean hasRole(AuthenticationManager.AuthResult authResult, String roleValue) {
-        AccessToken token = authResult.token();
+    public static boolean hasRole(AuthenticationManager.AuthResult authResult, String roleValue) {
+        return hasRole(authResult.token(), roleValue);
+    }
+
+    /**
+     * Token-level overload of {@link #hasRole(AuthenticationManager.AuthResult, String)}.
+     * Callers that only have the decoded {@link AccessToken} (e.g. the
+     * admin emit endpoint goes through {@code AdminAuth}, not the SSF
+     * receiver auth pipeline) can check roles without needing a full
+     * {@code AuthResult} wrapper.
+     */
+    public static boolean hasRole(AccessToken token, String roleValue) {
+        if (token == null || roleValue == null || roleValue.isBlank()) {
+            return false;
+        }
 
         int dot = roleValue.indexOf('.');
         if (dot > 0 && dot < roleValue.length() - 1) {
