@@ -21,6 +21,9 @@
             register_shutdown_hook="true"
             return_entire_cache="false"
             write_data_on_find="true"
+            initialize_sql = "CREATE TABLE jgroups (address varchar(200) NOT NULL, name varchar(200), cluster varchar(200) NOT NULL, ip varchar(200) NOT NULL, coord boolean, last_update bigint, coordinated_by varchar(200), PRIMARY KEY (address) )"
+            insert_single_sql="INSERT INTO jgroups values (?, ?, ?, ?, ?, ?, ?)"
+            select_all_pingdata_sql="SELECT address, name, ip, coord, coordinated_by, last_update FROM jgroups WHERE cluster=?"
     />
     <!-- very aggressive merging to speed up the test -->
     <MERGE3 min_interval="2000"

@@ -57,20 +57,6 @@ public class KEYCLOAK_JDBC_PING2 extends JDBC_PING2 {
     @Property(description="Staleness timeout in milliseconds. The coordinator will update the entries once 50%-75% of the time has passed.", type= AttributeType.TIME)
     protected long staleness_timeout = 60000L;
 
-    {
-        // Move these new SQL statements to JDBC_PING2 once we provide this change to upstream.
-        initialize_sql = "CREATE TABLE jgroups (address varchar(200) NOT NULL, " +
-                "name varchar(200), " +
-                "cluster varchar(200) NOT NULL, " +
-                "ip varchar(200) NOT NULL, " +
-                "coord boolean, " +
-                "last_update bigint, " +
-                "coordinated_by varchar(200), " +
-                "PRIMARY KEY (address) )";
-        insert_single_sql="INSERT INTO jgroups values (?, ?, ?, ?, ?, ?, ?)";
-        select_all_pingdata_sql="SELECT address, name, ip, coord, coordinated_by, last_update FROM jgroups WHERE cluster=?";
-    }
-
     @Override
     protected void loadDriver() {
         //no-op, using JpaConnectionProviderFactory
