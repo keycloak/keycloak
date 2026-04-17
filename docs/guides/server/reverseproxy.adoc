@@ -11,6 +11,78 @@ includedOptions="proxy-* hostname hostname-admin http-relative-path shutdown-del
 
 Distributed environments frequently require the use of a reverse proxy. {project_name} offers several options to securely integrate with such environments.
 
+== TLS termination modes
+
+When deploying {project_name} behind a reverse proxy, there are two common approaches for handling TLS connections between clients, the proxy, and {project_name}: re-encrypt and passthrough.
+
+=== Re-encrypt
+
+For re-encrypt, the reverse proxy terminates the client TLS connection and establishes a TLS connection to {project_name}.
+The proxy can inspect and modify HTTP headers (such as `Forwarded` or `X-Forwarded-*`) before re-encrypting the traffic to the backend.
+The proxy and {project_name} use independent TLS certificates: The proxy presents its own certificate to clients, while {project_name} uses a separate certificate for backend communication.
+Configure `--proxy-headers` so that {project_name} parses the forwarded headers set by the proxy, including the real client IP address.
+
+=== Passthrough
+
+With passthrough, the reverse proxy forwards the raw TLS connection directly to {project_name} without terminating it.
+The TLS handshake occurs between the client and {project_name}, so the proxy cannot inspect or modify HTTP traffic.
+Do not set `--proxy-headers` because the proxy cannot inject forwarded headers into the encrypted traffic.
+Enable the PROXY protocol (`--proxy-protocol-enabled=true`) so that {project_name} can see the real client IP address.
+
+=== Comparison
+
+The following table compares different aspects of the re-encrypt and passthrough proxy configurations.
+
+[%autowidth]
+|===
+|Aspect |Re-encrypt |Passthrough
+
+|TLS between client and proxy |Yes |Yes (end-to-end)
+|TLS between proxy and {project_name} |Yes |N/A (direct tunnel)
+|Proxy can modify HTTP headers |Yes |No
+|Proxy can filter URL paths |Yes |No
+|{project_name} manages TLS certificates |Yes |Yes
+|Client certificate (X.509) forwarding |Via HTTP headers added by the proxy |Native (no header needed)
+
+|===
+
+=== When to use each mode
+
+Re-encrypt is the most common choice for production deployments.
+It allows the proxy to set forwarded headers, filter URL paths, and apply HTTP-level policies while maintaining TLS encryption on both sides of the proxy.
+The proxy and {project_name} can use different TLS certificates, giving you flexibility in certificate management.
+Because the proxy can inspect HTTP traffic, it can also pool backend connections, cache static resources, and use cookie-based session affinity.
+
+Passthrough provides true end-to-end encryption without TLS termination at the proxy.
+It is the recommended mode when using X.509 client certificate authentication because the client certificate reaches {project_name} directly without being forwarded through an HTTP header, which eliminates the risk of forged client certificate headers.
+However, because the proxy cannot modify HTTP traffic, it cannot set forwarded headers or filter URL paths.
+This mode also requires {project_name} to present a certificate that covers all its externally visible hostnames, which can complicate certificate management.
+
+=== Security considerations
+
+When using re-encrypt:
+
+// TODO: When the proxy and Keycloak use mTLS, restricting network access might not be necessary, or that mTLS could be a restriction of the network access.
+
+* Restrict network access so that {project_name} accepts connections only from the proxy.
+Without this restriction, clients could bypass the proxy and send forged forwarded headers directly to {project_name}.
++
+Set `--proxy-trusted-addresses` to the IP addresses of your proxy to ensure forwarded headers are accepted only from these IP addresses. Note that this is only weak protection because IP addresses can be spoofed.
+* Ensure the proxy overwrites (not just appends to) forwarded headers to prevent clients from injecting false values.
+
+When using passthrough:
+
+* Restrict network access so that {project_name} accepts connections only from the proxy.
+
+* Forwarded headers are not applicable because the proxy cannot modify the encrypted traffic.
+
+* Enable the PROXY protocol (`--proxy-protocol-enabled=true`) to see the real client IP address.
+Note that the PROXY protocol is not compatible with the `--proxy-headers` option.
++
+The PROXY protocol header that the proxy adds to convey the client IP address is neither encrypted nor signed. Therefore, it can be spoofed, tampered with, or leaked. Mitigate that for example by restricting the network access.
+
+* Allow a longer `--shutdown-delay` (for example, 10–30 seconds) to give keepalive connections time to drain during shutdown, since the proxy cannot signal a connection close at the HTTP connection level.
+
 == Port to be proxied
 
 {project_name} runs on the following ports by default:
@@ -29,17 +101,17 @@ You only need to proxy port `8443` (or `8080`) even when you use different host 
 
 {project_name} will parse the reverse proxy headers based on the `proxy-headers` option which accepts several values:
 
-* By default if the option is not specified, no reverse proxy headers are parsed. This should be used when no proxy is in use or with https passthrough.
+* By default if the option is not specified, no reverse proxy headers are parsed. This should be used when no proxy is in use or with TLS passthrough.
 * `forwarded` enables parsing of the `Forwarded` header as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC 7239].
 * `xforwarded` enables parsing of non-standard `X-Forwarded-*` headers, such as `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, `X-Forwarded-Port`, and `X-Forwarded-Prefix`.
 
-NOTE: If you are using a reverse proxy for anything other than https passthrough and do not set the `proxy-headers` option, then by default you will see 403 Forbidden responses to requests via the proxy that perform origin checking.
+NOTE: If you are using a reverse proxy for anything other than TLS passthrough and do not set the `proxy-headers` option, then by default you will see 403 Forbidden responses to requests via the proxy that perform origin checking.
 
 For example:
 
 <@kc.start parameters="--proxy-headers forwarded"/>
 
-WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Do not use `forwarded` or `xforwarded` with https passthrough. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
+WARNING: If either `forwarded` or `xforwarded` is selected, make sure your reverse proxy properly sets and overwrites the `Forwarded` or `X-Forwarded-*` headers respectively. To set these headers, consult the documentation for your reverse proxy. Do not use `forwarded` or `xforwarded` with TLS passthrough. Misconfiguration will leave {project_name} exposed to security vulnerabilities.
 
 Take extra precautions to ensure that the client address is properly set by your reverse proxy via the `Forwarded` or `X-Forwarded-For` headers.
 If this header is incorrectly configured, rogue clients can set this header and trick {project_name} into thinking the client is connected from a different IP address than the actual address. This precaution can be more critical if you do any deny or allow listing of IP addresses.
@@ -156,7 +228,7 @@ For example:
 
 The `proxy-protocol-enabled` option controls whether the server should use the HA PROXY protocol when serving requests from behind a proxy. When set to true, the remote address returned will be the one from the actual connecting client. The value cannot be `true` when using the `proxy-headers` option.
 
-This is useful when running behind a compatible https passthrough proxy because the request headers cannot be manipulated.
+This is useful when running behind a compatible TLS passthrough proxy because the request headers cannot be manipulated.
 
 For example:
 
