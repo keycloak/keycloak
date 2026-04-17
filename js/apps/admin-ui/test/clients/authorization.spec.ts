@@ -296,12 +296,14 @@ test.describe.serial("Client authorization resources pagination", () => {
     await goToResourcesSubTab(page);
   });
 
-  test("Should not duplicate the 10th item on the 2nd page", async ({ page }) => {
-    await page.waitForSelector('table');
-    await expect(page.getByText('Resource-10', { exact: true })).toBeVisible();
-    await expect(page.getByText('Resource-11', { exact: true })).not.toBeVisible();
+  test("Should not duplicate the 10th item on the 2nd page", async ({
+    page,
+  }) => {
+    await page.waitForSelector("table");
+    await expect(page.getByText("Resource-10", { exact: true })).toBeVisible();
+    await expect(page.getByText("Resource-11", { exact: true })).toBeHidden();
     await page.locator('[aria-label="Go to next page"]').first().click();
-    await expect(page.getByText('Resource-11', { exact: true })).toBeVisible();
-    await expect(page.getByText('Resource-10', { exact: true })).not.toBeVisible();
+    await expect(page.getByText("Resource-11", { exact: true })).toBeVisible();
+    await expect(page.getByText("Resource-10", { exact: true })).toBeHidden();
   });
 });
