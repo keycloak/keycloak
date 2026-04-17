@@ -209,13 +209,14 @@ public class ClientResource {
     }
 
     public ClientModel viewClientModel() {
+        auth.clients().requireView(client);
+
         try {
             session.clientPolicy().triggerOnEvent(new AdminClientViewContext(client, auth.adminAuth()));
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        auth.clients().requireView(client);
         return client;
     }
 
