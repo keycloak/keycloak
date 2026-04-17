@@ -213,7 +213,7 @@ public class DPoPUtil {
         verifier.verifierContext(signatureVerifier);
         verifier.withChecks(
                 DPoPClaimsCheck.INSTANCE,
-                new DPoPHTTPCheck(session, uri, method),
+                new DPoPHTTPCheck(uri, method),
                 new DPoPIsActiveCheck(session, lifetime, clockSkew),
                 new DPoPReplayCheck(session, lifetime + clockSkew));
 
@@ -356,10 +356,8 @@ public class DPoPUtil {
 
         private final URI uri;
         private final String method;
-        private final KeycloakSession session;
 
-        DPoPHTTPCheck(KeycloakSession session, URI uri, String method) {
-            this.session = session;
+        DPoPHTTPCheck(URI uri, String method) {
             this.uri = uri;
             this.method = method;
         }
@@ -367,20 +365,8 @@ public class DPoPUtil {
         @Override
         public boolean test(DPoP t) throws DPoPVerificationException {
             try {
-                URI dpopUri = new URI(t.getHttpUri());
-                if (!normalize(dpopUri).equals(normalize(uri))) {
-                    // When Keycloak runs behind a reverse proxy, it may not be possible to reconstruct
-                    // the expected uri from the request alone - port information may get lost.
-                    // We also accept a DPoP Uri that matches the configured KC_HOSTNAME
-                    UriInfo uriInfo = session.getContext().getHttpRequest().getUri();
-                    URI expectedUri = session.getContext()
-                            .getUri()
-                            .getBaseUriBuilder()
-                            .replacePath(uriInfo.getPath())
-                            .build();
-                    if (!normalize(dpopUri).equals(normalize(expectedUri)))
-                        throw new DPoPVerificationException(t, "DPoP HTTP URL mismatch");
-                }
+                if (!normalize(new URI(t.getHttpUri())).equals(normalize(uri)))
+                    throw new DPoPVerificationException(t, "DPoP HTTP URL mismatch");
 
                 if (!method.equals(t.getHttpMethod()))
                     throw new DPoPVerificationException(t, "DPoP HTTP method mismatch");
