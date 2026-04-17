@@ -170,7 +170,7 @@ public class SsfTransmitterRateLimitTests {
         streamConfig.setEventsRequested(Set.of(CaepCredentialChange.TYPE));
         streamConfig.setDescription("Rate limit integration test");
 
-        try (SimpleHttpResponse response = http.doPost(SsfTransmitterUrls.streamsEndpoint(realm.getBaseUrl()))
+        try (SimpleHttpResponse response = http.doPost(SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl()))
                 .json(streamConfig)
                 .auth(token)
                 .acceptJson()
@@ -181,7 +181,7 @@ public class SsfTransmitterRateLimitTests {
     }
 
     protected String verificationEndpoint() {
-        return SsfTransmitterUrls.streamVerificationEndpoint(realm.getBaseUrl());
+        return SsfTransmitterUrls.getStreamVerificationEndpointUrl(realm.getBaseUrl());
     }
 
     protected ClientRepresentation findClientByClientId(String clientId) {

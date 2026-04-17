@@ -289,11 +289,11 @@ public class SsfTransmitterVerificationTests {
     }
 
     protected String streamsEndpoint() {
-        return SsfTransmitterUrls.streamsEndpoint(realm.getBaseUrl());
+        return SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl());
     }
 
     protected String verificationEndpoint() {
-        return SsfTransmitterUrls.streamVerificationEndpoint(realm.getBaseUrl());
+        return SsfTransmitterUrls.getStreamVerificationEndpointUrl(realm.getBaseUrl());
     }
 
     protected String obtainManageAndReadToken(String clientId, String secret) throws IOException {

@@ -744,7 +744,7 @@ public class SsfTransmitterStreamManagementTests {
     // --- helpers ---------------------------------------------------------
 
     protected String streamsEndpoint() {
-        return SsfTransmitterUrls.streamsEndpoint(realm.getBaseUrl());
+        return SsfTransmitterUrls.getStreamsEndpointUrl(realm.getBaseUrl());
     }
 
     /**
