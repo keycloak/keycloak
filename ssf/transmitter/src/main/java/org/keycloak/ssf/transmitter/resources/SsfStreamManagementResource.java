@@ -16,6 +16,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
@@ -27,6 +28,13 @@ import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 import org.keycloak.util.JsonSerialization;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
@@ -56,6 +64,17 @@ public class SsfStreamManagementResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Ssf.Tags.TRANSMITTER)
+    @Operation(
+            summary = "Create stream",
+            description = "Creates a new SSF stream for the authenticated receiver client (SSF 1.0 §7.1.1.1)."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = StreamConfig.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "409", description = "Duplicate stream configuration")
+    })
     public Response createStream(StreamConfigInputRepresentation input) {
 
         if (!SsfAuthUtil.canManage()) {
@@ -97,7 +116,19 @@ public class SsfStreamManagementResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getStream(@QueryParam("stream_id") String streamId) {
+    @Tag(name = KeycloakOpenAPI.Ssf.Tags.TRANSMITTER)
+    @Operation(
+            summary = "Get stream(s)",
+            description = "Returns the stream for the given stream_id or, if stream_id is omitted, all streams owned by the authenticated receiver client (SSF 1.0 §7.1.1.2)."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = StreamConfig.class))),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "404", description = "Stream not found")
+    })
+    public Response getStream(
+            @Parameter(description = "Identifier of the stream to return. If omitted, all streams for the authenticated client are returned.")
+            @QueryParam("stream_id") String streamId) {
 
         if (!SsfAuthUtil.canRead()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
@@ -145,6 +176,17 @@ public class SsfStreamManagementResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Ssf.Tags.TRANSMITTER)
+    @Operation(
+            summary = "Update stream",
+            description = "Partially updates a stream configuration (SSF 1.0 §7.1.1.3)."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = StreamConfig.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "404", description = "Stream not found")
+    })
     public Response updateStream(StreamConfigUpdateRepresentation update) {
 
         if (!SsfAuthUtil.canManage()) {
@@ -194,6 +236,17 @@ public class SsfStreamManagementResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Ssf.Tags.TRANSMITTER)
+    @Operation(
+            summary = "Replace stream",
+            description = "Replaces the full stream configuration (SSF 1.0 §7.1.1.4)."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = StreamConfig.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "404", description = "Stream not found")
+    })
     public Response replaceStream(StreamConfigUpdateRepresentation update) {
 
         if (!SsfAuthUtil.canManage()) {
@@ -241,7 +294,20 @@ public class SsfStreamManagementResource {
      */
     @DELETE
     @NoCache
-    public Response deleteStream(@QueryParam("stream_id") String streamId) {
+    @Tag(name = KeycloakOpenAPI.Ssf.Tags.TRANSMITTER)
+    @Operation(
+            summary = "Delete stream",
+            description = "Deletes an SSF stream (SSF 1.0 §7.1.1.5). If stream_id is omitted, the caller's stored stream id is used."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "404", description = "Stream not found")
+    })
+    public Response deleteStream(
+            @Parameter(description = "Identifier of the stream to delete. If omitted, the caller's stored stream id is used.")
+            @QueryParam("stream_id") String streamId) {
 
         if (!SsfAuthUtil.canManage()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();

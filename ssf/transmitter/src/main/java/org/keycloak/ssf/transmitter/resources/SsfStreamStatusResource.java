@@ -10,12 +10,20 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
@@ -44,7 +52,20 @@ public class SsfStreamStatusResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getStreamStatus(@QueryParam("stream_id") String streamId) {
+    @Tag(name = KeycloakOpenAPI.Ssf.Tags.TRANSMITTER)
+    @Operation(
+            summary = "Get stream status",
+            description = "Returns the current status of the given stream (SSF 1.0 §7.1.2.1)."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = StreamStatus.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "404", description = "Stream not found")
+    })
+    public Response getStreamStatus(
+            @Parameter(description = "Identifier of the stream whose status to return.")
+            @QueryParam("stream_id") String streamId) {
 
         if (!SsfAuthUtil.canRead()) {
             return Response.status(Response.Status.UNAUTHORIZED).build();
@@ -84,6 +105,17 @@ public class SsfStreamStatusResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Ssf.Tags.TRANSMITTER)
+    @Operation(
+            summary = "Update stream status",
+            description = "Updates the status of the given stream, e.g. to pause or disable it (SSF 1.0 §7.1.2.2)."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = StreamStatus.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "404", description = "Stream not found")
+    })
     public Response updateStreamStatus(StreamStatus streamStatus) {
 
         if (!SsfAuthUtil.canManage()) {

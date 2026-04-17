@@ -18,6 +18,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.ssf.SsfException;
@@ -37,6 +38,14 @@ import org.keycloak.ssf.transmitter.subject.SubjectManagementResult;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 
 /**
@@ -44,6 +53,7 @@ import org.jboss.logging.Logger;
  *
  * The endpoint is available via {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf}
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class SsfAdminResource {
 
     private static final Logger log = Logger.getLogger(SsfAdminResource.class);
@@ -79,6 +89,14 @@ public class SsfAdminResource {
     @GET
     @Path("config")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Get SSF realm configuration",
+            description = "Returns the current SSF configuration for this realm, including transmitter defaults such as the set of event types supported by default when a receiver client does not configure its own."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfConfigRepresentation.class)))
+    })
     public SsfConfigRepresentation getConfig() {
 
         auth.realm().requireViewRealm();
@@ -109,16 +127,27 @@ public class SsfAdminResource {
      * (i.e. the receiver has not created a stream via the SSF Transmitter API).
      *
      * The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/stream}
      */
     @GET
-    @Path("clients/{clientId}/stream")
+    @Path("clients/{clientIdentifier}/stream")
     @Produces(MediaType.APPLICATION_JSON)
-    public SsfClientStreamRepresentation getClientStream(@PathParam("clientId") String clientId) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Get SSF stream for client",
+            description = "Returns the current SSF stream state for a single receiver client, including the events that the transmitter currently delivers to it."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfClientStreamRepresentation.class))),
+            @APIResponse(responseCode = "404", description = "Client not found or no SSF stream registered")
+    })
+    public SsfClientStreamRepresentation getClientStream(
+            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
+            @PathParam("clientIdentifier") String clientIdentifier) {
 
         auth.realm().requireViewRealm();
 
-        ClientModel client = realm.getClientById(clientId);
+        ClientModel client = realm.getClientById(clientIdentifier);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -148,16 +177,29 @@ public class SsfAdminResource {
      * client already has a registered stream.
      *
      * <p>The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}.
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/stream}.
      */
     @POST
-    @Path("clients/{clientId}/stream")
+    @Path("clients/{clientIdentifier}/stream")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createClientStream(@PathParam("clientId") String clientId,
-                                       StreamConfigInputRepresentation input) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Create SSF stream for client",
+            description = "Admin-initiated creation of an SSF stream for an existing receiver client. Mirrors the receiver-facing POST /streams flow but bypasses the receiver-vs-transmitter profile validation for iss/aud/format."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = SsfClientStreamRepresentation.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "404", description = "Client not found"),
+            @APIResponse(responseCode = "409", description = "Client already has a registered stream")
+    })
+    public Response createClientStream(
+            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
+            @PathParam("clientIdentifier") String clientIdentifier,
+            StreamConfigInputRepresentation input) {
 
-        ClientModel client = realm.getClientById(clientId);
+        ClientModel client = realm.getClientById(clientIdentifier);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -170,12 +212,12 @@ public class SsfAdminResource {
                     .entity(toClientStreamRepresentation(created, client))
                     .build();
         } catch (DuplicateStreamConfigException dsce) {
-            log.debugf(dsce, "Admin stream create rejected for client %s: duplicate stream", clientId);
+            log.debugf(dsce, "Admin stream create rejected for client %s: duplicate stream", clientIdentifier);
             throw new WebApplicationException(Response.status(Response.Status.CONFLICT)
                     .entity(new SsfErrorRepresentation("stream_error", dsce.getMessage()))
                     .build());
         } catch (SsfException e) {
-            log.debugf(e, "Admin stream create rejected for client %s: %s", clientId, e.getMessage());
+            log.debugf(e, "Admin stream create rejected for client %s: %s", clientIdentifier, e.getMessage());
             throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("stream_error", e.getMessage()))
                     .build());
@@ -230,13 +272,24 @@ public class SsfAdminResource {
      * off, not when the receiver has acknowledged it.
      *
      * <p>The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream/verify}.
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/stream/verify}.
      */
     @POST
-    @Path("clients/{clientId}/stream/verify")
-    public Response verifyClientStream(@PathParam("clientId") String clientId) {
+    @Path("clients/{clientIdentifier}/stream/verify")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Verify SSF stream for client",
+            description = "Sends an unsolicited verification Security Event Token (SET) to a receiver client's registered SSF stream. The push is fire-and-forget — the dispatcher schedules the delivery on the push executor."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "404", description = "Client not found or no SSF stream registered")
+    })
+    public Response verifyClientStream(
+            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
+            @PathParam("clientIdentifier") String clientIdentifier) {
 
-        ClientModel client = realm.getClientById(clientId);
+        ClientModel client = realm.getClientById(clientIdentifier);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -274,13 +327,24 @@ public class SsfAdminResource {
      * success, 404 if the client does not exist or has no registered stream.
      *
      * The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/stream}
      */
     @DELETE
-    @Path("clients/{clientId}/stream")
-    public Response deleteClientStream(@PathParam("clientId") String clientId) {
+    @Path("clients/{clientIdentifier}/stream")
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Delete SSF stream for client",
+            description = "Deletes the currently registered SSF stream for a receiver client so the receiver can re-register with a fresh configuration."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "404", description = "Client not found or no SSF stream registered")
+    })
+    public Response deleteClientStream(
+            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
+            @PathParam("clientIdentifier") String clientIdentifier) {
 
-        ClientModel client = realm.getClientById(clientId);
+        ClientModel client = realm.getClientById(clientIdentifier);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -302,16 +366,28 @@ public class SsfAdminResource {
      * {@code ssf.notify.<clientId>} attribute on the resolved entity.
      *
      * <p>The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/subjects/add}.
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/subjects/add}.
      */
     @POST
-    @Path("clients/{clientId}/subjects/add")
+    @Path("clients/{clientIdentifier}/subjects/add")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response addSubject(@PathParam("clientId") String clientId,
-                               SsfAdminSubjectRequest request) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Add subject to client notification scope",
+            description = "Adds a subject to a receiver client's notification scope. Resolves the subject by the admin shorthand type (user-id, user-email, org-alias) and sets the ssf.notify.<clientId> attribute on the resolved entity."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfAdminSubjectResponse.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "404", description = "Client or subject not found")
+    })
+    public Response addSubject(
+            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
+            @PathParam("clientIdentifier") String clientIdentifier,
+            SsfAdminSubjectRequest request) {
 
-        ClientModel client = realm.getClientById(clientId);
+        ClientModel client = realm.getClientById(clientIdentifier);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -325,7 +401,7 @@ public class SsfAdminResource {
 
 
         SubjectManagementService svc = transmitter.subjectManagementService();
-        AdminSubjectResult result = svc.addSubjectByAdmin(clientId, request.getType(), request.getValue());
+        AdminSubjectResult result = svc.addSubjectByAdmin(clientIdentifier, request.getType(), request.getValue());
 
         if (result.result() == SubjectManagementResult.OK) {
             return Response.ok(new SsfAdminSubjectResponse("added", result.entityType(), result.entityId())).build();
@@ -344,15 +420,27 @@ public class SsfAdminResource {
      * attribute from the resolved entity.
      *
      * <p>The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/subjects/remove}.
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/subjects/remove}.
      */
     @POST
-    @Path("clients/{clientId}/subjects/remove")
+    @Path("clients/{clientIdentifier}/subjects/remove")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response removeSubject(@PathParam("clientId") String clientId,
-                                  SsfAdminSubjectRequest request) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Remove subject from client notification scope",
+            description = "Removes a subject from a receiver client's notification scope. Resolves the subject and clears the ssf.notify.<clientId> attribute from the resolved entity."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "404", description = "Client or subject not found")
+    })
+    public Response removeSubject(
+            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
+            @PathParam("clientIdentifier") String clientIdentifier,
+            SsfAdminSubjectRequest request) {
 
-        ClientModel client = realm.getClientById(clientId);
+        ClientModel client = realm.getClientById(clientIdentifier);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -365,7 +453,7 @@ public class SsfAdminResource {
         }
 
         SubjectManagementService svc = transmitter.subjectManagementService();
-        AdminSubjectResult result = svc.removeSubjectByAdmin(clientId, request.getType(), request.getValue());
+        AdminSubjectResult result = svc.removeSubjectByAdmin(clientIdentifier, request.getType(), request.getValue());
 
         if (result.result() == SubjectManagementResult.OK) {
             return Response.noContent().build();
@@ -384,16 +472,28 @@ public class SsfAdminResource {
      * will not receive events even in {@code default_subjects=ALL} mode.
      *
      * <p>The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/subjects/ignore}.
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/subjects/ignore}.
      */
     @POST
-    @Path("clients/{clientId}/subjects/ignore")
+    @Path("clients/{clientIdentifier}/subjects/ignore")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response ignoreSubject(@PathParam("clientId") String clientId,
-                                  SsfAdminSubjectRequest request) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Ignore subject for client",
+            description = "Explicitly excludes a subject from a receiver client's notification scope by setting ssf.notify.<clientId>=false. The subject will not receive events even in default_subjects=ALL mode."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfAdminSubjectResponse.class))),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "404", description = "Client or subject not found")
+    })
+    public Response ignoreSubject(
+            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
+            @PathParam("clientIdentifier") String clientIdentifier,
+            SsfAdminSubjectRequest request) {
 
-        ClientModel client = realm.getClientById(clientId);
+        ClientModel client = realm.getClientById(clientIdentifier);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -406,7 +506,7 @@ public class SsfAdminResource {
         }
 
         SubjectManagementService svc = transmitter.subjectManagementService();
-        AdminSubjectResult result = svc.ignoreSubjectByAdmin(clientId, request.getType(), request.getValue());
+        AdminSubjectResult result = svc.ignoreSubjectByAdmin(clientIdentifier, request.getType(), request.getValue());
 
         if (result.result() == SubjectManagementResult.OK) {
             return Response.ok(new SsfAdminSubjectResponse("ignored", result.entityType(), result.entityId())).build();
