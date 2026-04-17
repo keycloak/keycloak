@@ -99,13 +99,13 @@ The following fields help determine whether standbys are healthy and replication
 
 | `Current LSN`, `Sent LSN`, `Write LSN`, `Flush LSN`, `Replay LSN`
 | A two-part hexadecimal value like `0/7000000`, indicating a log file number and a byte-offset within that log file.
-| Log Sequence Number (LSN) is a number representing a position in the Write-Ahead Log (WAL) stream.
+| A Log Sequence Number (LSN) is a pointer to a position in the Write-Ahead Log (WAL) stream.
 
 The `Current LSN` shows the latest position recorded by a particular instance.
 
-The `Sent`, `Write`, `Flush` and `Replay` LSNs show the latest position for a particular standby which has been sent to it by the primary, written to the file system, safely written to a storage device (flushed from cache), and replayed by the database. Differences between values indicate a lag between individual phases in terms of bytes.
+The `Sent`, `Write`, `Flush`, and `Replay` LSNs show the latest WAL position for a particular standby that has been sent by the primary, written to the file system, safely written to a storage device (flushed from cache), and replayed by the database, respectively. Differences between these values indicate lag between individual phases in terms of bytes.
 
-The difference between a standby's `Replay LSN` and the primary's `Current LSN` indicates the overall replication lag for the particular standby in terms of bytes.
+The difference between a standby's `Replay LSN` and the primary's `Current LSN` indicates the overall replication lag for that standby in terms of bytes.
 
 | `Write Lag`, `Flush Lag`, `Replay Lag`
 | `00:00:00.00NNNN`
@@ -135,11 +135,11 @@ a| Synchronous state of this standby server. Possible values are:
 | Confirms the replication slot is in use and the standby is consuming WAL.
 |===
 
-== Review the status through Prometheus and Grafana
+== Review the status via Prometheus and Grafana
 
 === Enable monitoring of the CloudNativePG cluster
 
-. Enable collection of metrics by creating a PodMonitor resource:
+. Enable metric collection by creating a PodMonitor resource:
 +
 .Command:
 [source,bash,indent=0]
@@ -163,7 +163,7 @@ EOF
 +
 . Optionally, customize the monitoring according to the https://cloudnative-pg.io/docs/${properties["cnpg.major-minor-version"]}/monitoring#monitoring-instances[Monitoring section of the CloudNativePG documentation].
 
-=== Observe Replication Status
+=== Observe replication status
 
 Use the following metrics to observe standby health:
 
@@ -187,7 +187,7 @@ Use the following metrics to observe standby health:
 | Time elapsed between WAL flushed on the primary and replayed on the standby.
 |===
 
-=== Observe Backups
+=== Observe backups
 
 If backups are enabled, use the https://cloudnative-pg.io/plugin-barman-cloud/docs/observability/[metrics exposed by the Barman Cloud Plugin] to monitor their status:
 
@@ -207,7 +207,7 @@ If backups are enabled, use the https://cloudnative-pg.io/plugin-barman-cloud/do
 |===
 
 
-== What healthy standby looks like
+== What a healthy standby looks like
 
 A healthy standby setup typically shows:
 
