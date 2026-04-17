@@ -41,6 +41,8 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
+import org.keycloak.jose.jws.JWSBuilder;
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -319,6 +321,27 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 
         String code = oauth.parseLoginResponse().getCode();
         AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT("ppassswordd", 20));
+
+        // https://tools.ietf.org/html/rfc6749#section-5.2
+        assertEquals(400, response.getStatusCode());
+        assertEquals("unauthorized_client", response.getError());
+    }
+
+    @Test
+    public void testAssertionWithNoneAlgorithm() throws Exception {
+        oauth.clientId("test-app");
+        oauth.doLogin("test-user@localhost", "password");
+        EventRepresentation loginEvent = events.expectLogin()
+                .client("test-app")
+                .assertEvent();
+
+        String code = oauth.parseLoginResponse().getCode();
+
+        String client1Jwt = getClientSignedJWT("ppassswordd", 20);
+        JsonWebToken client1JsonWebToken = new JWSInput(client1Jwt).readJsonContent(JsonWebToken.class);
+        String request = new JWSBuilder().jsonContent(client1JsonWebToken).none();
+
+        AccessTokenResponse response = doAccessTokenRequest(code, request);
 
         // https://tools.ietf.org/html/rfc6749#section-5.2
         assertEquals(400, response.getStatusCode());
