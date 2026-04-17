@@ -72,7 +72,10 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
     @TestSetup
     public void configure() {
         var kw = createRsaKeyPair("openid-abca-attester-key");
-        JWK jwk = JWKBuilder.create().kid(kw.getKid()).rsa(kw.getPublicKey(), kw.getCertificate());
+        JWK jwk = JWKBuilder.create()
+                .kid(kw.getKid())
+                .algorithm(kw.getAlgorithm())
+                .rsa(kw.getPublicKey(), kw.getCertificate());
         abcaConfig = new ABCAConfig().setKeys(List.of(jwk));
         attester = new OIDCMockClientAttester(kw);
     }
@@ -105,7 +108,7 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
         // Call the Attester to get the Client Attestation JWT
         //
         var walletKey = wallet.getRSAKeyPair(ctx);
-        String attestationJwt = wallet.buildClientAttestationJWT(ctx, walletKey.getPublicKey());
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, walletKey);
 
         // Verify the Client Attestation JWT
         //
@@ -134,9 +137,9 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
     @Test
     public void testClientAttestationHappyFlow_PublicClient() {
 
-        var key = wallet.getRSAKeyPair(ctx);
-        String attestationJwt = wallet.buildClientAttestationJWT(ctx, key.getPublicKey());
-        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, key);
+        var kw = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, kw);
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, kw);
 
         PkceGenerator pkce = PkceGenerator.s256();
 
@@ -152,8 +155,8 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
                 .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
                 .codeVerifier(pkce)
                 .send();
-        String accessToken = tokenResponse.getAccessToken();
-        assertNotNull(authCode, "No accessToken");
+        String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
+        assertNotNull(accessToken, "No accessToken");
 
         String credIdentifier = ctx.getAuthorizedCredentialIdentifier();
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)
@@ -171,9 +174,9 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
         ctx.putAttachment(CLIENT_ATTESTER_ATTACHMENT_KEY, attester);
         oauth.client(ctx.getClient().getClientId(), ctx.getClient().getSecret());
 
-        var key = wallet.getRSAKeyPair(ctx);
-        String attestationJwt = wallet.buildClientAttestationJWT(ctx, key.getPublicKey());
-        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, key);
+        var kw = wallet.getRSAKeyPair(ctx);
+        String attestationJwt = wallet.buildClientAttestationJWT(ctx, kw);
+        String attestationPoPJwt = wallet.buildClientAttestationPoPJWT(ctx, kw);
 
         AuthorizationEndpointResponse authResponse = wallet.authorizationRequest()
                 .scope(ctx.getScope())
@@ -185,8 +188,8 @@ public class OIDCAttestationBasedClientAuthenticationTest extends OID4VCIssuerTe
                 .header(OAUTH_CLIENT_ATTESTATION_HEADER, attestationJwt)
                 .header(OAUTH_CLIENT_ATTESTATION_POP_HEADER, attestationPoPJwt)
                 .send();
-        String accessToken = tokenResponse.getAccessToken();
-        assertNotNull(authCode, "No accessToken");
+        String accessToken = wallet.validateHolderAccessToken(ctx, tokenResponse);
+        assertNotNull(accessToken, "No accessToken");
 
         String credIdentifier = ctx.getAuthorizedCredentialIdentifier();
         CredentialResponse credResponse = wallet.credentialRequest(ctx, accessToken)

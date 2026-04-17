@@ -1,6 +1,5 @@
 package org.keycloak.tests.oid4vc.abca;
 
-import java.security.Key;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
@@ -39,8 +38,12 @@ public class OIDCMockClientAttester implements OIDCClientAttester {
     }
 
     @Override
-    public String attestWalletKey(String clientId, Key pubKey) {
-        JWK jwk = JWKBuilder.create().rsa(pubKey);
+    public String attestWalletKey(String clientId, KeyWrapper key) {
+        String algorithm = key.getAlgorithm();
+        JWK jwk = JWKBuilder.create()
+                .kid(key.getKid())
+                .algorithm(algorithm)
+                .rsa(key.getPublicKey(), key.getCertificate());
         ClientAttestationJwt body = new ClientAttestationJwt()
                 .issuer(issuer)
                 .subject(clientId)

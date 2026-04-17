@@ -1,7 +1,6 @@
 package org.keycloak.tests.oid4vc;
 
 import java.io.IOException;
-import java.security.Key;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -181,10 +180,12 @@ public class OID4VCBasicWallet {
         return attester;
     }
 
-    public String buildClientAttestationJWT(OID4VCTestContext ctx, Key pubKey) {
+    public String buildClientAttestationJWT(OID4VCTestContext ctx, KeyWrapper walletKey) {
+        KeyWrapper pubKeyWrapper = walletKey.cloneKey();
+        pubKeyWrapper.setPrivateKey(null);
         String clientId = ctx.getClient().getClientId();
         OIDCClientAttester attester = getClientAttester(ctx);
-        String attestationJwt = attester.attestWalletKey(clientId, pubKey);
+        String attestationJwt = attester.attestWalletKey(clientId, pubKeyWrapper);
         return attestationJwt;
     }
 
@@ -205,7 +206,6 @@ public class OID4VCBasicWallet {
                 .kid(walletKey.getKid())
                 .jsonContent(body)
                 .sign(new AsymmetricSignatureSignerContext(walletKey));
-
         return attestationPoPJwt;
     }
 
@@ -233,7 +233,7 @@ public class OID4VCBasicWallet {
     public Proofs generateJwtProof(OID4VCTestContext ctx) {
         String aud = getIssuerMetadata(ctx).getCredentialIssuer();
         String nonce = oauth.oid4vc().doNonceRequest().getNonce();
-        KeyWrapper kw = getECKeyPair(ctx, "proof-key");
+        KeyWrapper kw = getECKeyPair(ctx, null);
         return Proofs.create(ProofType.JWT, OID4VCProofTestUtils.generateJwtProof(aud, kw, nonce));
     }
 
