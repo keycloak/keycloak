@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
@@ -18,6 +19,10 @@ import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
@@ -54,6 +59,18 @@ public class SsfStreamVerificationResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Ssf.Tags.TRANSMITTER)
+    @Operation(
+            summary = "Trigger stream verification",
+            description = "Triggers the transmitter to push a verification Security Event Token (SET) to the stream's delivery endpoint (SSF 1.0 §7.1.3)."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "404", description = "Stream not found"),
+            @APIResponse(responseCode = "429", description = "Too Many Requests — minimum verification interval not yet elapsed")
+    })
     public Response triggerVerification(StreamVerificationRequest verificationRequest) {
         try {
 

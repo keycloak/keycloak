@@ -8,6 +8,7 @@ import jakarta.ws.rs.core.Response;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.ssf.subject.AddSubjectRequest;
 import org.keycloak.ssf.subject.RemoveSubjectRequest;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementResult;
@@ -15,6 +16,10 @@ import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.NoCache;
 
@@ -51,6 +56,17 @@ public class SsfSubjectManagementResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Ssf.Tags.TRANSMITTER)
+    @Operation(
+            summary = "Add subject to stream",
+            description = "Adds a subject to the caller's stream (SSF 1.0 §7.1.3.2). In privacy-by-default (silent) mode, unknown subjects or unsupported formats return 200 without a body."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK"),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "404", description = "Stream or subject not found (verbose mode only)")
+    })
     public Response addSubject(AddSubjectRequest request) {
 
         if (!SsfAuthUtil.canManage()) {
@@ -97,6 +113,17 @@ public class SsfSubjectManagementResource {
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Ssf.Tags.TRANSMITTER)
+    @Operation(
+            summary = "Remove subject from stream",
+            description = "Removes a subject from the caller's stream (SSF 1.0 §7.1.3.3). In privacy-by-default (silent) mode, unknown subjects or unsupported formats return 204."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "204", description = "No Content"),
+            @APIResponse(responseCode = "400", description = "Bad Request"),
+            @APIResponse(responseCode = "401", description = "Unauthorized"),
+            @APIResponse(responseCode = "404", description = "Stream not found (verbose mode only)")
+    })
     public Response removeSubject(RemoveSubjectRequest request) {
 
         if (!SsfAuthUtil.canManage()) {

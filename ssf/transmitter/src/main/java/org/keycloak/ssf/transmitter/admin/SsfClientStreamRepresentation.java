@@ -7,8 +7,7 @@ import org.keycloak.ssf.transmitter.stream.StreamDeliveryConfig;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- * Representation of the current SSF stream state for a single receiver client,
- * exposed via {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}.
+ * Representation of the current SSF stream state for a single receiver client.
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class SsfClientStreamRepresentation {
