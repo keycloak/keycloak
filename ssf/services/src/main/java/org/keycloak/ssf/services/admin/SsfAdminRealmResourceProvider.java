@@ -5,6 +5,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
+import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 
 /**
  * Exposes the {@link SsfAdminResource}
@@ -13,7 +14,8 @@ public class SsfAdminRealmResourceProvider implements AdminRealmResourceProvider
 
     @Override
     public Object getResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        return new SsfAdminResource(session, realm, auth, adminEvent);
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
+        return new SsfAdminResource(session, realm, auth, adminEvent, transmitter);
     }
 
     @Override

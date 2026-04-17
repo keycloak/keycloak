@@ -23,6 +23,8 @@ import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
+import org.keycloak.ssf.transmitter.admin.SsfAdminSubjectRequest;
+import org.keycloak.ssf.transmitter.admin.SsfAdminSubjectResponse;
 import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
 import org.keycloak.ssf.transmitter.admin.SsfConfigRepresentation;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
@@ -30,6 +32,9 @@ import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.subject.AdminSubjectResult;
+import org.keycloak.ssf.transmitter.subject.SubjectManagementResult;
+import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 
 import org.jboss.logging.Logger;
@@ -44,15 +49,21 @@ public class SsfAdminResource {
     private static final Logger log = Logger.getLogger(SsfAdminResource.class);
 
     protected final KeycloakSession session;
+
     protected final RealmModel realm;
+
     protected final AdminPermissionEvaluator auth;
+
     protected final AdminEventBuilder adminEvent;
 
-    public SsfAdminResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    protected final SsfTransmitterProvider transmitter;
+
+    public SsfAdminResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent, SsfTransmitterProvider transmitter) {
         this.session = session;
         this.realm = realm;
         this.auth = auth;
         this.adminEvent = adminEvent;
+        this.transmitter = transmitter;
     }
 
     /**
@@ -72,7 +83,6 @@ public class SsfAdminResource {
 
         auth.realm().requireViewRealm();
 
-        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
         SsfTransmitterConfig transmitterConfig = transmitter.getConfig();
 
         SsfConfigRepresentation config = new SsfConfigRepresentation();
@@ -113,8 +123,7 @@ public class SsfAdminResource {
             throw new NotFoundException("Client not found");
         }
 
-        ClientStreamStore store = new ClientStreamStore(session);
-        StreamConfig streamConfig = store.getStreamForClient(client);
+        StreamConfig streamConfig = transmitter.streamStore().getStreamForClient(client);
         if (streamConfig == null) {
             throw new NotFoundException("No SSF stream registered for client");
         }
@@ -156,7 +165,7 @@ public class SsfAdminResource {
         auth.clients().requireManage(client);
 
         try {
-            StreamConfig created = session.getProvider(SsfTransmitterProvider.class).streamService().createStreamAsAdmin(input, client);
+            StreamConfig created = transmitter.streamService().createStreamAsAdmin(input, client);
             return Response.status(Response.Status.CREATED)
                     .entity(toClientStreamRepresentation(created, client))
                     .build();
@@ -180,8 +189,6 @@ public class SsfAdminResource {
      * same shape.
      */
     protected SsfClientStreamRepresentation toClientStreamRepresentation(StreamConfig streamConfig, ClientModel client) {
-
-        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
 
         SsfClientStreamRepresentation rep = new SsfClientStreamRepresentation();
         rep.setStreamId(streamConfig.getStreamId());
@@ -236,8 +243,7 @@ public class SsfAdminResource {
 
         auth.clients().requireManage(client);
 
-        ClientStreamStore store = new ClientStreamStore(session);
-        StreamConfig streamConfig = store.getStreamForClient(client);
+        StreamConfig streamConfig = transmitter.streamStore().getStreamForClient(client);
         if (streamConfig == null) {
             throw new NotFoundException("No SSF stream registered for client");
         }
@@ -248,7 +254,6 @@ public class SsfAdminResource {
         // include a state nonce — only receiver-initiated requests may set
         // one — so we leave the state null here.
 
-        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
         boolean triggered = transmitter.verificationService().triggerVerification(verificationRequest);
         if (!triggered) {
             throw new NotFoundException("No SSF stream registered for client");
@@ -282,13 +287,136 @@ public class SsfAdminResource {
 
         auth.clients().requireManage(client);
 
-        ClientStreamStore store = new ClientStreamStore(session);
-        boolean deleted = store.deleteStreamForClient(client);
+        boolean deleted = transmitter.streamStore().deleteStreamForClient(client);
         if (!deleted) {
             throw new NotFoundException("No SSF stream registered for client");
         }
 
         return Response.noContent().build();
+    }
+
+    /**
+     * Adds a subject to a receiver client's notification scope. Resolves
+     * the subject by the admin shorthand type ({@code user-id},
+     * {@code user-email}, {@code org-alias}) and sets the
+     * {@code ssf.notify.<clientId>} attribute on the resolved entity.
+     *
+     * <p>The endpoint is available via
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/subjects/add}.
+     */
+    @POST
+    @Path("clients/{clientId}/subjects/add")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response addSubject(@PathParam("clientId") String clientId,
+                               SsfAdminSubjectRequest request) {
+
+        ClientModel client = realm.getClientById(clientId);
+        if (client == null) {
+            throw new NotFoundException("Client not found");
+        }
+        auth.clients().requireManage(client);
+
+        if (request == null || request.getType() == null || request.getValue() == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("invalid_request", "type and value are required"))
+                    .build();
+        }
+
+
+        SubjectManagementService svc = transmitter.subjectManagementService();
+        AdminSubjectResult result = svc.addSubjectByAdmin(clientId, request.getType(), request.getValue());
+
+        if (result.result() == SubjectManagementResult.OK) {
+            return Response.ok(new SsfAdminSubjectResponse("added", result.entityType(), result.entityId())).build();
+        }
+        if (result.result() == SubjectManagementResult.SUBJECT_NOT_FOUND) {
+            throw new NotFoundException("Subject not found");
+        }
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(new SsfErrorRepresentation("invalid_request", "unsupported subject type: " + request.getType()))
+                .build();
+    }
+
+    /**
+     * Removes a subject from a receiver client's notification scope.
+     * Resolves the subject and clears the {@code ssf.notify.<clientId>}
+     * attribute from the resolved entity.
+     *
+     * <p>The endpoint is available via
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/subjects/remove}.
+     */
+    @POST
+    @Path("clients/{clientId}/subjects/remove")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response removeSubject(@PathParam("clientId") String clientId,
+                                  SsfAdminSubjectRequest request) {
+
+        ClientModel client = realm.getClientById(clientId);
+        if (client == null) {
+            throw new NotFoundException("Client not found");
+        }
+        auth.clients().requireManage(client);
+
+        if (request == null || request.getType() == null || request.getValue() == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("invalid_request", "type and value are required"))
+                    .build();
+        }
+
+        SubjectManagementService svc = transmitter.subjectManagementService();
+        AdminSubjectResult result = svc.removeSubjectByAdmin(clientId, request.getType(), request.getValue());
+
+        if (result.result() == SubjectManagementResult.OK) {
+            return Response.noContent().build();
+        }
+        if (result.result() == SubjectManagementResult.SUBJECT_NOT_FOUND) {
+            throw new NotFoundException("Subject not found");
+        }
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(new SsfErrorRepresentation("invalid_request", "unsupported subject type: " + request.getType()))
+                .build();
+    }
+
+    /**
+     * Explicitly excludes a subject from a receiver client's notification
+     * scope by setting {@code ssf.notify.<clientId>=false}. The subject
+     * will not receive events even in {@code default_subjects=ALL} mode.
+     *
+     * <p>The endpoint is available via
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/subjects/ignore}.
+     */
+    @POST
+    @Path("clients/{clientId}/subjects/ignore")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response ignoreSubject(@PathParam("clientId") String clientId,
+                                  SsfAdminSubjectRequest request) {
+
+        ClientModel client = realm.getClientById(clientId);
+        if (client == null) {
+            throw new NotFoundException("Client not found");
+        }
+        auth.clients().requireManage(client);
+
+        if (request == null || request.getType() == null || request.getValue() == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("invalid_request", "type and value are required"))
+                    .build();
+        }
+
+        SubjectManagementService svc = transmitter.subjectManagementService();
+        AdminSubjectResult result = svc.ignoreSubjectByAdmin(clientId, request.getType(), request.getValue());
+
+        if (result.result() == SubjectManagementResult.OK) {
+            return Response.ok(new SsfAdminSubjectResponse("ignored", result.entityType(), result.entityId())).build();
+        }
+        if (result.result() == SubjectManagementResult.SUBJECT_NOT_FOUND) {
+            throw new NotFoundException("Subject not found");
+        }
+        return Response.status(Response.Status.BAD_REQUEST)
+                .entity(new SsfErrorRepresentation("invalid_request", "unsupported subject type: " + request.getType()))
+                .build();
     }
 
     /**

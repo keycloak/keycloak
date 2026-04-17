@@ -12,8 +12,11 @@ import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.resources.SsfStreamManagementResource;
 import org.keycloak.ssf.transmitter.resources.SsfStreamStatusResource;
 import org.keycloak.ssf.transmitter.resources.SsfStreamVerificationResource;
+import org.keycloak.ssf.transmitter.resources.SsfSubjectManagementResource;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
+import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
+import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 
 /**
  * Provider for the SSF (Shared Signals Framework) Transmitter.
@@ -62,11 +65,26 @@ public interface SsfTransmitterProvider extends Provider {
     SecurityEventTokenDispatcher securityEventTokenDispatcher();
 
     /**
+     * Returns the service responsible for managing subjects (users, clients, etc.)
+     * within the SSF framework.
+     *
+     * @return the subject management service
+     */
+    SubjectManagementService subjectManagementService();
+
+    /**
      * Returns the JAX-RS sub-resource for stream CRUD operations (create, read, update, delete).
      *
      * @return the stream management endpoint
      */
     SsfStreamManagementResource streamManagementResource();
+
+    /**
+     * Returns the service responsible for storing and retrieving SSF stream configurations.
+     *
+     * @return the SSF stream store service
+     */
+    SsfStreamStore streamStore();
 
     /**
      * Returns the service for managing SSF streams (create, update, delete, lookup).
@@ -88,6 +106,14 @@ public interface SsfTransmitterProvider extends Provider {
      * @return the stream verification endpoint
      */
     SsfStreamVerificationResource streamVerificationResource();
+
+    /**
+     * Returns the JAX-RS sub-resource for subject management
+     * (add/remove subject).
+     *
+     * @return the subject management endpoint
+     */
+    SsfSubjectManagementResource subjectManagementResource();
 
     /**
      * The default set of supported events.

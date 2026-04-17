@@ -18,15 +18,25 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Chip,
   FormGroup,
   InputGroup,
   InputGroupItem,
   PageSection,
   SelectOption,
+  Split,
+  SplitItem,
   Text,
   TextInput,
 } from "@patternfly/react-core";
 import { CopyToClipboardButton } from "../components/copy-to-clipboard-button/CopyToClipboardButton";
+import { DefaultSwitchControl } from "../components/SwitchControl";
+import {
+  AddRoleButton,
+  AddRoleMappingModal,
+  FilterType,
+} from "../components/role-mapping/AddRoleMappingModal";
+import { ServiceRole } from "../components/role-mapping/RoleMapping";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -134,6 +144,177 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
   const [createStreamEventsOpen, setCreateStreamEventsOpen] = useState(false);
   const [createStreamSubmitting, setCreateStreamSubmitting] = useState(false);
   const [createStreamFormOpen, setCreateStreamFormOpen] = useState(false);
+
+  // --- SSF Required Role picker state ---
+  const [rolePickerOpen, setRolePickerOpen] = useState(false);
+  const [roleFilterType, setRoleFilterType] = useState<FilterType>("clients");
+
+  const requiredRoleFieldName = convertAttributeNameToForm<FormFields>(
+    "attributes.ssf.requiredRole",
+  );
+
+  const parseRoleValue = (value: string | undefined) => {
+    if (!value?.includes(".")) return ["", value || ""];
+    return value.split(".");
+  };
+
+  // --- SSF Subjects section state ---
+  type SubjectType = "user-id" | "user-email" | "user-username" | "org-alias";
+  const [subjectType, setSubjectType] = useState<SubjectType>("user-email");
+  const [subjectValue, setSubjectValue] = useState("");
+  const [subjectStatus, setSubjectStatus] = useState<{
+    variant: "success" | "danger" | "info";
+    message: string;
+  } | null>(null);
+  const [subjectLoading, setSubjectLoading] = useState(false);
+
+  const ssfNotifyKey = `ssf.notify.${client.clientId}`;
+
+  const callSubjectAdminEndpoint = async (
+    action: "subjects/add" | "subjects/remove" | "subjects/ignore",
+  ) => {
+    const baseUrl = addTrailingSlash(adminClient.baseUrl);
+    const res = await fetch(
+      `${baseUrl}admin/realms/${realm}/ssf/clients/${client.id}/${action}`,
+      {
+        method: "POST",
+        headers: {
+          ...getAuthorizationHeaders(await adminClient.getAccessToken()),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ type: subjectType, value: subjectValue }),
+      },
+    );
+    return res;
+  };
+
+  const checkSubjectViaAdminApi = async () => {
+    const baseUrl = addTrailingSlash(adminClient.baseUrl);
+    const headers = getAuthorizationHeaders(await adminClient.getAccessToken());
+
+    let attrs: Record<string, string[]> = {};
+
+    if (subjectType === "user-id") {
+      const res = await fetch(
+        `${baseUrl}admin/realms/${realm}/users/${encodeURIComponent(subjectValue)}`,
+        { headers },
+      );
+      if (!res.ok) return null;
+      const user = await res.json();
+      attrs = user.attributes ?? {};
+    } else if (subjectType === "user-email") {
+      const res = await fetch(
+        `${baseUrl}admin/realms/${realm}/users?email=${encodeURIComponent(subjectValue)}&exact=true&max=1&briefRepresentation=false`,
+        { headers },
+      );
+      if (!res.ok) return null;
+      const users = await res.json();
+      if (!Array.isArray(users) || users.length === 0) return null;
+      attrs = users[0].attributes ?? {};
+    } else if (subjectType === "user-username") {
+      const res = await fetch(
+        `${baseUrl}admin/realms/${realm}/users?username=${encodeURIComponent(subjectValue)}&exact=true&max=1&briefRepresentation=false`,
+        { headers },
+      );
+      if (!res.ok) return null;
+      const users = await res.json();
+      if (!Array.isArray(users) || users.length === 0) return null;
+      attrs = users[0].attributes ?? {};
+    } else if (subjectType === "org-alias") {
+      const res = await fetch(
+        `${baseUrl}admin/realms/${realm}/organizations?search=${encodeURIComponent(subjectValue)}&exact=true&first=0&max=1`,
+        { headers },
+      );
+      if (!res.ok) return null;
+      const orgs = await res.json();
+      if (!Array.isArray(orgs) || orgs.length === 0) return null;
+      attrs = orgs[0].attributes ?? {};
+    }
+
+    const values = attrs[ssfNotifyKey];
+    if (!values) return "absent";
+    if (values.includes("true")) return "notified";
+    if (values.includes("false")) return "ignored";
+    return "absent";
+  };
+
+  const handleSubjectAction = async (
+    action: "add" | "remove" | "ignore" | "check",
+  ) => {
+    if (!subjectValue.trim()) {
+      setSubjectStatus({
+        variant: "danger",
+        message: t("ssfSubjectValueRequired"),
+      });
+      return;
+    }
+    setSubjectLoading(true);
+    setSubjectStatus(null);
+    try {
+      if (action === "check") {
+        const status = await checkSubjectViaAdminApi();
+        if (status === null) {
+          setSubjectStatus({
+            variant: "danger",
+            message: t("ssfSubjectNotFound"),
+          });
+        } else if (status === "notified") {
+          setSubjectStatus({
+            variant: "success",
+            message: t("ssfSubjectIsNotified"),
+          });
+        } else if (status === "ignored") {
+          setSubjectStatus({
+            variant: "danger",
+            message: t("ssfSubjectIsIgnored"),
+          });
+        } else {
+          setSubjectStatus({
+            variant: "info",
+            message: t("ssfSubjectIsNotNotified"),
+          });
+        }
+        return;
+      }
+
+      const endpoint =
+        action === "add"
+          ? "subjects/add"
+          : action === "ignore"
+            ? "subjects/ignore"
+            : "subjects/remove";
+      const res = await callSubjectAdminEndpoint(endpoint);
+
+      if (res.status === 404) {
+        setSubjectStatus({
+          variant: "danger",
+          message: t("ssfSubjectNotFound"),
+        });
+        return;
+      }
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`${res.status} ${body || res.statusText}`);
+      }
+
+      setSubjectStatus({
+        variant: "success",
+        message:
+          action === "add"
+            ? t("ssfSubjectAdded")
+            : action === "ignore"
+              ? t("ssfSubjectIgnored")
+              : t("ssfSubjectRemoved"),
+      });
+    } catch (error) {
+      setSubjectStatus({
+        variant: "danger",
+        message: String(error),
+      });
+    } finally {
+      setSubjectLoading(false);
+    }
+  };
 
   const refresh = () => {
     setStreamFetchKey((k) => k + 1);
@@ -432,6 +613,11 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
       "ssf.supportedEvents",
       "ssf.profile",
       "ssf.userSubjectFormat",
+      "ssf.defaultSubjects",
+      "ssf.autoNotifyOnLogin",
+      "ssf.requireServiceAccount",
+      "ssf.requiredRole",
+      "ssf.minVerificationInterval",
       "ssf.verificationTrigger",
       "ssf.verificationDelayMillis",
       "ssf.status",
@@ -587,6 +773,122 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
                         value: t("ssfVerification.TRANSMITTER_INITIATED"),
                       },
                     ]}
+                  />
+                  <SelectControl
+                    name={convertAttributeNameToForm<FormFields>(
+                      "attributes.ssf.defaultSubjects",
+                    )}
+                    label={t("ssfDefaultSubjects")}
+                    labelIcon={t("ssfDefaultSubjectsHelp")}
+                    controller={{
+                      defaultValue: "NONE",
+                    }}
+                    options={[
+                      {
+                        key: "ALL",
+                        value: t("ssfDefaultSubjects.ALL"),
+                      },
+                      {
+                        key: "NONE",
+                        value: t("ssfDefaultSubjects.NONE"),
+                      },
+                    ]}
+                  />
+                  <DefaultSwitchControl
+                    name={convertAttributeNameToForm<FormFields>(
+                      "attributes.ssf.autoNotifyOnLogin",
+                    )}
+                    label={t("ssfAutoNotifyOnLogin")}
+                    labelIcon={t("ssfAutoNotifyOnLoginHelp")}
+                    stringify
+                  />
+                  <DefaultSwitchControl
+                    name={convertAttributeNameToForm<FormFields>(
+                      "attributes.ssf.requireServiceAccount",
+                    )}
+                    label={t("ssfRequireServiceAccount")}
+                    labelIcon={t("ssfRequireServiceAccountHelp")}
+                    stringify
+                  />
+                  <FormGroup
+                    label={t("ssfRequiredRole")}
+                    fieldId="ssfRequiredRole"
+                    labelIcon={
+                      <HelpItem
+                        helpText={t("ssfRequiredRoleHelp")}
+                        fieldLabelId="ssfRequiredRole"
+                      />
+                    }
+                  >
+                    <Controller
+                      name={requiredRoleFieldName}
+                      defaultValue=""
+                      control={control}
+                      render={({ field }) => (
+                        <Split>
+                          {rolePickerOpen && (
+                            <AddRoleMappingModal
+                              id="ssfRequiredRolePicker"
+                              type="roles"
+                              filterType={roleFilterType}
+                              name="ssfRequiredRole"
+                              onAssign={(rows) => {
+                                const row = rows[0];
+                                const value = row.client?.clientId
+                                  ? `${row.client.clientId}.${row.role.name}`
+                                  : row.role.name;
+                                field.onChange(value);
+                                setRolePickerOpen(false);
+                              }}
+                              onClose={() => setRolePickerOpen(false)}
+                              isRadio
+                            />
+                          )}
+                          {field.value && field.value !== "" && (
+                            <SplitItem>
+                              <Chip
+                                textMaxWidth="500px"
+                                onClick={() => field.onChange("")}
+                              >
+                                <ServiceRole
+                                  role={{
+                                    name: parseRoleValue(field.value)[1],
+                                  }}
+                                  client={{
+                                    clientId: parseRoleValue(field.value)[0],
+                                  }}
+                                />
+                              </Chip>
+                            </SplitItem>
+                          )}
+                          <SplitItem>
+                            <AddRoleButton
+                              label="selectRole.label"
+                              onFilerTypeChange={(type) => {
+                                setRoleFilterType(type);
+                                setRolePickerOpen(true);
+                              }}
+                              variant="secondary"
+                              data-testid="ssfRequiredRoleSelect"
+                              isDisabled={false}
+                            />
+                          </SplitItem>
+                        </Split>
+                      )}
+                    />
+                  </FormGroup>
+                  <NumberControl
+                    name={convertAttributeNameToForm<FormFields>(
+                      "attributes.ssf.minVerificationInterval",
+                    )}
+                    label={t("ssfMinVerificationInterval")}
+                    labelIcon={t("ssfMinVerificationIntervalHelp")}
+                    controller={{
+                      defaultValue: "",
+                      rules: {
+                        min: 0,
+                      },
+                    }}
                   />
                   {ssfVerificationTrigger === "TRANSMITTER_INITIATED" && (
                     <NumberControl
@@ -1200,6 +1502,120 @@ export const SsfTab = ({ save, client }: SsfTabProps) => {
                     </ActionGroup>
                   </FormAccess>
                 )}
+              </>
+            ),
+          },
+          {
+            title: t("ssfSubjects"),
+            panel: (
+              <>
+                <Text className="pf-v5-u-pb-lg">{t("ssfSubjectsHelp")}</Text>
+                <FormAccess
+                  role="manage-clients"
+                  fineGrainedAccess={client.access?.configure}
+                  isHorizontal
+                >
+                  <FormGroup
+                    label={t("ssfSubjectType")}
+                    fieldId="ssfSubjectType"
+                  >
+                    <select
+                      id="ssfSubjectType"
+                      data-testid="ssfSubjectType"
+                      value={subjectType}
+                      onChange={(e) =>
+                        setSubjectType(e.target.value as SubjectType)
+                      }
+                      className="pf-v5-c-form-control"
+                    >
+                      <option value="user-email">
+                        {t("ssfSubjectType.userEmail")}
+                      </option>
+                      <option value="user-id">
+                        {t("ssfSubjectType.userId")}
+                      </option>
+                      <option value="user-username">
+                        {t("ssfSubjectType.userUsername")}
+                      </option>
+                      <option value="org-alias">
+                        {t("ssfSubjectType.orgAlias")}
+                      </option>
+                    </select>
+                  </FormGroup>
+                  <FormGroup
+                    label={t("ssfSubjectValue")}
+                    fieldId="ssfSubjectValue"
+                    isRequired
+                  >
+                    <InputGroup>
+                      <InputGroupItem isFill>
+                        <TextInput
+                          id="ssfSubjectValue"
+                          data-testid="ssfSubjectValue"
+                          value={subjectValue}
+                          onChange={(_e, value) => setSubjectValue(value)}
+                          placeholder={
+                            subjectType === "user-email"
+                              ? "user@example.com"
+                              : subjectType === "user-id"
+                                ? "user-uuid"
+                                : subjectType === "user-username"
+                                  ? "username"
+                                  : "org-alias"
+                          }
+                        />
+                      </InputGroupItem>
+                    </InputGroup>
+                  </FormGroup>
+                  <ActionGroup>
+                    <Button
+                      variant="primary"
+                      onClick={() => handleSubjectAction("add")}
+                      isDisabled={subjectLoading}
+                      data-testid="ssfSubjectAdd"
+                    >
+                      {t("ssfSubjectAdd")}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleSubjectAction("ignore")}
+                      isDisabled={subjectLoading}
+                      data-testid="ssfSubjectIgnore"
+                    >
+                      {t("ssfSubjectIgnore")}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleSubjectAction("remove")}
+                      isDisabled={subjectLoading}
+                      data-testid="ssfSubjectRemove"
+                    >
+                      {t("ssfSubjectRemove")}
+                    </Button>
+                    <Button
+                      variant="tertiary"
+                      onClick={() => handleSubjectAction("check")}
+                      isDisabled={subjectLoading}
+                      data-testid="ssfSubjectCheck"
+                    >
+                      {t("ssfSubjectCheck")}
+                    </Button>
+                  </ActionGroup>
+                  {subjectStatus && (
+                    <Text
+                      className={`pf-v5-u-mt-md ${
+                        subjectStatus.variant === "success"
+                          ? "pf-v5-u-color-status-success--100"
+                          : subjectStatus.variant === "danger"
+                            ? "pf-v5-u-color-status-danger--100"
+                            : "pf-v5-u-color-status-info--100"
+                      }`}
+                      data-testid="ssfSubjectStatus"
+                    >
+                      {subjectStatus.message}
+                    </Text>
+                  )}
+                </FormAccess>
               </>
             ),
           },

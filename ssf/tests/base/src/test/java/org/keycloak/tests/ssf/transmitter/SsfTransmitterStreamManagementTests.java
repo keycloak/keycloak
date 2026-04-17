@@ -1,4 +1,4 @@
-package org.keycloak.tests.ssf;
+package org.keycloak.tests.ssf.transmitter;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;

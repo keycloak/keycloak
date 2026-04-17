@@ -1,4 +1,4 @@
-package org.keycloak.tests.ssf;
+package org.keycloak.tests.ssf.transmitter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -457,7 +457,8 @@ public class SsfTransmitterPushDeliveryTests {
                     .serviceAccountsEnabled(true)
                     .directAccessGrantsEnabled(false)
                     .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true");
+                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL");
 
             realm.addClient(RECEIVER_SSE_CAEP)
                     .secret(RECEIVER_SSE_CAEP_SECRET)
@@ -465,6 +466,7 @@ public class SsfTransmitterPushDeliveryTests {
                     .directAccessGrantsEnabled(false)
                     .publicClient(false)
                     .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL")
                     .attribute(ClientStreamStore.SSF_PROFILE_KEY, SsfProfile.SSE_CAEP.name());
 
             realm.addClient(RECEIVER_CRED_ONLY)
@@ -472,7 +474,8 @@ public class SsfTransmitterPushDeliveryTests {
                     .serviceAccountsEnabled(true)
                     .directAccessGrantsEnabled(false)
                     .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true");
+                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL");
 
             return realm;
         }

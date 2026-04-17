@@ -17,6 +17,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.event.SsfEventRegistry;
+import org.keycloak.ssf.metadata.DefaultSubjects;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
@@ -47,6 +48,11 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_PUSH_ENDPOINT_SOCKET_TIMEOUT_MILLIS_KEY = "ssf.pushEndpointSocketTimeoutMillis";
     public static final String SSF_STREAM_SIGNATURE_ALGORITHM_KEY = "ssf.signatureAlgorithm";
     public static final String SSF_STREAM_USER_SUBJECT_FORMAT_KEY = "ssf.userSubjectFormat";
+    public static final String SSF_DEFAULT_SUBJECTS_KEY = "ssf.defaultSubjects";
+    public static final String SSF_AUTO_NOTIFY_ON_LOGIN_KEY = "ssf.autoNotifyOnLogin";
+    public static final String SSF_REQUIRE_SERVICE_ACCOUNT_KEY = "ssf.requireServiceAccount";
+    public static final String SSF_REQUIRED_ROLE_KEY = "ssf.requiredRole";
+    public static final String SSF_MIN_VERIFICATION_INTERVAL_KEY = "ssf.minVerificationInterval";
 
     // ----- Per-stream state (cleared on stream delete) -----------------------
     public static final String SSF_STREAM_ID_KEY = "ssf.streamId";
@@ -82,6 +88,7 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_STREAM_MIN_VERIFICATION_INTERVAL_KEY = "ssf.stream.minVerificationInterval";
     public static final String SSF_STREAM_INACTIVITY_TIMEOUT_KEY = "ssf.stream.inactivityTimeout";
     public static final String SSF_STREAM_FORMAT_KEY = "ssf.stream.format";
+    public static final String SSF_STREAM_DEFAULT_SUBJECTS_KEY = "ssf.stream.defaultSubjects";
     public static final String SSF_STREAM_CREATED_AT_KEY = "ssf.stream.createdAt";
     public static final String SSF_STREAM_UPDATED_AT_KEY = "ssf.stream.updatedAt";
 
@@ -113,6 +120,7 @@ public class ClientStreamStore implements SsfStreamStore {
             SSF_STREAM_MIN_VERIFICATION_INTERVAL_KEY,
             SSF_STREAM_INACTIVITY_TIMEOUT_KEY,
             SSF_STREAM_FORMAT_KEY,
+            SSF_STREAM_DEFAULT_SUBJECTS_KEY,
             SSF_STREAM_CREATED_AT_KEY,
             SSF_STREAM_UPDATED_AT_KEY);
 
@@ -305,6 +313,7 @@ public class ClientStreamStore implements SsfStreamStore {
         // second lookup. Not persisted, not echoed on the wire — covered
         // by @JsonIgnore on the field.
         streamConfig.setClientId(client.getId());
+        streamConfig.setClientClientId(client.getClientId());
 
         applyReceiverAttributeOverlays(client, streamConfig);
         return streamConfig;
@@ -333,6 +342,8 @@ public class ClientStreamStore implements SsfStreamStore {
         streamConfig.setMinVerificationInterval(parseIntAttribute(client, SSF_STREAM_MIN_VERIFICATION_INTERVAL_KEY));
         streamConfig.setInactivityTimeout(parseIntAttribute(client, SSF_STREAM_INACTIVITY_TIMEOUT_KEY));
         streamConfig.setFormat(client.getAttribute(SSF_STREAM_FORMAT_KEY));
+        streamConfig.setDefaultSubjects(DefaultSubjects.parseOrDefault(
+                client.getAttribute(SSF_STREAM_DEFAULT_SUBJECTS_KEY), null));
         streamConfig.setCreatedAt(parseIntAttribute(client, SSF_STREAM_CREATED_AT_KEY));
         streamConfig.setUpdatedAt(parseIntAttribute(client, SSF_STREAM_UPDATED_AT_KEY));
 
@@ -395,6 +406,22 @@ public class ClientStreamStore implements SsfStreamStore {
         if (userSubjectFormat != null && !userSubjectFormat.isBlank()) {
             streamConfig.setUserSubjectFormat(userSubjectFormat);
         }
+        if (streamConfig.getDefaultSubjects() == null) {
+            DefaultSubjects clientDefault = DefaultSubjects.parseOrDefault(
+                    client.getAttribute(SSF_DEFAULT_SUBJECTS_KEY), null);
+            if (clientDefault != null) {
+                streamConfig.setDefaultSubjects(clientDefault);
+            }
+        }
+        // Client-level minVerificationInterval is an override, not a
+        // fallback: the stream creation stamps the transmitter default
+        // (e.g. 60s) eagerly, so the stream value is rarely null. The
+        // admin explicitly setting a per-client value means "I want this
+        // client's rate limit to differ from the transmitter default."
+        Integer clientMinVerification = parseIntAttribute(client, SSF_MIN_VERIFICATION_INTERVAL_KEY);
+        if (clientMinVerification != null) {
+            streamConfig.setMinVerificationInterval(clientMinVerification);
+        }
     }
 
     protected void storeStreamConfig(ClientModel client, StreamConfig streamConfig) {
@@ -423,6 +450,8 @@ public class ClientStreamStore implements SsfStreamStore {
         setIntOrRemove(client, SSF_STREAM_MIN_VERIFICATION_INTERVAL_KEY, streamConfig.getMinVerificationInterval());
         setIntOrRemove(client, SSF_STREAM_INACTIVITY_TIMEOUT_KEY, streamConfig.getInactivityTimeout());
         setOrRemove(client, SSF_STREAM_FORMAT_KEY, streamConfig.getFormat());
+        setOrRemove(client, SSF_STREAM_DEFAULT_SUBJECTS_KEY,
+                streamConfig.getDefaultSubjects() != null ? streamConfig.getDefaultSubjects().name() : null);
         setIntOrRemove(client, SSF_STREAM_CREATED_AT_KEY, streamConfig.getCreatedAt());
         setIntOrRemove(client, SSF_STREAM_UPDATED_AT_KEY, streamConfig.getUpdatedAt());
 

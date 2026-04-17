@@ -3,6 +3,7 @@ package org.keycloak.ssf.transmitter.stream;
 import java.util.Set;
 
 import org.keycloak.ssf.SsfProfile;
+import org.keycloak.ssf.metadata.DefaultSubjects;
 import org.keycloak.ssf.stream.StreamStatusValue;
 import org.keycloak.ssf.subject.IssuerSubjectId;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
@@ -100,6 +101,15 @@ public class StreamConfig {
     @JsonProperty("inactivity_timeout")
     protected Integer inactivityTimeout;
 
+    /**
+     * Receiver-Supplied, OPTIONAL. Controls whether the transmitter
+     * delivers events for all subjects or only for explicitly subscribed
+     * ones. {@code null} inherits the transmitter-wide default (usually
+     * {@link DefaultSubjects#ALL}).
+     */
+    @JsonProperty("default_subjects")
+    protected DefaultSubjects defaultSubjects;
+
     @JsonProperty("kc_status")
     protected StreamStatusValue status;
 
@@ -141,6 +151,17 @@ public class StreamConfig {
      */
     @JsonIgnore
     protected String clientId;
+
+    /**
+     * The receiver client's human-readable OAuth {@code client_id}
+     * (e.g. {@code AppleBusinessManagerOIDC}). Used as the key suffix
+     * in {@code ssf.notify.<clientClientId>} user/org attributes so
+     * the attribute is readable in the admin UI. Populated from
+     * {@link org.keycloak.models.ClientModel#getClientId()} at
+     * {@code extractStreamConfig} time.
+     */
+    @JsonIgnore
+    protected String clientClientId;
 
     @JsonIgnore
     protected Integer pushEndpointConnectTimeoutMillis;
@@ -254,6 +275,14 @@ public class StreamConfig {
         this.inactivityTimeout = inactivityTimeout;
     }
 
+    public DefaultSubjects getDefaultSubjects() {
+        return defaultSubjects;
+    }
+
+    public void setDefaultSubjects(DefaultSubjects defaultSubjects) {
+        this.defaultSubjects = defaultSubjects;
+    }
+
     public StreamStatusValue getStatus() {
         return status;
     }
@@ -316,6 +345,14 @@ public class StreamConfig {
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
+    }
+
+    public String getClientClientId() {
+        return clientClientId;
+    }
+
+    public void setClientClientId(String clientClientId) {
+        this.clientClientId = clientClientId;
     }
 
     public Integer getPushEndpointConnectTimeoutMillis() {

@@ -11,7 +11,7 @@ import jakarta.ws.rs.core.Response;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
+import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
@@ -32,9 +32,16 @@ public class SsfStreamVerificationResource {
 
     protected final StreamVerificationService verificationService;
 
-    public SsfStreamVerificationResource(KeycloakSession session, StreamVerificationService verificationService) {
+    protected final SsfTransmitterConfig transmitterConfig;
+
+    protected final ClientStreamStore clientStreamStore;
+
+    public SsfStreamVerificationResource(KeycloakSession session, StreamVerificationService verificationService,
+                                         SsfTransmitterConfig transmitterConfig, ClientStreamStore clientStreamStore) {
         this.session = session;
         this.verificationService = verificationService;
+        this.transmitterConfig = transmitterConfig;
+        this.clientStreamStore = clientStreamStore;
     }
 
     /**
@@ -103,7 +110,17 @@ public class SsfStreamVerificationResource {
 
     protected void checkMinVerificationInterval(ClientModel client) {
 
-        int minVerificationIntervalSeconds = session.getProvider(SsfTransmitterProvider.class).getConfig().getMinVerificationIntervalSeconds();
+        // Per-stream / per-client override takes precedence over the
+        // transmitter-wide default. The stream config includes overlays
+        // applied by ClientStreamStore.applyReceiverAttributeOverlays
+        // (reads ssf.minVerificationInterval from the client attribute).
+        var streamConfig = clientStreamStore.getStreamForClient(client);
+        Integer streamInterval = streamConfig != null ? streamConfig.getMinVerificationInterval() : null;
+
+        int minVerificationIntervalSeconds = streamInterval != null
+                ? streamInterval
+                : transmitterConfig.getMinVerificationIntervalSeconds();
+
         if (minVerificationIntervalSeconds <= 0) {
             // Rate limiting disabled.
             return;

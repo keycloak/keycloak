@@ -13,9 +13,11 @@ import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.resources.SsfStreamManagementResource;
 import org.keycloak.ssf.transmitter.resources.SsfStreamStatusResource;
 import org.keycloak.ssf.transmitter.resources.SsfStreamVerificationResource;
+import org.keycloak.ssf.transmitter.resources.SsfSubjectManagementResource;
 import org.keycloak.ssf.transmitter.stream.StreamService;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 
 public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
@@ -29,7 +31,7 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     protected final TransmitterMetadataService transmitterService;
 
-    private final SsfTransmitterConfig transmitterConfig;
+    protected final SsfTransmitterConfig transmitterConfig;
 
     /**
      * Aliases (or full URIs) of the events this transmitter advertises as
@@ -38,7 +40,11 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
      * falls back to every event type known to the registry — which picks
      * up custom SPI-contributed events automatically.
      */
-    private final Set<String> configuredDefaultSupportedEventAliases;
+    protected final Set<String> configuredDefaultSupportedEventAliases;
+
+    protected final ClientStreamStore streamStore;
+
+    protected final SubjectManagementService subjectManagementService;
 
     public DefaultSsfTransmitterProvider(KeycloakSession session,
                                          TransmitterMetadataService transmitterMetadataService,
@@ -46,7 +52,9 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
                                          SecurityEventTokenMapper securityEventTokenMapper,
                                          SecurityEventTokenDispatcher securityEventTokenDispatcher,
                                          SsfTransmitterConfig transmitterConfig,
-                                         Set<String> configuredDefaultSupportedEventAliases) {
+                                         Set<String> configuredDefaultSupportedEventAliases,
+                                         ClientStreamStore streamStore,
+                                         SubjectManagementService subjectManagementService) {
         this.session = session;
         this.transmitterService = transmitterMetadataService;
         this.verificationService = verificationService;
@@ -54,6 +62,8 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
         this.securityEventTokenDispatcher = securityEventTokenDispatcher;
         this.transmitterConfig = transmitterConfig;
         this.configuredDefaultSupportedEventAliases = configuredDefaultSupportedEventAliases;
+        this.streamStore = streamStore;
+        this.subjectManagementService = subjectManagementService;
     }
 
     @Override
@@ -78,7 +88,16 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     @Override
     public StreamService streamService() {
-        return new StreamService(session, new ClientStreamStore(session), transmitterService);
+        return new StreamService(session, streamStore(), transmitterService);
+    }
+
+    public ClientStreamStore streamStore() {
+        return streamStore;
+    }
+
+    @Override
+    public SubjectManagementService subjectManagementService() {
+        return subjectManagementService;
     }
 
     @Override
@@ -93,7 +112,12 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
 
     @Override
     public SsfStreamVerificationResource streamVerificationResource() {
-        return new SsfStreamVerificationResource(session, verificationService);
+        return new SsfStreamVerificationResource(session, verificationService, transmitterConfig, streamStore());
+    }
+
+    @Override
+    public SsfSubjectManagementResource subjectManagementResource() {
+        return new SsfSubjectManagementResource(session, new SubjectManagementService(session), false);
     }
 
     @Override
