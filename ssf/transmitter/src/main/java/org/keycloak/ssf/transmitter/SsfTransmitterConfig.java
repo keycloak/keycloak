@@ -28,6 +28,8 @@ public class SsfTransmitterConfig {
 
     public static final String CONFIG_DEFAULT_SUBJECTS = "default-subjects";
 
+    public static final String CONFIG_SUBJECT_MANAGEMENT_ENABLED = "subject-management-enabled";
+
     /**
      * Default connect timeout (in milliseconds) for delivering SSF events via
      * HTTP push to a receiver's push endpoint.
@@ -79,7 +81,18 @@ public class SsfTransmitterConfig {
      * via {@code ssf.notify.<clientId>} attributes before an event is
      * delivered.
      */
-    public static final DefaultSubjects DEFAULT_DEFAULT_SUBJECTS = DefaultSubjects.ALL;
+    public static final DefaultSubjects DEFAULT_DEFAULT_SUBJECTS = DefaultSubjects.NONE;
+
+    /**
+     * Default for the subject-management-enabled flag. {@code true}
+     * exposes the {@code /subjects:add} and {@code /subjects:remove}
+     * endpoints and advertises them in the transmitter metadata.
+     * Set to {@code false} to hide the endpoints entirely — useful for
+     * deployments that rely exclusively on admin-curated
+     * {@code ssf.notify.<clientId>} attributes and don't want receivers
+     * to be able to manage subjects at all.
+     */
+    public static final boolean DEFAULT_SUBJECT_MANAGEMENT_ENABLED = true;
 
     private final int pushEndpointConnectTimeoutMillis;
 
@@ -95,13 +108,16 @@ public class SsfTransmitterConfig {
 
     private final DefaultSubjects defaultSubjects;
 
+    private final boolean subjectManagementEnabled;
+
     public SsfTransmitterConfig(int pushEndpointConnectTimeoutMillis,
                                 int pushEndpointSocketTimeoutMillis,
                                 int transmitterInitiatedVerificationDelayMillis,
                                 int minVerificationIntervalSeconds,
                                 String signatureAlgorithm,
                                 String userSubjectFormat,
-                                DefaultSubjects defaultSubjects) {
+                                DefaultSubjects defaultSubjects,
+                                boolean subjectManagementEnabled) {
         this.pushEndpointConnectTimeoutMillis = pushEndpointConnectTimeoutMillis;
         this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
         this.transmitterInitiatedVerificationDelayMillis = transmitterInitiatedVerificationDelayMillis;
@@ -109,6 +125,7 @@ public class SsfTransmitterConfig {
         this.signatureAlgorithm = signatureAlgorithm;
         this.userSubjectFormat = userSubjectFormat;
         this.defaultSubjects = defaultSubjects;
+        this.subjectManagementEnabled = subjectManagementEnabled;
     }
 
     /**
@@ -131,7 +148,9 @@ public class SsfTransmitterConfig {
                 config.get(CONFIG_USER_SUBJECT_FORMAT,
                         DEFAULT_USER_SUBJECT_FORMAT),
                 DefaultSubjects.parseOrDefault(config.get(CONFIG_DEFAULT_SUBJECTS),
-                        DEFAULT_DEFAULT_SUBJECTS));
+                        DEFAULT_DEFAULT_SUBJECTS),
+                config.getBoolean(CONFIG_SUBJECT_MANAGEMENT_ENABLED,
+                        DEFAULT_SUBJECT_MANAGEMENT_ENABLED));
     }
 
     /**
@@ -147,7 +166,8 @@ public class SsfTransmitterConfig {
                 DEFAULT_MIN_VERIFICATION_INTERVAL_SECONDS,
                 DEFAULT_SIGNATURE_ALGORITHM,
                 DEFAULT_USER_SUBJECT_FORMAT,
-                DEFAULT_DEFAULT_SUBJECTS);
+                DEFAULT_DEFAULT_SUBJECTS,
+                DEFAULT_SUBJECT_MANAGEMENT_ENABLED);
     }
 
     /**
@@ -216,5 +236,17 @@ public class SsfTransmitterConfig {
      */
     public DefaultSubjects getDefaultSubjects() {
         return defaultSubjects;
+    }
+
+    /**
+     * Whether the {@code /subjects:add} and {@code /subjects:remove}
+     * endpoints are exposed. When {@code false}, the endpoints are not
+     * registered and the transmitter metadata omits them. Subject
+     * subscriptions can still be managed via admin-curated
+     * {@code ssf.notify.<clientId>} attributes on users and
+     * organizations.
+     */
+    public boolean isSubjectManagementEnabled() {
+        return subjectManagementEnabled;
     }
 }

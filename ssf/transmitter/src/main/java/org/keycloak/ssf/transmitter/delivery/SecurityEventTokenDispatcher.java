@@ -15,12 +15,15 @@ import org.keycloak.ssf.transmitter.event.SecurityEventTokenEncoder;
 import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.subject.SubjectSubscriptionFilter;
 
 import org.jboss.logging.Logger;
 
 public class SecurityEventTokenDispatcher {
 
-    protected static final Logger log = Logger.getLogger(SecurityEventTokenDispatcher.class);
+    private static final Logger log = Logger.getLogger(SecurityEventTokenDispatcher.class);
+
+    protected static final SubjectSubscriptionFilter DEFAULT_SUBJECT_SUBSCRIPTION_FILTER = new SubjectSubscriptionFilter();
 
     protected final KeycloakSession session;
 
@@ -32,6 +35,8 @@ public class SecurityEventTokenDispatcher {
 
     protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
 
+    protected final SubjectSubscriptionFilter subjectSubscriptionFilter;
+
     public SecurityEventTokenDispatcher(KeycloakSession session,
                                         SecurityEventTokenEncoder securityEventTokenEncoder,
                                         PushDeliveryService pushDeliveryService,
@@ -42,6 +47,11 @@ public class SecurityEventTokenDispatcher {
         this.pushDeliveryService = pushDeliveryService;
         this.transmitterConfig = transmitterConfig;
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
+        this.subjectSubscriptionFilter = createSubjectSubscriptionFilter();
+    }
+
+    protected SubjectSubscriptionFilter createSubjectSubscriptionFilter() {
+        return DEFAULT_SUBJECT_SUBSCRIPTION_FILTER;
     }
 
     /**
@@ -76,7 +86,25 @@ public class SecurityEventTokenDispatcher {
             return;
         }
 
+        if (!shouldDispatchForSubject(eventToken, stream)) {
+            return;
+        }
+
         deliverEvent(eventToken, stream);
+    }
+
+    /**
+     * Subject subscription filter. Returns {@code true} if the event
+     * should be delivered to the given stream based on the stream's
+     * {@code default_subjects} setting and the presence of
+     * {@code ssf.notify.<clientId>} attributes on the event's subject.
+     *
+     * <p>Protected so subclasses can override the filtering logic — e.g.
+     * to add custom subject resolution or to unconditionally bypass the
+     * check for certain event types.
+     */
+    protected boolean shouldDispatchForSubject(SsfSecurityEventToken eventToken, StreamConfig stream) {
+        return subjectSubscriptionFilter.shouldDispatch(eventToken, stream, stream.getClientClientId(), session);
     }
 
     protected boolean isEventEnabledForStream(SsfSecurityEventToken eventToken, StreamConfig stream) {

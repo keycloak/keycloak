@@ -3,16 +3,17 @@ package org.keycloak.ssf.transmitter.outbox;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
-import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.timer.ScheduledTask;
 import org.keycloak.utils.KeycloakSessionUtil;
 
@@ -64,14 +65,22 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
      */
     protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
 
+    protected final SsfTransmitterConfig transmitterConfig;
+
+    protected final BiFunction<KeycloakSession, SsfTransmitterConfig, PushDeliveryService> pushDeliveryServiceFactory;
+
     public SsfPushOutboxDrainerTask(int batchSize,
                                     SsfPushOutboxBackoff backoff,
                                     Duration deadLetterRetention,
-                                    Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
+                                    Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory,
+                                    SsfTransmitterConfig transmitterConfig,
+                                    BiFunction<KeycloakSession, SsfTransmitterConfig, PushDeliveryService> pushDeliveryServiceFactory) {
         this.batchSize = batchSize;
         this.backoff = backoff;
         this.deadLetterRetention = deadLetterRetention;
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
+        this.transmitterConfig = transmitterConfig;
+        this.pushDeliveryServiceFactory = pushDeliveryServiceFactory;
     }
 
     @Override
@@ -123,7 +132,16 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             return;
         }
 
-        StreamConfig stream = new ClientStreamStore(session).getStreamForClient(receiverClient);
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
+        if (transmitter == null) {
+            // Feature disabled mid-flight — leave the row pending, try
+            // again next tick. No counter bump: this isn't the receiver's
+            // fault.
+            log.warnf("SSF outbox: transmitter provider unavailable — skipping row %s", row.getId());
+            return;
+        }
+
+        StreamConfig stream = transmitter.streamStore().getStreamForClient(receiverClient);
         if (stream == null || !row.getStreamId().equals(stream.getStreamId())) {
             // Stream was deleted (or recreated with a different id) while
             // this SET was in the outbox. Either way the receiver isn't
@@ -135,16 +153,7 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             return;
         }
 
-        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
-        if (transmitter == null) {
-            // Feature disabled mid-flight — leave the row pending, try
-            // again next tick. No counter bump: this isn't the receiver's
-            // fault.
-            log.warnf("SSF outbox: transmitter provider unavailable — skipping row %s", row.getId());
-            return;
-        }
-
-        boolean delivered = deliverEncoded(session, transmitter, stream, row);
+        boolean delivered = deliverEncoded(session, stream, row);
         if (delivered) {
             log.debugf("SSF outbox delivered. id=%s clientId=%s streamId=%s jti=%s attempts=%d",
                     row.getId(), row.getClientId(), row.getStreamId(), row.getJti(), row.getAttempts() + 1);
@@ -177,10 +186,10 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
      * is the already-signed {@code encoded_set} from the row.
      */
     protected boolean deliverEncoded(KeycloakSession session,
-                                     SsfTransmitterProvider transmitter,
                                      StreamConfig stream,
                                      SsfPendingEventEntity row) {
-        PushDeliveryService push = new PushDeliveryService(session, transmitter.getConfig());
+
+        PushDeliveryService push = pushDeliveryServiceFactory.apply(session, transmitterConfig);
         SsfSecurityEventToken stub = new SsfSecurityEventToken();
         stub.setJti(row.getJti());
         try {

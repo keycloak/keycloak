@@ -1,19 +1,29 @@
 package org.keycloak.ssf.transmitter.support;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
+import org.jboss.logging.Logger;
+
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.ssf.Ssf;
+import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.utils.KeycloakSessionUtil;
 
 public class SsfAuthUtil {
 
+    private static final Logger log = Logger.getLogger(SsfAuthUtil.class);
+
     public static final String AUTH_KEY = "auth";
+
+    private static final Pattern SCOPE_DELIMITER = Pattern.compile(" ");
 
     public static AuthenticationManager.AuthResult authenticate() {
         KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
@@ -22,7 +32,6 @@ public class SsfAuthUtil {
         if (auth == null) {
             throw new WebApplicationException(Response.Status.UNAUTHORIZED);
         }
-        // make the current authentication available on the session
         SsfAuthUtil.setAuth(session, auth);
         return auth;
     }
@@ -32,7 +41,7 @@ public class SsfAuthUtil {
     }
 
     private static AuthenticationManager.AuthResult getAuthResult() {
-        return (AuthenticationManager.AuthResult)KeycloakSessionUtil.getKeycloakSession().getAttribute(AUTH_KEY);
+        return (AuthenticationManager.AuthResult) KeycloakSessionUtil.getKeycloakSession().getAttribute(AUTH_KEY);
     }
 
     public static boolean canManage() {
@@ -44,26 +53,89 @@ public class SsfAuthUtil {
     }
 
     public static boolean checkScopePermission(String scope) {
+
+        // 0. Token must be valid
         var authResult = getAuthResult();
         if (authResult == null) {
+            log.trace("SSF auth denied: no authentication result available");
             return false;
         }
 
-        // only check that the client has the ssf.enabled attribute
-        if (!Boolean.parseBoolean(authResult.client().getAttribute("ssf.enabled"))) {
+        ClientModel client = authResult.client();
+
+        // 1. Client must have SSF enabled
+        if (!Boolean.parseBoolean(client.getAttribute(ClientStreamStore.SSF_ENABLED_KEY))) {
+            log.tracef("SSF auth denied: SSF receiver not enabled for client %s", client.getClientId());
             return false;
         }
 
-        if (!authResult.client().isServiceAccountsEnabled()) {
+        // 2. Service account check (default: required when attribute is
+        //    absent or any value other than "false")
+        String requireSaValue = client.getAttribute(ClientStreamStore.SSF_REQUIRE_SERVICE_ACCOUNT_KEY);
+        boolean requireServiceAccount = !"false".equalsIgnoreCase(requireSaValue);
+        if (requireServiceAccount) {
+            if (!client.isServiceAccountsEnabled()) {
+                log.tracef("SSF auth denied: service account required but not enabled for client %s", client.getClientId());
+                return false;
+            }
+            if (client.getClientId().equals(authResult.user().getServiceAccountClientLink())) {
+                log.tracef("SSF auth denied: token user is not the service account for client %s", client.getClientId());
+                return false;
+            }
+        }
+
+        // 3. Role check (only when configured)
+        String requiredRole = client.getAttribute(ClientStreamStore.SSF_REQUIRED_ROLE_KEY);
+        if (requiredRole != null && !requiredRole.isBlank()) {
+            if (!hasRole(authResult, requiredRole)) {
+                log.tracef("SSF auth denied: token missing required role '%s' for client %s", requiredRole, client.getClientId());
+                return false;
+            }
+        }
+
+        // 4. Scope check
+        String tokenScope = authResult.token().getScope();
+        if (tokenScope == null) {
+            log.tracef("SSF auth denied: token has no scope claim for client %s", client.getClientId());
             return false;
         }
 
-        // only the service account should be able to do this
-        if (authResult.client().getClientId().equals(authResult.user().getServiceAccountClientLink())) {
+        boolean containsScope = List.of(SCOPE_DELIMITER.split(tokenScope)).contains(scope);
+        if (!containsScope) {
+            log.tracef("SSF auth denied: token missing required scope '%s' for client %s", scope, client.getClientId());
             return false;
         }
 
+        return true;
+    }
 
-        return List.of(authResult.token().getScope().split(" ")).contains(scope);
+    /**
+     * Checks whether the token carries the given role. The role value
+     * follows the same format the admin UI role picker produces:
+     * <ul>
+     *     <li>{@code roleName} — checked as a realm role.</li>
+     *     <li>{@code clientId.roleName} — checked as a client role on
+     *         the specified client.</li>
+     * </ul>
+     */
+    private static boolean hasRole(AuthenticationManager.AuthResult authResult, String roleValue) {
+        AccessToken token = authResult.token();
+
+        int dot = roleValue.indexOf('.');
+        if (dot > 0 && dot < roleValue.length() - 1) {
+            // Client role: "clientId.roleName"
+            String clientId = roleValue.substring(0, dot);
+            String roleName = roleValue.substring(dot + 1);
+            AccessToken.Access clientAccess = token.getResourceAccess(clientId);
+            return clientAccess != null
+                    && clientAccess.getRoles() != null
+                    && clientAccess.getRoles().contains(roleName);
+        }
+
+        // Realm role: plain "roleName"
+        AccessToken.Access realmAccess = token.getRealmAccess();
+        return realmAccess != null
+                && realmAccess.getRoles() != null
+                && realmAccess.getRoles().contains(roleValue);
     }
 }

@@ -74,6 +74,12 @@ public class TransmitterMetadataService {
         metadata.setStatusEndpoint(SsfTransmitterUrls.streamStatusEndpoint(issuerUrl));
         metadata.setVerificationEndpoint(SsfTransmitterUrls.streamVerificationEndpoint(issuerUrl));
 
+        // Subject management endpoints (only advertised when enabled)
+        if (transmitterConfig.isSubjectManagementEnabled()) {
+            metadata.setAddSubjectEndpoint(SsfTransmitterUrls.addSubjectEndpoint(issuerUrl));
+            metadata.setRemoveSubjectEndpoint(SsfTransmitterUrls.removeSubjectEndpoint(issuerUrl));
+        }
+
         metadata.setAuthorizationSchemes(createAuthorizationSchemes());
 
         metadata.setDefaultSubjects(transmitterConfig.getDefaultSubjects().name());

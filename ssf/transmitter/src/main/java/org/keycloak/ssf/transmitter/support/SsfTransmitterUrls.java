@@ -24,4 +24,12 @@ public final class SsfTransmitterUrls {
     public static String streamVerificationEndpoint(String issuerUrl) {
         return getSsfTransmitterBasePath(issuerUrl) + "/verify";
     }
+
+    public static String addSubjectEndpoint(String issuerUrl) {
+        return getSsfTransmitterBasePath(issuerUrl) + "/subjects/add";
+    }
+
+    public static String removeSubjectEndpoint(String issuerUrl) {
+        return getSsfTransmitterBasePath(issuerUrl) + "/subjects/remove";
+    }
 }

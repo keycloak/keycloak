@@ -9,12 +9,18 @@ import org.keycloak.events.Event;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.ssf.metadata.DefaultSubjects;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamService;
+import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.subject.SsfNotifyAttributes;
 
 import org.jboss.logging.Logger;
 
@@ -36,6 +42,11 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
 
         if (shouldIgnoreEvent(event)) {
             return;
+        }
+
+        // Auto-tag users on login for SSF receivers with autoNotifyOnLogin
+        if (EventType.LOGIN.equals(event.getType())) {
+            autoNotifyOnLogin(event);
         }
 
         SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
@@ -91,6 +102,53 @@ public class SsfTransmitterEventListener implements EventListenerProvider {
 
     protected SsfSecurityEventToken convertUserEventToSecurityEventToken(Event event, SsfTransmitterProvider transmitter, StreamConfig stream) {
         return transmitter.securityEventTokenMapper().toSecurityEvent(event, stream);
+    }
+
+    /**
+     * When a user logs in via a client that is an SSF receiver with
+     * {@code ssf.autoNotifyOnLogin=true} and
+     * {@code ssf.defaultSubjects=NONE}, automatically sets the
+     * {@code ssf.notify.<clientId>} attribute on the user so future
+     * events for that user are delivered to the receiver's stream.
+     */
+    protected void autoNotifyOnLogin(Event event) {
+        String eventClientId = event.getClientId();
+        if (eventClientId == null || event.getUserId() == null) {
+            return;
+        }
+
+        RealmModel realm = session.getContext().getRealm();
+        ClientModel client = realm.getClientByClientId(eventClientId);
+        if (client == null) {
+            return;
+        }
+
+        if (!Boolean.parseBoolean(client.getAttribute(ClientStreamStore.SSF_ENABLED_KEY))) {
+            return;
+        }
+        if (!Boolean.parseBoolean(client.getAttribute(ClientStreamStore.SSF_AUTO_NOTIFY_ON_LOGIN_KEY))) {
+            return;
+        }
+
+        // Only auto-tag when the receiver is NOT in broadcast mode.
+        // Absent attribute → falls back to transmitter default (NONE),
+        // so we skip only when explicitly set to ALL.
+        DefaultSubjects defaultSubjects = DefaultSubjects.parseOrDefault(
+                client.getAttribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY), null);
+        if (defaultSubjects == DefaultSubjects.ALL) {
+            return;
+        }
+
+        UserModel user = session.users().getUserById(realm, event.getUserId());
+        if (user == null) {
+            return;
+        }
+
+        if (!SsfNotifyAttributes.isUserNotified(user, client.getClientId())) {
+            SsfNotifyAttributes.setForUser(user, client.getClientId());
+            log.debugf("SSF auto-notify on login: tagged user %s for receiver client %s",
+                    user.getId(), client.getClientId());
+        }
     }
 
     protected boolean shouldIgnoreEvent(Event event) {

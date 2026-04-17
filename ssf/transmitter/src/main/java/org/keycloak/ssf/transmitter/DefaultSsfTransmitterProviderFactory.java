@@ -27,6 +27,7 @@ import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxBackoff;
 import org.keycloak.ssf.transmitter.outbox.SsfPushOutboxDrainerTask;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationService;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
+import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 import org.keycloak.ssf.transmitter.support.SsfUtil;
 import org.keycloak.timer.TimerProvider;
 
@@ -89,15 +90,60 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     @Override
     public SsfTransmitterProvider create(KeycloakSession session) {
         var transmitterConfig = getTransmitterConfig();
-        var mapper = new SecurityEventTokenMapper(session, transmitterConfig, this::createSsfIssuerUrl);
-        var encoder = new SecurityEventTokenEncoder(session);
-        var pushDelivery = new PushDeliveryService(session, transmitterConfig);
-        var dispatcher = new SecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig, this::createSsfPendingEventStore);
-        var streamStore = new ClientStreamStore(session);
-        var verificationService = new StreamVerificationService(session, streamStore, mapper, dispatcher);
-        var transmitterMetadataService = new TransmitterMetadataService(session, this::createSsfIssuerUrl, transmitterConfig);
+        var mapper = createSecurityEventTokenMapper(session, transmitterConfig);
+        var encoder = createSecurityEventTokenEncoder(session);
+        var pushDelivery = createPushDeliveryService(session, transmitterConfig);
+        var dispatcher = createSecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig);
+        var streamStore = createClientStreamStore(session);
+        var verificationService = createVerificationService(session, streamStore, mapper, dispatcher);
+        var transmitterMetadataService = createTransmitterMetadataService(session, transmitterConfig);
+        var subjectManagementService = createSubjectManagementService(session);
+        return createTransmitter(session, transmitterMetadataService, verificationService, subjectManagementService, mapper, dispatcher, transmitterConfig, streamStore);
+    }
+
+    protected SsfTransmitterProvider createTransmitter(KeycloakSession session,
+                                                       TransmitterMetadataService transmitterMetadataService,
+                                                       StreamVerificationService verificationService,
+                                                       SubjectManagementService subjectManagementService,
+                                                       SecurityEventTokenMapper mapper,
+                                                       SecurityEventTokenDispatcher dispatcher,
+                                                       SsfTransmitterConfig transmitterConfig,
+                                                       ClientStreamStore streamStore) {
         return new DefaultSsfTransmitterProvider(session, transmitterMetadataService, verificationService, mapper,
-                dispatcher, transmitterConfig, configuredDefaultSupportedEventAliases);
+                dispatcher, transmitterConfig, configuredDefaultSupportedEventAliases, streamStore,
+                subjectManagementService);
+    }
+
+    protected SubjectManagementService createSubjectManagementService(KeycloakSession session) {
+        return new SubjectManagementService(session);
+    }
+
+    protected TransmitterMetadataService createTransmitterMetadataService(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
+        return new TransmitterMetadataService(session, this::createSsfIssuerUrl, transmitterConfig);
+    }
+
+    protected StreamVerificationService createVerificationService(KeycloakSession session, ClientStreamStore streamStore, SecurityEventTokenMapper mapper, SecurityEventTokenDispatcher dispatcher) {
+        return new StreamVerificationService(session, streamStore, mapper, dispatcher);
+    }
+
+    protected ClientStreamStore createClientStreamStore(KeycloakSession session) {
+        return new ClientStreamStore(session);
+    }
+
+    protected SecurityEventTokenDispatcher createSecurityEventTokenDispatcher(KeycloakSession session, SecurityEventTokenEncoder encoder, PushDeliveryService pushDelivery, SsfTransmitterConfig transmitterConfig) {
+        return new SecurityEventTokenDispatcher(session, encoder, pushDelivery, transmitterConfig, this::createSsfPendingEventStore);
+    }
+
+    protected PushDeliveryService createPushDeliveryService(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
+        return new PushDeliveryService(session, transmitterConfig);
+    }
+
+    protected SecurityEventTokenEncoder createSecurityEventTokenEncoder(KeycloakSession session) {
+        return new SecurityEventTokenEncoder(session);
+    }
+
+    protected SecurityEventTokenMapper createSecurityEventTokenMapper(KeycloakSession session, SsfTransmitterConfig transmitterConfig) {
+        return new SecurityEventTokenMapper(session, transmitterConfig, this::createSsfIssuerUrl);
     }
 
     @Override
@@ -207,6 +253,12 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
                 .helpText("How long DEAD_LETTER outbox rows are retained before the drainer purges them. Accepts suffixes ms, s, m, h (default 30d equivalent). Set to 0 to retain dead-letters indefinitely.")
                 .defaultValue(DEFAULT_OUTBOX_DEAD_LETTER_RETENTION_MILLIS + "ms")
                 .add()
+                .property()
+                .name(SsfTransmitterConfig.CONFIG_SUBJECT_MANAGEMENT_ENABLED)
+                .type("boolean")
+                .helpText("Whether the /subjects:add and /subjects:remove endpoints are exposed. When false, the endpoints are not registered and the transmitter metadata omits them. Subject subscriptions can still be managed via admin-curated ssf.notify.<clientId> attributes.")
+                .defaultValue(SsfTransmitterConfig.DEFAULT_SUBJECT_MANAGEMENT_ENABLED)
+                .add()
                 .build();
     }
 
@@ -234,6 +286,16 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
     public void postInit(KeycloakSessionFactory factory) {
         scheduleOutboxDrainer(factory);
         factory.register(outboxRealmRemovedPurgeListener);
+        // NOTE: ssf.notify.<clientId> attributes on users/orgs are NOT
+        // cleaned up on client removal. Orphaned attributes are inert —
+        // the dispatcher resolves the stream (which requires a live
+        // client) before checking the attribute, so no stale attribute
+        // can cause a spurious delivery. Cleaning them eagerly would
+        // require loading every tagged user/org in one transaction,
+        // which is prohibitively expensive for receivers with large
+        // subscriber sets. If storage hygiene becomes a concern, add an
+        // admin "purge stale SSF notify attributes" endpoint or a
+        // bulk-SQL scheduled task.
     }
 
     /**
@@ -244,10 +306,9 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      * the timer.
      */
     protected void scheduleOutboxDrainer(KeycloakSessionFactory factory) {
-        SsfPushOutboxDrainerTask task = createDrainerTask();
-
         try (KeycloakSession session = factory.create()) {
             TimerProvider timer = session.getProvider(TimerProvider.class);
+            SsfPushOutboxDrainerTask task = createDrainerTask(session);
             ScheduledTaskRunner runner = createDrainerScheduledTaskRunner(factory, task);
             timer.schedule(runner, outboxDrainerIntervalMillis, outboxDrainerIntervalMillis, task.getClass().getSimpleName());
             log.infof("SSF push outbox drainer scheduled: interval=%dms, batchSize=%d, maxAttempts=%d, deadLetterRetention=%s",
@@ -260,13 +321,14 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
         return new ClusterAwareScheduledTaskRunner(factory, task, outboxDrainerIntervalMillis);
     }
 
-    protected SsfPushOutboxDrainerTask createDrainerTask() {
+    protected SsfPushOutboxDrainerTask createDrainerTask(KeycloakSession session) {
         SsfPushOutboxBackoff backoff = new SsfPushOutboxBackoff(outboxDrainerMaxAttempts);
         Duration deadLetterRetention = outboxDeadLetterRetentionMillis > 0
                 ? Duration.ofMillis(outboxDeadLetterRetentionMillis)
                 : null;
+
         return new SsfPushOutboxDrainerTask(outboxDrainerBatchSize, backoff, deadLetterRetention,
-                this::createSsfPendingEventStore);
+                this::createSsfPendingEventStore, getTransmitterConfig(), this::createPushDeliveryService);
     }
 
     /**
@@ -300,9 +362,6 @@ public class DefaultSsfTransmitterProviderFactory implements SsfTransmitterProvi
      * deployments that want to plug in a custom {@link SsfPendingEventStore}
      * subclass (e.g. for instrumentation or schema overrides) — the
      * default is {@code SsfPendingEventStore::new}.
-     *
-     * @param session
-     * @return
      */
     protected SsfPendingEventStore createSsfPendingEventStore(KeycloakSession session) {
         return new SsfPendingEventStore(session);

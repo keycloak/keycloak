@@ -79,6 +79,21 @@ public interface SsfStreamStore {
     StreamConfig findStreamById(String streamId);
 
     /**
+     * Retrieves the stream configuration associated with the specified client.
+     *
+     * @param client The client model for which the stream configuration is being retrieved.
+     * @return The stream configuration associated with the given client, or null if no associated stream configuration exists.
+     */
+    StreamConfig getStreamForClient(ClientModel client);
+
+    /**
+     * Delete the stream configuration associated with the specified client.
+     * @param client
+     * @return
+     */
+    boolean deleteStreamForClient(ClientModel client);
+
+    /**
      * Deletes a stream configuration.
      *
      * @param streamId The stream ID
@@ -102,4 +117,6 @@ public interface SsfStreamStore {
     StreamVerificationConfig getStreamVerificationConfig(String streamId, ClientModel client);
 
     SsfEventsConfig getEventsConfig(ClientModel client, Set<String> eventsRequested);
+
+
 }

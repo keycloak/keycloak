@@ -1,4 +1,4 @@
-package org.keycloak.tests.ssf;
+package org.keycloak.tests.ssf.transmitter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -394,21 +394,24 @@ public class SsfTransmitterPushFailureTests {
                     .serviceAccountsEnabled(true)
                     .directAccessGrantsEnabled(false)
                     .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true");
+                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL");
 
             realm.addClient(RECEIVER_UNREACH)
                     .secret(RECEIVER_UNREACH_SECRET)
                     .serviceAccountsEnabled(true)
                     .directAccessGrantsEnabled(false)
                     .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true");
+                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL");
 
             realm.addClient(RECEIVER_HEALTHY)
                     .secret(RECEIVER_HEALTHY_SECRET)
                     .serviceAccountsEnabled(true)
                     .directAccessGrantsEnabled(false)
                     .publicClient(false)
-                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true");
+                    .attribute(ClientStreamStore.SSF_ENABLED_KEY, "true")
+                    .attribute(ClientStreamStore.SSF_DEFAULT_SUBJECTS_KEY, "ALL");
 
             return realm;
         }
