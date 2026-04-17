@@ -286,15 +286,6 @@ public interface TestingResource {
     @Produces(MediaType.APPLICATION_JSON)
     Response restorePeriodicTasks();
 
-    @GET
-    @Path("/uncaught-error")
-    @Produces(MediaType.TEXT_HTML_UTF_8)
-    Response uncaughtError();
-
-    @GET
-    @Path("/uncaught-error")
-    Response uncaughtErrorJson();
-
     @POST
     @Path("/run-on-server")
     @Consumes(MediaType.TEXT_PLAIN_UTF_8)
@@ -377,16 +368,6 @@ public interface TestingResource {
     @Produces(MediaType.TEXT_HTML_UTF_8)
     Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
                                  @QueryParam("encodedFormParameters") String encodedFormParameters);
-
-    /**
-     * Display message to Error Page - for testing purposes
-     *
-     * @param message message
-     */
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/display-error-message")
-    Response displayErrorMessage(@QueryParam("message") String message);
 
     /**
      * @param providerClass Full name of class such as for example "org.keycloak.authentication.Authenticator"
