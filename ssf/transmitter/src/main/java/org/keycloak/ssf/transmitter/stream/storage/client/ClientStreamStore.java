@@ -53,6 +53,8 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_REQUIRE_SERVICE_ACCOUNT_KEY = "ssf.requireServiceAccount";
     public static final String SSF_REQUIRED_ROLE_KEY = "ssf.requiredRole";
     public static final String SSF_MIN_VERIFICATION_INTERVAL_KEY = "ssf.minVerificationInterval";
+    public static final String SSF_ALLOW_EMIT_EVENTS_KEY = "ssf.allowEmitEvents";
+    public static final String SSF_EMIT_EVENTS_ROLE_KEY = "ssf.emitEventsRole";
 
     // ----- Per-stream state (cleared on stream delete) -----------------------
     public static final String SSF_STREAM_ID_KEY = "ssf.streamId";

@@ -1,6 +1,8 @@
 package org.keycloak.tests.providers.ssf;
 
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
@@ -28,7 +30,7 @@ public class TestSsfEventProviderFactory implements SsfEventProviderFactory {
 
     public static final String PROVIDER_ID = "test-ssf-events";
 
-    private volatile SsfEventRegistry registry;
+    private SsfEventRegistry registry;
 
     @Override
     public String getId() {
@@ -36,8 +38,8 @@ public class TestSsfEventProviderFactory implements SsfEventProviderFactory {
     }
 
     @Override
-    public Set<SsfEvent> getContributedEvents() {
-        return Set.of(new TestSsfEvent());
+    public Map<String, Supplier<? extends SsfEvent>> getContributedEventFactories() {
+        return Map.of(TestSsfEvent.TYPE, TestSsfEvent::new);
     }
 
     @Override
@@ -57,17 +59,7 @@ public class TestSsfEventProviderFactory implements SsfEventProviderFactory {
     }
 
     @Override
-    public void init(Config.Scope config) {
-        // no-op
-    }
-
-    @Override
     public void postInit(KeycloakSessionFactory factory) {
         this.registry = SsfEventProviderFactory.buildRegistry(factory);
-    }
-
-    @Override
-    public void close() {
-        // no-op
     }
 }

@@ -5,9 +5,9 @@ import java.util.Set;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.Ssf;
-import org.keycloak.ssf.event.SsfEvent;
 import org.keycloak.ssf.event.SsfEventRegistry;
 import org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher;
+import org.keycloak.ssf.transmitter.emit.EventEmitterService;
 import org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper;
 import org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService;
 import org.keycloak.ssf.transmitter.resources.SsfStreamManagementResource;
@@ -101,6 +101,11 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
     }
 
     @Override
+    public EventEmitterService eventEmitterService() {
+        return new EventEmitterService(session, this);
+    }
+
+    @Override
     public SsfStreamManagementResource streamManagementResource() {
         return new SsfStreamManagementResource(session, streamService());
     }
@@ -146,11 +151,6 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
             }
         }
         return resolved;
-    }
-
-    @Override
-    public Class<? extends SsfEvent> resolveSupportedEventType(String supportedEvent) {
-        return registry().resolveEventClass(supportedEvent);
     }
 
     @Override

@@ -1,8 +1,9 @@
 package org.keycloak.ssf.event;
 
-import java.util.LinkedHashSet;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -44,37 +45,52 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
 
     public static final String PROVIDER_ID = "default";
 
-    private static final List<SsfEvent> STANDARD_EVENTS = List.of(
-            // SSF Stream events
-            new SsfStreamVerificationEvent(),
-            new SsfStreamUpdatedEvent(),
-            // CAEP events
-            new CaepAssuranceLevelChange(),
-            new CaepCredentialChange(),
-            new CaepDeviceComplianceChange(),
-            new CaepSessionEstablished(),
-            new CaepSessionPresented(),
-            new CaepSessionRevoked(),
-            new CaepTokenClaimsChanged(),
-            // RISC events
-            new RiscAccountCredentialChangeRequired(),
-            new RiscAccountDisabled(),
-            new RiscAccountEnabled(),
-            new RiscAccountPurged(),
-            new RiscCredentialCompromise(),
-            new RiscIdentifierChanged(),
-            new RiscIdentifierRecycled(),
-            new RiscOptIn(),
-            new RiscOptOutInitiated(),
-            new RiscOptOutCancelled(),
-            new RiscOptOutEffective(),
-            new RiscRecoveryActivated(),
-            new RiscRecoveryInformationChanged());
+    /**
+     * Standard event contributions keyed by event type URI. The value is a
+     * {@code ::new} method reference so the registry can instantiate fresh
+     * instances at runtime (e.g. for the synthetic event emitter) without
+     * reflection.
+     *
+     * <p>{@link LinkedHashMap} to preserve insertion order for predictable
+     * iteration when introspecting the registry (e.g. in the admin UI's
+     * supported-events list).
+     */
+    private static final Map<String, Supplier<? extends SsfEvent>> STANDARD_EVENT_FACTORIES;
+
+    static {
+        Map<String, Supplier<? extends SsfEvent>> events = new LinkedHashMap<>();
+        // SSF Stream events
+        events.put(SsfStreamVerificationEvent.TYPE, SsfStreamVerificationEvent::new);
+        events.put(SsfStreamUpdatedEvent.TYPE, SsfStreamUpdatedEvent::new);
+        // CAEP events
+        events.put(CaepAssuranceLevelChange.TYPE, CaepAssuranceLevelChange::new);
+        events.put(CaepCredentialChange.TYPE, CaepCredentialChange::new);
+        events.put(CaepDeviceComplianceChange.TYPE, CaepDeviceComplianceChange::new);
+        events.put(CaepSessionEstablished.TYPE, CaepSessionEstablished::new);
+        events.put(CaepSessionPresented.TYPE, CaepSessionPresented::new);
+        events.put(CaepSessionRevoked.TYPE, CaepSessionRevoked::new);
+        events.put(CaepTokenClaimsChanged.TYPE, CaepTokenClaimsChanged::new);
+        // RISC events
+        events.put(RiscAccountCredentialChangeRequired.TYPE, RiscAccountCredentialChangeRequired::new);
+        events.put(RiscAccountDisabled.TYPE, RiscAccountDisabled::new);
+        events.put(RiscAccountEnabled.TYPE, RiscAccountEnabled::new);
+        events.put(RiscAccountPurged.TYPE, RiscAccountPurged::new);
+        events.put(RiscCredentialCompromise.TYPE, RiscCredentialCompromise::new);
+        events.put(RiscIdentifierChanged.TYPE, RiscIdentifierChanged::new);
+        events.put(RiscIdentifierRecycled.TYPE, RiscIdentifierRecycled::new);
+        events.put(RiscOptIn.TYPE, RiscOptIn::new);
+        events.put(RiscOptOutInitiated.TYPE, RiscOptOutInitiated::new);
+        events.put(RiscOptOutCancelled.TYPE, RiscOptOutCancelled::new);
+        events.put(RiscOptOutEffective.TYPE, RiscOptOutEffective::new);
+        events.put(RiscRecoveryActivated.TYPE, RiscRecoveryActivated::new);
+        events.put(RiscRecoveryInformationChanged.TYPE, RiscRecoveryInformationChanged::new);
+        STANDARD_EVENT_FACTORIES = Map.copyOf(events);
+    }
 
     /**
-     * Subset of {@link #STANDARD_EVENTS} that {@code SecurityEventTokenMapper}
+     * Subset of {@link #STANDARD_EVENT_FACTORIES} that {@code SecurityEventTokenMapper}
      * actually produces from Keycloak events. Every other built-in event in
-     * the list is contributed to the registry only so that the receiver-side
+     * the map is contributed to the registry only so that the receiver-side
      * parser can decode incoming SETs of that type.
      */
     public static final Set<String> EMITTABLE_EVENT_TYPES = Set.of(
@@ -89,8 +105,8 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
     }
 
     @Override
-    public Set<SsfEvent> getContributedEvents() {
-        return new LinkedHashSet<>(STANDARD_EVENTS);
+    public Map<String, Supplier<? extends SsfEvent>> getContributedEventFactories() {
+        return STANDARD_EVENT_FACTORIES;
     }
 
     @Override

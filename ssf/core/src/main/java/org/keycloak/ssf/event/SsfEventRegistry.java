@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 
 /**
  * Immutable registry of all known SSF event types and their aliases.
@@ -26,6 +27,8 @@ public final class SsfEventRegistry {
 
     private final Map<String, String> eventTypeByAlias;
 
+    private final Map<String, Supplier<? extends SsfEvent>> factoryByEventType;
+
     private final Set<String> emittableEventTypes;
 
     SsfEventRegistry(
@@ -33,11 +36,13 @@ public final class SsfEventRegistry {
             Map<String, Class<? extends SsfEvent>> classByAlias,
             Map<String, String> aliasByEventType,
             Map<String, String> eventTypeByAlias,
+            Map<String, Supplier<? extends SsfEvent>> factoryByEventType,
             Set<String> emittableEventTypes) {
         this.classByEventType = Collections.unmodifiableMap(classByEventType);
         this.classByAlias = Collections.unmodifiableMap(classByAlias);
         this.aliasByEventType = Collections.unmodifiableMap(aliasByEventType);
         this.eventTypeByAlias = Collections.unmodifiableMap(eventTypeByAlias);
+        this.factoryByEventType = Collections.unmodifiableMap(factoryByEventType);
         this.emittableEventTypes = Collections.unmodifiableSet(emittableEventTypes);
     }
 
@@ -51,23 +56,37 @@ public final class SsfEventRegistry {
         Map<String, Class<? extends SsfEvent>> classByAlias = new HashMap<>();
         Map<String, String> aliasByEventType = new HashMap<>();
         Map<String, String> eventTypeByAlias = new HashMap<>();
+        Map<String, Supplier<? extends SsfEvent>> factoryByEventType = new HashMap<>();
         Set<String> emittableEventTypes = new LinkedHashSet<>();
 
         for (SsfEventProviderFactory factory : factories) {
-            for (SsfEvent event : factory.getContributedEvents()) {
-                Class<? extends SsfEvent> eventClass = event.getClass();
-                String eventType = event.getEventType();
-                String alias = event.getAlias() != null ? event.getAlias() : eventClass.getSimpleName();
+            for (Map.Entry<String, Supplier<? extends SsfEvent>> entry
+                    : factory.getContributedEventFactories().entrySet()) {
+                String eventType = entry.getKey();
+                Supplier<? extends SsfEvent> eventFactory = entry.getValue();
+
+                // Instantiate once at registry-build time to derive the
+                // event class (used by Jackson as the deserialization
+                // target) and the alias (explicit override or fallback
+                // to the class' simple name). The factory is stored
+                // alongside so callers that need fresh instances at
+                // runtime (e.g. the synthetic event emitter) can invoke
+                // eventFactory.get() directly without reflection.
+                SsfEvent sample = eventFactory.get();
+                Class<? extends SsfEvent> eventClass = sample.getClass();
+                String alias = sample.getAlias() != null ? sample.getAlias() : eventClass.getSimpleName();
 
                 classByEventType.put(eventType, eventClass);
                 classByAlias.put(alias, eventClass);
                 aliasByEventType.put(eventType, alias);
                 eventTypeByAlias.put(alias, eventType);
+                factoryByEventType.put(eventType, eventFactory);
             }
             emittableEventTypes.addAll(factory.getEmittableEventTypes());
         }
 
-        return new SsfEventRegistry(classByEventType, classByAlias, aliasByEventType, eventTypeByAlias, emittableEventTypes);
+        return new SsfEventRegistry(classByEventType, classByAlias, aliasByEventType,
+                eventTypeByAlias, factoryByEventType, emittableEventTypes);
     }
 
     /**
@@ -76,6 +95,17 @@ public final class SsfEventRegistry {
      */
     public Optional<Class<? extends SsfEvent>> getEventClassByType(String eventType) {
         return Optional.ofNullable(classByEventType.get(eventType));
+    }
+
+    /**
+     * Returns the factory for creating fresh {@link SsfEvent} instances of
+     * the given event type URI. Used by callers like the synthetic event
+     * emitter to build a default event body without reaching for
+     * reflection. Returns an empty {@link Optional} if the event type is
+     * not registered.
+     */
+    public Optional<Supplier<? extends SsfEvent>> getEventFactoryByType(String eventType) {
+        return Optional.ofNullable(factoryByEventType.get(eventType));
     }
 
     /**

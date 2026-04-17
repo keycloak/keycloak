@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.keycloak.ssf.event.token.SseCaepSecurityEventToken;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.ssf.subject.ComplexSubjectId;
+import org.keycloak.ssf.subject.SubjectId;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -31,14 +33,44 @@ public class SseCaepEventConverter {
             adjustedEventData.put("credential_type", eventData.get("credential_type"));
             adjustedEventData.put("change_type", eventData.get("change_type"));
 
-            var subjectMap = new HashMap<String, Object>();
-            subjectMap.put("user", ssfEventToken.getSubjectId());
-            adjustedEventData.put("subject", subjectMap);
+            adjustedEventData.put("subject", buildSseCaepSubject(ssfEventToken.getSubjectId()));
 
             sseCaepEventData.put(eventType, adjustedEventData);
         }
         sseCaepToken.setEvents(sseCaepEventData);
 
         return sseCaepToken;
+    }
+
+    /**
+     * Builds the SSE 1.0 {@code subject} object that replaces the SSF 1.0
+     * top-level {@code sub_id}.
+     *
+     * <p>Per SSE 1.0 §3.2 a complex subject carries each facet ({@code user},
+     * {@code session}, {@code device}, {@code application}, {@code tenant},
+     * {@code org_unit}, {@code group}) as a sibling key under
+     * {@code subject}. A simple (non-complex) subject is wrapped as the
+     * {@code user} facet — that's the right call for events like
+     * {@code CaepCredentialChange} that only carry a user identity.
+     */
+    protected static Map<String, Object> buildSseCaepSubject(SubjectId subjectId) {
+        Map<String, Object> subjectMap = new HashMap<>();
+        if (subjectId == null) {
+            return subjectMap;
+        }
+        if (subjectId instanceof ComplexSubjectId complex) {
+            // Flatten each non-null facet into siblings of subject — this
+            // is the shape SSE 1.0 receivers expect for complex subjects.
+            if (complex.getUser() != null) subjectMap.put("user", complex.getUser());
+            if (complex.getSession() != null) subjectMap.put("session", complex.getSession());
+            if (complex.getDevice() != null) subjectMap.put("device", complex.getDevice());
+            if (complex.getApplication() != null) subjectMap.put("application", complex.getApplication());
+            if (complex.getTenant() != null) subjectMap.put("tenant", complex.getTenant());
+            if (complex.getOrgUnit() != null) subjectMap.put("org_unit", complex.getOrgUnit());
+            if (complex.getGroup() != null) subjectMap.put("group", complex.getGroup());
+            return subjectMap;
+        }
+        subjectMap.put("user", subjectId);
+        return subjectMap;
     }
 }
