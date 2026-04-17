@@ -214,7 +214,7 @@ export const AuthorizationResources = ({
                   )}
                 </Tr>
               </Thead>
-              {resources.map((resource, rowIndex) => (
+              {resources.slice(0, max).map((resource, rowIndex) => (
                 <Tbody key={resource._id} isExpanded={resource.isExpanded}>
                   <Tr>
                     <Td

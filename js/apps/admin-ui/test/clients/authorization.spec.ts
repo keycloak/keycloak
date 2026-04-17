@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import adminClient from "../utils/AdminClient.ts";
 import { clickSaveButton } from "../utils/form.ts";
 import { login } from "../utils/login.ts";
@@ -303,5 +303,52 @@ test.describe.serial("Accessibility tests for client authorization", () => {
     page,
   }) => {
     await assertAxeViolations(page);
+  });
+});
+
+test.describe.serial("Client authorization resources pagination", () => {
+  const clientId = `client-authz-pagination-${crypto.randomUUID()}`;
+
+  test.beforeAll(async () => {
+    await adminClient.createClient({
+      protocol: "openid-connect",
+      clientId,
+      publicClient: false,
+      authorizationServicesEnabled: true,
+      serviceAccountsEnabled: true,
+      standardFlowEnabled: true,
+    });
+
+    for (let i = 1; i <= 11; i++) {
+      await adminClient.createResource(clientId, {
+        name: `Resource-${i.toString().padStart(2, "0")}`,
+        displayName: `Display Resource ${i}`,
+        type: "urn:pagination:test",
+      });
+    }
+  });
+
+  test.afterAll(async () => {
+    await adminClient.deleteClient(clientId);
+  });
+
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await goToClients(page);
+    await searchItem(page, "Search for client", clientId);
+    await clickTableRowItem(page, clientId);
+    await goToAuthorizationTab(page);
+    await goToResourcesSubTab(page);
+  });
+
+  test("Should not duplicate the 10th item on the 2nd page", async ({
+    page,
+  }) => {
+    await page.waitForSelector("table");
+    await expect(page.getByText("Resource-10", { exact: true })).toBeVisible();
+    await expect(page.getByText("Resource-11", { exact: true })).toBeHidden();
+    await page.locator('[aria-label="Go to next page"]').first().click();
+    await expect(page.getByText("Resource-11", { exact: true })).toBeVisible();
+    await expect(page.getByText("Resource-10", { exact: true })).toBeHidden();
   });
 });
