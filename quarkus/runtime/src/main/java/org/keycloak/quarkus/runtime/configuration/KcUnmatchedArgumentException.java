@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import picocli.CommandLine;
@@ -36,6 +38,20 @@ public class KcUnmatchedArgumentException extends CommandLine.UnmatchedArgumentE
 
     @Override
     public List<String> getSuggestions() {
-        return super.getSuggestions();
+        List<String> result = super.getSuggestions();
+        // command suggestions are limited to 3 results, but options are seemingly unlimited
+        if (result.size() > 7) {
+            try {
+                Class<?> clazz = Class.forName(CommandLine.class.getName() + "$CosineSimilarity");
+                Method m = clazz.getDeclaredMethod("mostSimilar", String.class, Iterable.class);
+                m.setAccessible(true);
+                result = (List<String>) m.invoke(null, this.getUnmatched().get(0), result);
+                result = result.subList(0, Math.min(7, result.size()));
+            } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | IllegalAccessException
+                    | InvocationTargetException e) {
+                // do nothing
+            }
+        }
+        return result;
     }
 }
