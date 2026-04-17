@@ -46,6 +46,14 @@ Database:
 --db-log-slow-queries-threshold <milliseconds>
                      Log SQL statements slower than the configured threshold with logger org.
                        hibernate.SQL_SLOW and log-level info. Default: 10000.
+--db-mtls-key-store-file <path>
+                     The path to the keystore file containing the client certificate and private
+                       key used for mTLS authentication with the database server.
+--db-mtls-key-store-password <password>
+                     The password to access the keystore file specified in db-mtls-key-store-file.
+--db-mtls-key-store-type <type>
+                     The type of the keystore file. Common values include 'JKS' (Java KeyStore) and
+                       'PKCS12'. If not specified, it uses the driver's default.
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
@@ -119,6 +127,17 @@ Database - additional datasources:
                      Used for named <datasource>. Log SQL statements slower than the configured
                        threshold with logger org.hibernate.SQL_SLOW and log-level info. Default:
                        10000.
+--db-mtls-key-store-file-<datasource> <path>
+                     Used for named <datasource>. The path to the keystore file containing the
+                       client certificate and private key used for mTLS authentication with the
+                       database server.
+--db-mtls-key-store-password-<datasource> <password>
+                     Used for named <datasource>. The password to access the keystore file
+                       specified in db-mtls-key-store-file.
+--db-mtls-key-store-type-<datasource> <type>
+                     Used for named <datasource>. The type of the keystore file. Common values
+                       include 'JKS' (Java KeyStore) and 'PKCS12'. If not specified, it uses the
+                       driver's default.
 --db-password-<datasource> <password>
                      Used for named <datasource>. The password of the database user.
 --db-pool-initial-size-<datasource> <size>
