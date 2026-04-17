@@ -35,13 +35,21 @@ import jakarta.persistence.UniqueConstraint;
 @Table(name = "SSF_PENDING_EVENT",
         uniqueConstraints = {
                 // Dedup: the same SET is never enqueued twice for the same
-                // receiver client. Keep the uniqueness scope to (client, jti)
-                // rather than just (jti) — jti is globally unique in practice
-                // but the DB-level dedup only needs to match the application
-                // semantics, and this leaves room for fan-out schemes where
-                // one jti could legitimately appear once per receiver.
+                // receiver client. The application-level dedup is the
+                // explicit findByClientAndJti lookup in
+                // SsfPendingEventStore.enqueuePending*; this DB-level
+                // unique is the safety net.
+                //
+                // CREATED_AT is part of the constraint solely so PostgreSQL /
+                // MySQL declarative partitioning by created_at is possible —
+                // those engines require the partition key to be a member of
+                // every UNIQUE constraint on the table. The application code
+                // never enqueues two rows with the same (client_id, jti) at
+                // different timestamps, so the operational uniqueness scope
+                // is effectively still (client_id, jti). See
+                // ssf-changelog-1.0.1.xml.
                 @UniqueConstraint(name = "UC_SSF_PENDING_CLIENT_JTI",
-                        columnNames = {"CLIENT_ID", "JTI"})
+                        columnNames = {"CLIENT_ID", "JTI", "CREATED_AT"})
         },
         indexes = {
                 // Drainer query: WHERE status = PENDING
