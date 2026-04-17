@@ -16,5 +16,6 @@
                                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
 
     <include file="META-INF/ssf-changelog-1.0.0.xml"/>
+    <include file="META-INF/ssf-changelog-1.0.1.xml"/>
 
 </databaseChangeLog>
