@@ -64,6 +64,14 @@
       "patternfly-bootstrap-combobox",
       "patternfly-bootstrap-treeview"
     ],
+    "overrides": {
+      "picomatch@^2": "^2.3.2",
+      "flatted": "^3.4.2",
+      "minimatch@~3": "^3.1.4",
+      "minimatch@~9": "^9.0.7",
+      "@isaacs/brace-expansion@^5": "^5.0.1",
+      "serialize-javascript": "^7.0.3"
+    },
     "onlyBuiltDependencies": [
       "@swc/core",
       "esbuild"
@@ -71,5 +79,16 @@
   },
   "lint-staged": {
     "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
-  }
+  },
+  "author": {
+    "name": "Red Hat, Inc.",
+    "url": "https://www.keycloak.org/"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/keycloak/keycloak.git",
+    "directory": "js/"
+  },
+  "homepage": "https://www.keycloak.org/"
 }
