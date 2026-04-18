@@ -17,6 +17,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.InitiatingEntity;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
@@ -298,12 +299,16 @@ public class SecurityEventTokenMapper {
      * {@link CaepSessionRevoked}) and as the top-level {@code sub_id}
      * of simpler events (e.g. {@link CaepCredentialChange}).
      *
-     * <p>When the configured format is {@code email} and the user has
-     * no email address on record (or the user itself cannot be resolved
-     * — e.g. deleted mid-event), this method logs a warning and falls
-     * back to {@code iss_sub} rather than dropping the event. Losing a
-     * receiver signal is worse than delivering it with a less-preferred
-     * subject format.
+     * <p>When the configured format is {@code email} and no email is
+     * available for the user (user deleted mid-event, or simply has
+     * no email on record), this method throws an {@link SsfException}
+     * — silently substituting {@code iss_sub} would deliver a SET
+     * shaped differently from what the receiver negotiated, which a
+     * strict receiver would reject and a lenient receiver would
+     * misroute. The caller catches the exception, logs it, and drops
+     * the event. The receiver therefore sees no signal rather than a
+     * misrepresented one; operators see the warning and can fix the
+     * user record or change the stream's subject format.
      */
     protected SubjectId buildUserSubjectId(SsfSecurityEventToken eventToken, String userId, StreamConfig stream) {
 
@@ -311,13 +316,13 @@ public class SecurityEventTokenMapper {
 
         if (EmailSubjectId.TYPE.equals(format)) {
             String email = lookupUserEmail(userId);
-            if (email != null && !email.isBlank()) {
-                EmailSubjectId emailSubject = new EmailSubjectId();
-                emailSubject.setEmail(email);
-                return emailSubject;
+            if (email == null || email.isBlank()) {
+                throw new SsfException("Configured user subject format is 'email' but no email is available for user "
+                        + userId + " (stream " + (stream != null ? stream.getStreamId() : null) + ")");
             }
-            log.warnf("Configured user subject format is 'email' but no email is available for user. "
-                    + "Falling back to 'iss_sub'. userId=%s streamId=%s", userId, stream != null ? stream.getStreamId() : null);
+            EmailSubjectId emailSubject = new EmailSubjectId();
+            emailSubject.setEmail(email);
+            return emailSubject;
         }
 
         // Reuse the issuer that newSecurityEventToken already resolved onto
