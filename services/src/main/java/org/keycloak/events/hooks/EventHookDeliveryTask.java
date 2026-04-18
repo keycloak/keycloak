@@ -216,6 +216,7 @@ public class EventHookDeliveryTask implements ScheduledTask {
         log.setId(UUID.randomUUID().toString());
         log.setExecutionId(executionId);
         log.setStatus(status);
+        log.setMessageStatus(message.getStatus());
         log.setAttemptNumber(message.getAttemptCount());
         log.setStatusCode(result.getStatusCode());
         log.setDurationMs(result.getDurationMillis());
@@ -258,6 +259,9 @@ public class EventHookDeliveryTask implements ScheduledTask {
             message.setNextAttemptAt(now);
         } else if (result.isWaiting()) {
             message.setStatus(EventHookMessageStatus.WAITING);
+            message.setNextAttemptAt(now);
+        } else if (EventHookBodyMappingSupport.PARSE_FAILED_STATUS_CODE.equals(result.getStatusCode())) {
+            message.setStatus(EventHookMessageStatus.PARSE_FAILED);
             message.setNextAttemptAt(now);
         } else if (retryEnabled && result.isRetryable() && attemptNumber < maxAttempts) {
             message.setStatus(EventHookMessageStatus.PENDING);

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
@@ -58,16 +59,16 @@ public class PullEventHookTargetEndpointResource {
     }
 
     @GET
-    public EventHookPullRepresentation consumeGet(@jakarta.ws.rs.core.Context HttpHeaders headers) {
+    public Object consumeGet(@jakarta.ws.rs.core.Context HttpHeaders headers) {
         return consume(headers);
     }
 
     @POST
-    public EventHookPullRepresentation consumePost(@jakarta.ws.rs.core.Context HttpHeaders headers) {
+    public Object consumePost(@jakarta.ws.rs.core.Context HttpHeaders headers) {
         return consume(headers);
     }
 
-    private EventHookPullRepresentation consume(HttpHeaders headers) {
+    private Object consume(HttpHeaders headers) {
         RealmModel realm = session.getContext().getRealm();
         if (target == null || !target.isEnabled()) {
             throw new NotFoundException("Event hook target not found");
@@ -91,10 +92,6 @@ public class PullEventHookTargetEndpointResource {
                 .map(message -> toPullEntry(store, realm.getId(), message))
                 .toList();
 
-        if (!messages.isEmpty()) {
-            messages.forEach(message -> completeMessage(store, message, message.getExecutionId(), batchExecution));
-        }
-
         EventHookPullRepresentation representation = new EventHookPullRepresentation();
         if (!batchMode) {
             representation.setEvent(messages.isEmpty() ? null : readPayload(messages.get(0).getPayload()));
@@ -103,7 +100,29 @@ public class PullEventHookTargetEndpointResource {
             representation.setEvents(messages.stream().map(message -> readPayload(message.getPayload())).toList());
             representation.setEntries(entries);
         }
-            representation.setHasMoreEvents(store.hasAvailableMessages(realm.getId(), target.getId(), currentTimeMillis(), EXECUTION_TIMEOUT_MILLIS, testMode));
+        representation.setHasMoreEvents(store.hasAvailableMessages(realm.getId(), target.getId(), currentTimeMillis(), EXECUTION_TIMEOUT_MILLIS, testMode));
+
+        if (!messages.isEmpty()) {
+            if (EventHookBodyMappingSupport.isEnabled(target.getSettings())) {
+                try {
+                    Object renderedBody = EventHookBodyMappingSupport.render(target.getSettings(), pullBodyMappingModel(representation)).jsonBody();
+                    messages.forEach(message -> completeMessage(store, message, message.getExecutionId(), batchExecution));
+                    return renderedBody;
+                } catch (EventHookBodyMappingSupport.EventHookBodyMappingException exception) {
+                    failMessages(store, messages, executionId, batchExecution, exception.getMessage());
+                    throw new InternalServerErrorException(truncate(exception.getMessage(), 1024));
+                }
+            }
+
+            messages.forEach(message -> completeMessage(store, message, message.getExecutionId(), batchExecution));
+        } else if (EventHookBodyMappingSupport.isEnabled(target.getSettings())) {
+            try {
+                return EventHookBodyMappingSupport.render(target.getSettings(), pullBodyMappingModel(representation)).jsonBody();
+            } catch (EventHookBodyMappingSupport.EventHookBodyMappingException exception) {
+                throw new InternalServerErrorException(truncate(exception.getMessage(), 1024));
+            }
+        }
+
         return representation;
     }
 
@@ -143,6 +162,7 @@ public class PullEventHookTargetEndpointResource {
         log.setId(UUID.randomUUID().toString());
         log.setExecutionId(executionId);
         log.setStatus(EventHookLogStatus.SUCCESS);
+        log.setMessageStatus(message.getStatus());
         log.setAttemptNumber(message.getAttemptCount());
         log.setStatusCode(testMode ? "PULL_TEST_CONSUMED" : "PULL_CONSUMED");
         log.setDurationMs(0L);
@@ -190,5 +210,53 @@ public class PullEventHookTargetEndpointResource {
         }
         String stringValue = value.toString().trim();
         return stringValue.isEmpty() ? null : stringValue;
+    }
+
+    private Map<String, Object> pullBodyMappingModel(EventHookPullRepresentation representation) {
+        Map<String, Object> model = representation.getEvents() == null
+                ? EventHookBodyMappingSupport.singleEventModel(representation.getEvent())
+                : EventHookBodyMappingSupport.batchEventModel(representation.getEvents());
+        return EventHookBodyMappingSupport.withPullMetadata(model, representation.getEntry(), representation.getEntries(), representation.isHasMoreEvents());
+    }
+
+    private void failMessages(EventHookStoreProvider store, List<EventHookMessageModel> messages, String executionId, boolean batchExecution, String details) {
+        EventHookDeliveryResult result = new EventHookDeliveryResult();
+        result.setSuccess(false);
+        result.setRetryable(false);
+        result.setStatusCode(EventHookBodyMappingSupport.PARSE_FAILED_STATUS_CODE);
+        result.setDetails(truncate(details, 1024));
+        result.setDurationMillis(0L);
+
+        long now = currentTimeMillis();
+        for (EventHookMessageModel message : messages) {
+            message.setExecutionId(executionId);
+            message.setExecutionBatch(batchExecution);
+            EventHookDeliveryTask.applyDeliveryResultToMessage(message, target, result, now, false);
+            store.updateMessage(message);
+            createFailureLog(store, message, executionId, result, now);
+        }
+    }
+
+    private void createFailureLog(EventHookStoreProvider store, EventHookMessageModel message, String executionId,
+            EventHookDeliveryResult result, long now) {
+        EventHookLogModel log = new EventHookLogModel();
+        log.setId(UUID.randomUUID().toString());
+        log.setExecutionId(executionId);
+        log.setStatus(EventHookLogStatus.FAILED);
+        log.setMessageStatus(message.getStatus());
+        log.setAttemptNumber(message.getAttemptCount());
+        log.setStatusCode(result.getStatusCode());
+        log.setDurationMs(result.getDurationMillis());
+        log.setDetails(result.getDetails());
+        log.setCreatedAt(now);
+        log.setTest(message.isTest());
+        store.createLog(log);
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
     }
 }

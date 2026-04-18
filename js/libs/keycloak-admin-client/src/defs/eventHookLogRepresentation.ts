@@ -8,5 +8,4 @@ export default interface EventHookLogRepresentation {
   durationMs?: number;
   details?: string;
   createdAt?: number;
-  test?: boolean;
 }

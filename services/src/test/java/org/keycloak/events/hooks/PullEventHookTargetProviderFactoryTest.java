@@ -16,8 +16,10 @@ public class PullEventHookTargetProviderFactoryTest {
     private final PullEventHookTargetProviderFactory factory = new PullEventHookTargetProviderFactory();
 
     @Test
-    public void shouldExposeOnlyPullSecretSetting() {
-        assertEquals(List.of("pullSecret"), factory.getConfigMetadata().stream().map(ProviderConfigProperty::getName).toList());
+    public void shouldExposePullSecretAndCustomBodyMappingSettings() {
+        assertEquals(
+                List.of("pullSecret", "customBodyMappingTemplate"),
+                factory.getConfigMetadata().stream().map(ProviderConfigProperty::getName).toList());
     }
 
     @Test
@@ -32,6 +34,13 @@ public class PullEventHookTargetProviderFactoryTest {
     public void shouldAllowMissingPullSecret() {
         factory.validateConfig(null, Map.of());
         assertFalse(factory.getConfigMetadata().get(0).isRequired());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectInvalidCustomBodyTemplateSyntax() {
+        factory.validateConfig(null, Map.of(
+                "customBodyMappingTemplate", "<#if event>"
+        ));
     }
 
     @Test

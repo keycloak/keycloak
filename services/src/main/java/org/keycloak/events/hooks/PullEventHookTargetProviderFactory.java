@@ -41,6 +41,12 @@ public class PullEventHookTargetProviderFactory implements EventHookTargetProvid
             .type(ProviderConfigProperty.PASSWORD)
             .secret(true)
             .add()
+            .property()
+            .name(EventHookBodyMappingSupport.CUSTOM_BODY_MAPPING_TEMPLATE)
+            .label("eventHookTargetCustomBodyMappingTemplate")
+            .helpText("eventHookTargetCustomBodyMappingTemplateHelp")
+            .type(ProviderConfigProperty.TEXT_TYPE)
+            .add()
             .build();
 
     @Override
@@ -114,6 +120,7 @@ public class PullEventHookTargetProviderFactory implements EventHookTargetProvid
 
     @Override
     public void validateConfig(KeycloakSession session, Map<String, Object> settings) {
+        EventHookBodyMappingSupport.validateConfig(settings);
     }
 
     @Override

@@ -84,7 +84,7 @@ export const EventHookTargetDialog = ({
 }: EventHookTargetDialogProps) => {
   const { adminClient } = useAdminClient();
   const { environment } = useEnvironment();
-  const { realm } = useRealm();
+  const { realm, realmRepresentation } = useRealm();
   const serverInfo = useServerInfo();
   const localeSort = useLocaleSort();
   const { t } = useTranslation();
@@ -155,15 +155,38 @@ export const EventHookTargetDialog = ({
   const supportsRetry = selectedProvider?.supportsRetry !== false;
   const supportsAggregation = Boolean(selectedProvider?.supportsAggregation);
   const isHttpTarget = selectedProvider?.id === "http";
+  const isEmailTarget = selectedProvider?.id === "email";
   const isPullTarget = selectedProvider?.id === "pull";
   const isBulkDelivery = deliveryMode === "BULK";
   const isRetryEnabled =
     supportsRetry &&
     (retryEnabled === undefined || isTruthyValue(retryEnabled));
   const isHmacConfigured = isTruthyValue(hmacEnabled);
+  const customBodyMappingTemplate = watch("config.customBodyMappingTemplate");
+  const [customBodyMappingExpanded, setCustomBodyMappingExpanded] =
+    useState(false);
+  const isCustomBodyMappingEnabled =
+    customBodyMappingExpanded ||
+    (typeof customBodyMappingTemplate === "string" &&
+      customBodyMappingTemplate.trim().length > 0);
   const isPullSecretConfigured = hasConfiguredSecret(pullSecret);
   const canTestTarget =
     Boolean(selectedProvider) && (!isPullTarget || Boolean(target?.id));
+  const isRealmEmailConfigured = useMemo(() => {
+    const smtpServer = realmRepresentation?.smtpServer;
+    if (!smtpServer) {
+      return false;
+    }
+
+    const host = smtpServer.host;
+    const from = smtpServer.from;
+    return (
+      typeof host === "string" &&
+      host.trim().length > 0 &&
+      typeof from === "string" &&
+      from.trim().length > 0
+    );
+  }, [realmRepresentation?.smtpServer]);
   const pullPreviewUrl = useMemo(() => {
     if (!isPullTarget) {
       return undefined;
@@ -239,6 +262,12 @@ export const EventHookTargetDialog = ({
       delete settings["hmacEnabled"];
     }
 
+    if (isEmptyValue(settings.customBodyMappingTemplate)) {
+      delete settings.customBodyMappingTemplate;
+    }
+
+    delete settings.customBodyMappingEnabled;
+
     return settings;
   };
 
@@ -258,6 +287,13 @@ export const EventHookTargetDialog = ({
       settings: submittedSettings(converted.config),
     };
   };
+
+  useEffect(() => {
+    setCustomBodyMappingExpanded(
+      typeof customBodyMappingTemplate === "string" &&
+      customBodyMappingTemplate.trim().length > 0,
+    );
+  }, [customBodyMappingTemplate]);
 
   useEffect(() => {
     if (target) {
@@ -364,7 +400,7 @@ export const EventHookTargetDialog = ({
     setTestDialogTarget(toPayload(values));
   };
 
-  const renderHttpField = (name: string) => {
+  const renderConfigField = (name: string) => {
     const property = metadataByName[name];
 
     return property ? (
@@ -372,61 +408,83 @@ export const EventHookTargetDialog = ({
     ) : null;
   };
 
-  const renderHttpConfig = () => (
-    <>
-      <Grid hasGutter>
-        <GridItem lg={4} sm={12}>
-          {renderHttpField("method")}
-        </GridItem>
-        <GridItem lg={8} sm={12}>
-          {renderHttpField("url")}
-        </GridItem>
-      </Grid>
-      {renderHttpField("headers")}
-      <FormGroup
-        label={t("eventHookTargetHmac")}
-        fieldId="event-hook-target-hmac-enabled"
-        labelIcon={
-          <HelpItem
-            helpText={t("eventHookTargetHmacHelp")}
-            fieldLabelId="eventHookTargetHmac"
-          />
-        }
-      >
-        <Controller
-          name="config.hmacEnabled"
-          control={control}
-          render={({ field }) => (
-            <Switch
-              id="event-hook-target-hmac-enabled"
-              label={t("eventHookTargetOptional")}
-              labelOff={t("disabled")}
-              isChecked={isTruthyValue(field.value)}
-              onChange={(_, checked) => field.onChange(checked)}
+  // Shared settings blocks used across multiple target types.
+  const renderBatchConfig = () => {
+    if (!supportsBatch) {
+      return null;
+    }
+
+    return (
+      <>
+        <FormGroup
+          label={t("eventHookTargetDeliveryMode")}
+          fieldId="event-hook-target-delivery-mode"
+          labelIcon={
+            <HelpItem
+              helpText={t("eventHookTargetDeliveryModeHelp")}
+              fieldLabelId="eventHookTargetDeliveryMode"
             />
-          )}
-        />
-      </FormGroup>
-      {isHmacConfigured && (
-        <Grid hasGutter>
-          <GridItem lg={4} sm={12}>
-            {renderHttpField("hmacAlgorithm")}
-          </GridItem>
-          <GridItem lg={8} sm={12}>
-            {renderHttpField("hmacSecret")}
-          </GridItem>
-        </Grid>
-      )}
-      <Grid hasGutter>
-        <GridItem lg={6} sm={12}>
-          {renderHttpField("connectTimeoutMs")}
-        </GridItem>
-        <GridItem lg={6} sm={12}>
-          {renderHttpField("readTimeoutMs")}
-        </GridItem>
-      </Grid>
-    </>
-  );
+          }
+        >
+          <Controller
+            name="config.deliveryMode"
+            control={control}
+            render={({ field }) => (
+              <KeycloakSelect
+                toggleId="event-hook-target-delivery-mode"
+                aria-label={t("eventHookTargetDeliveryMode")}
+                isOpen={deliveryModeOpen}
+                onToggle={() => setDeliveryModeOpen(!deliveryModeOpen)}
+                onSelect={(value) => {
+                  field.onChange(value as DeliveryMode);
+                  setDeliveryModeOpen(false);
+                }}
+                selections={
+                  ((deliveryMode || field.value) as DeliveryMode | undefined) ||
+                  "SINGLE"
+                }
+                variant="single"
+              >
+                <SelectOption value="SINGLE">{t("SINGLE")}</SelectOption>
+                <SelectOption value="BULK">{t("BULK")}</SelectOption>
+              </KeycloakSelect>
+            )}
+          />
+        </FormGroup>
+        {isBulkDelivery &&
+          (supportsAggregation ? (
+            <Grid hasGutter>
+              <GridItem lg={6} sm={12}>
+                <TextControl
+                  name="config.maxEventsPerBatch"
+                  label={t("eventHookTargetMaxEventsPerBatch")}
+                  helperText={t("eventHookTargetMaxEventsPerBatchHelp")}
+                  type="number"
+                  rules={{ required: t("required") }}
+                />
+              </GridItem>
+              <GridItem lg={6} sm={12}>
+                <TextControl
+                  name="config.aggregationTimeoutMs"
+                  label={t("eventHookTargetAggregationTimeoutMs")}
+                  helperText={t("eventHookTargetAggregationTimeoutMsHelp")}
+                  type="number"
+                  rules={{ required: t("required") }}
+                />
+              </GridItem>
+            </Grid>
+          ) : (
+            <TextControl
+              name="config.maxEventsPerBatch"
+              label={t("eventHookTargetMaxEventsPerBatch")}
+              helperText={t("eventHookTargetMaxEventsPerBatchHelp")}
+              type="number"
+              rules={{ required: t("required") }}
+            />
+          ))}
+      </>
+    );
+  };
 
   const renderRetryConfig = () => {
     if (!supportsRetry) {
@@ -483,84 +541,213 @@ export const EventHookTargetDialog = ({
     );
   };
 
-  const renderBatchConfig = () => {
-    if (!supportsBatch) {
+  const renderBodyMappingConfig = () => {
+    if (!metadataByName.customBodyMappingTemplate) {
       return null;
     }
 
     return (
       <>
         <FormGroup
-          label={t("eventHookTargetDeliveryMode")}
-          fieldId="event-hook-target-delivery-mode"
+          label={t("eventHookTargetCustomBodyMapping")}
+          fieldId="event-hook-target-custom-body-mapping-enabled"
           labelIcon={
             <HelpItem
-              helpText={t("eventHookTargetDeliveryModeHelp")}
-              fieldLabelId="eventHookTargetDeliveryMode"
+              helpText={t("eventHookTargetCustomBodyMappingHelp")}
+              fieldLabelId="eventHookTargetCustomBodyMapping"
             />
           }
         >
-          <Controller
-            name="config.deliveryMode"
-            control={control}
-            render={({ field }) => (
-              <KeycloakSelect
-                toggleId="event-hook-target-delivery-mode"
-                aria-label={t("eventHookTargetDeliveryMode")}
-                isOpen={deliveryModeOpen}
-                onToggle={() => setDeliveryModeOpen(!deliveryModeOpen)}
-                onSelect={(value) => {
-                  field.onChange(value as DeliveryMode);
-                  setDeliveryModeOpen(false);
-                }}
-                selections={
-                  (field.value as DeliveryMode | undefined) || "SINGLE"
-                }
-                variant="single"
-              >
-                <SelectOption value="SINGLE">{t("SINGLE")}</SelectOption>
-                <SelectOption value="BULK">{t("BULK")}</SelectOption>
-              </KeycloakSelect>
-            )}
+          <Switch
+            id="event-hook-target-custom-body-mapping-enabled"
+            label={t("eventHookTargetOptional")}
+            labelOff={t("disabled")}
+            isChecked={isCustomBodyMappingEnabled}
+            onChange={(_, checked) => {
+              setCustomBodyMappingExpanded(checked);
+              if (!checked) {
+                setValue("config.customBodyMappingTemplate", "", {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }
+            }}
           />
         </FormGroup>
-        {isBulkDelivery && (
-          <>
-            {supportsAggregation ? (
-              <Grid hasGutter>
-                <GridItem lg={6} sm={12}>
-                  <TextControl
-                    name="config.maxEventsPerBatch"
-                    label={t("eventHookTargetMaxEventsPerBatch")}
-                    helperText={t("eventHookTargetMaxEventsPerBatchHelp")}
-                    type="number"
-                    rules={{ required: t("required") }}
-                  />
-                </GridItem>
-                <GridItem lg={6} sm={12}>
-                  <TextControl
-                    name="config.aggregationTimeoutMs"
-                    label={t("eventHookTargetAggregationTimeoutMs")}
-                    helperText={t("eventHookTargetAggregationTimeoutMsHelp")}
-                    type="number"
-                    rules={{ required: t("required") }}
-                  />
-                </GridItem>
-              </Grid>
-            ) : (
-              <TextControl
-                name="config.maxEventsPerBatch"
-                label={t("eventHookTargetMaxEventsPerBatch")}
-                helperText={t("eventHookTargetMaxEventsPerBatchHelp")}
-                type="number"
-                rules={{ required: t("required") }}
-              />
-            )}
-          </>
-        )}
+        {isCustomBodyMappingEnabled && renderConfigField("customBodyMappingTemplate")}
       </>
     );
   };
+
+  // HTTP-specific settings.
+  const renderHttpConfig = () => (
+    <>
+      <Grid hasGutter>
+        <GridItem lg={4} sm={12}>
+          {renderConfigField("method")}
+        </GridItem>
+        <GridItem lg={8} sm={12}>
+          {renderConfigField("url")}
+        </GridItem>
+      </Grid>
+      {renderConfigField("headers")}
+      <FormGroup
+        label={t("eventHookTargetHmac")}
+        fieldId="event-hook-target-hmac-enabled"
+        labelIcon={
+          <HelpItem
+            helpText={t("eventHookTargetHmacHelp")}
+            fieldLabelId="eventHookTargetHmac"
+          />
+        }
+      >
+        <Controller
+          name="config.hmacEnabled"
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="event-hook-target-hmac-enabled"
+              label={t("eventHookTargetOptional")}
+              labelOff={t("disabled")}
+              isChecked={isTruthyValue(field.value)}
+              onChange={(_, checked) => field.onChange(checked)}
+            />
+          )}
+        />
+      </FormGroup>
+      {isHmacConfigured && (
+        <Grid hasGutter>
+          <GridItem lg={4} sm={12}>
+            {renderConfigField("hmacAlgorithm")}
+          </GridItem>
+          <GridItem lg={8} sm={12}>
+            {renderConfigField("hmacSecret")}
+          </GridItem>
+        </Grid>
+      )}
+      {renderBodyMappingConfig()}
+      <Grid hasGutter>
+        <GridItem lg={6} sm={12}>
+          {renderConfigField("connectTimeoutMs")}
+        </GridItem>
+        <GridItem lg={6} sm={12}>
+          {renderConfigField("readTimeoutMs")}
+        </GridItem>
+      </Grid>
+    </>
+  );
+
+  // Email-specific settings and inline guidance.
+  const renderEmailConfig = () => (
+    <>
+      {!isRealmEmailConfigured && (
+        <Alert
+          isInline
+          variant="warning"
+          title={t("eventHookTargetEmailSmtpMissingTitle")}
+          className="pf-v5-u-mb-md"
+        >
+          {t("eventHookTargetEmailSmtpMissing")}
+        </Alert>
+      )}
+      <Alert
+        isInline
+        variant="info"
+        title={t("eventHookTargetEmailUsesRealmConfigTitle")}
+        className="pf-v5-u-mb-md"
+      >
+        {t("eventHookTargetEmailUsesRealmConfig")}
+      </Alert>
+      <Grid hasGutter>
+        <GridItem lg={8} sm={12}>
+          {renderConfigField("recipientTemplate")}
+        </GridItem>
+        <GridItem lg={4} sm={12}>
+          {renderConfigField("localeTemplate")}
+        </GridItem>
+      </Grid>
+      <Alert
+        isInline
+        variant="info"
+        title={t("eventHookTargetEmailRecipientHintTitle")}
+        className="pf-v5-u-mb-md"
+      >
+        {t("eventHookTargetEmailRecipientHint")}
+      </Alert>
+      <Alert
+        isInline
+        variant="info"
+        title={t("eventHookTargetEmailLocalizationTitle")}
+        className="pf-v5-u-mb-md"
+      >
+        {t("eventHookTargetEmailLocalization")}
+      </Alert>
+      {renderConfigField("subjectTemplate")}
+      <Alert
+        isInline
+        variant="info"
+        title={t("eventHookTargetEmailTemplateHintTitle")}
+        className="pf-v5-u-mb-md"
+      >
+        {t("eventHookTargetEmailTemplateHint")}
+      </Alert>
+      <Grid hasGutter>
+        <GridItem lg={6} sm={12}>
+          {renderConfigField("textBodyTemplate")}
+        </GridItem>
+        <GridItem lg={6} sm={12}>
+          {renderConfigField("htmlBodyTemplate")}
+        </GridItem>
+      </Grid>
+    </>
+  );
+
+  // Pull-specific hints and generated endpoint previews.
+  const renderPullConfig = () => (
+    <>
+      {!isPullSecretConfigured && (
+        <Alert
+          isInline
+          variant="warning"
+          title={t("eventHookTargetPullSecretWarningTitle")}
+        >
+          {t("eventHookTargetPullSecretWarning")}
+        </Alert>
+      )}
+      {pullPreviewUrl && (
+        <FormGroup
+          label={t("eventHookTargetPullUrlPreview")}
+          fieldId="event-hook-target-pull-url-preview"
+          labelIcon={
+            <HelpItem
+              helpText={t("eventHookTargetPullUrlPreviewHelp")}
+              fieldLabelId="eventHookTargetPullUrlPreview"
+            />
+          }
+        >
+          <ClipboardCopy id="event-hook-target-pull-url-preview" isReadOnly>
+            {pullPreviewUrl}
+          </ClipboardCopy>
+        </FormGroup>
+      )}
+      {pullTestPreviewUrl && (
+        <FormGroup
+          label={t("eventHookTargetPullTestUrlPreview")}
+          fieldId="event-hook-target-pull-test-url-preview"
+          labelIcon={
+            <HelpItem
+              helpText={t("eventHookTargetPullTestUrlPreviewHelp")}
+              fieldLabelId="eventHookTargetPullTestUrlPreview"
+            />
+          }
+        >
+          <ClipboardCopy id="event-hook-target-pull-test-url-preview" isReadOnly>
+            {pullTestPreviewUrl}
+          </ClipboardCopy>
+        </FormGroup>
+      )}
+    </>
+  );
 
   return (
     <>
@@ -630,24 +817,24 @@ export const EventHookTargetDialog = ({
                               config: {
                                 ...(provider?.supportsBatch
                                   ? {
-                                      deliveryMode: "SINGLE",
-                                      maxEventsPerBatch:
-                                        DEFAULT_MAX_EVENTS_PER_BATCH,
-                                    }
+                                    deliveryMode: "SINGLE",
+                                    maxEventsPerBatch:
+                                      DEFAULT_MAX_EVENTS_PER_BATCH,
+                                  }
                                   : {}),
                                 ...(provider?.supportsAggregation
                                   ? {
-                                      aggregationTimeoutMs:
-                                        DEFAULT_AGGREGATION_TIMEOUT_MS,
-                                    }
+                                    aggregationTimeoutMs:
+                                      DEFAULT_AGGREGATION_TIMEOUT_MS,
+                                  }
                                   : {}),
                                 ...(provider?.supportsRetry === false
                                   ? {}
                                   : {
-                                      retryEnabled: true,
-                                      maxAttempts: DEFAULT_MAX_ATTEMPTS,
-                                      retryDelayMs: DEFAULT_RETRY_DELAY_MS,
-                                    }),
+                                    retryEnabled: true,
+                                    maxAttempts: DEFAULT_MAX_ATTEMPTS,
+                                    retryDelayMs: DEFAULT_RETRY_DELAY_MS,
+                                  }),
                               },
                             });
                           } else {
@@ -708,56 +895,20 @@ export const EventHookTargetDialog = ({
                 </div>
                 {isHttpTarget ? (
                   renderHttpConfig()
+                ) : isEmailTarget ? (
+                  renderEmailConfig()
                 ) : (
-                  <DynamicComponents stringify properties={configMetadata} />
+                  <>
+                    <DynamicComponents
+                      stringify
+                      properties={configMetadata.filter(
+                        ({ name }) => name !== "customBodyMappingTemplate",
+                      )}
+                    />
+                    {isPullTarget && renderBodyMappingConfig()}
+                  </>
                 )}
-                {isPullTarget && !isPullSecretConfigured && (
-                  <Alert
-                    isInline
-                    variant="warning"
-                    title={t("eventHookTargetPullSecretWarningTitle")}
-                  >
-                    {t("eventHookTargetPullSecretWarning")}
-                  </Alert>
-                )}
-                {pullPreviewUrl && (
-                  <FormGroup
-                    label={t("eventHookTargetPullUrlPreview")}
-                    fieldId="event-hook-target-pull-url-preview"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("eventHookTargetPullUrlPreviewHelp")}
-                        fieldLabelId="eventHookTargetPullUrlPreview"
-                      />
-                    }
-                  >
-                    <ClipboardCopy
-                      id="event-hook-target-pull-url-preview"
-                      isReadOnly
-                    >
-                      {pullPreviewUrl}
-                    </ClipboardCopy>
-                  </FormGroup>
-                )}
-                {pullTestPreviewUrl && (
-                  <FormGroup
-                    label={t("eventHookTargetPullTestUrlPreview")}
-                    fieldId="event-hook-target-pull-test-url-preview"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("eventHookTargetPullTestUrlPreviewHelp")}
-                        fieldLabelId="eventHookTargetPullTestUrlPreview"
-                      />
-                    }
-                  >
-                    <ClipboardCopy
-                      id="event-hook-target-pull-test-url-preview"
-                      isReadOnly
-                    >
-                      {pullTestPreviewUrl}
-                    </ClipboardCopy>
-                  </FormGroup>
-                )}
+                {isPullTarget && renderPullConfig()}
               </>
             )}
           </FormProvider>

@@ -18,7 +18,6 @@ import org.keycloak.services.util.DateUtil;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 public class EventHooksResourceLogsTest {
 
@@ -68,7 +67,6 @@ public class EventHooksResourceLogsTest {
         assertEquals("exec-1", representation.getExecutionId());
         assertEquals("SUCCESS", representation.getStatus());
         assertEquals("SUCCESS", representation.getMessageStatus());
-        assertEquals(Boolean.TRUE, representation.getTest());
         assertNotNull(representation.getCreatedAt());
     }
 

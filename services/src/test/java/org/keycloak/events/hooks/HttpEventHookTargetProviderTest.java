@@ -97,6 +97,70 @@ public class HttpEventHookTargetProviderTest {
     }
 
     @Test
+    public void shouldRenderCustomBodyTemplateForSingleDelivery() throws Exception {
+        RecordingHandler handler = startServer(200, "accepted");
+
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpEventHookTargetProvider provider = new HttpEventHookTargetProvider(null, SimpleHttp.create(client));
+            EventHookDeliveryResult result = provider.deliver(target(handler.url(), Map.of(
+                    "customBodyMappingTemplate", "{\"customEventId\": ${eventId?json_string}, \"details\": ${details}, \"event\": ${event}}"
+            )), message("evt-custom", Map.of(
+                    "eventId", "evt-custom",
+                    "details", Map.of("clientId", "security-admin-console")
+            )));
+
+            assertTrue(result.isSuccess());
+
+            Map<String, Object> body = JsonSerialization.readValue(handler.body, new TypeReference<Map<String, Object>>() {
+            });
+            assertEquals("evt-custom", body.get("customEventId"));
+            assertEquals("security-admin-console", ((Map<?, ?>) body.get("details")).get("clientId"));
+            assertEquals("evt-custom", ((Map<?, ?>) body.get("event")).get("eventId"));
+        }
+    }
+
+    @Test
+    public void shouldRenderCustomBodyTemplateForBatchDelivery() throws Exception {
+        RecordingHandler handler = startServer(202, "queued");
+
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpEventHookTargetProvider provider = new HttpEventHookTargetProvider(null, SimpleHttp.create(client));
+            EventHookDeliveryResult result = provider.deliverBatch(target(handler.url(), Map.of(
+                    "customBodyMappingTemplate", "{\"items\": [<#list events as item>${item}<#sep>,</#sep></#list>]}"
+            )), List.of(
+                    message("evt-1", Map.of("eventId", "evt-1", "type", "LOGIN")),
+                    message("evt-2", Map.of("eventId", "evt-2", "type", "LOGOUT"))
+            ));
+
+            assertTrue(result.isSuccess());
+
+            Map<String, Object> body = JsonSerialization.readValue(handler.body, new TypeReference<Map<String, Object>>() {
+            });
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
+            assertEquals(2, items.size());
+            assertEquals("evt-1", items.get(0).get("eventId"));
+            assertEquals("evt-2", items.get(1).get("eventId"));
+        }
+    }
+
+    @Test
+    public void shouldReturnParseFailedForInvalidRenderedCustomBody() throws Exception {
+        RecordingHandler handler = startServer(200, "accepted");
+
+        try (CloseableHttpClient client = HttpClients.createDefault()) {
+            HttpEventHookTargetProvider provider = new HttpEventHookTargetProvider(null, SimpleHttp.create(client));
+            EventHookDeliveryResult result = provider.deliver(target(handler.url(), Map.of(
+                    "customBodyMappingTemplate", "{\"eventId\": ${eventId}}"
+            )), message("evt-invalid", Map.of("eventId", "evt-invalid")));
+
+            assertFalse(result.isSuccess());
+            assertFalse(result.isRetryable());
+            assertEquals("PARSE_FAILED", result.getStatusCode());
+        }
+    }
+
+    @Test
     public void shouldParseRepresentationJsonForHttpDelivery() throws Exception {
         RecordingHandler handler = startServer(200, "accepted");
 

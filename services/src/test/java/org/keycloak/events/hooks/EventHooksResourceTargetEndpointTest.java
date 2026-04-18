@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.HttpHeaders;
 
@@ -55,7 +56,7 @@ public class EventHooksResourceTargetEndpointTest {
                                 store.hasMoreTestMessages = false;
 
                 Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "test");
-                EventHookPullRepresentation representation = ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
+                EventHookPullRepresentation representation = (EventHookPullRepresentation) ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
 
                 assertNotNull(representation.getEvent());
                 assertEquals("LOGIN", ((Map<?, ?>) representation.getEvent()).get("eventType"));
@@ -97,7 +98,7 @@ public class EventHooksResourceTargetEndpointTest {
                 store.hasMoreMessages = false;
 
                 Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "consume");
-                EventHookPullRepresentation representation = ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
+                EventHookPullRepresentation representation = (EventHookPullRepresentation) ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
 
                 assertNotNull(representation.getEvent());
                 assertEquals("LOGIN", ((Map<?, ?>) representation.getEvent()).get("event"));
@@ -162,7 +163,7 @@ public class EventHooksResourceTargetEndpointTest {
         Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "consume");
         assertTrue(endpoint instanceof PullEventHookTargetEndpointResource);
 
-        EventHookPullRepresentation representation = ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
+        EventHookPullRepresentation representation = (EventHookPullRepresentation) ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
 
         assertNotNull(representation.getEvent());
         assertTrue(representation.getEvent() instanceof Map<?, ?>);
@@ -208,7 +209,7 @@ public class EventHooksResourceTargetEndpointTest {
                 store.hasMoreMessages = false;
 
                 Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "consume");
-                EventHookPullRepresentation representation = ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
+                EventHookPullRepresentation representation = (EventHookPullRepresentation) ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
 
                 assertNotNull(representation.getEvents());
                 assertEquals(List.of("event-1", "event-2", "event-3"), representation.getEvents().stream()
@@ -259,7 +260,90 @@ public class EventHooksResourceTargetEndpointTest {
                 store.hasMoreMessages = false;
 
                 Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "consume");
-                EventHookPullRepresentation representation = ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
+                EventHookPullRepresentation representation = (EventHookPullRepresentation) ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
+
+        @Test
+        public void shouldRenderCustomPullBodyMapping() {
+                                RecordingStoreProvider store = new RecordingStoreProvider();
+                                RealmModel realm = realm("realm-1");
+                                KeycloakSession session = session(realm, store, new PullEventHookTargetProviderFactory());
+                                HttpHeaders headers = headers("top-secret", null);
+
+                EventHookTargetModel target = new EventHookTargetModel();
+                target.setId("target-1");
+                target.setType(PullEventHookTargetProviderFactory.ID);
+                target.setEnabled(true);
+                target.setSettings(Map.of(
+                        "pullSecret", "top-secret",
+                        "deliveryMode", "SINGLE",
+                        "customBodyMappingTemplate", "{\"event\": ${event}, \"messageId\": ${entry.messageId?json_string}, \"hasMoreEvents\": ${hasMoreEvents}}"
+                ));
+
+                EventHookMessageModel message = new EventHookMessageModel();
+                message.setId("msg-1");
+                message.setRealmId("realm-1");
+                message.setTargetId("target-1");
+                message.setSourceEventId("event-1");
+                message.setAttemptCount(1);
+                message.setStatus(EventHookMessageStatus.WAITING);
+                message.setPayload("{\"event\":\"LOGIN\"}");
+                message.setUpdatedAt(100L);
+
+                store.target = target;
+                store.messages = List.of(message);
+                store.hasMoreMessages = true;
+
+                Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "consume");
+                Object response = ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
+
+                assertTrue(response instanceof Map<?, ?>);
+                assertEquals("LOGIN", ((Map<?, ?>) ((Map<?, ?>) response).get("event")).get("event"));
+                assertEquals("msg-1", ((Map<?, ?>) response).get("messageId"));
+                assertEquals(Boolean.TRUE, ((Map<?, ?>) response).get("hasMoreEvents"));
+                assertEquals(EventHookMessageStatus.SUCCESS, store.updatedMessage.getStatus());
+        }
+
+        @Test(expected = InternalServerErrorException.class)
+        public void shouldMarkPullMessagesAsParseFailedWhenCustomMappingRendersInvalidJson() {
+                                RecordingStoreProvider store = new RecordingStoreProvider();
+                                RealmModel realm = realm("realm-1");
+                                KeycloakSession session = session(realm, store, new PullEventHookTargetProviderFactory());
+                                HttpHeaders headers = headers("top-secret", null);
+
+                EventHookTargetModel target = new EventHookTargetModel();
+                target.setId("target-1");
+                target.setType(PullEventHookTargetProviderFactory.ID);
+                target.setEnabled(true);
+                target.setSettings(Map.of(
+                        "pullSecret", "top-secret",
+                        "deliveryMode", "SINGLE",
+                        "customBodyMappingTemplate", "{\"messageId\": ${entry.messageId}}"
+                ));
+
+                EventHookMessageModel message = new EventHookMessageModel();
+                message.setId("msg-parse-failed");
+                message.setRealmId("realm-1");
+                message.setTargetId("target-1");
+                message.setSourceEventId("event-1");
+                message.setAttemptCount(1);
+                message.setStatus(EventHookMessageStatus.WAITING);
+                message.setPayload("{\"event\":\"LOGIN\"}");
+                message.setUpdatedAt(100L);
+
+                store.target = target;
+                store.messages = List.of(message);
+                store.hasMoreMessages = false;
+
+                Object endpoint = new EventHooksResource(session, null, null).getTargetEndpoint("target-1", "consume");
+
+                try {
+                        ((PullEventHookTargetEndpointResource) endpoint).consumeGet(headers);
+                } finally {
+                        assertEquals(EventHookMessageStatus.PARSE_FAILED, store.updatedMessage.getStatus());
+                        assertEquals("PARSE_FAILED", store.createdLog.getStatusCode());
+                        assertEquals(EventHookMessageStatus.PARSE_FAILED, store.createdLog.getMessageStatus());
+                }
+        }
 
                 assertTrue(representation.getEvent() instanceof Map<?, ?>);
                 assertTrue(((Map<?, ?>) representation.getEvent()).get("representation") instanceof Map<?, ?>);

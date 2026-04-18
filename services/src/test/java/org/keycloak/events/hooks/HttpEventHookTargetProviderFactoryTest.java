@@ -35,6 +35,7 @@ public class HttpEventHookTargetProviderFactoryTest {
                 "headers",
                 "hmacAlgorithm",
                 "hmacSecret",
+                "customBodyMappingTemplate",
                 "connectTimeoutMs",
                 "readTimeoutMs"
             ),
@@ -59,6 +60,22 @@ public class HttpEventHookTargetProviderFactoryTest {
     @Test
     public void shouldSupportAggregation() {
         assertTrue(factory.supportsAggregation());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectBlankCustomBodyTemplateWhenEnabled() {
+        factory.validateConfig(null, Map.of(
+                "url", "https://example.org/hooks/keycloak",
+                "customBodyMappingTemplate", "   "
+        ));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void shouldRejectInvalidCustomBodyTemplateSyntax() {
+        factory.validateConfig(null, Map.of(
+                "url", "https://example.org/hooks/keycloak",
+                "customBodyMappingTemplate", "<#if event>"
+        ));
     }
 
     @Test(expected = IllegalArgumentException.class)

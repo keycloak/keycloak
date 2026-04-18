@@ -72,6 +72,12 @@ public class HttpEventHookTargetProviderFactory implements EventHookTargetProvid
             .secret(true)
             .add()
             .property()
+            .name(EventHookBodyMappingSupport.CUSTOM_BODY_MAPPING_TEMPLATE)
+            .label("eventHookTargetCustomBodyMappingTemplate")
+            .helpText("eventHookTargetCustomBodyMappingTemplateHelp")
+            .type(ProviderConfigProperty.TEXT_TYPE)
+            .add()
+            .property()
             .name("connectTimeoutMs")
             .label("eventHookTargetConnectTimeoutMs")
             .helpText("eventHookTargetConnectTimeoutMsHelp")
@@ -163,6 +169,7 @@ public class HttpEventHookTargetProviderFactory implements EventHookTargetProvid
         }
         positiveInteger(settings, "connectTimeoutMs");
         positiveInteger(settings, "readTimeoutMs");
+        EventHookBodyMappingSupport.validateConfig(settings);
     }
 
     @Override

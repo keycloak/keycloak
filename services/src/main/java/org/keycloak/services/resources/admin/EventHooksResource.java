@@ -77,6 +77,7 @@ public class EventHooksResource {
 
     private static final EnumSet<EventHookMessageStatus> RETRYABLE_MESSAGE_STATUSES = EnumSet.of(
             EventHookMessageStatus.FAILED,
+            EventHookMessageStatus.PARSE_FAILED,
             EventHookMessageStatus.EXHAUSTED,
             EventHookMessageStatus.DEAD);
 
@@ -465,7 +466,6 @@ public class EventHooksResource {
         representation.setDurationMs(model.getDurationMs());
         representation.setDetails(model.getDetails());
         representation.setCreatedAt(model.getCreatedAt());
-        representation.setTest(model.isTest());
         return representation;
     }
 
@@ -555,6 +555,7 @@ public class EventHooksResource {
         log.setExecutionId(executionId);
         log.setStatus(result.isSuccess() ? EventHookLogStatus.SUCCESS : result.isWaiting() ? EventHookLogStatus.WAITING : EventHookLogStatus.FAILED);
         log.setAttemptNumber(representativeMessage.getAttemptCount());
+        log.setMessageStatus(representativeMessage.getStatus());
         log.setStatusCode(result.getStatusCode());
         log.setDurationMs(result.getDurationMillis());
         log.setDetails(result.getDetails());

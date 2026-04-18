@@ -28,7 +28,6 @@ public class EventHookLogRepresentation {
     private Long durationMs;
     private String details;
     private Long createdAt;
-    private Boolean test;
 
     public String getId() {
         return id;
@@ -100,13 +99,5 @@ public class EventHookLogRepresentation {
 
     public void setCreatedAt(Long createdAt) {
         this.createdAt = createdAt;
-    }
-
-    public Boolean getTest() {
-        return test;
-    }
-
-    public void setTest(Boolean test) {
-        this.test = test;
     }
 }

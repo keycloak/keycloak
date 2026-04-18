@@ -16,5 +16,6 @@
 #
 
 org.keycloak.events.hooks.HttpEventHookTargetProviderFactory
+org.keycloak.events.hooks.EmailEventHookTargetProviderFactory
 org.keycloak.events.hooks.PullEventHookTargetProviderFactory
 org.keycloak.events.hooks.SqlEventHookTargetProviderFactory

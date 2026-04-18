@@ -23,6 +23,7 @@ public enum EventHookMessageStatus {
     WAITING,
     SUCCESS,
     FAILED,
+    PARSE_FAILED,
     EXHAUSTED,
     DEAD
 }

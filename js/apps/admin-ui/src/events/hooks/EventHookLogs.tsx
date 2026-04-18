@@ -85,6 +85,7 @@ const messageStatusOptions = [
   "WAITING",
   "SUCCESS",
   "FAILED",
+  "PARSE_FAILED",
   "EXHAUSTED",
   "DEAD",
 ];
@@ -188,6 +189,7 @@ const MessageStatusLabel = ({ status }: { status?: string }) => {
         </Label>
       );
     case "FAILED":
+    case "PARSE_FAILED":
     case "EXHAUSTED":
     case "DEAD":
       return (
@@ -443,7 +445,10 @@ export const EventHookLogs = () => {
   const refresh = () => setRefreshCount((count) => count + 1);
 
   const isRetryableMessageStatus = (status?: string) =>
-    status === "FAILED" || status === "EXHAUSTED" || status === "DEAD";
+    status === "FAILED" ||
+    status === "PARSE_FAILED" ||
+    status === "EXHAUSTED" ||
+    status === "DEAD";
 
   const withRetryingExecutions = async <T,>(
     executionIds: string[],
@@ -900,30 +905,30 @@ export const EventHookLogs = () => {
     const filteredExecutionIds =
       status || dateFrom || dateTo || messageId
         ? new Set(
-            (
-              await adminClient.eventHooks.findLogs({
-                realm,
-                messageId: messageId || undefined,
-                targetId: targetId || undefined,
-                targetType: targetType || undefined,
-                sourceType: sourceType || undefined,
-                event: event || undefined,
-                client: client || undefined,
-                user: user || undefined,
-                ipAddress: ipAddress || undefined,
-                resourceType: resourceType || undefined,
-                resourcePath: resourcePath || undefined,
-                status: status || undefined,
-                messageStatus: messageStatus || undefined,
-                dateFrom: dateFrom || undefined,
-                dateTo: dateTo || undefined,
-                executionId: executionId || undefined,
-                search: search || undefined,
-              })
-            )
-              .map((log) => log.executionId)
-              .filter((value): value is string => Boolean(value)),
+          (
+            await adminClient.eventHooks.findLogs({
+              realm,
+              messageId: messageId || undefined,
+              targetId: targetId || undefined,
+              targetType: targetType || undefined,
+              sourceType: sourceType || undefined,
+              event: event || undefined,
+              client: client || undefined,
+              user: user || undefined,
+              ipAddress: ipAddress || undefined,
+              resourceType: resourceType || undefined,
+              resourcePath: resourcePath || undefined,
+              status: status || undefined,
+              messageStatus: messageStatus || undefined,
+              dateFrom: dateFrom || undefined,
+              dateTo: dateTo || undefined,
+              executionId: executionId || undefined,
+              search: search || undefined,
+            })
           )
+            .map((log) => log.executionId)
+            .filter((value): value is string => Boolean(value)),
+        )
         : undefined;
 
     const targetNames = new Map(

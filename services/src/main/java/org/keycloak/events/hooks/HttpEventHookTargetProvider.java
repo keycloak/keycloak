@@ -31,6 +31,8 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpRequest;
 import org.keycloak.http.simple.SimpleHttpResponse;
@@ -56,19 +58,51 @@ public class HttpEventHookTargetProvider implements EventHookTargetProvider {
 
     @Override
     public EventHookDeliveryResult deliver(EventHookTargetModel target, EventHookMessageModel message) throws IOException {
-        return deliverPayload(target, singlePayload(message));
+        try {
+            Object payload = EventHookBodyMappingSupport.readPayload(message.getPayload());
+            return deliverPayload(target, payload, EventHookBodyMappingSupport.singleEventModel(payload));
+        } catch (EventHookBodyMappingSupport.EventHookBodyMappingException exception) {
+            return parseFailedResult(exception);
+        }
     }
 
     @Override
     public EventHookDeliveryResult deliverBatch(EventHookTargetModel target, List<EventHookMessageModel> messages) throws IOException {
-        return deliverPayload(target, bulkPayload(messages));
+        try {
+            List<Object> payloads = messages.stream().map(message -> {
+                try {
+                    return EventHookBodyMappingSupport.readPayload(message.getPayload());
+                } catch (EventHookBodyMappingSupport.EventHookBodyMappingException exception) {
+                    throw new IllegalStateException(exception);
+                }
+            }).toList();
+            return deliverPayload(target, Map.of("events", payloads), EventHookBodyMappingSupport.batchEventModel(payloads));
+        } catch (IllegalStateException exception) {
+            Throwable cause = exception.getCause();
+            if (cause instanceof EventHookBodyMappingSupport.EventHookBodyMappingException mappingException) {
+                return parseFailedResult(mappingException);
+            }
+            throw exception;
+        }
     }
 
-    private EventHookDeliveryResult deliverPayload(EventHookTargetModel target, Object entity) throws IOException {
+    private EventHookDeliveryResult deliverPayload(EventHookTargetModel target, Object entity, Map<String, Object> bodyMappingModel) throws IOException {
         Map<String, Object> settings = target.getSettings();
         String url = stringSetting(settings, "url", null);
         String method = stringSetting(settings, "method", "POST").toUpperCase(Locale.ROOT);
-        String requestBody = JsonSerialization.writeValueAsString(entity);
+        long started = System.currentTimeMillis();
+
+        String requestBody;
+        if (EventHookBodyMappingSupport.isEnabled(settings)) {
+            try {
+                EventHookBodyMappingSupport.RenderedBody renderedBody = EventHookBodyMappingSupport.render(settings, bodyMappingModel);
+                requestBody = renderedBody.rawBody();
+            } catch (EventHookBodyMappingSupport.EventHookBodyMappingException exception) {
+                return parseFailedResult(started, exception);
+            }
+        } else {
+            requestBody = JsonSerialization.writeValueAsString(entity);
+        }
 
         RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(intSetting(settings, "connectTimeoutMs", DEFAULT_CONNECT_TIMEOUT_MS))
@@ -76,10 +110,14 @@ public class HttpEventHookTargetProvider implements EventHookTargetProvider {
                 .setConnectionRequestTimeout(intSetting(settings, "connectionRequestTimeoutMs", DEFAULT_CONNECT_TIMEOUT_MS))
                 .build();
 
-        long started = System.currentTimeMillis();
         SimpleHttpRequest request = requestForMethod(resolveHttp().withRequestConfig(requestConfig), method, url)
-                .header("Content-Type", "application/json")
-                .json(entity);
+                .header("Content-Type", "application/json");
+
+        if (EventHookBodyMappingSupport.isEnabled(settings)) {
+            request.entity(new StringEntity(requestBody, ContentType.APPLICATION_JSON));
+        } else {
+            request.json(entity);
+        }
 
         headersSetting(settings).forEach(request::header);
 
@@ -128,22 +166,6 @@ public class HttpEventHookTargetProvider implements EventHookTargetProvider {
             case "PATCH" -> http.doPatch(url);
             default -> http.doPost(url);
         };
-    }
-
-    private Object singlePayload(EventHookMessageModel message) throws IOException {
-        return readPayload(message.getPayload());
-    }
-
-    private Object bulkPayload(List<EventHookMessageModel> messages) throws IOException {
-        return Map.of("events", messages.stream().map(message -> readPayload(message.getPayload())).toList());
-    }
-
-    private Object readPayload(String payload) {
-        try {
-            return EventHookPayloadNormalizer.readPayload(payload);
-        } catch (IOException exception) {
-            throw new IllegalArgumentException("Failed to parse event hook payload", exception);
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -213,5 +235,19 @@ public class HttpEventHookTargetProvider implements EventHookTargetProvider {
             return value;
         }
         return value.substring(0, maxLength);
+    }
+
+    private EventHookDeliveryResult parseFailedResult(EventHookBodyMappingSupport.EventHookBodyMappingException exception) {
+        return parseFailedResult(System.currentTimeMillis(), exception);
+    }
+
+    private EventHookDeliveryResult parseFailedResult(long started, EventHookBodyMappingSupport.EventHookBodyMappingException exception) {
+        EventHookDeliveryResult result = new EventHookDeliveryResult();
+        result.setSuccess(false);
+        result.setRetryable(false);
+        result.setStatusCode(EventHookBodyMappingSupport.PARSE_FAILED_STATUS_CODE);
+        result.setDetails(truncate(exception.getMessage(), 1024));
+        result.setDurationMillis(Math.max(0, System.currentTimeMillis() - started));
+        return result;
     }
 }
