@@ -11,7 +11,6 @@ import {
   TextControl,
   useAlerts,
   useFetch,
-  useHelp,
 } from "@keycloak/keycloak-ui-shared";
 import type { SsfClientTab } from "./routes/ClientSsfTab";
 import {
@@ -19,6 +18,10 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
   Chip,
   FormGroup,
   InputGroup,
@@ -37,7 +40,6 @@ import {
   InfoCircleIcon,
   MinusCircleIcon,
   PauseCircleIcon,
-  QuestionCircleIcon,
   SyncAltIcon,
   TimesCircleIcon,
 } from "@patternfly/react-icons";
@@ -180,7 +182,6 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
-  const { enabled: helpEnabled } = useHelp();
   const formatDate = useFormatDate();
 
   const { control, watch, setValue } = useFormContext<FormFields>();
@@ -916,413 +917,287 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
     <PageSection variant="light" className="pf-v5-u-py-0">
       <DeleteStreamConfirm />
       {activeTab === "receiver" && (
-        <>
-          {helpEnabled && (
-            <TextContent className="keycloak__section_intro__help">
-              <Text>
-                <QuestionCircleIcon /> {t("ssfReceiverHelp")}
-              </Text>
+        <Card isFlat className="pf-v5-u-mt-md">
+          <CardHeader>
+            <CardTitle>{t("ssfReceiver")}</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <TextContent>
+              <Text>{t("ssfReceiverHelp")}</Text>
             </TextContent>
-          )}
-          <FormAccess
-            role="manage-clients"
-            fineGrainedAccess={client.access?.configure}
-            isHorizontal
-          >
-            <FormGroup
-              label={t("ssfStreamStatusLabel")}
-              fieldId="ssfStreamStatusIndicator"
+          </CardBody>
+          <CardBody>
+            <FormAccess
+              role="manage-clients"
+              fineGrainedAccess={client.access?.configure}
+              isHorizontal
             >
-              {!clientStream && (
-                <Label
-                  color="grey"
-                  icon={<MinusCircleIcon />}
-                  data-testid="ssfStreamIndicator.unregistered"
-                >
-                  {t("ssfStreamIndicator.unregistered")}
-                </Label>
+              <FormGroup
+                label={t("ssfStreamStatusLabel")}
+                fieldId="ssfStreamStatusIndicator"
+              >
+                {!clientStream && (
+                  <Label
+                    color="grey"
+                    icon={<MinusCircleIcon />}
+                    data-testid="ssfStreamIndicator.unregistered"
+                  >
+                    {t("ssfStreamIndicator.unregistered")}
+                  </Label>
+                )}
+                {clientStream?.status === "enabled" && (
+                  <Label
+                    color="green"
+                    icon={<CheckCircleIcon />}
+                    data-testid="ssfStreamIndicator.enabled"
+                  >
+                    {t("ssfStreamIndicator.enabled")}
+                  </Label>
+                )}
+                {clientStream?.status === "paused" && (
+                  <Label
+                    color="orange"
+                    icon={<PauseCircleIcon />}
+                    data-testid="ssfStreamIndicator.paused"
+                  >
+                    {t("ssfStreamIndicator.paused")}
+                  </Label>
+                )}
+                {clientStream?.status === "disabled" && (
+                  <Label
+                    color="red"
+                    icon={<TimesCircleIcon />}
+                    data-testid="ssfStreamIndicator.disabled"
+                  >
+                    {t("ssfStreamIndicator.disabled")}
+                  </Label>
+                )}
+                {clientStream && !clientStream.status && (
+                  <Label
+                    color="blue"
+                    icon={<InfoCircleIcon />}
+                    data-testid="ssfStreamIndicator.registered"
+                  >
+                    {t("ssfStreamIndicator.registered")}
+                  </Label>
+                )}
+              </FormGroup>
+              <SelectControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.profile",
+                )}
+                label={t("ssfProfile")}
+                labelIcon={t("ssfProfileHelp")}
+                controller={{
+                  defaultValue: "SSF_1_0",
+                }}
+                options={[
+                  { key: "SSF_1_0", value: t("ssfProfile.SSF_1_0") },
+                  { key: "SSE_CAEP", value: t("ssfProfile.SSE_CAEP") },
+                ]}
+              />
+              <TextControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.streamAudience",
+                )}
+                label={t("ssfStreamAudience")}
+                labelIcon={t("ssfStreamAudienceHelp")}
+              />
+              <SelectControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.defaultSubjects",
+                )}
+                label={t("ssfDefaultSubjects")}
+                labelIcon={t("ssfDefaultSubjectsHelp")}
+                controller={{
+                  defaultValue: "NONE",
+                }}
+                options={[
+                  {
+                    key: "ALL",
+                    value: t("ssfDefaultSubjects.ALL"),
+                  },
+                  {
+                    key: "NONE",
+                    value: t("ssfDefaultSubjects.NONE"),
+                  },
+                ]}
+              />
+              <SelectControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.userSubjectFormat",
+                )}
+                label={t("ssfUserSubjectFormat")}
+                labelIcon={t("ssfUserSubjectFormatHelp")}
+                controller={{
+                  defaultValue: defaultUserSubjectFormat,
+                }}
+                options={[
+                  {
+                    key: "iss_sub",
+                    value: t("ssfUserSubjectFormat.iss_sub"),
+                  },
+                  {
+                    key: "email",
+                    value: t("ssfUserSubjectFormat.email"),
+                  },
+                  {
+                    key: "complex.iss_sub+tenant",
+                    value: t("ssfUserSubjectFormat.complex.iss_sub+tenant"),
+                  },
+                  {
+                    key: "complex.email+tenant",
+                    value: t("ssfUserSubjectFormat.complex.email+tenant"),
+                  },
+                ]}
+              />
+              <SelectControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.verificationTrigger",
+                )}
+                label={t("ssfVerification")}
+                labelIcon={t("ssfVerificationHelp")}
+                controller={{
+                  defaultValue: "RECEIVER_INITIATED",
+                }}
+                options={[
+                  {
+                    key: "RECEIVER_INITIATED",
+                    value: t("ssfVerification.RECEIVER_INITIATED"),
+                  },
+                  {
+                    key: "TRANSMITTER_INITIATED",
+                    value: t("ssfVerification.TRANSMITTER_INITIATED"),
+                  },
+                ]}
+              />
+              {ssfVerificationTrigger === "TRANSMITTER_INITIATED" && (
+                <NumberControl
+                  name={convertAttributeNameToForm<FormFields>(
+                    "attributes.ssf.verificationDelayMillis",
+                  )}
+                  label={t("ssfVerificationDelay")}
+                  labelIcon={t("ssfVerificationDelayHelp")}
+                  controller={{
+                    defaultValue: 1500,
+                    rules: {
+                      min: 0,
+                    },
+                  }}
+                />
               )}
-              {clientStream?.status === "enabled" && (
-                <Label
-                  color="green"
-                  icon={<CheckCircleIcon />}
-                  data-testid="ssfStreamIndicator.enabled"
-                >
-                  {t("ssfStreamIndicator.enabled")}
-                </Label>
-              )}
-              {clientStream?.status === "paused" && (
-                <Label
-                  color="orange"
-                  icon={<PauseCircleIcon />}
-                  data-testid="ssfStreamIndicator.paused"
-                >
-                  {t("ssfStreamIndicator.paused")}
-                </Label>
-              )}
-              {clientStream?.status === "disabled" && (
-                <Label
-                  color="red"
-                  icon={<TimesCircleIcon />}
-                  data-testid="ssfStreamIndicator.disabled"
-                >
-                  {t("ssfStreamIndicator.disabled")}
-                </Label>
-              )}
-              {clientStream && !clientStream.status && (
-                <Label
-                  color="blue"
-                  icon={<InfoCircleIcon />}
-                  data-testid="ssfStreamIndicator.registered"
-                >
-                  {t("ssfStreamIndicator.registered")}
-                </Label>
-              )}
-            </FormGroup>
-            <SelectControl
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.ssf.profile",
-              )}
-              label={t("ssfProfile")}
-              labelIcon={t("ssfProfileHelp")}
-              controller={{
-                defaultValue: "SSF_1_0",
-              }}
-              options={[
-                { key: "SSF_1_0", value: t("ssfProfile.SSF_1_0") },
-                { key: "SSE_CAEP", value: t("ssfProfile.SSE_CAEP") },
-              ]}
-            />
-            <TextControl
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.ssf.streamAudience",
-              )}
-              label={t("ssfStreamAudience")}
-              labelIcon={t("ssfStreamAudienceHelp")}
-            />
-            <SelectControl
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.ssf.defaultSubjects",
-              )}
-              label={t("ssfDefaultSubjects")}
-              labelIcon={t("ssfDefaultSubjectsHelp")}
-              controller={{
-                defaultValue: "NONE",
-              }}
-              options={[
-                {
-                  key: "ALL",
-                  value: t("ssfDefaultSubjects.ALL"),
-                },
-                {
-                  key: "NONE",
-                  value: t("ssfDefaultSubjects.NONE"),
-                },
-              ]}
-            />
-            <SelectControl
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.ssf.userSubjectFormat",
-              )}
-              label={t("ssfUserSubjectFormat")}
-              labelIcon={t("ssfUserSubjectFormatHelp")}
-              controller={{
-                defaultValue: defaultUserSubjectFormat,
-              }}
-              options={[
-                {
-                  key: "iss_sub",
-                  value: t("ssfUserSubjectFormat.iss_sub"),
-                },
-                {
-                  key: "email",
-                  value: t("ssfUserSubjectFormat.email"),
-                },
-                {
-                  key: "complex.iss_sub+tenant",
-                  value: t("ssfUserSubjectFormat.complex.iss_sub+tenant"),
-                },
-                {
-                  key: "complex.email+tenant",
-                  value: t("ssfUserSubjectFormat.complex.email+tenant"),
-                },
-              ]}
-            />
-            <SelectControl
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.ssf.verificationTrigger",
-              )}
-              label={t("ssfVerification")}
-              labelIcon={t("ssfVerificationHelp")}
-              controller={{
-                defaultValue: "RECEIVER_INITIATED",
-              }}
-              options={[
-                {
-                  key: "RECEIVER_INITIATED",
-                  value: t("ssfVerification.RECEIVER_INITIATED"),
-                },
-                {
-                  key: "TRANSMITTER_INITIATED",
-                  value: t("ssfVerification.TRANSMITTER_INITIATED"),
-                },
-              ]}
-            />
-            {ssfVerificationTrigger === "TRANSMITTER_INITIATED" && (
               <NumberControl
                 name={convertAttributeNameToForm<FormFields>(
-                  "attributes.ssf.verificationDelayMillis",
+                  "attributes.ssf.minVerificationInterval",
                 )}
-                label={t("ssfVerificationDelay")}
-                labelIcon={t("ssfVerificationDelayHelp")}
+                label={t("ssfMinVerificationInterval")}
+                labelIcon={t("ssfMinVerificationIntervalHelp")}
                 controller={{
-                  defaultValue: 1500,
+                  defaultValue: "",
                   rules: {
                     min: 0,
                   },
                 }}
               />
-            )}
-            <NumberControl
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.ssf.minVerificationInterval",
-              )}
-              label={t("ssfMinVerificationInterval")}
-              labelIcon={t("ssfMinVerificationIntervalHelp")}
-              controller={{
-                defaultValue: "",
-                rules: {
-                  min: 0,
-                },
-              }}
-            />
-            <FormGroup
-              label={t("ssfMaxEventAge")}
-              fieldId="ssfMaxEventAge"
-              labelIcon={
-                <HelpItem
-                  helpText={t("ssfMaxEventAgeHelp")}
-                  fieldLabelId="ssfMaxEventAge"
-                />
-              }
-            >
-              <Controller
-                name={convertAttributeNameToForm<FormFields>(
-                  "attributes.ssf.maxEventAgeSeconds",
-                )}
-                defaultValue=""
-                control={control}
-                render={({ field }) => (
-                  <TimeSelector
-                    data-testid="ssfMaxEventAge"
-                    value={field.value!}
-                    onChange={field.onChange}
-                    units={["second", "minute", "hour", "day"]}
-                  />
-                )}
-              />
-            </FormGroup>
-            <FormGroup
-              label={t("ssfInactivityTimeout")}
-              fieldId="ssfInactivityTimeout"
-              labelIcon={
-                <HelpItem
-                  helpText={t("ssfInactivityTimeoutHelp")}
-                  fieldLabelId="ssfInactivityTimeout"
-                />
-              }
-            >
-              <Controller
-                name={convertAttributeNameToForm<FormFields>(
-                  "attributes.ssf.inactivityTimeoutSeconds",
-                )}
-                defaultValue=""
-                control={control}
-                render={({ field }) => (
-                  <TimeSelector
-                    data-testid="ssfInactivityTimeout"
-                    value={field.value!}
-                    onChange={field.onChange}
-                    units={["minute", "hour", "day"]}
-                  />
-                )}
-              />
-            </FormGroup>
-            <DefaultSwitchControl
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.ssf.autoNotifyOnLogin",
-              )}
-              label={t("ssfAutoNotifyOnLogin")}
-              labelIcon={t("ssfAutoNotifyOnLoginHelp")}
-              stringify
-            />
-            <DefaultSwitchControl
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.ssf.requireServiceAccount",
-              )}
-              label={t("ssfRequireServiceAccount")}
-              labelIcon={t("ssfRequireServiceAccountHelp")}
-              stringify
-            />
-            <FormGroup
-              label={t("ssfRequiredRole")}
-              fieldId="ssfRequiredRole"
-              labelIcon={
-                <HelpItem
-                  helpText={t("ssfRequiredRoleHelp")}
-                  fieldLabelId="ssfRequiredRole"
-                />
-              }
-            >
-              <Controller
-                name={requiredRoleFieldName}
-                defaultValue=""
-                control={control}
-                render={({ field }) => (
-                  <Split>
-                    {rolePickerOpen && (
-                      <AddRoleMappingModal
-                        id="ssfRequiredRolePicker"
-                        type="roles"
-                        filterType={roleFilterType}
-                        name="ssfRequiredRole"
-                        onAssign={(rows) => {
-                          const row = rows[0];
-                          const value = row.client?.clientId
-                            ? `${row.client.clientId}.${row.role.name}`
-                            : row.role.name;
-                          field.onChange(value);
-                          setRolePickerOpen(false);
-                        }}
-                        onClose={() => setRolePickerOpen(false)}
-                        isRadio
-                      />
-                    )}
-                    {field.value && field.value !== "" && (
-                      <SplitItem>
-                        <Chip
-                          textMaxWidth="500px"
-                          onClick={() => field.onChange("")}
-                        >
-                          <ServiceRole
-                            role={{
-                              name: parseRoleValue(field.value)[1],
-                            }}
-                            client={{
-                              clientId: parseRoleValue(field.value)[0],
-                            }}
-                          />
-                        </Chip>
-                      </SplitItem>
-                    )}
-                    <SplitItem>
-                      <AddRoleButton
-                        label="selectRole.label"
-                        onFilerTypeChange={(type) => {
-                          setRoleFilterType(type);
-                          setRolePickerOpen(true);
-                        }}
-                        variant="secondary"
-                        data-testid="ssfRequiredRoleSelect"
-                        isDisabled={false}
-                      />
-                    </SplitItem>
-                  </Split>
-                )}
-              />
-            </FormGroup>
-            <FormGroup
-              label={t("ssfSupportedEvents")}
-              fieldId="ssfSupportedEvents"
-              labelIcon={
-                <HelpItem
-                  helpText={t("ssfSupportedEventsHelp")}
-                  fieldLabelId="ssfSupportedEvents"
-                />
-              }
-            >
-              <Controller
-                name={convertAttributeNameToForm<FormFields>(
-                  "attributes.ssf.supportedEvents",
-                )}
-                control={control}
-                defaultValue={defaultSupportedEvents}
-                render={({ field }) => {
-                  const selected = splitSupportedEvents(field.value);
-                  return (
-                    <KeycloakSelect
-                      toggleId="ssfSupportedEvents"
-                      data-testid="ssfSupportedEvents"
-                      variant={SelectVariant.typeaheadMulti}
-                      chipGroupProps={{
-                        numChips: 5,
-                        expandedText: t("hide"),
-                        collapsedText: t("showRemaining"),
-                      }}
-                      typeAheadAriaLabel={t("ssfSupportedEvents")}
-                      onToggle={setSupportedEventsOpen}
-                      isOpen={supportedEventsOpen}
-                      selections={selected}
-                      onSelect={(value) => {
-                        const option = value.toString();
-                        if (!option) return;
-                        const next = selected.includes(option)
-                          ? selected.filter((s) => s !== option)
-                          : [...selected, option];
-                        field.onChange(next.join(","));
-                      }}
-                      onClear={() => field.onChange("")}
-                    >
-                      {availableSupportedEvents.map((event) => (
-                        <SelectOption key={event} value={event}>
-                          {event}
-                        </SelectOption>
-                      ))}
-                    </KeycloakSelect>
-                  );
-                }}
-              />
-            </FormGroup>
-            <DefaultSwitchControl
-              name={convertAttributeNameToForm<FormFields>(
-                "attributes.ssf.allowEmitEvents",
-              )}
-              label={t("ssfAllowEmitEvents")}
-              labelIcon={t("ssfAllowEmitEventsHelp")}
-              stringify
-            />
-            {String(ssfAllowEmitEvents) === "true" && (
               <FormGroup
-                label={t("ssfEmitEventsRole")}
-                fieldId="ssfEmitEventsRole"
+                label={t("ssfMaxEventAge")}
+                fieldId="ssfMaxEventAge"
                 labelIcon={
                   <HelpItem
-                    helpText={t("ssfEmitEventsRoleHelp")}
-                    fieldLabelId="ssfEmitEventsRole"
+                    helpText={t("ssfMaxEventAgeHelp")}
+                    fieldLabelId="ssfMaxEventAge"
                   />
                 }
               >
                 <Controller
-                  name={emitEventsRoleFieldName}
+                  name={convertAttributeNameToForm<FormFields>(
+                    "attributes.ssf.maxEventAgeSeconds",
+                  )}
+                  defaultValue=""
+                  control={control}
+                  render={({ field }) => (
+                    <TimeSelector
+                      data-testid="ssfMaxEventAge"
+                      value={field.value!}
+                      onChange={field.onChange}
+                      units={["second", "minute", "hour", "day"]}
+                    />
+                  )}
+                />
+              </FormGroup>
+              <FormGroup
+                label={t("ssfInactivityTimeout")}
+                fieldId="ssfInactivityTimeout"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfInactivityTimeoutHelp")}
+                    fieldLabelId="ssfInactivityTimeout"
+                  />
+                }
+              >
+                <Controller
+                  name={convertAttributeNameToForm<FormFields>(
+                    "attributes.ssf.inactivityTimeoutSeconds",
+                  )}
+                  defaultValue=""
+                  control={control}
+                  render={({ field }) => (
+                    <TimeSelector
+                      data-testid="ssfInactivityTimeout"
+                      value={field.value!}
+                      onChange={field.onChange}
+                      units={["minute", "hour", "day"]}
+                    />
+                  )}
+                />
+              </FormGroup>
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.autoNotifyOnLogin",
+                )}
+                label={t("ssfAutoNotifyOnLogin")}
+                labelIcon={t("ssfAutoNotifyOnLoginHelp")}
+                stringify
+              />
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.requireServiceAccount",
+                )}
+                label={t("ssfRequireServiceAccount")}
+                labelIcon={t("ssfRequireServiceAccountHelp")}
+                stringify
+              />
+              <FormGroup
+                label={t("ssfRequiredRole")}
+                fieldId="ssfRequiredRole"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfRequiredRoleHelp")}
+                    fieldLabelId="ssfRequiredRole"
+                  />
+                }
+              >
+                <Controller
+                  name={requiredRoleFieldName}
                   defaultValue=""
                   control={control}
                   render={({ field }) => (
                     <Split>
-                      {emitRolePickerOpen && (
+                      {rolePickerOpen && (
                         <AddRoleMappingModal
-                          id="ssfEmitEventsRolePicker"
+                          id="ssfRequiredRolePicker"
                           type="roles"
-                          filterType={emitRoleFilterType}
-                          name="ssfEmitEventsRole"
+                          filterType={roleFilterType}
+                          name="ssfRequiredRole"
                           onAssign={(rows) => {
                             const row = rows[0];
                             const value = row.client?.clientId
                               ? `${row.client.clientId}.${row.role.name}`
                               : row.role.name;
                             field.onChange(value);
-                            setEmitRolePickerOpen(false);
+                            setRolePickerOpen(false);
                           }}
-                          onClose={() => setEmitRolePickerOpen(false)}
+                          onClose={() => setRolePickerOpen(false)}
                           isRadio
                         />
                       )}
@@ -1347,11 +1222,11 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                         <AddRoleButton
                           label="selectRole.label"
                           onFilerTypeChange={(type) => {
-                            setEmitRoleFilterType(type);
-                            setEmitRolePickerOpen(true);
+                            setRoleFilterType(type);
+                            setRolePickerOpen(true);
                           }}
                           variant="secondary"
-                          data-testid="ssfEmitEventsRoleSelect"
+                          data-testid="ssfRequiredRoleSelect"
                           isDisabled={false}
                         />
                       </SplitItem>
@@ -1359,1060 +1234,1225 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                   )}
                 />
               </FormGroup>
-            )}
-            {saveActionGroup("ssfReceiver")}
-          </FormAccess>
-        </>
+              <FormGroup
+                label={t("ssfSupportedEvents")}
+                fieldId="ssfSupportedEvents"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("ssfSupportedEventsHelp")}
+                    fieldLabelId="ssfSupportedEvents"
+                  />
+                }
+              >
+                <Controller
+                  name={convertAttributeNameToForm<FormFields>(
+                    "attributes.ssf.supportedEvents",
+                  )}
+                  control={control}
+                  defaultValue={defaultSupportedEvents}
+                  render={({ field }) => {
+                    const selected = splitSupportedEvents(field.value);
+                    return (
+                      <KeycloakSelect
+                        toggleId="ssfSupportedEvents"
+                        data-testid="ssfSupportedEvents"
+                        variant={SelectVariant.typeaheadMulti}
+                        chipGroupProps={{
+                          numChips: 5,
+                          expandedText: t("hide"),
+                          collapsedText: t("showRemaining"),
+                        }}
+                        typeAheadAriaLabel={t("ssfSupportedEvents")}
+                        onToggle={setSupportedEventsOpen}
+                        isOpen={supportedEventsOpen}
+                        selections={selected}
+                        onSelect={(value) => {
+                          const option = value.toString();
+                          if (!option) return;
+                          const next = selected.includes(option)
+                            ? selected.filter((s) => s !== option)
+                            : [...selected, option];
+                          field.onChange(next.join(","));
+                        }}
+                        onClear={() => field.onChange("")}
+                      >
+                        {availableSupportedEvents.map((event) => (
+                          <SelectOption key={event} value={event}>
+                            {event}
+                          </SelectOption>
+                        ))}
+                      </KeycloakSelect>
+                    );
+                  }}
+                />
+              </FormGroup>
+              <DefaultSwitchControl
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.allowEmitEvents",
+                )}
+                label={t("ssfAllowEmitEvents")}
+                labelIcon={t("ssfAllowEmitEventsHelp")}
+                stringify
+              />
+              {String(ssfAllowEmitEvents) === "true" && (
+                <FormGroup
+                  label={t("ssfEmitEventsRole")}
+                  fieldId="ssfEmitEventsRole"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("ssfEmitEventsRoleHelp")}
+                      fieldLabelId="ssfEmitEventsRole"
+                    />
+                  }
+                >
+                  <Controller
+                    name={emitEventsRoleFieldName}
+                    defaultValue=""
+                    control={control}
+                    render={({ field }) => (
+                      <Split>
+                        {emitRolePickerOpen && (
+                          <AddRoleMappingModal
+                            id="ssfEmitEventsRolePicker"
+                            type="roles"
+                            filterType={emitRoleFilterType}
+                            name="ssfEmitEventsRole"
+                            onAssign={(rows) => {
+                              const row = rows[0];
+                              const value = row.client?.clientId
+                                ? `${row.client.clientId}.${row.role.name}`
+                                : row.role.name;
+                              field.onChange(value);
+                              setEmitRolePickerOpen(false);
+                            }}
+                            onClose={() => setEmitRolePickerOpen(false)}
+                            isRadio
+                          />
+                        )}
+                        {field.value && field.value !== "" && (
+                          <SplitItem>
+                            <Chip
+                              textMaxWidth="500px"
+                              onClick={() => field.onChange("")}
+                            >
+                              <ServiceRole
+                                role={{
+                                  name: parseRoleValue(field.value)[1],
+                                }}
+                                client={{
+                                  clientId: parseRoleValue(field.value)[0],
+                                }}
+                              />
+                            </Chip>
+                          </SplitItem>
+                        )}
+                        <SplitItem>
+                          <AddRoleButton
+                            label="selectRole.label"
+                            onFilerTypeChange={(type) => {
+                              setEmitRoleFilterType(type);
+                              setEmitRolePickerOpen(true);
+                            }}
+                            variant="secondary"
+                            data-testid="ssfEmitEventsRoleSelect"
+                            isDisabled={false}
+                          />
+                        </SplitItem>
+                      </Split>
+                    )}
+                  />
+                </FormGroup>
+              )}
+              {saveActionGroup("ssfReceiver")}
+            </FormAccess>
+          </CardBody>
+        </Card>
       )}
       {activeTab === "stream" && (
-        <>
-          {helpEnabled && (
-            <TextContent className="keycloak__section_intro__help">
-              <Text>
-                <QuestionCircleIcon /> {t("ssfStreamHelp")}
-              </Text>
+        <Card isFlat className="pf-v5-u-mt-md">
+          <CardHeader>
+            <CardTitle>{t("ssfStream")}</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <TextContent>
+              <Text>{t("ssfStreamHelp")}</Text>
             </TextContent>
-          )}
-          <ActionGroup className="pf-v5-u-pb-md">
-            <Button variant="link" onClick={refresh} data-testid="ssfRefresh">
-              <SyncAltIcon /> {t("refresh")}
-            </Button>
-          </ActionGroup>
-          {!clientStream ? (
-            <>
-              {!createStreamFormOpen && (
-                <ListEmptyState
-                  message={t("ssfStreamNotRegistered")}
-                  instructions={t("ssfStreamNotRegisteredHelp")}
-                  primaryActionText={t("ssfCreateStream")}
-                  onPrimaryAction={() => setCreateStreamFormOpen(true)}
-                />
-              )}
-              {createStreamFormOpen && (
-                <FormAccess
-                  role="manage-clients"
-                  fineGrainedAccess={client.access?.configure}
-                  isHorizontal
-                >
-                  <FormGroup
-                    label={t("ssfCreateStreamAudience")}
-                    fieldId="ssfCreateStreamAudience"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfCreateStreamAudienceHelp")}
-                        fieldLabelId="ssfCreateStreamAudience"
-                      />
-                    }
+          </CardBody>
+          <CardBody>
+            <ActionGroup className="pf-v5-u-pb-md">
+              <Button variant="link" onClick={refresh} data-testid="ssfRefresh">
+                <SyncAltIcon /> {t("refresh")}
+              </Button>
+            </ActionGroup>
+            {!clientStream ? (
+              <>
+                {!createStreamFormOpen && (
+                  <ListEmptyState
+                    message={t("ssfStreamNotRegistered")}
+                    instructions={t("ssfStreamNotRegisteredHelp")}
+                    primaryActionText={t("ssfCreateStream")}
+                    onPrimaryAction={() => setCreateStreamFormOpen(true)}
+                  />
+                )}
+                {createStreamFormOpen && (
+                  <FormAccess
+                    role="manage-clients"
+                    fineGrainedAccess={client.access?.configure}
+                    isHorizontal
                   >
-                    <TextInput
-                      id="ssfCreateStreamAudience"
-                      data-testid="ssfCreateStreamAudience"
-                      value={createStreamAudience}
-                      onChange={(_e, value) => setCreateStreamAudience(value)}
-                    />
-                  </FormGroup>
-                  <FormGroup
-                    label={t("ssfCreateStreamDeliveryMethod")}
-                    fieldId="ssfCreateStreamDeliveryMethod"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfCreateStreamDeliveryMethodHelp")}
-                        fieldLabelId="ssfCreateStreamDeliveryMethod"
-                      />
-                    }
-                  >
-                    <select
-                      id="ssfCreateStreamDeliveryMethod"
-                      data-testid="ssfCreateStreamDeliveryMethod"
-                      className="pf-v5-c-form-control"
-                      value={createStreamMethod}
-                      onChange={(e) =>
-                        setCreateStreamMethod(
-                          e.target.value === "POLL" ? "POLL" : "PUSH",
-                        )
-                      }
-                    >
-                      <option value="PUSH">{t("ssfDelivery.PUSH")}</option>
-                      <option value="POLL">{t("ssfDelivery.POLL")}</option>
-                    </select>
-                  </FormGroup>
-                  {createStreamMethod === "PUSH" && (
-                    <>
-                      <FormGroup
-                        label={t("ssfCreateStreamEndpointUrl")}
-                        fieldId="ssfCreateStreamEndpointUrl"
-                        isRequired
-                        labelIcon={
-                          <HelpItem
-                            helpText={t("ssfCreateStreamEndpointUrlHelp")}
-                            fieldLabelId="ssfCreateStreamEndpointUrl"
-                          />
-                        }
-                      >
-                        <TextInput
-                          id="ssfCreateStreamEndpointUrl"
-                          data-testid="ssfCreateStreamEndpointUrl"
-                          isRequired
-                          value={createStreamEndpointUrl}
-                          onChange={(_e, value) =>
-                            setCreateStreamEndpointUrl(value)
-                          }
+                    <FormGroup
+                      label={t("ssfCreateStreamAudience")}
+                      fieldId="ssfCreateStreamAudience"
+                      labelIcon={
+                        <HelpItem
+                          helpText={t("ssfCreateStreamAudienceHelp")}
+                          fieldLabelId="ssfCreateStreamAudience"
                         />
-                      </FormGroup>
-                      <FormGroup
-                        label={t("ssfStreamPushAuthHeader")}
-                        fieldId="ssfCreateStreamAuthHeader"
-                        labelIcon={
-                          <HelpItem
-                            helpText={t("ssfStreamPushAuthHeaderHelp")}
-                            fieldLabelId="ssfStreamPushAuthHeader"
-                          />
+                      }
+                    >
+                      <TextInput
+                        id="ssfCreateStreamAudience"
+                        data-testid="ssfCreateStreamAudience"
+                        value={createStreamAudience}
+                        onChange={(_e, value) => setCreateStreamAudience(value)}
+                      />
+                    </FormGroup>
+                    <FormGroup
+                      label={t("ssfCreateStreamDeliveryMethod")}
+                      fieldId="ssfCreateStreamDeliveryMethod"
+                      labelIcon={
+                        <HelpItem
+                          helpText={t("ssfCreateStreamDeliveryMethodHelp")}
+                          fieldLabelId="ssfCreateStreamDeliveryMethod"
+                        />
+                      }
+                    >
+                      <select
+                        id="ssfCreateStreamDeliveryMethod"
+                        data-testid="ssfCreateStreamDeliveryMethod"
+                        className="pf-v5-c-form-control"
+                        value={createStreamMethod}
+                        onChange={(e) =>
+                          setCreateStreamMethod(
+                            e.target.value === "POLL" ? "POLL" : "PUSH",
+                          )
                         }
                       >
-                        <InputGroup>
-                          <InputGroupItem isFill>
-                            <PasswordInput
-                              id="ssfCreateStreamAuthHeader"
-                              data-testid="ssfCreateStreamAuthHeader"
-                              value={createStreamAuthHeader}
-                              onChange={(event) =>
-                                setCreateStreamAuthHeader(
-                                  (event.target as HTMLInputElement).value,
-                                )
-                              }
+                        <option value="PUSH">{t("ssfDelivery.PUSH")}</option>
+                        <option value="POLL">{t("ssfDelivery.POLL")}</option>
+                      </select>
+                    </FormGroup>
+                    {createStreamMethod === "PUSH" && (
+                      <>
+                        <FormGroup
+                          label={t("ssfCreateStreamEndpointUrl")}
+                          fieldId="ssfCreateStreamEndpointUrl"
+                          isRequired
+                          labelIcon={
+                            <HelpItem
+                              helpText={t("ssfCreateStreamEndpointUrlHelp")}
+                              fieldLabelId="ssfCreateStreamEndpointUrl"
                             />
-                          </InputGroupItem>
-                          <InputGroupItem>
-                            <CopyToClipboardButton
-                              id="ssfCreateStreamAuthHeader"
-                              text={createStreamAuthHeader}
-                              label="ssfStreamPushAuthHeader"
-                              variant="control"
+                          }
+                        >
+                          <TextInput
+                            id="ssfCreateStreamEndpointUrl"
+                            data-testid="ssfCreateStreamEndpointUrl"
+                            isRequired
+                            value={createStreamEndpointUrl}
+                            onChange={(_e, value) =>
+                              setCreateStreamEndpointUrl(value)
+                            }
+                          />
+                        </FormGroup>
+                        <FormGroup
+                          label={t("ssfStreamPushAuthHeader")}
+                          fieldId="ssfCreateStreamAuthHeader"
+                          labelIcon={
+                            <HelpItem
+                              helpText={t("ssfStreamPushAuthHeaderHelp")}
+                              fieldLabelId="ssfStreamPushAuthHeader"
                             />
-                          </InputGroupItem>
-                        </InputGroup>
-                      </FormGroup>
-                    </>
-                  )}
-                  <FormGroup
-                    label={t("ssfCreateStreamEventsRequested")}
-                    fieldId="ssfCreateStreamEventsRequested"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfCreateStreamEventsRequestedHelp")}
-                        fieldLabelId="ssfCreateStreamEventsRequested"
+                          }
+                        >
+                          <InputGroup>
+                            <InputGroupItem isFill>
+                              <PasswordInput
+                                id="ssfCreateStreamAuthHeader"
+                                data-testid="ssfCreateStreamAuthHeader"
+                                value={createStreamAuthHeader}
+                                onChange={(event) =>
+                                  setCreateStreamAuthHeader(
+                                    (event.target as HTMLInputElement).value,
+                                  )
+                                }
+                              />
+                            </InputGroupItem>
+                            <InputGroupItem>
+                              <CopyToClipboardButton
+                                id="ssfCreateStreamAuthHeader"
+                                text={createStreamAuthHeader}
+                                label="ssfStreamPushAuthHeader"
+                                variant="control"
+                              />
+                            </InputGroupItem>
+                          </InputGroup>
+                        </FormGroup>
+                      </>
+                    )}
+                    <FormGroup
+                      label={t("ssfCreateStreamEventsRequested")}
+                      fieldId="ssfCreateStreamEventsRequested"
+                      labelIcon={
+                        <HelpItem
+                          helpText={t("ssfCreateStreamEventsRequestedHelp")}
+                          fieldLabelId="ssfCreateStreamEventsRequested"
+                        />
+                      }
+                    >
+                      <KeycloakSelect
+                        toggleId="ssfCreateStreamEventsRequested"
+                        data-testid="ssfCreateStreamEventsRequested"
+                        variant={SelectVariant.typeaheadMulti}
+                        chipGroupProps={{
+                          numChips: 5,
+                          expandedText: t("hide"),
+                          collapsedText: t("showRemaining"),
+                        }}
+                        typeAheadAriaLabel={t("ssfCreateStreamEventsRequested")}
+                        onToggle={setCreateStreamEventsOpen}
+                        isOpen={createStreamEventsOpen}
+                        selections={createStreamEvents}
+                        onSelect={(value) => {
+                          const option = value.toString();
+                          if (!option) return;
+                          setCreateStreamEvents((current) =>
+                            current.includes(option)
+                              ? current.filter((e) => e !== option)
+                              : [...current, option],
+                          );
+                        }}
+                        onClear={() => setCreateStreamEvents([])}
+                      >
+                        {availableSupportedEvents.map((event) => (
+                          <SelectOption key={event} value={event}>
+                            {event}
+                          </SelectOption>
+                        ))}
+                      </KeycloakSelect>
+                    </FormGroup>
+                    <FormGroup
+                      label={t("ssfCreateStreamDescription")}
+                      fieldId="ssfCreateStreamDescription"
+                      labelIcon={
+                        <HelpItem
+                          helpText={t("ssfCreateStreamDescriptionHelp")}
+                          fieldLabelId="ssfCreateStreamDescription"
+                        />
+                      }
+                    >
+                      <TextInput
+                        id="ssfCreateStreamDescription"
+                        data-testid="ssfCreateStreamDescription"
+                        value={createStreamDescription}
+                        onChange={(_e, value) =>
+                          setCreateStreamDescription(value)
+                        }
                       />
-                    }
-                  >
-                    <KeycloakSelect
-                      toggleId="ssfCreateStreamEventsRequested"
-                      data-testid="ssfCreateStreamEventsRequested"
-                      variant={SelectVariant.typeaheadMulti}
-                      chipGroupProps={{
-                        numChips: 5,
-                        expandedText: t("hide"),
-                        collapsedText: t("showRemaining"),
-                      }}
-                      typeAheadAriaLabel={t("ssfCreateStreamEventsRequested")}
-                      onToggle={setCreateStreamEventsOpen}
-                      isOpen={createStreamEventsOpen}
-                      selections={createStreamEvents}
-                      onSelect={(value) => {
-                        const option = value.toString();
-                        if (!option) return;
-                        setCreateStreamEvents((current) =>
-                          current.includes(option)
-                            ? current.filter((e) => e !== option)
-                            : [...current, option],
-                        );
-                      }}
-                      onClear={() => setCreateStreamEvents([])}
-                    >
-                      {availableSupportedEvents.map((event) => (
-                        <SelectOption key={event} value={event}>
-                          {event}
-                        </SelectOption>
-                      ))}
-                    </KeycloakSelect>
-                  </FormGroup>
-                  <FormGroup
-                    label={t("ssfCreateStreamDescription")}
-                    fieldId="ssfCreateStreamDescription"
-                    labelIcon={
-                      <HelpItem
-                        helpText={t("ssfCreateStreamDescriptionHelp")}
-                        fieldLabelId="ssfCreateStreamDescription"
-                      />
-                    }
-                  >
-                    <TextInput
-                      id="ssfCreateStreamDescription"
-                      data-testid="ssfCreateStreamDescription"
-                      value={createStreamDescription}
-                      onChange={(_e, value) =>
-                        setCreateStreamDescription(value)
-                      }
-                    />
-                  </FormGroup>
-                  <ActionGroup>
-                    <Button
-                      variant="primary"
-                      isDisabled={
-                        createStreamSubmitting ||
-                        !createStreamEndpointUrl.trim()
-                      }
-                      onClick={submitCreateStream}
-                      data-testid="ssfCreateStreamSubmit"
-                    >
-                      {t("ssfCreateStream")}
-                    </Button>
-                    <Button
-                      variant="link"
-                      onClick={() => {
-                        resetCreateStreamForm();
-                        setCreateStreamFormOpen(false);
-                      }}
-                      data-testid="ssfCreateStreamCancel"
-                    >
-                      {t("cancel")}
-                    </Button>
-                  </ActionGroup>
-                </FormAccess>
-              )}
-            </>
-          ) : (
-            <FormAccess
-              role="manage-clients"
-              fineGrainedAccess={client.access?.configure}
-              isHorizontal
-            >
-              <FormGroup label={t("ssfStreamId")} fieldId="ssfStreamId">
-                <InputGroup>
-                  <InputGroupItem isFill>
-                    <TextInput
-                      id="ssfStreamId"
-                      data-testid="ssfStreamId"
-                      readOnlyVariant="default"
-                      value={clientStream.streamId ?? ""}
-                    />
-                  </InputGroupItem>
-                  <InputGroupItem>
-                    <CopyToClipboardButton
-                      id="ssfStreamId"
-                      text={clientStream.streamId ?? ""}
-                      label="ssfStreamId"
-                      variant="control"
-                    />
-                  </InputGroupItem>
-                </InputGroup>
-              </FormGroup>
-              {clientStream.description && (
-                <FormGroup
-                  label={t("ssfStreamDescription")}
-                  fieldId="ssfStreamDescription"
-                  labelIcon={
-                    <HelpItem
-                      helpText={t("ssfStreamDescriptionHelp")}
-                      fieldLabelId="ssfStreamDescription"
-                    />
-                  }
-                >
-                  <TextInput
-                    id="ssfStreamDescription"
-                    data-testid="ssfStreamDescription"
-                    readOnlyVariant="default"
-                    value={clientStream.description}
-                  />
-                </FormGroup>
-              )}
-              {clientStream.createdAt && (
-                <FormGroup
-                  label={t("ssfStreamCreatedAt")}
-                  fieldId="ssfStreamCreatedAt"
-                  labelIcon={
-                    <HelpItem
-                      helpText={t("ssfStreamCreatedAtHelp")}
-                      fieldLabelId="ssfStreamCreatedAt"
-                    />
-                  }
-                >
-                  <TextInput
-                    id="ssfStreamCreatedAt"
-                    data-testid="ssfStreamCreatedAt"
-                    readOnlyVariant="default"
-                    value={formatDate(new Date(clientStream.createdAt * 1000))}
-                  />
-                </FormGroup>
-              )}
-              {clientStream.updatedAt && (
-                <FormGroup
-                  label={t("ssfStreamUpdatedAt")}
-                  fieldId="ssfStreamUpdatedAt"
-                  labelIcon={
-                    <HelpItem
-                      helpText={t("ssfStreamUpdatedAtHelp")}
-                      fieldLabelId="ssfStreamUpdatedAt"
-                    />
-                  }
-                >
-                  <TextInput
-                    id="ssfStreamUpdatedAt"
-                    data-testid="ssfStreamUpdatedAt"
-                    readOnlyVariant="default"
-                    value={formatDate(new Date(clientStream.updatedAt * 1000))}
-                  />
-                </FormGroup>
-              )}
-              <FormGroup
-                label={t("ssfStreamLastVerifiedAt")}
-                fieldId="ssfStreamLastVerifiedAt"
-                labelIcon={
-                  <HelpItem
-                    helpText={t("ssfStreamLastVerifiedAtHelp")}
-                    fieldLabelId="ssfStreamLastVerifiedAt"
-                  />
-                }
+                    </FormGroup>
+                    <ActionGroup>
+                      <Button
+                        variant="primary"
+                        isDisabled={
+                          createStreamSubmitting ||
+                          !createStreamEndpointUrl.trim()
+                        }
+                        onClick={submitCreateStream}
+                        data-testid="ssfCreateStreamSubmit"
+                      >
+                        {t("ssfCreateStream")}
+                      </Button>
+                      <Button
+                        variant="link"
+                        onClick={() => {
+                          resetCreateStreamForm();
+                          setCreateStreamFormOpen(false);
+                        }}
+                        data-testid="ssfCreateStreamCancel"
+                      >
+                        {t("cancel")}
+                      </Button>
+                    </ActionGroup>
+                  </FormAccess>
+                )}
+              </>
+            ) : (
+              <FormAccess
+                role="manage-clients"
+                fineGrainedAccess={client.access?.configure}
+                isHorizontal
               >
-                <TextInput
-                  id="ssfStreamLastVerifiedAt"
-                  data-testid="ssfStreamLastVerifiedAt"
-                  readOnlyVariant="default"
-                  value={
-                    clientStream.lastVerifiedAt
-                      ? formatDate(new Date(clientStream.lastVerifiedAt * 1000))
-                      : ""
-                  }
-                />
-              </FormGroup>
-              <FormGroup
-                label={t("ssfStreamAudience")}
-                fieldId="ssfStreamAudienceCurrent"
-                labelIcon={
-                  <HelpItem
-                    helpText={t("ssfStreamAudienceCurrentHelp")}
-                    fieldLabelId="ssfStreamAudience"
-                  />
-                }
-              >
-                <TextInput
-                  id="ssfStreamAudienceCurrent"
-                  data-testid="ssfStreamAudienceCurrent"
-                  readOnlyVariant="default"
-                  value={
-                    clientStream.audience && clientStream.audience.length > 0
-                      ? clientStream.audience.join(", ")
-                      : ""
-                  }
-                />
-              </FormGroup>
-              {clientStream.delivery?.endpoint_url && (
-                <FormGroup
-                  label={
-                    isPollDeliveryMethod(clientStream.delivery.method)
-                      ? t("ssfStreamPollEndpointUrl")
-                      : t("ssfStreamPushEndpointUrl")
-                  }
-                  fieldId="ssfStreamEndpointUrl"
-                  labelIcon={
-                    <HelpItem
-                      helpText={
-                        isPollDeliveryMethod(clientStream.delivery.method)
-                          ? t("ssfStreamPollEndpointUrlHelp")
-                          : t("ssfStreamPushEndpointUrlHelp")
-                      }
-                      fieldLabelId="ssfStreamEndpointUrl"
-                    />
-                  }
-                >
+                <FormGroup label={t("ssfStreamId")} fieldId="ssfStreamId">
                   <InputGroup>
                     <InputGroupItem isFill>
                       <TextInput
-                        id="ssfStreamEndpointUrl"
-                        data-testid="ssfStreamEndpointUrl"
+                        id="ssfStreamId"
+                        data-testid="ssfStreamId"
                         readOnlyVariant="default"
-                        value={clientStream.delivery.endpoint_url}
+                        value={clientStream.streamId ?? ""}
                       />
                     </InputGroupItem>
                     <InputGroupItem>
                       <CopyToClipboardButton
-                        id="ssfStreamEndpointUrl"
-                        text={clientStream.delivery.endpoint_url}
-                        label="ssfStreamEndpointUrl"
+                        id="ssfStreamId"
+                        text={clientStream.streamId ?? ""}
+                        label="ssfStreamId"
                         variant="control"
                       />
                     </InputGroupItem>
                   </InputGroup>
                 </FormGroup>
-              )}
-              {/* Push auth header is irrelevant for POLL — receivers
-                  authenticate themselves with their own bearer token to
-                  call the transmitter-hosted poll endpoint, and the
-                  transmitter doesn't store an outbound auth header for
-                  POLL streams. */}
-              {clientStream.delivery?.endpoint_url &&
-                !isPollDeliveryMethod(clientStream.delivery.method) && (
+                {clientStream.description && (
                   <FormGroup
-                    label={t("ssfStreamPushAuthHeader")}
-                    fieldId="ssfStreamPushAuthHeader"
+                    label={t("ssfStreamDescription")}
+                    fieldId="ssfStreamDescription"
                     labelIcon={
                       <HelpItem
-                        helpText={t("ssfStreamPushAuthHeaderHelp")}
-                        fieldLabelId="ssfStreamPushAuthHeader"
+                        helpText={t("ssfStreamDescriptionHelp")}
+                        fieldLabelId="ssfStreamDescription"
+                      />
+                    }
+                  >
+                    <TextInput
+                      id="ssfStreamDescription"
+                      data-testid="ssfStreamDescription"
+                      readOnlyVariant="default"
+                      value={clientStream.description}
+                    />
+                  </FormGroup>
+                )}
+                {clientStream.createdAt && (
+                  <FormGroup
+                    label={t("ssfStreamCreatedAt")}
+                    fieldId="ssfStreamCreatedAt"
+                    labelIcon={
+                      <HelpItem
+                        helpText={t("ssfStreamCreatedAtHelp")}
+                        fieldLabelId="ssfStreamCreatedAt"
+                      />
+                    }
+                  >
+                    <TextInput
+                      id="ssfStreamCreatedAt"
+                      data-testid="ssfStreamCreatedAt"
+                      readOnlyVariant="default"
+                      value={formatDate(
+                        new Date(clientStream.createdAt * 1000),
+                      )}
+                    />
+                  </FormGroup>
+                )}
+                {clientStream.updatedAt && (
+                  <FormGroup
+                    label={t("ssfStreamUpdatedAt")}
+                    fieldId="ssfStreamUpdatedAt"
+                    labelIcon={
+                      <HelpItem
+                        helpText={t("ssfStreamUpdatedAtHelp")}
+                        fieldLabelId="ssfStreamUpdatedAt"
+                      />
+                    }
+                  >
+                    <TextInput
+                      id="ssfStreamUpdatedAt"
+                      data-testid="ssfStreamUpdatedAt"
+                      readOnlyVariant="default"
+                      value={formatDate(
+                        new Date(clientStream.updatedAt * 1000),
+                      )}
+                    />
+                  </FormGroup>
+                )}
+                <FormGroup
+                  label={t("ssfStreamLastVerifiedAt")}
+                  fieldId="ssfStreamLastVerifiedAt"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("ssfStreamLastVerifiedAtHelp")}
+                      fieldLabelId="ssfStreamLastVerifiedAt"
+                    />
+                  }
+                >
+                  <TextInput
+                    id="ssfStreamLastVerifiedAt"
+                    data-testid="ssfStreamLastVerifiedAt"
+                    readOnlyVariant="default"
+                    value={
+                      clientStream.lastVerifiedAt
+                        ? formatDate(
+                            new Date(clientStream.lastVerifiedAt * 1000),
+                          )
+                        : ""
+                    }
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("ssfStreamAudience")}
+                  fieldId="ssfStreamAudienceCurrent"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("ssfStreamAudienceCurrentHelp")}
+                      fieldLabelId="ssfStreamAudience"
+                    />
+                  }
+                >
+                  <TextInput
+                    id="ssfStreamAudienceCurrent"
+                    data-testid="ssfStreamAudienceCurrent"
+                    readOnlyVariant="default"
+                    value={
+                      clientStream.audience && clientStream.audience.length > 0
+                        ? clientStream.audience.join(", ")
+                        : ""
+                    }
+                  />
+                </FormGroup>
+                {clientStream.delivery?.endpoint_url && (
+                  <FormGroup
+                    label={
+                      isPollDeliveryMethod(clientStream.delivery.method)
+                        ? t("ssfStreamPollEndpointUrl")
+                        : t("ssfStreamPushEndpointUrl")
+                    }
+                    fieldId="ssfStreamEndpointUrl"
+                    labelIcon={
+                      <HelpItem
+                        helpText={
+                          isPollDeliveryMethod(clientStream.delivery.method)
+                            ? t("ssfStreamPollEndpointUrlHelp")
+                            : t("ssfStreamPushEndpointUrlHelp")
+                        }
+                        fieldLabelId="ssfStreamEndpointUrl"
                       />
                     }
                   >
                     <InputGroup>
                       <InputGroupItem isFill>
-                        <PasswordInput
-                          id="ssfStreamPushAuthHeader"
-                          data-testid="ssfStreamPushAuthHeader"
-                          readOnly
-                          value={
-                            clientStream.delivery.authorization_header ?? ""
-                          }
+                        <TextInput
+                          id="ssfStreamEndpointUrl"
+                          data-testid="ssfStreamEndpointUrl"
+                          readOnlyVariant="default"
+                          value={clientStream.delivery.endpoint_url}
                         />
                       </InputGroupItem>
                       <InputGroupItem>
                         <CopyToClipboardButton
-                          id="ssfStreamPushAuthHeader"
-                          text={
-                            clientStream.delivery.authorization_header ?? ""
-                          }
-                          label="ssfStreamPushAuthHeader"
+                          id="ssfStreamEndpointUrl"
+                          text={clientStream.delivery.endpoint_url}
+                          label="ssfStreamEndpointUrl"
                           variant="control"
                         />
                       </InputGroupItem>
                     </InputGroup>
                   </FormGroup>
                 )}
-              <SelectControl
-                name={convertAttributeNameToForm<FormFields>(
-                  "attributes.ssf.status",
-                )}
-                label={t("ssfStreamStatus")}
-                labelIcon={t("ssfStreamStatusHelp")}
-                controller={{
-                  defaultValue: "enabled",
-                }}
-                options={[
-                  { key: "enabled", value: t("ssfStreamStatus.enabled") },
-                  { key: "paused", value: t("ssfStreamStatus.paused") },
-                  {
-                    key: "disabled",
-                    value: t("ssfStreamStatus.disabled"),
-                  },
-                ]}
-              />
-              <FormGroup
-                label={t("ssfStreamStatusReason")}
-                fieldId="ssfStreamStatusReason"
-                labelIcon={
-                  <HelpItem
-                    helpText={t("ssfStreamStatusReasonHelp")}
-                    fieldLabelId="ssfStreamStatusReason"
-                  />
-                }
-              >
-                <TextInput
-                  id="ssfStreamStatusReason"
-                  data-testid="ssfStreamStatusReason"
-                  readOnlyVariant="default"
-                  value={clientStream.statusReason ?? ""}
+                {/* Push auth header is irrelevant for POLL — receivers
+                  authenticate themselves with their own bearer token to
+                  call the transmitter-hosted poll endpoint, and the
+                  transmitter doesn't store an outbound auth header for
+                  POLL streams. */}
+                {clientStream.delivery?.endpoint_url &&
+                  !isPollDeliveryMethod(clientStream.delivery.method) && (
+                    <FormGroup
+                      label={t("ssfStreamPushAuthHeader")}
+                      fieldId="ssfStreamPushAuthHeader"
+                      labelIcon={
+                        <HelpItem
+                          helpText={t("ssfStreamPushAuthHeaderHelp")}
+                          fieldLabelId="ssfStreamPushAuthHeader"
+                        />
+                      }
+                    >
+                      <InputGroup>
+                        <InputGroupItem isFill>
+                          <PasswordInput
+                            id="ssfStreamPushAuthHeader"
+                            data-testid="ssfStreamPushAuthHeader"
+                            readOnly
+                            value={
+                              clientStream.delivery.authorization_header ?? ""
+                            }
+                          />
+                        </InputGroupItem>
+                        <InputGroupItem>
+                          <CopyToClipboardButton
+                            id="ssfStreamPushAuthHeader"
+                            text={
+                              clientStream.delivery.authorization_header ?? ""
+                            }
+                            label="ssfStreamPushAuthHeader"
+                            variant="control"
+                          />
+                        </InputGroupItem>
+                      </InputGroup>
+                    </FormGroup>
+                  )}
+                <SelectControl
+                  name={convertAttributeNameToForm<FormFields>(
+                    "attributes.ssf.status",
+                  )}
+                  label={t("ssfStreamStatus")}
+                  labelIcon={t("ssfStreamStatusHelp")}
+                  controller={{
+                    defaultValue: "enabled",
+                  }}
+                  options={[
+                    { key: "enabled", value: t("ssfStreamStatus.enabled") },
+                    { key: "paused", value: t("ssfStreamStatus.paused") },
+                    {
+                      key: "disabled",
+                      value: t("ssfStreamStatus.disabled"),
+                    },
+                  ]}
                 />
-              </FormGroup>
-              <FormGroup
-                label={t("ssfEventsRequested")}
-                fieldId="ssfEventsRequested"
-                labelIcon={
-                  <HelpItem
-                    helpText={t("ssfEventsRequestedHelp")}
-                    fieldLabelId="ssfEventsRequested"
-                  />
-                }
-              >
-                {clientStream.eventsRequested &&
-                clientStream.eventsRequested.length > 0 ? (
-                  <KeycloakSelect
-                    toggleId="ssfEventsRequested"
-                    data-testid="ssfEventsRequested"
-                    variant={SelectVariant.typeaheadMulti}
-                    isDisabled
-                    chipGroupProps={{
-                      numChips: 5,
-                      expandedText: t("hide"),
-                      collapsedText: t("showRemaining"),
-                    }}
-                    typeAheadAriaLabel={t("ssfEventsRequested")}
-                    onToggle={noop}
-                    isOpen={false}
-                    selections={clientStream.eventsRequested}
-                    onSelect={noop}
-                  >
-                    {clientStream.eventsRequested.map((event) => (
-                      <SelectOption key={event} value={event}>
-                        {event}
-                      </SelectOption>
-                    ))}
-                  </KeycloakSelect>
-                ) : (
+                <FormGroup
+                  label={t("ssfStreamStatusReason")}
+                  fieldId="ssfStreamStatusReason"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("ssfStreamStatusReasonHelp")}
+                      fieldLabelId="ssfStreamStatusReason"
+                    />
+                  }
+                >
                   <TextInput
-                    id="ssfEventsRequested"
-                    data-testid="ssfEventsRequested"
+                    id="ssfStreamStatusReason"
+                    data-testid="ssfStreamStatusReason"
                     readOnlyVariant="default"
-                    value={t("ssfEventsRequestedEmpty")}
+                    value={clientStream.statusReason ?? ""}
                   />
-                )}
-              </FormGroup>
-              <FormGroup
-                label={t("ssfEventsDelivered")}
-                fieldId="ssfEventsDelivered"
-                labelIcon={
-                  <HelpItem
-                    helpText={t("ssfEventsDeliveredHelp")}
-                    fieldLabelId="ssfEventsDelivered"
-                  />
-                }
-              >
-                {clientStream.eventsDelivered &&
-                clientStream.eventsDelivered.length > 0 ? (
-                  <KeycloakSelect
-                    toggleId="ssfEventsDelivered"
-                    data-testid="ssfEventsDelivered"
-                    variant={SelectVariant.typeaheadMulti}
-                    isDisabled
-                    chipGroupProps={{
-                      numChips: 5,
-                      expandedText: t("hide"),
-                      collapsedText: t("showRemaining"),
-                    }}
-                    typeAheadAriaLabel={t("ssfEventsDelivered")}
-                    onToggle={noop}
-                    isOpen={false}
-                    selections={clientStream.eventsDelivered}
-                    onSelect={noop}
-                  >
-                    {clientStream.eventsDelivered.map((event) => (
-                      <SelectOption key={event} value={event}>
-                        {event}
-                      </SelectOption>
-                    ))}
-                  </KeycloakSelect>
-                ) : (
-                  <TextInput
-                    id="ssfEventsDelivered"
-                    data-testid="ssfEventsDelivered"
-                    readOnlyVariant="default"
-                    value={t("ssfEventsDeliveredEmpty")}
-                  />
-                )}
-              </FormGroup>
-              <SelectControl
-                name={convertAttributeNameToForm<FormFields>(
-                  "attributes.ssf.delivery",
-                )}
-                label={t("ssfDelivery")}
-                labelIcon={t("ssfDeliveryHelp")}
-                controller={{
-                  defaultValue: "PUSH",
-                }}
-                options={[
-                  { key: "PUSH", value: t("ssfDelivery.PUSH") },
-                  { key: "POLL", value: t("ssfDelivery.POLL") },
-                ]}
-              />
-              {/* Push timeouts only apply when Keycloak makes outbound
+                </FormGroup>
+                <FormGroup
+                  label={t("ssfEventsRequested")}
+                  fieldId="ssfEventsRequested"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("ssfEventsRequestedHelp")}
+                      fieldLabelId="ssfEventsRequested"
+                    />
+                  }
+                >
+                  {clientStream.eventsRequested &&
+                  clientStream.eventsRequested.length > 0 ? (
+                    <KeycloakSelect
+                      toggleId="ssfEventsRequested"
+                      data-testid="ssfEventsRequested"
+                      variant={SelectVariant.typeaheadMulti}
+                      isDisabled
+                      chipGroupProps={{
+                        numChips: 5,
+                        expandedText: t("hide"),
+                        collapsedText: t("showRemaining"),
+                      }}
+                      typeAheadAriaLabel={t("ssfEventsRequested")}
+                      onToggle={noop}
+                      isOpen={false}
+                      selections={clientStream.eventsRequested}
+                      onSelect={noop}
+                    >
+                      {clientStream.eventsRequested.map((event) => (
+                        <SelectOption key={event} value={event}>
+                          {event}
+                        </SelectOption>
+                      ))}
+                    </KeycloakSelect>
+                  ) : (
+                    <TextInput
+                      id="ssfEventsRequested"
+                      data-testid="ssfEventsRequested"
+                      readOnlyVariant="default"
+                      value={t("ssfEventsRequestedEmpty")}
+                    />
+                  )}
+                </FormGroup>
+                <FormGroup
+                  label={t("ssfEventsDelivered")}
+                  fieldId="ssfEventsDelivered"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("ssfEventsDeliveredHelp")}
+                      fieldLabelId="ssfEventsDelivered"
+                    />
+                  }
+                >
+                  {clientStream.eventsDelivered &&
+                  clientStream.eventsDelivered.length > 0 ? (
+                    <KeycloakSelect
+                      toggleId="ssfEventsDelivered"
+                      data-testid="ssfEventsDelivered"
+                      variant={SelectVariant.typeaheadMulti}
+                      isDisabled
+                      chipGroupProps={{
+                        numChips: 5,
+                        expandedText: t("hide"),
+                        collapsedText: t("showRemaining"),
+                      }}
+                      typeAheadAriaLabel={t("ssfEventsDelivered")}
+                      onToggle={noop}
+                      isOpen={false}
+                      selections={clientStream.eventsDelivered}
+                      onSelect={noop}
+                    >
+                      {clientStream.eventsDelivered.map((event) => (
+                        <SelectOption key={event} value={event}>
+                          {event}
+                        </SelectOption>
+                      ))}
+                    </KeycloakSelect>
+                  ) : (
+                    <TextInput
+                      id="ssfEventsDelivered"
+                      data-testid="ssfEventsDelivered"
+                      readOnlyVariant="default"
+                      value={t("ssfEventsDeliveredEmpty")}
+                    />
+                  )}
+                </FormGroup>
+                <SelectControl
+                  name={convertAttributeNameToForm<FormFields>(
+                    "attributes.ssf.delivery",
+                  )}
+                  label={t("ssfDelivery")}
+                  labelIcon={t("ssfDeliveryHelp")}
+                  controller={{
+                    defaultValue: "PUSH",
+                  }}
+                  options={[
+                    { key: "PUSH", value: t("ssfDelivery.PUSH") },
+                    { key: "POLL", value: t("ssfDelivery.POLL") },
+                  ]}
+                />
+                {/* Push timeouts only apply when Keycloak makes outbound
                   HTTP push requests. POLL is inbound (receivers call
                   the transmitter), so the timeout knobs have no effect
                   and we hide them to avoid suggesting otherwise. */}
-              {(ssfDelivery === "PUSH" || !ssfDelivery) &&
-                !isPollDeliveryMethod(clientStream.delivery?.method) && (
-                  <>
-                    <NumberControl
-                      name={convertAttributeNameToForm<FormFields>(
-                        "attributes.ssf.pushEndpointConnectTimeoutMillis",
-                      )}
-                      label={t("ssfPushEndpointConnectTimeout")}
-                      labelIcon={t("ssfPushEndpointConnectTimeoutHelp")}
-                      controller={{
-                        defaultValue: defaultPushConnectTimeoutMillis,
-                        rules: {
-                          min: 0,
-                        },
-                      }}
+                {(ssfDelivery === "PUSH" || !ssfDelivery) &&
+                  !isPollDeliveryMethod(clientStream.delivery?.method) && (
+                    <>
+                      <NumberControl
+                        name={convertAttributeNameToForm<FormFields>(
+                          "attributes.ssf.pushEndpointConnectTimeoutMillis",
+                        )}
+                        label={t("ssfPushEndpointConnectTimeout")}
+                        labelIcon={t("ssfPushEndpointConnectTimeoutHelp")}
+                        controller={{
+                          defaultValue: defaultPushConnectTimeoutMillis,
+                          rules: {
+                            min: 0,
+                          },
+                        }}
+                      />
+                      <NumberControl
+                        name={convertAttributeNameToForm<FormFields>(
+                          "attributes.ssf.pushEndpointSocketTimeoutMillis",
+                        )}
+                        label={t("ssfPushEndpointSocketTimeout")}
+                        labelIcon={t("ssfPushEndpointSocketTimeoutHelp")}
+                        controller={{
+                          defaultValue: defaultPushSocketTimeoutMillis,
+                          rules: {
+                            min: 0,
+                          },
+                        }}
+                      />
+                    </>
+                  )}
+                <ActionGroup>
+                  <Button
+                    variant="secondary"
+                    onClick={() => save()}
+                    data-testid="ssfStreamSave"
+                  >
+                    {t("save")}
+                  </Button>
+                  <Button
+                    variant="link"
+                    onClick={reset}
+                    data-testid="ssfStreamRevert"
+                  >
+                    {t("revert")}
+                  </Button>
+                  <Button
+                    variant="tertiary"
+                    onClick={triggerVerifyStream}
+                    data-testid="ssfStreamVerify"
+                  >
+                    {t("ssfVerifyStream")}
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={toggleDeleteStreamDialog}
+                    data-testid="ssfStreamDelete"
+                  >
+                    {t("ssfDeleteStream")}
+                  </Button>
+                </ActionGroup>
+              </FormAccess>
+            )}
+          </CardBody>
+        </Card>
+      )}
+      {activeTab === "subjects" && (
+        <Card isFlat className="pf-v5-u-mt-md">
+          <CardHeader>
+            <CardTitle>{t("ssfTabSubjects")}</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <TextContent>
+              <Text>{t("ssfSubjectsHelp")}</Text>
+            </TextContent>
+          </CardBody>
+          <CardBody>
+            <FormAccess
+              role="manage-clients"
+              fineGrainedAccess={client.access?.configure}
+              isHorizontal
+            >
+              <FormGroup label={t("ssfSubjectType")} fieldId="ssfSubjectType">
+                <select
+                  id="ssfSubjectType"
+                  data-testid="ssfSubjectType"
+                  value={subjectType}
+                  onChange={(e) =>
+                    setSubjectType(e.target.value as SubjectType)
+                  }
+                  className="pf-v5-c-form-control"
+                >
+                  <option value="user-email">
+                    {t("ssfSubjectType.userEmail")}
+                  </option>
+                  <option value="user-id">{t("ssfSubjectType.userId")}</option>
+                  <option value="user-username">
+                    {t("ssfSubjectType.userUsername")}
+                  </option>
+                  <option value="org-alias">
+                    {t("ssfSubjectType.orgAlias")}
+                  </option>
+                </select>
+              </FormGroup>
+              <FormGroup
+                label={t("ssfSubjectValue")}
+                fieldId="ssfSubjectValue"
+                isRequired
+              >
+                <InputGroup>
+                  <InputGroupItem isFill>
+                    <TextInput
+                      id="ssfSubjectValue"
+                      data-testid="ssfSubjectValue"
+                      value={subjectValue}
+                      onChange={(_e, value) => setSubjectValue(value)}
+                      placeholder={
+                        subjectType === "user-email"
+                          ? "user@example.com"
+                          : subjectType === "user-id"
+                            ? "user-uuid"
+                            : subjectType === "user-username"
+                              ? "username"
+                              : "org-alias"
+                      }
                     />
-                    <NumberControl
-                      name={convertAttributeNameToForm<FormFields>(
-                        "attributes.ssf.pushEndpointSocketTimeoutMillis",
-                      )}
-                      label={t("ssfPushEndpointSocketTimeout")}
-                      labelIcon={t("ssfPushEndpointSocketTimeoutHelp")}
-                      controller={{
-                        defaultValue: defaultPushSocketTimeoutMillis,
-                        rules: {
-                          min: 0,
-                        },
-                      }}
-                    />
-                  </>
-                )}
+                  </InputGroupItem>
+                </InputGroup>
+              </FormGroup>
               <ActionGroup>
                 <Button
-                  variant="secondary"
-                  onClick={() => save()}
-                  data-testid="ssfStreamSave"
+                  variant="primary"
+                  onClick={() => handleSubjectAction("add")}
+                  isDisabled={subjectLoading}
+                  data-testid="ssfSubjectAdd"
                 >
-                  {t("save")}
+                  {t("ssfSubjectAdd")}
                 </Button>
                 <Button
-                  variant="link"
-                  onClick={reset}
-                  data-testid="ssfStreamRevert"
+                  variant="secondary"
+                  onClick={() => handleSubjectAction("ignore")}
+                  isDisabled={subjectLoading}
+                  data-testid="ssfSubjectIgnore"
                 >
-                  {t("revert")}
+                  {t("ssfSubjectIgnore")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleSubjectAction("remove")}
+                  isDisabled={subjectLoading}
+                  data-testid="ssfSubjectRemove"
+                >
+                  {t("ssfSubjectRemove")}
                 </Button>
                 <Button
                   variant="tertiary"
-                  onClick={triggerVerifyStream}
-                  data-testid="ssfStreamVerify"
+                  onClick={() => handleSubjectAction("check")}
+                  isDisabled={subjectLoading}
+                  data-testid="ssfSubjectCheck"
                 >
-                  {t("ssfVerifyStream")}
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={toggleDeleteStreamDialog}
-                  data-testid="ssfStreamDelete"
-                >
-                  {t("ssfDeleteStream")}
+                  {t("ssfSubjectCheck")}
                 </Button>
               </ActionGroup>
+              {subjectStatus && (
+                <Text
+                  className={`pf-v5-u-mt-md ${
+                    subjectStatus.variant === "success"
+                      ? "pf-v5-u-color-status-success--100"
+                      : subjectStatus.variant === "danger"
+                        ? "pf-v5-u-color-status-danger--100"
+                        : "pf-v5-u-color-status-info--100"
+                  }`}
+                  data-testid="ssfSubjectStatus"
+                >
+                  {subjectStatus.message}
+                </Text>
+              )}
             </FormAccess>
-          )}
-        </>
-      )}
-      {activeTab === "subjects" && (
-        <>
-          {helpEnabled && (
-            <TextContent className="keycloak__section_intro__help">
-              <Text>
-                <QuestionCircleIcon /> {t("ssfSubjectsHelp")}
-              </Text>
-            </TextContent>
-          )}
-          <FormAccess
-            role="manage-clients"
-            fineGrainedAccess={client.access?.configure}
-            isHorizontal
-          >
-            <FormGroup label={t("ssfSubjectType")} fieldId="ssfSubjectType">
-              <select
-                id="ssfSubjectType"
-                data-testid="ssfSubjectType"
-                value={subjectType}
-                onChange={(e) => setSubjectType(e.target.value as SubjectType)}
-                className="pf-v5-c-form-control"
-              >
-                <option value="user-email">
-                  {t("ssfSubjectType.userEmail")}
-                </option>
-                <option value="user-id">{t("ssfSubjectType.userId")}</option>
-                <option value="user-username">
-                  {t("ssfSubjectType.userUsername")}
-                </option>
-                <option value="org-alias">
-                  {t("ssfSubjectType.orgAlias")}
-                </option>
-              </select>
-            </FormGroup>
-            <FormGroup
-              label={t("ssfSubjectValue")}
-              fieldId="ssfSubjectValue"
-              isRequired
-            >
-              <InputGroup>
-                <InputGroupItem isFill>
-                  <TextInput
-                    id="ssfSubjectValue"
-                    data-testid="ssfSubjectValue"
-                    value={subjectValue}
-                    onChange={(_e, value) => setSubjectValue(value)}
-                    placeholder={
-                      subjectType === "user-email"
-                        ? "user@example.com"
-                        : subjectType === "user-id"
-                          ? "user-uuid"
-                          : subjectType === "user-username"
-                            ? "username"
-                            : "org-alias"
-                    }
-                  />
-                </InputGroupItem>
-              </InputGroup>
-            </FormGroup>
-            <ActionGroup>
-              <Button
-                variant="primary"
-                onClick={() => handleSubjectAction("add")}
-                isDisabled={subjectLoading}
-                data-testid="ssfSubjectAdd"
-              >
-                {t("ssfSubjectAdd")}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => handleSubjectAction("ignore")}
-                isDisabled={subjectLoading}
-                data-testid="ssfSubjectIgnore"
-              >
-                {t("ssfSubjectIgnore")}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => handleSubjectAction("remove")}
-                isDisabled={subjectLoading}
-                data-testid="ssfSubjectRemove"
-              >
-                {t("ssfSubjectRemove")}
-              </Button>
-              <Button
-                variant="tertiary"
-                onClick={() => handleSubjectAction("check")}
-                isDisabled={subjectLoading}
-                data-testid="ssfSubjectCheck"
-              >
-                {t("ssfSubjectCheck")}
-              </Button>
-            </ActionGroup>
-            {subjectStatus && (
-              <Text
-                className={`pf-v5-u-mt-md ${
-                  subjectStatus.variant === "success"
-                    ? "pf-v5-u-color-status-success--100"
-                    : subjectStatus.variant === "danger"
-                      ? "pf-v5-u-color-status-danger--100"
-                      : "pf-v5-u-color-status-info--100"
-                }`}
-                data-testid="ssfSubjectStatus"
-              >
-                {subjectStatus.message}
-              </Text>
-            )}
-          </FormAccess>
-        </>
+          </CardBody>
+        </Card>
       )}
       {activeTab === "pending-events" && (
         <>
-          {helpEnabled && (
-            <TextContent className="keycloak__section_intro__help">
-              <Text>
-                <QuestionCircleIcon /> {t("ssfPendingEventsHelp")}
-              </Text>
-            </TextContent>
-          )}
           {/* Lookup section ------------------------------------------ */}
-          <TextContent>
-            <Text component="h2">{t("ssfLookupTitle")}</Text>
-            <Text component="p">{t("ssfLookupTitleHelp")}</Text>
-          </TextContent>
-          <FormAccess
-            role="manage-clients"
-            fineGrainedAccess={client.access?.configure}
-            isHorizontal
-          >
-            <FormGroup
-              label={t("ssfPendingLookupJti")}
-              fieldId="ssfPendingLookupJti"
-              labelIcon={
-                <HelpItem
-                  helpText={t("ssfPendingLookupJtiHelp")}
-                  fieldLabelId="ssfPendingLookupJti"
-                />
-              }
-              isRequired
-            >
-              <InputGroup>
-                <InputGroupItem isFill>
-                  <TextInput
-                    id="ssfPendingLookupJti"
-                    data-testid="ssfPendingLookupJti"
-                    value={pendingLookupJti}
-                    onChange={(_e, value) => setPendingLookupJti(value)}
-                    placeholder={t("ssfPendingLookupJtiPlaceholder")}
-                  />
-                </InputGroupItem>
-              </InputGroup>
-            </FormGroup>
-            <ActionGroup>
-              <Button
-                variant="primary"
-                onClick={handlePendingLookup}
-                isDisabled={
-                  pendingActionLoading || pendingLookupJti.trim() === ""
-                }
-                data-testid="ssfPendingLookup"
+          <Card isFlat className="pf-v5-u-mt-md">
+            <CardHeader>
+              <CardTitle>{t("ssfLookupTitle")}</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <TextContent>
+                <Text>{t("ssfLookupTitleHelp")}</Text>
+              </TextContent>
+            </CardBody>
+            <CardBody>
+              <FormAccess
+                role="manage-clients"
+                fineGrainedAccess={client.access?.configure}
+                isHorizontal
               >
-                {t("ssfPendingLookup")}
-              </Button>
-            </ActionGroup>
-            {pendingLookupError && (
-              <Text
-                className="pf-v5-u-mt-md pf-v5-u-color-status-danger--100"
-                data-testid="ssfPendingLookupError"
-              >
-                {pendingLookupError}
-              </Text>
-            )}
-            {pendingLookupResult && (
-              <FormGroup
-                label={t("ssfPendingLookupResult")}
-                fieldId="ssfPendingLookupResult"
-              >
-                <TextContent data-testid="ssfPendingLookupResult">
-                  <Text>
-                    <strong>{t("ssfPendingFieldStatus")}:</strong>{" "}
-                    {pendingLookupResult.status ?? "-"}
+                <FormGroup
+                  label={t("ssfPendingLookupJti")}
+                  fieldId="ssfPendingLookupJti"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("ssfPendingLookupJtiHelp")}
+                      fieldLabelId="ssfPendingLookupJti"
+                    />
+                  }
+                  isRequired
+                >
+                  <InputGroup>
+                    <InputGroupItem isFill>
+                      <TextInput
+                        id="ssfPendingLookupJti"
+                        data-testid="ssfPendingLookupJti"
+                        value={pendingLookupJti}
+                        onChange={(_e, value) => setPendingLookupJti(value)}
+                        placeholder={t("ssfPendingLookupJtiPlaceholder")}
+                      />
+                    </InputGroupItem>
+                  </InputGroup>
+                </FormGroup>
+                <ActionGroup>
+                  <Button
+                    variant="primary"
+                    onClick={handlePendingLookup}
+                    isDisabled={
+                      pendingActionLoading || pendingLookupJti.trim() === ""
+                    }
+                    data-testid="ssfPendingLookup"
+                  >
+                    {t("ssfPendingLookup")}
+                  </Button>
+                </ActionGroup>
+                {pendingLookupError && (
+                  <Text
+                    className="pf-v5-u-mt-md pf-v5-u-color-status-danger--100"
+                    data-testid="ssfPendingLookupError"
+                  >
+                    {pendingLookupError}
                   </Text>
-                  <Text>
-                    <strong>{t("ssfPendingFieldEventType")}:</strong>{" "}
-                    {pendingLookupResult.eventType ?? "-"}
-                  </Text>
-                  <Text>
-                    <strong>{t("ssfPendingFieldDeliveryMethod")}:</strong>{" "}
-                    {pendingLookupResult.deliveryMethod ?? "-"}
-                  </Text>
-                  {/* Attempts + Next attempt at are PUSH drainer
+                )}
+                {pendingLookupResult && (
+                  <FormGroup
+                    label={t("ssfPendingLookupResult")}
+                    fieldId="ssfPendingLookupResult"
+                  >
+                    <TextContent data-testid="ssfPendingLookupResult">
+                      <Text>
+                        <strong>{t("ssfPendingFieldStatus")}:</strong>{" "}
+                        {pendingLookupResult.status ?? "-"}
+                      </Text>
+                      <Text>
+                        <strong>{t("ssfPendingFieldEventType")}:</strong>{" "}
+                        {pendingLookupResult.eventType ?? "-"}
+                      </Text>
+                      <Text>
+                        <strong>{t("ssfPendingFieldDeliveryMethod")}:</strong>{" "}
+                        {pendingLookupResult.deliveryMethod ?? "-"}
+                      </Text>
+                      {/* Attempts + Next attempt at are PUSH drainer
                       retry state — for POLL the receiver pulls on its
                       own cadence and these fields carry no useful
                       information. Hide them for POLL rows to avoid
                       operator confusion. */}
-                  {pendingLookupResult.deliveryMethod !== "POLL" && (
-                    <Text>
-                      <strong>{t("ssfPendingFieldAttempts")}:</strong>{" "}
-                      {pendingLookupResult.attempts ?? 0}
-                    </Text>
-                  )}
-                  <Text>
-                    <strong>{t("ssfPendingFieldCreatedAt")}:</strong>{" "}
-                    {pendingLookupResult.createdAt
-                      ? formatDate(
-                          new Date(pendingLookupResult.createdAt * 1000),
-                        )
-                      : "-"}
-                  </Text>
-                  {pendingLookupResult.deliveryMethod !== "POLL" && (
-                    <Text>
-                      <strong>{t("ssfPendingFieldNextAttemptAt")}:</strong>{" "}
-                      {pendingLookupResult.nextAttemptAt
-                        ? formatDate(
-                            new Date(pendingLookupResult.nextAttemptAt * 1000),
-                          )
-                        : "-"}
-                    </Text>
-                  )}
-                  <Text>
-                    <strong>{t("ssfPendingFieldDeliveredAt")}:</strong>{" "}
-                    {pendingLookupResult.deliveredAt
-                      ? formatDate(
-                          new Date(pendingLookupResult.deliveredAt * 1000),
-                        )
-                      : "-"}
-                  </Text>
-                  {pendingLookupResult.lastError && (
-                    <Text>
-                      <strong>{t("ssfPendingFieldLastError")}:</strong>{" "}
-                      {pendingLookupResult.lastError}
-                    </Text>
-                  )}
-                  {pendingLookupResult.userId && (
-                    <Text>
-                      <strong>{t("ssfPendingFieldUserId")}:</strong>{" "}
-                      {pendingLookupResult.userId}
-                    </Text>
-                  )}
-                  {pendingLookupResult.decodedSet && (
-                    <>
+                      {pendingLookupResult.deliveryMethod !== "POLL" && (
+                        <Text>
+                          <strong>{t("ssfPendingFieldAttempts")}:</strong>{" "}
+                          {pendingLookupResult.attempts ?? 0}
+                        </Text>
+                      )}
                       <Text>
-                        <strong>{t("ssfPendingFieldDecodedSet")}:</strong>
+                        <strong>{t("ssfPendingFieldCreatedAt")}:</strong>{" "}
+                        {pendingLookupResult.createdAt
+                          ? formatDate(
+                              new Date(pendingLookupResult.createdAt * 1000),
+                            )
+                          : "-"}
                       </Text>
-                      <pre
-                        data-testid="ssfPendingFieldDecodedSetJson"
-                        className="pf-v5-u-font-family-monospace"
-                      >
-                        {JSON.stringify(
-                          pendingLookupResult.decodedSet,
-                          null,
-                          2,
-                        )}
-                      </pre>
-                    </>
-                  )}
-                </TextContent>
-              </FormGroup>
-            )}
-          </FormAccess>
+                      {pendingLookupResult.deliveryMethod !== "POLL" && (
+                        <Text>
+                          <strong>{t("ssfPendingFieldNextAttemptAt")}:</strong>{" "}
+                          {pendingLookupResult.nextAttemptAt
+                            ? formatDate(
+                                new Date(
+                                  pendingLookupResult.nextAttemptAt * 1000,
+                                ),
+                              )
+                            : "-"}
+                        </Text>
+                      )}
+                      <Text>
+                        <strong>{t("ssfPendingFieldDeliveredAt")}:</strong>{" "}
+                        {pendingLookupResult.deliveredAt
+                          ? formatDate(
+                              new Date(pendingLookupResult.deliveredAt * 1000),
+                            )
+                          : "-"}
+                      </Text>
+                      {pendingLookupResult.lastError && (
+                        <Text>
+                          <strong>{t("ssfPendingFieldLastError")}:</strong>{" "}
+                          {pendingLookupResult.lastError}
+                        </Text>
+                      )}
+                      {pendingLookupResult.userId && (
+                        <Text>
+                          <strong>{t("ssfPendingFieldUserId")}:</strong>{" "}
+                          {pendingLookupResult.userId}
+                        </Text>
+                      )}
+                      {pendingLookupResult.decodedSet && (
+                        <>
+                          <Text>
+                            <strong>{t("ssfPendingFieldDecodedSet")}:</strong>
+                          </Text>
+                          <pre
+                            data-testid="ssfPendingFieldDecodedSetJson"
+                            className="pf-v5-u-font-family-monospace"
+                          >
+                            {JSON.stringify(
+                              pendingLookupResult.decodedSet,
+                              null,
+                              2,
+                            )}
+                          </pre>
+                        </>
+                      )}
+                    </TextContent>
+                  </FormGroup>
+                )}
+              </FormAccess>
+            </CardBody>
+          </Card>
 
           {/* Emit section -------------------------------------------- */}
-          <TextContent className="pf-v5-u-mt-xl">
-            <Text component="h2">{t("ssfEmitTitle")}</Text>
-            <Text component="p">{t("ssfEmitTitleHelp")}</Text>
-          </TextContent>
-          <FormAccess
-            role="manage-clients"
-            fineGrainedAccess={client.access?.configure}
-            isHorizontal
-          >
-            <FormGroup
-              label={t("ssfEmitEventType")}
-              fieldId="ssfEmitEventType"
-              labelIcon={
-                <HelpItem
-                  helpText={t("ssfEmitEventTypeHelp")}
-                  fieldLabelId="ssfEmitEventType"
-                />
-              }
-              isRequired
-            >
-              <select
-                id="ssfEmitEventType"
-                data-testid="ssfEmitEventType"
-                value={emitEventType}
-                onChange={(e) => setEmitEventType(e.target.value)}
-                className="pf-v5-c-form-control"
+          <Card isFlat className="pf-v5-u-mt-xl">
+            <CardHeader>
+              <CardTitle>{t("ssfEmitTitle")}</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <TextContent>
+                <Text>{t("ssfEmitTitleHelp")}</Text>
+              </TextContent>
+            </CardBody>
+            <CardBody>
+              <FormAccess
+                role="manage-clients"
+                fineGrainedAccess={client.access?.configure}
+                isHorizontal
               >
-                <option value="">{t("ssfEmitEventTypeSelectPrompt")}</option>
-                {availableSupportedEvents.map((eventType) => (
-                  <option key={eventType} value={eventType}>
-                    {eventType}
-                  </option>
-                ))}
-              </select>
-            </FormGroup>
-            <FormGroup label={t("ssfSubjectType")} fieldId="ssfEmitSubjectType">
-              <select
-                id="ssfEmitSubjectType"
-                data-testid="ssfEmitSubjectType"
-                value={emitSubjectType}
-                onChange={(e) =>
-                  setEmitSubjectType(e.target.value as typeof emitSubjectType)
-                }
-                className="pf-v5-c-form-control"
-              >
-                <option value="user-email">
-                  {t("ssfSubjectType.userEmail")}
-                </option>
-                <option value="user-id">{t("ssfSubjectType.userId")}</option>
-                <option value="user-username">
-                  {t("ssfSubjectType.userUsername")}
-                </option>
-                <option value="org-alias">
-                  {t("ssfSubjectType.orgAlias")}
-                </option>
-              </select>
-            </FormGroup>
-            <FormGroup
-              label={t("ssfSubjectValue")}
-              fieldId="ssfEmitSubjectValue"
-              labelIcon={
-                <HelpItem
-                  helpText={t("ssfEmitSubjectValueHelp")}
-                  fieldLabelId="ssfEmitSubjectValue"
-                />
-              }
-              isRequired
-            >
-              <TextInput
-                id="ssfEmitSubjectValue"
-                data-testid="ssfEmitSubjectValue"
-                value={emitSubjectValue}
-                onChange={(_e, value) => setEmitSubjectValue(value)}
-                placeholder={
-                  emitSubjectType === "user-email"
-                    ? "user@example.com"
-                    : emitSubjectType === "user-id"
-                      ? "user-uuid"
-                      : emitSubjectType === "user-username"
-                        ? "username"
-                        : "org-alias"
-                }
-              />
-            </FormGroup>
-            <FormGroup
-              label={t("ssfEmitPayload")}
-              fieldId="ssfEmitPayload"
-              labelIcon={
-                <HelpItem
-                  helpText={t("ssfEmitPayloadHelp")}
-                  fieldLabelId="ssfEmitPayload"
-                />
-              }
-            >
-              <CodeEditor
-                data-testid="ssfEmitPayload"
-                aria-label={t("ssfEmitPayload")}
-                language="json"
-                height={220}
-                value={emitPayload}
-                onChange={(value) => {
-                  setEmitPayload(value);
-                  // Live validation: substitute placeholders first
-                  // (so unquoted __now__ becomes a valid numeric
-                  // literal) then JSON.parse. Blank payload resolves
-                  // to {} at submit time and is therefore valid.
-                  const trimmed = value.trim();
-                  if (trimmed === "") {
-                    setEmitPayloadParseError(null);
-                    return;
+                <FormGroup
+                  label={t("ssfEmitEventType")}
+                  fieldId="ssfEmitEventType"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("ssfEmitEventTypeHelp")}
+                      fieldLabelId="ssfEmitEventType"
+                    />
                   }
-                  try {
-                    JSON.parse(substitutePayloadPlaceholders(value));
-                    setEmitPayloadParseError(null);
-                  } catch (error) {
-                    setEmitPayloadParseError(
-                      t("ssfEmitPayloadInvalidJson", { error: String(error) }),
-                    );
-                  }
-                }}
-              />
-              {emitPayloadParseError && (
-                <Text
-                  className="pf-v5-u-mt-sm pf-v5-u-color-status-danger--100"
-                  data-testid="ssfEmitPayloadParseError"
+                  isRequired
                 >
-                  {emitPayloadParseError}
-                </Text>
-              )}
-            </FormGroup>
-            <ActionGroup>
-              <Button
-                variant="primary"
-                onClick={handleEmitEvent}
-                isDisabled={
-                  pendingActionLoading || emitPayloadParseError !== null
-                }
-                data-testid="ssfEmitEvent"
-              >
-                {t("ssfEmitEvent")}
-              </Button>
-            </ActionGroup>
-            {emitError && (
-              <Text
-                className="pf-v5-u-mt-md pf-v5-u-color-status-danger--100"
-                data-testid="ssfEmitError"
-              >
-                {emitError}
-              </Text>
-            )}
-            {emitResult && (
-              <Text
-                className="pf-v5-u-mt-md pf-v5-u-color-status-success--100"
-                data-testid="ssfEmitResult"
-              >
-                {t("ssfEmitResult", {
-                  status: emitResult.status,
-                  jti: emitResult.jti,
-                })}
-              </Text>
-            )}
-          </FormAccess>
+                  <select
+                    id="ssfEmitEventType"
+                    data-testid="ssfEmitEventType"
+                    value={emitEventType}
+                    onChange={(e) => setEmitEventType(e.target.value)}
+                    className="pf-v5-c-form-control"
+                  >
+                    <option value="">
+                      {t("ssfEmitEventTypeSelectPrompt")}
+                    </option>
+                    {availableSupportedEvents.map((eventType) => (
+                      <option key={eventType} value={eventType}>
+                        {eventType}
+                      </option>
+                    ))}
+                  </select>
+                </FormGroup>
+                <FormGroup
+                  label={t("ssfSubjectType")}
+                  fieldId="ssfEmitSubjectType"
+                >
+                  <select
+                    id="ssfEmitSubjectType"
+                    data-testid="ssfEmitSubjectType"
+                    value={emitSubjectType}
+                    onChange={(e) =>
+                      setEmitSubjectType(
+                        e.target.value as typeof emitSubjectType,
+                      )
+                    }
+                    className="pf-v5-c-form-control"
+                  >
+                    <option value="user-email">
+                      {t("ssfSubjectType.userEmail")}
+                    </option>
+                    <option value="user-id">
+                      {t("ssfSubjectType.userId")}
+                    </option>
+                    <option value="user-username">
+                      {t("ssfSubjectType.userUsername")}
+                    </option>
+                    <option value="org-alias">
+                      {t("ssfSubjectType.orgAlias")}
+                    </option>
+                  </select>
+                </FormGroup>
+                <FormGroup
+                  label={t("ssfSubjectValue")}
+                  fieldId="ssfEmitSubjectValue"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("ssfEmitSubjectValueHelp")}
+                      fieldLabelId="ssfEmitSubjectValue"
+                    />
+                  }
+                  isRequired
+                >
+                  <TextInput
+                    id="ssfEmitSubjectValue"
+                    data-testid="ssfEmitSubjectValue"
+                    value={emitSubjectValue}
+                    onChange={(_e, value) => setEmitSubjectValue(value)}
+                    placeholder={
+                      emitSubjectType === "user-email"
+                        ? "user@example.com"
+                        : emitSubjectType === "user-id"
+                          ? "user-uuid"
+                          : emitSubjectType === "user-username"
+                            ? "username"
+                            : "org-alias"
+                    }
+                  />
+                </FormGroup>
+                <FormGroup
+                  label={t("ssfEmitPayload")}
+                  fieldId="ssfEmitPayload"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("ssfEmitPayloadHelp")}
+                      fieldLabelId="ssfEmitPayload"
+                    />
+                  }
+                >
+                  <CodeEditor
+                    data-testid="ssfEmitPayload"
+                    aria-label={t("ssfEmitPayload")}
+                    language="json"
+                    height={220}
+                    value={emitPayload}
+                    onChange={(value) => {
+                      setEmitPayload(value);
+                      // Live validation: substitute placeholders first
+                      // (so unquoted __now__ becomes a valid numeric
+                      // literal) then JSON.parse. Blank payload resolves
+                      // to {} at submit time and is therefore valid.
+                      const trimmed = value.trim();
+                      if (trimmed === "") {
+                        setEmitPayloadParseError(null);
+                        return;
+                      }
+                      try {
+                        JSON.parse(substitutePayloadPlaceholders(value));
+                        setEmitPayloadParseError(null);
+                      } catch (error) {
+                        setEmitPayloadParseError(
+                          t("ssfEmitPayloadInvalidJson", {
+                            error: String(error),
+                          }),
+                        );
+                      }
+                    }}
+                  />
+                  {emitPayloadParseError && (
+                    <Text
+                      className="pf-v5-u-mt-sm pf-v5-u-color-status-danger--100"
+                      data-testid="ssfEmitPayloadParseError"
+                    >
+                      {emitPayloadParseError}
+                    </Text>
+                  )}
+                </FormGroup>
+                <ActionGroup>
+                  <Button
+                    variant="primary"
+                    onClick={handleEmitEvent}
+                    isDisabled={
+                      pendingActionLoading || emitPayloadParseError !== null
+                    }
+                    data-testid="ssfEmitEvent"
+                  >
+                    {t("ssfEmitEvent")}
+                  </Button>
+                </ActionGroup>
+                {emitError && (
+                  <Text
+                    className="pf-v5-u-mt-md pf-v5-u-color-status-danger--100"
+                    data-testid="ssfEmitError"
+                  >
+                    {emitError}
+                  </Text>
+                )}
+                {emitResult && (
+                  <Text
+                    className="pf-v5-u-mt-md pf-v5-u-color-status-success--100"
+                    data-testid="ssfEmitResult"
+                  >
+                    {t("ssfEmitResult", {
+                      status: emitResult.status,
+                      jti: emitResult.jti,
+                    })}
+                  </Text>
+                )}
+              </FormAccess>
+            </CardBody>
+          </Card>
         </>
       )}
     </PageSection>
