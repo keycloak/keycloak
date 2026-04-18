@@ -78,6 +78,14 @@ public class TransmitterMetadataService {
 
         metadata.setDefaultSubjects(transmitterConfig.getDefaultSubjects().name());
 
+        // critical_subject_members tells a receiver which complex-subject
+        // member keys (e.g. "user", "session", "tenant") it MUST be able
+        // to interpret. Empty / null configured set omits the field.
+        Set<String> critical = transmitterConfig.getCriticalSubjectMembers();
+        if (critical != null && !critical.isEmpty()) {
+            metadata.setCriticalSubjectMembers(new LinkedHashSet<>(critical));
+        }
+
         return metadata;
     }
 
