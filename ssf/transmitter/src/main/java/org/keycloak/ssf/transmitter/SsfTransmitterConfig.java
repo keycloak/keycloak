@@ -1,5 +1,8 @@
 package org.keycloak.ssf.transmitter;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 import org.keycloak.Config;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.ssf.metadata.DefaultSubjects;
@@ -31,6 +34,8 @@ public class SsfTransmitterConfig {
     public static final String CONFIG_SUBJECT_MANAGEMENT_ENABLED = "subject-management-enabled";
 
     public static final String CONFIG_SSE_CAEP_ENABLED = "sse-caep-enabled";
+
+    public static final String CONFIG_CRITICAL_SUBJECT_MEMBERS = "critical-subject-members";
 
     /**
      * Default connect timeout (in milliseconds) for delivering SSF events via
@@ -108,6 +113,20 @@ public class SsfTransmitterConfig {
      */
     public static final boolean DEFAULT_SSE_CAEP_ENABLED = true;
 
+    /**
+     * Default value for the transmitter's {@code critical_subject_members}
+     * metadata field. Names the complex-subject member keys a receiver must
+     * understand to interpret SETs from this transmitter — single member
+     * {@code "user"} reflects that every CAEP event the transmitter emits
+     * carries the user identifier under that key (the session and tenant
+     * keys are optional siblings).
+     *
+     * <p>Override via the {@code critical-subject-members} SPI property
+     * with a comma-separated list (e.g. {@code "user,tenant"}). An empty
+     * value omits the field from the metadata document entirely.
+     */
+    public static final Set<String> DEFAULT_CRITICAL_SUBJECT_MEMBERS = Set.of("user");
+
     private final int pushEndpointConnectTimeoutMillis;
 
     private final int pushEndpointSocketTimeoutMillis;
@@ -126,6 +145,8 @@ public class SsfTransmitterConfig {
 
     private final boolean sseCaepEnabled;
 
+    private final Set<String> criticalSubjectMembers;
+
     public SsfTransmitterConfig(int pushEndpointConnectTimeoutMillis,
                                 int pushEndpointSocketTimeoutMillis,
                                 int transmitterInitiatedVerificationDelayMillis,
@@ -134,7 +155,8 @@ public class SsfTransmitterConfig {
                                 String userSubjectFormat,
                                 DefaultSubjects defaultSubjects,
                                 boolean subjectManagementEnabled,
-                                boolean sseCaepEnabled) {
+                                boolean sseCaepEnabled,
+                                Set<String> criticalSubjectMembers) {
         this.pushEndpointConnectTimeoutMillis = pushEndpointConnectTimeoutMillis;
         this.pushEndpointSocketTimeoutMillis = pushEndpointSocketTimeoutMillis;
         this.transmitterInitiatedVerificationDelayMillis = transmitterInitiatedVerificationDelayMillis;
@@ -144,6 +166,7 @@ public class SsfTransmitterConfig {
         this.defaultSubjects = defaultSubjects;
         this.subjectManagementEnabled = subjectManagementEnabled;
         this.sseCaepEnabled = sseCaepEnabled;
+        this.criticalSubjectMembers = criticalSubjectMembers;
     }
 
     /**
@@ -170,7 +193,29 @@ public class SsfTransmitterConfig {
                 config.getBoolean(CONFIG_SUBJECT_MANAGEMENT_ENABLED,
                         DEFAULT_SUBJECT_MANAGEMENT_ENABLED),
                 config.getBoolean(CONFIG_SSE_CAEP_ENABLED,
-                        DEFAULT_SSE_CAEP_ENABLED));
+                        DEFAULT_SSE_CAEP_ENABLED),
+                parseCriticalSubjectMembers(config.get(CONFIG_CRITICAL_SUBJECT_MEMBERS)));
+    }
+
+    /**
+     * Parses the comma-separated {@code critical-subject-members} SPI value.
+     * {@code null} (unset) returns {@link #DEFAULT_CRITICAL_SUBJECT_MEMBERS};
+     * an explicit empty value returns an empty set, which signals
+     * {@link org.keycloak.ssf.transmitter.metadata.TransmitterMetadataService}
+     * to omit the metadata field entirely.
+     */
+    protected static Set<String> parseCriticalSubjectMembers(String raw) {
+        if (raw == null) {
+            return DEFAULT_CRITICAL_SUBJECT_MEMBERS;
+        }
+        Set<String> members = new LinkedHashSet<>();
+        for (String token : raw.split(",")) {
+            String trimmed = token.trim();
+            if (!trimmed.isEmpty()) {
+                members.add(trimmed);
+            }
+        }
+        return members;
     }
 
     /**
@@ -188,7 +233,8 @@ public class SsfTransmitterConfig {
                 DEFAULT_USER_SUBJECT_FORMAT,
                 DEFAULT_DEFAULT_SUBJECTS,
                 DEFAULT_SUBJECT_MANAGEMENT_ENABLED,
-                DEFAULT_SSE_CAEP_ENABLED);
+                DEFAULT_SSE_CAEP_ENABLED,
+                DEFAULT_CRITICAL_SUBJECT_MEMBERS);
     }
 
     /**
@@ -283,5 +329,16 @@ public class SsfTransmitterConfig {
      */
     public boolean isSseCaepEnabled() {
         return sseCaepEnabled;
+    }
+
+    /**
+     * Names the complex-subject member keys a receiver MUST understand to
+     * interpret SETs from this transmitter. Echoed back as
+     * {@code critical_subject_members} on the SSF metadata document so a
+     * receiver can fail-fast on stream-create if it can't process the
+     * required keys. Empty set ⇒ omit the field entirely.
+     */
+    public Set<String> getCriticalSubjectMembers() {
+        return criticalSubjectMembers;
     }
 }
