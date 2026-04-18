@@ -139,7 +139,8 @@ public class SsfStreamManagementResource {
                 return getStreamById(streamId);
             }
 
-            return getStreams();
+            return Response.ok(getStreams())
+                    .build();
         } catch (Exception e) {
             log.errorf(e, "Error getting stream with streamId=%s", streamId);
             return Response.serverError()
@@ -148,9 +149,8 @@ public class SsfStreamManagementResource {
         }
     }
 
-    protected Response getStreams() {
-        List<StreamConfig> streams = streamService.getStreamsByClient(session.getContext().getClient());
-        return Response.ok(streams).build();
+    protected List<StreamConfig> getStreams() {
+        return streamService.getStreamsByClient(session.getContext().getClient());
     }
 
     protected Response getStreamById(String streamId) {

@@ -2,8 +2,10 @@ package org.keycloak.ssf.services;
 
 import jakarta.ws.rs.Path;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.ssf.Ssf;
+import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.resources.SsfTransmitterResource;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.utils.KeycloakSessionUtil;
@@ -28,7 +30,9 @@ public class SsfRealmResourceProvider implements RealmResourceProvider {
     @Path(Ssf.SSF_TRANSMITTER_PATH)
     public SsfTransmitterResource transmitter() {
         var authResult = SsfAuthUtil.authenticate();
-        return new SsfTransmitterResource(KeycloakSessionUtil.getKeycloakSession(), authResult);
+        KeycloakSession session = KeycloakSessionUtil.getKeycloakSession();
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
+        return new SsfTransmitterResource(session, authResult, transmitter);
     }
 
     @Override

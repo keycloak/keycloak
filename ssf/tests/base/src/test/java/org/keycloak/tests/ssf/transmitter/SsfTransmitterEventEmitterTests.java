@@ -609,9 +609,8 @@ public class SsfTransmitterEventEmitterTests {
     }
 
     protected void subscribeTestUser() throws IOException {
-        String receiverUuid = findClientByClientId(RECEIVER).getId();
         String url = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
-                + "/ssf/clients/" + receiverUuid + "/subjects/add";
+                + "/ssf/clients/" + RECEIVER + "/subjects/add";
         try (SimpleHttpResponse ignored = http.doPost(url)
                 .auth(adminClient.tokenManager().getAccessTokenString())
                 .json(Map.of("type", "user-email", "value", TEST_EMAIL))
@@ -679,9 +678,8 @@ public class SsfTransmitterEventEmitterTests {
 
     protected void bestEffortDeleteStream() {
         try {
-            String receiverUuid = findClientByClientId(RECEIVER).getId();
             String url = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
-                    + "/ssf/clients/" + receiverUuid + "/stream";
+                    + "/ssf/clients/" + RECEIVER + "/stream";
             http.doDelete(url).auth(adminClient.tokenManager().getAccessTokenString()).asResponse().close();
         } catch (Exception ignored) {
         }
@@ -689,9 +687,8 @@ public class SsfTransmitterEventEmitterTests {
 
     protected void bestEffortRemoveNotify() {
         try {
-            String receiverUuid = findClientByClientId(RECEIVER).getId();
             String url = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
-                    + "/ssf/clients/" + receiverUuid + "/subjects/remove";
+                    + "/ssf/clients/" + RECEIVER + "/subjects/remove";
             http.doPost(url)
                     .auth(adminClient.tokenManager().getAccessTokenString())
                     .json(Map.of("type", "user-email", "value", TEST_EMAIL))

@@ -716,9 +716,8 @@ public class SsfTransmitterStreamManagementTests {
             Assertions.assertEquals(201, response.getStatus());
         }
 
-        String rwClientUuid = findClientByClientId(RECEIVER_RW).getId();
         String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
-                + "/ssf/clients/" + rwClientUuid + "/stream";
+                + "/ssf/clients/" + RECEIVER_RW + "/stream";
 
         // Admin GET should return the stream before delete.
         try (SimpleHttpResponse response = http.doGet(adminStreamUrl)
@@ -864,7 +863,7 @@ public class SsfTransmitterStreamManagementTests {
             return;
         }
         String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
-                + "/ssf/clients/" + client.getId() + "/stream";
+                + "/ssf/clients/" + client.getClientId() + "/stream";
         try (SimpleHttpResponse response = http.doDelete(adminStreamUrl)
                 .auth(adminClient.tokenManager().getAccessTokenString())
                 .asResponse()) {
@@ -884,7 +883,7 @@ public class SsfTransmitterStreamManagementTests {
         ClientRepresentation client = findClientByClientId(clientId);
         Assertions.assertNotNull(client, () -> "expected client '" + clientId + "' to exist");
         String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
-                + "/ssf/clients/" + client.getId() + "/stream";
+                + "/ssf/clients/" + client.getClientId() + "/stream";
         try (SimpleHttpResponse response = http.doGet(adminStreamUrl)
                 .auth(adminClient.tokenManager().getAccessTokenString())
                 .acceptJson()

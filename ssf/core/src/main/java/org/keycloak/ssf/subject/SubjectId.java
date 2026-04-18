@@ -11,6 +11,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * A Subject Identifier is structured information that describes a subject related to a security event, using named
  * formats to define its encoding as JSON objects within Security Event Tokens.
  *
+ * <p>This class is deliberately NOT annotated with a class-level
+ * {@code @JsonDeserialize}: doing so would propagate to every concrete
+ * subclass via Jackson's annotation inheritance and {@link SubjectIdJsonDeserializer}
+ * itself dispatches to a concrete subclass through {@code treeToValue},
+ * which would loop. Call sites that need to deserialize the abstract
+ * {@code SubjectId} type either use a field-level
+ * {@code @JsonDeserialize(using = SubjectIdJsonDeserializer.class)}
+ * (e.g. {@code SsfEmitEventRequest.sub_id}) or invoke the deserializer
+ * via {@code SubjectIds.fromTree(...)}.
+ *
  * See: https://datatracker.ietf.org/doc/html/rfc9493
  */
 public abstract class SubjectId {

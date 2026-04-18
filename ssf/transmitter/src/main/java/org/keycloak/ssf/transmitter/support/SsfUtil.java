@@ -1,6 +1,7 @@
 package org.keycloak.ssf.transmitter.support;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -8,7 +9,10 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 
 public class SsfUtil {
@@ -86,5 +90,9 @@ public class SsfUtil {
             log.warnf("Invalid interval '%s' — falling back to default %dms", value, defaultMillis);
             return defaultMillis;
         }
+    }
+
+    public static Map<String, Object> treeToMap(JsonNode node) {
+        return JsonSerialization.mapper.convertValue(node, new TypeReference<Map<String, Object>>() {});
     }
 }

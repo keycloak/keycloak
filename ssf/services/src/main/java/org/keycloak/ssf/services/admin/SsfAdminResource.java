@@ -1,6 +1,7 @@
 package org.keycloak.ssf.services.admin;
 
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import jakarta.ws.rs.Consumes;
@@ -15,6 +16,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -22,6 +24,11 @@ import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.fgap.AdminPermissionEvaluator;
 import org.keycloak.ssf.SsfException;
+import org.keycloak.ssf.subject.ComplexSubjectId;
+import org.keycloak.ssf.subject.SubjectId;
+import org.keycloak.ssf.subject.SubjectIds;
+import org.keycloak.ssf.subject.SubjectResolution;
+import org.keycloak.ssf.subject.SubjectResolver;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.admin.SsfAdminSubjectRequest;
@@ -30,18 +37,27 @@ import org.keycloak.ssf.transmitter.admin.SsfClientStreamRepresentation;
 import org.keycloak.ssf.transmitter.admin.SsfConfigRepresentation;
 import org.keycloak.ssf.transmitter.admin.SsfEmitEventRequest;
 import org.keycloak.ssf.transmitter.admin.SsfEmitEventResponse;
+import org.keycloak.ssf.transmitter.admin.SsfPendingEventRepresentation;
+import org.keycloak.ssf.transmitter.delivery.SseCaepEventConverter;
 import org.keycloak.ssf.transmitter.emit.EmitEventResult;
+import org.keycloak.ssf.transmitter.emit.EmitEventStatus;
+import org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity;
+import org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore;
 import org.keycloak.ssf.transmitter.stream.DuplicateStreamConfigException;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.StreamConfigInputRepresentation;
 import org.keycloak.ssf.transmitter.stream.StreamVerificationRequest;
+import org.keycloak.ssf.transmitter.stream.storage.SsfStreamStore;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.subject.AdminSubjectResult;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementResult;
 import org.keycloak.ssf.transmitter.subject.SubjectManagementService;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
 import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
+import org.keycloak.util.JsonSerialization;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -72,12 +88,24 @@ public class SsfAdminResource {
 
     protected final SsfTransmitterProvider transmitter;
 
-    public SsfAdminResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent, SsfTransmitterProvider transmitter) {
+    protected final SubjectManagementService subjectManagementService;
+
+    protected final SsfStreamStore streamStore;
+
+    public SsfAdminResource(KeycloakSession session, 
+                            RealmModel realm, 
+                            AdminPermissionEvaluator auth, 
+                            AdminEventBuilder adminEvent, 
+                            SsfTransmitterProvider transmitter, 
+                            SubjectManagementService subjectManagementService, 
+                            SsfStreamStore streamStore) {
         this.session = session;
         this.realm = realm;
         this.auth = auth;
         this.adminEvent = adminEvent;
         this.transmitter = transmitter;
+        this.subjectManagementService = subjectManagementService;
+        this.streamStore = streamStore;
     }
 
     /**
@@ -131,10 +159,10 @@ public class SsfAdminResource {
      * (i.e. the receiver has not created a stream via the SSF Transmitter API).
      *
      * The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/stream}
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}
      */
     @GET
-    @Path("clients/{clientIdentifier}/stream")
+    @Path("clients/{clientId}/stream")
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
     @Operation(
@@ -146,17 +174,17 @@ public class SsfAdminResource {
             @APIResponse(responseCode = "404", description = "Client not found or no SSF stream registered")
     })
     public SsfClientStreamRepresentation getClientStream(
-            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
-            @PathParam("clientIdentifier") String clientIdentifier) {
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId) {
 
         auth.realm().requireViewRealm();
 
-        ClientModel client = realm.getClientById(clientIdentifier);
+        ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
 
-        StreamConfig streamConfig = transmitter.streamStore().getStreamForClient(client);
+        StreamConfig streamConfig = streamStore.getStreamForClient(client);
         if (streamConfig == null) {
             throw new NotFoundException("No SSF stream registered for client");
         }
@@ -181,10 +209,10 @@ public class SsfAdminResource {
      * client already has a registered stream.
      *
      * <p>The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/stream}.
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}.
      */
     @POST
-    @Path("clients/{clientIdentifier}/stream")
+    @Path("clients/{clientId}/stream")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
@@ -199,11 +227,11 @@ public class SsfAdminResource {
             @APIResponse(responseCode = "409", description = "Client already has a registered stream")
     })
     public Response createClientStream(
-            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
-            @PathParam("clientIdentifier") String clientIdentifier,
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId,
             StreamConfigInputRepresentation input) {
 
-        ClientModel client = realm.getClientById(clientIdentifier);
+        ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -216,12 +244,12 @@ public class SsfAdminResource {
                     .entity(toClientStreamRepresentation(created, client))
                     .build();
         } catch (DuplicateStreamConfigException dsce) {
-            log.debugf(dsce, "Admin stream create rejected for client %s: duplicate stream", clientIdentifier);
+            log.debugf(dsce, "Admin stream create rejected for client %s: duplicate stream", clientId);
             throw new WebApplicationException(Response.status(Response.Status.CONFLICT)
                     .entity(new SsfErrorRepresentation("stream_error", dsce.getMessage()))
                     .build());
         } catch (SsfException e) {
-            log.debugf(e, "Admin stream create rejected for client %s: %s", clientIdentifier, e.getMessage());
+            log.debugf(e, "Admin stream create rejected for client %s: %s", clientId, e.getMessage());
             throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("stream_error", e.getMessage()))
                     .build());
@@ -276,10 +304,10 @@ public class SsfAdminResource {
      * off, not when the receiver has acknowledged it.
      *
      * <p>The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/stream/verify}.
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream/verify}.
      */
     @POST
-    @Path("clients/{clientIdentifier}/stream/verify")
+    @Path("clients/{clientId}/stream/verify")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
     @Operation(
             summary = "Verify SSF stream for client",
@@ -290,17 +318,17 @@ public class SsfAdminResource {
             @APIResponse(responseCode = "404", description = "Client not found or no SSF stream registered")
     })
     public Response verifyClientStream(
-            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
-            @PathParam("clientIdentifier") String clientIdentifier) {
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId) {
 
-        ClientModel client = realm.getClientById(clientIdentifier);
+        ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
 
         auth.clients().requireManage(client);
 
-        StreamConfig streamConfig = transmitter.streamStore().getStreamForClient(client);
+        StreamConfig streamConfig = streamStore.getStreamForClient(client);
         if (streamConfig == null) {
             throw new NotFoundException("No SSF stream registered for client");
         }
@@ -331,10 +359,10 @@ public class SsfAdminResource {
      * success, 404 if the client does not exist or has no registered stream.
      *
      * The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/stream}
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/stream}
      */
     @DELETE
-    @Path("clients/{clientIdentifier}/stream")
+    @Path("clients/{clientId}/stream")
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
     @Operation(
             summary = "Delete SSF stream for client",
@@ -345,10 +373,10 @@ public class SsfAdminResource {
             @APIResponse(responseCode = "404", description = "Client not found or no SSF stream registered")
     })
     public Response deleteClientStream(
-            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
-            @PathParam("clientIdentifier") String clientIdentifier) {
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId) {
 
-        ClientModel client = realm.getClientById(clientIdentifier);
+        ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -360,7 +388,7 @@ public class SsfAdminResource {
         // cascade-purge of pending outbox rows for this client. Going
         // straight to streamStore.deleteStreamForClient would bypass
         // the cascade and leave POLL rows orphaned.
-        StreamConfig existingStream = transmitter.streamStore().getStreamForClient(client);
+        StreamConfig existingStream = streamStore.getStreamForClient(client);
         if (existingStream == null) {
             throw new NotFoundException("No SSF stream registered for client");
         }
@@ -383,10 +411,10 @@ public class SsfAdminResource {
      * {@code ssf.notify.<clientId>} attribute on the resolved entity.
      *
      * <p>The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/subjects/add}.
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/subjects/add}.
      */
     @POST
-    @Path("clients/{clientIdentifier}/subjects/add")
+    @Path("clients/{clientId}/subjects/add")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
@@ -400,11 +428,11 @@ public class SsfAdminResource {
             @APIResponse(responseCode = "404", description = "Client or subject not found")
     })
     public Response addSubject(
-            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
-            @PathParam("clientIdentifier") String clientIdentifier,
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId,
             SsfAdminSubjectRequest request) {
 
-        ClientModel client = realm.getClientById(clientIdentifier);
+        ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -417,8 +445,8 @@ public class SsfAdminResource {
         }
 
 
-        SubjectManagementService svc = transmitter.subjectManagementService();
-        AdminSubjectResult result = svc.addSubjectByAdmin(clientIdentifier, request.getType(), request.getValue());
+        // svc takes the internal UUID, not the OAuth clientId.
+        AdminSubjectResult result = subjectManagementService.addSubjectByAdmin(client.getId(), request.getType(), request.getValue());
 
         if (result.result() == SubjectManagementResult.OK) {
             return Response.ok(new SsfAdminSubjectResponse("added", result.entityType(), result.entityId())).build();
@@ -437,10 +465,10 @@ public class SsfAdminResource {
      * attribute from the resolved entity.
      *
      * <p>The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/subjects/remove}.
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/subjects/remove}.
      */
     @POST
-    @Path("clients/{clientIdentifier}/subjects/remove")
+    @Path("clients/{clientId}/subjects/remove")
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
     @Operation(
@@ -453,11 +481,11 @@ public class SsfAdminResource {
             @APIResponse(responseCode = "404", description = "Client or subject not found")
     })
     public Response removeSubject(
-            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
-            @PathParam("clientIdentifier") String clientIdentifier,
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId,
             SsfAdminSubjectRequest request) {
 
-        ClientModel client = realm.getClientById(clientIdentifier);
+        ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -469,8 +497,7 @@ public class SsfAdminResource {
                     .build();
         }
 
-        SubjectManagementService svc = transmitter.subjectManagementService();
-        AdminSubjectResult result = svc.removeSubjectByAdmin(clientIdentifier, request.getType(), request.getValue());
+        AdminSubjectResult result = subjectManagementService.removeSubjectByAdmin(client.getId(), request.getType(), request.getValue());
 
         if (result.result() == SubjectManagementResult.OK) {
             return Response.noContent().build();
@@ -489,10 +516,10 @@ public class SsfAdminResource {
      * will not receive events even in {@code default_subjects=ALL} mode.
      *
      * <p>The endpoint is available via
-     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientIdentifier}/subjects/ignore}.
+     * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/subjects/ignore}.
      */
     @POST
-    @Path("clients/{clientIdentifier}/subjects/ignore")
+    @Path("clients/{clientId}/subjects/ignore")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
@@ -506,11 +533,11 @@ public class SsfAdminResource {
             @APIResponse(responseCode = "404", description = "Client or subject not found")
     })
     public Response ignoreSubject(
-            @Parameter(description = "Internal client UUID (not the OAuth client_id)")
-            @PathParam("clientIdentifier") String clientIdentifier,
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId,
             SsfAdminSubjectRequest request) {
 
-        ClientModel client = realm.getClientById(clientIdentifier);
+        ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             throw new NotFoundException("Client not found");
         }
@@ -522,8 +549,7 @@ public class SsfAdminResource {
                     .build();
         }
 
-        SubjectManagementService svc = transmitter.subjectManagementService();
-        AdminSubjectResult result = svc.ignoreSubjectByAdmin(clientIdentifier, request.getType(), request.getValue());
+        AdminSubjectResult result = subjectManagementService.ignoreSubjectByAdmin(client.getId(), request.getType(), request.getValue());
 
         if (result.result() == SubjectManagementResult.OK) {
             return Response.ok(new SsfAdminSubjectResponse("ignored", result.entityType(), result.entityId())).build();
@@ -568,17 +594,14 @@ public class SsfAdminResource {
      * is reported in the response so emitter integrations can debug
      * their wiring without enabling verbose logging.
      *
+     * <p>Console-only convenience: callers with {@code manage-clients}
+     * on the receiver bypass the {@code allowEmitEvents} opt-in and
+     * the role/service-account checks so the admin UI's "Pending
+     * Events" tab can drive this endpoint without forcing operators
+     * to configure an emit-events role just to use the console.
+     *
      * <p>The endpoint is available via
      * {@code $KC_ADMIN_URL/admin/realms/{realm}/ssf/clients/{clientId}/events/emit}.
-     *
-     * <p>Note on path naming: unlike the other {@code /ssf/clients/...}
-     * admin endpoints which use {@code {clientIdentifier}} (the internal
-     * client UUID) because they're called from the admin console where
-     * the UUID is already in the browser URL, this endpoint uses the
-     * OAuth {@code clientId}. Emitter integrations (e.g. an IAM
-     * management service) configure a single well-known receiver
-     * {@code clientId} and should not need to resolve a Keycloak UUID
-     * first.
      */
     @POST
     @Path("clients/{clientId}/events/emit")
@@ -605,76 +628,350 @@ public class SsfAdminResource {
             throw new NotFoundException("Client not found");
         }
 
-        // 1. Receiver must have explicitly opted in.
-        boolean allowEmit = Boolean.parseBoolean(receiverClient.getAttribute(ClientStreamStore.SSF_ALLOW_EMIT_EVENTS_KEY));
-        if (!allowEmit) {
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(new SsfErrorRepresentation("emit_not_allowed",
-                            "Receiver has not enabled synthetic event emission"))
-                    .build();
-        }
+        // 0. Admin-console fast path: a caller with manage-clients on
+        //    the receiver bypasses the receiver's allowEmitEvents
+        //    opt-in, the configured emit-events role check, and the
+        //    service-account requirement. The admin already has full
+        //    power over the receiver, so insisting they also configure
+        //    a dedicated emitter role just to use the admin UI's
+        //    "Pending Events" tab would be friction without any added
+        //    safety. canManage is non-throwing so the trusted-emitter
+        //    path below still runs for unprivileged service accounts.
+        boolean adminCaller = auth.clients().canManage(receiverClient);
 
-        // 2. Receiver must have a non-empty role configured. Empty role
-        //    means misconfiguration — refuse rather than silently
-        //    accepting unauthenticated emission.
-        String configuredRole = receiverClient.getAttribute(ClientStreamStore.SSF_EMIT_EVENTS_ROLE_KEY);
-        if (configuredRole == null || configuredRole.isBlank()) {
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(new SsfErrorRepresentation("emit_role_not_configured",
-                            "Receiver has no emit-events role configured"))
-                    .build();
-        }
+        if (!adminCaller) {
+            // 1. Receiver must have explicitly opted in.
+            boolean allowEmit = Boolean.parseBoolean(receiverClient.getAttribute(ClientStreamStore.SSF_ALLOW_EMIT_EVENTS_KEY));
+            if (!allowEmit) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(new SsfErrorRepresentation("emit_not_allowed",
+                                "Receiver has not enabled synthetic event emission"))
+                        .build();
+            }
 
-        // 3. Caller must be a service-account token. Strictly M2M —
-        //    user-delegated tokens (admin-console sessions, password
-        //    grant) shouldn't be able to forge events on behalf of
-        //    other users.
-        var adminAuth = auth.adminAuth();
-        if (adminAuth == null || adminAuth.getUser() == null
-                || adminAuth.getUser().getServiceAccountClientLink() == null) {
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(new SsfErrorRepresentation("not_service_account",
-                            "Synthetic event emission requires a service account token"))
-                    .build();
-        }
+            // 2. Receiver must have a non-empty role configured. Empty role
+            //    means misconfiguration — refuse rather than silently
+            //    accepting unauthenticated emission.
+            String configuredRole = receiverClient.getAttribute(ClientStreamStore.SSF_EMIT_EVENTS_ROLE_KEY);
+            if (configuredRole == null || configuredRole.isBlank()) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(new SsfErrorRepresentation("emit_role_not_configured",
+                                "Receiver has no emit-events role configured"))
+                        .build();
+            }
 
-        // 4. Caller must hold the configured role — value follows the
-        //    same format the admin UI role picker produces: plain
-        //    "roleName" checks as a realm role, "clientId.roleName"
-        //    checks as a client role on the specified client (usually
-        //    the receiver itself, for per-receiver scoping).
-        if (!SsfAuthUtil.hasRole(adminAuth.getToken(), configuredRole)) {
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(new SsfErrorRepresentation("emit_role_missing",
-                            "Caller does not hold the configured emit-events role"))
-                    .build();
+            // 3. Caller must be a service-account token. Strictly M2M —
+            //    user-delegated tokens (admin-console sessions, password
+            //    grant) shouldn't be able to forge events on behalf of
+            //    other users.
+            var adminAuth = auth.adminAuth();
+            if (adminAuth == null || adminAuth.getUser() == null
+                    || adminAuth.getUser().getServiceAccountClientLink() == null) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(new SsfErrorRepresentation("not_service_account",
+                                "Synthetic event emission requires a service account token"))
+                        .build();
+            }
+
+            // 4. Caller must hold the configured role — value follows the
+            //    same format the admin UI role picker produces: plain
+            //    "roleName" checks as a realm role, "clientId.roleName"
+            //    checks as a client role on the specified client (usually
+            //    the receiver itself, for per-receiver scoping).
+            if (!SsfAuthUtil.hasRole(adminAuth.getToken(), configuredRole)) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(new SsfErrorRepresentation("emit_role_missing",
+                                "Caller does not hold the configured emit-events role"))
+                        .build();
+            }
         }
 
         // 5. Validate basic payload shape early — emitter service does
         //    a richer check too, but failing fast here gives clearer
-        //    errors for missing top-level fields.
-        if (request == null || request.getEventType() == null
-                || request.getSubjectId() == null) {
+        //    errors for missing top-level fields. Admin caller may use
+        //    the subjectType/subjectValue shorthand instead of sub_id;
+        //    trusted-emitter callers must always supply sub_id.
+        if (request == null || request.getEventType() == null) {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(new SsfErrorRepresentation("invalid_request",
-                            "eventType and sub_id are required"))
+                            "eventType is required"))
                     .build();
+        }
+        boolean hasShorthand = request.getSubjectType() != null
+                && request.getSubjectValue() != null
+                && !request.getSubjectValue().isBlank();
+        if (request.getSubjectId() == null && (!adminCaller || !hasShorthand)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("invalid_request",
+                            adminCaller
+                                    ? "Either sub_id or (subjectType, subjectValue) is required"
+                                    : "sub_id is required"))
+                    .build();
+        }
+
+        // 6. Admin shorthand: delegate (subjectType, subjectValue)
+        //    resolution to SubjectManagementService, which reuses the
+        //    same resolver the /subjects endpoints use and additionally
+        //    routes user subjects through the mapper (honoring the
+        //    receiver's configured ssf.userSubjectFormat) and org
+        //    subjects into a tenant-only complex subject. sub_id wins
+        //    if both shapes are present so trusted-emitter flows that
+        //    genuinely need a verbatim subject are unaffected.
+        SubjectId subjectId = request.getSubjectId();
+        if (subjectId == null && adminCaller) {
+            StreamConfig stream = streamStore.getStreamForClient(receiverClient);
+            if (stream == null) {
+                throw new NotFoundException("No SSF stream registered for client");
+            }
+            try {
+                subjectId = subjectManagementService.resolveSubjectForEmit(stream, request.getSubjectType(), request.getSubjectValue());
+            } catch (SsfException e) {
+                log.debugf(e, "Admin emit subject resolution failed");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new SsfErrorRepresentation("invalid_request", e.getMessage()))
+                        .build();
+            }
         }
 
         EmitEventResult emitResult = transmitter.eventEmitterService().emit(
                 receiverClient,
                 request.getEventType(),
-                request.getSubjectId(),
+                subjectId,
                 request.getEvent());
 
-        log.debugf("SSF synthetic emit. receiverClientId=%s callerClientId=%s eventType=%s status=%s jti=%s",
+        log.debugf("SSF synthetic emit. receiverClientId=%s adminCaller=%s eventType=%s status=%s jti=%s",
                 receiverClient.getClientId(),
-                adminAuth.getClient() != null ? adminAuth.getClient().getClientId() : null,
+                adminCaller,
                 request.getEventType(),
                 emitResult.status(),
                 emitResult.jti());
 
-        return Response.ok(new SsfEmitEventResponse(emitResult.status().wireValue(), emitResult.jti())).build();
+        // INVALID_REQUEST from the emitter service typically means the
+        // event payload didn't deserialize against the registered class
+        // for the eventType. Surface as 400 with the registry's error
+        // message so the caller can fix the payload.
+        if (emitResult.status() == EmitEventStatus.INVALID_REQUEST) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new SsfErrorRepresentation("invalid_request",
+                            emitResult.message() != null
+                                    ? emitResult.message()
+                                    : "Event payload could not be deserialized for the given eventType"))
+                    .build();
+        }
+
+        return Response.ok(new SsfEmitEventResponse(
+                emitResult.status().wireValue(),
+                emitResult.jti(),
+                emitResult.message())).build();
+    }
+
+    /**
+     * Looks up a single outbox row by {@code (receiverClient, jti)} so
+     * an admin can inspect the delivery state of a specific SET — used
+     * by the admin UI's "Pending Events" tab. Returns the
+     * operator-visible delivery metadata
+     * ({@link SsfPendingEventRepresentation}); the signed encoded SET
+     * payload itself is intentionally not exposed because the operator
+     * cares about delivery state, not wire bytes.
+     *
+     * <p>Scoped on the receiver client so an admin cannot probe rows
+     * that belong to another receiver via this endpoint — to inspect
+     * a different receiver's row, navigate to that receiver in the
+     * admin UI first.
+     */
+    @GET
+    @Path("clients/{clientId}/pending-events/{jti}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SSF)
+    @Operation(
+            summary = "Lookup pending SSF event by jti",
+            description = "Returns the outbox-row metadata (status, delivery method, attempts, timestamps, last error) for the SET identified by jti — scoped to the given receiver client."
+    )
+    @APIResponses(value = {
+            @APIResponse(responseCode = "200", description = "OK", content = @Content(schema = @Schema(implementation = SsfPendingEventRepresentation.class))),
+            @APIResponse(responseCode = "404", description = "Client or pending event not found")
+    })
+    public SsfPendingEventRepresentation getPendingEvent(
+            @Parameter(description = "OAuth client_id of the receiver")
+            @PathParam("clientId") String clientId,
+            @Parameter(description = "JWT id of the SET")
+            @PathParam("jti") String jti) {
+
+        ClientModel receiverClient = realm.getClientByClientId(clientId);
+        if (receiverClient == null) {
+            throw new NotFoundException("Client not found");
+        }
+
+        auth.clients().requireView(receiverClient);
+
+        
+        SsfPendingEventStore store = new SsfPendingEventStore(session);
+        SsfPendingEventEntity entity = store.findByClientAndJti(receiverClient.getId(), jti);
+        if (entity == null) {
+            throw new NotFoundException("Pending event not found");
+        }
+        return toPendingEventRepresentation(entity);
+    }
+
+    protected SsfPendingEventRepresentation toPendingEventRepresentation(SsfPendingEventEntity entity) {
+        SsfPendingEventRepresentation rep = new SsfPendingEventRepresentation();
+        rep.setJti(entity.getJti());
+        rep.setEventType(entity.getEventType());
+        rep.setDeliveryMethod(entity.getDeliveryMethod());
+        if (entity.getStatus() != null) {
+            rep.setStatus(entity.getStatus().name());
+        }
+        rep.setAttempts(entity.getAttempts());
+        if (entity.getCreatedAt() != null) {
+            rep.setCreatedAt(entity.getCreatedAt().getEpochSecond());
+        }
+        if (entity.getNextAttemptAt() != null) {
+            rep.setNextAttemptAt(entity.getNextAttemptAt().getEpochSecond());
+        }
+        if (entity.getDeliveredAt() != null) {
+            rep.setDeliveredAt(entity.getDeliveredAt().getEpochSecond());
+        }
+        rep.setLastError(entity.getLastError());
+        rep.setStreamId(entity.getStreamId());
+        rep.setDecodedSet(decodeSet(entity.getEncodedSet()));
+        // Resolve the user from the same raw JWS payload. Keeps the
+        // expensive decode to a single pass even though the admin
+        // endpoint exposes both the full SET and the click-through
+        // userId separately.
+        Map<String, Object> subjectMap = extractSubjectIdFromEncodedSet(entity.getEncodedSet());
+        rep.setUserId(resolveUserIdFromSubject(subjectMap));
+        return rep;
+    }
+
+    /**
+     * Decodes the encoded SET's JWS payload (no signature check — we
+     * signed it ourselves) and returns the full claim set as a plain
+     * JSON map so the admin UI can render the Security Event Token
+     * verbatim. Returns {@code null} on parse failure.
+     */
+    protected Map<String, Object> decodeSet(String encodedSet) {
+        if (encodedSet == null || encodedSet.isBlank()) {
+            return null;
+        }
+        try {
+            JWSInput jws = new JWSInput(encodedSet);
+            JsonNode payload = JsonSerialization.readValue(jws.getContent(), JsonNode.class);
+            if (!payload.isObject()) {
+                return null;
+            }
+            return SsfUtil.treeToMap(payload);
+        } catch (Exception e) {
+            log.debugf(e, "Failed to decode encoded SET");
+            return null;
+        }
+    }
+
+    /**
+     * Best-effort resolution of the {@code sub_id} to a Keycloak user
+     * UUID so the Pending Events lookup can offer a click-through to
+     * the user in the admin UI. Rebuilds a typed {@link SubjectId}
+     * from the raw map (manually reading the {@code format}
+     * discriminator to pick the concrete class — avoids the
+     * abstract-class deserializer-dispatch recursion that's the whole
+     * reason {@code subjectId} is kept untyped on the wire) and hands
+     * it to {@link SubjectResolver}. Returns {@code null} for
+     * org-only subjects, subjects whose format isn't user-identifying,
+     * or unresolvable user references — the admin UI just omits the
+     * click-through in those cases.
+     */
+    protected String resolveUserIdFromSubject(Map<String, Object> subjectMap) {
+        if (subjectMap == null || subjectMap.isEmpty()) {
+            return null;
+        }
+        SubjectId typed = toTypedSubjectId(subjectMap);
+        if (typed == null) {
+            return null;
+        }
+        SubjectResolution resolution = SubjectResolver.resolve(session, realm, typed);
+        if (resolution instanceof SubjectResolution.User userRes) {
+            return userRes.user().getId();
+        }
+        return null;
+    }
+
+    /**
+     * Materialises a typed {@link SubjectId} from the raw wire map.
+     * When the map carries a {@code format} discriminator (SSF 1.0
+     * shape), looks up the concrete class through
+     * {@link SubjectIds#getSubjectIdType} and deserialises into it.
+     * When there's no {@code format} key (legacy SSE CAEP, where the
+     * facets are sibling keys under {@code subject} without an outer
+     * marker), falls back to {@link ComplexSubjectId}.
+     */
+    protected SubjectId toTypedSubjectId(Map<String, Object> subjectMap) {
+        Object formatObj = subjectMap.get("format");
+        try {
+            if (formatObj instanceof String format && !format.isBlank()) {
+                Class<? extends SubjectId> cls = SubjectIds.getSubjectIdType(format);
+                if (cls == null) {
+                    return null;
+                }
+                return JsonSerialization.mapper.convertValue(subjectMap, cls);
+            }
+            return JsonSerialization.mapper.convertValue(subjectMap, ComplexSubjectId.class);
+        } catch (Exception e) {
+            log.debugf(e, "Failed to rehydrate typed SubjectId from map");
+            return null;
+        }
+    }
+
+    /**
+     * Decodes the encoded SET's JWS payload (no signature check — we
+     * signed it ourselves and the bytes are already in our DB) and
+     * returns the subject as a generic JSON map for the admin UI to
+     * render verbatim. Two wire shapes are supported:
+     *
+     * <ul>
+     *     <li><b>SSF 1.0</b> — top-level {@code sub_id} claim. Returned
+     *         as-is with its {@code format} discriminator.</li>
+     *     <li><b>Legacy SSE CAEP</b> — no top-level {@code sub_id}; the
+     *         subject lives under {@code events.<type>.subject} with
+     *         complex-subject facets (user / session / tenant / …) as
+     *         sibling keys and no outer {@code format}. Returned as-is
+     *         from there.</li>
+     * </ul>
+     *
+     * <p>Returns {@code null} if the row is missing the encoded SET,
+     * the JWS can't be parsed, or neither subject shape is present —
+     * the admin UI renders that as "no subject block" rather than
+     * failing the lookup. The map is intentionally untyped to skip
+     * the {@link org.keycloak.ssf.subject.SubjectId} class hierarchy
+     * (whose abstract-class deserializer dispatches via
+     * {@code treeToValue} and would loop if invoked recursively here).
+     */
+    protected Map<String, Object> extractSubjectIdFromEncodedSet(String encodedSet) {
+        if (encodedSet == null || encodedSet.isBlank()) {
+            return null;
+        }
+        try {
+            JWSInput jws = new JWSInput(encodedSet);
+            JsonNode payload = JsonSerialization.readValue(jws.getContent(), JsonNode.class);
+
+            // SSF 1.0: top-level sub_id.
+            JsonNode subId = payload.path("sub_id");
+            if (!subId.isMissingNode() && !subId.isNull() && subId.isObject()) {
+                return SsfUtil.treeToMap(subId);
+            }
+
+            // Legacy SSE CAEP: events.<firstEventTypeUri>.subject.
+            JsonNode events = payload.path("events");
+            if (events.isObject() && events.fieldNames().hasNext()) {
+                Map<String, Object> result = SseCaepEventConverter.extractSseSubjectIdMap(events);
+                if (result != null) {
+                    return result;
+                }
+            }
+
+            return null;
+        } catch (Exception e) {
+            log.debugf(e, "Failed to extract sub_id from encoded SET");
+            return null;
+        }
     }
 
     /**

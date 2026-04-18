@@ -15,8 +15,8 @@ import org.keycloak.events.EventType;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.SsfException;
@@ -25,8 +25,8 @@ import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
 import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
-import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.EmailSubjectId;
 import org.keycloak.ssf.subject.IssuerSubjectId;
@@ -384,6 +384,23 @@ public class SecurityEventTokenMapper {
             return;
         }
         complex.setTenant(buildTenantSubject(userId, stream));
+    }
+
+    /**
+     * Builds the user subject for the given receiver using the same
+     * code path as native event emission — honors the receiver's
+     * configured {@code ssf.userSubjectFormat} (iss_sub / email /
+     * complex.iss_sub+tenant / complex.email+tenant), with the same
+     * fail-loud behaviour for missing email or no organization.
+     *
+     * <p>Used by the admin "Pending Events" emit form so an operator
+     * can pick a user (by UUID) and let the transmitter format the
+     * sub_id per the receiver's negotiated subject shape, instead of
+     * the admin UI hardcoding {@code iss_sub} regardless of config.
+     */
+    public SubjectId buildSubjectForReceiver(StreamConfig stream, String userId) {
+        SsfSecurityEventToken stub = newSecurityEventToken(stream);
+        return composeUserSubject(stub, userId, stream);
     }
 
     /**

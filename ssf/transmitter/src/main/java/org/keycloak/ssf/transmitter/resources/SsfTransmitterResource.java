@@ -15,10 +15,10 @@ public class SsfTransmitterResource {
 
     private final AuthenticationManager.AuthResult authResult;
 
-    public SsfTransmitterResource(KeycloakSession session, AuthenticationManager.AuthResult authResult) {
+    public SsfTransmitterResource(KeycloakSession session, AuthenticationManager.AuthResult authResult, SsfTransmitterProvider transmitter) {
         this.session = session;
         this.authResult = authResult;
-        this.transmitter = session.getProvider(SsfTransmitterProvider.class);
+        this.transmitter = transmitter;
     }
 
     @Path("/streams")

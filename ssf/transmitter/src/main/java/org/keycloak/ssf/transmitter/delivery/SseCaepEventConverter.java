@@ -7,10 +7,24 @@ import org.keycloak.ssf.event.token.SseCaepSecurityEventToken;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.SubjectId;
+import org.keycloak.ssf.transmitter.support.SsfUtil;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class SseCaepEventConverter {
+
+    public static Map<String, Object> extractSseSubjectIdMap(JsonNode events) {
+        if (events.isObject() && events.fieldNames().hasNext()) {
+            String firstEventKey = events.fieldNames().next();
+            JsonNode subject = events.path(firstEventKey).path("subject");
+            if (subject.isObject()) {
+                return SsfUtil.treeToMap(subject);
+            }
+        }
+        return null;
+    }
+
 
     public static SseCaepSecurityEventToken convert(SsfSecurityEventToken ssfEventToken) {
 

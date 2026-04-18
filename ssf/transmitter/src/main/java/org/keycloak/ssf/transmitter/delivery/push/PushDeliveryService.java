@@ -75,7 +75,7 @@ public class PushDeliveryService {
     protected boolean deliverEvent(String endpointUrl, String authorizationHeader, SecurityEventToken eventToken, String encodedEventToken, StreamConfig stream) {
         try {
 
-            log.debugf("Delivering event %s to %s. EventToken=%s", eventToken.getJti(), endpointUrl, encodedEventToken);
+            log.debugf("Delivering event jti=%s to %s. EventToken=%s", eventToken.getJti(), endpointUrl, encodedEventToken);
 
             try (var response = createSimpleHttp(endpointUrl, authorizationHeader, stream)
                     .header(HttpHeaders.CONTENT_TYPE, Ssf.APPLICATION_SECEVENT_JWT_TYPE)
@@ -90,24 +90,24 @@ public class PushDeliveryService {
 
                 if (!success) {
                     String responseString = response.asString();
-                    log.warnf("Failed to deliver event %s to url %s. Got status=%s response='%s'",
+                    log.warnf("Failed to deliver event jti=%s to url %s. Got status=%s response='%s'",
                             eventToken.getJti(), endpointUrl, status, responseString);
                 } else if (status != Response.Status.OK.getStatusCode()
                         && status != Response.Status.ACCEPTED.getStatusCode()) {
                     // 2xx but not the canonical 200/202 — log at INFO so an
                     // operator sees the receiver's exact status without it
                     // being treated as a failure.
-                    log.debugf("Delivery of event %s to url %s accepted with non-canonical 2xx. Got status=%s. events=%s",
+                    log.debugf("Delivery of event jti=%s to url %s accepted with non-canonical 2xx. Got status=%s. events=%s",
                             eventToken.getJti(), endpointUrl, status, eventToken.getEvents());
                 } else {
-                    log.debugf("Delivery of event %s to url %s successful. Got status=%s. events=%s",
+                    log.debugf("Delivery of event jti=%s to url %s successful. Got status=%s. events=%s",
                             eventToken.getJti(), endpointUrl, status, eventToken.getEvents());
                 }
 
                 return success;
             }
         } catch (Exception e) {
-            log.errorf(e, "Error delivering event %s to url %s", eventToken.getJti(), endpointUrl);
+            log.errorf(e, "Error delivering event jti=%s to url %s", eventToken.getJti(), endpointUrl);
             return false;
         }
     }
