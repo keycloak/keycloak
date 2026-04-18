@@ -890,6 +890,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       "ssf.pushEndpointConnectTimeoutMillis",
       "ssf.pushEndpointSocketTimeoutMillis",
       "ssf.maxEventAgeSeconds",
+      "ssf.inactivityTimeoutSeconds",
     ]);
 
   const saveActionGroup = (testIdPrefix: string) => (
@@ -1117,6 +1118,32 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                     value={field.value!}
                     onChange={field.onChange}
                     units={["second", "minute", "hour", "day"]}
+                  />
+                )}
+              />
+            </FormGroup>
+            <FormGroup
+              label={t("ssfInactivityTimeout")}
+              fieldId="ssfInactivityTimeout"
+              labelIcon={
+                <HelpItem
+                  helpText={t("ssfInactivityTimeoutHelp")}
+                  fieldLabelId="ssfInactivityTimeout"
+                />
+              }
+            >
+              <Controller
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.inactivityTimeoutSeconds",
+                )}
+                defaultValue=""
+                control={control}
+                render={({ field }) => (
+                  <TimeSelector
+                    data-testid="ssfInactivityTimeout"
+                    value={field.value!}
+                    onChange={field.onChange}
+                    units={["minute", "hour", "day"]}
                   />
                 )}
               />

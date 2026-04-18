@@ -1,5 +1,7 @@
 package org.keycloak.ssf.transmitter.event;
 
+import java.util.Map;
+
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.jws.JWSBuilder;
@@ -7,6 +9,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.token.SecurityEventToken;
+import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 
 /**
  * Produces a signed, base64url-encoded JWS for a given SSF Security Event
@@ -33,6 +36,19 @@ public class SecurityEventTokenEncoder {
      *         instead of NPE'ing deeper in {@link JWSBuilder}.
      */
     public String encode(SecurityEventToken token, String signatureAlgorithm) {
+
+        // CAEP Interop Profile 1.0 §2.8.1 MUST: a SET carries exactly
+        // one event. Our generators always produce a single entry, but
+        // a defensive check here fails loud if a future refactor
+        // accidentally ships a multi-event SET rather than silently
+        // emitting a spec-violating token.
+        if (token instanceof SsfSecurityEventToken ssfToken) {
+            Map<String, Object> events = ssfToken.getEvents();
+            if (events == null || events.size() != 1) {
+                throw new SsfException("SSF SET must carry exactly one event (events map size="
+                        + (events == null ? 0 : events.size()) + ")");
+            }
+        }
 
         SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, signatureAlgorithm);
         if (signatureProvider == null) {

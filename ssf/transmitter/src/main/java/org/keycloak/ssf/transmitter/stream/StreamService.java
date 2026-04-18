@@ -908,33 +908,32 @@ public class StreamService {
                     streamId, newStatusCode);
         }
 
-        // Notify the receiver of the new status with a stream-updated
-        // SET — but only when the new status permits transmission.
-        // For paused/disabled the SSF spec says MUST NOT transmit
-        // events over the stream, and a stream-updated SET is itself
-        // an event; emitting one would violate the very status it
-        // announces. Receivers learn about a transition AWAY from
-        // enabled through GET /streams/status. Transitions back to
-        // enabled (paused/disabled → enabled) do emit, so the
-        // receiver gets a "you're online again" notification.
-        if (StreamStatusValue.enabled.getStatusCode().equals(newStatusCode)) {
-            try {
-                StreamConfig refreshed = streamStore.getStream(streamId);
-                if (refreshed != null) {
-                    SsfSecurityEventToken updatedEvent = transmitterProvider.securityEventTokenMapper()
-                            .generateStreamUpdatedEvent(refreshed, streamStatus);
-                    if (updatedEvent != null) {
-                        transmitterProvider.securityEventTokenDispatcher()
-                                .deliverEvent(updatedEvent, refreshed);
-                    }
+        // SSF §8.1.2: notify the receiver of the new status with a
+        // stream-updated SET on every transition. The spec carves out
+        // an explicit exception for the inactivity-timeout path
+        // ("If the Transmitter decides to pause or disable the stream,
+        // it MUST send a Stream Updated Event") which is incompatible
+        // with the paused/disabled MUST-NOT-transmit rule; we treat
+        // the SET as a transmitter-initiated signal that lives outside
+        // the normal dispatch gate. deliverEvent bypasses the
+        // dispatcher's status gate so the event goes out regardless of
+        // the new (or old) status.
+        try {
+            StreamConfig refreshed = streamStore.getStream(streamId);
+            if (refreshed != null) {
+                SsfSecurityEventToken updatedEvent = transmitterProvider.securityEventTokenMapper()
+                        .generateStreamUpdatedEvent(refreshed, streamStatus);
+                if (updatedEvent != null) {
+                    transmitterProvider.securityEventTokenDispatcher()
+                            .deliverEvent(updatedEvent, refreshed);
                 }
-            } catch (Exception e) {
-                // Status persistence already succeeded — surface the
-                // dispatch failure as a warning rather than rolling
-                // back the status change itself; the receiver can
-                // re-derive the current status via GET /streams/status.
-                log.warnf(e, "Failed to dispatch stream-updated SET. streamId=%s", streamId);
             }
+        } catch (Exception e) {
+            // Status persistence already succeeded — surface the
+            // dispatch failure as a warning rather than rolling back
+            // the status change itself; the receiver can re-derive
+            // the current status via GET /streams/status.
+            log.warnf(e, "Failed to dispatch stream-updated SET. streamId=%s", streamId);
         }
 
         return streamStatus;
