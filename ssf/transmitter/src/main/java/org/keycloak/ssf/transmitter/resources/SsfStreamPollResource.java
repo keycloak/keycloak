@@ -11,12 +11,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.ssf.transmitter.delivery.poll.PollDeliveryService;
+import org.keycloak.ssf.transmitter.delivery.poll.PollErrorRepresentation;
 import org.keycloak.ssf.transmitter.delivery.poll.PollRequest;
 import org.keycloak.ssf.transmitter.delivery.poll.PollResponse;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.ssf.transmitter.support.SsfAuthUtil;
-import org.keycloak.ssf.transmitter.support.SsfErrorRepresentation;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -141,7 +141,7 @@ public class SsfStreamPollResource {
 
     protected Response invalidRequest(String message) {
         return Response.status(Response.Status.BAD_REQUEST)
-                .entity(new SsfErrorRepresentation("invalid_request", message))
+                .entity(new PollErrorRepresentation("invalid_request", message))
                 .build();
     }
 
@@ -153,7 +153,7 @@ public class SsfStreamPollResource {
 
     protected Response streamNotFound() {
         return Response.status(Response.Status.NOT_FOUND)
-                .entity(new SsfErrorRepresentation("stream_not_found", "Stream not found"))
+                .entity(new PollErrorRepresentation("stream_not_found", "Stream not found"))
                 .build();
     }
 }
