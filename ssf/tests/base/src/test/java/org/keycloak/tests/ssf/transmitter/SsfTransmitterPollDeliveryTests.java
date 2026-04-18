@@ -396,7 +396,7 @@ public class SsfTransmitterPollDeliveryTests {
                 .asResponse()) {
             Assertions.assertEquals(400, response.getStatus(),
                     "ack over the batch cap must be rejected with 400");
-            Assertions.assertEquals("invalid_request", response.asJson().get("error").asText());
+            Assertions.assertEquals("invalid_request", response.asJson().get("err").asText());
         }
     }
 
@@ -421,7 +421,7 @@ public class SsfTransmitterPollDeliveryTests {
                 .asResponse()) {
             Assertions.assertEquals(400, response.getStatus(),
                     "setErrs over the batch cap must be rejected with 400");
-            Assertions.assertEquals("invalid_request", response.asJson().get("error").asText());
+            Assertions.assertEquals("invalid_request", response.asJson().get("err").asText());
         }
     }
 
