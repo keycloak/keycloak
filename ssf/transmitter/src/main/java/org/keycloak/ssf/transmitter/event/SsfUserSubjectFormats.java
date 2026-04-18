@@ -18,12 +18,44 @@ import org.keycloak.ssf.transmitter.stream.StreamConfig;
  * rejected at stream create/update time so misconfigurations surface
  * before the first event emission.
  *
- * <p>The allow-list is deliberately small for now ({@code iss_sub} and
- * {@code email}) — expanding it to other SSF subject formats (e.g.
- * {@code phone_number}, {@code aliases}) is a matter of extending the
- * mapper's {@code buildUserSubjectId} dispatch and adding the value here.
+ * <p>Two compositions are also supported —
+ * {@link #COMPLEX_ISS_SUB_PLUS_TENANT complex.iss_sub+tenant} and
+ * {@link #COMPLEX_EMAIL_PLUS_TENANT complex.email+tenant} — which wrap
+ * the user subject in a complex subject and add a {@code tenant}
+ * sibling carrying the user's Keycloak organization. The
+ * {@code complex.} prefix flags that the SET will carry a
+ * {@link org.keycloak.ssf.subject.ComplexSubjectId ComplexSubjectId}
+ * rather than a single subject; the {@code +tenant} suffix names the
+ * additional member. Both are Keycloak-only compositions, not
+ * RFC 9493 subject identifier formats; receivers that don't understand
+ * {@code critical_subject_members=["user","tenant"]} will reject the
+ * stream at creation time.
+ *
+ * <p>The allow-list is deliberately small for now — expanding it to
+ * other SSF subject formats (e.g. {@code phone_number}, {@code aliases})
+ * is a matter of extending the mapper's {@code buildUserSubjectId}
+ * dispatch and adding the value here.
  */
 public final class SsfUserSubjectFormats {
+
+    /**
+     * Composition prefix that flags the SET will carry a
+     * {@link org.keycloak.ssf.subject.ComplexSubjectId ComplexSubjectId}
+     * rather than a single user subject. The portion after the prefix
+     * names the user-subject component (e.g. {@code iss_sub} /
+     * {@code email}); additional siblings are appended via composition
+     * suffixes such as {@link #TENANT_SUFFIX}.
+     */
+    public static final String COMPLEX_PREFIX = "complex.";
+
+    /** Composition suffix that asks the mapper to add a {@code tenant} member. */
+    public static final String TENANT_SUFFIX = "+tenant";
+
+    /** Composition: complex(user={@code iss_sub}, tenant=user's organization). */
+    public static final String COMPLEX_ISS_SUB_PLUS_TENANT = COMPLEX_PREFIX + IssuerSubjectId.TYPE + TENANT_SUFFIX;
+
+    /** Composition: complex(user={@code email}, tenant=user's organization). */
+    public static final String COMPLEX_EMAIL_PLUS_TENANT = COMPLEX_PREFIX + EmailSubjectId.TYPE + TENANT_SUFFIX;
 
     /**
      * Subject identifier formats the transmitter knows how to produce
@@ -32,7 +64,9 @@ public final class SsfUserSubjectFormats {
      */
     public static final Set<String> ALLOWED = Set.of(
             IssuerSubjectId.TYPE,
-            EmailSubjectId.TYPE);
+            EmailSubjectId.TYPE,
+            COMPLEX_ISS_SUB_PLUS_TENANT,
+            COMPLEX_EMAIL_PLUS_TENANT);
 
     /**
      * Default user subject identifier format — the realm issuer plus the
@@ -42,6 +76,35 @@ public final class SsfUserSubjectFormats {
     public static final String DEFAULT = IssuerSubjectId.TYPE;
 
     private SsfUserSubjectFormats() {
+    }
+
+    /**
+     * Returns {@code true} if {@code format} carries the {@code +tenant}
+     * composition suffix — i.e. the mapper should add a tenant subject
+     * sibling to the complex SET subject.
+     */
+    public static boolean includesTenant(String format) {
+        return format != null && format.endsWith(TENANT_SUFFIX);
+    }
+
+    /**
+     * Strips the {@link #COMPLEX_PREFIX complex.} prefix and the
+     * {@link #TENANT_SUFFIX +tenant} suffix to return the bare
+     * user-subject format ({@code iss_sub} / {@code email}). Pass-through
+     * when neither marker is present.
+     */
+    public static String userPartOf(String format) {
+        if (format == null) {
+            return null;
+        }
+        String result = format;
+        if (result.startsWith(COMPLEX_PREFIX)) {
+            result = result.substring(COMPLEX_PREFIX.length());
+        }
+        if (result.endsWith(TENANT_SUFFIX)) {
+            result = result.substring(0, result.length() - TENANT_SUFFIX.length());
+        }
+        return result;
     }
 
     /**

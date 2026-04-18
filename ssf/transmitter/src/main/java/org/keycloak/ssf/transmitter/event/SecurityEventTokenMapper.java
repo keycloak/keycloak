@@ -16,7 +16,9 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.event.InitiatingEntity;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
@@ -177,16 +179,19 @@ public class SecurityEventTokenMapper {
             SsfSecurityEventToken eventToken = newSecurityEventToken(stream);
             eventToken.setTxn(UUID.randomUUID().toString());
 
-            // Set subject ID (complex subject with user and session)
+            // Set subject ID (complex subject with user and session,
+            // plus tenant when the configured user-subject format
+            // carries the +tenant composition suffix).
             ComplexSubjectId subId = new ComplexSubjectId();
 
-            SubjectId userSubject = buildUserSubjectId(eventToken, userId, stream);
+            subId.setUser(buildUserSubjectId(eventToken, userId, stream));
 
             OpaqueSubjectId sessionSubject = new OpaqueSubjectId();
             sessionSubject.setId(sessionId);
-
-            subId.setUser(userSubject);
             subId.setSession(sessionSubject);
+
+            addTenantIfConfigured(subId, userId, stream);
+
             eventToken.setSubjectId(subId);
 
             // Set events
@@ -225,8 +230,11 @@ public class SecurityEventTokenMapper {
             SsfSecurityEventToken event = newSecurityEventToken(stream);
             event.setTxn(UUID.randomUUID().toString());
 
-            // Set subject ID
-            event.setSubjectId(buildUserSubjectId(event, userId, stream));
+            // Set subject ID — composeUserSubject wraps in a complex
+            // subject with a tenant sibling when the configured format
+            // carries the +tenant composition suffix; otherwise the
+            // bare user subject goes on as before.
+            event.setSubjectId(composeUserSubject(event, userId, stream));
 
             String caepCredentialType = narrowCaepCredentialType(credentialType);
 
@@ -312,7 +320,11 @@ public class SecurityEventTokenMapper {
      */
     protected SubjectId buildUserSubjectId(SsfSecurityEventToken eventToken, String userId, StreamConfig stream) {
 
-        String format = SsfUserSubjectFormats.resolveForStream(stream, transmitterConfig);
+        // Strip any composition suffix (e.g. "+tenant") — that part is
+        // applied by addTenantIfConfigured at the outer complex-subject
+        // level. This method only computes the user-identifying portion.
+        String format = SsfUserSubjectFormats.userPartOf(
+                SsfUserSubjectFormats.resolveForStream(stream, transmitterConfig));
 
         if (EmailSubjectId.TYPE.equals(format)) {
             String email = lookupUserEmail(userId);
@@ -332,6 +344,101 @@ public class SecurityEventTokenMapper {
         issSubject.setIss(eventToken.getIss());
         issSubject.setSub(userId);
         return issSubject;
+    }
+
+    /**
+     * If the configured user-subject format carries the {@code +tenant}
+     * composition suffix, resolves the user's primary Keycloak
+     * organization and adds it as the {@code tenant} member of the
+     * given complex subject. No-op when the format does not include
+     * tenant. Throws {@link SsfException} (caught by the calling event
+     * generator and logged) when the user belongs to no organization —
+     * silently dropping the tenant slot would deliver a SET shaped
+     * differently from what the receiver negotiated, mirroring the
+     * fail-loud behaviour of the {@code email} format with no email.
+     */
+    protected void addTenantIfConfigured(ComplexSubjectId complex, String userId, StreamConfig stream) {
+        String format = SsfUserSubjectFormats.resolveForStream(stream, transmitterConfig);
+        if (!SsfUserSubjectFormats.includesTenant(format)) {
+            return;
+        }
+        complex.setTenant(buildTenantSubject(userId, stream));
+    }
+
+    /**
+     * Wraps the user subject in a {@link ComplexSubjectId} when the
+     * configured format includes the {@code +tenant} composition;
+     * returns the bare user subject otherwise. Used by event
+     * generators whose default emission shape is a single subject
+     * (e.g. {@code credential-change}) so they can pick up the tenant
+     * member without unconditionally switching to a complex shape.
+     */
+    protected SubjectId composeUserSubject(SsfSecurityEventToken eventToken, String userId, StreamConfig stream) {
+        SubjectId userSubject = buildUserSubjectId(eventToken, userId, stream);
+        String format = SsfUserSubjectFormats.resolveForStream(stream, transmitterConfig);
+        if (!SsfUserSubjectFormats.includesTenant(format)) {
+            return userSubject;
+        }
+        ComplexSubjectId complex = new ComplexSubjectId();
+        complex.setUser(userSubject);
+        complex.setTenant(buildTenantSubject(userId, stream));
+        return complex;
+    }
+
+    /**
+     * Builds an {@link OpaqueSubjectId} carrying the user's primary
+     * Keycloak organization alias. Throws {@link SsfException} when
+     * the user belongs to no organization — see
+     * {@link #addTenantIfConfigured} for why fail-loud is the right
+     * choice.
+     *
+     * <p><b>Multi-org resolution policy: managed-preferred.</b> When the
+     * user belongs to multiple organizations, prefers the {@code MANAGED}
+     * membership (the org that provisioned the user — at most one per
+     * user, per Keycloak's organization model) and falls back to the
+     * first {@code UNMANAGED} membership otherwise. This gives users
+     * with a clear provisioning origin (SCIM, IdP federation, JIT) a
+     * stable "owning organization" answer; users that just associate
+     * with one or more orgs get a deterministic-but-arbitrary first-of-
+     * stream pick. Deployments that need stricter semantics
+     * (managed-only) or a different policy can subclass this method.
+     */
+    protected SubjectId buildTenantSubject(String userId, StreamConfig stream) {
+        if (session == null || userId == null) {
+            throw new SsfException("Cannot build tenant subject: missing session or userId (stream "
+                    + (stream != null ? stream.getStreamId() : null) + ")");
+        }
+        RealmModel realm = session.getContext().getRealm();
+        OrganizationProvider orgProvider = session.getProvider(OrganizationProvider.class);
+        if (orgProvider == null) {
+            throw new SsfException("Cannot build tenant subject: organization feature is not enabled (stream "
+                    + (stream != null ? stream.getStreamId() : null) + ")");
+        }
+        UserModel user = session.users().getUserById(realm, userId);
+        if (user == null) {
+            throw new SsfException("Cannot build tenant subject: user " + userId + " not found (stream "
+                    + (stream != null ? stream.getStreamId() : null) + ")");
+        }
+        OrganizationModel org = orgProvider.getByMember(user)
+                .filter(candidate -> orgProvider.isManagedMember(candidate, user))
+                .findFirst()
+                .orElseGet(() -> orgProvider.getByMember(user).findFirst().orElse(null));
+        if (org == null) {
+            throw new SsfException("Configured user subject format includes '+tenant' but user " + userId
+                    + " belongs to no organization (stream " + (stream != null ? stream.getStreamId() : null) + ")");
+        }
+        // Emit alias rather than the internal UUID — alias is the stable,
+        // human-readable organization identifier and the receiver-side
+        // SubjectResolver tries getByAlias as a fallback to getById, so
+        // this resolves on round-trip without requiring receivers to
+        // know the transmitter's internal UUIDs.
+        return createTenantSubjectId(org, user);
+    }
+
+    protected OpaqueSubjectId createTenantSubjectId(OrganizationModel org, UserModel user) {
+        OpaqueSubjectId tenantSubject = new OpaqueSubjectId();
+        tenantSubject.setId(org.getAlias());
+        return tenantSubject;
     }
 
     /**

@@ -843,6 +843,14 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                   key: "email",
                   value: t("ssfUserSubjectFormat.email"),
                 },
+                {
+                  key: "complex.iss_sub+tenant",
+                  value: t("ssfUserSubjectFormat.complex.iss_sub+tenant"),
+                },
+                {
+                  key: "complex.email+tenant",
+                  value: t("ssfUserSubjectFormat.complex.email+tenant"),
+                },
               ]}
             />
             <SelectControl
