@@ -438,6 +438,37 @@ public class SsfPendingEventStore {
         return deleted;
     }
 
+    /**
+     * Retargets the queued non-terminal outbox rows for the receiver
+     * to a different delivery method. Invoked from
+     * {@code StreamService.updateStream / replaceStream} when the
+     * receiver flips the stream's delivery between PUSH and POLL so
+     * the already-signed SETs land on the new channel instead of
+     * being orphaned (PUSH rows would keep retrying to the poll URL
+     * and dead-letter; POLL rows would sit uncollected forever).
+     * DELIVERED + DEAD_LETTER rows are terminal and left alone.
+     *
+     * @param newDeliveryMethod the target {@code DELIVERY_METHOD}
+     *        column value (e.g. {@link SsfPendingEventEntity#DELIVERY_METHOD_PUSH}).
+     * @return the number of rows whose delivery method was migrated.
+     */
+    public int migrateDeliveryMethodForClient(String clientId, String newDeliveryMethod) {
+        Objects.requireNonNull(clientId, "clientId");
+        Objects.requireNonNull(newDeliveryMethod, "newDeliveryMethod");
+        int migrated = getEntityManager()
+                .createNamedQuery("SsfPendingEvent.migrateDeliveryMethodForClient")
+                .setParameter("clientId", clientId)
+                .setParameter("newMethod", newDeliveryMethod)
+                .setParameter("statuses",
+                        java.util.List.of(SsfPendingEventStatus.PENDING, SsfPendingEventStatus.HELD))
+                .executeUpdate();
+        if (migrated > 0) {
+            log.debugf("SSF outbox migrated %d row(s) for client %s to delivery method %s",
+                    migrated, clientId, newDeliveryMethod);
+        }
+        return migrated;
+    }
+
     public void recordFailure(SsfPendingEventEntity entity, Instant nextAttemptAt, String lastError) {
         entity.setAttempts(entity.getAttempts() + 1);
         entity.setNextAttemptAt(nextAttemptAt);

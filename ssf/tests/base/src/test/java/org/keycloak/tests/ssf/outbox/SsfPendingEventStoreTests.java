@@ -303,6 +303,83 @@ public class SsfPendingEventStoreTests {
     }
 
     @Test
+    public void migrateDeliveryMethodForClient_retargetsQueuedRowsAndLeavesTerminalRowsAlone() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+
+            SsfPendingEventEntity pending = persistRaw(session, realmId, "client-migrate", "stream-a",
+                    "jti-migrate-pending", SsfPendingEventStatus.PENDING, 0,
+                    now.minusSeconds(5), now.minusSeconds(5));
+
+            SsfPendingEventEntity held = persistRaw(session, realmId, "client-migrate", "stream-a",
+                    "jti-migrate-held", SsfPendingEventStatus.HELD, 0,
+                    now.minusSeconds(5), now.minusSeconds(5));
+
+            SsfPendingEventEntity delivered = persistRaw(session, realmId, "client-migrate", "stream-a",
+                    "jti-migrate-delivered", SsfPendingEventStatus.DELIVERED, 1,
+                    now.minusSeconds(5), now.minusSeconds(5));
+            delivered.setDeliveredAt(now.minusSeconds(1));
+
+            SsfPendingEventEntity deadLetter = persistRaw(session, realmId, "client-migrate", "stream-a",
+                    "jti-migrate-dead", SsfPendingEventStatus.DEAD_LETTER, 8,
+                    now.minusSeconds(5), now.minusSeconds(5));
+
+            SsfPendingEventEntity otherClient = persistRaw(session, realmId, "client-other", "stream-b",
+                    "jti-migrate-other", SsfPendingEventStatus.PENDING, 0,
+                    now.minusSeconds(5), now.minusSeconds(5));
+
+            em(session).flush();
+            em(session).clear();
+
+            int migrated = new SsfPendingEventStore(session)
+                    .migrateDeliveryMethodForClient("client-migrate",
+                            SsfPendingEventEntity.DELIVERY_METHOD_POLL);
+            Assertions.assertEquals(2, migrated,
+                    "only PENDING + HELD rows for the target client should migrate");
+
+            em(session).flush();
+            em(session).clear();
+
+            Assertions.assertEquals(SsfPendingEventEntity.DELIVERY_METHOD_POLL,
+                    findById(session, pending.getId()).getDeliveryMethod(),
+                    "PENDING rows must be retargeted to the new delivery method");
+            Assertions.assertEquals(SsfPendingEventEntity.DELIVERY_METHOD_POLL,
+                    findById(session, held.getId()).getDeliveryMethod(),
+                    "HELD rows must be retargeted to the new delivery method");
+
+            Assertions.assertEquals(SsfPendingEventEntity.DELIVERY_METHOD_PUSH,
+                    findById(session, delivered.getId()).getDeliveryMethod(),
+                    "DELIVERED rows are terminal and must not be migrated");
+            Assertions.assertEquals(SsfPendingEventEntity.DELIVERY_METHOD_PUSH,
+                    findById(session, deadLetter.getId()).getDeliveryMethod(),
+                    "DEAD_LETTER rows are terminal and must not be migrated");
+
+            Assertions.assertEquals(SsfPendingEventEntity.DELIVERY_METHOD_PUSH,
+                    findById(session, otherClient.getId()).getDeliveryMethod(),
+                    "rows for other clients must not be migrated");
+        });
+    }
+
+    @Test
+    public void migrateDeliveryMethodForClient_isIdempotentWhenTargetMethodAlreadyInUse() {
+        final String realmId = testRealmId;
+        runOnServer.run(session -> {
+            Instant now = Instant.now();
+            persistRaw(session, realmId, "client-noop", "stream-a", "jti-noop",
+                    SsfPendingEventStatus.PENDING, 0, now, now);
+            em(session).flush();
+            em(session).clear();
+
+            int migrated = new SsfPendingEventStore(session)
+                    .migrateDeliveryMethodForClient("client-noop",
+                            SsfPendingEventEntity.DELIVERY_METHOD_PUSH);
+            Assertions.assertEquals(0, migrated,
+                    "rows already using the target delivery method must not be counted");
+        });
+    }
+
+    @Test
     public void deleteByRealm_removesAllRowsForRealmAcrossStatuses() {
         final String realmId = testRealmId;
         final String otherRealmId = UUID.randomUUID().toString();

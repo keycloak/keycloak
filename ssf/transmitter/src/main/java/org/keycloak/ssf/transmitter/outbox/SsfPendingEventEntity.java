@@ -178,6 +178,20 @@ import jakarta.persistence.UniqueConstraint;
                 query = "DELETE FROM SsfPendingEventEntity e"
                         + " WHERE e.clientId = :clientId"
                         + "   AND e.status IN :statuses"),
+        // Stream-replace / PATCH with a delivery-method change hook:
+        // migrates already-queued non-terminal rows so the new
+        // channel picks them up instead of orphaning them. The
+        // encoded SET itself is channel-agnostic (a JWS string),
+        // so changing the routing column is sufficient. Applies
+        // only to PENDING + HELD (DELIVERED + DEAD_LETTER are
+        // terminal and stay in their bucket for audit / dedup).
+        @NamedQuery(
+                name = "SsfPendingEvent.migrateDeliveryMethodForClient",
+                query = "UPDATE SsfPendingEventEntity e"
+                        + " SET e.deliveryMethod = :newMethod"
+                        + " WHERE e.clientId = :clientId"
+                        + "   AND e.deliveryMethod <> :newMethod"
+                        + "   AND e.status IN :statuses"),
         // Per-receiver TTL housekeeping pre-scan: enumerates the
         // (realmId, clientId) pairs that own at least one
         // non-DELIVERED row, so the drainer's per-client purge loop
