@@ -216,7 +216,7 @@ public class SsfTransmitterCustomEventTests {
             return;
         }
         String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
-                + "/ssf/clients/" + client.getId() + "/stream";
+                + "/ssf/clients/" + client.getClientId() + "/stream";
         try (SimpleHttpResponse ignored = http.doDelete(adminStreamUrl)
                 .auth(adminClient.tokenManager().getAccessTokenString())
                 .asResponse()) {

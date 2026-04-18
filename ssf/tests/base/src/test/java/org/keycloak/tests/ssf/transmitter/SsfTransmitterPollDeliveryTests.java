@@ -681,18 +681,18 @@ public class SsfTransmitterPollDeliveryTests {
         if (client == null) {
             return;
         }
-        deleteStreamViaAdminInternal(client.getId());
+        deleteStreamViaAdminInternal(client.getClientId());
     }
 
     protected void deleteStreamViaAdmin(String clientId) {
         ClientRepresentation client = findClientByClientId(clientId);
         Assertions.assertNotNull(client, () -> "expected client '" + clientId + "' to exist");
-        deleteStreamViaAdminInternal(client.getId());
+        deleteStreamViaAdminInternal(client.getClientId());
     }
 
-    protected void deleteStreamViaAdminInternal(String clientUuid) {
+    protected void deleteStreamViaAdminInternal(String clientOauthId) {
         String adminStreamUrl = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
-                + "/ssf/clients/" + clientUuid + "/stream";
+                + "/ssf/clients/" + clientOauthId + "/stream";
         try (SimpleHttpResponse ignored = http.doDelete(adminStreamUrl)
                 .auth(adminClient.tokenManager().getAccessTokenString())
                 .asResponse()) {

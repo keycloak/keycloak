@@ -5,11 +5,15 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.subject.AddSubjectRequest;
+import org.keycloak.ssf.subject.ComplexSubjectId;
+import org.keycloak.ssf.subject.OpaqueSubjectId;
 import org.keycloak.ssf.subject.RemoveSubjectRequest;
 import org.keycloak.ssf.subject.SubjectId;
 import org.keycloak.ssf.subject.SubjectResolution;
 import org.keycloak.ssf.subject.SubjectResolver;
+import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
 import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 
@@ -194,6 +198,47 @@ public class SubjectManagementService {
         }
 
         return SubjectResolution.UNSUPPORTED_FORMAT;
+    }
+
+    /**
+     * Resolves the admin shorthand {@code (type, value)} into a typed
+     * {@link SubjectId} suitable for handing straight to the synthetic
+     * event emitter. For user subjects ({@code user-id} /
+     * {@code user-email} / {@code user-username}) the sub_id is built
+     * via {@link org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper#buildSubjectForReceiver
+     * buildSubjectForReceiver} so it honors the receiver's configured
+     * {@code ssf.userSubjectFormat}. For {@code org-alias} the result
+     * is a {@link ComplexSubjectId} with only a {@code tenant} facet
+     * (so the emitter routes it as an org-scoped event).
+     *
+     * <p>Throws {@link SsfException} with an operator-friendly message
+     * for each failure — unresolvable subject, unknown type, or the
+     * mapper's fail-loud cases (missing email, no organization for a
+     * {@code +tenant} format). The admin endpoint catches and surfaces
+     * as 400.
+     */
+    public SubjectId resolveSubjectForEmit(StreamConfig stream,
+                                           String subjectType,
+                                           String subjectValue) {
+        SubjectResolution resolution = resolveByAdminType(subjectType, subjectValue);
+        if (resolution instanceof SubjectResolution.User userRes) {
+            SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
+            return transmitter.securityEventTokenMapper()
+                    .buildSubjectForReceiver(stream, userRes.user().getId());
+        }
+        if (resolution instanceof SubjectResolution.Organization orgRes) {
+            ComplexSubjectId complex = new ComplexSubjectId();
+            OpaqueSubjectId tenant = new OpaqueSubjectId();
+            tenant.setId(orgRes.organization().getAlias());
+            complex.setTenant(tenant);
+            return complex;
+        }
+        if (resolution instanceof SubjectResolution.NotFound) {
+            throw new SsfException("Subject not found for type=" + subjectType
+                    + " value=" + subjectValue);
+        }
+        // UNSUPPORTED_FORMAT (unknown type or organization feature disabled).
+        throw new SsfException("Unsupported subjectType: " + subjectType);
     }
 
     /**

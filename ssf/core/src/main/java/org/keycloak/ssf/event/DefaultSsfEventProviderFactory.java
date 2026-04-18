@@ -95,7 +95,8 @@ public class DefaultSsfEventProviderFactory implements SsfEventProviderFactory, 
      */
     public static final Set<String> EMITTABLE_EVENT_TYPES = Set.of(
             CaepCredentialChange.TYPE,
-            CaepSessionRevoked.TYPE);
+            CaepSessionRevoked.TYPE,
+            CaepDeviceComplianceChange.TYPE);
 
     private volatile SsfEventRegistry registry;
 

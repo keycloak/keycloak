@@ -145,10 +145,19 @@ public class EventEmitterService {
         // 5. Deserialize the event payload into the registry's typed
         //    event class so the dispatcher's per-event narrowing (e.g.
         //    SSE_CAEP conversion for Apple Business Manager) applies
-        //    just like for native events.
-        Object eventPayload = deserializeEvent(registry, eventTypeUri, eventAttributes);
+        //    just like for native events. On failure, surface the
+        //    Jackson error message via the result so the admin caller
+        //    can see exactly which field shape is wrong instead of a
+        //    generic invalid_request.
+        Object eventPayload;
+        try {
+            eventPayload = deserializeEventOrThrow(registry, eventTypeUri, eventAttributes);
+        } catch (EventPayloadDeserializationException e) {
+            return EmitEventResult.dropped(EmitEventStatus.INVALID_REQUEST, e.getMessage());
+        }
         if (eventPayload == null) {
-            return EmitEventResult.dropped(EmitEventStatus.INVALID_REQUEST);
+            return EmitEventResult.dropped(EmitEventStatus.INVALID_REQUEST,
+                    "No registered event class for eventType=" + eventTypeUri);
         }
 
         // 6. Build the SET (sub_id verbatim from the emitter) and hand
@@ -257,7 +266,15 @@ public class EventEmitterService {
         return userNotified || orgNotified;
     }
 
-    protected Object deserializeEvent(SsfEventRegistry registry, String eventTypeUri, Map<String, Object> eventAttributes) {
+    /**
+     * Deserializes the raw event attributes into the typed event
+     * class registered for the given URI, propagating the Jackson
+     * conversion error as an {@link EventPayloadDeserializationException}
+     * so callers can surface the message back to the operator.
+     */
+    protected Object deserializeEventOrThrow(SsfEventRegistry registry,
+                                             String eventTypeUri,
+                                             Map<String, Object> eventAttributes) {
         Class<? extends SsfEvent> eventClass = registry.getEventClassByType(eventTypeUri).orElse(null);
         if (eventClass == null) {
             return null;
@@ -274,9 +291,26 @@ public class EventEmitterService {
         }
         try {
             return JsonSerialization.mapper.convertValue(eventAttributes, eventClass);
-        } catch (Exception e) {
-            log.debugf(e, "Failed to deserialize event attributes for type %s", eventTypeUri);
-            return null;
+        } catch (IllegalArgumentException e) {
+            // Jackson wraps mismatch errors in IllegalArgumentException
+            // when called via convertValue — its cause is the typed
+            // JsonMappingException with the field-pointer details.
+            String detail = e.getCause() != null && e.getCause().getMessage() != null
+                    ? e.getCause().getMessage()
+                    : e.getMessage();
+            throw new EventPayloadDeserializationException(
+                    "Event payload does not match the schema for " + eventTypeUri + ": " + detail, e);
+        }
+    }
+
+    /**
+     * Internal exception type used to ferry a Jackson conversion
+     * failure back to the admin endpoint without leaking the raw
+     * stack to the wire.
+     */
+    protected static class EventPayloadDeserializationException extends RuntimeException {
+        public EventPayloadDeserializationException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 

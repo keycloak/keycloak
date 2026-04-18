@@ -18,6 +18,9 @@ public class SsfEmitEventResponse {
     @JsonProperty("jti")
     private String jti;
 
+    @JsonProperty("message")
+    private String message;
+
     public SsfEmitEventResponse() {
     }
 
@@ -28,6 +31,12 @@ public class SsfEmitEventResponse {
     public SsfEmitEventResponse(String status, String jti) {
         this.status = status;
         this.jti = jti;
+    }
+
+    public SsfEmitEventResponse(String status, String jti, String message) {
+        this.status = status;
+        this.jti = jti;
+        this.message = message;
     }
 
     public String getStatus() {
@@ -44,5 +53,13 @@ public class SsfEmitEventResponse {
 
     public void setJti(String jti) {
         this.jti = jti;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

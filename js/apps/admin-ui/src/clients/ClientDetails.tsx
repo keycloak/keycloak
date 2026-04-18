@@ -282,6 +282,7 @@ export default function ClientDetails() {
   const ssfReceiverTab = useRoutableTab(ssfTabRoute("receiver"));
   const ssfStreamTab = useRoutableTab(ssfTabRoute("stream"));
   const ssfSubjectsTab = useRoutableTab(ssfTabRoute("subjects"));
+  const ssfPendingEventsTab = useRoutableTab(ssfTabRoute("pending-events"));
 
   const authorizationTabRoute = (tab: AuthorizationTab) =>
     toAuthorizationTab({
@@ -750,6 +751,20 @@ export default function ClientDetails() {
                         save={save}
                         client={client}
                         activeTab="subjects"
+                      />
+                    </Tab>
+                    <Tab
+                      id="ssfPendingEventsTab"
+                      data-testid="ssfPendingEventsTab"
+                      title={
+                        <TabTitleText>{t("ssfTabPendingEvents")}</TabTitleText>
+                      }
+                      {...ssfPendingEventsTab}
+                    >
+                      <SsfTab
+                        save={save}
+                        client={client}
+                        activeTab="pending-events"
                       />
                     </Tab>
                   </RoutableTabs>

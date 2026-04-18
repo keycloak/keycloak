@@ -128,9 +128,8 @@ public class SsfSubjectManagementTests {
 
     @Test
     public void adminAddSubject_byEmail_returns200() throws IOException {
-        String receiverUuid = findClientByClientId(RECEIVER).getId();
 
-        try (SimpleHttpResponse res = adminSubjectRequest(receiverUuid, "subjects/add",
+        try (SimpleHttpResponse res = adminSubjectRequest(RECEIVER, "subjects/add",
                 "user-email", TEST_EMAIL)) {
             Assertions.assertEquals(200, res.getStatus());
             var body = res.asJson();
@@ -142,13 +141,12 @@ public class SsfSubjectManagementTests {
 
     @Test
     public void adminAddSubject_idempotent_returns200() throws IOException {
-        String receiverUuid = findClientByClientId(RECEIVER).getId();
 
-        try (SimpleHttpResponse res = adminSubjectRequest(receiverUuid, "subjects/add",
+        try (SimpleHttpResponse res = adminSubjectRequest(RECEIVER, "subjects/add",
                 "user-email", TEST_EMAIL)) {
             Assertions.assertEquals(200, res.getStatus());
         }
-        try (SimpleHttpResponse res = adminSubjectRequest(receiverUuid, "subjects/add",
+        try (SimpleHttpResponse res = adminSubjectRequest(RECEIVER, "subjects/add",
                 "user-email", TEST_EMAIL)) {
             Assertions.assertEquals(200, res.getStatus(),
                     "second add for the same subject should still succeed (idempotent)");
@@ -157,11 +155,10 @@ public class SsfSubjectManagementTests {
 
     @Test
     public void adminRemoveSubject_returns204() throws IOException {
-        String receiverUuid = findClientByClientId(RECEIVER).getId();
 
-        try (SimpleHttpResponse ignored = adminSubjectRequest(receiverUuid, "subjects/add",
+        try (SimpleHttpResponse ignored = adminSubjectRequest(RECEIVER, "subjects/add",
                 "user-email", TEST_EMAIL)) {}
-        try (SimpleHttpResponse res = adminSubjectRequest(receiverUuid, "subjects/remove",
+        try (SimpleHttpResponse res = adminSubjectRequest(RECEIVER, "subjects/remove",
                 "user-email", TEST_EMAIL)) {
             Assertions.assertEquals(204, res.getStatus());
         }
@@ -169,9 +166,8 @@ public class SsfSubjectManagementTests {
 
     @Test
     public void adminIgnoreSubject_returns200() throws IOException {
-        String receiverUuid = findClientByClientId(RECEIVER).getId();
 
-        try (SimpleHttpResponse res = adminSubjectRequest(receiverUuid, "subjects/ignore",
+        try (SimpleHttpResponse res = adminSubjectRequest(RECEIVER, "subjects/ignore",
                 "user-email", TEST_EMAIL)) {
             Assertions.assertEquals(200, res.getStatus());
             var body = res.asJson();
@@ -181,9 +177,8 @@ public class SsfSubjectManagementTests {
 
     @Test
     public void adminAddSubject_unknownUser_returns404() throws IOException {
-        String receiverUuid = findClientByClientId(RECEIVER).getId();
 
-        try (SimpleHttpResponse res = adminSubjectRequest(receiverUuid, "subjects/add",
+        try (SimpleHttpResponse res = adminSubjectRequest(RECEIVER, "subjects/add",
                 "user-email", "nonexistent@nowhere.test")) {
             Assertions.assertEquals(404, res.getStatus());
         }
@@ -191,9 +186,8 @@ public class SsfSubjectManagementTests {
 
     @Test
     public void adminAddSubject_byUsername_returns200() throws IOException {
-        String receiverUuid = findClientByClientId(RECEIVER).getId();
 
-        try (SimpleHttpResponse res = adminSubjectRequest(receiverUuid, "subjects/add",
+        try (SimpleHttpResponse res = adminSubjectRequest(RECEIVER, "subjects/add",
                 "user-username", TEST_USER)) {
             Assertions.assertEquals(200, res.getStatus());
             var body = res.asJson();
@@ -219,10 +213,9 @@ public class SsfSubjectManagementTests {
 
     @Test
     public void dispatcher_defaultSubjectsNone_deliversSubscribedUser() throws Exception {
-        String receiverUuid = findClientByClientId(RECEIVER).getId();
 
         // Subscribe the user first
-        try (SimpleHttpResponse ignored = adminSubjectRequest(receiverUuid, "subjects/add",
+        try (SimpleHttpResponse ignored = adminSubjectRequest(RECEIVER, "subjects/add",
                 "user-email", TEST_EMAIL)) {}
 
         String token = obtainReceiverToken();
@@ -237,10 +230,9 @@ public class SsfSubjectManagementTests {
 
     @Test
     public void dispatcher_defaultSubjectsNone_ignoredUserDoesNotReceive() throws Exception {
-        String receiverUuid = findClientByClientId(RECEIVER).getId();
 
         // Explicitly ignore the user
-        try (SimpleHttpResponse ignored = adminSubjectRequest(receiverUuid, "subjects/ignore",
+        try (SimpleHttpResponse ignored = adminSubjectRequest(RECEIVER, "subjects/ignore",
                 "user-email", TEST_EMAIL)) {}
 
         String token = obtainReceiverToken();
@@ -255,10 +247,10 @@ public class SsfSubjectManagementTests {
 
     // ---- helpers ----
 
-    protected SimpleHttpResponse adminSubjectRequest(String clientUuid, String action,
+    protected SimpleHttpResponse adminSubjectRequest(String clientId, String action,
                                                      String type, String value) throws IOException {
         String url = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
-                + "/ssf/clients/" + clientUuid + "/" + action;
+                + "/ssf/clients/" + clientId + "/" + action;
         return http.doPost(url)
                 .auth(adminClient.tokenManager().getAccessTokenString())
                 .json(Map.of("type", type, "value", value))
@@ -332,7 +324,7 @@ public class SsfSubjectManagementTests {
         ClientRepresentation client = findClientByClientId(clientId);
         if (client == null) return;
         String url = keycloakUrls.getAdmin() + "/realms/" + realm.getName()
-                + "/ssf/clients/" + client.getId() + "/stream";
+                + "/ssf/clients/" + client.getClientId() + "/stream";
         try (SimpleHttpResponse ignored = http.doDelete(url)
                 .auth(adminClient.tokenManager().getAccessTokenString())
                 .asResponse()) {
@@ -342,8 +334,7 @@ public class SsfSubjectManagementTests {
 
     protected void bestEffortClearNotifyAttribute() {
         try {
-            String receiverUuid = findClientByClientId(RECEIVER).getId();
-            adminSubjectRequest(receiverUuid, "subjects/remove", "user-email", TEST_EMAIL).close();
+                adminSubjectRequest(RECEIVER, "subjects/remove", "user-email", TEST_EMAIL).close();
         } catch (Exception ignored) {
         }
     }

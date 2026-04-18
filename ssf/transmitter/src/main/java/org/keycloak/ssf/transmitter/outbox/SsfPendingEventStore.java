@@ -541,6 +541,19 @@ public class SsfPendingEventStore {
         return purged;
     }
 
+    /**
+     * Public lookup for an outbox row by {@code (clientId, jti)} —
+     * used by the admin "Pending Events" lookup endpoint so an
+     * operator can inspect the delivery state of a specific SET.
+     * Scoped on {@code clientId} so callers cannot probe rows that
+     * belong to a different receiver.
+     */
+    public SsfPendingEventEntity findByClientAndJti(String clientId, String jti) {
+        Objects.requireNonNull(clientId, "clientId");
+        Objects.requireNonNull(jti, "jti");
+        return findByClientAndJti(getEntityManager(), clientId, jti);
+    }
+
     protected SsfPendingEventEntity findByClientAndJti(EntityManager em, String clientId, String jti) {
         List<SsfPendingEventEntity> hits = em
                 .createNamedQuery("SsfPendingEvent.findByClientAndJti", SsfPendingEventEntity.class)

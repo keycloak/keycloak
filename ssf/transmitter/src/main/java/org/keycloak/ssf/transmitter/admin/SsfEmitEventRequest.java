@@ -59,6 +59,34 @@ public class SsfEmitEventRequest {
     @JsonDeserialize(using = SubjectIdJsonDeserializer.class)
     private SubjectId subjectId;
 
+    /**
+     * Admin-shorthand alternative to {@link #subjectId}. Only honored
+     * on the admin-emit path (caller has manage-clients on the
+     * receiver) — the trusted-emitter path always uses {@code sub_id}
+     * verbatim. Mirrors the {@code type}/{@code value} pair the admin
+     * {@code /subjects:add} endpoints take:
+     *
+     * <ul>
+     *     <li>{@code user-id}, {@code user-email}, {@code user-username}
+     *         → resolves to a Keycloak user; transmitter builds the
+     *         {@code sub_id} via
+     *         {@link org.keycloak.ssf.transmitter.event.SecurityEventTokenMapper#buildSubjectForReceiver
+     *         buildSubjectForReceiver} so the shape honors the receiver's
+     *         configured {@code ssf.userSubjectFormat}.</li>
+     *     <li>{@code org-alias} → resolves to an organization; transmitter
+     *         emits a complex subject with a {@code tenant} facet only
+     *         (no user) so the receiver routes it as an org-scoped
+     *         event.</li>
+     * </ul>
+     *
+     * <p>{@code sub_id} takes precedence if both shapes are present.
+     */
+    @JsonProperty("subjectType")
+    private String subjectType;
+
+    @JsonProperty("subjectValue")
+    private String subjectValue;
+
     @JsonProperty("event")
     private Map<String, Object> event;
 
@@ -84,5 +112,21 @@ public class SsfEmitEventRequest {
 
     public void setEvent(Map<String, Object> event) {
         this.event = event;
+    }
+
+    public String getSubjectType() {
+        return subjectType;
+    }
+
+    public void setSubjectType(String subjectType) {
+        this.subjectType = subjectType;
+    }
+
+    public String getSubjectValue() {
+        return subjectValue;
+    }
+
+    public void setSubjectValue(String subjectValue) {
+        this.subjectValue = subjectValue;
     }
 }
