@@ -82,16 +82,26 @@ public class PushDeliveryService {
                     .entity(new StringEntity(encodedEventToken))
                     .asResponse()) {
 
-                boolean success = response.getStatus() == Response.Status.OK.getStatusCode() ||
-                                  response.getStatus() == Response.Status.ACCEPTED.getStatusCode();
+                // RFC 8935 §2.4: the Event Receiver responds with an HTTP 2xx
+                // status code on success — anything in [200, 300) is success;
+                // 204 No Content is common (acknowledged but no body).
+                int status = response.getStatus();
+                boolean success = status >= 200 && status < 300;
 
                 if (!success) {
                     String responseString = response.asString();
                     log.warnf("Failed to deliver event %s to url %s. Got status=%s response='%s'",
-                            eventToken.getJti(), endpointUrl, response.getStatus(), responseString);
+                            eventToken.getJti(), endpointUrl, status, responseString);
+                } else if (status != Response.Status.OK.getStatusCode()
+                        && status != Response.Status.ACCEPTED.getStatusCode()) {
+                    // 2xx but not the canonical 200/202 — log at INFO so an
+                    // operator sees the receiver's exact status without it
+                    // being treated as a failure.
+                    log.debugf("Delivery of event %s to url %s accepted with non-canonical 2xx. Got status=%s. events=%s",
+                            eventToken.getJti(), endpointUrl, status, eventToken.getEvents());
                 } else {
                     log.debugf("Delivery of event %s to url %s successful. Got status=%s. events=%s",
-                            eventToken.getJti(), endpointUrl, response.getStatus(), eventToken.getEvents());
+                            eventToken.getJti(), endpointUrl, status, eventToken.getEvents());
                 }
 
                 return success;
