@@ -342,9 +342,12 @@ public class KeycloakDeploymentDependentResource extends CRUDKubernetesDependent
         boolean automount = !Boolean.FALSE.equals(keycloakCR.getSpec().getAutomountServiceAccountToken());
         specBuilder.withAutomountServiceAccountToken(automount);
         if (keycloakCR.getSpec().getServiceAccountSpec() != null) {
-            context.getSecondaryResource(ServiceAccount.class)
+            String saName = context.getSecondaryResource(ServiceAccount.class)
                     .map(sa -> sa.getMetadata().getName())
-                    .ifPresent(specBuilder::withServiceAccountName);
+                    .orElse("default");
+            specBuilder.withServiceAccountName(saName);
+        } else {
+            specBuilder.withServiceAccountName("default");
         }
         handleScheduling(keycloakCR, schedulingLabels, specBuilder);
 

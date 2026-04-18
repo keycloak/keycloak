@@ -60,7 +60,7 @@ public class KeycloakServiceAccountTest extends BaseOperatorTest {
 
         var ss = getStatefulSet(kc);
         assertThat(ss.getSpec().getTemplate().getSpec().getServiceAccountName())
-                .isNullOrEmpty();
+                .isIn(null, "", "default");
     }
 
     @Test
@@ -120,7 +120,7 @@ public class KeycloakServiceAccountTest extends BaseOperatorTest {
 
         var ss = getStatefulSet(kc);
         assertThat(ss.getSpec().getTemplate().getSpec().getServiceAccountName())
-                .isNullOrEmpty();
+                .isIn(null, "", "default");
     }
 
     @Test

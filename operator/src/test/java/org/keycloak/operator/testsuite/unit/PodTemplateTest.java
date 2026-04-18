@@ -795,17 +795,17 @@ public class PodTemplateTest {
     }
 
     @Test
-    public void testServiceAccountNameAbsentWhenSpecPresentButSANotInCache() {
-        // SA spec present but SA not yet in informer cache (first reconcile, or pre-existing SA conflict)
+    public void testServiceAccountNameDefaultWhenSpecPresentButSANotInCache() {
+        // SA spec present but SA not yet in informer cache (first reconcile): fall back to default
         var ss = getDeployment(null, new StatefulSet(),
                 spec -> spec.withServiceAccountSpec(new org.keycloak.operator.crds.v2beta1.deployment.spec.ServiceAccountSpec()));
-        assertNull(ss.getSpec().getTemplate().getSpec().getServiceAccountName());
+        assertEquals("default", ss.getSpec().getTemplate().getSpec().getServiceAccountName());
     }
 
     @Test
-    public void testServiceAccountNameAbsentWhenSpecNotPresent() {
+    public void testServiceAccountNameDefaultWhenSpecNotPresent() {
         var ss = getDeployment(null);
-        assertNull(ss.getSpec().getTemplate().getSpec().getServiceAccountName());
+        assertEquals("default", ss.getSpec().getTemplate().getSpec().getServiceAccountName());
     }
 
     private Job getUpdateJob(Consumer<KeycloakSpecBuilder> newSpec, Consumer<KeycloakSpecBuilder> oldSpec, Consumer<StatefulSetBuilder> existingModifier) {
