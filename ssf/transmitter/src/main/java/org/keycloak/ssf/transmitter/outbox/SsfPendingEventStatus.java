@@ -9,8 +9,15 @@ package org.keycloak.ssf.transmitter.outbox;
  *     PENDING ──retries exhausted──▶ DEAD_LETTER
  *     PENDING ──stream paused──▶ HELD
  *     HELD ──stream resumed (status enabled)──▶ PENDING
+ *     PENDING / HELD ──stream disabled──▶ (deleted)
  *     DEAD_LETTER ──admin "retry" action──▶ PENDING  (resets attempts, next_attempt_at)
  * </pre>
+ *
+ * <p>Per the SSF spec a {@code disabled} stream MUST NOT transmit AND
+ * "will not hold any events for later transmission", so the in-flight
+ * backlog is discarded on the transition rather than parked — see
+ * {@code SsfPendingEventStore.deleteUndeliveredForClient}. DELIVERED
+ * and DEAD_LETTER rows are kept (jti dedup / post-failure audit).
  *
  * <p>Rows in {@link #DELIVERED} are kept briefly for audit/idempotency
  * (jti dedup) and then purged by the drainer's housekeeping pass. Rows
@@ -41,7 +48,7 @@ public enum SsfPendingEventStatus {
 
     /**
      * Event is parked because the owning stream is in the
-     * {@code paused} status (SSF §8.2). Neither the PUSH drainer nor the
+     * {@code paused} status. Neither the PUSH drainer nor the
      * POLL endpoint serves rows in this state. When the stream is
      * resumed (status returns to {@code enabled}), the held rows are
      * bulk-transitioned back to {@link #PENDING} in original arrival

@@ -874,20 +874,39 @@ public class StreamService {
                 currentStreamStatus.getStatus(), streamStatus.getStatus()
         );
 
-        // SSF §8.2: when a stream resumes (status returns to enabled),
-        // release any events the dispatcher held while the stream was
-        // paused so the receiver sees them as if the pause had never
-        // happened. Order matters: release before dispatching the
-        // stream-updated SET so the receiver observes the held SETs at
-        // or before the status-change notification.
-        if (StreamStatusValue.enabled.getStatusCode().equals(streamStatus.getStatus())
-                && !StreamStatusValue.enabled.getStatusCode().equals(currentStreamStatus.getStatus())) {
-            try {
-                pendingSsfEventStoreFactory.apply(session)
-                        .releaseHeldForClient(stream.getClientId());
-            } catch (Exception e) {
-                log.warnf(e, "Failed to release held outbox rows on stream resume. streamId=%s", streamId);
+        // SSF stream-status semantics: align the in-flight outbox
+        // backlog with the new status BEFORE the stream-updated SET
+        // is enqueued, so the SET row inserted right after this pass
+        // stays PENDING and reaches the receiver:
+        //
+        //   * → disabled       ⇒ DISCARD all undelivered (PENDING + HELD).
+        //                        The spec says a disabled stream MUST NOT
+        //                        transmit AND "will not hold any events
+        //                        for later transmission" — re-enable does
+        //                        not resurrect the backlog.
+        //   * enabled → paused ⇒ HOLD all PENDING (drainer / poll endpoint
+        //                        stop serving them; symmetric to
+        //                        dispatchEvent's hold of new events for
+        //                        paused streams).
+        //   * → enabled (from paused or disabled) ⇒ RELEASE all HELD back
+        //                        to PENDING. For disabled→enabled this is
+        //                        a no-op because the discard above wiped
+        //                        any HELD rows; harmless.
+        String newStatusCode = streamStatus.getStatus();
+        String oldStatusCode = currentStreamStatus.getStatus();
+        SsfPendingEventStore pendingStore = pendingSsfEventStoreFactory.apply(session);
+        try {
+            if (StreamStatusValue.disabled.getStatusCode().equals(newStatusCode)) {
+                pendingStore.deleteUndeliveredForClient(stream.getClientId());
+            } else if (StreamStatusValue.enabled.getStatusCode().equals(newStatusCode)) {
+                pendingStore.releaseHeldForClient(stream.getClientId());
+            } else if (StreamStatusValue.paused.getStatusCode().equals(newStatusCode)
+                    && StreamStatusValue.enabled.getStatusCode().equals(oldStatusCode)) {
+                pendingStore.holdPendingForClient(stream.getClientId());
             }
+        } catch (Exception e) {
+            log.warnf(e, "Failed to align outbox backlog with new stream status. streamId=%s newStatus=%s",
+                    streamId, newStatusCode);
         }
 
         // SSF §8.1.5: notify the receiver of the new status with a
