@@ -20,6 +20,8 @@ import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.metadata.TransmitterMetadata;
+import org.keycloak.ssf.stream.DeliveryMethod;
+import org.keycloak.ssf.transmitter.outbox.SsfPendingEventEntity;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
@@ -446,6 +448,12 @@ public class StreamService {
             throw new SsfException("Invalid stream configuration: SSE CAEP delivery methods are disabled on this transmitter");
         }
 
+        validateDeliveryMethod(streamConfig, delivery);
+
+        validateFieldLengths(streamConfig);
+    }
+
+    protected void validateDeliveryMethod(StreamConfig streamConfig, StreamDeliveryConfig delivery) {
         switch (delivery.getMethod()) {
             case Ssf.DELIVERY_METHOD_PUSH_URI, Ssf.DELIVERY_METHOD_RISC_PUSH_URI -> {
                 if (delivery.getEndpointUrl() == null) {
@@ -464,8 +472,6 @@ public class StreamService {
             }
             default -> throw new SsfException("Invalid stream configuration: unsupported delivery method");
         }
-
-        validateFieldLengths(streamConfig);
     }
 
     /**
@@ -608,32 +614,43 @@ public class StreamService {
         validateLegacyFieldsForProfile(streamUpdate, profile);
 
         boolean eventsRequestedChanged = streamUpdate.getEventsRequested() != null;
+        String previousDeliveryMethodUri = currentDeliveryMethodUri(existingStream);
 
-        mergeReceiverFields(streamUpdate, existingStream);
-        applyLegacyFields(streamUpdate, existingStream, receiverClient, profile);
+        // Work on an isolated draft: if validation or any post-merge
+        // step throws, the stored config remains untouched. The draft
+        // is only handed off to the store once every step has succeeded.
+        StreamConfig draft = new StreamConfig(existingStream);
+        mergeReceiverFields(streamUpdate, draft);
+        applyLegacyFields(streamUpdate, draft, receiverClient, profile);
 
         // Re-run full validation against the merged result; delivery method /
         // push endpoint constraints are enforced on the combined state.
-        validate(existingStream);
+        validate(draft);
+
+        // If the merge flipped the delivery channel (e.g. PUSH → POLL),
+        // regenerate the poll endpoint URL if now needed and retarget
+        // any already-queued non-terminal outbox rows so the new
+        // channel picks them up. See also replaceStream.
+        handleDeliveryMethodChange(draft, receiverClient, previousDeliveryMethodUri);
 
         // Recompute events_delivered only when events_requested actually changed —
         // a pure description or delivery update should not touch the delivered set.
         if (eventsRequestedChanged) {
-            SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, existingStream.getEventsRequested());
-            existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
+            SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, draft.getEventsRequested());
+            draft.setEventsDelivered(eventsConfig.eventsDelivered());
         }
 
-        applySignatureAlgorithmFromClient(existingStream, receiverClient);
-        applyUserSubjectFormatFromClient(existingStream, receiverClient);
+        applySignatureAlgorithmFromClient(draft, receiverClient);
+        applyUserSubjectFormatFromClient(draft, receiverClient);
 
-        existingStream.setUpdatedAt(Time.currentTime());
+        draft.setUpdatedAt(Time.currentTime());
 
-        streamStore.saveStream(existingStream);
+        streamStore.saveStream(draft);
 
         log.debugf("Stream updated. realm=%s client=%s streamId=%s",
                 session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamUpdate.getStreamId());
 
-        return existingStream;
+        return draft;
     }
 
     /**
@@ -669,27 +686,38 @@ public class StreamService {
             throw new SsfException("Invalid stream replace: delivery is required");
         }
 
-        // Replace receiver-updatable fields on existingStream. Omitted receiver
-        // fields are reset — that is the whole point of PUT vs PATCH.
-        replaceReceiverFields(streamUpdate, existingStream);
-        applyLegacyFields(streamUpdate, existingStream, receiverClient, profile);
+        String previousDeliveryMethodUri = currentDeliveryMethodUri(existingStream);
 
-        validate(existingStream);
+        // Work on an isolated draft: validation or any post-replace step
+        // throwing leaves the stored config untouched. Omitted receiver
+        // fields are reset on the draft — that is the whole point of
+        // PUT vs PATCH.
+        StreamConfig draft = new StreamConfig(existingStream);
+        replaceReceiverFields(streamUpdate, draft);
+        applyLegacyFields(streamUpdate, draft, receiverClient, profile);
 
-        SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, existingStream.getEventsRequested());
-        existingStream.setEventsDelivered(eventsConfig.eventsDelivered());
+        validate(draft);
 
-        applySignatureAlgorithmFromClient(existingStream, receiverClient);
-        applyUserSubjectFormatFromClient(existingStream, receiverClient);
+        // Delivery method may have flipped (PUSH ↔ POLL) — re-derive
+        // the poll endpoint URL if the new method is POLL and retarget
+        // any queued non-terminal outbox rows so they land on the new
+        // channel instead of being orphaned.
+        handleDeliveryMethodChange(draft, receiverClient, previousDeliveryMethodUri);
 
-        existingStream.setUpdatedAt(Time.currentTime());
+        SsfEventsConfig eventsConfig = streamStore.getEventsConfig(receiverClient, draft.getEventsRequested());
+        draft.setEventsDelivered(eventsConfig.eventsDelivered());
 
-        streamStore.saveStream(existingStream);
+        applySignatureAlgorithmFromClient(draft, receiverClient);
+        applyUserSubjectFormatFromClient(draft, receiverClient);
+
+        draft.setUpdatedAt(Time.currentTime());
+
+        streamStore.saveStream(draft);
 
         log.debugf("Stream replaced. realm=%s client=%s streamId=%s",
                 session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamUpdate.getStreamId());
 
-        return existingStream;
+        return draft;
     }
 
     /**
@@ -715,6 +743,71 @@ public class StreamService {
      * streams where the receiver-supplied URL is the actual delivery
      * target.
      */
+    /**
+     * Returns the delivery-method URI currently stored on the given
+     * stream, or {@code null} if unset. Exposed as a helper because
+     * {@code updateStream} and {@code replaceStream} both need to
+     * capture it before the merge / replace runs.
+     */
+    protected String currentDeliveryMethodUri(StreamConfig streamConfig) {
+        if (streamConfig == null || streamConfig.getDelivery() == null) {
+            return null;
+        }
+        return streamConfig.getDelivery().getMethod();
+    }
+
+    /**
+     * Deals with the fallout of a receiver flipping the stream's
+     * delivery method on update / replace:
+     *
+     * <ul>
+     *     <li>When the new method is POLL, re-derive the
+     *         transmitter-owned poll endpoint URL so any URL the
+     *         receiver may have carried over from the previous PUSH
+     *         config is overwritten with the correct one.</li>
+     *     <li>Migrate queued non-terminal outbox rows
+     *         (PENDING + HELD) to the new {@code DELIVERY_METHOD}
+     *         column so the already-signed SETs land on the new
+     *         channel instead of being orphaned. PUSH rows retargeted
+     *         to POLL become available to the receiver's next poll;
+     *         POLL rows retargeted to PUSH are picked up by the
+     *         drainer on its next tick.</li>
+     * </ul>
+     *
+     * <p>No-op when the URI hasn't changed.
+     */
+    protected void handleDeliveryMethodChange(StreamConfig streamConfig,
+                                              ClientModel receiverClient,
+                                              String previousDeliveryMethodUri) {
+        String newMethodUri = currentDeliveryMethodUri(streamConfig);
+        if (newMethodUri == null || newMethodUri.equals(previousDeliveryMethodUri)) {
+            return;
+        }
+
+        // Re-derive the poll URL when switching TO a poll flavor so
+        // the stored endpoint_url matches the transmitter-owned one.
+        finalizePollEndpointUrlIfApplicable(streamConfig, receiverClient);
+
+        // Retarget queued non-terminal outbox rows. The encoded SET
+        // bytes are channel-agnostic; only the routing column needs
+        // to change.
+        DeliveryMethod newMethod = DeliveryMethod.valueOfUri(newMethodUri);
+        if (newMethod == null) {
+            return;
+        }
+        String newMethodColumn = switch (newMethod) {
+            case PUSH, RISC_PUSH -> SsfPendingEventEntity.DELIVERY_METHOD_PUSH;
+            case POLL, RISC_POLL -> SsfPendingEventEntity.DELIVERY_METHOD_POLL;
+        };
+        SsfPendingEventStore pendingEventStore = pendingSsfEventStoreFactory.apply(session);
+        int migrated = pendingEventStore.migrateDeliveryMethodForClient(
+                streamConfig.getClientId(), newMethodColumn);
+        if (migrated > 0) {
+            log.debugf("Retargeted %d queued outbox row(s) on delivery method change %s → %s. streamId=%s",
+                    migrated, previousDeliveryMethodUri, newMethodUri, streamConfig.getStreamId());
+        }
+    }
+
     protected void finalizePollEndpointUrlIfApplicable(StreamConfig streamConfig, ClientModel receiverClient) {
         StreamDeliveryConfig delivery = streamConfig.getDelivery();
         if (delivery == null || delivery.getMethod() == null) {

@@ -1,5 +1,6 @@
 package org.keycloak.ssf.transmitter.stream;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.keycloak.ssf.SsfProfile;
@@ -218,6 +219,49 @@ public class StreamConfig {
      */
     @JsonIgnore
     protected String userSubjectFormat;
+
+    public StreamConfig() {
+    }
+
+    /**
+     * Deep-ish copy constructor. Creates a draft snapshot that callers
+     * can mutate (merge receiver fields, re-derive poll endpoint URL,
+     * recompute {@code events_delivered}) without touching the stored
+     * instance. A validation failure on the draft leaves the stored
+     * config untouched. Mutable collections ({@code audience},
+     * {@code eventsSupported}, {@code eventsRequested},
+     * {@code eventsDelivered}) and the {@code delivery} sub-object are
+     * defensively copied; primitives and immutable strings are shared.
+     */
+    public StreamConfig(StreamConfig other) {
+        if (other == null) {
+            return;
+        }
+        this.streamId = other.streamId;
+        this.issuer = other.issuer;
+        this.audience = other.audience == null ? null : new HashSet<>(other.audience);
+        this.eventsSupported = other.eventsSupported == null ? null : new HashSet<>(other.eventsSupported);
+        this.eventsRequested = other.eventsRequested == null ? null : new HashSet<>(other.eventsRequested);
+        this.eventsDelivered = other.eventsDelivered == null ? null : new HashSet<>(other.eventsDelivered);
+        this.delivery = other.delivery == null ? null : new StreamDeliveryConfig(other.delivery);
+        this.minVerificationInterval = other.minVerificationInterval;
+        this.description = other.description;
+        this.inactivityTimeout = other.inactivityTimeout;
+        this.defaultSubjects = other.defaultSubjects;
+        this.status = other.status;
+        this.statusReason = other.statusReason;
+        this.createdAt = other.createdAt;
+        this.updatedAt = other.updatedAt;
+        this.format = other.format;
+        this.profile = other.profile;
+        this.enabled = other.enabled;
+        this.clientId = other.clientId;
+        this.clientClientId = other.clientClientId;
+        this.pushEndpointConnectTimeoutMillis = other.pushEndpointConnectTimeoutMillis;
+        this.pushEndpointSocketTimeoutMillis = other.pushEndpointSocketTimeoutMillis;
+        this.signatureAlgorithm = other.signatureAlgorithm;
+        this.userSubjectFormat = other.userSubjectFormat;
+    }
 
     public String getStreamId() {
         return streamId;

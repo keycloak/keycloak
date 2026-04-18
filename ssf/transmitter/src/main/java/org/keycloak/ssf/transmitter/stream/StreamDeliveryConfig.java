@@ -1,5 +1,6 @@
 package org.keycloak.ssf.transmitter.stream;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -22,6 +23,27 @@ public class StreamDeliveryConfig {
 
     @JsonProperty("additional_parameters")
     private Map<String, Object> additionalParameters;
+
+    public StreamDeliveryConfig() {
+    }
+
+    /**
+     * Shallow-ish copy constructor used by {@link StreamConfig#StreamConfig(StreamConfig)}
+     * so a draft delivery config can be mutated (e.g. by
+     * {@code finalizePollEndpointUrlIfApplicable}) without touching the
+     * stored instance.
+     */
+    public StreamDeliveryConfig(StreamDeliveryConfig other) {
+        if (other == null) {
+            return;
+        }
+        this.method = other.method;
+        this.endpointUrl = other.endpointUrl;
+        this.authorizationHeader = other.authorizationHeader;
+        this.additionalParameters = other.additionalParameters == null
+                ? null
+                : new LinkedHashMap<>(other.additionalParameters);
+    }
 
     public String getMethod() {
         return method;
