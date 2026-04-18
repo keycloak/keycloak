@@ -14,10 +14,15 @@ import java.util.stream.Collectors;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.Profile;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.http.simple.SimpleHttp;
 import org.keycloak.http.simple.SimpleHttpResponse;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.ssf.Ssf;
@@ -45,6 +50,8 @@ import org.keycloak.testframework.realm.ManagedRealm;
 import org.keycloak.testframework.realm.RealmConfig;
 import org.keycloak.testframework.realm.RealmConfigBuilder;
 import org.keycloak.testframework.realm.UserConfigBuilder;
+import org.keycloak.testframework.remote.runonserver.InjectRunOnServer;
+import org.keycloak.testframework.remote.runonserver.RunOnServerClient;
 import org.keycloak.testframework.server.DefaultKeycloakServerConfig;
 import org.keycloak.testframework.server.KeycloakServerConfigBuilder;
 import org.keycloak.testframework.server.KeycloakUrls;
@@ -122,6 +129,9 @@ public class SsfTransmitterPushDeliveryTests {
 
     @InjectHttpServer
     HttpServer mockReceiverServer;
+
+    @InjectRunOnServer
+    RunOnServerClient runOnServer;
 
     private final BlockingQueue<CapturedPush> pushes = new LinkedBlockingQueue<>();
 
@@ -272,6 +282,80 @@ public class SsfTransmitterPushDeliveryTests {
                 "disabled stream should not receive pushes");
     }
 
+    @Test
+    public void testPushDeliversCredentialChangeUpdateOnUpdateCredential() throws Exception {
+
+        // UPDATE_CREDENTIAL with details.credential_type=password →
+        // CAEP credential-change with change_type=update,
+        // credential_type=password.
+        String token = obtainReceiverToken(RECEIVER_CRED_ONLY, RECEIVER_CRED_ONLY_SECRET);
+        StreamConfig stream = createPushStream(token, Set.of(CaepCredentialChange.TYPE));
+
+        triggerCredentialEvent(EventType.UPDATE_CREDENTIAL, "password");
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+
+        Assertions.assertEquals(stream.getAudience(), extractAudience(set),
+                "aud should match the stream audience");
+
+        JsonNode credentialChange = set.path("events").path(CaepCredentialChange.TYPE);
+        Assertions.assertFalse(credentialChange.isMissingNode(),
+                "SET should carry a CAEP credential-change event");
+        Assertions.assertEquals("update", credentialChange.path("change_type").asText(),
+                "UPDATE_CREDENTIAL must map to CAEP change_type=update");
+        Assertions.assertEquals("password", credentialChange.path("credential_type").asText(),
+                "credential_type should be propagated from the event details");
+    }
+
+    @Test
+    public void testPushDeliversCredentialChangeDeleteOnRemoveCredential() throws Exception {
+
+        // REMOVE_CREDENTIAL with details.credential_type=otp →
+        // CAEP credential-change with change_type=delete,
+        // credential_type=otp. Regression guard: prior behaviour
+        // hardcoded change_type=update for every credential event.
+        String token = obtainReceiverToken(RECEIVER_CRED_ONLY, RECEIVER_CRED_ONLY_SECRET);
+        createPushStream(token, Set.of(CaepCredentialChange.TYPE));
+
+        triggerCredentialEvent(EventType.REMOVE_CREDENTIAL, "otp");
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+
+        JsonNode credentialChange = set.path("events").path(CaepCredentialChange.TYPE);
+        Assertions.assertFalse(credentialChange.isMissingNode(),
+                "SET should carry a CAEP credential-change event");
+        Assertions.assertEquals("delete", credentialChange.path("change_type").asText(),
+                "REMOVE_CREDENTIAL must map to CAEP change_type=delete");
+        Assertions.assertEquals("otp", credentialChange.path("credential_type").asText(),
+                "credential_type should be propagated from the event details");
+    }
+
+    @Test
+    public void testPushDeliversCredentialChangeUpdateOnResetPassword() throws Exception {
+
+        // RESET_PASSWORD doesn't carry a credential_type detail —
+        // the mapper falls back to "password". change_type stays
+        // update because the password value is being changed, not
+        // added or removed.
+        String token = obtainReceiverToken(RECEIVER_CRED_ONLY, RECEIVER_CRED_ONLY_SECRET);
+        createPushStream(token, Set.of(CaepCredentialChange.TYPE));
+
+        triggerCredentialEvent(EventType.RESET_PASSWORD, null);
+
+        CapturedPush captured = awaitPush();
+        JsonNode set = decodeSet(captured);
+
+        JsonNode credentialChange = set.path("events").path(CaepCredentialChange.TYPE);
+        Assertions.assertFalse(credentialChange.isMissingNode(),
+                "SET should carry a CAEP credential-change event");
+        Assertions.assertEquals("update", credentialChange.path("change_type").asText(),
+                "RESET_PASSWORD must map to CAEP change_type=update");
+        Assertions.assertEquals("password", credentialChange.path("credential_type").asText(),
+                "credential_type should fall back to 'password' when the event has no detail");
+    }
+
     // --- helpers ---------------------------------------------------------
 
     /**
@@ -287,6 +371,30 @@ public class SsfTransmitterPushDeliveryTests {
         Assertions.assertNotNull(tokenResponse.getRefreshToken(),
                 "password grant response should include a refresh token");
         oauthClient.doLogout(tokenResponse.getRefreshToken());
+    }
+
+    /**
+     * Fires a Keycloak credential-related user event from inside the
+     * server context — the same code path that real flows use, so the
+     * SSF event listener picks it up and the dispatcher narrows it
+     * into a CAEP credential-change SET. Uses {@code runOnServer}
+     * because EventBuilder/EventStore live in the server JVM and
+     * have no public REST shim. {@code credentialType} is written to
+     * {@link Details#CREDENTIAL_TYPE} when non-null; pass {@code null}
+     * to omit the detail (e.g. for {@link EventType#RESET_PASSWORD}).
+     */
+    protected void triggerCredentialEvent(EventType type, String credentialType) {
+        runOnServer.run(session -> {
+            RealmModel serverRealm = session.getContext().getRealm();
+            UserModel user = session.users().getUserByUsername(serverRealm, TEST_USER);
+            EventBuilder builder = new EventBuilder(serverRealm, session)
+                    .event(type)
+                    .user(user);
+            if (credentialType != null) {
+                builder.detail(Details.CREDENTIAL_TYPE, credentialType);
+            }
+            builder.success();
+        });
     }
 
     protected CapturedPush awaitPush() throws InterruptedException {

@@ -216,16 +216,37 @@ public class SecurityEventTokenMapper {
     /**
      * Generates a credential change event.
      *
-     * @param userId         The ID of the user
-     * @param credentialType The type of credential that changed
-     * @param stream
-     * @return The credential change event as a SecurityEventToken
+     * <p>The CAEP {@code change_type} is supplied by the caller because
+     * Keycloak's {@code UPDATE_CREDENTIAL} / {@code REMOVE_CREDENTIAL} /
+     * {@code RESET_PASSWORD} event types each map to a different CAEP
+     * change_type (UPDATE / DELETE / UPDATE) and the dispatcher in
+     * {@link #toSecurityEvent(Event, StreamConfig)} knows the right
+     * value for each. The {@code credentialType} string is read from
+     * {@code userEvent.getDetails().get(Details.CREDENTIAL_TYPE)} when
+     * present and falls back to {@code credentialTypeFallback} otherwise
+     * — used for events like {@code RESET_PASSWORD} that don't set the
+     * detail but where the credential type is implicit ("password").
+     *
+     * <p>Distinguishing CREATE from UPDATE inside this path is left
+     * unimplemented: Keycloak fires {@code UPDATE_CREDENTIAL} for both
+     * "first credential of this type added" and "existing credential
+     * modified" without a marker on the event itself, so a heuristic
+     * here would be guesswork. UPDATE is the conservative default for
+     * additions and modifications.
      */
-    public SsfSecurityEventToken generateCredentialChangeEvent(Event userEvent, StreamConfig stream) {
+    public SsfSecurityEventToken generateCredentialChangeEvent(Event userEvent,
+                                                               StreamConfig stream,
+                                                               CaepCredentialChange.ChangeType changeType,
+                                                               String credentialTypeFallback) {
         try {
 
             String userId = userEvent.getUserId();
-            String credentialType = userEvent.getDetails().get("credential_type");
+            String credentialType = userEvent.getDetails() != null
+                    ? userEvent.getDetails().get(Details.CREDENTIAL_TYPE)
+                    : null;
+            if (credentialType == null || credentialType.isBlank()) {
+                credentialType = credentialTypeFallback;
+            }
 
             SsfSecurityEventToken event = newSecurityEventToken(stream);
             event.setTxn(UUID.randomUUID().toString());
@@ -241,7 +262,7 @@ public class SecurityEventTokenMapper {
             // Set events
             Map<String, Object> events = new HashMap<>();
             CaepCredentialChange credentialChangeEvent = new CaepCredentialChange();
-            credentialChangeEvent.setChangeType(CaepCredentialChange.ChangeType.UPDATE);
+            credentialChangeEvent.setChangeType(changeType);
             credentialChangeEvent.setEventTimestamp(Time.currentTime());
             credentialChangeEvent.setCredentialType(caepCredentialType);
             credentialChangeEvent.setInitiatingEntity(InitiatingEntity.USER);
@@ -482,7 +503,9 @@ public class SecurityEventTokenMapper {
         }
         return switch (event.getType()) {
             case LOGOUT -> !shouldIgnoreLogout(event);
-            case UPDATE_CREDENTIAL -> !shouldIgnoreCredentialChange(event);
+            case UPDATE_CREDENTIAL,
+                 REMOVE_CREDENTIAL,
+                 RESET_PASSWORD -> !shouldIgnoreCredentialChange(event);
             default -> false;
         };
     }
@@ -530,9 +553,48 @@ public class SecurityEventTokenMapper {
                     yield null;
                 }
 
-                yield generateCredentialChangeEvent(event, stream);
+                // CAEP change_type=update covers both "first credential of
+                // this type added" and "existing credential modified" —
+                // Keycloak's UPDATE_CREDENTIAL fires for both without a
+                // distinguishing detail, so we conservatively report
+                // UPDATE for both. credential_type is read from the
+                // event's Details.CREDENTIAL_TYPE.
+                yield generateCredentialChangeEvent(event, stream,
+                        CaepCredentialChange.ChangeType.UPDATE, null);
             }
-            // Add more event mappings here as needed
+
+            case REMOVE_CREDENTIAL -> {
+
+                if (shouldIgnoreCredentialChange(event)) {
+                    yield null;
+                }
+
+                // CAEP change_type=delete: the credential was removed
+                // (required-action DeleteCredentialAction). credential_type
+                // is on the event's Details.
+                yield generateCredentialChangeEvent(event, stream,
+                        CaepCredentialChange.ChangeType.DELETE, null);
+            }
+
+            case RESET_PASSWORD -> {
+
+                if (shouldIgnoreCredentialChange(event)) {
+                    yield null;
+                }
+
+                // RESET_PASSWORD is the forgot-password completion flow —
+                // CAEP change_type=update on the password credential.
+                // Keycloak doesn't set Details.CREDENTIAL_TYPE on this
+                // event, so pass "password" as the fallback.
+                yield generateCredentialChangeEvent(event, stream,
+                        CaepCredentialChange.ChangeType.UPDATE, "password");
+            }
+            // Add more event mappings here as needed.
+            // Deliberately NOT mapped: UPDATE_PASSWORD / UPDATE_TOTP /
+            // REMOVE_TOTP — these are deprecated event types Keycloak
+            // fires as clones alongside UPDATE_CREDENTIAL /
+            // REMOVE_CREDENTIAL. Mapping them here would emit a
+            // duplicate SET per real change.
 
             default -> {
 
