@@ -56,6 +56,18 @@ public class ClientStreamStore implements SsfStreamStore {
     public static final String SSF_ALLOW_EMIT_EVENTS_KEY = "ssf.allowEmitEvents";
     public static final String SSF_EMIT_EVENTS_ROLE_KEY = "ssf.emitEventsRole";
 
+    /**
+     * Per-receiver outbox event TTL in seconds. Any non-{@code DELIVERED}
+     * outbox row for this client whose {@code createdAt} is older than
+     * {@code now - ssf.maxEventAgeSeconds} is purged by the drainer's
+     * housekeeping pass <em>before</em> the global
+     * {@code outbox-dead-letter-retention} window applies. Useful for
+     * receivers whose events lose relevance fast (e.g. {@code session-revoked}
+     * for a session that's already been re-established). Empty/absent =
+     * use only the transmitter-wide retention.
+     */
+    public static final String SSF_MAX_EVENT_AGE_SECONDS_KEY = "ssf.maxEventAgeSeconds";
+
     // ----- Per-stream state (cleared on stream delete) -----------------------
     public static final String SSF_STREAM_ID_KEY = "ssf.streamId";
     public static final String SSF_STATUS_KEY = "ssf.status";

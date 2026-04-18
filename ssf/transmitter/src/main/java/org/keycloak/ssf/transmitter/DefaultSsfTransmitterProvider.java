@@ -106,7 +106,7 @@ public class DefaultSsfTransmitterProvider implements SsfTransmitterProvider {
         // SsfPendingEventStore> — the StreamService needs a factory so
         // stream-delete can cascade-purge pending outbox rows for both
         // PUSH and POLL streams.
-        return new StreamService(session, streamStore(), metadataService(), pendingSsfEventStoreFactory);
+        return new StreamService(session, this, streamStore(), metadataService(), pendingSsfEventStoreFactory);
     }
 
     @Override

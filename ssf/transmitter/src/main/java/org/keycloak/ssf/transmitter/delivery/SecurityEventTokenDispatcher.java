@@ -73,9 +73,12 @@ public class SecurityEventTokenDispatcher {
             return;
         }
 
-        if (!isStreamEnabled(stream)) {
-            log.debugf("Skipping event delivery for stream because of unsupported stream status. clientId=%s streamId=%s jti=%s status=%s",
-                    stream.getClientClientId(), stream.getStreamId(), eventToken.getJti(), stream.getStatus());
+        StreamStatusValue status = stream.getStatus();
+
+        if (status == StreamStatusValue.disabled) {
+            // SSF §8.2: disabled streams drop events outright.
+            log.debugf("Dropping event for disabled stream. clientId=%s streamId=%s jti=%s",
+                    stream.getClientClientId(), stream.getStreamId(), eventToken.getJti());
             return;
         }
 
@@ -87,6 +90,13 @@ public class SecurityEventTokenDispatcher {
         }
 
         if (!shouldDispatchForSubject(eventToken, stream)) {
+            return;
+        }
+
+        if (status == StreamStatusValue.paused) {
+            // SSF §8.2: paused streams hold events; they're released when
+            // the stream is resumed (status returns to enabled).
+            holdEvent(eventToken, stream);
             return;
         }
 
@@ -123,6 +133,48 @@ public class SecurityEventTokenDispatcher {
             return true;
         }
         return StreamStatusValue.enabled == status;
+    }
+
+    /**
+     * Holds an event for a paused stream by signing it and writing it to
+     * the outbox in {@link org.keycloak.ssf.transmitter.outbox.SsfPendingEventStatus#HELD HELD}
+     * status. The drainer/poll endpoint skip HELD rows; they're released
+     * to {@code PENDING} when the stream is resumed
+     * ({@link org.keycloak.ssf.transmitter.outbox.SsfPendingEventStore#releaseHeldForClient
+     * releaseHeldForClient}).
+     */
+    protected void holdEvent(SsfSecurityEventToken eventToken, StreamConfig stream) {
+        var delivery = stream.getDelivery();
+        DeliveryMethod deliveryMethod = DeliveryMethod.valueOfUri(delivery.getMethod());
+
+        try {
+            SecurityEventToken narrowedEventToken = getNarrowedEventToken(eventToken, stream);
+            String signatureAlgorithm = SsfSignatureAlgorithms.resolveForStream(stream, transmitterConfig);
+            String encodedEvent = securityEventTokenEncoder.encode(narrowedEventToken, signatureAlgorithm);
+
+            String realmId = session.getContext().getRealm().getId();
+            String clientId = stream.getClientId();
+            String streamId = stream.getStreamId();
+            String jti = eventToken.getJti();
+            String eventType = getEventType(eventToken);
+            if (eventType == null) {
+                eventType = "<unknown>";
+            }
+
+            var pendingEventStore = pendingSsfEventStoreFactory.apply(session);
+            switch (deliveryMethod) {
+                case PUSH, RISC_PUSH ->
+                        pendingEventStore.enqueueHeldPush(realmId, clientId, streamId, jti, eventType, encodedEvent);
+                case POLL, RISC_POLL ->
+                        pendingEventStore.enqueueHeldPoll(realmId, clientId, streamId, jti, eventType, encodedEvent);
+            }
+
+            log.debugf("Held event for paused stream. clientId=%s streamId=%s jti=%s deliveryMethod=%s",
+                    stream.getClientClientId(), streamId, jti, deliveryMethod.name());
+        } catch (Exception e) {
+            log.errorf(e, "Error holding event for paused stream. clientId=%s streamId=%s",
+                    stream.getClientClientId(), stream.getStreamId());
+        }
     }
 
     /**

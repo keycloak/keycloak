@@ -7,6 +7,8 @@ package org.keycloak.ssf.transmitter.outbox;
  * <pre>
  *     PENDING ──push succeeds──▶ DELIVERED
  *     PENDING ──retries exhausted──▶ DEAD_LETTER
+ *     PENDING ──stream paused──▶ HELD
+ *     HELD ──stream resumed (status enabled)──▶ PENDING
  *     DEAD_LETTER ──admin "retry" action──▶ PENDING  (resets attempts, next_attempt_at)
  * </pre>
  *
@@ -35,5 +37,16 @@ public enum SsfPendingEventStatus {
      * All retry attempts have been exhausted without a successful
      * delivery. Requires admin intervention.
      */
-    DEAD_LETTER
+    DEAD_LETTER,
+
+    /**
+     * Event is parked because the owning stream is in the
+     * {@code paused} status (SSF §8.2). Neither the PUSH drainer nor the
+     * POLL endpoint serves rows in this state. When the stream is
+     * resumed (status returns to {@code enabled}), the held rows are
+     * bulk-transitioned back to {@link #PENDING} in original arrival
+     * order so the receiver gets the held SETs as if the pause had
+     * never happened.
+     */
+    HELD
 }

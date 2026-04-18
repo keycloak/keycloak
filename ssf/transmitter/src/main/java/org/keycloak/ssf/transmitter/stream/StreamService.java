@@ -19,8 +19,10 @@ import org.keycloak.ssf.Ssf;
 import org.keycloak.ssf.SsfException;
 import org.keycloak.ssf.SsfProfile;
 import org.keycloak.ssf.metadata.TransmitterMetadata;
+import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.stream.StreamStatusValue;
+import org.keycloak.ssf.transmitter.DefaultSsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.event.SsfSignatureAlgorithms;
 import org.keycloak.ssf.transmitter.event.SsfUserSubjectFormats;
@@ -58,14 +60,16 @@ public class StreamService {
 
     protected final KeycloakSession session;
 
+    private final SsfTransmitterProvider transmitterProvider;
     protected final SsfStreamStore streamStore;
 
     protected final TransmitterMetadataService transmitterService;
 
     protected final Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory;
 
-    public StreamService(KeycloakSession session, SsfStreamStore streamStore, TransmitterMetadataService transmitterService, Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
+    public StreamService(KeycloakSession session, SsfTransmitterProvider transmitterProvider, SsfStreamStore streamStore, TransmitterMetadataService transmitterService, Function<KeycloakSession, SsfPendingEventStore> pendingSsfEventStoreFactory) {
         this.session = session;
+        this.transmitterProvider = transmitterProvider;
         this.streamStore = streamStore;
         this.transmitterService = transmitterService;
         this.pendingSsfEventStoreFactory = pendingSsfEventStoreFactory;
@@ -869,6 +873,46 @@ public class StreamService {
                 session.getContext().getRealm().getName(), session.getContext().getClient().getClientId(), streamId,
                 currentStreamStatus.getStatus(), streamStatus.getStatus()
         );
+
+        // SSF §8.2: when a stream resumes (status returns to enabled),
+        // release any events the dispatcher held while the stream was
+        // paused so the receiver sees them as if the pause had never
+        // happened. Order matters: release before dispatching the
+        // stream-updated SET so the receiver observes the held SETs at
+        // or before the status-change notification.
+        if (StreamStatusValue.enabled.getStatusCode().equals(streamStatus.getStatus())
+                && !StreamStatusValue.enabled.getStatusCode().equals(currentStreamStatus.getStatus())) {
+            try {
+                pendingSsfEventStoreFactory.apply(session)
+                        .releaseHeldForClient(stream.getClientId());
+            } catch (Exception e) {
+                log.warnf(e, "Failed to release held outbox rows on stream resume. streamId=%s", streamId);
+            }
+        }
+
+        // SSF §8.1.5: notify the receiver of the new status with a
+        // stream-updated SET. Re-load the stream so the dispatcher sees
+        // the freshly-persisted status; dispatch via deliverEvent (async,
+        // gate-bypassing) so the event is delivered even when the new
+        // status is paused/disabled — the gate in dispatchEvent would
+        // otherwise drop SETs whose status is not enabled.
+        try {
+            StreamConfig refreshed = streamStore.getStream(streamId);
+            if (refreshed != null) {
+                SsfSecurityEventToken updatedEvent = transmitterProvider.securityEventTokenMapper()
+                        .generateStreamUpdatedEvent(refreshed, streamStatus);
+                if (updatedEvent != null) {
+                    transmitterProvider.securityEventTokenDispatcher()
+                            .deliverEvent(updatedEvent, refreshed);
+                }
+            }
+        } catch (Exception e) {
+            // Status persistence already succeeded — surface the dispatch
+            // failure as a warning rather than rolling back the status
+            // change itself; the receiver can re-derive the current
+            // status via GET /streams/status.
+            log.warnf(e, "Failed to dispatch stream-updated SET. streamId=%s", streamId);
+        }
 
         return streamStatus;
     }

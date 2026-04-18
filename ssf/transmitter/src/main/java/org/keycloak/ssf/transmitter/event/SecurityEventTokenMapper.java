@@ -20,7 +20,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.ssf.event.InitiatingEntity;
 import org.keycloak.ssf.event.caep.CaepCredentialChange;
 import org.keycloak.ssf.event.caep.CaepSessionRevoked;
+import org.keycloak.ssf.event.stream.SsfStreamUpdatedEvent;
 import org.keycloak.ssf.event.stream.SsfStreamVerificationEvent;
+import org.keycloak.ssf.stream.StreamStatus;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
 import org.keycloak.ssf.subject.ComplexSubjectId;
 import org.keycloak.ssf.subject.EmailSubjectId;
@@ -78,6 +80,41 @@ public class SecurityEventTokenMapper {
      * @param state  The verification state
      * @return The verification event as a JSON string
      */
+    /**
+     * Generates a stream-updated SET communicating a stream status change to
+     * the receiver, per SSF §8.1.5. Subject is the stream itself (opaque
+     * {@code stream_id}), event payload carries the new status and the
+     * optional reason — same shape used by {@code GET /stream/status}.
+     *
+     * <p>Callers are expected to dispatch the returned token via
+     * {@link org.keycloak.ssf.transmitter.delivery.SecurityEventTokenDispatcher#deliverEvent
+     * deliverEvent} (gate-bypassing, async) so the receiver still sees the
+     * status change even when the new status is {@code paused}/{@code disabled}.
+     */
+    public SsfSecurityEventToken generateStreamUpdatedEvent(StreamConfig stream, StreamStatus newStatus) {
+        try {
+            SsfSecurityEventToken token = newSecurityEventToken(stream);
+            token.setTxn(UUID.randomUUID().toString());
+
+            OpaqueSubjectId subId = new OpaqueSubjectId();
+            subId.setId(stream.getStreamId());
+            token.setSubjectId(subId);
+
+            SsfStreamUpdatedEvent payload = new SsfStreamUpdatedEvent();
+            payload.setStatus(newStatus);
+            payload.setReason(newStatus.getReason());
+
+            Map<String, Object> events = new HashMap<>();
+            events.put(SsfStreamUpdatedEvent.TYPE, payload);
+            token.setEvents(events);
+
+            return token;
+        } catch (Exception e) {
+            log.error("Error generating stream-updated event", e);
+            return null;
+        }
+    }
+
     public SsfSecurityEventToken generateVerificationEvent(StreamConfig stream, String state) {
         try {
             SsfSecurityEventToken verificationEventToken = newSecurityEventToken(stream);

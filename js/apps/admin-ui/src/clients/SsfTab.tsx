@@ -60,6 +60,7 @@ import { addTrailingSlash, convertAttributeNameToForm } from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
 import useFormatDate from "../utils/useFormatDate";
 import type { FormFields, SaveOptions } from "./ClientDetails";
+import { TimeSelector } from "../components/time-selector/TimeSelector";
 
 const FALLBACK_DEFAULT_SUPPORTED_EVENTS =
   "CaepCredentialChange,CaepSessionRevoked";
@@ -635,6 +636,18 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
           { shouldDirty: false },
         );
       }
+      // Re-seed the form-bound delivery selector from the actual
+      // stream's delivery.method so the dropdown matches reality. The
+      // attribute defaults to "PUSH" for new clients and only gets
+      // overwritten on save — without this, opening a client whose
+      // stream was created as POLL still shows "Push" in the picker.
+      if (stream?.delivery?.method) {
+        setValue(
+          convertAttributeNameToForm<FormFields>("attributes.ssf.delivery"),
+          isPollDeliveryMethod(stream.delivery.method) ? "POLL" : "PUSH",
+          { shouldDirty: false },
+        );
+      }
     },
     [client.id, streamFetchKey],
   );
@@ -682,6 +695,7 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
       "ssf.delivery",
       "ssf.pushEndpointConnectTimeoutMillis",
       "ssf.pushEndpointSocketTimeoutMillis",
+      "ssf.maxEventAgeSeconds",
     ]);
 
   const saveActionGroup = (testIdPrefix: string) => (
@@ -879,6 +893,32 @@ export const SsfTab = ({ save, client, activeTab }: SsfTabProps) => {
                 },
               }}
             />
+            <FormGroup
+              label={t("ssfMaxEventAge")}
+              fieldId="ssfMaxEventAge"
+              labelIcon={
+                <HelpItem
+                  helpText={t("ssfMaxEventAgeHelp")}
+                  fieldLabelId="ssfMaxEventAge"
+                />
+              }
+            >
+              <Controller
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.ssf.maxEventAgeSeconds",
+                )}
+                defaultValue=""
+                control={control}
+                render={({ field }) => (
+                  <TimeSelector
+                    data-testid="ssfMaxEventAge"
+                    value={field.value!}
+                    onChange={field.onChange}
+                    units={["second", "minute", "hour", "day"]}
+                  />
+                )}
+              />
+            </FormGroup>
             <DefaultSwitchControl
               name={convertAttributeNameToForm<FormFields>(
                 "attributes.ssf.autoNotifyOnLogin",

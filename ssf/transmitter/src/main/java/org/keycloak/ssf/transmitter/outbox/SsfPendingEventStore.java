@@ -52,7 +52,25 @@ public class SsfPendingEventStore {
                                      String eventType,
                                      String encodedSet) {
         return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
-                SsfPendingEventEntity.DELIVERY_METHOD_PUSH);
+                SsfPendingEventEntity.DELIVERY_METHOD_PUSH, SsfPendingEventStatus.PENDING);
+    }
+
+    /**
+     * Enqueues a SET for asynchronous push delivery in the
+     * {@link SsfPendingEventStatus#HELD HELD} state — used when the
+     * owning stream is in SSF §8.2 {@code paused} status. The drainer
+     * skips HELD rows; {@link #releaseHeldForClient(String)} flips them
+     * to {@link SsfPendingEventStatus#PENDING PENDING} when the stream
+     * is resumed.
+     */
+    public String enqueueHeldPush(String realmId,
+                                  String clientId,
+                                  String streamId,
+                                  String jti,
+                                  String eventType,
+                                  String encodedSet) {
+        return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
+                SsfPendingEventEntity.DELIVERY_METHOD_PUSH, SsfPendingEventStatus.HELD);
     }
 
     /**
@@ -71,7 +89,22 @@ public class SsfPendingEventStore {
                                      String eventType,
                                      String encodedSet) {
         return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
-                SsfPendingEventEntity.DELIVERY_METHOD_POLL);
+                SsfPendingEventEntity.DELIVERY_METHOD_POLL, SsfPendingEventStatus.PENDING);
+    }
+
+    /**
+     * Enqueues a SET for poll delivery in the
+     * {@link SsfPendingEventStatus#HELD HELD} state — see
+     * {@link #enqueueHeldPush}. The poll endpoint skips HELD rows.
+     */
+    public String enqueueHeldPoll(String realmId,
+                                  String clientId,
+                                  String streamId,
+                                  String jti,
+                                  String eventType,
+                                  String encodedSet) {
+        return enqueuePending(realmId, clientId, streamId, jti, eventType, encodedSet,
+                SsfPendingEventEntity.DELIVERY_METHOD_POLL, SsfPendingEventStatus.HELD);
     }
 
     /**
@@ -86,12 +119,14 @@ public class SsfPendingEventStore {
                                     String jti,
                                     String eventType,
                                     String encodedSet,
-                                    String deliveryMethod) {
+                                    String deliveryMethod,
+                                    SsfPendingEventStatus initialStatus) {
         Objects.requireNonNull(realmId, "realmId");
         Objects.requireNonNull(clientId, "clientId");
         Objects.requireNonNull(jti, "jti");
         Objects.requireNonNull(encodedSet, "encodedSet");
         Objects.requireNonNull(deliveryMethod, "deliveryMethod");
+        Objects.requireNonNull(initialStatus, "initialStatus");
 
         EntityManager em = getEntityManager();
 
@@ -116,7 +151,7 @@ public class SsfPendingEventStore {
         entity.setEventType(eventType);
         entity.setEncodedSet(encodedSet);
         entity.setDeliveryMethod(deliveryMethod);
-        entity.setStatus(SsfPendingEventStatus.PENDING);
+        entity.setStatus(initialStatus);
         entity.setAttempts(0);
         // PUSH path: the drainer picks it up on its next tick.
         // POLL path: nextAttemptAt is unused but the column is NOT NULL,
@@ -320,6 +355,35 @@ public class SsfPendingEventStore {
         return deleted;
     }
 
+    /**
+     * Bulk-transitions all {@link SsfPendingEventStatus#HELD HELD} rows
+     * for the given receiver client back to
+     * {@link SsfPendingEventStatus#PENDING PENDING}. Invoked from
+     * {@code StreamService.updateStreamStatus} when a stream is resumed
+     * (status returns to {@code enabled}).
+     *
+     * <p>For PUSH rows, {@code next_attempt_at} is reset to {@code now}
+     * so the drainer picks them up on its next tick. POLL rows ignore
+     * the field but it is set anyway to keep the schema constraint
+     * satisfied.
+     *
+     * @return the number of rows that transitioned out of HELD.
+     */
+    public int releaseHeldForClient(String clientId) {
+        Objects.requireNonNull(clientId, "clientId");
+        int released = getEntityManager()
+                .createNamedQuery("SsfPendingEvent.releaseHeldForClient")
+                .setParameter("pending", SsfPendingEventStatus.PENDING)
+                .setParameter("held", SsfPendingEventStatus.HELD)
+                .setParameter("clientId", clientId)
+                .setParameter("now", Instant.now())
+                .executeUpdate();
+        if (released > 0) {
+            log.debugf("SSF outbox released %d held rows for client %s", released, clientId);
+        }
+        return released;
+    }
+
     public void recordFailure(SsfPendingEventEntity entity, Instant nextAttemptAt, String lastError) {
         entity.setAttempts(entity.getAttempts() + 1);
         entity.setNextAttemptAt(nextAttemptAt);
@@ -354,6 +418,43 @@ public class SsfPendingEventStore {
             log.debugf("SSF outbox purged %d rows for removed realm %s", deleted, realmId);
         }
         return deleted;
+    }
+
+    /**
+     * Lists every distinct {@code (realmId, clientId)} pair that owns at
+     * least one non-{@code DELIVERED} outbox row. Used by the drainer's
+     * per-client TTL pass to bound the receiver-attribute lookup loop to
+     * clients that actually have stale candidates.
+     */
+    public List<Object[]> findRealmClientPairsForPurgeScan() {
+        return getEntityManager()
+                .createNamedQuery("SsfPendingEvent.findRealmClientPairsForPurgeScan", Object[].class)
+                .setParameter("delivered", SsfPendingEventStatus.DELIVERED)
+                .getResultList();
+    }
+
+    /**
+     * Per-receiver TTL purge: drops every non-{@code DELIVERED} outbox
+     * row for the given client whose {@code createdAt} predates
+     * {@code cutoff}. Backs the {@code ssf.maxEventAgeSeconds} client
+     * attribute — runs in the drainer's housekeeping pass <em>before</em>
+     * the global delivered/dead-letter retention windows so receivers
+     * with short-lived events shed stale rows promptly regardless of
+     * their terminal status (PENDING / HELD / DEAD_LETTER).
+     */
+    public int purgeStaleForClient(String clientId, Instant cutoff) {
+        Objects.requireNonNull(clientId, "clientId");
+        Objects.requireNonNull(cutoff, "cutoff");
+        int purged = getEntityManager()
+                .createNamedQuery("SsfPendingEvent.purgeStaleForClient")
+                .setParameter("clientId", clientId)
+                .setParameter("delivered", SsfPendingEventStatus.DELIVERED)
+                .setParameter("cutoff", cutoff)
+                .executeUpdate();
+        if (purged > 0) {
+            log.debugf("SSF outbox purged %d stale rows for client %s (cutoff=%s)", purged, clientId, cutoff);
+        }
+        return purged;
     }
 
     public int purgeDeliveredOlderThan(Instant cutoff) {
