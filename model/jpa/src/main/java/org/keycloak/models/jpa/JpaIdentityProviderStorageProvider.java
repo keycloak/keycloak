@@ -173,6 +173,10 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
             //call toModel(entity) now as after em.remove(entity) and the flush it might throw LazyInitializationException
             //when accessing the config of the entity (entity.getConfig()) withing the toModel(entity)
             IdentityProviderModel model = toModel(entity);
+            RealmModel realm = this.getRealm();
+
+            // Remove all federated identity links and invalidate user caches for this IDP.
+            session.users().preRemove(realm, model);
 
             em.remove(entity);
             // flush so that constraint violations are flagged and converted into model exception now rather than at the end of the tx.
@@ -181,7 +185,6 @@ public class JpaIdentityProviderStorageProvider implements IdentityProviderStora
             session.identityProviders().getMappersByAliasStream(alias).forEach(session.identityProviders()::removeMapper);
 
             // send identity provider removed event.
-            RealmModel realm = this.getRealm();
             session.getKeycloakSessionFactory().publish(new RealmModel.IdentityProviderRemovedEvent() {
 
                 @Override

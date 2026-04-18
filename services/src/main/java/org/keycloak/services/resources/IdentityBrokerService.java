@@ -1271,6 +1271,16 @@ public class IdentityBrokerService implements UserAuthenticationIdentityProvider
     private void updateFederatedIdentity(BrokeredIdentityContext context, UserModel federatedUser) {
         FederatedIdentityModel federatedIdentityModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, context.getIdpConfig().getAlias());
 
+        if (federatedIdentityModel == null) {
+            // No federated identity link found. Defensively re-add it so the session can continue.
+            // This can occur when a stale cache entry bypasses first-broker-login after IDP re-creation.
+            logger.debugf("Federated identity not found for user '%s' and provider '%s'. Re-adding link.",
+                    federatedUser.getUsername(), context.getIdpConfig().getAlias());
+            federatedIdentityModel = new FederatedIdentityModel(context.getIdpConfig().getAlias(),
+                    context.getId(), context.getUsername(), context.getToken());
+            this.session.users().addFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
+        }
+
         if (context.getIdpConfig().getSyncMode() == IdentityProviderSyncMode.FORCE) {
             setBasicUserAttributes(context, federatedUser);
 
