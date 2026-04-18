@@ -129,7 +129,35 @@ import jakarta.persistence.UniqueConstraint;
         @NamedQuery(
                 name = "SsfPendingEvent.deleteByClient",
                 query = "DELETE FROM SsfPendingEventEntity e"
-                        + " WHERE e.clientId = :clientId")
+                        + " WHERE e.clientId = :clientId"),
+        // Resume-from-pause hook: bulk-flips every HELD row for the
+        // receiver back to PENDING and resets next_attempt_at so the
+        // PUSH drainer picks them up on its next tick. POLL rows ignore
+        // next_attempt_at but the column is NOT NULL — set it anyway.
+        @NamedQuery(
+                name = "SsfPendingEvent.releaseHeldForClient",
+                query = "UPDATE SsfPendingEventEntity e"
+                        + " SET e.status = :pending,"
+                        + "     e.nextAttemptAt = :now"
+                        + " WHERE e.clientId = :clientId"
+                        + "   AND e.status = :held"),
+        // Per-receiver TTL housekeeping pre-scan: enumerates the
+        // (realmId, clientId) pairs that own at least one
+        // non-DELIVERED row, so the drainer's per-client purge loop
+        // visits only receivers that actually have stale candidates.
+        @NamedQuery(
+                name = "SsfPendingEvent.findRealmClientPairsForPurgeScan",
+                query = "SELECT DISTINCT e.realmId, e.clientId FROM SsfPendingEventEntity e"
+                        + " WHERE e.status <> :delivered"),
+        // Per-receiver TTL purge: drops every non-DELIVERED row for the
+        // client whose createdAt predates the receiver-specific cutoff
+        // derived from ssf.maxEventAgeSeconds.
+        @NamedQuery(
+                name = "SsfPendingEvent.purgeStaleForClient",
+                query = "DELETE FROM SsfPendingEventEntity e"
+                        + " WHERE e.clientId = :clientId"
+                        + "   AND e.status <> :delivered"
+                        + "   AND e.createdAt < :cutoff")
 })
 public class SsfPendingEventEntity {
 

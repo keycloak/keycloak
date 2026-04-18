@@ -14,6 +14,7 @@ import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
 import org.keycloak.ssf.transmitter.stream.StreamConfig;
+import org.keycloak.ssf.transmitter.stream.storage.client.ClientStreamStore;
 import org.keycloak.timer.ScheduledTask;
 import org.keycloak.utils.KeycloakSessionUtil;
 
@@ -92,6 +93,10 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
         try {
             SsfPendingEventStore store = pendingSsfEventStoreFactory.apply(session);
             drain(session, store);
+            // Per-receiver TTL pass first so receivers with a tighter
+            // ssf.maxEventAgeSeconds shed stale rows before the broader
+            // global retention windows touch them.
+            purgeStalePerClient(session, store);
             purgeDeliveredOlderThanRetention(store);
             purgeDeadLetterOlderThanRetention(store);
         } finally {
@@ -198,6 +203,67 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             log.warnf(e, "SSF outbox push threw. id=%s clientId=%s jti=%s",
                     row.getId(), row.getClientId(), row.getJti());
             return false;
+        }
+    }
+
+    /**
+     * Per-receiver TTL housekeeping. For every receiver that owns at
+     * least one non-{@code DELIVERED} outbox row, looks up the
+     * {@code ssf.maxEventAgeSeconds} client attribute and purges
+     * non-{@code DELIVERED} rows for that client whose {@code createdAt}
+     * is older than {@code now - maxEventAgeSeconds}. Receivers that
+     * don't set the attribute fall back to the transmitter-wide
+     * retention windows.
+     *
+     * <p>Bounded by the distinct (realmId, clientId) pairs returned from
+     * {@link SsfPendingEventStore#findRealmClientPairsForPurgeScan},
+     * so it scales with the number of <em>active</em> receivers, not
+     * the total client count in the realm.
+     */
+    protected void purgeStalePerClient(KeycloakSession session, SsfPendingEventStore store) {
+        List<Object[]> pairs = store.findRealmClientPairsForPurgeScan();
+        if (pairs.isEmpty()) {
+            return;
+        }
+        Instant now = Instant.now();
+        for (Object[] pair : pairs) {
+            String realmId = (String) pair[0];
+            String clientId = (String) pair[1];
+            Long maxAgeSeconds = readMaxEventAgeSeconds(session, realmId, clientId);
+            if (maxAgeSeconds == null || maxAgeSeconds <= 0) {
+                continue;
+            }
+            Instant cutoff = now.minusSeconds(maxAgeSeconds);
+            store.purgeStaleForClient(clientId, cutoff);
+        }
+    }
+
+    /**
+     * Reads {@link ClientStreamStore#SSF_MAX_EVENT_AGE_SECONDS_KEY} off
+     * the receiver client. Returns {@code null} when the realm or client
+     * is gone (the row will be reaped by realm-removed cascade or the
+     * drainer's own dead-letter path) or when the attribute is unset /
+     * malformed.
+     */
+    protected Long readMaxEventAgeSeconds(KeycloakSession session, String realmId, String clientId) {
+        RealmModel realm = session.realms().getRealm(realmId);
+        if (realm == null) {
+            return null;
+        }
+        ClientModel client = realm.getClientById(clientId);
+        if (client == null) {
+            return null;
+        }
+        String raw = client.getAttribute(ClientStreamStore.SSF_MAX_EVENT_AGE_SECONDS_KEY);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(raw.trim());
+        } catch (NumberFormatException e) {
+            log.debugf("Ignoring malformed %s='%s' on client %s",
+                    ClientStreamStore.SSF_MAX_EVENT_AGE_SECONDS_KEY, raw, clientId);
+            return null;
         }
     }
 
