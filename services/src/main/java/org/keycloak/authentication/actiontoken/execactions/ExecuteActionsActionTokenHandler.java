@@ -33,7 +33,6 @@ import org.keycloak.authentication.actiontoken.TokenUtils;
 import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -90,20 +89,11 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHandler
         final RealmModel realm = tokenContext.getRealm();
         final KeycloakSession session = tokenContext.getSession();
         if (tokenContext.isAuthenticationSessionFresh()) {
-            // Update the authentication session in the token
             String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
             token.setCompoundAuthenticationSessionId(authSessionEncodedId);
             UriBuilder builder = Urls.actionTokenBuilder(uriInfo.getBaseUri(), token.serialize(session, realm, uriInfo),
                     authSession.getClient().getClientId(), authSession.getTabId(), AuthenticationProcessor.getClientData(session, authSession));
-            String confirmUri = builder.build(realm.getName()).toString();
-
-            return session.getProvider(LoginFormsProvider.class)
-                    .setAuthenticationSession(authSession)
-                    .setUser(authSession.getAuthenticatedUser())
-                    .setSuccess(Messages.CONFIRM_EXECUTION_OF_ACTIONS)
-                    .setAttribute(Constants.TEMPLATE_ATTR_ACTION_URI, confirmUri)
-                    .setAttribute(Constants.TEMPLATE_ATTR_REQUIRED_ACTIONS, token.getRequiredActions())
-                    .createInfoPage();
+            return Response.seeOther(builder.build(realm.getName())).build();
         }
 
         String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient());
