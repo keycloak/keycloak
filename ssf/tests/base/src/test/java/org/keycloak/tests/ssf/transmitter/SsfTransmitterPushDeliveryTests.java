@@ -262,8 +262,10 @@ public class SsfTransmitterPushDeliveryTests {
         String token = obtainReceiverToken(RECEIVER_SSF, RECEIVER_SSF_SECRET);
         StreamConfig stream = createPushStream(token, Set.of(CaepSessionRevoked.TYPE));
 
-        // Disable the stream. The dispatcher must skip delivery when the
-        // stream status is not `enabled`.
+        // Disable the stream. The dispatcher must skip delivery of
+        // regular events, but the spec requires a stream-updated SET
+        // on every status transition, so we expect exactly one push
+        // — the stream-updated notification — and then silence.
         StreamStatus disableStatus = new StreamStatus();
         disableStatus.setStreamId(stream.getStreamId());
         disableStatus.setStatus(StreamStatusValue.disabled.getStatusCode());
@@ -276,10 +278,18 @@ public class SsfTransmitterPushDeliveryTests {
                     "POST /streams/status should succeed");
         }
 
+        // Drain the stream-updated SET fired by the disable transition.
+        CapturedPush streamUpdated = awaitPush();
+        JsonNode statusSet = decodeSet(streamUpdated);
+        Assertions.assertTrue(
+                statusSet.path("events").has(
+                        "https://schemas.openid.net/secevent/ssf/event-type/stream-updated"),
+                "disable transition should emit a stream-updated SET");
+
         triggerUserLogout();
 
         Assertions.assertNull(pushes.poll(2, TimeUnit.SECONDS),
-                "disabled stream should not receive pushes");
+                "disabled stream should not receive regular event pushes after the status transition");
     }
 
     @Test

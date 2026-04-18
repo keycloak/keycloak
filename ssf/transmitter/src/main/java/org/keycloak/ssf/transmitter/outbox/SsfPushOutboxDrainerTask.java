@@ -6,10 +6,13 @@ import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.ssf.event.token.SsfSecurityEventToken;
+import org.keycloak.ssf.stream.StreamStatus;
+import org.keycloak.ssf.stream.StreamStatusValue;
 import org.keycloak.ssf.transmitter.SsfTransmitterConfig;
 import org.keycloak.ssf.transmitter.SsfTransmitterProvider;
 import org.keycloak.ssf.transmitter.delivery.push.PushDeliveryService;
@@ -99,6 +102,9 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             purgeStalePerClient(session, store);
             purgeDeliveredOlderThanRetention(store);
             purgeDeadLetterOlderThanRetention(store);
+            // SSF 1.0 §8.1.1: auto-pause streams whose receiver has
+            // been idle beyond the configured inactivity_timeout.
+            pauseInactiveStreams(session);
         } finally {
             KeycloakSessionUtil.setKeycloakSession(previous);
         }
@@ -264,6 +270,100 @@ public class SsfPushOutboxDrainerTask implements ScheduledTask {
             log.debugf("Ignoring malformed %s='%s' on client %s",
                     ClientStreamStore.SSF_MAX_EVENT_AGE_SECONDS_KEY, raw, clientId);
             return null;
+        }
+    }
+
+    /**
+     * SSF 1.0 §8.1.1 {@code inactivity_timeout}: walks every realm's
+     * receivers that have a registered stream AND a configured
+     * {@code ssf.inactivityTimeoutSeconds} attribute, and transitions
+     * stale streams (no activity within the window) from {@code enabled}
+     * to {@code paused}. The status change itself goes through
+     * {@code StreamService.updateStreamStatus} so the hold-backlog
+     * machinery and the {@code stream-updated} SET dispatch run
+     * exactly as they would for a receiver-driven status change.
+     *
+     * <p>Only scans clients that have {@code ssf.streamId} set — the
+     * inactivity check is irrelevant for anything without a stream.
+     * Already-paused or already-disabled streams are skipped; the
+     * transition only fires when the current status is {@code enabled}.
+     */
+    protected void pauseInactiveStreams(KeycloakSession session) {
+        long now = Time.currentTime();
+        SsfTransmitterProvider transmitter = session.getProvider(SsfTransmitterProvider.class);
+        if (transmitter == null) {
+            return;
+        }
+        session.realms().getRealmsStream().forEach(realm -> {
+            session.getContext().setRealm(realm);
+            realm.getClientsStream()
+                    .filter(c -> c.getAttribute(ClientStreamStore.SSF_STREAM_ID_KEY) != null)
+                    .filter(c -> c.getAttribute(ClientStreamStore.SSF_INACTIVITY_TIMEOUT_SECONDS_KEY) != null)
+                    .forEach(client -> pauseIfInactive(session, transmitter, client, now));
+        });
+    }
+
+    private void pauseIfInactive(KeycloakSession session,
+                                 SsfTransmitterProvider transmitter,
+                                 ClientModel client,
+                                 long now) {
+        String timeoutRaw = client.getAttribute(ClientStreamStore.SSF_INACTIVITY_TIMEOUT_SECONDS_KEY);
+        long timeoutSeconds;
+        try {
+            timeoutSeconds = Long.parseLong(timeoutRaw.trim());
+        } catch (NumberFormatException e) {
+            log.debugf("Ignoring malformed %s='%s' on client %s",
+                    ClientStreamStore.SSF_INACTIVITY_TIMEOUT_SECONDS_KEY, timeoutRaw, client.getClientId());
+            return;
+        }
+        if (timeoutSeconds <= 0) {
+            return;
+        }
+
+        String status = client.getAttribute(ClientStreamStore.SSF_STATUS_KEY);
+        if (!StreamStatusValue.enabled.name().equals(status)) {
+            return;
+        }
+
+        String lastActivityRaw = client.getAttribute(ClientStreamStore.SSF_LAST_ACTIVITY_TIMESLOT_KEY);
+        long lastActivity;
+        try {
+            lastActivity = lastActivityRaw != null ? Long.parseLong(lastActivityRaw.trim()) : 0L;
+        } catch (NumberFormatException e) {
+            lastActivity = 0L;
+        }
+        // Never-active streams: stamp now as a baseline and let the
+        // next tick evaluate — avoids pausing a stream that was just
+        // created but hasn't seen any API hit yet.
+        if (lastActivity == 0L) {
+            client.setAttribute(ClientStreamStore.SSF_LAST_ACTIVITY_TIMESLOT_KEY, String.valueOf(now));
+            return;
+        }
+        if (now - lastActivity < timeoutSeconds) {
+            return;
+        }
+
+        String streamId = client.getAttribute(ClientStreamStore.SSF_STREAM_ID_KEY);
+        log.infof("SSF inactivity timeout exceeded — pausing stream. clientId=%s streamId=%s idleSeconds=%d timeout=%d",
+                client.getClientId(), streamId, (now - lastActivity), timeoutSeconds);
+
+        StreamStatus pauseStatus = new StreamStatus();
+        pauseStatus.setStreamId(streamId);
+        pauseStatus.setStatus(StreamStatusValue.paused.getStatusCode());
+        pauseStatus.setReason("Stream paused due to receiver inactivity");
+        try {
+            // updateStreamStatus reads the receiver from session.getContext().getClient()
+            // for logging and the stream-updated dispatch; set it up briefly.
+            ClientModel previousClient = session.getContext().getClient();
+            session.getContext().setClient(client);
+            try {
+                transmitter.streamService().updateStreamStatus(pauseStatus);
+            } finally {
+                session.getContext().setClient(previousClient);
+            }
+        } catch (Exception e) {
+            log.warnf(e, "Failed to pause inactive stream. clientId=%s streamId=%s",
+                    client.getClientId(), streamId);
         }
     }
 

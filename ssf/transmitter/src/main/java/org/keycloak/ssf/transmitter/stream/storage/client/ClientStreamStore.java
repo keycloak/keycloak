@@ -68,6 +68,29 @@ public class ClientStreamStore implements SsfStreamStore {
      */
     public static final String SSF_MAX_EVENT_AGE_SECONDS_KEY = "ssf.maxEventAgeSeconds";
 
+    /**
+     * Per-receiver SSF inactivity timeout in seconds. Empty/absent
+     * disables the check. When set, the transmitter automatically
+     * pauses the receiver's stream if no eligible activity (any hit
+     * on the stream-management endpoints or a POLL for POLL streams)
+     * arrives within the window — see SSF 1.0 §8.1.1
+     * {@code inactivity_timeout}.
+     */
+    public static final String SSF_INACTIVITY_TIMEOUT_SECONDS_KEY = "ssf.inactivityTimeoutSeconds";
+
+    /**
+     * Coarse-grained activity-slot marker (epoch seconds) for the
+     * receiver. Deliberately named "timeslot" rather than "timestamp"
+     * because the value is write-coalesced to a configurable
+     * granularity (see {@code SsfActivityTracker.STAMP_GRANULARITY_SECONDS})
+     * rather than tracking every request — a busy poll receiver
+     * shouldn't trigger a DB UPDATE + cluster-wide Infinispan
+     * invalidation per call just to bump a timestamp the inactivity
+     * check tolerates minutes of lag on. Consumed by the drainer's
+     * inactivity-check pass alongside {@link #SSF_INACTIVITY_TIMEOUT_SECONDS_KEY}.
+     */
+    public static final String SSF_LAST_ACTIVITY_TIMESLOT_KEY = "ssf.lastActivityTimeslot";
+
     // ----- Per-stream state (cleared on stream delete) -----------------------
     public static final String SSF_STREAM_ID_KEY = "ssf.streamId";
     public static final String SSF_STATUS_KEY = "ssf.status";
@@ -456,6 +479,14 @@ public class ClientStreamStore implements SsfStreamStore {
         Integer clientMinVerification = parseIntAttribute(client, SSF_MIN_VERIFICATION_INTERVAL_KEY);
         if (clientMinVerification != null) {
             streamConfig.setMinVerificationInterval(clientMinVerification);
+        }
+        // SSF 1.0 §8.1.1 inactivity_timeout — receiver-configured per
+        // client. Populated on read so the receiver sees the effective
+        // value in the stream config response; the drainer's
+        // inactivity-check pass reads the same attribute directly.
+        Integer clientInactivityTimeout = parseIntAttribute(client, SSF_INACTIVITY_TIMEOUT_SECONDS_KEY);
+        if (clientInactivityTimeout != null) {
+            streamConfig.setInactivityTimeout(clientInactivityTimeout);
         }
     }
 

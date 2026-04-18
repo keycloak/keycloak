@@ -106,6 +106,14 @@ public class SsfAuthUtil {
             return false;
         }
 
+        // SSF 1.0 §8.1.1 inactivity_timeout: any authenticated hit
+        // on a stream-management or poll endpoint counts as eligible
+        // receiver activity and MUST restart the inactivity clock.
+        // Stamping here covers every receiver-facing path in one
+        // place — individual resource handlers don't have to
+        // remember.
+        SsfActivityTracker.stamp(client);
+
         return true;
     }
 
