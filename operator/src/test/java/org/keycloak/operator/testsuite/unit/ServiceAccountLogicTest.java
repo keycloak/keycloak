@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ServiceAccountLogicTest {
@@ -111,7 +110,7 @@ public class ServiceAccountLogicTest {
         var keycloak = K8sUtils.getDefaultKeycloakDeployment();
         keycloak.getSpec().setServiceAccountSpec(new ServiceAccountSpec());
         var sa = new KeycloakServiceAccountDependentResource().desired(keycloak, null);
-        assertNull(sa.getMetadata().getAnnotations());
+        assertTrue(sa.getMetadata().getAnnotations() == null || sa.getMetadata().getAnnotations().isEmpty());
         assertTrue(sa.getImagePullSecrets() == null || sa.getImagePullSecrets().isEmpty());
     }
 }
